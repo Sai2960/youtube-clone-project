@@ -13,11 +13,7 @@ import { initializeTheme, applyTheme, getStoredTheme } from '../lib/theme';
 import CallNotification from "@/components/ui/CallNotification";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com"
-
-
-}';
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
 /**
  * Global state tracker to prevent duplicate initialization
  * Using a module-level object ensures these values persist across re-renders
