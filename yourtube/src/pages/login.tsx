@@ -1,4 +1,4 @@
-// youtube/src/pages/login.tsx - COMPLETE MERGED VERSION WITH ALL FEATURES
+// youtube/src/pages/login.tsx - FIXED VERSION
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
-// ✅ Import both locationApi functions AND axios for fallback
+// Import locationApi functions
 import { 
   checkLocationAndApplyTheme, 
   sendOTP as sendOTPApi, 
@@ -27,14 +27,14 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0);
   const [locationInfo, setLocationInfo] = useState<any>(null);
 
-  // ✅ Redirect if logged in
+  // Redirect if logged in
   useEffect(() => {
     if (user) {
       router.push('/');
     }
   }, [user, router]);
 
-  // ✅ Countdown timer
+  // Countdown timer
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -42,7 +42,7 @@ export default function LoginPage() {
     }
   }, [countdown]);
 
-  // ✅ Check location on mount - USES locationApi
+  // Check location on mount
   useEffect(() => {
     checkLocation();
   }, []);
@@ -67,7 +67,6 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error('❌ Location check failed:', error);
-      // Fallback to email if location check fails
       console.log('⚠️ Falling back to email OTP');
       setOtpMethod('email');
     }
@@ -92,7 +91,7 @@ export default function LoginPage() {
       return;
     }
 
-    // ✅ Validate email
+    // Validate email
     if (otpMethod === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(contact)) {
@@ -100,14 +99,13 @@ export default function LoginPage() {
         return;
       }
       
-      // Don't allow test/example emails
       if (contact.includes('test') || contact.includes('example')) {
         toast.error('Please use a real email address (not test/example)');
         return;
       }
     }
 
-    // ✅ Validate phone
+    // Validate phone
     if (otpMethod === 'sms') {
       const cleaned = contact.replace(/\D/g, '');
       if (cleaned.length !== 10) {
@@ -120,15 +118,13 @@ export default function LoginPage() {
     try {
       console.log('📤 Sending OTP via', otpMethod, 'to:', contact);
       
-      // ✅ Use locationApi function
       const result = await sendOTPApi(otpMethod, contact);
       
       if (result.success) {
         toast.success(`OTP sent to your ${otpMethod === 'email' ? 'email' : 'phone'}!`);
         setCountdown(60);
-        setStep('otp'); // ✅ Auto-advance to OTP step
+        setStep('otp');
         
-        // Show test OTP in development
         if (result.debug?.otp && process.env.NODE_ENV === 'development') {
           console.log('🔐 TEST OTP:', result.debug.otp);
           toast.info(`Test OTP: ${result.debug.otp}`, { duration: 10000 });
@@ -162,15 +158,11 @@ export default function LoginPage() {
     try {
       console.log('🔐 Verifying OTP...');
       
-      // ✅ Use locationApi function
       const result = await verifyOTPApi(contact, otp);
       
       if (result.success) {
         toast.success('OTP verified successfully!');
-        
-        // ✅ Now proceed with actual Google sign-in
         await handlegooglesignin();
-        
       } else {
         toast.error(result.error || 'Invalid OTP');
       }
@@ -183,7 +175,6 @@ export default function LoginPage() {
     }
   };
 
-  // ✅ Handle phone number input formatting
   const handlePhoneInput = (value: string) => {
     const cleaned = value.replace(/[^\d]/g, '');
     setContact(cleaned);
@@ -246,7 +237,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* ✅ Enhanced Location Info Card with all details */}
+              {/* Location Info Card */}
               {locationInfo && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <div className="flex items-start gap-3">
@@ -269,7 +260,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* ✅ Fallback OTP Method Display (when locationInfo not available) */}
+              {/* Fallback OTP Method Display */}
               {!locationInfo && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-sm">
@@ -423,7 +414,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ✅ Enhanced Debug Info (Development Only) */}
+        {/* Debug Info (Development Only) */}
         {process.env.NODE_ENV === 'development' && locationInfo && (
           <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
             <p className="font-bold mb-2">🧪 Debug Info:</p>
@@ -443,7 +434,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* ✅ Basic Debug Info when locationInfo not loaded */}
+        {/* Basic Debug Info when locationInfo not loaded */}
         {process.env.NODE_ENV === 'development' && !locationInfo && (
           <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
             <p className="font-bold mb-2">🧪 Debug Info:</p>
