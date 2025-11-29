@@ -128,7 +128,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const channelName = getShortChannelName(short);
 
   const getApiUrl = () =>
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    process.env.NEXT_PUBLIC_API_URL || "http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}";
 
   // Translation handlers
   const handleTranslated = (

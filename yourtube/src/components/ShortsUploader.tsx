@@ -5,7 +5,7 @@ import { Upload, X, Play, AlertCircle, Loader, Sparkles, Loader2 } from 'lucide-
 import axios from 'axios';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 
-const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}';
 
 interface ShortsUploaderProps {
   channelId: string;

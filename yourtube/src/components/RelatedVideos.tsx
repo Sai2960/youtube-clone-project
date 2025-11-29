@@ -37,7 +37,7 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
         return `http://${hostname}:5000`;
       }
     }
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}';
   };
 
   useEffect(() => {

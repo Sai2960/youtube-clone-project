@@ -37,8 +37,8 @@ export const OTPModal: React.FC<OTPModalProps> = ({
     setError('');
     try {
       const endpoint = otpMethod === 'email' 
-        ? 'http://localhost:5000/api/send-email-otp'
-        : 'http://localhost:5000/api/send-sms-otp';
+        ? 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}/api/send-email-otp'
+        : 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}/api/send-sms-otp';
       
       const payload = otpMethod === 'email' 
         ? { email: contact }
@@ -77,7 +77,7 @@ export const OTPModal: React.FC<OTPModalProps> = ({
     try {
       console.log('🔐 Verifying OTP:', otp, 'for contact:', contact);
 
-      const response = await axios.post('http://localhost:5000/api/verify-otp', {
+      const response = await axios.post('http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}/api/verify-otp', {
         otp,
         contact
       });

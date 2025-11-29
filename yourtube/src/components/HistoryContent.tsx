@@ -276,17 +276,17 @@ export default function HistoryContent() {
 
   const getVideoUrl = (video: Video) => {
   if (video?.videofilename) {
-    return `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/uploads/videos/${video.videofilename}`;
+    return `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}'}/uploads/videos/${video.videofilename}`;
   } else if (video?.filepath) {
     const filename = video.filepath.split(/[\\/]/).pop();
-    return `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/uploads/videos/${filename}`;
+    return `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}'}/uploads/videos/${filename}`;
   }
   return "";
 };
 
  const getShortThumbnail = (short: Short) => {
   if (short?.thumbnailUrl) {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}';
     if (short.thumbnailUrl.startsWith('http')) {
       return short.thumbnailUrl;
     }
@@ -297,7 +297,7 @@ export default function HistoryContent() {
 
   const getShortUrl = (short: Short) => {
     if (short?.videoUrl) {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}';
       if (short.videoUrl.startsWith('http')) {
         return short.videoUrl;
       }

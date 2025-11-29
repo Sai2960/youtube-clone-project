@@ -79,10 +79,10 @@ export default function WatchLaterContent() {
 
   const getVideoUrl = (video: any) => {
     if (video?.videofilename) {
-      return `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/uploads/videos/${video.videofilename}`;
+      return `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}'}/uploads/videos/${video.videofilename}`;
     } else if (video?.filepath) {
       const filename = video.filepath.split(/[\\/]/).pop();
-      return `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/uploads/videos/${filename}`;
+      return `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}'}/uploads/videos/${filename}`;
     }
     return "/video/vdo.mp4";
   };

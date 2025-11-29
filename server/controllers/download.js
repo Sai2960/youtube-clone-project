@@ -422,7 +422,7 @@ export const getUserDownloads = async (req, res) => {
     const total = await DownloadModel.countDocuments({ userId });
     const totalPages = Math.ceil(total / limit);
 
-    const baseUrl = process.env.BASE_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+    const baseUrl = process.env.BASE_URL || process.env.BACKEND_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}';
     const enhancedDownloads = downloads.map(download => ({
       ...download,
       downloadUrl: `${baseUrl}${download.downloadUrl}`,

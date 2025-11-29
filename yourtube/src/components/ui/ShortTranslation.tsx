@@ -35,7 +35,7 @@ const SUPPORTED_LANGUAGES = [
   { code: 'tr', name: 'Turkish', flag: '🇹🇷' },
 ];
 
-const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}';
 
 const ShortTranslation: React.FC<ShortTranslationProps> = ({
   shortId,
