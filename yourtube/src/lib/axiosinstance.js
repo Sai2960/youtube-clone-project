@@ -1,28 +1,36 @@
-// yourtube/src/lib/axiosinstance.js - NETWORK ACCESS FIXED
 import axios from 'axios';
 
-// ✅ CRITICAL: Use network IP for mobile access
+// ✅ PRODUCTION FIX: Always use HTTPS in production
 const getBackendURL = () => {
-  // Check if we're in browser
+  // Use environment variable first
+  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+    return process.env.NEXT_PUBLIC_BACKEND_URL;
+  }
+  
+  // Fallback for development
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // If accessing via network IP, use network IP for backend
+    // Production domains use HTTPS backend
+    if (hostname.includes('vercel.app')) {
+      return 'https://youtube-clone-project-q3pd.onrender.com';
+    }
+    
+    // Local network access
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `http://${hostname}:5000`;
     }
   }
   
-  // Default to environment variable or network IP
-  return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://192.168.0.181:5000';
+  // Default localhost
+  return 'http://localhost:5000';
 };
 
 const BACKEND_URL = getBackendURL();
 
 console.log('🔧 Axios Configuration:');
 console.log('   Backend URL:', BACKEND_URL);
-console.log('   Environment:', process.env.NODE_ENV);
-console.log('   Hostname:', typeof window !== 'undefined' ? window.location.hostname : 'server');
+console.log('   Is HTTPS:', BACKEND_URL.startsWith('https'));
 
 const axiosInstance = axios.create({
   baseURL: BACKEND_URL,
@@ -39,6 +47,7 @@ axiosInstance.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Token attached to request');
     }
     
     console.log('📤 API Request:', {
@@ -61,8 +70,7 @@ axiosInstance.interceptors.response.use(
   (response) => {
     console.log('✅ API Response:', {
       url: response.config.url,
-      status: response.status,
-      success: response.data?.success
+      status: response.status
     });
     return response;
   },
@@ -70,30 +78,19 @@ axiosInstance.interceptors.response.use(
     console.error('❌ API Error:', {
       url: error.config?.url,
       status: error.response?.status,
-      message: error.response?.data?.message || error.message,
-      networkError: error.code === 'ERR_NETWORK'
+      message: error.response?.data?.message || error.message
     });
 
-    // Specific handling for network errors
     if (error.code === 'ERR_NETWORK') {
-      console.error('🌐 NETWORK ERROR - Cannot reach backend');
-      console.error('   Backend URL:', BACKEND_URL);
-      console.error('   Make sure backend is running and accessible from this device');
+      console.error('🌐 NETWORK ERROR - Check backend URL:', BACKEND_URL);
     }
 
-    // Handle 401 Unauthorized
     if (error.response?.status === 401) {
-      console.log('🔒 Unauthorized - Token expired or invalid');
-      
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+      console.log('🔒 Unauthorized - clearing auth');
+      if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
-    }
-
-    // Handle 403 Forbidden
-    if (error.response?.status === 403) {
-      console.log('⛔ Forbidden - Premium required');
     }
 
     return Promise.reject(error);
