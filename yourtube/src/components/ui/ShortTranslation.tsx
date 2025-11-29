@@ -35,7 +35,8 @@ const SUPPORTED_LANGUAGES = [
   { code: 'tr', name: 'Turkish', flag: '🇹🇷' },
 ];
 
-const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://${"https://youtube-clone-project-q3pd.onrender.com"
+const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com"
+
 
 }';
 

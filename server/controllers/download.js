@@ -422,7 +422,8 @@ export const getUserDownloads = async (req, res) => {
     const total = await DownloadModel.countDocuments({ userId });
     const totalPages = Math.ceil(total / limit);
 
-    const baseUrl = process.env.BASE_URL || process.env.BACKEND_URL || 'http://${"https://youtube-clone-project-q3pd.onrender.com"
+    const baseUrl = process.env.BASE_URL || process.env.BACKEND_URL || "https://youtube-clone-project-q3pd.onrender.com"
+
 
 }';
     const enhancedDownloads = downloads.map(download => ({

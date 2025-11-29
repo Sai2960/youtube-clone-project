@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://${"https://youtube-clone-project-q3pd.onrender.com"
+const API_URL = "https://youtube-clone-project-q3pd.onrender.com"
+
 
 }'; // ✅ Changed from 3000 to 5000
 

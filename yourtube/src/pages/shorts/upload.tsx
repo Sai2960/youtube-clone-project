@@ -5,7 +5,8 @@ import Head from 'next/head';
 import { Upload, X, Play, AlertCircle, CheckCircle, Loader, Sparkles, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
-const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://${"https://youtube-clone-project-q3pd.onrender.com"
+const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com"
+
 
 }';
 

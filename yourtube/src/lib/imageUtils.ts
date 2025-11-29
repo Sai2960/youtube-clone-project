@@ -6,7 +6,7 @@
 const getBackendUrl = (): string => {
   // Server-side rendering
   if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${"https://youtube-clone-project-q3pd.onrender.com"
+    return "https://youtube-clone-project-q3pd.onrender.com"
 
 }';
   }
@@ -17,7 +17,7 @@ const getBackendUrl = (): string => {
     return `http://${hostname}:5000`;
   }
   
-  return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://${"https://youtube-clone-project-q3pd.onrender.com"
+  return "https://youtube-clone-project-q3pd.onrender.com"
 
 }';
 };
