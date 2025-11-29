@@ -2,10 +2,7 @@
 import axios from 'axios';
 import { applyTheme } from './theme';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com"
-
-
-}';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
 
 export interface LocationData {
   success: boolean;
