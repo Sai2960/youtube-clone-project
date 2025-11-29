@@ -80,13 +80,12 @@ const allowedOrigins = [
   'http://localhost:3001',
   'http://192.168.0.181:3000',
   
-  // ✅ Vercel production domains (ADD YOUR ACTUAL DOMAINS)
+// Vercel domains
   'https://youtube-clone-project-eosin.vercel.app',
   'https://youtube-clone-project-e0c7hj5p6-sais-projects-daab7a9a.vercel.app',
   'https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app',
-  
-  // Add more Vercel preview URLs as needed
-  // Pattern: https://your-project-[hash]-[username].vercel.app
+  'https://youtube-clone-project-h1yxl3qo6-sais-projects-daab7a9a.vercel.app',
+  'https://youtube-clone-project-2xkyn9690-sais-projects-daab7a9a.vercel.app', // ✅ ADD THIS
 ];
 
 // Add environment variable origins if provided
