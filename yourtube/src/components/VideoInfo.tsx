@@ -408,7 +408,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     if (onShare) {
       onShare();
     } else {
-      const videoUrl = `${window.location.origin}/watch/${video._id}`;
+      const videoUrl = `${window.location.origin
+}/watch/${video._id}`;
       if (navigator.share) {
         navigator.share({
           title: video.videotitle,

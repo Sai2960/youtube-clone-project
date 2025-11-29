@@ -180,7 +180,9 @@ echo.
 echo Backend (Express):
 echo   • API Endpoint:     http://192.168.0.181:5000
 echo   • Health Check:     http://192.168.0.181:5000/health
-echo   • Local:            http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}
+echo   • Local:            http://${"https://youtube-clone-project-q3pd.onrender.com"
+
+}
 echo.
 echo Socket.IO:
 echo   • WebSocket:        ws://192.168.0.181:5000

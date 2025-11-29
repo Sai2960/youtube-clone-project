@@ -111,7 +111,9 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
   }, [shortId]);
 
   const getApiUrl = () => {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}';
+    return process.env.NEXT_PUBLIC_API_URL || 'http://${"https://youtube-clone-project-q3pd.onrender.com"
+
+}';
   };
 
   const getAuthHeaders = () => {

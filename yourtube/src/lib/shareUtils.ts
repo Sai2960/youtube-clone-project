@@ -12,7 +12,8 @@ export const shareUtils = {
   getShareableUrl: (videoId: string, currentTime?: number): string => {
     if (typeof window === 'undefined') return '';
     
-    const baseUrl = window.location.origin;
+    const baseUrl = window.location.origin
+;
     const timestamp = currentTime && currentTime > 0 ? `?t=${Math.floor(currentTime)}` : '';
     return `${baseUrl}/watch/${videoId}${timestamp}`;
   },

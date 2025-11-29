@@ -14,7 +14,9 @@ import {
   verifyOTP as verifyOTPApi 
 } from '@/lib/locationApi';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://${process.env.NEXT_PUBLIC_BACKEND_URL||"https://youtube-clone-project-q3pd.onrender.com"}';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://${"https://youtube-clone-project-q3pd.onrender.com"
+
+}';
 
 export default function LoginPage() {
   const router = useRouter();

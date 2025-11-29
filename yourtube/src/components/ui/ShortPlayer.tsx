@@ -129,7 +129,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
   const getApiUrl = () =>
 // ✅ CORRECT - Simple fallback chain
-process.env.NEXT_PUBLIC_BACKEND_URL || "https://youtube-clone-project-q3pd.onrender.com"
+"https://youtube-clone-project-q3pd.onrender.com"
   // Translation handlers
   const handleTranslated = (
     title: string,

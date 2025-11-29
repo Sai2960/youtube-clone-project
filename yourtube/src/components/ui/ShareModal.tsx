@@ -39,7 +39,8 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
   const FRONTEND_URL =
     process.env.NEXT_PUBLIC_FRONTEND_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "");
+    (typeof window !== "undefined" ? window.location.origin
+ : "");
   
   const basePath = isShort ? '/shorts' : '/watch';
   const timestamp =
