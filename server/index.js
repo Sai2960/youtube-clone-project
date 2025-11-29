@@ -183,7 +183,13 @@ app.use(cors({
 }));
 
 // Handle preflight requests explicitly
-app.options('*', cors());
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // Parse JSON and URL-encoded request bodies
 // Increased limit to 30mb for video uploads
