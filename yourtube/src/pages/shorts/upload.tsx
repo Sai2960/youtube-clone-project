@@ -8,7 +8,7 @@ import axios from 'axios';
 const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com"
 
 
-}';
+
 
 interface FormData {
   title: string;
