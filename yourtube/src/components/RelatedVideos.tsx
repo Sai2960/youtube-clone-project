@@ -37,10 +37,8 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
         return `http://${hostname}:5000`;
       }
     }
-    return "https://youtube-clone-project-q3pd.onrender.com"
-
-}';
-  };
+  return "https://youtube-clone-project-q3pd.onrender.com";
+}
 
   useEffect(() => {
     const newKeys: Record<string, number> = {};

@@ -78,17 +78,14 @@ export default function WatchLaterContent() {
   };
 
   const getVideoUrl = (video: any) => {
-    if (video?.videofilename) {
-      return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${
-video.videofilename}`;
-    } else if (video?.filepath) {
-      const filename = video.filepath.split(/[\\/]/).pop();
-      return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${
-filename}`;
-    }
-    return "/video/vdo.mp4";
-  };
-
+  if (video?.videofilename) {
+    return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${video.videofilename}`;
+  } else if (video?.filepath) {
+    const filename = video.filepath.split(/[\\/]/).pop();
+    return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${filename}`;
+  }
+  return "/video/vdo.mp4";
+};
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">

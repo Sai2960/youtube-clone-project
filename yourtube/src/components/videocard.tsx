@@ -28,18 +28,15 @@ export default function VideoCard({ video }: any) {
     };
   }, []);
 
-  const getVideoUrl = () => {
-    if (video?.videofilename) {
-      return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${
-video.videofilename}`;
-    } else if (video?.filepath) {
-      const filename = video.filepath.split(/[\\/]/).pop();
-      return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${
-filename}`;
-    }
-    return videos;
-  };
-
+  const getVideoUrl = (video: any) => {
+  if (video?.videofilename) {
+    return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${video.videofilename}`;
+  } else if (video?.filepath) {
+    const filename = video.filepath.split(/[\\/]/).pop();
+    return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${filename}`;
+  }
+  return videos;
+};
   const handleChannelClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -63,7 +60,7 @@ filename}`;
         {/* Thumbnail Container */}
         <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-youtube-secondary mb-3">
           <video
-            src={getVideoUrl()}
+            src={getVideoUrl(video)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
             preload="metadata"
             poster={video?.thumbnail}
