@@ -28,12 +28,18 @@ export default function VideoCard({ video }: any) {
     };
   }, []);
 
-  const getVideoUrl = (video: any) => {
+// REPLACE lines 28-36 with:
+const getVideoUrl = (video: any) => {
+  const BACKEND_URL = 'https://youtube-clone-project-q3pd.onrender.com';
+  
   if (video?.videofilename) {
-    return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${video.videofilename}`;
+    return `${BACKEND_URL}/uploads/videos/${video.videofilename}`;
   } else if (video?.filepath) {
-    const filename = video.filepath.split(/[\\/]/).pop();
-    return `https://youtube-clone-project-q3pd.onrender.com/uploads/videos/${filename}`;
+    // Remove any existing backend URL and add correct one
+    let path = video.filepath;
+    path = path.replace(/https?:\/\/[^/]+/, ''); // Remove any existing domain
+    const filename = path.split(/[\\/]/).pop();
+    return `${BACKEND_URL}/uploads/videos/${filename}`;
   }
   return videos;
 };

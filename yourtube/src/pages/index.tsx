@@ -238,17 +238,21 @@ const Home: NextPage = () => {
     return 'Just now';
   };
 
-  const getVideoUrl = (video: Video) => {
-    const backend = getBackendUrl();
-    
-    if (video?.videofilename) {
-      return `${backend}/uploads/videos/${video.videofilename}`;
-    } else if (video?.filepath) {
-      const filename = video.filepath.split(/[\\/]/).pop();
-      return `${backend}/uploads/videos/${filename}`;
-    }
-    return '/video/vdo.mp4';
-  };
+// REPLACE lines 54-68 (the getVideoUrl function) with:
+const getVideoUrl = (video: Video) => {
+  const backend = 'https://youtube-clone-project-q3pd.onrender.com';
+  
+  if (video?.videofilename) {
+    return `${backend}/uploads/videos/${video.videofilename}`;
+  } else if (video?.filepath) {
+    // Clean filepath
+    let path = video.filepath;
+    path = path.replace(/https?:\/\/[^/]+/, ''); // Remove any domain
+    const filename = path.split(/[\\/]/).pop();
+    return `${backend}/uploads/videos/${filename}`;
+  }
+  return '/video/vdo.mp4';
+};
 
   const scrollShorts = (direction: 'left' | 'right') => {
     if (shortsScrollRef.current) {

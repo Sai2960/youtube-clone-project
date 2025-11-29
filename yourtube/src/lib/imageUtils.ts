@@ -1,26 +1,43 @@
-// src/lib/imageUtils.ts - COMPLETE CORRECTED VERSION
+// src/lib/imageUtils.ts - COMPLETE MERGED & ENHANCED VERSION
 
 // ==========================================
-// DYNAMIC BACKEND URL
+// DYNAMIC BACKEND URL CONFIGURATION
 // ==========================================
-// ==========================================
-// DYNAMIC BACKEND URL
-// ==========================================
+
 const getBackendUrl = (): string => {
-  // Server-side rendering
+  // Server-side rendering - use production URL
   if (typeof window === 'undefined') {
+    return process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
+  }
+  
+  // Client-side: Check for environment variable first
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Client-side: use dynamic hostname for local network access
+  const hostname = window.location.hostname;
+  
+  // Production deployment (Vercel, etc.)
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('192.168')) {
     return "https://youtube-clone-project-q3pd.onrender.com";
   }
   
-  // Client-side: use dynamic hostname
-  const hostname = window.location.hostname;
-  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+  // Local network development
+  if (hostname.includes('192.168')) {
     return `http://${hostname}:5000`;
   }
   
+  // Localhost development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return "http://localhost:5000";
+  }
+  
+  // Fallback to production
   return "https://youtube-clone-project-q3pd.onrender.com";
 };
 
+// Default avatar SVG for fallback
 const DEFAULT_AVATAR_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
 
 // ==========================================
@@ -33,7 +50,8 @@ const needsProxy = (url: string | undefined | null): boolean => {
   const proxyDomains = [
     'lh3.googleusercontent.com',
     'graph.facebook.com',
-    'platform-lookaside.fbsbx.com'
+    'platform-lookaside.fbsbx.com',
+    'avatars.githubusercontent.com'
   ];
   
   try {
@@ -53,6 +71,32 @@ const needsProxy = (url: string | undefined | null): boolean => {
 const proxyImage = (url: string): string => {
   const BACKEND_URL = getBackendUrl();
   return `${BACKEND_URL}/api/proxy-image?url=${encodeURIComponent(url)}`;
+};
+
+// ==========================================
+// HELPER: Clean malformed URLs
+// ==========================================
+
+const cleanMalformedUrl = (url: string): string => {
+  const BACKEND_URL = getBackendUrl();
+  
+  // ✅ FIX: Remove port from Vercel URLs (https://vercel.app:5000)
+  if (url.includes('vercel.app:5000')) {
+    url = url.replace(/https:\/\/[^/]+:5000/, BACKEND_URL);
+  }
+  
+  // ✅ FIX: Replace local IPs with production URL
+  if (url.includes('192.168.0.181:5000') || url.includes('localhost:5000')) {
+    url = url.replace(/https?:\/\/(192\.168\.0\.181|localhost):5000/, BACKEND_URL);
+  }
+  
+  // ✅ FIX: Remove duplicate protocols
+  url = url.replace(/https?:\/\/https?:\/\//, 'https://');
+  
+  // ✅ FIX: Remove double slashes except after protocol
+  url = url.replace(/([^:])\/\//g, '$1/');
+  
+  return url;
 };
 
 // ==========================================
@@ -81,7 +125,7 @@ export const getImageUrl = (
   forceRefresh: boolean = false
 ): string => {
   const defaultImage = 'https://github.com/shadcn.png';
-  const BACKEND_URL = getBackendUrl(); // ✅ Get dynamic URL
+  const BACKEND_URL = getBackendUrl();
   
   if (!imagePath || imagePath.trim() === '') {
     return defaultImage;
@@ -89,19 +133,33 @@ export const getImageUrl = (
 
   let finalUrl: string;
 
-  // ✅ Check if it's a Google/OAuth image that needs proxying
+  // ✅ Already full Render production URL
+  if (imagePath.startsWith('https://youtube-clone-project-q3pd.onrender.com')) {
+    return forceRefresh ? addTimestamp(imagePath) : imagePath;
+  }
+
+  // ✅ Google/OAuth images - keep original
+  if (imagePath.includes('googleusercontent.com') || 
+      imagePath.includes('googleapis.com') ||
+      imagePath.includes('github.com')) {
+    return forceRefresh ? addTimestamp(imagePath) : imagePath;
+  }
+
+  // ✅ Check if it's a proxied external image
   if (needsProxy(imagePath)) {
     finalUrl = proxyImage(imagePath);
     return forceRefresh ? addTimestamp(finalUrl) : finalUrl;
   }
 
-  // Handle regular URLs
+  // ✅ Clean malformed URLs first
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    finalUrl = imagePath;
+    finalUrl = cleanMalformedUrl(imagePath);
   }
+  // Handle relative paths starting with /uploads
   else if (imagePath.startsWith('/uploads')) {
     finalUrl = `${BACKEND_URL}${imagePath}`;
   }
+  // Handle other relative paths
   else {
     const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     finalUrl = `${BACKEND_URL}/uploads${cleanPath}`;
@@ -160,7 +218,6 @@ export const getImageFilename = (imagePath: string | undefined | null): string =
 // ==========================================
 // AVATAR-SPECIFIC UTILITIES
 // ==========================================
-// In src/lib/imageUtils.ts - UPDATE THIS FUNCTION ONLY
 
 export const normalizeAvatarUrl = (avatar: string | undefined | null): string => {
   const BACKEND_URL = getBackendUrl();
@@ -169,20 +226,34 @@ export const normalizeAvatarUrl = (avatar: string | undefined | null): string =>
     return DEFAULT_AVATAR_SVG;
   }
 
-  // ✅ Proxy Google/OAuth avatars
+  // ✅ Already full Render URL
+  if (avatar.startsWith('https://youtube-clone-project-q3pd.onrender.com')) {
+    return avatar;
+  }
+
+  // ✅ Google/OAuth avatars - keep original or proxy if needed
+  if (avatar.includes('googleusercontent.com') || 
+      avatar.includes('googleapis.com') ||
+      avatar.includes('github.com')) {
+    return avatar;
+  }
+
+  // ✅ Proxy other external OAuth images
   if (needsProxy(avatar)) {
     return proxyImage(avatar);
   }
 
+  // ✅ Clean malformed URLs
   if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
-    return avatar;
+    return cleanMalformedUrl(avatar);
   }
 
+  // Handle paths starting with /uploads
   if (avatar.startsWith('/uploads')) {
     return `${BACKEND_URL}${avatar}`;
   }
 
-  // ✅ CRITICAL FIX: Use channel-images directory
+  // ✅ CRITICAL FIX: Use channel-images directory for local uploads
   const cleanPath = avatar.startsWith('/') ? avatar.slice(1) : avatar;
   return `${BACKEND_URL}/uploads/channel-images/${cleanPath}`;
 };
@@ -308,13 +379,30 @@ export const formatDuration = (seconds: number): string => {
 // ==========================================
 
 export const forceImageReload = (): void => {
-  window.dispatchEvent(new Event('avatarUpdated'));
-  console.log('🔄 Force image reload triggered');
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('avatarUpdated'));
+    console.log('🔄 Force image reload triggered');
+  }
 };
 
 export const clearImageCache = (): void => {
-  window.dispatchEvent(new Event('clearImageCache'));
-  console.log('🗑️ Image cache cleared');
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('clearImageCache'));
+    console.log('🗑️ Image cache cleared');
+  }
+};
+
+// ==========================================
+// DEBUG UTILITIES
+// ==========================================
+
+export const debugImageUrl = (url: string | undefined | null): void => {
+  console.group('🔍 Image URL Debug');
+  console.log('Original:', url);
+  console.log('Processed:', getImageUrl(url));
+  console.log('Backend URL:', getBackendUrl());
+  console.log('Needs Proxy:', needsProxy(url));
+  console.groupEnd();
 };
 
 // ==========================================
@@ -324,5 +412,9 @@ export const clearImageCache = (): void => {
 export { 
   DEFAULT_AVATAR_SVG, 
   addTimestamp, 
-  removeTimestamp 
+  removeTimestamp,
+  getBackendUrl,
+  needsProxy,
+  proxyImage,
+  cleanMalformedUrl
 };
