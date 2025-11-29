@@ -1,0 +1,96 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# ✅ ADDED: Webpack cache prevention
+.next/cache/
+.next/server/
+.next/static/
+
+# ✅ ADDED: Windows system files
+pagefile.sys
+hiberfil.sys
+swapfile.sys
+DumpStack.log.tmp
+System Volume Information/
+$RECYCLE.BIN/
+
+# Environment Variables - NEVER UPLOAD THESE!
+.env
+.env.local
+.env.production
+*.env
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# Package manager
+package-lock.json
+yarn.lock
+
+# Sensitive configs
+ecosystem.config.js
