@@ -8,7 +8,6 @@ import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com"
 
 
-}';
 
 interface ShortsUploaderProps {
   channelId: string;
