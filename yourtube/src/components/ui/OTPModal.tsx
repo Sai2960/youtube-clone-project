@@ -10,6 +10,8 @@ interface OTPModalProps {
   onSuccess: () => void;
 }
 
+const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
+
 export const OTPModal: React.FC<OTPModalProps> = ({
   isOpen,
   onClose,
@@ -36,15 +38,10 @@ export const OTPModal: React.FC<OTPModalProps> = ({
     setLoading(true);
     setError('');
     try {
+      const apiUrl = getApiUrl();
       const endpoint = otpMethod === 'email' 
-        ? "https://youtube-clone-project-q3pd.onrender.com"
-
-
-}/api/send-email-otp'
-        : "https://youtube-clone-project-q3pd.onrender.com"
-
-
-}/api/send-sms-otp';
+        ? `${apiUrl}/api/send-email-otp`
+        : `${apiUrl}/api/send-sms-otp`;
       
       const payload = otpMethod === 'email' 
         ? { email: contact }
@@ -82,11 +79,9 @@ export const OTPModal: React.FC<OTPModalProps> = ({
     setError('');
     try {
       console.log('🔐 Verifying OTP:', otp, 'for contact:', contact);
+      const apiUrl = getApiUrl();
 
-      const response = await axios.post("https://youtube-clone-project-q3pd.onrender.com"
-
-
-}/api/verify-otp', {
+      const response = await axios.post(`${apiUrl}/api/verify-otp`, {
         otp,
         contact
       });
@@ -135,7 +130,7 @@ export const OTPModal: React.FC<OTPModalProps> = ({
         {!otpSent ? (
           <>
             <p className="mb-4 text-gray-700 dark:text-gray-300">
-              Well send an OTP to your {otpMethod === 'email' ? 'email' : 'mobile number'}
+              We'll send an OTP to your {otpMethod === 'email' ? 'email' : 'mobile number'}
             </p>
             <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
               <p className="font-semibold text-gray-900 dark:text-white break-all">
