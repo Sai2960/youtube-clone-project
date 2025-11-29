@@ -1,6 +1,7 @@
 // server/index.js
 // Main server file for YouTube Clone Backend
 // Handles video streaming, real-time calls, and content management
+// MERGED VERSION - Enhanced CORS + All Features Preserved
 
 // =================== ENVIRONMENT SETUP (MUST BE FIRST) ===================
 import dotenv from "dotenv";
@@ -71,18 +72,57 @@ let cronJobsRunning = false;
 
 // Create HTTP server and attach Socket.IO
 const server = http.createServer(app);
+// =================== ENHANCED CORS CONFIGURATION - CRITICAL FOR VERCEL ===================
+// Build allowed origins array
+const allowedOrigins = [
+  // Local development
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://192.168.0.181:3000',
+  
+  // ✅ Vercel production domains (ADD YOUR ACTUAL DOMAINS)
+  'https://youtube-clone-project-eosin.vercel.app',
+  'https://youtube-clone-project-e0c7hj5p6-sais-projects-daab7a9a.vercel.app',
+  'https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app',
+  
+  // Add more Vercel preview URLs as needed
+  // Pattern: https://your-project-[hash]-[username].vercel.app
+];
 
-// Socket.IO configuration with CORS settings
-// Parse allowed origins from environment variable (comma-separated)
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-    : ['http://localhost:3000', 'http://192.168.0.181:3000'];
+// Add environment variable origins if provided
+if (process.env.ALLOWED_ORIGINS) {
+  const envOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
+  allowedOrigins.push(...envOrigins);
+}
 
+console.log('🌐 CORS Configuration:');
+console.log('   Allowed origins:', allowedOrigins.length);
+allowedOrigins.forEach(origin => console.log('   ✓', origin));
+
+// Socket.IO configuration with enhanced CORS settings
 const io = new Server(server, {
     cors: {
-        origin: allowedOrigins,
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-        credentials: true
+        origin: function(origin, callback) {
+            // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+            if (!origin) {
+                console.log('   ℹ️  Request with no origin - allowing');
+                return callback(null, true);
+            }
+            
+            // Check if origin is in allowedOrigins
+            if (allowedOrigins.indexOf(origin) !== -1) {
+                console.log('   ✅ Allowed origin:', origin);
+                callback(null, true);
+            } else {
+                console.log('   ❌ CORS blocked origin:', origin);
+                console.log('   💡 Add this to ALLOWED_ORIGINS env variable or allowedOrigins array');
+                callback(new Error('Not allowed by CORS policy'));
+            }
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        exposedHeaders: ['Content-Range', 'X-Content-Range']
     },
     // Use both websocket and polling for better compatibility
     transports: ['websocket', 'polling'],
@@ -96,8 +136,6 @@ const io = new Server(server, {
 });
 
 console.log('🌐 Socket.IO configured with', allowedOrigins.length, 'allowed origin(s)');
-console.log('   Origins:', allowedOrigins.join(', '));
-
 // Define upload directories for different content types
 // These need to exist before the server starts accepting uploads
 const directories = {
@@ -118,13 +156,34 @@ Object.entries(directories).forEach(([name, dirPath]) => {
     }
 });
 
-// CORS middleware - allows requests from our frontend
+// =================== ENHANCED CORS MIDDLEWARE ===================
 app.use(cors({
-    origin: allowedOrigins,
+    origin: function(origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+        if (!origin) {
+            console.log('   ℹ️  Request with no origin - allowing');
+            return callback(null, true);
+        }
+        
+        // Check if origin is in allowedOrigins
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            console.log('   ✅ Allowed origin:', origin);
+            callback(null, true);
+        } else {
+            console.log('   ❌ CORS blocked origin:', origin);
+            console.log('   💡 Add this to ALLOWED_ORIGINS env variable or allowedOrigins array');
+            callback(new Error('Not allowed by CORS policy'));
+        }
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 600 // Cache preflight for 10 minutes
 }));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
 
 // Parse JSON and URL-encoded request bodies
 // Increased limit to 30mb for video uploads
@@ -135,7 +194,6 @@ app.use(bodyParser.json());
 // Static file serving for uploads and invoices
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
-
 // =================== API Routes ===================
 console.log('📋 Setting up API routes...');
 
@@ -178,6 +236,7 @@ app.get("/", (req, res) => {
         mongoConnected: mongoConnected,
         cronJobsActive: cronJobsRunning,
         socketConnections: io.sockets.sockets.size,
+        allowedOrigins: allowedOrigins,
         endpoints: {
             auth: "/auth",
             users: "/user",
@@ -214,12 +273,6 @@ app.get('/test-env', (req, res) => {
   });
 });
 
-// =================== Socket.IO User Management ===================
-// Maps to track online users and their socket connections
-const userToSocket = new Map(); // userId -> socketId
-const socketToUser = new Map(); // socketId -> userId
-const activeCallRooms = new Map(); // roomId -> Set of socketIds
-
 // Health check endpoint - useful for monitoring
 app.get("/health", (req, res) => {
     res.json({
@@ -230,6 +283,7 @@ app.get("/health", (req, res) => {
         socketConnections: io.sockets.sockets.size,
         registeredUsers: userToSocket.size,
         activeRooms: activeCallRooms.size,
+        allowedOrigins: allowedOrigins.length,
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         memory: {
@@ -238,6 +292,11 @@ app.get("/health", (req, res) => {
         }
     });
 });
+// =================== Socket.IO User Management ===================
+// Maps to track online users and their socket connections
+const userToSocket = new Map(); // userId -> socketId
+const socketToUser = new Map(); // socketId -> userId
+const activeCallRooms = new Map(); // roomId -> Set of socketIds
 
 // =================== Socket.IO Connection Handler ===================
 io.on('connection', (socket) => {
@@ -339,7 +398,6 @@ io.on('connection', (socket) => {
 
         console.log('✅ User joined room successfully\n');
     });
-
     // WebRTC signaling - offer
     socket.on('offer', (roomId, offer) => {
         console.log('\n📤 WebRTC Offer received');
@@ -401,7 +459,6 @@ io.on('connection', (socket) => {
             from: socket.id
         });
     });
-
     // Initiate a call to another user
     socket.on('call-user', (callData) => {
         console.log('\n📞 Initiating call');
@@ -504,7 +561,6 @@ io.on('connection', (socket) => {
 
         console.log('✅ Call ended successfully\n');
     });
-
     // Screen sharing started
     socket.on('start-screen-share', (roomId) => {
         console.log('🖥️  Screen sharing started in room:', roomId);
@@ -577,7 +633,6 @@ io.on('connection', (socket) => {
             timestamp: Date.now()
         });
     });
-
     // Handle disconnection
     socket.on('disconnect', (reason) => {
         console.log('\n👋 User disconnected');
@@ -652,10 +707,19 @@ io.on('connection', (socket) => {
         });
     });
 });
-
 // =================== Error Handling Middleware ===================
 app.use((err, req, res, next) => {
     console.error('❌ Server error:', err.stack);
+
+    // Special handling for CORS errors
+    if (err.message === 'Not allowed by CORS policy') {
+        return res.status(403).json({ 
+            error: 'CORS Error',
+            message: 'This origin is not allowed to access this resource',
+            origin: req.headers.origin,
+            hint: 'Add your domain to ALLOWED_ORIGINS environment variable or allowedOrigins array'
+        });
+    }
 
     res.status(err.status || 500).json({
         success: false,
@@ -688,6 +752,7 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`   Local: http://localhost:${PORT}`);
     console.log(`   Network: http://0.0.0.0:${PORT}`);
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`   CORS Origins: ${allowedOrigins.length}`);
     console.log(`===== SERVER READY =====\n`);
 });
 
@@ -749,11 +814,11 @@ if (DATABASE_URL) {
     connectToDatabase();
 } else {
     console.warn('⚠️  No MongoDB connection string provided');
-    console.warn('⚠️  Set DB_URL in your .env file');
-    console.warn('⚠️  Database features and cron jobs will not be available');
+    console.warn('⚠️  Set DB_URL in your    .env file');
+console.warn('⚠️  Database features and cron jobs will not be available');
 }
 
-// =================== Graceful Shutdown Handler ===================
+
 const handleShutdown = async (signal) => {
     console.log(`\n🛑 ${signal} received. Starting graceful shutdown...`);
 
