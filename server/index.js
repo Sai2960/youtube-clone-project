@@ -75,17 +75,16 @@ const server = http.createServer(app);
 // =================== ENHANCED CORS CONFIGURATION - CRITICAL FOR VERCEL ===================
 // Build allowed origins array
 const allowedOrigins = [
-  // Local development
   'http://localhost:3000',
   'http://localhost:3001',
   'http://192.168.0.181:3000',
-// Vercel domains - ADD THE NEW ONE
   'https://youtube-clone-project-eosin.vercel.app',
   'https://youtube-clone-project-e0c7hj5p6-sais-projects-daab7a9a.vercel.app',
   'https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app',
   'https://youtube-clone-project-h1yxl3qo6-sais-projects-daab7a9a.vercel.app',
   'https://youtube-clone-project-2xkyn9690-sais-projects-daab7a9a.vercel.app',
-  'https://youtube-clone-project-cjria7b6t-sais-projects-daab7a9a.vercel.app', // ✅ ADD THIS NEW ONE
+  'https://youtube-clone-project-cjria7b6t-sais-projects-daab7a9a.vercel.app',
+  'https://youtube-clone-project-9dpr75et7-sais-projects-daab7a9a.vercel.app', // ✅ NEW
 ];
 
 // Add environment variable origins if provided
@@ -98,23 +97,33 @@ console.log('🌐 CORS Configuration:');
 console.log('   Allowed origins:', allowedOrigins.length);
 allowedOrigins.forEach(origin => console.log('   ✓', origin));
 
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // Allow requests with no origin
+  
+  // Check exact matches
+  if (allowedOrigins.includes(origin)) return true;
+  
+  // Check if it's a Vercel preview domain
+  const vercelPattern = /^https:\/\/youtube-clone-project-[a-z0-9]+-sais-projects-daab7a9a\.vercel\.app$/;
+  if (vercelPattern.test(origin)) return true;
+  
+  return false;
+};
+
+console.log('🌐 CORS Configuration:');
+console.log('   Allowed origins:', allowedOrigins.length);
+allowedOrigins.forEach(origin => console.log('   ✓', origin));
+console.log('   + All Vercel preview domains (via regex)');
+
 // Socket.IO configuration with enhanced CORS settings
 const io = new Server(server, {
     cors: {
         origin: function(origin, callback) {
-            // Allow requests with no origin (mobile apps, Postman, curl, etc.)
-            if (!origin) {
-                console.log('   ℹ️  Request with no origin - allowing');
-                return callback(null, true);
-            }
-            
-            // Check if origin is in allowedOrigins
-            if (allowedOrigins.indexOf(origin) !== -1) {
-                console.log('   ✅ Allowed origin:', origin);
+            if (!origin || isOriginAllowed(origin)) {
                 callback(null, true);
             } else {
-                console.log('   ❌ CORS blocked origin:', origin);
-                console.log('   💡 Add this to ALLOWED_ORIGINS env variable or allowedOrigins array');
+                console.log('   ❌ Socket.IO CORS blocked:', origin);
                 callback(new Error('Not allowed by CORS policy'));
             }
         },
@@ -123,13 +132,11 @@ const io = new Server(server, {
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
         exposedHeaders: ['Content-Range', 'X-Content-Range']
     },
-    // Use both websocket and polling for better compatibility
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     reconnectionAttempts: Infinity,
-    // Keep connections alive with ping/pong
     pingTimeout: 60000,
     pingInterval: 25000,
 });
@@ -158,19 +165,19 @@ Object.entries(directories).forEach(([name, dirPath]) => {
 // =================== ENHANCED CORS MIDDLEWARE ===================
 app.use(cors({
     origin: function(origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+        // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) {
             console.log('   ℹ️  Request with no origin - allowing');
             return callback(null, true);
         }
         
-        // Check if origin is in allowedOrigins
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        // Check if origin is allowed
+        if (isOriginAllowed(origin)) {
             console.log('   ✅ Allowed origin:', origin);
             callback(null, true);
         } else {
             console.log('   ❌ CORS blocked origin:', origin);
-            console.log('   💡 Add this to ALLOWED_ORIGINS env variable or allowedOrigins array');
+            console.log('   💡 Add this to ALLOWED_ORIGINS env variable');
             callback(new Error('Not allowed by CORS policy'));
         }
     },
@@ -178,7 +185,7 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    maxAge: 600 // Cache preflight for 10 minutes
+    maxAge: 600
 }));
 
 // Handle preflight requests explicitly
