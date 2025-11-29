@@ -6,20 +6,40 @@ let isRegistered = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://192.168.0.181:5000';
+// ✅ PRODUCTION FIX: Use environment variable or fallback
+const getSocketURL = () => {
+  // Check environment variable first
+  if (process.env.NEXT_PUBLIC_SOCKET_URL) {
+    return process.env.NEXT_PUBLIC_SOCKET_URL;
+  }
+  
+  // Check API URL and convert to socket URL
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Production fallback
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    return 'https://youtube-clone-project-q3pd.onrender.com';
+  }
+  
+  // Development fallback
+  return 'http://192.168.0.181:5000';
+};
+
+const SOCKET_URL = getSocketURL();
 
 console.log('🔧 Socket Configuration:');
 console.log('   URL:', SOCKET_URL);
+console.log('   Is Production:', SOCKET_URL.includes('render.com'));
 console.log('   Environment:', process.env.NODE_ENV);
 
 export const initializeSocket = (userId: string): Socket => {
-  // Return existing socket if already connected for this user
   if (socket && socket.connected && isRegistered && currentUserId === userId) {
     console.log('✅ Socket already connected for user:', userId);
     return socket;
   }
 
-  // Clean up if switching users
   if (socket && currentUserId !== userId) {
     console.log('🔄 Switching user, disconnecting old socket');
     socket.disconnect();
@@ -34,24 +54,25 @@ export const initializeSocket = (userId: string): Socket => {
   console.log('   User ID:', userId);
   console.log('   Backend URL:', SOCKET_URL);
 
-  // Create new socket connection
+  // ✅ PRODUCTION: Use secure connection for HTTPS
+  const isSecure = SOCKET_URL.startsWith('https');
+  
   socket = io(SOCKET_URL, {
-    transports: ['websocket', 'polling'], // Try WebSocket first, fall back to polling
-    upgrade: true, // Allow upgrading from polling to WebSocket
+    transports: ['websocket', 'polling'],
+    upgrade: true,
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
     autoConnect: true,
-    forceNew: false, // Reuse existing connection if possible
+    forceNew: false,
     withCredentials: true,
-    query: {
-      userId: userId
-    }
+    secure: isSecure, // ✅ Force secure in production
+    rejectUnauthorized: false, // ✅ Allow self-signed certs
+    query: { userId: userId }
   });
 
-  // Connection event handlers
   socket.on('connect', () => {
     console.log('✅ Socket connected:', socket?.id);
     console.log('   Transport:', socket?.io.engine.transport.name);
@@ -73,15 +94,12 @@ export const initializeSocket = (userId: string): Socket => {
     isRegistered = false;
   });
 
-  // Upgrade event (when switching from polling to WebSocket)
   socket.io.engine.on('upgrade', (transport) => {
     console.log('⬆️ Socket upgraded to:', transport.name);
   });
 
   socket.on('connect_error', (error) => {
     console.error('❌ Socket connection error:', error.message);
-    console.error('   Type:', error.message);
-    console.error('   Description:', error.toString());
     isRegistered = false;
     reconnectAttempts++;
 
@@ -97,8 +115,6 @@ export const initializeSocket = (userId: string): Socket => {
     if (reason === 'io server disconnect') {
       console.log('🔄 Server disconnected socket, reconnecting...');
       socket?.connect();
-    } else if (reason === 'transport close' || reason === 'transport error') {
-      console.log('🔄 Transport issue, will attempt reconnection');
     }
   });
 

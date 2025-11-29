@@ -75,16 +75,13 @@ const server = http.createServer(app);
 // =================== ENHANCED CORS CONFIGURATION - CRITICAL FOR VERCEL ===================
 // Build allowed origins array
 const allowedOrigins = [
+  // Local development
   'http://localhost:3000',
   'http://localhost:3001',
   'http://192.168.0.181:3000',
+  
+  // Vercel production
   'https://youtube-clone-project-eosin.vercel.app',
-  'https://youtube-clone-project-e0c7hj5p6-sais-projects-daab7a9a.vercel.app',
-  'https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app',
-  'https://youtube-clone-project-h1yxl3qo6-sais-projects-daab7a9a.vercel.app',
-  'https://youtube-clone-project-2xkyn9690-sais-projects-daab7a9a.vercel.app',
-  'https://youtube-clone-project-cjria7b6t-sais-projects-daab7a9a.vercel.app',
-  'https://youtube-clone-project-9dpr75et7-sais-projects-daab7a9a.vercel.app', // ✅ NEW
 ];
 
 // Add environment variable origins if provided

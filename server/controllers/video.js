@@ -2,6 +2,24 @@
 import videofiles from "../Modals/video.js";
 import path from "path";
 import User from "../Modals/User.js";
+import { toAbsoluteURL } from '../utils/urlHelper.js';
+
+const transformVideoURLs = (video) => {
+  if (!video) return null;
+  
+  const videoObj = video.toObject ? video.toObject() : video;
+  
+  return {
+    ...videoObj,
+    filepath: toAbsoluteURL(videoObj.filepath),
+    videothumbnail: toAbsoluteURL(videoObj.videothumbnail),
+    uploadedBy: videoObj.uploadedBy ? {
+      ...videoObj.uploadedBy,
+      image: toAbsoluteURL(videoObj.uploadedBy.image),
+      bannerImage: toAbsoluteURL(videoObj.uploadedBy.bannerImage)
+    } : videoObj.uploadedBy
+  };
+};
 
 // ==============================
 // 📊 Track Video Shares
@@ -217,9 +235,16 @@ export const getallvideo = async (req, res) => {
     const videos = await videofiles
       .find()
       .populate("uploadedBy", "name email channelname image")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean(); // ✅ Use lean for better performance
 
-    res.status(200).json({ success: true, videos });
+    // ✅ Transform all URLs to absolute
+    const videosWithAbsoluteURLs = videos.map(transformVideoURLs);
+
+    res.status(200).json({ 
+      success: true, 
+      videos: videosWithAbsoluteURLs 
+    });
   } catch (error) {
     console.error("Get videos error:", error);
     res.status(500).json({
@@ -239,7 +264,6 @@ export const getVideoById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // ✅ Fetch fresh data with .lean()
     const video = await videofiles
       .findById(id)
       .populate("uploadedBy", "name email channelname image subscribers")
@@ -252,23 +276,15 @@ export const getVideoById = async (req, res) => {
       });
     }
 
-    // ✅ Increment views separately
-    await videofiles.findByIdAndUpdate(id, { 
-      $inc: { views: 1 } 
-    });
-
+    await videofiles.findByIdAndUpdate(id, { $inc: { views: 1 } });
     video.views = (video.views || 0) + 1;
 
-    console.log('✅ Fresh video data:', {
-      id: video._id,
-      likes: video.Like,
-      dislikes: video.Dislike,
-      views: video.views
-    });
+    // ✅ Transform URLs
+    const videoWithAbsoluteURLs = transformVideoURLs(video);
 
     res.status(200).json({ 
       success: true, 
-      video 
+      video: videoWithAbsoluteURLs 
     });
   } catch (error) {
     console.error("Get video error:", error);
