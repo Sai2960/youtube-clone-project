@@ -274,25 +274,12 @@ export default function HistoryContent() {
     }
   };
 
-  const getVideoUrl = (video: Video) => {
-  if (video?.videofilename) {
-    return `${"https://youtube-clone-project-q3pd.onrender.com"
+// Removed duplicate declaration of getShortUrl
 
-/uploads/videos/${video.videofilename}`;
-  } else if (video?.filepath) {
-    const filename = video.filepath.split(/[\\/]/).pop();
-    return `${"https://youtube-clone-project-q3pd.onrender.com"
-
-/uploads/videos/${filename}`;
-  }
-  return "";
-};
-
- const getShortThumbnail = (short: Short) => {
+const getShortThumbnail = (short: Short) => {
   if (short?.thumbnailUrl) {
-    const backendUrl = "https://youtube-clone-project-q3pd.onrender.com"
+    const backendUrl = "https://youtube-clone-project-q3pd.onrender.com";
 
-}';
     if (short.thumbnailUrl.startsWith('http')) {
       return short.thumbnailUrl;
     }
@@ -300,19 +287,17 @@ export default function HistoryContent() {
   }
   return null;
 };
-
-  const getShortUrl = (short: Short) => {
-    if (short?.videoUrl) {
-      const backendUrl = "https://youtube-clone-project-q3pd.onrender.com"
-
-}';
-      if (short.videoUrl.startsWith('http')) {
-        return short.videoUrl;
-      }
-      return `${backendUrl}${short.videoUrl}`;
+const getShortUrl = (short: Short) => {
+  if (short?.videoUrl) {
+    const backendUrl = "https://youtube-clone-project-q3pd.onrender.com";
+    
+    if (short.videoUrl.startsWith('http')) {
+      return short.videoUrl;
     }
-    return '';
-  };
+    return `${backendUrl}${short.videoUrl}`;
+  }
+  return '';
+};
 
   const groupedHistory = groupHistoryByDate(filteredHistory);
   const shortsInHistory = filteredHistory.filter(item => 
@@ -515,6 +500,10 @@ export default function HistoryContent() {
                         {videoItems.map((item) => {
                           const video = item.videoid;
                           if (!video || typeof video !== 'object') return null;
+
+                          function getVideoUrl(video: Video): string | Blob | MediaSource | MediaStream {
+                            throw new Error("Function not implemented.");
+                          }
 
                           return (
                            <div key={item._id} className="mb-2 md:mb-3">
