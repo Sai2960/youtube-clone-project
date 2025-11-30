@@ -2,25 +2,26 @@
 import videofiles from "../Modals/video.js";
 import path from "path";
 import User from "../Modals/User.js";
-import { toAbsoluteURL } from '../utils/urlHelper.js';
+import { toAbsoluteURL } from "../utils/urlHelper.js";
 
 const transformVideoURLs = (video) => {
   if (!video) return null;
-  
+
   const videoObj = video.toObject ? video.toObject() : video;
-  
+
   return {
     ...videoObj,
-    filepath: toAbsoluteURL(videoObj.filepath),
-    videothumbnail: toAbsoluteURL(videoObj.videothumbnail),
-    uploadedBy: videoObj.uploadedBy ? {
-      ...videoObj.uploadedBy,
-      image: toAbsoluteURL(videoObj.uploadedBy.image),
-      bannerImage: toAbsoluteURL(videoObj.uploadedBy.bannerImage)
-    } : videoObj.uploadedBy
+    filepath: getVideoURL(videoObj.filepath),
+    videothumbnail: getImageURL(videoObj.videothumbnail),
+    uploadedBy: videoObj.uploadedBy
+      ? {
+          ...videoObj.uploadedBy,
+          image: getImageURL(videoObj.uploadedBy.image),
+          bannerImage: getImageURL(videoObj.uploadedBy.bannerImage),
+        }
+      : videoObj.uploadedBy,
   };
 };
-
 // ==============================
 // 📊 Track Video Shares
 // ==============================
@@ -55,7 +56,8 @@ export const trackShare = async (req, res) => {
       if (!video.shares.platforms) {
         video.shares.platforms = {};
       }
-      video.shares.platforms[platform] = (video.shares.platforms[platform] || 0) + 1;
+      video.shares.platforms[platform] =
+        (video.shares.platforms[platform] || 0) + 1;
     }
 
     await video.save();
@@ -171,7 +173,7 @@ export const uploadvideo = async (req, res) => {
     const channelName = user?.channelname || videochanel || "Unknown Channel";
 
     const videofilename = req.file.filename;
-const filepath = req.file.path; // Cloudinary URL
+    const filepath = req.file.path; // Cloudinary URL
     const title = videotitle || req.file.originalname;
 
     const autoDescription =
@@ -241,9 +243,9 @@ export const getallvideo = async (req, res) => {
     // ✅ Transform all URLs to absolute
     const videosWithAbsoluteURLs = videos.map(transformVideoURLs);
 
-    res.status(200).json({ 
-      success: true, 
-      videos: videosWithAbsoluteURLs 
+    res.status(200).json({
+      success: true,
+      videos: videosWithAbsoluteURLs,
     });
   } catch (error) {
     console.error("Get videos error:", error);
@@ -282,9 +284,9 @@ export const getVideoById = async (req, res) => {
     // ✅ Transform URLs
     const videoWithAbsoluteURLs = transformVideoURLs(video);
 
-    res.status(200).json({ 
-      success: true, 
-      video: videoWithAbsoluteURLs 
+    res.status(200).json({
+      success: true,
+      video: videoWithAbsoluteURLs,
     });
   } catch (error) {
     console.error("Get video error:", error);
@@ -384,7 +386,7 @@ export const getRelatedVideos = async (req, res) => {
     const { id } = req.params;
     const { limit = 20 } = req.query;
 
-    console.log('🎯 Fetching related videos for:', id);
+    console.log("🎯 Fetching related videos for:", id);
 
     // Get the current video to extract metadata
     const currentVideo = await videofiles.findById(id);
@@ -403,29 +405,34 @@ export const getRelatedVideos = async (req, res) => {
         // Same channel
         { uploadedBy: currentVideo.uploadedBy },
         // Similar title words (simple approach)
-        { videotitle: { $regex: currentVideo.videotitle.split(' ')[0], $options: 'i' } },
+        {
+          videotitle: {
+            $regex: currentVideo.videotitle.split(" ")[0],
+            $options: "i",
+          },
+        },
         // Same category if you have it
         // { category: currentVideo.category }
-      ]
+      ],
     };
 
     // Fetch related videos
     const relatedVideos = await videofiles
       .find(relatedQuery)
-      .populate('uploadedBy', 'name email channelname image subscribers')
+      .populate("uploadedBy", "name email channelname image subscribers")
       .sort({ views: -1, createdAt: -1 }) // Sort by popularity then recency
       .limit(parseInt(limit));
 
     // If not enough related videos, fill with popular videos
     if (relatedVideos.length < parseInt(limit)) {
       const remaining = parseInt(limit) - relatedVideos.length;
-      const relatedIds = relatedVideos.map(v => v._id);
-      
+      const relatedIds = relatedVideos.map((v) => v._id);
+
       const popularVideos = await videofiles
-        .find({ 
-          _id: { $nin: [...relatedIds, id] } 
+        .find({
+          _id: { $nin: [...relatedIds, id] },
         })
-        .populate('uploadedBy', 'name email channelname image subscribers')
+        .populate("uploadedBy", "name email channelname image subscribers")
         .sort({ views: -1, createdAt: -1 })
         .limit(remaining);
 
@@ -439,13 +446,15 @@ export const getRelatedVideos = async (req, res) => {
       data: relatedVideos,
       count: relatedVideos.length,
     });
-
   } catch (error) {
-    console.error('❌ Error fetching related videos:', error);
+    console.error("❌ Error fetching related videos:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch related videos',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Failed to fetch related videos",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
