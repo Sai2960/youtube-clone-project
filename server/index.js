@@ -772,11 +772,9 @@ if (DATABASE_URL) {
     const connectToDatabase = async () => {
         try {
             await mongoose.connect(DATABASE_URL, {
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
-                serverSelectionTimeoutMS: 10000,
-                socketTimeoutMS: 45000,
-            });
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+});
 
             console.log("✅ MongoDB connected successfully");
             mongoConnected = true;

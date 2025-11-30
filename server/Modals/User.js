@@ -9,7 +9,6 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    index: true,
     validate: {
       validator: function(v) {
         return /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v);
@@ -28,7 +27,6 @@ const userSchema = new mongoose.Schema({
   channelname: {
     type: String,
     trim: true,
-    index: true,
     default: function() {
       return this.name || (this.email ? this.email.split('@')[0] : 'Channel');
     }
