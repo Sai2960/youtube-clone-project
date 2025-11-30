@@ -6,31 +6,41 @@ import { toAbsoluteURL } from "../utils/urlHelper.js";
 
 const getVideoURL = (filepath) => {
   if (!filepath) return null;
-  
-  // If already a full URL (Cloudinary), return as-is
   if (filepath.startsWith('http://') || filepath.startsWith('https://')) {
     return filepath;
   }
-  
-  // For local files, convert to absolute URL
   const baseURL = process.env.BASE_URL || 'http://localhost:5000';
   return `${baseURL}/${filepath.replace(/\\/g, '/')}`;
 };
 
-/**
- * Get full URL for image files
- */
+// ✅ HELPER FUNCTION 2
 const getImageURL = (imagePath) => {
   if (!imagePath) return null;
-  
-  // If already a full URL (Cloudinary), return as-is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
-  
-  // For local files, convert to absolute URL
   const baseURL = process.env.BASE_URL || 'http://localhost:5000';
   return `${baseURL}/${imagePath.replace(/\\/g, '/')}`;
+};
+
+// ✅ HELPER FUNCTION 3 - ADD THIS ONE (IT'S MISSING!)
+const transformVideoURLs = (video) => {
+  if (!video) return null;
+
+  const videoObj = video.toObject ? video.toObject() : video;
+
+  return {
+    ...videoObj,
+    filepath: getVideoURL(videoObj.filepath),
+    videothumbnail: getImageURL(videoObj.videothumbnail),
+    uploadedBy: videoObj.uploadedBy
+      ? {
+          ...videoObj.uploadedBy,
+          image: getImageURL(videoObj.uploadedBy.image),
+          bannerImage: getImageURL(videoObj.uploadedBy.bannerImage),
+        }
+      : videoObj.uploadedBy,
+  };
 };
 
 // ==============================
