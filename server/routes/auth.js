@@ -10,6 +10,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from 'url';
 import { locationMiddleware } from '../middleware/detectLocation.js';
+import { uploadChannelImage, deleteFromCloudinary } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -37,36 +38,8 @@ if (!fs.existsSync(uploadsDir)) {
   console.log('📁 Created uploads directory:', uploadsDir);
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const channelId = req.params.channelId || req.params.id || 'unknown';
-    cb(null, `channel-${channelId}-${uniqueSuffix}${ext}`);
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-  
-  if (extname && mimetype) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed!'));
-  }
-};
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: fileFilter
-});
-
+// Using Cloudinary upload from config
+const upload = uploadChannelImage;
 // ==================== HELPER FUNCTIONS ====================
 
 // 🎨 AUTO-GENERATE CHANNEL DESCRIPTION

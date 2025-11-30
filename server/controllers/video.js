@@ -171,7 +171,7 @@ export const uploadvideo = async (req, res) => {
     const channelName = user?.channelname || videochanel || "Unknown Channel";
 
     const videofilename = req.file.filename;
-    const filepath = `uploads/videos/${req.file.filename}`;
+const filepath = req.file.path; // Cloudinary URL
     const title = videotitle || req.file.originalname;
 
     const autoDescription =

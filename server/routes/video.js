@@ -1,4 +1,4 @@
-// server/routes/video.js - CORRECTED ROUTE ORDER
+// server/routes/video.js - COMPLETE WITH CLOUDINARY INTEGRATION
 
 import express from 'express';
 import multer from 'multer';
@@ -16,10 +16,12 @@ import {
   getRelatedVideos 
 } from '../controllers/video.js';
 import { verifyToken } from '../middleware/auth.js';
+import { uploadVideo, uploadThumbnail, deleteFromCloudinary } from '../config/cloudinary.js';
 
 const router = express.Router();
 
-// =================== MULTER SETUP (keep as is) ===================
+// =================== LEGACY LOCAL STORAGE SETUP (Backup) ===================
+// Keep for fallback if Cloudinary fails
 const uploadDir = 'uploads/videos/';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -54,7 +56,8 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({
+// Local storage upload (fallback)
+const localUpload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { 
@@ -62,10 +65,90 @@ const upload = multer({
   },
 });
 
-// =================== VIDEO ROUTES - CORRECT ORDER ===================
+// =================== VIDEO UPLOAD ROUTES - CLOUDINARY PRIMARY ===================
 
-// 📤 Upload video
-router.post('/upload', verifyToken, upload.single('file'), uploadvideo);
+// 📤 Upload video (Cloudinary)
+router.post('/upload', verifyToken, uploadVideo.single('file'), uploadvideo);
+
+// 🖼️ Upload thumbnail (Cloudinary)
+router.post('/upload-thumbnail', verifyToken, uploadThumbnail.single('thumbnail'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No thumbnail file uploaded' 
+      });
+    }
+
+    console.log('✅ Thumbnail uploaded successfully:', req.file.path);
+
+    res.json({
+      success: true,
+      url: req.file.path,
+      publicId: req.file.filename,
+      message: 'Thumbnail uploaded successfully'
+    });
+  } catch (error) {
+    console.error('❌ Thumbnail upload error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to upload thumbnail'
+    });
+  }
+});
+
+// 🗑️ Delete video/image from Cloudinary
+router.delete('/cloudinary/:publicId', verifyToken, async (req, res) => {
+  try {
+    const { publicId } = req.params;
+    const { resourceType = 'video' } = req.query; // 'video' or 'image'
+
+    console.log(`🗑️ Deleting ${resourceType} from Cloudinary:`, publicId);
+
+    const result = await deleteFromCloudinary(publicId, resourceType);
+    
+    res.json({ 
+      success: true, 
+      result,
+      message: `${resourceType} deleted successfully from Cloudinary`
+    });
+  } catch (error) {
+    console.error('❌ Cloudinary deletion error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to delete from Cloudinary'
+    });
+  }
+});
+
+// 📤 Fallback: Upload video (Local Storage)
+router.post('/upload-local', verifyToken, localUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No video file uploaded' 
+      });
+    }
+
+    console.log('⚠️ Using local storage fallback for video upload');
+
+    res.json({
+      success: true,
+      filePath: req.file.path,
+      filename: req.file.filename,
+      message: 'Video uploaded to local storage (fallback mode)'
+    });
+  } catch (error) {
+    console.error('❌ Local upload error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to upload video locally'
+    });
+  }
+});
+
+// =================== VIDEO RETRIEVAL ROUTES - CORRECT ORDER ===================
 
 // 📋 Get all videos
 router.get('/getall', getallvideo);
@@ -247,14 +330,57 @@ router.post('/track-watch-time', verifyToken, trackWatchTime);
 // 📊 Track share
 router.post('/share/track', trackShare);
 
+// =================== HEALTH & DIAGNOSTICS ===================
+
 // ✅ Health check
 router.get('/health/check', (req, res) => {
   res.json({
     success: true,
-    message: 'Video routes are working',
+    message: 'Video routes are working with Cloudinary',
     timestamp: new Date().toISOString(),
-    uploadDir: uploadDir,
-    uploadDirExists: fs.existsSync(uploadDir)
+    cloudinary: {
+      enabled: !!process.env.CLOUDINARY_CLOUD_NAME,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'not configured'
+    },
+    localStorage: {
+      uploadDir: uploadDir,
+      exists: fs.existsSync(uploadDir)
+    },
+    features: {
+      videoUpload: true,
+      thumbnailUpload: true,
+      search: true,
+      trending: true,
+      channelVideos: true,
+      analytics: true,
+      watchTimeTracking: true,
+      shareTracking: true,
+      relatedVideos: true
+    }
+  });
+});
+
+// 🔧 Configuration status
+router.get('/config/status', verifyToken, (req, res) => {
+  res.json({
+    success: true,
+    cloudinary: {
+      configured: !!(process.env.CLOUDINARY_CLOUD_NAME && 
+                      process.env.CLOUDINARY_API_KEY && 
+                      process.env.CLOUDINARY_API_SECRET),
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'missing',
+      apiKeySet: !!process.env.CLOUDINARY_API_KEY,
+      apiSecretSet: !!process.env.CLOUDINARY_API_SECRET
+    },
+    localStorage: {
+      enabled: true,
+      directory: uploadDir,
+      exists: fs.existsSync(uploadDir)
+    },
+    limits: {
+      maxFileSize: '100MB',
+      allowedFormats: ['mp4', 'mpeg', 'quicktime', 'avi', 'mkv', 'webm']
+    }
   });
 });
 
