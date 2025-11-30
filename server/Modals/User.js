@@ -166,7 +166,6 @@ const userSchema = new mongoose.Schema({
 });
 
 
-userSchema.index({ email: 1 });
 userSchema.index({ channelname: 1 });
 userSchema.index({ subscribers: -1 }); // For leaderboards
 userSchema.index({ subscribedChannels: 1 });
