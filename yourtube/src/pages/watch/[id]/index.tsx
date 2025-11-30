@@ -6,6 +6,7 @@ import ShareModal from "@/components/ui/ShareModal";
 import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import React, { useEffect, useState, useRef } from "react";
+import fixMediaURL from "@/lib/urlHelper";
 
 const WatchPage = () => {
   const router = useRouter();
@@ -56,19 +57,20 @@ const WatchPage = () => {
         console.log("✅ Video API Response:", videoRes.data);
 
         if (videoRes.data.success && videoRes.data.video) {
-          const newVideo = videoRes.data.video;
-          console.log("✅ Video found:", newVideo.videotitle);
-
-          // ✅ Only update state if it's a different video
-          setCurrentVideo((prevVideo) => {
-            if (prevVideo?._id === newVideo._id) {
-              console.log("📌 Same video, skipping state update");
-              return prevVideo;
-            }
-            console.log("🎬 New video loaded:", newVideo.videotitle);
-            setCurrentVideoTime(0); // Reset time only on new video
-            return newVideo;
-          });
+          const newVideo = {
+            ...videoRes.data.video,
+            filepath: fixMediaURL(videoRes.data.video.filepath),
+            videothumbnail: fixMediaURL(videoRes.data.video.videothumbnail),
+            uploadedBy: videoRes.data.video.uploadedBy
+              ? {
+                  ...videoRes.data.video.uploadedBy,
+                  image: fixMediaURL(videoRes.data.video.uploadedBy.image),
+                  bannerImage: fixMediaURL(
+                    videoRes.data.video.uploadedBy.bannerImage
+                  ),
+                }
+              : null,
+          };
 
           // ✅ Update all videos list
           if (
@@ -285,15 +287,13 @@ const WatchPage = () => {
   }
 
   // ✅ Main video watch page
-    return (
+  return (
     <div className="w-full bg-youtube-primary min-h-screen">
       <div className="w-full max-w-[1920px] mx-auto">
         {/* Changed lg:p-6 to lg:pt-6 lg:px-6 (removes mobile padding) */}
         <div className="flex flex-col lg:flex-row lg:gap-6 lg:px-6 lg:pt-6">
-          
           {/* Main Content Column */}
           <div className="flex-1 lg:max-w-[calc(100%-424px)] w-full overflow-x-hidden">
-            
             {/* Video Player Container - Edge to edge on mobile */}
             <div className="w-full sticky top-0 z-20 bg-black md:relative md:rounded-xl md:overflow-hidden md:shadow-lg">
               <GestureVideoPlayer
@@ -304,7 +304,7 @@ const WatchPage = () => {
               />
             </div>
 
-             {/* Video Info - Add padding only here for mobile */}
+            {/* Video Info - Add padding only here for mobile */}
             <div className="w-full mt-0 md:mt-3">
               <VideoInfo
                 key={`video-info-${currentVideo._id}`}
@@ -314,7 +314,10 @@ const WatchPage = () => {
             </div>
 
             {/* Comments */}
-            <div ref={commentsRef} className="px-4 lg:px-0 pt-4 pb-8 border-t border-gray-200 dark:border-gray-800 md:border-none">
+            <div
+              ref={commentsRef}
+              className="px-4 lg:px-0 pt-4 pb-8 border-t border-gray-200 dark:border-gray-800 md:border-none"
+            >
               <Comments
                 key={`comments-${currentVideo._id}`}
                 videoId={currentVideo._id}
@@ -322,7 +325,7 @@ const WatchPage = () => {
             </div>
 
             {/* ⚠️ CRITICAL FIX: Mobile Related Videos - MOVED INSIDE MAIN CONTENT */}
-             <div className="lg:hidden border-t-4 border-gray-200 dark:border-[#272727] pt-4 pb-24">
+            <div className="lg:hidden border-t-4 border-gray-200 dark:border-[#272727] pt-4 pb-24">
               {relatedVideos && relatedVideos.length > 0 ? (
                 <div className="px-0">
                   <RelatedVideos videos={relatedVideos} />
