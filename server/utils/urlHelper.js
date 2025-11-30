@@ -1,5 +1,10 @@
+// server/utils/urlHelper.js - COMPLETE VERSION
+
 const BASE_URL = process.env.BASE_URL || 'https://youtube-clone-project-q3pd.onrender.com';
 
+/**
+ * Normalize any URL to production format
+ */
 export const normalizeURL = (url) => {
   if (!url) return null;
 
@@ -29,7 +34,7 @@ export const normalizeURL = (url) => {
   }
 
   // Already absolute production URL
-  if (urlStr.startsWith('https://youtube-clone-project-q3pd.onrender.com')) {
+  if (urlStr.startsWith(BASE_URL)) {
     return urlStr;
   }
 
@@ -43,14 +48,31 @@ export const normalizeURL = (url) => {
   return `${BASE_URL}${cleanPath}`;
 };
 
+/**
+ * Convert relative URL to absolute URL
+ * Alias for normalizeURL
+ */
+export const toAbsoluteURL = (url) => {
+  return normalizeURL(url);
+};
+
+/**
+ * Get secure media URL (alias for normalizeURL)
+ */
 export const getSecureMediaURL = (filepath) => {
   return normalizeURL(filepath);
 };
 
+/**
+ * Check if URL is a Cloudinary URL
+ */
 export const isCloudinaryURL = (url) => {
   return url && url.includes('res.cloudinary.com');
 };
 
+/**
+ * Check if URL is an external OAuth image
+ */
 export const isOAuthImage = (url) => {
   if (!url) return false;
   return url.includes('googleusercontent.com') ||
@@ -59,4 +81,59 @@ export const isOAuthImage = (url) => {
          url.includes('facebook.com');
 };
 
-export default { normalizeURL, getSecureMediaURL, isCloudinaryURL, isOAuthImage };
+/**
+ * Normalize all media fields in an object
+ */
+export const normalizeMediaObject = (obj) => {
+  if (!obj) return obj;
+  
+  const normalized = { ...obj };
+  const mediaFields = ['videoLink', 'thumbnail', 'avatar', 'channelAvatar', 'image', 'bannerImage', 'url', 'filepath', 'videothumbnail'];
+  
+  for (const field of mediaFields) {
+    if (field in normalized && normalized[field]) {
+      normalized[field] = normalizeURL(normalized[field]);
+    }
+  }
+  
+  return normalized;
+};
+
+/**
+ * Normalize array of objects with media fields
+ */
+export const normalizeMediaArray = (arr) => {
+  if (!arr || !Array.isArray(arr)) return arr;
+  return arr.map(item => normalizeMediaObject(item));
+};
+
+/**
+ * Extract public ID from Cloudinary URL
+ */
+export const extractPublicId = (url) => {
+  if (!url || !url.includes('cloudinary.com')) return null;
+  
+  try {
+    const parts = url.split('/upload/');
+    if (parts.length > 1) {
+      const afterUpload = parts[1].split('/').slice(1).join('/');
+      return afterUpload.replace(/\.[^/.]+$/, ''); // Remove extension
+    }
+  } catch (error) {
+    console.error('Error extracting public ID:', error);
+  }
+  
+  return null;
+};
+
+// Default export with all functions
+export default { 
+  normalizeURL, 
+  toAbsoluteURL,
+  getSecureMediaURL, 
+  isCloudinaryURL, 
+  isOAuthImage,
+  normalizeMediaObject,
+  normalizeMediaArray,
+  extractPublicId
+};
