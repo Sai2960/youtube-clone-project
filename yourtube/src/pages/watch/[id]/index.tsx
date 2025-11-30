@@ -6,8 +6,7 @@ import ShareModal from "@/components/ui/ShareModal";
 import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import React, { useEffect, useState, useRef } from "react";
-import fixMediaURL from "@/lib/urlHelper";
-
+import { fixMediaURL } from "@/lib/urlHelper";
 const WatchPage = () => {
   const router = useRouter();
   const { id } = router.query;
