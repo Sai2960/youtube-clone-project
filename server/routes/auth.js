@@ -1,4 +1,4 @@
-// server/routes/auth.js - COMPLETE MERGED VERSION WITH LOCATION MIDDLEWARE
+// server/routes/auth.js - COMPLETE MERGED VERSION
 import express from "express";
 import jwt from "jsonwebtoken";
 import User from "../Modals/User.js";
@@ -17,7 +17,7 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ FIXED: Use function instead of constant
+// ✅ JWT Secret Handler
 const getJWTSecret = () => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
@@ -30,8 +30,7 @@ const getJWTSecret = () => {
 console.log('🔐 Auth routes loaded');
 console.log('🔐 JWT_SECRET will be read at runtime');
 
-
-// ==================== MULTER STORAGE CONFIGURATION ====================
+// ==================== MULTER & CLOUDINARY SETUP ====================
 const uploadsDir = path.join(__dirname, '..', 'uploads', 'channel-images');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
@@ -73,14 +72,14 @@ const generateToken = (user) => {
     name: user.name,
   };
   
-  const JWT_SECRET = getJWTSecret();  // ✅ Call function here
+  const JWT_SECRET = getJWTSecret();
   console.log("🔐 Creating token with payload:", payload);
   console.log("🔑 Using JWT_SECRET:", JWT_SECRET.substring(0, 20) + "...");
   
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
 };
 
-// 🌍 FALLBACK: Determine Theme and OTP Method based on Geo-location
+// 🌍 Determine Theme and OTP Method based on Geo-location
 const determineThemeAndOtpMethod = (ip) => {
   try {
     const geo = geoip.lookup(ip) || { country: "IN", region: "TN" };
@@ -126,6 +125,16 @@ const determineThemeAndOtpMethod = (ip) => {
   }
 };
 
+// 🔑 Extract Cloudinary Public ID from URL
+const extractPublicId = (url) => {
+  if (!url) return null;
+  const parts = url.split('/upload/');
+  if (parts.length > 1) {
+    const afterUpload = parts[1].split('/').slice(1).join('/');
+    return afterUpload.replace(/\.[^/.]+$/, '');
+  }
+  return null;
+};
 // ==================== MIDDLEWARE ====================
 
 const verifyToken = (req, res, next) => {
@@ -143,7 +152,7 @@ const verifyToken = (req, res, next) => {
       ? authHeader.substring(7) 
       : authHeader;
 
-    const JWT_SECRET = getJWTSecret();  // ✅ Call function here
+    const JWT_SECRET = getJWTSecret();
     console.log("🔑 Verifying token...");
     const decoded = jwt.verify(token, JWT_SECRET);
     console.log("✅ Token verified for user:", decoded.id);
@@ -158,7 +167,6 @@ const verifyToken = (req, res, next) => {
     });
   }
 };
-
 // ==================== AUTH ROUTES ====================
 
 // ✅ LOGIN WITH LOCATION MIDDLEWARE
@@ -207,8 +215,6 @@ router.post("/login", locationMiddleware, async (req, res) => {
       console.log("🆕 Creating new user");
       
       const channelName = name || email.split('@')[0];
-      
-      // ✅ AUTO-GENERATE DESCRIPTION
       const autoDescription = generateChannelDescription(channelName);
       
       user = new User({
@@ -216,11 +222,11 @@ router.post("/login", locationMiddleware, async (req, res) => {
         name: channelName,
         image: image || "https://github.com/shadcn.png",
         channelname: channelName,
-        description: autoDescription, // ✅ Auto-generated
+        description: autoDescription,
         currentPlan: "FREE",
         watchTimeLimit: 5,
-        theme: theme, // ✅ From auto-detection
-        preferredOtpMethod: otpMethod, // ✅ From auto-detection
+        theme: theme,
+        preferredOtpMethod: otpMethod,
         subscribers: 0,
         subscribedChannels: [],
         location: {
@@ -246,9 +252,8 @@ router.post("/login", locationMiddleware, async (req, res) => {
       }
       
       // ✅ CRITICAL: Only update image if user doesn't have a custom uploaded one
-      // Custom uploaded images start with /uploads/
-      if (image && !user.image?.startsWith('/uploads/')) {
-        // Only update if the new image is different
+      // Custom uploaded images are Cloudinary URLs or start with /uploads/
+      if (image && !user.image?.includes('cloudinary.com') && !user.image?.startsWith('/uploads/')) {
         if (user.image !== image) {
           console.log('📸 Updating profile image (not a custom upload)');
           user.image = image;
@@ -299,8 +304,8 @@ router.post("/login", locationMiddleware, async (req, res) => {
         _id: user._id,
         email: user.email,
         name: user.name,
-        image: user.image, // ✅ Will be custom upload if exists
-        bannerImage: user.bannerImage, // ✅ Preserve banner
+        image: user.image,
+        bannerImage: user.bannerImage,
         channelname: user.channelname,
         description: user.description,
         currentPlan: user.currentPlan,
@@ -308,8 +313,8 @@ router.post("/login", locationMiddleware, async (req, res) => {
         subscriptionExpiry: user.subscriptionExpiry,
         subscribers: user.subscribers,
       },
-      theme, // ✅ From auto-detection
-      otpMethod, // ✅ From auto-detection
+      theme,
+      otpMethod,
       location: {
         state,
         city,
@@ -329,6 +334,7 @@ router.post("/login", locationMiddleware, async (req, res) => {
     });
   }
 });
+// ==================== UPDATE ROUTE ====================
 
 router.patch("/update/:id", async (req, res) => {
   try {
@@ -467,151 +473,383 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
-
 // ==================== IMAGE UPLOAD ROUTES ====================
 
-router.post("/channel/:channelId/upload-image", verifyToken, upload.single('image'), async (req, res) => {
-  try {
-    const { channelId } = req.params;
-    const { imageType } = req.body; // 'profile' or 'banner'
-    const userId = req.user.id;
+// ✅ MAIN IMAGE UPLOAD ROUTE WITH CLOUDINARY
+router.post("/channel/:channelId/upload-image", 
+  verifyToken, 
+  upload.single('image'), 
+  async (req, res) => {
+    try {
+      const { channelId } = req.params;
+      const { imageType } = req.body; // 'profile' or 'banner'
+      const userId = req.user.id;
 
-    console.log(`📸 Upload request:`, { 
-      channelId, 
-      imageType, 
-      userId, 
-      hasFile: !!req.file, 
-      fileName: req.file?.filename 
-    });
-
-    // Authorization check
-    if (userId !== channelId) {
-      console.error('❌ Unauthorized upload attempt');
-      return res.status(403).json({ 
-        success: false, 
-        message: "You can only upload images to your own channel" 
+      console.log(`📸 Upload request:`, { 
+        channelId, 
+        imageType, 
+        userId, 
+        hasFile: !!req.file,
+        cloudinaryUrl: req.file?.path
       });
-    }
 
-    if (!req.file) {
-      console.error('❌ No file uploaded');
-      return res.status(400).json({ 
-        success: false, 
-        message: "No image file provided" 
-      });
-    }
-
-    const user = await User.findById(channelId);
-    if (!user) {
-      // Clean up uploaded file if user not found
-      if (fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
+      // Authorization check
+      if (userId !== channelId) {
+        console.error('❌ Unauthorized upload attempt');
+        
+        // Delete uploaded Cloudinary file
+        if (req.file?.filename) {
+          try {
+            await deleteFromCloudinary(req.file.filename, 'image');
+          } catch (err) {
+            console.error('⚠️ Cloudinary cleanup failed:', err);
+          }
+        }
+        
+        return res.status(403).json({ 
+          success: false, 
+          message: "You can only upload images to your own channel" 
+        });
       }
-      console.error('❌ User not found');
+
+      if (!req.file) {
+        console.error('❌ No file uploaded');
+        return res.status(400).json({ 
+          success: false, 
+          message: "No image file provided" 
+        });
+      }
+
+      const user = await User.findById(channelId);
+      if (!user) {
+        // Delete uploaded Cloudinary file if user not found
+        if (req.file?.filename) {
+          try {
+            await deleteFromCloudinary(req.file.filename, 'image');
+          } catch (err) {
+            console.error('⚠️ Cloudinary cleanup failed:', err);
+          }
+        }
+        
+        console.error('❌ User not found');
+        return res.status(404).json({ 
+          success: false, 
+          message: "User not found" 
+        });
+      }
+
+      const imageUrl = req.file.path; // Cloudinary URL
+      const publicId = req.file.filename; // Cloudinary public ID
+
+      console.log('📸 Cloudinary image uploaded:', imageUrl);
+      console.log('🔑 Public ID:', publicId);
+
+      // Delete old Cloudinary image if exists
+      if (imageType === 'banner' && user.bannerImage) {
+        if (user.bannerImage.includes('cloudinary.com')) {
+          try {
+            const oldPublicId = extractPublicId(user.bannerImage);
+            if (oldPublicId) {
+              await deleteFromCloudinary(oldPublicId, 'image');
+              console.log('🗑️ Deleted old banner from Cloudinary');
+            }
+          } catch (err) {
+            console.error('⚠️ Could not delete old banner:', err);
+          }
+        } else if (user.bannerImage.startsWith('/uploads/')) {
+          // Delete local file if exists
+          const oldPath = path.join(__dirname, '..', user.bannerImage);
+          if (fs.existsSync(oldPath)) {
+            try {
+              fs.unlinkSync(oldPath);
+              console.log('🗑️ Deleted old local banner');
+            } catch (err) {
+              console.error('⚠️ Could not delete local banner:', err);
+            }
+          }
+        }
+      } else if (imageType === 'profile' && user.image) {
+        if (user.image.includes('cloudinary.com')) {
+          try {
+            const oldPublicId = extractPublicId(user.image);
+            if (oldPublicId) {
+              await deleteFromCloudinary(oldPublicId, 'image');
+              console.log('🗑️ Deleted old profile image from Cloudinary');
+            }
+          } catch (err) {
+            console.error('⚠️ Could not delete old profile:', err);
+          }
+        } else if (user.image.startsWith('/uploads/')) {
+          // Delete local file if exists
+          const oldPath = path.join(__dirname, '..', user.image);
+          if (fs.existsSync(oldPath)) {
+            try {
+              fs.unlinkSync(oldPath);
+              console.log('🗑️ Deleted old local profile image');
+            } catch (err) {
+              console.error('⚠️ Could not delete local profile:', err);
+            }
+          }
+        }
+      }
+
+      // Update user with new Cloudinary image
+      if (imageType === 'banner') {
+        user.bannerImage = imageUrl;
+      } else if (imageType === 'profile') {
+        user.image = imageUrl;
+      } else {
+        // Clean up uploaded file
+        if (req.file?.filename) {
+          try {
+            await deleteFromCloudinary(req.file.filename, 'image');
+          } catch (err) {
+            console.error('⚠️ Cleanup failed:', err);
+          }
+        }
+        
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid imageType. Must be 'profile' or 'banner'" 
+        });
+      }
+
+      await user.save();
+
+      console.log(`✅ ${imageType} image uploaded successfully:`, imageUrl);
+      console.log('✅ Updated user:', { 
+        id: user._id, 
+        image: user.image, 
+        bannerImage: user.bannerImage 
+      });
+
+      res.json({
+        success: true,
+        message: `${imageType} image uploaded successfully`,
+        imageUrl: imageUrl,
+        publicId: publicId,
+        user: {
+          _id: user._id,
+          image: user.image,
+          bannerImage: user.bannerImage
+        }
+      });
+
+    } catch (error) {
+      console.error("❌ Upload error:", error);
+      
+      // Clean up Cloudinary file on error
+      if (req.file?.filename) {
+        try {
+          await deleteFromCloudinary(req.file.filename, 'image');
+          console.log('🗑️ Cleaned up Cloudinary file after error');
+        } catch (cleanupErr) {
+          console.error('⚠️ Cloudinary cleanup failed:', cleanupErr);
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Image upload failed",
+        error: process.env.NODE_ENV === 'development' ? error.message : "Internal server error"
+      });
+    }
+});
+
+// ✅ UPDATE PROFILE WITH AVATAR (Alternative endpoint)
+router.put("/update-profile", 
+  verifyToken, 
+  upload.single("avatar"), 
+  async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const updateData = { ...req.body };
+
+      console.log('📝 Profile update request for user:', userId);
+
+      // If new avatar uploaded to Cloudinary
+      if (req.file) {
+        const oldUser = await User.findById(userId);
+        
+        // Delete old avatar from Cloudinary if it exists
+        if (oldUser.image && oldUser.image.includes('cloudinary.com')) {
+          try {
+            const publicId = extractPublicId(oldUser.image);
+            if (publicId) {
+              await deleteFromCloudinary(publicId, 'image');
+              console.log('🗑️ Old avatar deleted from Cloudinary');
+            }
+          } catch (error) {
+            console.error('⚠️ Failed to delete old avatar:', error);
+          }
+        }
+
+        updateData.image = req.file.path; // Cloudinary URL
+        console.log('✅ New avatar uploaded:', req.file.path);
+      }
+
+      // Remove sensitive fields that shouldn't be updated directly
+      delete updateData.password;
+      delete updateData.email; // Email should be updated separately with verification
+
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      ).select("-password");
+
+      if (!updatedUser) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "User not found" 
+        });
+      }
+
+      console.log('✅ Profile updated for:', updatedUser.name);
+
+      res.status(200).json({
+        success: true,
+        message: "Profile updated successfully",
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error("❌ Profile update error:", error);
+      
+      // Clean up on error
+      if (req.file?.filename) {
+        try {
+          await deleteFromCloudinary(req.file.filename, 'image');
+        } catch (err) {
+          console.error('⚠️ Cleanup failed:', err);
+        }
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: "Profile update failed", 
+        error: error.message 
+      });
+    }
+});
+
+// ✅ UPLOAD AVATAR (Alternative endpoint)
+router.post("/upload-avatar", 
+  verifyToken, 
+  upload.single("avatar"), 
+  async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      if (!req.file) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "No avatar file provided" 
+        });
+      }
+
+      const avatarUrl = req.file.path; // Cloudinary URL
+      const publicId = req.file.filename; // Cloudinary public ID
+
+      // Update user's avatar
+      const user = await User.findById(userId);
+      
+      // Delete old avatar if exists
+      if (user.image && user.image.includes('cloudinary.com')) {
+        try {
+          const oldPublicId = extractPublicId(user.image);
+          if (oldPublicId) {
+            await deleteFromCloudinary(oldPublicId, 'image');
+            console.log('🗑️ Old avatar deleted from Cloudinary');
+          }
+        } catch (error) {
+          console.error('⚠️ Failed to delete old avatar:', error);
+        }
+      }
+
+      user.image = avatarUrl;
+      await user.save();
+
+      console.log('✅ Avatar uploaded for:', user.name);
+
+      res.status(200).json({
+        success: true,
+        message: "Avatar uploaded successfully",
+        avatar: avatarUrl,
+        publicId: publicId
+      });
+    } catch (error) {
+      console.error("❌ Avatar upload error:", error);
+      
+      // Clean up on error
+      if (req.file?.filename) {
+        try {
+          await deleteFromCloudinary(req.file.filename, 'image');
+        } catch (err) {
+          console.error('⚠️ Cleanup failed:', err);
+        }
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: "Avatar upload failed", 
+        error: error.message 
+      });
+    }
+});
+
+// ✅ GET USER PROFILE
+router.get("/profile", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
       return res.status(404).json({ 
         success: false, 
         message: "User not found" 
       });
     }
 
-    const imageUrl = `/uploads/channel-images/${req.file.filename}`;
-    console.log('📸 Generated image URL:', imageUrl);
-
-    // Delete old image file if exists
-    if (imageType === 'banner' && user.bannerImage && user.bannerImage.startsWith('/uploads')) {
-      const oldPath = path.join(__dirname, '..', user.bannerImage);
-      if (fs.existsSync(oldPath)) {
-        try {
-          fs.unlinkSync(oldPath);
-          console.log('🗑️ Deleted old banner image');
-        } catch (err) {
-          console.error('⚠️ Could not delete old banner:', err);
-        }
-      }
-    } else if (imageType === 'profile' && user.image && user.image.startsWith('/uploads')) {
-      const oldPath = path.join(__dirname, '..', user.image);
-      if (fs.existsSync(oldPath)) {
-        try {
-          fs.unlinkSync(oldPath);
-          console.log('🗑️ Deleted old profile image');
-        } catch (err) {
-          console.error('⚠️ Could not delete old profile:', err);
-        }
-      }
-    }
-
-    // Update user with new image
-    if (imageType === 'banner') {
-      user.bannerImage = imageUrl;
-    } else if (imageType === 'profile') {
-      user.image = imageUrl;
-    } else {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid imageType. Must be 'profile' or 'banner'" 
-      });
-    }
-
-    await user.save();
-
-    console.log(`✅ ${imageType} image uploaded successfully:`, imageUrl);
-    console.log('✅ Updated user:', { 
-      id: user._id, 
-      image: user.image, 
-      bannerImage: user.bannerImage 
-    });
-
-    res.json({
+    res.status(200).json({
       success: true,
-      message: `${imageType} image uploaded successfully`,
-      imageUrl: imageUrl,
-      user: {
-        _id: user._id,
-        image: user.image,
-        bannerImage: user.bannerImage
-      }
-    });
-
-  } catch (error) {
-    console.error("❌ Upload error:", error);
-    
-    // Clean up uploaded file on error
-    if (req.file && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupErr) {
-        console.error('⚠️ Cleanup failed:', cleanupErr);
-      }
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Image upload failed",
-      error: process.env.NODE_ENV === 'development' ? error.message : "Internal server error"
-    });
-  }
-});
-
-// ✅ DEBUG ROUTE (remove in production)
-router.get("/debug/uploads", async (req, res) => {
-  try {
-    const uploadPath = path.join(__dirname, '..', 'uploads', 'channel-images');
-    const files = fs.readdirSync(uploadPath);
-    
-    res.json({
-      success: true,
-      uploadPath: uploadPath,
-      files: files,
-      count: files.length
+      user: user
     });
   } catch (error) {
+    console.error("❌ Get profile error:", error);
     res.status(500).json({ 
       success: false, 
+      message: "Failed to fetch profile", 
       error: error.message 
     });
   }
 });
 
+// ✅ GET PUBLIC USER PROFILE BY ID
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select("-password -email");
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found" 
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: user
+    });
+  } catch (error) {
+    console.error("❌ Get user error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch user", 
+      error: error.message 
+    });
+  }
+});
 // ==================== SUBSCRIPTION ROUTES ====================
 
 router.post("/subscribe/:channelId", verifyToken, async (req, res) => {
@@ -741,54 +979,6 @@ router.post("/unsubscribe/:channelId", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Avatar upload should save like this
-router.post('/fix-my-avatar', verifyToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    
-    console.log('🔧 Fixing avatar for user:', userId);
-    
-    // Get user
-    const user = await User.findById(userId);
-    
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    // Check if current avatar file exists
-    const currentAvatarPath = path.join(__dirname, '..', user.image);
-    const fileExists = fs.existsSync(currentAvatarPath);
-    
-    console.log('Current avatar:', user.image);
-    console.log('File exists?', fileExists);
-    
-    if (!fileExists && user.image.startsWith('/uploads/')) {
-      // Reset to default if file doesn't exist
-      console.log('⚠️ Avatar file missing, resetting to default');
-      
-      user.image = 'https://github.com/shadcn.png';
-      await user.save();
-      
-      return res.json({
-        success: true,
-        message: 'Avatar reset to default. Please upload a new one.',
-        newImage: user.image
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: 'Avatar is valid',
-      image: user.image,
-      fileExists
-    });
-    
-  } catch (error) {
-    console.error('❌ Fix avatar error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
 router.get("/subscription-status/:channelId", verifyToken, async (req, res) => {
   try {
     const { channelId } = req.params;
@@ -858,6 +1048,116 @@ router.get("/subscribed-channels", verifyToken, async (req, res) => {
       message: error.message 
     });
   }
+});
+// ==================== DEBUG & UTILITY ROUTES ====================
+
+// ✅ DEBUG ROUTE (remove in production)
+router.get("/debug/uploads", async (req, res) => {
+  try {
+    const uploadPath = path.join(__dirname, '..', 'uploads', 'channel-images');
+    
+    let files = [];
+    let fileCount = 0;
+    
+    if (fs.existsSync(uploadPath)) {
+      files = fs.readdirSync(uploadPath);
+      fileCount = files.length;
+    }
+    
+    res.json({
+      success: true,
+      uploadPath: uploadPath,
+      pathExists: fs.existsSync(uploadPath),
+      files: files,
+      count: fileCount,
+      note: "Local uploads deprecated - using Cloudinary"
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ✅ FIX AVATAR UTILITY ROUTE
+router.post('/fix-my-avatar', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    console.log('🔧 Fixing avatar for user:', userId);
+    
+    // Get user
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    
+    let needsUpdate = false;
+    let message = 'Avatar is valid';
+    
+    // Check if it's a local file path
+    if (user.image && user.image.startsWith('/uploads/')) {
+      const currentAvatarPath = path.join(__dirname, '..', user.image);
+      const fileExists = fs.existsSync(currentAvatarPath);
+      
+      console.log('Current avatar:', user.image);
+      console.log('File exists?', fileExists);
+      
+      if (!fileExists) {
+        console.log('⚠️ Avatar file missing, resetting to default');
+        user.image = 'https://github.com/shadcn.png';
+        needsUpdate = true;
+        message = 'Avatar file was missing. Reset to default. Please upload a new one.';
+      }
+    }
+    
+    // Check banner image too
+    if (user.bannerImage && user.bannerImage.startsWith('/uploads/')) {
+      const bannerPath = path.join(__dirname, '..', user.bannerImage);
+      if (!fs.existsSync(bannerPath)) {
+        console.log('⚠️ Banner file missing, removing reference');
+        user.bannerImage = null;
+        needsUpdate = true;
+        message += ' Banner file was also missing and has been reset.';
+      }
+    }
+    
+    if (needsUpdate) {
+      await user.save();
+    }
+    
+    res.json({
+      success: true,
+      message: message,
+      user: {
+        _id: user._id,
+        image: user.image,
+        bannerImage: user.bannerImage
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Fix avatar error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ✅ HEALTH CHECK ROUTE
+router.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Auth routes are working",
+    timestamp: new Date().toISOString(),
+    cloudinaryEnabled: true
+  });
 });
 
 export default router;

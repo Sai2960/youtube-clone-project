@@ -1,74 +1,62 @@
-// server/utils/urlHelper.js - PRODUCTION FIX
-
 const BASE_URL = process.env.BASE_URL || 'https://youtube-clone-project-q3pd.onrender.com';
 
-/**
- * Convert relative paths to absolute URLs
- */
-export const toAbsoluteURL = (relativePath) => {
-  // Handle null/undefined
-  if (!relativePath) {
-    return null;
+export const normalizeURL = (url) => {
+  if (!url) return null;
+
+  const urlStr = String(url);
+
+  // Already a Cloudinary URL - return as-is
+  if (urlStr.includes('res.cloudinary.com')) {
+    return urlStr;
   }
 
-  const path = String(relativePath);
-
-  // Already absolute URL - return as-is
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    // Fix localhost URLs
-    if (path.includes('192.168.0.181') || path.includes('localhost')) {
-      return path.replace(/https?:\/\/(192\.168\.0\.181|localhost):5000/, BASE_URL);
-    }
-    return path;
+  // Google/OAuth images - return as-is
+  if (urlStr.includes('googleusercontent.com') || 
+      urlStr.includes('googleapis.com') ||
+      urlStr.includes('github.com') ||
+      urlStr.includes('facebook.com')) {
+    return urlStr;
   }
 
-  // Cloudinary URLs
-  if (path.includes('cloudinary.com')) {
-    return path;
+  // Fix localhost/local IP URLs
+  if (urlStr.includes('192.168.0.181') || urlStr.includes('localhost')) {
+    return urlStr.replace(/https?:\/\/(192\.168\.0\.181|localhost):5000/, BASE_URL);
+  }
+
+  // Fix wrong Vercel URLs with port
+  if (urlStr.includes('vercel.app:5000')) {
+    return urlStr.replace(/https:\/\/[^/]+:5000/, BASE_URL);
+  }
+
+  // Already absolute production URL
+  if (urlStr.startsWith('https://youtube-clone-project-q3pd.onrender.com')) {
+    return urlStr;
+  }
+
+  // Other absolute URLs
+  if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
+    return urlStr;
   }
 
   // Relative path - make absolute
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const cleanPath = urlStr.startsWith('/') ? urlStr : `/${urlStr}`;
   return `${BASE_URL}${cleanPath}`;
 };
 
-/**
- * Get secure video URL
- */
-export const getVideoURL = (filepath) => {
-  if (!filepath) return null;
-  
-  // If Cloudinary URL, return directly
-  if (filepath.includes('res.cloudinary.com')) {
-    return filepath;
-  }
-  
-  return toAbsoluteURL(filepath);
+export const getSecureMediaURL = (filepath) => {
+  return normalizeURL(filepath);
 };
 
-/**
- * Get secure image URL
- */
-export const getImageURL = (imagePath) => {
-  if (!imagePath) return null;
-  
-  // External images (Google, Facebook, etc.)
-  if (imagePath.includes('googleusercontent.com') || 
-      imagePath.includes('googleapis.com') ||
-      imagePath.includes('facebook.com')) {
-    return imagePath;
-  }
-  
-  // Cloudinary
-  if (imagePath.includes('res.cloudinary.com')) {
-    return imagePath;
-  }
-  
-  return toAbsoluteURL(imagePath);
+export const isCloudinaryURL = (url) => {
+  return url && url.includes('res.cloudinary.com');
 };
 
-export default {
-  toAbsoluteURL,
-  getVideoURL,
-  getImageURL
+export const isOAuthImage = (url) => {
+  if (!url) return false;
+  return url.includes('googleusercontent.com') ||
+         url.includes('googleapis.com') ||
+         url.includes('github.com') ||
+         url.includes('facebook.com');
 };
+
+export default { normalizeURL, getSecureMediaURL, isCloudinaryURL, isOAuthImage };
