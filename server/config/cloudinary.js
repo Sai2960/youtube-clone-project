@@ -1,115 +1,146 @@
+// server/config/cloudinary.js
 import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
-// Configure Cloudinary
+// ==================== CLOUDINARY CONFIGURATION ====================
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Test connection
-console.log('☁️  Cloudinary Configuration:');
-console.log('   Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME);
-console.log('   API Key exists:', !!process.env.CLOUDINARY_API_KEY);
-console.log('   Secret exists:', !!process.env.CLOUDINARY_API_SECRET);
+console.log('🎨 Cloudinary configured:', {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  has_api_key: !!process.env.CLOUDINARY_API_KEY,
+  has_api_secret: !!process.env.CLOUDINARY_API_SECRET
+});
 
-// Video Storage Configuration
+// ==================== STORAGE CONFIGURATIONS ====================
+
+// Video storage
 const videoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'youtube-clone/videos',
-      resource_type: 'video',
-      allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
-      transformation: [{ quality: 'auto' }],
-      public_id: `video-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
-    };
-  },
+  params: {
+    folder: 'youtube-clone/videos',
+    resource_type: 'video',
+    allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
+  }
 });
 
-// Thumbnail Storage Configuration
-const thumbnailStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'youtube-clone/thumbnails',
-      resource_type: 'image',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-      transformation: [{ width: 1280, height: 720, crop: 'fill' }],
-      public_id: `thumb-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
-    };
-  },
-});
-
-// Channel Image Storage Configuration
+// Channel image storage
 const channelImageStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'youtube-clone/channel-images',
-      resource_type: 'image',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-      transformation: [{ width: 800, height: 800, crop: 'fill', gravity: 'face' }],
-      public_id: `channel-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
-    };
-  },
+  params: {
+    folder: 'youtube-clone/channel-images',
+    resource_type: 'image',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp'],
+  }
 });
 
-// Shorts Video Storage
+// Thumbnail storage
+const thumbnailStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'youtube-clone/thumbnails',
+    resource_type: 'image',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  }
+});
+
+// Shorts video storage
 const shortsVideoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'youtube-clone/shorts/videos',
-      resource_type: 'video',
-      allowed_formats: ['mp4', 'mov', 'webm'],
-      transformation: [{ quality: 'auto', width: 1080, crop: 'limit' }],
-      public_id: `short-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
-    };
-  },
+  params: {
+    folder: 'youtube-clone/shorts/videos',
+    resource_type: 'video',
+    allowed_formats: ['mp4', 'mov', 'webm'],
+  }
 });
 
-// Shorts Thumbnail Storage
+// Shorts thumbnail storage
 const shortsThumbnailStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'youtube-clone/shorts/thumbnails',
-      resource_type: 'image',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-      transformation: [{ width: 1080, height: 1920, crop: 'fill' }],
-      public_id: `short-thumb-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
-    };
-  },
+  params: {
+    folder: 'youtube-clone/shorts/thumbnails',
+    resource_type: 'image',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  }
 });
 
-// Create multer instances
+// ==================== MULTER UPLOAD INSTANCES ====================
+
 export const uploadVideo = multer({ 
   storage: videoStorage,
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
-});
-
-export const uploadThumbnail = multer({ 
-  storage: thumbnailStorage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB
 });
 
 export const uploadChannelImage = multer({ 
   storage: channelImageStorage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
+export const uploadThumbnail = multer({ 
+  storage: thumbnailStorage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
 export const uploadShortsVideo = multer({ 
   storage: shortsVideoStorage,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
 export const uploadShortsThumbnail = multer({ 
   storage: shortsThumbnailStorage,
-  limits: { fileSize: 3 * 1024 * 1024 } // 3MB limit
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
+// ==================== CLOUDINARY UTILITIES ====================
+
+/**
+ * Delete a resource from Cloudinary
+ * @param {string} publicId - The public ID of the resource
+ * @param {string} resourceType - 'image' or 'video'
+ * @returns {Promise} - Cloudinary deletion result
+ */
+export const deleteFromCloudinary = async (publicId, resourceType = 'image') => {
+  try {
+    console.log(`🗑️ Deleting ${resourceType} from Cloudinary:`, publicId);
+    
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+      invalidate: true
+    });
+    
+    console.log('✅ Cloudinary deletion result:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Cloudinary delete error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Extract public ID from Cloudinary URL
+ * @param {string} url - Cloudinary URL
+ * @returns {string|null} - Public ID or null
+ */
+export const extractPublicId = (url) => {
+  if (!url || !url.includes('cloudinary.com')) return null;
+  
+  try {
+    const parts = url.split('/upload/');
+    if (parts.length > 1) {
+      const afterUpload = parts[1].split('/').slice(1).join('/');
+      return afterUpload.replace(/\.[^/.]+$/, ''); // Remove extension
+    }
+  } catch (error) {
+    console.error('Error extracting public ID:', error);
+  }
+  
+  return null;
+};
+
+// ==================== DEFAULT EXPORT ====================
 export { cloudinary };
+export default cloudinary;
