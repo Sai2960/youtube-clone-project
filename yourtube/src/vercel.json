@@ -1,0 +1,18 @@
+{
+  "buildCommand": "npm ci && npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm ci",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "regions": ["iad1"],
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1",
+      "NODE_ENV": "production"
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://youtube-clone-project-q3pd.onrender.com",
+    "NEXT_PUBLIC_BACKEND_URL": "https://youtube-clone-project-q3pd.onrender.com"
+  }
+}
