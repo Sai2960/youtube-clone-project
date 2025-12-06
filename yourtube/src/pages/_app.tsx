@@ -287,11 +287,7 @@ function AppContent({ Component, pageProps }: AppProps) {
   );
 }
 
-/**
- * Root App component - FIXED VERSION
- * ✅ Removed duplicate <Component /> rendering
- * ✅ Fixed appProps -> Component and pageProps
- */
+
 export default function App(appProps: AppProps) {
   return (
     <UserProvider>
