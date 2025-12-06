@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Check, FileVideo, Upload, X, Sparkles } from "lucide-react";
 import React, { ChangeEvent, useRef, useState, useEffect } from "react";
