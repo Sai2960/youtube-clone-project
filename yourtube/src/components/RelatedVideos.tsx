@@ -113,19 +113,18 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
   };
 
   // ========== Enhanced Thumbnail URL Function ==========
-  const getEnhancedThumbnailUrl = (video: Video): string | null => {
-    // Use urlHelper's getThumbnailUrl
-    const thumbnailUrl = getThumbnailUrl(video);
-    
-    if (thumbnailUrl) {
-      console.log('✅ Thumbnail URL:', thumbnailUrl.substring(0, 60));
-      return thumbnailUrl;
-    }
-    
-    console.log('⚠️ No thumbnail URL found for video:', video._id);
-    return null;
-  };
-
+const getEnhancedThumbnailUrl = (video: Video): string | null => {
+  // Use urlHelper's getThumbnailUrl directly
+  const thumbnailUrl = getThumbnailUrl(video);
+  
+  if (thumbnailUrl) {
+    console.log('✅ Thumbnail URL:', thumbnailUrl.substring(0, 60));
+    return thumbnailUrl;
+  }
+  
+  console.log('⚠️ No thumbnail URL found for video:', video._id);
+  return null;
+};
   // ========== Format Views Function ==========
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";

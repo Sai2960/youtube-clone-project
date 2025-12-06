@@ -35,6 +35,7 @@ const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`;
  * ✅ ENHANCED VIDEO URL FUNCTION
  * Handles Cloudinary URLs, backend URLs, relative paths, and file IDs
  */
+// 🔥 UPDATED: Clean video URL function (Line 44-100)
 export const getVideoUrl = (video: any): string => {
   if (!video) {
     console.error('❌ getVideoUrl: video object is null/undefined');
@@ -63,10 +64,21 @@ export const getVideoUrl = (video: any): string => {
   
   // ✅ CASE 1: Already a complete valid Cloudinary URL
   if (urlStr.includes('res.cloudinary.com/') && urlStr.includes('/video/upload/')) {
+    // Extract filename to rebuild clean URL
+    const filenameMatch = urlStr.match(/file_[a-z0-9]+/i);
+    if (filenameMatch) {
+      const filename = filenameMatch[0];
+      // ✅ Rebuild with clean transformations
+      const cleanUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/f_mp4,vc_h264,ac_aac,br_1000k,q_auto:good/youtube-clone/videos/${filename}.mp4`;
+      console.log('✅ Rebuilt clean video URL:', cleanUrl.substring(0, 80));
+      return cleanUrl;
+    }
+    
+    // Fallback: clean existing URL
     const cleanUrl = urlStr
       .replace(/^http:\/\//, 'https://')
       .replace(/:\d+/, ''); // Remove port if present
-    console.log('✅ Valid Cloudinary URL:', cleanUrl.substring(0, 80));
+    console.log('✅ Cleaned Cloudinary URL:', cleanUrl.substring(0, 80));
     return cleanUrl;
   }
   
@@ -74,17 +86,16 @@ export const getVideoUrl = (video: any): string => {
   const fileIdMatch = urlStr.match(/file_[a-z0-9]+/i);
   if (fileIdMatch) {
     const fileId = fileIdMatch[0];
-    const reconstructed = `${CLOUDINARY_BASE}/video/upload/youtube-clone/videos/${fileId}.mp4`;
+    const reconstructed = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/f_mp4,vc_h264,ac_aac,br_1000k,q_auto:good/youtube-clone/videos/${fileId}.mp4`;
     console.log('✅ Reconstructed from file ID:', reconstructed);
     return reconstructed;
   }
   
   // ✅ CASE 3: Already a full HTTPS/HTTP URL (non-Cloudinary)
   if (urlStr.startsWith('https://') || urlStr.startsWith('http://')) {
-    // Convert HTTP to HTTPS for security
     let secureUrl = urlStr.replace(/^http:\/\//, 'https://');
     
-    // Fix localhost/development URLs pointing to backend
+    // Fix localhost/development URLs
     if (secureUrl.includes('192.168.0.181') || secureUrl.includes('localhost')) {
       secureUrl = secureUrl.replace(/https:\/\/(192\.168\.0\.181|localhost):5000/, BACKEND_URL);
     }
@@ -109,12 +120,11 @@ export const getVideoUrl = (video: any): string => {
   }
   
   // ✅ CASE 4: Relative path or filename
-  // Remove leading slashes and backslashes
   const cleanPath = urlStr
     .replace(/\\/g, '/')
     .replace(/^\/+/, '');
   
-  // If it's just a filename (no directory separators)
+  // If it's just a filename
   if (!cleanPath.includes('/')) {
     const fullUrl = `${BACKEND_URL}/uploads/videos/${cleanPath}`;
     console.log('✅ Built URL from filename:', fullUrl.substring(0, 60));
@@ -128,7 +138,7 @@ export const getVideoUrl = (video: any): string => {
     return fullUrl;
   }
   
-  // ✅ CASE 5: Extract filename from complex path
+  // Extract filename from complex path
   const filename = cleanPath.split(/[\\/]/).pop();
   if (filename) {
     const fullUrl = `${BACKEND_URL}/uploads/videos/${filename}`;
@@ -136,21 +146,16 @@ export const getVideoUrl = (video: any): string => {
     return fullUrl;
   }
   
-  // ❌ Could not process URL
-  console.error('⚠️ Could not process video URL:', {
-    input: urlStr.substring(0, 100),
-    videoId: video._id
-  });
-  
+  console.error('⚠️ Could not process video URL:', urlStr.substring(0, 100));
   return '';
 };
-
 /**
  * ✅ CRITICAL FIX: ENHANCED THUMBNAIL URL FUNCTION
  * Properly extracts filename and generates clean thumbnail URLs
  * Prevents nested transformation parameters
  */
 // 🔥 CRITICAL FIX: Line 104-180
+// 🔥 CRITICAL FIX: Clean thumbnail generation (Line 104-160)
 export const getThumbnailUrl = (video: any): string => {
   console.log('🖼️ getThumbnailUrl called for:', video?._id);
   
@@ -164,11 +169,11 @@ export const getThumbnailUrl = (video: any): string => {
   if (explicitThumbnail) {
     const thumbStr = String(explicitThumbnail).trim();
     
-    // If it's already a Cloudinary image URL (.jpg), use it
-    if (thumbStr.includes('res.cloudinary.com') && thumbStr.includes('.jpg')) {
+    // If it's already a Cloudinary image URL (.jpg/.png), use it
+    if (thumbStr.includes('res.cloudinary.com') && /\.(jpg|png|jpeg|webp)$/i.test(thumbStr)) {
       const normalized = normalizeURL(thumbStr);
       if (normalized) {
-        console.log('✅ Using explicit Cloudinary image thumbnail');
+        console.log('✅ Using explicit Cloudinary thumbnail');
         return normalized;
       }
     }
@@ -191,7 +196,7 @@ export const getThumbnailUrl = (video: any): string => {
     try {
       const urlStr = String(videoUrl).trim();
       
-      // ✅ NEW APPROACH: Extract just the filename, ignore all transformations
+      // ✅ CRITICAL: Extract ONLY the filename using regex
       const filenameMatch = urlStr.match(/file_[a-z0-9]+/i);
       
       if (!filenameMatch) {
@@ -202,10 +207,10 @@ export const getThumbnailUrl = (video: any): string => {
       const filename = filenameMatch[0];
       console.log('✅ Extracted clean filename:', filename);
       
-      // ✅ Build CLEAN thumbnail URL with NO nested transformations
+      // ✅ Build CLEAN thumbnail URL - NO video transformations
       const thumbnailUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${filename}.jpg`;
       
-      console.log('🖼️ Generated thumbnail:', thumbnailUrl);
+      console.log('🖼️ Generated clean thumbnail:', thumbnailUrl);
       return thumbnailUrl;
     } catch (error) {
       console.error('❌ Error generating thumbnail:', error);

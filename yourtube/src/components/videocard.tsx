@@ -105,20 +105,13 @@ const [thumbnailRetryCount, setThumbnailRetryCount] = useState(0);
   // ========== Thumbnail Error Handler ==========
 // Get thumbnail with retry logic
 const validatedThumbnailUrl = (() => {
-  if (thumbnailError && thumbnailRetryCount < 2) {
-    // Retry with different transformation
-    const videoUrl = getVideoUrl(video);
-    if (videoUrl && videoUrl.includes('cloudinary.com')) {
-      const filenameMatch = videoUrl.match(/file_[a-z0-9]+/i);
-      if (filenameMatch) {
-        const filename = filenameMatch[0];
-        // ✅ CLEAN retry URL
-        return `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_2,w_480,h_270,c_fill/youtube-clone/videos/${filename}.jpg`;
-      }
-    }
+  if (!thumbnailUrl) {
+    console.warn('⚠️ No thumbnail URL for video:', video?._id);
+    return fallbackThumbnail;
   }
   
-  return thumbnailUrl || fallbackThumbnail;
+  console.log('✅ Using thumbnail:', thumbnailUrl.substring(0, 60));
+  return thumbnailUrl;
 })();
 
 const handleThumbnailError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {

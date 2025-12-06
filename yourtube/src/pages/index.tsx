@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/pages/index.tsx - COMPLETE FIXED VERSION (NO NESTED LINKS)
 
 import { NextPage } from "next";
@@ -15,6 +16,8 @@ import {
   getShortChannelName,
 } from "@/lib/imageUtils";
 import { VideoGridSkeleton } from "@/components/VideoSkeleton";
+// Line ~10 - ADD this import
+import { getThumbnailUrl as getThumbnailUrlHelper } from '@/lib/urlHelper';
 
 interface Video {
   videoLink: string;
@@ -309,24 +312,20 @@ const Home: NextPage = () => {
     return "/video/vdo.mp4";
   };
 const getThumbnailUrl = (video: Video) => {
-  // Priority 1: Explicit thumbnail fields
-  const thumbnail = 
-    video?.thumbnailUrl || 
-    video?.thumbnail || 
-    video?.videothumbnail || 
-    video?.videothumb;
+    // Priority 1: Explicit thumbnail fields
+  const thumbnail = getThumbnailUrl(video);
   
   // If thumbnail exists and is a Cloudinary URL, use it
-  if (thumbnail && thumbnail.includes('res.cloudinary.com')) {
-    console.log('✅ Using explicit Cloudinary thumbnail:', thumbnail.substring(0, 60));
+if (thumbnail) {
+    console.log('✅ Thumbnail from helper:', thumbnail.substring(0, 60));
     return thumbnail;
   }
   
   // If thumbnail exists and is a full URL (non-Cloudinary), use it
-  if (thumbnail && thumbnail.startsWith('http')) {
-    console.log('✅ Using external thumbnail URL');
-    return thumbnail;
-  }
+ console.warn('⚠️ No thumbnail available, using placeholder');
+  return '/placeholder-thumbnail.jpg';
+
+  
   
   // Priority 2: Generate from video URL
   const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
