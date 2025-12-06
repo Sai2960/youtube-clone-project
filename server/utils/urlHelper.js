@@ -18,32 +18,43 @@ export const getVideoURL = (filepath) => {
   
   const fileStr = String(filepath).trim();
   
-  // ✅ Already valid Cloudinary URL - just ensure HTTPS
-if (fileStr.includes('res.cloudinary.com')) {
+  // ✅ Already valid Cloudinary URL with full path
+  if (fileStr.includes('res.cloudinary.com') && fileStr.includes('/video/upload/')) {
     return fileStr
       .replace(/^http:\/\//, 'https://')
-      .replace(/:\d+/, ''); // Remove any port
+      .replace(/:\d+/, ''); // Remove port
   }
   
-  // ✅ CRITICAL: Extract file ID from ANYWHERE
- const fileIdMatch = fileStr.match(/file_[a-z0-9]+/i);
+  // ✅ Extract public_id (handles both "file_xxx" and full paths)
+  let publicId = null;
   
-if (fileIdMatch) {
-    const fileId = fileIdMatch[0];
-    const cloudinaryUrl = `${CLOUDINARY_BASE}/youtube-clone/videos/${fileId}.mp4`;
-    console.log(`🔧 Reconstructed Cloudinary URL: ${cloudinaryUrl}`);
-    return cloudinaryUrl;
+  // Try to extract from various formats
+  if (fileStr.includes('youtube-clone/videos/')) {
+    // Full path like "youtube-clone/videos/file_v8xfa6"
+    const match = fileStr.match(/youtube-clone\/videos\/([^.\/]+)/);
+    if (match) publicId = `youtube-clone/videos/${match[1]}`;
+  } else {
+    // Just filename like "file_v8xfa6"
+    const fileIdMatch = fileStr.match(/file_[a-z0-9]+/i);
+    if (fileIdMatch) publicId = `youtube-clone/videos/${fileIdMatch[0]}`;
   }
   
-  // ✅ Handle localhost/port URLs
- if (fileStr.includes('localhost') || fileStr.includes(':5000') || 
+  if (publicId) {
+    const transforms = 'f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good';
+    const reconstructed = `${CLOUDINARY_BASE}/${transforms}/${publicId}.mp4`;
+    console.log(`🔧 Reconstructed video URL: ${reconstructed.substring(0, 80)}`);
+    return reconstructed;
+  }
+  
+  // ✅ Reject invalid URLs
+  if (fileStr.includes('localhost') || fileStr.includes(':5000') || 
       fileStr.includes('192.168') || fileStr.includes('127.0.0.1')) {
     console.warn('⚠️ Invalid local URL detected:', fileStr);
     return null;
   }
-  console.error('❌ Could not extract file ID from:', fileStr);
+  
+  console.error('❌ Could not process video URL:', fileStr.substring(0, 100));
   return null;
-
 };
 export const normalizeURL = (url) => {
   if (!url) return null;

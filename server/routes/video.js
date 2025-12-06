@@ -1916,5 +1916,95 @@ router.post('/admin/fix-all-thumbnails-clean', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// ✅ FIX ALL EXISTING VIDEOS - Regenerate proper URLs
+router.post('/admin/fix-all-videos-final', async (req, res) => {
+  try {
+    console.log('\n🔧 ===== FINAL FIX FOR ALL VIDEOS =====');
+    
+    const videos = await videofiles.find({});
+    let fixed = 0;
+    let unfixable = 0;
+    const results = [];
+
+    for (const video of videos) {
+      // Extract public_id from videofilename or any existing URL
+      let publicId = video.videofilename;
+      
+      // If videofilename doesn't look like a public_id, try to extract from URL
+      if (!publicId || !publicId.includes('youtube-clone/videos/')) {
+        const urls = [video.filepath, video.videofile, video.videoLink].filter(Boolean);
+        for (const url of urls) {
+          const match = url.match(/youtube-clone\/videos\/([^.\/]+)/);
+          if (match) {
+            publicId = `youtube-clone/videos/${match[1]}`;
+            break;
+          }
+        }
+      }
+      
+      // Last resort: extract file_xxx from anywhere
+      if (!publicId || !publicId.includes('youtube-clone/videos/')) {
+        const urls = [video.filepath, video.videofile, video.videoLink, video.videofilename].filter(Boolean);
+        for (const path of urls) {
+          const fileMatch = path.match(/file_[a-z0-9]+/i);
+          if (fileMatch) {
+            publicId = `youtube-clone/videos/${fileMatch[0]}`;
+            break;
+          }
+        }
+      }
+
+      if (!publicId || !publicId.includes('file_')) {
+        unfixable++;
+        console.log(`❌ Cannot fix: ${video.videotitle} - No valid public_id found`);
+        continue;
+      }
+
+      // ✅ Build correct URLs
+      const videoUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
+      const thumbnailUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+
+      // Update all fields
+      video.filepath = videoUrl;
+      video.videofile = videoUrl;
+      video.videoLink = videoUrl;
+      video.videoUrl = videoUrl;
+      video.videofilename = publicId;
+      
+      video.thumbnail = thumbnailUrl;
+      video.videothumbnail = thumbnailUrl;
+      video.thumbnailUrl = thumbnailUrl;
+      video.videothumb = thumbnailUrl;
+      
+      await video.save();
+      
+      fixed++;
+      results.push({
+        id: video._id,
+        title: video.videotitle,
+        publicId,
+        videoUrl: videoUrl.substring(0, 80),
+        thumbnailUrl: thumbnailUrl.substring(0, 80)
+      });
+      
+      console.log(`✅ Fixed: ${video.videotitle}`);
+    }
+
+    console.log(`\n✅ Fixed: ${fixed}, Unfixable: ${unfixable}`);
+
+    res.json({
+      success: true,
+      summary: {
+        total: videos.length,
+        fixed,
+        unfixable
+      },
+      results: results.slice(0, 10)
+    });
+  } catch (error) {
+    console.error('❌ Fix error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 export default router;
