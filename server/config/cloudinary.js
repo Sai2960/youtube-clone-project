@@ -25,10 +25,11 @@ console.log('🎨 Cloudinary configured:', {
 
 // ✅ CRITICAL FIX: Video storage with audio codec preservation
 // 🔥 CRITICAL FIX: Line 24-48
+// 🔥 CRITICAL FIX: Remove versioning (Line 24-50)
 const videoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    console.log('📤 Uploading video with audio preservation');
+    console.log('📤 Uploading video WITHOUT versioning');
 
     return {
       folder: 'youtube-clone/videos',
@@ -39,7 +40,12 @@ const videoStorage = new CloudinaryStorage({
       timeout: 600000,
       use_filename: true,
       unique_filename: true,
-      // ✅ CLEAN transformations - no nested params
+      overwrite: false, // ✅ Don't overwrite existing files
+      invalidate: true,  // ✅ Invalidate CDN cache
+      // ✅ CRITICAL: Disable versioning
+      versioning: false,
+      version: false,
+      // Clean transformations
       transformation: {
         video_codec: 'h264',
         audio_codec: 'aac',

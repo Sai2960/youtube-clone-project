@@ -10,6 +10,7 @@ const BASE_URL = getBackendURL();
  * ✅ CRITICAL: Get proper Cloudinary video URL
  * Handles broken formats like "file_t1d4kf.mp4" and converts to full Cloudinary URL
  */
+// 🔥 CRITICAL FIX: Handle Cloudinary versions (Line 15-80)
 export const getVideoURL = (filepath) => {
   if (!filepath) return null;
   
@@ -20,9 +21,14 @@ export const getVideoURL = (filepath) => {
   
   // ✅ Already valid Cloudinary URL with full path
   if (fileStr.includes('res.cloudinary.com') && fileStr.includes('/video/upload/')) {
-    return fileStr
+    // ✅ CRITICAL: Remove version numbers (v1234567890)
+    let cleanUrl = fileStr
       .replace(/^http:\/\//, 'https://')
-      .replace(/:\d+/, ''); // Remove port
+      .replace(/:\d+/, '') // Remove port
+      .replace(/\/v\d+\//g, '/'); // ✅ Remove /v1234567890/
+    
+    console.log('✅ Cleaned URL (removed version):', cleanUrl.substring(0, 80));
+    return cleanUrl;
   }
   
   // ✅ Extract public_id (handles both "file_xxx" and full paths)
@@ -30,7 +36,7 @@ export const getVideoURL = (filepath) => {
   
   // Try to extract from various formats
   if (fileStr.includes('youtube-clone/videos/')) {
-    // Full path like "youtube-clone/videos/file_v8xfa6"
+    // Full path like "youtube-clone/videos/file_v8xfa6" or "v1234/youtube-clone/videos/file_v8xfa6"
     const match = fileStr.match(/youtube-clone\/videos\/([^.\/]+)/);
     if (match) publicId = `youtube-clone/videos/${match[1]}`;
   } else {
@@ -40,6 +46,7 @@ export const getVideoURL = (filepath) => {
   }
   
   if (publicId) {
+    // ✅ Build clean URL WITHOUT version
     const transforms = 'f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good';
     const reconstructed = `${CLOUDINARY_BASE}/${transforms}/${publicId}.mp4`;
     console.log(`🔧 Reconstructed video URL: ${reconstructed.substring(0, 80)}`);
@@ -56,6 +63,7 @@ export const getVideoURL = (filepath) => {
   console.error('❌ Could not process video URL:', fileStr.substring(0, 100));
   return null;
 };
+
 export const normalizeURL = (url) => {
   if (!url) return null;
 
