@@ -1,18 +1,23 @@
 {
-  "buildCommand": "npm ci && npm run build",
+  "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm ci",
+  "installCommand": "npm install",
   "framework": "nextjs",
   "outputDirectory": ".next",
   "regions": ["iad1"],
-  "build": {
-    "env": {
-      "NEXT_TELEMETRY_DISABLED": "1",
-      "NODE_ENV": "production"
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
     }
-  },
+  ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://youtube-clone-project-q3pd.onrender.com",
-    "NEXT_PUBLIC_BACKEND_URL": "https://youtube-clone-project-q3pd.onrender.com"
+    "NEXT_PUBLIC_API_URL": "@youtube-api-url",
+    "NEXT_PUBLIC_BACKEND_URL": "@youtube-backend-url"
+  },
+  "functions": {
+    "app/**/*.tsx": {
+      "maxDuration": 30
+    }
   }
 }

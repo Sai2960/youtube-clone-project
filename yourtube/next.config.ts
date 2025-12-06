@@ -76,7 +76,18 @@ const nextConfig: NextConfig = {
   
   // Optimize output
   output: 'standalone',
-  swcMinify: true,
+  // swcMinify is removed - it's enabled by default in Next.js 15
+  
+  // Type checking configuration
+  typescript: {
+    // Set to true to skip type checking during build if needed
+    ignoreBuildErrors: false,
+  },
+  
+  eslint: {
+    // Set to true to skip linting during build if needed
+    ignoreDuringBuilds: false,
+  },
 };
 
 export default nextConfig;
