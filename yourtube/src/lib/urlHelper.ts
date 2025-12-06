@@ -42,7 +42,6 @@ export const getVideoUrl = (video: any): string => {
     return '';
   }
   
-  // Try all possible video URL fields
   const rawUrl = video.filepath ||
                  video.videoLink || 
                  video.videofile || 
@@ -62,27 +61,29 @@ export const getVideoUrl = (video: any): string => {
     input: urlStr.substring(0, 100)
   });
   
-  // ✅ CASE 1: Already a complete valid Cloudinary URL
+ // ✅ CASE 1: Already a complete valid Cloudinary URL
   if (urlStr.includes('res.cloudinary.com/') && urlStr.includes('/video/upload/')) {
+    // ✅ CRITICAL: Remove version numbers
+    const cleanUrlStr = urlStr.replace(/\/v\d+\//g, '/');
+    
     // Extract filename to rebuild clean URL
-    const filenameMatch = urlStr.match(/file_[a-z0-9]+/i);
+    const filenameMatch = cleanUrlStr.match(/file_[a-z0-9]+/i);
     if (filenameMatch) {
       const filename = filenameMatch[0];
-      // ✅ Rebuild with clean transformations
+      // ✅ Rebuild with clean transformations WITHOUT version
       const cleanUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/f_mp4,vc_h264,ac_aac,br_1000k,q_auto:good/youtube-clone/videos/${filename}.mp4`;
       console.log('✅ Rebuilt clean video URL:', cleanUrl.substring(0, 80));
       return cleanUrl;
     }
     
     // Fallback: clean existing URL
-    const cleanUrl = urlStr
+     const cleanUrl = cleanUrlStr
       .replace(/^http:\/\//, 'https://')
-      .replace(/:\d+/, ''); // Remove port if present
+      .replace(/:\d+/, '');
     console.log('✅ Cleaned Cloudinary URL:', cleanUrl.substring(0, 80));
     return cleanUrl;
   }
   
-  // ✅ CASE 2: Contains Cloudinary file ID - reconstruct full URL
   const fileIdMatch = urlStr.match(/file_[a-z0-9]+/i);
   if (fileIdMatch) {
     const fileId = fileIdMatch[0];
@@ -156,6 +157,7 @@ export const getVideoUrl = (video: any): string => {
  */
 // 🔥 CRITICAL FIX: Line 104-180
 // 🔥 CRITICAL FIX: Clean thumbnail generation (Line 104-160)
+// 🔥 CRITICAL FIX: Handle versions in thumbnails (Line 104-160)
 export const getThumbnailUrl = (video: any): string => {
   console.log('🖼️ getThumbnailUrl called for:', video?._id);
   
@@ -169,11 +171,13 @@ export const getThumbnailUrl = (video: any): string => {
   if (explicitThumbnail) {
     const thumbStr = String(explicitThumbnail).trim();
     
-    // If it's already a Cloudinary image URL (.jpg/.png), use it
+    // If it's already a Cloudinary image URL (.jpg/.png), clean it
     if (thumbStr.includes('res.cloudinary.com') && /\.(jpg|png|jpeg|webp)$/i.test(thumbStr)) {
-      const normalized = normalizeURL(thumbStr);
+      // ✅ Remove version numbers
+      const cleanThumb = thumbStr.replace(/\/v\d+\//g, '/');
+      const normalized = normalizeURL(cleanThumb);
       if (normalized) {
-        console.log('✅ Using explicit Cloudinary thumbnail');
+        console.log('✅ Using explicit Cloudinary thumbnail (cleaned)');
         return normalized;
       }
     }
@@ -196,18 +200,21 @@ export const getThumbnailUrl = (video: any): string => {
     try {
       const urlStr = String(videoUrl).trim();
       
-      // ✅ CRITICAL: Extract ONLY the filename using regex
-      const filenameMatch = urlStr.match(/file_[a-z0-9]+/i);
+      // ✅ CRITICAL: Remove version numbers FIRST
+      const cleanUrlStr = urlStr.replace(/\/v\d+\//g, '/');
+      
+      // Extract ONLY the filename
+      const filenameMatch = cleanUrlStr.match(/file_[a-z0-9]+/i);
       
       if (!filenameMatch) {
-        console.error('❌ No filename found in URL:', urlStr);
+        console.error('❌ No filename found in URL:', cleanUrlStr);
         return '';
       }
       
       const filename = filenameMatch[0];
       console.log('✅ Extracted clean filename:', filename);
       
-      // ✅ Build CLEAN thumbnail URL - NO video transformations
+      // ✅ Build CLEAN thumbnail URL WITHOUT version
       const thumbnailUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${filename}.jpg`;
       
       console.log('🖼️ Generated clean thumbnail:', thumbnailUrl);
