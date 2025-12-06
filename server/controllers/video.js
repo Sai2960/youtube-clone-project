@@ -279,11 +279,12 @@ const generateSampleComments = (videoTitle) => {
 // ✅ CRITICAL FIX: Simplified uploadvideo controller
 // REPLACE THE uploadvideo FUNCTION (around lines 183-290) with this:
 
+// 🔥 CRITICAL FIX: Lines 183-290
 export const uploadvideo = async (req, res) => {
   try {
     console.log("\n📤 ===== VIDEO UPLOAD STARTED =====");
-    console.log("   File received:", !!req.file);
-    console.log("   User ID:", req.userId);
+    console.log("   req.file exists:", !!req.file);
+    console.log("   req.userId:", req.userId);
 
     if (!req.file) {
       return res.status(400).json({
@@ -292,48 +293,50 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    // ✅ Get FULL Cloudinary response
-    console.log("🔍 Cloudinary Upload Result:", {
-      path: req.file.path,
-      filename: req.file.filename,
-      public_id: req.file.public_id, // ✅ THIS IS CRITICAL
+    // ✅ CRITICAL: Log EVERYTHING Cloudinary returns
+    console.log("🔍 Full Cloudinary Response:", JSON.stringify(req.file, null, 2));
+
+    // ✅ Extract data from req.file
+    const cloudinaryData = {
+      secure_url: req.file.secure_url || req.file.path,
+      public_id: req.file.public_id || req.file.filename,
+      url: req.file.url,
       format: req.file.format,
       resource_type: req.file.resource_type,
-    });
+      bytes: req.file.size,
+      duration: req.file.duration
+    };
 
-    // ✅ Validate Cloudinary URL
-    let videoUrl = req.file.path || req.file.secure_url;
-    
-    if (!videoUrl || !videoUrl.includes("cloudinary.com")) {
-      console.error("❌ No valid Cloudinary URL from upload");
+    console.log("📊 Extracted Cloudinary Data:", cloudinaryData);
+
+    // ✅ CRITICAL: Validate we have public_id
+    if (!cloudinaryData.public_id) {
+      console.error("❌ NO PUBLIC_ID IN RESPONSE!");
+      console.error("   Full req.file:", req.file);
+      
       return res.status(500).json({
         success: false,
-        message: "Upload failed - invalid Cloudinary response",
+        message: "Upload failed - Cloudinary did not return public_id",
+        debug: {
+          hasPath: !!req.file.path,
+          hasFilename: !!req.file.filename,
+          hasSecureUrl: !!req.file.secure_url,
+          keys: Object.keys(req.file)
+        }
       });
     }
 
-    // ✅ CRITICAL: Extract public_id for thumbnail generation
-    const publicId = req.file.public_id; // e.g., "youtube-clone/videos/file_v8xfa6"
-    
-    if (!publicId) {
-      console.error("❌ No public_id from Cloudinary");
-      return res.status(500).json({
-        success: false,
-        message: "Upload failed - missing public_id",
-      });
-    }
-
+    const publicId = cloudinaryData.public_id; // e.g., "youtube-clone/videos/file_1234_abc"
     console.log("✅ Public ID:", publicId);
 
-    // ✅ Build clean video URL with audio
-    const cleanVideoUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
-
-    // ✅ Generate thumbnail from public_id (NOT from video URL)
+    // ✅ Build clean URLs
+    const videoUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
     const thumbnailUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
 
-    console.log("✅ Final video URL:", cleanVideoUrl.substring(0, 80));
+    console.log("✅ Video URL:", videoUrl.substring(0, 80));
     console.log("✅ Thumbnail URL:", thumbnailUrl.substring(0, 80));
 
+    // ✅ Get request data
     const { videotitle, videodescription, videochanel } = req.body;
     const uploadedBy = req.userId;
 
@@ -352,30 +355,28 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    const channelName =
-      user?.channelname || videochanel || user?.name || "Unknown Channel";
+    const channelName = user?.channelname || videochanel || user?.name || "Unknown Channel";
     const title = videotitle || req.file.originalname;
-    const autoDescription =
-      videodescription?.trim() ||
+    const autoDescription = videodescription?.trim() || 
       `Watch this amazing video about ${title}. Don't forget to like and subscribe!`;
 
     const views = Math.floor(Math.random() * 91) + 10;
     const likes = Math.floor(views * 0.075);
     const dislikes = Math.floor(views * 0.01);
 
-    // ✅ Create video with CORRECT URLs
+    // ✅ Create video document
     const newVideo = new videofiles({
       videotitle: title,
       videodescription: autoDescription,
-      videofilename: publicId, // ✅ Store public_id as filename
+      videofilename: publicId, // ✅ Store public_id
       
-      // ✅ ALL video fields = SAME clean URL
-      filepath: cleanVideoUrl,
-      videofile: cleanVideoUrl,
-      videoLink: cleanVideoUrl,
-      videoUrl: cleanVideoUrl,
+      // ✅ ALL video URL fields = same clean URL
+      filepath: videoUrl,
+      videofile: videoUrl,
+      videoLink: videoUrl,
+      videoUrl: videoUrl,
       
-      // ✅ ALL thumbnail fields = Generated thumbnail
+      // ✅ ALL thumbnail fields = generated thumbnail
       thumbnail: thumbnailUrl,
       videothumbnail: thumbnailUrl,
       thumbnailUrl: thumbnailUrl,
@@ -383,7 +384,7 @@ export const uploadvideo = async (req, res) => {
 
       filename: req.file.originalname,
       filetype: req.file.mimetype,
-      filesize: `${(req.file.size / (1024 * 1024)).toFixed(2)} MB`,
+      filesize: `${(cloudinaryData.bytes / (1024 * 1024)).toFixed(2)} MB`,
       videotype: req.file.mimetype,
       uploadedBy,
       user: uploadedBy,
@@ -415,27 +416,28 @@ export const uploadvideo = async (req, res) => {
     try {
       const { clearCachePattern } = await import("../middleware/cache.js");
       clearCachePattern(/\/video/);
-      console.log("✅ Video cache cleared after upload");
+      console.log("✅ Video cache cleared");
     } catch (e) {
-      console.log("⚠️ Cache clear failed (non-fatal):", e.message);
+      console.log("⚠️ Cache clear skipped:", e.message);
     }
 
     res.status(201).json({
       success: true,
-      message: "Video uploaded successfully with audio",
+      message: "Video uploaded successfully",
       video: savedVideo,
-      videoUrl: cleanVideoUrl,
+      videoUrl: videoUrl,
       thumbnailUrl: thumbnailUrl,
+      publicId: publicId
     });
   } catch (error) {
-    console.error("\n❌ VIDEO UPLOAD ERROR:", error);
+    console.error("\n❌ VIDEO UPLOAD ERROR:");
+    console.error("   Message:", error.message);
+    console.error("   Stack:", error.stack);
+    
     res.status(500).json({
       success: false,
       message: "Failed to upload video",
-      error:
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
     });
   }
 };

@@ -234,26 +234,30 @@ const localUpload = multer({
 // ✅ CRITICAL: Add comprehensive error handling
 // =================== VIDEO UPLOAD ROUTES ===================
 
+// 🔥 UPDATE: Lines 210-250
 router.post("/upload", 
   (req, res, next) => {
     console.log('\n📤 ===== UPLOAD ROUTE HIT =====');
     console.log('   Method:', req.method);
     console.log('   Content-Type:', req.headers['content-type']);
-    console.log('   Authorization:', req.headers.authorization ? 'Present' : 'Missing');
+    console.log('   Has Auth Header:', !!req.headers.authorization);
     next();
   },
   verifyToken,
   (req, res, next) => {
-    console.log('✅ Token verified, userId:', req.userId);
+    console.log('✅ Token verified');
+    console.log('   req.userId:', req.userId);
+    console.log('   req.user:', req.user ? 'exists' : 'missing');
     next();
   },
-  uploadVideo.single("file"), // ✅ This uploads to Cloudinary and sets req.file.path
+  uploadVideo.single("file"),
   (err, req, res, next) => {
     if (err) {
-      console.error('❌ Multer/Upload error:', {
+      console.error('❌ Upload middleware error:', {
         name: err.name,
         message: err.message,
-        code: err.code
+        code: err.code,
+        stack: err.stack?.split('\n')[0]
       });
       
       if (err.code === 'LIMIT_FILE_SIZE') {
@@ -266,14 +270,20 @@ router.post("/upload",
       return res.status(400).json({
         success: false,
         message: 'Upload error: ' + err.message,
-        error: err.message
       });
     }
+    
+    // ✅ CRITICAL: Log what Cloudinary returned
+    console.log('📦 File upload complete');
+    console.log('   req.file keys:', req.file ? Object.keys(req.file) : 'NO FILE');
+    console.log('   req.file.path:', req.file?.path?.substring(0, 60));
+    console.log('   req.file.filename:', req.file?.filename);
+    console.log('   req.file.public_id:', req.file?.public_id);
+    
     next();
   },
-  uploadvideo // ✅ Now calls the fixed controller
+  uploadvideo
 );
-// ✅ DEBUG: Log all upload route requests
 // ✅ DEBUG: Log all upload route requests
 router.use((req, res, next) => {
   if (req.path.includes('/upload')) {
