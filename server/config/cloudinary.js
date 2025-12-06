@@ -24,6 +24,7 @@ console.log('🎨 Cloudinary configured:', {
 // ==================== STORAGE CONFIGURATIONS ====================
 
 // ✅ CRITICAL FIX: Video storage with audio codec preservation
+// 🔥 CRITICAL FIX: Line 24-48
 const videoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
@@ -38,16 +39,15 @@ const videoStorage = new CloudinaryStorage({
       timeout: 600000,
       use_filename: true,
       unique_filename: true,
-      // ✅ CRITICAL: Explicit audio preservation
-      transformation: [{
+      // ✅ CLEAN transformations - no nested params
+      transformation: {
         video_codec: 'h264',
         audio_codec: 'aac',
         audio_frequency: 44100,
-        audio_channels: 2,
         bit_rate: '1000k',
         quality: 'auto:good'
-      }],
-      flags: ['attachment']
+      },
+      flags: 'attachment'
     };
   }
 });
