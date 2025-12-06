@@ -1,5 +1,5 @@
-// src/lib/urlHelper.ts - COMPLETE MERGED & ENHANCED VERSION
-// Combines all features from both implementations
+// src/lib/urlHelper.ts - COMPLETE MERGED & FIXED VERSION
+// Combines all features from both implementations with enhanced error handling
 
 /**
  * Internal helper to get backend URL dynamically
@@ -27,7 +27,7 @@ const getBackendURLInternal = (): string => {
 };
 
 const BACKEND_URL = getBackendURLInternal();
-const CLOUDINARY_CLOUD_NAME = 'dxuxxk0ss'; // Your Cloudinary cloud name
+const CLOUDINARY_CLOUD_NAME = 'dxuxxk0ss';
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`;
 
 /**
@@ -145,8 +145,9 @@ export const getVideoUrl = (video: any): string => {
 };
 
 /**
- * ✅ ENHANCED THUMBNAIL URL FUNCTION
+ * ✅ ENHANCED THUMBNAIL URL FUNCTION - CRITICAL FIX
  * Generates thumbnail from video URL or uses explicit thumbnail
+ * Properly removes transformation parameters to prevent nested transformations
  */
 export const getThumbnailUrl = (video: any): string => {
   console.log('🖼️ getThumbnailUrl called for:', video?._id);
@@ -163,8 +164,11 @@ export const getThumbnailUrl = (video: any): string => {
     
     // If it's already a Cloudinary image URL, use it
     if (thumbStr.includes('res.cloudinary.com') && thumbStr.includes('/image/upload/')) {
-      console.log('✅ Using explicit Cloudinary image thumbnail');
-      return normalizeURL(thumbStr) || '';
+      const normalized = normalizeURL(thumbStr);
+      if (normalized) {
+        console.log('✅ Using explicit Cloudinary image thumbnail');
+        return normalized;
+      }
     }
     
     // If it's a full URL but not Cloudinary
@@ -192,7 +196,7 @@ export const getThumbnailUrl = (video: any): string => {
         const cloudName = cloudinaryMatch[1];
         let videoPath = cloudinaryMatch[2];
         
-        // ✅ CRITICAL: Remove ALL transformation parameters from the path
+        // ✅ CRITICAL FIX: Remove ALL transformation parameters from the path
         // These look like: f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/
         videoPath = videoPath
           .split('/')
@@ -207,7 +211,11 @@ export const getThumbnailUrl = (video: any): string => {
                    !segment.includes('w_') &&
                    !segment.includes('h_') &&
                    !segment.includes('c_') &&
-                   !segment.includes('so_');
+                   !segment.includes('so_') &&
+                   !segment.includes('g_') &&
+                   !segment.includes('e_') &&
+                   !segment.includes('l_') &&
+                   !segment.includes('fl_');
           })
           .join('/');
         
@@ -226,6 +234,7 @@ export const getThumbnailUrl = (video: any): string => {
   console.warn('⚠️ No valid thumbnail source, using fallback');
   return '';
 };
+
 /**
  * ✅ COMPREHENSIVE URL NORMALIZER
  * Handles all types of URLs: Cloudinary, OAuth, backend, relative paths

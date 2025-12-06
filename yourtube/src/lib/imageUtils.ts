@@ -1,9 +1,17 @@
-// src/lib/imageUtils.ts - COMPLETE FIXED VERSION
+// src/lib/imageUtils.ts - COMPLETE MERGED & FIXED VERSION
+// Combines all features from both implementations
 
 import { fixMediaURL, normalizeURL, getBackendURL } from './urlHelper';
 
 // ==========================================
-// DYNAMIC BACKEND URL CONFIGURATION
+// CONSTANTS & DEFAULT VALUES
+// ==========================================
+
+const DEFAULT_AVATAR = process.env.NEXT_PUBLIC_DEFAULT_AVATAR || '/images/default-avatar.png';
+const DEFAULT_AVATAR_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+
+// ==========================================
+// BACKEND URL CONFIGURATION
 // ==========================================
 
 /**
@@ -13,10 +21,6 @@ const getBackendUrl = (): string => {
   return getBackendURL();
 };
 
-// Default avatar constants
-const DEFAULT_AVATAR = process.env.NEXT_PUBLIC_DEFAULT_AVATAR || '/images/default-avatar.png';
-const DEFAULT_AVATAR_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-
 // ==========================================
 // HELPER: Check if URL needs proxying
 // ==========================================
@@ -25,10 +29,8 @@ const needsProxy = (url: string | undefined | null): boolean => {
   if (!url) return false;
   
   const proxyDomains = [
-    'lh3.googleusercontent.com',
     'graph.facebook.com',
     'platform-lookaside.fbsbx.com',
-    'avatars.githubusercontent.com'
   ];
   
   try {
@@ -90,36 +92,65 @@ const removeTimestamp = (url: string): string => {
 // ==========================================
 
 /**
- * Get properly formatted image URL with optional cache-busting
- * Uses urlHelper for normalization with additional image-specific logic
+ * ✅ ENHANCED: Get properly formatted image URL with optional cache-busting
+ * Combines urlHelper normalization with image-specific logic
  */
 export const getImageUrl = (
   imagePath: string | undefined | null, 
+  isAvatar: boolean = false,
   bustCache: boolean = false,
   forceRefresh: boolean = false
 ): string => {
-  const defaultImage = DEFAULT_AVATAR_SVG;
+  const defaultImage = isAvatar ? DEFAULT_AVATAR_SVG : '';
   
   if (!imagePath || imagePath.trim() === '') {
     return defaultImage;
   }
 
-  // Use urlHelper for basic normalization
-  let finalUrl = normalizeURL(imagePath);
+  const urlStr = String(imagePath).trim();
+
+  // ✅ Cloudinary URLs
+  if (urlStr.includes('res.cloudinary.com')) {
+    let finalUrl = urlStr.replace(/^http:\/\//, 'https://');
+    if (bustCache || forceRefresh) {
+      finalUrl = addTimestamp(finalUrl);
+    }
+    return finalUrl;
+  }
   
-  if (!finalUrl) {
-    return defaultImage;
+  // ✅ OAuth images (Google, GitHub) - keep original
+  if (urlStr.includes('googleusercontent.com') || 
+      urlStr.includes('googleapis.com') ||
+      urlStr.includes('github.com')) {
+    return urlStr.replace(/^http:\/\//, 'https://');
+  }
+  
+  // ✅ Proxy other external OAuth images if needed
+  if (needsProxy(urlStr)) {
+    return proxyImage(urlStr);
+  }
+  
+  // ✅ Full URLs - normalize
+  if (urlStr.startsWith('http')) {
+    let finalUrl = urlStr.replace(/^http:\/\//, 'https://');
+    finalUrl = cleanMalformedUrl(finalUrl);
+    if (bustCache || forceRefresh) {
+      finalUrl = addTimestamp(finalUrl);
+    }
+    return finalUrl;
+  }
+  
+  // ✅ Relative paths - use urlHelper
+  const normalized = normalizeURL(urlStr);
+  if (normalized) {
+    let finalUrl = normalized;
+    if (bustCache || forceRefresh) {
+      finalUrl = addTimestamp(finalUrl);
+    }
+    return finalUrl;
   }
 
-  // Clean any malformed URLs
-  finalUrl = cleanMalformedUrl(finalUrl);
-
-  // Add cache buster if requested
-  if (bustCache || forceRefresh) {
-    finalUrl = addTimestamp(finalUrl);
-  }
-
-  return finalUrl;
+  return defaultImage;
 };
 
 /**
@@ -130,8 +161,8 @@ export const getImageUrlWithFallback = (
   fallbackPath: string = DEFAULT_AVATAR_SVG,
   forceRefresh: boolean = false
 ): string => {
-  const primary = getImageUrl(imagePath, forceRefresh);
-  return primary !== DEFAULT_AVATAR_SVG ? primary : fallbackPath;
+  const primary = getImageUrl(imagePath, false, forceRefresh);
+  return primary || fallbackPath;
 };
 
 /**
@@ -171,7 +202,7 @@ export const getBatchImageUrls = (
   imagePaths: (string | undefined | null)[],
   bustCache: boolean = false
 ): string[] => {
-  return imagePaths.map(path => getImageUrl(path, bustCache));
+  return imagePaths.map(path => getImageUrl(path, false, bustCache));
 };
 
 /**
@@ -187,40 +218,6 @@ export const getImageFilename = (imagePath: string | undefined | null): string =
 // ==========================================
 // AVATAR-SPECIFIC UTILITIES
 // ==========================================
-
-/**
- * Normalize avatar URL with comprehensive fallback logic
- */
-export const normalizeAvatarUrl = (avatar: string | undefined | null): string => {
-  if (!avatar || avatar.trim() === '' || avatar.includes('placeholder') || avatar.includes('null')) {
-    return DEFAULT_AVATAR_SVG;
-  }
-
-  // Google/OAuth avatars - keep original or proxy if needed
-  if (avatar.includes('googleusercontent.com') || 
-      avatar.includes('googleapis.com') ||
-      avatar.includes('github.com')) {
-    return avatar;
-  }
-
-  // Proxy other external OAuth images
-  if (needsProxy(avatar)) {
-    return proxyImage(avatar);
-  }
-
-  // Clean malformed URLs
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
-    return cleanMalformedUrl(avatar);
-  }
-
-  // Use urlHelper for normalization
-  const normalized = normalizeURL(avatar);
-  if (normalized) {
-    return normalized;
-  }
-
-  return DEFAULT_AVATAR_SVG;
-};
 
 /**
  * Check if image URL is valid and not a placeholder
@@ -246,7 +243,46 @@ export const isValidImageUrl = (url: string | null | undefined): boolean => {
 };
 
 /**
- * Get user avatar with multiple field fallbacks
+ * ✅ ENHANCED: Normalize avatar URL with comprehensive fallback logic
+ */
+export const normalizeAvatarUrl = (avatar: string | undefined | null): string => {
+  if (!avatar || avatar.trim() === '' || avatar.includes('placeholder') || avatar.includes('null')) {
+    return DEFAULT_AVATAR_SVG;
+  }
+
+  // Google/OAuth avatars - keep original
+  if (avatar.includes('googleusercontent.com') || 
+      avatar.includes('googleapis.com') ||
+      avatar.includes('github.com')) {
+    return avatar.replace(/^http:\/\//, 'https://');
+  }
+
+  // Proxy other external OAuth images
+  if (needsProxy(avatar)) {
+    return proxyImage(avatar);
+  }
+
+  // Cloudinary URLs
+  if (avatar.includes('res.cloudinary.com')) {
+    return avatar.replace(/^http:\/\//, 'https://');
+  }
+
+  // Clean malformed URLs
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return cleanMalformedUrl(avatar);
+  }
+
+  // Use urlHelper for normalization
+  const normalized = normalizeURL(avatar);
+  if (normalized) {
+    return normalized;
+  }
+
+  return DEFAULT_AVATAR_SVG;
+};
+
+/**
+ * ✅ ENHANCED: Get user avatar with multiple field fallbacks
  */
 export const getUserAvatar = (user: {
   channelAvatar?: string | null;
@@ -274,10 +310,15 @@ export const getUserAvatar = (user: {
 };
 
 /**
- * Get short avatar with fallback - optimized for shorts/reels
+ * ✅ ENHANCED: Get short avatar with comprehensive fallback
  */
 export const getShortAvatar = (short: {
   channelAvatar?: string | null;
+  uploadedBy?: {
+    image?: string | null;
+    avatar?: string | null;
+    channelAvatar?: string | null;
+  };
   userId?: {
     avatar?: string | null;
     image?: string | null;
@@ -286,11 +327,27 @@ export const getShortAvatar = (short: {
 } | null | undefined): string => {
   if (!short) return DEFAULT_AVATAR_SVG;
 
-  return getUserAvatar({
-    channelAvatar: short.channelAvatar,
-    avatar: short.userId?.avatar || short.userId?.channelAvatar,
-    image: short.userId?.image,
-  });
+  // Check all possible avatar sources
+  const possibleAvatars = [
+    short.channelAvatar,
+    short.userId?.image,
+    short.userId?.avatar,
+    short.userId?.channelAvatar,
+    short.uploadedBy?.image,
+    short.uploadedBy?.avatar,
+    short.uploadedBy?.channelAvatar,
+  ];
+
+  for (const avatar of possibleAvatars) {
+    if (isValidImageUrl(avatar)) {
+      const processed = getImageUrl(avatar, true);
+      if (processed !== DEFAULT_AVATAR_SVG) {
+        return processed;
+      }
+    }
+  }
+
+  return DEFAULT_AVATAR_SVG;
 };
 
 // ==========================================
@@ -314,10 +371,15 @@ export const getChannelName = (user: {
 };
 
 /**
- * Get short channel name with fallback
+ * ✅ ENHANCED: Get short channel name with comprehensive fallback
  */
 export const getShortChannelName = (short: {
   channelName?: string;
+  uploadedBy?: {
+    channelName?: string;
+    channelname?: string;
+    name?: string;
+  };
   userId?: {
     channelName?: string;
     channelname?: string;
@@ -326,11 +388,24 @@ export const getShortChannelName = (short: {
 } | null | undefined): string => {
   if (!short) return 'Unknown Channel';
 
-  return short.channelName?.trim() ||
-         short.userId?.channelName?.trim() ||
-         short.userId?.channelname?.trim() ||
-         short.userId?.name?.trim() ||
-         'Unknown Channel';
+  // Check all possible channel name sources
+  const possibleNames = [
+    short.channelName,
+    short.userId?.channelName,
+    short.userId?.channelname,
+    short.userId?.name,
+    short.uploadedBy?.channelName,
+    short.uploadedBy?.channelname,
+    short.uploadedBy?.name,
+  ];
+
+  for (const name of possibleNames) {
+    if (name && name.trim()) {
+      return name.trim();
+    }
+  }
+
+  return 'Unknown Channel';
 };
 
 /**
