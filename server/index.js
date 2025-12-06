@@ -101,15 +101,15 @@ app.use(compression({
 // ✅ FIXED: Smart timeout - exempt upload routes
 app.use((req, res, next) => {
   // ✅ CRITICAL: Skip timeout for upload routes
-  if (
+ if (
     req.path.includes('/upload') || 
     req.path.includes('/video/upload') ||
     req.path.includes('/shorts/upload') ||
     req.method === 'POST' && req.headers['content-type']?.includes('multipart/form-data')
   ) {
-    // Upload routes: 10 minute timeout
-    req.setTimeout(600000);
-    res.setTimeout(600000);
+    // ✅ Upload routes: 15 minute timeout (Render free tier needs this)
+    req.setTimeout(900000); // 15 minutes
+    res.setTimeout(900000);
     console.log('⏱️ Extended timeout for upload:', req.path);
     return next();
   }
@@ -141,38 +141,26 @@ const allowedOrigins = [
   "http://localhost:3001", 
   "http://192.168.0.181:3000",
 
-  // Vercel production & preview domains
+  // ✅ ALL Vercel domains
   "https://youtube-clone-project-eosin.vercel.app",
   "https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app",
 ];
 
-// Add environment variable origins
-if (process.env.ALLOWED_ORIGINS) {
-  const envOrigins = process.env.ALLOWED_ORIGINS.split(',')
-    .map(o => o.trim())
-    .filter(o => o.length > 0);
-  allowedOrigins.push(...envOrigins);
-}
-console.log("🌐 CORS Configuration:");
-console.log("   Allowed origins:", allowedOrigins);
-allowedOrigins.forEach((origin) => console.log("   ✓", origin));
-
-// ✅ CRITICAL: Function to check origin
+// ✅ CRITICAL: Also allow ANY Vercel preview domain
 const isOriginAllowed = (origin) => {
   if (!origin) return true; // Allow no origin (mobile apps, Postman)
   
   // Exact match
   if (allowedOrigins.includes(origin)) return true;
   
-  // ANY Vercel domain (production or preview)
-  if (/^https:\/\/.*\.vercel\.app$/.test(origin)) {
+  // ✅ Allow ANY Vercel domain (production or preview)
+  if (/^https:\/\/youtube-clone-project.*\.vercel\.app$/.test(origin)) {
     console.log("   ✅ Vercel domain allowed:", origin);
     return true;
   }
   
   return false;
 };
-
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
@@ -294,14 +282,19 @@ app.use(
 );
 
 // Enhanced preflight handler
+// Enhanced preflight handler
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // Always set CORS headers
-  if (origin && isOriginAllowed(origin)) {
+  // ✅ CRITICAL: For uploads, be VERY permissive
+  if (req.path.includes('/upload')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    console.log('🚀 Upload route - permissive CORS for:', origin);
+  } else if (origin && isOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else if (process.env.NODE_ENV === 'production') {
-    // Production: allow any origin (permissive)
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
   }
   
