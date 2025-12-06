@@ -1,5 +1,5 @@
-// src/lib/urlHelper.ts - COMPLETE MERGED & FIXED VERSION
-// Combines all features from both implementations with enhanced error handling
+// src/lib/urlHelper.ts - FINAL COMPLETE MERGED & FIXED VERSION
+// Combines all features with critical thumbnail generation fix
 
 /**
  * Internal helper to get backend URL dynamically
@@ -145,9 +145,9 @@ export const getVideoUrl = (video: any): string => {
 };
 
 /**
- * ✅ ENHANCED THUMBNAIL URL FUNCTION - CRITICAL FIX
- * Generates thumbnail from video URL or uses explicit thumbnail
- * Properly removes transformation parameters to prevent nested transformations
+ * ✅ CRITICAL FIX: ENHANCED THUMBNAIL URL FUNCTION
+ * Properly extracts filename and generates clean thumbnail URLs
+ * Prevents nested transformation parameters
  */
 export const getThumbnailUrl = (video: any): string => {
   console.log('🖼️ getThumbnailUrl called for:', video?._id);
@@ -162,8 +162,8 @@ export const getThumbnailUrl = (video: any): string => {
   if (explicitThumbnail) {
     const thumbStr = String(explicitThumbnail).trim();
     
-    // If it's already a Cloudinary image URL, use it
-    if (thumbStr.includes('res.cloudinary.com') && thumbStr.includes('/image/upload/')) {
+    // If it's already a Cloudinary image URL (.jpg), use it
+    if (thumbStr.includes('res.cloudinary.com') && thumbStr.includes('.jpg')) {
       const normalized = normalizeURL(thumbStr);
       if (normalized) {
         console.log('✅ Using explicit Cloudinary image thumbnail');
@@ -189,41 +189,31 @@ export const getThumbnailUrl = (video: any): string => {
     try {
       const urlStr = String(videoUrl).trim();
       
-      // ✅ Extract the base Cloudinary URL and file path (BEFORE any transformations)
-      const cloudinaryMatch = urlStr.match(/https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/);
+      // ✅ CRITICAL FIX: Extract EVERYTHING after /video/upload/
+      const match = urlStr.match(/https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/);
       
-      if (cloudinaryMatch) {
-        const cloudName = cloudinaryMatch[1];
-        let videoPath = cloudinaryMatch[2];
+      if (match) {
+        const cloudName = match[1];
+        let fullPath = match[2]; // This includes transformations + path + filename
         
-        // ✅ CRITICAL FIX: Remove ALL transformation parameters from the path
-        // These look like: f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/
-        videoPath = videoPath
-          .split('/')
-          .filter(segment => {
-            // Keep only segments that don't contain transformation parameters
-            return !segment.includes('f_') && 
-                   !segment.includes('vc_') && 
-                   !segment.includes('ac_') && 
-                   !segment.includes('af_') && 
-                   !segment.includes('br_') && 
-                   !segment.includes('q_') &&
-                   !segment.includes('w_') &&
-                   !segment.includes('h_') &&
-                   !segment.includes('c_') &&
-                   !segment.includes('so_') &&
-                   !segment.includes('g_') &&
-                   !segment.includes('e_') &&
-                   !segment.includes('l_') &&
-                   !segment.includes('fl_');
-          })
-          .join('/');
+        console.log('🔍 Full path after /upload/:', fullPath);
         
-        // Build clean thumbnail URL with proper transformations
-        const thumbnailUrl = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${videoPath}`
-          .replace(/\.(mp4|mov|avi|mkv|webm)$/i, '.jpg');
+        // ✅ Extract the actual filename (file_xxx pattern)
+        const filenameMatch = fullPath.match(/file_[a-z0-9]+/i);
         
-        console.log('🖼️ Generated clean thumbnail:', thumbnailUrl.substring(0, 100));
+        if (!filenameMatch) {
+          console.error('❌ No filename found in path:', fullPath);
+          return '';
+        }
+        
+        const filename = filenameMatch[0];
+        console.log('✅ Extracted filename:', filename);
+        
+        // ✅ Build clean thumbnail URL with proper structure
+        // Uses the full cloudinary path structure: youtube-clone/videos/filename
+        const thumbnailUrl = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${filename}.jpg`;
+        
+        console.log('🖼️ Generated clean thumbnail:', thumbnailUrl);
         return thumbnailUrl;
       }
     } catch (error) {
