@@ -31,13 +31,6 @@ const nextConfig: NextConfig = {
         tls: false,
       };
     }
-    
-    // Optimize build
-    config.optimization = {
-      ...config.optimization,
-      minimize: true,
-    };
-    
     return config;
   },
   
@@ -74,18 +67,11 @@ const nextConfig: NextConfig = {
     ];
   },
   
-  // Optimize output
-  output: 'standalone',
-  // swcMinify is removed - it's enabled by default in Next.js 15
-  
-  // Type checking configuration
   typescript: {
-    // Temporarily skip type checking during build
     ignoreBuildErrors: true,
   },
   
   eslint: {
-    // Temporarily skip linting during build
     ignoreDuringBuilds: true,
   },
 };

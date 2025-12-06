@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
   "framework": "nextjs",
   "outputDirectory": ".next",
   "regions": ["iad1"],
@@ -12,12 +12,7 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "@youtube-api-url",
-    "NEXT_PUBLIC_BACKEND_URL": "@youtube-backend-url"
-  },
-  "functions": {
-    "app/**/*.tsx": {
-      "maxDuration": 30
-    }
+    "NEXT_PUBLIC_API_URL": "https://youtube-clone-project-q3pd.onrender.com",
+    "NEXT_PUBLIC_BACKEND_URL": "https://youtube-clone-project-q3pd.onrender.com"
   }
 }
