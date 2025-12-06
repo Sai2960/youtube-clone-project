@@ -56,6 +56,11 @@ export const initializeSocket = (userId: string): Socket => {
   console.log('🔌 Initializing Socket.IO');
   console.log('   User ID:', userId);
   console.log('   Backend URL:', SOCKET_URL);
+  // Line 49 - ADD this line
+console.log('🔧 Socket Configuration:');
+console.log('   URL:', SOCKET_URL);
+console.log('   Environment:', process.env.NODE_ENV);
+console.log('   Secure:', SOCKET_URL.startsWith('https'));
 
   // ✅ PRODUCTION: Use secure connection for HTTPS
   const isSecure = SOCKET_URL.startsWith('https');

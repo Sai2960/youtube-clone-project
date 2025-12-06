@@ -1,6 +1,6 @@
 // src/components/videocard.tsx - COMPLETE MERGED & ENHANCED VERSION
 // Combines all features from both implementations with full URL helper integration
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -109,15 +109,11 @@ const validatedThumbnailUrl = (() => {
     // Retry with different transformation
     const videoUrl = getVideoUrl(video);
     if (videoUrl && videoUrl.includes('cloudinary.com')) {
-      const parts = videoUrl.split('/video/upload/');
-      if (parts.length === 2) {
-        const pathAfterUpload = parts[1]
-          .split('/')
-          .filter(part => !part.includes('f_') && !part.includes('vc_'))
-          .join('/');
-        
-        return `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_2,w_480,h_270,c_fill/${pathAfterUpload}`
-          .replace(/\.(mp4|mov|avi|mkv|webm)$/i, '.jpg');
+      const filenameMatch = videoUrl.match(/file_[a-z0-9]+/i);
+      if (filenameMatch) {
+        const filename = filenameMatch[0];
+        // ✅ CLEAN retry URL
+        return `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_2,w_480,h_270,c_fill/youtube-clone/videos/${filename}.jpg`;
       }
     }
   }
@@ -134,7 +130,9 @@ const handleThumbnailError = (e: React.SyntheticEvent<HTMLImageElement, Event>) 
   } else {
     e.currentTarget.src = fallbackThumbnail;
   }
-};  const handleThumbnailLoad = () => {
+};
+
+const handleThumbnailLoad = () => {
     if (thumbnailUrl) {
       console.log('✅ Thumbnail loaded successfully:', video?._id);
     }

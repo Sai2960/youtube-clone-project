@@ -1,3 +1,4 @@
+/* eslint-disable import/no-anonymous-default-export */
 // src/lib/urlHelper.ts - FINAL COMPLETE MERGED & FIXED VERSION
 // Combines all features with critical thumbnail generation fix
 
@@ -149,6 +150,7 @@ export const getVideoUrl = (video: any): string => {
  * Properly extracts filename and generates clean thumbnail URLs
  * Prevents nested transformation parameters
  */
+// 🔥 CRITICAL FIX: Line 104-180
 export const getThumbnailUrl = (video: any): string => {
   console.log('🖼️ getThumbnailUrl called for:', video?._id);
   
@@ -189,39 +191,28 @@ export const getThumbnailUrl = (video: any): string => {
     try {
       const urlStr = String(videoUrl).trim();
       
-      // ✅ CRITICAL FIX: Extract EVERYTHING after /video/upload/
-      const match = urlStr.match(/https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/);
+      // ✅ NEW APPROACH: Extract just the filename, ignore all transformations
+      const filenameMatch = urlStr.match(/file_[a-z0-9]+/i);
       
-      if (match) {
-        const cloudName = match[1];
-        let fullPath = match[2]; // This includes transformations + path + filename
-        
-        console.log('🔍 Full path after /upload/:', fullPath);
-        
-        // ✅ Extract the actual filename (file_xxx pattern)
-        const filenameMatch = fullPath.match(/file_[a-z0-9]+/i);
-        
-        if (!filenameMatch) {
-          console.error('❌ No filename found in path:', fullPath);
-          return '';
-        }
-        
-        const filename = filenameMatch[0];
-        console.log('✅ Extracted filename:', filename);
-        
-        // ✅ Build clean thumbnail URL with proper structure
-        // Uses the full cloudinary path structure: youtube-clone/videos/filename
-        const thumbnailUrl = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${filename}.jpg`;
-        
-        console.log('🖼️ Generated clean thumbnail:', thumbnailUrl);
-        return thumbnailUrl;
+      if (!filenameMatch) {
+        console.error('❌ No filename found in URL:', urlStr);
+        return '';
       }
+      
+      const filename = filenameMatch[0];
+      console.log('✅ Extracted clean filename:', filename);
+      
+      // ✅ Build CLEAN thumbnail URL with NO nested transformations
+      const thumbnailUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${filename}.jpg`;
+      
+      console.log('🖼️ Generated thumbnail:', thumbnailUrl);
+      return thumbnailUrl;
     } catch (error) {
-      console.error('❌ Error generating thumbnail from video URL:', error);
+      console.error('❌ Error generating thumbnail:', error);
     }
   }
   
-  console.warn('⚠️ No valid thumbnail source, using fallback');
+  console.warn('⚠️ No valid thumbnail source');
   return '';
 };
 
