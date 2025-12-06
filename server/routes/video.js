@@ -37,6 +37,20 @@ router.get('/test', (req, res) => {
   });
 });
 
+// ✅ DEBUG: Test token verification
+router.post('/test-auth', verifyToken, (req, res) => {
+  console.log('\n✅ TEST AUTH SUCCESS:');
+  console.log('   req.userId:', req.userId);
+  console.log('   req.user:', req.user);
+  
+  res.json({
+    success: true,
+    message: 'Authentication working!',
+    userId: req.userId,
+    user: req.user
+  });
+});
+
 // ✅ CRITICAL FIX: Add root GET route for /video
 router.get("/", async (req, res) => {
   try {
