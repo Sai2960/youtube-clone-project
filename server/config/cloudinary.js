@@ -26,37 +26,31 @@ console.log('🎨 Cloudinary configured:', {
 // 🔥 CRITICAL FIX: Lines 24-55
 const videoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req, file) => {
-    console.log('📤 Uploading video to Cloudinary');
-
-    // ✅ CRITICAL: Return params directly, not wrapped in async
-    return {
-      folder: 'youtube-clone/videos',
-      resource_type: 'video',
-      format: 'mp4',
-      allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
-      chunk_size: 6000000,
-      timeout: 600000,
-      use_filename: true,
-      unique_filename: true,
-      overwrite: false,
-      invalidate: true,
-      // ✅ CRITICAL: Explicit public_id generation
-      public_id: (req, file) => {
-        const timestamp = Date.now();
-        const randomStr = Math.random().toString(36).substring(7);
-        return `youtube-clone/videos/file_${timestamp}_${randomStr}`;
-      },
-      // ✅ Clean transformations
-      transformation: {
-        video_codec: 'h264',
-        audio_codec: 'aac',
-        audio_frequency: 44100,
-        bit_rate: '1000k',
-        quality: 'auto:good'
-      },
-      flags: 'attachment'
-    };
+  params: {
+    folder: 'youtube-clone/videos',
+    resource_type: 'video',
+    format: 'mp4',
+    allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
+    chunk_size: 6000000,
+    timeout: 600000,
+    use_filename: true,
+    unique_filename: true,
+    overwrite: false,
+    invalidate: true,
+    // ✅ FIX: Remove nested public_id function
+    public_id: (req, file) => {
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(7);
+      return `file_${timestamp}_${randomStr}`;
+    },
+    transformation: {
+      video_codec: 'h264',
+      audio_codec: 'aac',
+      audio_frequency: 44100,
+      bit_rate: '1000k',
+      quality: 'auto:good'
+    },
+    flags: 'attachment'
   }
 });
 
