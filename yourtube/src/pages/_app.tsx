@@ -315,12 +315,13 @@ function AppContent({ Component, pageProps }: AppProps) {
  * Wraps the entire app with necessary context providers
  * Order matters: UserProvider must be outermost since other providers depend on it
  */
-export default function App(appProps: AppProps) {
+export default function App({ Component, pageProps }: AppProps) {
   return (
     <UserProvider>
       <SubscriptionProvider>
         <SocketProvider>
           <AppContent {...appProps} />
+          <Component {...pageProps} />
         </SocketProvider>
       </SubscriptionProvider>
     </UserProvider>
