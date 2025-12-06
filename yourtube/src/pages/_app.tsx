@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Header from "@/components/Header";
@@ -15,10 +15,9 @@ import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import { initKeepAlive } from '@/lib/keepAlive';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
+
 /**
  * Global state tracker to prevent duplicate initialization
- * Using a module-level object ensures these values persist across re-renders
- * without triggering React's re-render cycle
  */
 const initializationState = {
   hasInitializedTheme: false,
@@ -29,9 +28,11 @@ const initializationState = {
 
 function AppContent({ Component, pageProps }: AppProps) {
   const { user } = useUser();
+  
   useEffect(() => {
     initKeepAlive();
   }, []);
+  
   const router = useRouter();
   const [isThemeReady, setIsThemeReady] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
@@ -57,11 +58,8 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   /**
    * Initialize theme on first mount
-   * This runs once when the app loads and sets up the initial theme
-   * based on user preferences or system settings
    */
   useEffect(() => {
-    // Skip if not in browser or already initialized
     if (typeof window === 'undefined' || initializationState.hasInitializedTheme) {
       return;
     }
@@ -74,8 +72,7 @@ function AppContent({ Component, pageProps }: AppProps) {
   }, []);
 
   /**
-   * Set up page overflow rules to prevent horizontal scrolling
-   * This is a one-time setup that applies to the entire app
+   * Set up page overflow rules
    */
   useEffect(() => {
     if (typeof window === 'undefined' || initializationState.hasSetOverflow) {
@@ -84,7 +81,6 @@ function AppContent({ Component, pageProps }: AppProps) {
     
     initializationState.hasSetOverflow = true;
     
-    // Apply overflow rules to both body and html
     document.body.style.overflowX = 'hidden';
     document.documentElement.style.overflowX = 'hidden';
     document.body.style.maxWidth = '100vw';
@@ -92,7 +88,6 @@ function AppContent({ Component, pageProps }: AppProps) {
     
     console.log('📐 Page overflow rules applied');
     
-    // Cleanup function to restore defaults
     return () => {
       document.body.style.overflowX = '';
       document.documentElement.style.overflowX = '';
@@ -104,11 +99,8 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   /**
    * Check user's location and apply region-based theme
-   * Only runs for guest users (not logged in)
-   * Logged-in users have their own theme preferences
    */
   useEffect(() => {
-    // Wait for theme to be ready and skip if user is logged in
     if (!isThemeReady || initializationState.hasCheckedLocation || user) {
       return;
     }
@@ -135,7 +127,6 @@ function AppContent({ Component, pageProps }: AppProps) {
           console.log('✅ Applying location-based theme:', locationData.theme);
           applyTheme(locationData.theme as 'light' | 'dark');
           
-          // Store location info for later use
           sessionStorage.setItem('locationTheme', locationData.theme);
           sessionStorage.setItem('locationData', JSON.stringify({
             country: locationData.country || locationData.location?.country,
@@ -154,17 +145,14 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   /**
    * Apply user's personal theme preference
-   * This overrides location-based themes for logged-in users
    */
   useEffect(() => {
     if (!isThemeReady || !user?.theme) {
       return;
     }
     
-    // Create a unique key to track if this theme has been applied
     const themeIdentifier = `${user._id}-${user.theme}`;
     
-    // Skip if we've already applied this exact theme
     if (initializationState.currentUserTheme === themeIdentifier) {
       return;
     }
@@ -172,15 +160,11 @@ function AppContent({ Component, pageProps }: AppProps) {
     console.log('👤 Applying user theme preference:', user.theme);
     applyTheme(user.theme as 'light' | 'dark');
     initializationState.currentUserTheme = themeIdentifier;
-    
-    // Prevent location check from overriding user theme
     initializationState.hasCheckedLocation = true;
   }, [user?._id, user?.theme, isThemeReady]);
 
   /**
    * Handle mobile bottom navigation spacing
-   * Adjusts body padding to prevent content from being hidden
-   * behind the fixed bottom navigation bar
    */
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -194,7 +178,6 @@ function AppContent({ Component, pageProps }: AppProps) {
         ? 'calc(56px + env(safe-area-inset-bottom, 0px))' 
         : '0';
       
-      // Only update if changed to avoid unnecessary DOM manipulation
       if (document.body.style.paddingBottom !== newPadding) {
         document.body.style.paddingBottom = newPadding;
       }
@@ -202,7 +185,6 @@ function AppContent({ Component, pageProps }: AppProps) {
 
     adjustMobileSpacing();
     
-    // Debounce resize events to avoid excessive updates
     let resizeDebounceTimer: NodeJS.Timeout;
     const handleWindowResize = () => {
       clearTimeout(resizeDebounceTimer);
@@ -220,12 +202,10 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   /**
    * Prevent scrolling when mobile sidebar is open
-   * This creates a better UX by locking the background
    */
   useEffect(() => {
     const scrollBehavior = showMobileSidebar ? 'hidden' : 'unset';
     
-    // Only update if value actually changed
     if (document.body.style.overflow !== scrollBehavior) {
       document.body.style.overflow = scrollBehavior;
     }
@@ -236,8 +216,7 @@ function AppContent({ Component, pageProps }: AppProps) {
   }, [showMobileSidebar]);
 
   /**
-   * Show loading spinner while theme is being initialized
-   * Uses theme-aware colors for a seamless experience
+   * Loading spinner while theme initializes
    */
   if (!isThemeReady) {
     const currentTheme = typeof window !== 'undefined' ? getStoredTheme() : 'dark';
@@ -259,7 +238,6 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   /**
    * Render pages without layout (Shorts, Calls, Auth pages)
-   * These pages manage their own layout structure
    */
   if (shouldHideLayout) {
     return (
@@ -279,7 +257,6 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   /**
    * Main app layout with header, sidebar, and content area
-   * Standard layout used for most pages
    */
   return (
     <>
@@ -311,17 +288,16 @@ function AppContent({ Component, pageProps }: AppProps) {
 }
 
 /**
- * Root App component
- * Wraps the entire app with necessary context providers
- * Order matters: UserProvider must be outermost since other providers depend on it
+ * Root App component - FIXED VERSION
+ * ✅ Removed duplicate <Component /> rendering
+ * ✅ Fixed appProps -> Component and pageProps
  */
-export default function App({ Component, pageProps }: AppProps) {
+export default function App(appProps: AppProps) {
   return (
     <UserProvider>
       <SubscriptionProvider>
         <SocketProvider>
           <AppContent {...appProps} />
-          <Component {...pageProps} />
         </SocketProvider>
       </SubscriptionProvider>
     </UserProvider>
