@@ -249,50 +249,40 @@ const localUpload = multer({
 // =================== VIDEO UPLOAD ROUTES ===================
 
 // 🔥 UPDATE: Lines 210-250
-router.post("/upload", 
+// ✅ DEBUG: Log incoming upload request
+router.post("/upload",
   (req, res, next) => {
-    console.log('\n📤 ===== UPLOAD ROUTE HIT =====');
-    console.log('   Method:', req.method);
-    console.log('   Content-Type:', req.headers['content-type']);
-    console.log('   Has Auth Header:', !!req.headers.authorization);
+    console.log('\n📤 ===== UPLOAD REQUEST RECEIVED =====');
+    console.log('Headers:', {
+      contentType: req.headers['content-type'],
+      contentLength: req.headers['content-length'],
+      authorization: req.headers.authorization ? 'Present ✅' : 'MISSING ❌'
+    });
+    console.log('Body fields:', Object.keys(req.body));
+    console.log('Has files:', !!req.file || !!req.files);
+    console.log('=====================================\n');
     next();
   },
   verifyToken,
   (req, res, next) => {
-    console.log('✅ Token verified');
-    console.log('   req.userId:', req.userId);
-    console.log('   req.user:', req.user ? 'exists' : 'missing');
+    console.log('✅ Token verified, userId:', req.userId);
     next();
   },
   uploadVideo.single("file"),
   (err, req, res, next) => {
     if (err) {
-      console.error('❌ Upload middleware error:', {
-        name: err.name,
-        message: err.message,
-        code: err.code,
-        stack: err.stack?.split('\n')[0]
-      });
-      
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({
-          success: false,
-          message: 'File too large. Maximum size is 500MB.',
-        });
-      }
-      
+      console.error('❌ Multer error:', err.message);
       return res.status(400).json({
         success: false,
-        message: 'Upload error: ' + err.message,
+        message: 'File upload error: ' + err.message
       });
     }
     
-    // ✅ CRITICAL: Log what Cloudinary returned
-    console.log('📦 File upload complete');
-    console.log('   req.file keys:', req.file ? Object.keys(req.file) : 'NO FILE');
-    console.log('   req.file.path:', req.file?.path?.substring(0, 60));
-    console.log('   req.file.filename:', req.file?.filename);
-    console.log('   req.file.public_id:', req.file?.public_id);
+    console.log('📦 File received:', req.file ? 'YES ✅' : 'NO ❌');
+    if (req.file) {
+      console.log('   Filename:', req.file.originalname);
+      console.log('   Size:', (req.file.size / 1024 / 1024).toFixed(2) + ' MB');
+    }
     
     next();
   },
