@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   poweredByHeader: false,
   
+  // ✅ ADD THIS LINE to fix workspace warning
+  outputFileTracingRoot: process.cwd(),
+  
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
