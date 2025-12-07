@@ -96,32 +96,33 @@ const useSubscription = () => {
 export default function CompleteVideoPlayer({ videoId, videoUrl, video }: CompleteVideoPlayerProps) {
   // ✅ ADD THIS ENTIRE BLOCK AFTER YOUR STATE DECLARATIONS
  // 🔥 CRITICAL FIX: Line 180-230
+// 🔥 FIXED: Line 180-230
 const getProperVideoUrl = (): string => {
   console.log('🎬 getProperVideoUrl called');
 
-  // Priority 1: Use video object with helper function
+  // ✅ Use the helper function from urlHelper
   if (video) {
     const url = getVideoUrl(video);
-    console.log('✅ Extracted URL from video object:', url?.substring(0, 80));
-    if (url) return url;
+    if (url) {
+      console.log('✅ Got URL from helper:', url.substring(0, 100));
+      return url;
+    }
   }
   
-  // Priority 2: Process videoUrl prop
+  // ✅ Process videoUrl prop
   if (videoUrl) {
-    // Check if already proper Cloudinary URL
-    if (videoUrl.includes('res.cloudinary.com') && videoUrl.includes('/video/upload/')) {
-      console.log('✅ Using provided Cloudinary URL');
+    // Already proper Cloudinary URL
+    if (videoUrl.includes('cloudinary.com') && videoUrl.includes('/video/upload/')) {
+      console.log('✅ Using provided videoUrl:', videoUrl.substring(0, 100));
       return videoUrl;
     }
     
-    // Try to extract file ID and reconstruct
-    const fileMatch = videoUrl.match(/file_[a-z0-9]+/i);
-    if (fileMatch) {
-      const fileId = fileMatch[0];
-      const CLOUDINARY_CLOUD_NAME = 'dxuxxk0ss';
-      // ✅ CLEAN URL - No nested transformations
-      const reconstructed = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/f_mp4,vc_h264,ac_aac,br_1000k,q_auto:good/youtube-clone/videos/${fileId}.mp4`;
-      console.log('🔧 Reconstructed URL:', reconstructed);
+    // Try to extract public_id
+    const match = videoUrl.match(/youtube-clone\/videos\/file_\d+_[a-z0-9]+/i);
+    if (match) {
+      const publicId = match[0];
+      const reconstructed = `https://res.cloudinary.com/dxuxxk0ss/video/upload/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
+      console.log('🔧 Reconstructed from videoUrl:', reconstructed.substring(0, 100));
       return reconstructed;
     }
   }
@@ -131,11 +132,13 @@ const getProperVideoUrl = (): string => {
 };
 
 const finalVideoUrl = getProperVideoUrl();
-  
-  console.log('🎥 FINAL VIDEO URL:', {
-    url: finalVideoUrl.substring(0, 80),
-    isCloudinary: finalVideoUrl.includes('cloudinary.com')
-  });  const { watchTimeLimit, currentPlan, refreshSubscription } = useSubscription();
+
+console.log('🎥 FINAL VIDEO URL:', {
+  url: finalVideoUrl.substring(0, 100),
+  isCloudinary: finalVideoUrl.includes('cloudinary.com'),
+  hasPublicId: finalVideoUrl.includes('youtube-clone/videos/')
+});
+  const { watchTimeLimit, currentPlan, refreshSubscription } = useSubscription();
 
   const videoRef = useRef(null);
   const containerRef = useRef(null);

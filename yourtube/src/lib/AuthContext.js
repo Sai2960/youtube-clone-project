@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // lib/AuthContext.tsx - SECURE VERSION
 
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
@@ -50,7 +51,7 @@ export const UserProvider = ({ children }) => {
   const hasInitializedRef = useRef(false);
   const authUnsubscribeRef = useRef(null);
 
-   const login = (userdata, token, theme = null, location = null, otpMethod = 'sms') => {
+ const login = (userdata, token, theme = null, location = null, otpMethod = 'sms') => {
     console.log('🔐 ===== LOGIN FUNCTION =====');
     console.log('📦 User data:', {
       id: userdata._id || userdata.id,
@@ -73,8 +74,8 @@ export const UserProvider = ({ children }) => {
     
     const enrichedUser = {
       ...userdata,
-      _id: userdata._id || userdata.id, // ✅ Ensure _id exists
-      id: userdata._id || userdata.id,   // ✅ Ensure id exists
+      _id: userdata._id || userdata.id,
+      id: userdata._id || userdata.id,
       image: userdata.image || userdata.avatar || '/default-avatar.png',
       theme: theme || userdata.theme || localStorage.getItem('theme') || 'dark',
       location: location || null,
@@ -86,17 +87,22 @@ export const UserProvider = ({ children }) => {
       tokenLength: token.length,
     });
     
-    setUser(enrichedUser);
+    // ✅ CRITICAL: Save user FIRST, then token
     localStorage.setItem("user", JSON.stringify(enrichedUser));
     localStorage.setItem("token", token);
     
+    // ✅ THEN update state
+    setUser(enrichedUser);
+    
     console.log('✅ User logged in successfully');
+    console.log('🔑 Token saved to localStorage');
     console.log('===== LOGIN COMPLETE =====\n');
     
     if (theme || userdata.theme) {
       applyTheme(enrichedUser.theme);
     }
     
+    // ✅ Dispatch AFTER everything is saved
     window.dispatchEvent(new Event('tokenUpdated'));
     setError(null);
   };

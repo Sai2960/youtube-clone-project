@@ -68,6 +68,7 @@ const axiosInstance: AxiosInstance = axios.create({
 });
 
 // ✅ CRITICAL: Request Interceptor - Upload timeout override + token attachment
+// ✅ CRITICAL: Request Interceptor - Upload timeout override + token attachment
 axiosInstance.interceptors.request.use(
   (config) => {
     // ✅ EXTENDED TIMEOUT FOR UPLOADS (10 minutes)
@@ -76,15 +77,21 @@ axiosInstance.interceptors.request.use(
       console.log('⏱️ Extended timeout to 10 minutes for upload');
     }
     
-    // ✅ Attach authentication token
+    // ✅ CRITICAL: Get token synchronously from localStorage
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
+      // Force a fresh read from localStorage
+      const token = window.localStorage.getItem('token');
       
-      if (token && config.headers) {
+      if (token && token !== 'null' && token !== 'undefined') {
+        // ✅ FIX: Proper type handling for headers
+        if (!config.headers) {
+          config.headers = {} as any;
+        }
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('🔑 Token attached to request');
+        console.log('🔑 Token attached:', token.substring(0, 20) + '...');
       } else {
-        console.log('⚠️ No token found in localStorage');
+        console.warn('⚠️ No valid token found in localStorage');
+        console.warn('   localStorage.token:', token);
       }
     }
     
@@ -92,7 +99,7 @@ axiosInstance.interceptors.request.use(
       method: config.method?.toUpperCase(),
       url: config.url,
       fullUrl: `${config.baseURL}${config.url}`,
-      hasToken: !!(config.headers?.Authorization),
+      hasAuthHeader: !!(config.headers?.Authorization),
       timeout: config.timeout
     });
     

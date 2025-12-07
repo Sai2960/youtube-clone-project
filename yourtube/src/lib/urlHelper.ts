@@ -1,6 +1,6 @@
 /* eslint-disable import/no-anonymous-default-export */
-// src/lib/urlHelper.ts - FINAL COMPLETE MERGED & FIXED VERSION
-// Combines all features with critical thumbnail generation fix
+// src/lib/urlHelper.ts - COMPLETE PRODUCTION VERSION
+// ✅ All features merged with security hardening for GitHub deployment
 
 /**
  * Internal helper to get backend URL dynamically
@@ -12,7 +12,7 @@ const getBackendURLInternal = (): string => {
     
     // Production (Vercel or custom domain)
     if (hostname.includes('vercel.app') || hostname.includes('your-domain.com')) {
-      return 'https://youtube-clone-project-q3pd.onrender.com';
+      return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://your-backend.onrender.com';
     }
     
     // Local development
@@ -24,213 +24,214 @@ const getBackendURLInternal = (): string => {
   // Fallback to environment variables or production URL
   return process.env.NEXT_PUBLIC_API_URL || 
          process.env.NEXT_PUBLIC_BACKEND_URL || 
-         'https://youtube-clone-project-q3pd.onrender.com';
+         'https://your-backend.onrender.com';
 };
 
 const BACKEND_URL = getBackendURLInternal();
-const CLOUDINARY_CLOUD_NAME = 'dxuxxk0ss';
-const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`;
+const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'your-cloud-name';
+const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
 
 /**
  * ✅ ENHANCED VIDEO URL FUNCTION
- * Handles Cloudinary URLs, backend URLs, relative paths, and file IDs
+ * Handles Cloudinary URLs with proper public_id extraction and cleaning
+ * Supports: videofilename (priority), filepath, videofile, videoLink, videoUrl
  */
-// 🔥 UPDATED: Clean video URL function (Line 44-100)
-export const getVideoUrl = (video: any): string => {
+export const getVideoUrl = (video: any): string | null => {
   if (!video) {
     console.error('❌ getVideoUrl: video object is null/undefined');
-    return '';
+    return null;
   }
   
-  const rawUrl = video.filepath ||
-                 video.videoLink || 
-                 video.videofile || 
-                 video.video ||
-                 video.videoUrl ||
-                 video.url;
+  console.log('🎬 Processing video URL for:', video._id);
   
-  if (!rawUrl) {
-    console.error('❌ No video URL found for video:', video._id);
-    return '';
+  // ✅ PRIORITY 1: Use videofilename (the exact public_id from database)
+  if (video.videofilename && video.videofilename.includes('youtube-clone/videos/')) {
+    const url = `${CLOUDINARY_BASE}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${video.videofilename}.mp4`;
+    console.log('✅ Built URL from videofilename');
+    return url;
   }
   
-  const urlStr = String(rawUrl).trim();
+  // ✅ PRIORITY 2: Check existing Cloudinary URLs
+  const cloudinaryFields = [
+    video.filepath,
+    video.videofile, 
+    video.videoLink,
+    video.videoUrl,
+    video.video
+  ].filter(Boolean);
   
-  console.log('🎥 Processing video URL:', {
-    videoId: video._id,
-    input: urlStr.substring(0, 100)
-  });
-  
- // ✅ CASE 1: Already a complete valid Cloudinary URL
-  if (urlStr.includes('res.cloudinary.com/') && urlStr.includes('/video/upload/')) {
-    // ✅ CRITICAL: Remove version numbers
-    const cleanUrlStr = urlStr.replace(/\/v\d+\//g, '/');
+  for (const field of cloudinaryFields) {
+    const urlStr = String(field).trim();
     
-    // Extract filename to rebuild clean URL
-    const filenameMatch = cleanUrlStr.match(/file_[a-z0-9]+/i);
-    if (filenameMatch) {
-      const filename = filenameMatch[0];
-      // ✅ Rebuild with clean transformations WITHOUT version
-      const cleanUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/f_mp4,vc_h264,ac_aac,br_1000k,q_auto:good/youtube-clone/videos/${filename}.mp4`;
-      console.log('✅ Rebuilt clean video URL:', cleanUrl.substring(0, 80));
-      return cleanUrl;
+    // If already a complete Cloudinary URL
+    if (urlStr.includes('res.cloudinary.com/') && urlStr.includes('/video/upload/')) {
+      // ✅ Remove version numbers that cause 404s
+      const cleanUrl = urlStr.replace(/\/v\d+\//g, '/');
+      
+      // Extract and rebuild for consistency
+      const publicIdMatch = cleanUrl.match(/youtube-clone\/videos\/file_\d+_[a-z0-9]+/i);
+      if (publicIdMatch) {
+        const publicId = publicIdMatch[0];
+        const rebuiltUrl = `${CLOUDINARY_BASE}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
+        console.log('✅ Rebuilt clean video URL');
+        return rebuiltUrl;
+      }
+      
+      // Use cleaned URL as-is
+      const secureUrl = cleanUrl.replace(/^http:\/\//, 'https://');
+      console.log('✅ Using cleaned Cloudinary URL');
+      return secureUrl;
+    }
+  }
+  
+  // ✅ PRIORITY 3: Extract public_id from any field and reconstruct
+  for (const field of cloudinaryFields) {
+    const urlStr = String(field).trim();
+    const publicIdMatch = urlStr.match(/youtube-clone\/videos\/file_\d+_[a-z0-9]+/i);
+    
+    if (publicIdMatch) {
+      const publicId = publicIdMatch[0];
+      const reconstructedUrl = `${CLOUDINARY_BASE}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
+      console.log('🔧 Reconstructed URL from public_id pattern');
+      return reconstructedUrl;
+    }
+  }
+  
+  // ✅ PRIORITY 4: Handle non-Cloudinary URLs (legacy support)
+  const rawUrl = video.filepath || video.videoLink || video.videofile || video.video || video.videoUrl;
+  
+  if (rawUrl) {
+    const urlStr = String(rawUrl).trim();
+    
+    // Full HTTPS/HTTP URL
+    if (urlStr.startsWith('https://') || urlStr.startsWith('http://')) {
+      let secureUrl = urlStr.replace(/^http:\/\//, 'https://');
+      
+      // Fix localhost/development URLs
+      if (secureUrl.includes('localhost') || /192\.168\.\d+\.\d+/.test(secureUrl)) {
+        secureUrl = secureUrl.replace(/https:\/\/[^:]+:5000/, BACKEND_URL);
+      }
+      
+      // Fix Vercel URLs with port
+      if (secureUrl.includes('vercel.app:5000')) {
+        secureUrl = secureUrl.replace(/https:\/\/[^/]+:5000/, BACKEND_URL);
+      }
+      
+      // Remove standalone port numbers
+      if (secureUrl.includes(':5000')) {
+        const pathMatch = secureUrl.match(/:5000(\/.+)$/);
+        if (pathMatch) {
+          secureUrl = `${BACKEND_URL}${pathMatch[1]}`;
+        } else {
+          secureUrl = secureUrl.replace(/:5000/, '');
+        }
+      }
+      
+      console.log('✅ Using full non-Cloudinary URL');
+      return secureUrl;
     }
     
-    // Fallback: clean existing URL
-     const cleanUrl = cleanUrlStr
-      .replace(/^http:\/\//, 'https://')
-      .replace(/:\d+/, '');
-    console.log('✅ Cleaned Cloudinary URL:', cleanUrl.substring(0, 80));
-    return cleanUrl;
-  }
-  
-  const fileIdMatch = urlStr.match(/file_[a-z0-9]+/i);
-  if (fileIdMatch) {
-    const fileId = fileIdMatch[0];
-    const reconstructed = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/f_mp4,vc_h264,ac_aac,br_1000k,q_auto:good/youtube-clone/videos/${fileId}.mp4`;
-    console.log('✅ Reconstructed from file ID:', reconstructed);
-    return reconstructed;
-  }
-  
-  // ✅ CASE 3: Already a full HTTPS/HTTP URL (non-Cloudinary)
-  if (urlStr.startsWith('https://') || urlStr.startsWith('http://')) {
-    let secureUrl = urlStr.replace(/^http:\/\//, 'https://');
+    // Relative path or filename
+    const cleanPath = urlStr.replace(/\\/g, '/').replace(/^\/+/, '');
     
-    // Fix localhost/development URLs
-    if (secureUrl.includes('192.168.0.181') || secureUrl.includes('localhost')) {
-      secureUrl = secureUrl.replace(/https:\/\/(192\.168\.0\.181|localhost):5000/, BACKEND_URL);
-    }
-    
-    // Fix Vercel URLs with port
-    if (secureUrl.includes('vercel.app:5000')) {
-      secureUrl = secureUrl.replace(/https:\/\/[^/]+:5000/, BACKEND_URL);
-    }
-    
-    // Remove standalone port numbers
-    if (secureUrl.includes(':5000')) {
-      const pathMatch = secureUrl.match(/:5000(\/.+)$/);
-      if (pathMatch) {
-        secureUrl = `${BACKEND_URL}${pathMatch[1]}`;
-      } else {
-        secureUrl = secureUrl.replace(/:5000/, '');
+    if (cleanPath) {
+      if (!cleanPath.includes('/')) {
+        return `${BACKEND_URL}/uploads/videos/${cleanPath}`;
+      }
+      
+      if (cleanPath.startsWith('uploads/')) {
+        return `${BACKEND_URL}/${cleanPath}`;
+      }
+      
+      const filename = cleanPath.split(/[\\/]/).pop();
+      if (filename) {
+        return `${BACKEND_URL}/uploads/videos/${filename}`;
       }
     }
-    
-    console.log('✅ Using full URL:', secureUrl.substring(0, 60));
-    return secureUrl;
   }
   
-  // ✅ CASE 4: Relative path or filename
-  const cleanPath = urlStr
-    .replace(/\\/g, '/')
-    .replace(/^\/+/, '');
-  
-  // If it's just a filename
-  if (!cleanPath.includes('/')) {
-    const fullUrl = `${BACKEND_URL}/uploads/videos/${cleanPath}`;
-    console.log('✅ Built URL from filename:', fullUrl.substring(0, 60));
-    return fullUrl;
-  }
-  
-  // If it's a path starting with "uploads/"
-  if (cleanPath.startsWith('uploads/')) {
-    const fullUrl = `${BACKEND_URL}/${cleanPath}`;
-    console.log('✅ Built URL from uploads path:', fullUrl.substring(0, 60));
-    return fullUrl;
-  }
-  
-  // Extract filename from complex path
-  const filename = cleanPath.split(/[\\/]/).pop();
-  if (filename) {
-    const fullUrl = `${BACKEND_URL}/uploads/videos/${filename}`;
-    console.log('✅ Built URL from extracted filename:', fullUrl.substring(0, 60));
-    return fullUrl;
-  }
-  
-  console.error('⚠️ Could not process video URL:', urlStr.substring(0, 100));
-  return '';
+  console.warn('⚠️ No valid video URL found for:', video._id);
+  return null;
 };
+
 /**
- * ✅ CRITICAL FIX: ENHANCED THUMBNAIL URL FUNCTION
- * Properly extracts filename and generates clean thumbnail URLs
- * Prevents nested transformation parameters
+ * ✅ CRITICAL: ENHANCED THUMBNAIL GENERATION
+ * Generates clean thumbnails from video public_id
+ * Prevents version number issues and nested transformations
  */
-// 🔥 CRITICAL FIX: Line 104-180
-// 🔥 CRITICAL FIX: Clean thumbnail generation (Line 104-160)
-// 🔥 CRITICAL FIX: Handle versions in thumbnails (Line 104-160)
-export const getThumbnailUrl = (video: any): string => {
-  console.log('🖼️ getThumbnailUrl called for:', video?._id);
+export const getThumbnailUrl = (video: any): string | null => {
+  if (!video) return null;
   
-  // Priority 1: Check explicit thumbnail fields
-  const explicitThumbnail = 
-    video?.thumbnailUrl || 
-    video?.thumbnail || 
-    video?.videothumbnail || 
-    video?.videothumb;
+  console.log('📸 Generating thumbnail for:', video._id);
   
-  if (explicitThumbnail) {
-    const thumbStr = String(explicitThumbnail).trim();
+  // ✅ PRIORITY 1: Use existing thumbnail if valid
+  const explicitThumbs = [
+    video.thumbnailUrl,
+    video.thumbnail,
+    video.videothumbnail,
+    video.videothumb
+  ].filter(Boolean);
+  
+  for (const thumb of explicitThumbs) {
+    const thumbStr = String(thumb).trim();
     
-    // If it's already a Cloudinary image URL (.jpg/.png), clean it
     if (thumbStr.includes('res.cloudinary.com') && /\.(jpg|png|jpeg|webp)$/i.test(thumbStr)) {
-      // ✅ Remove version numbers
+      // Remove version numbers
       const cleanThumb = thumbStr.replace(/\/v\d+\//g, '/');
-      const normalized = normalizeURL(cleanThumb);
-      if (normalized) {
-        console.log('✅ Using explicit Cloudinary thumbnail (cleaned)');
-        return normalized;
-      }
+      const secureThumb = cleanThumb.replace(/^http:\/\//, 'https://');
+      console.log('✅ Using existing Cloudinary thumbnail');
+      return secureThumb;
     }
     
-    // If it's a full URL but not Cloudinary
     if (thumbStr.startsWith('http')) {
       console.log('✅ Using external thumbnail URL');
       return thumbStr;
     }
   }
   
-  // Priority 2: Generate thumbnail from video URL
-  const videoUrl = 
-    video?.filepath || 
-    video?.videofile || 
-    video?.videoLink || 
-    video?.videoUrl;
+  // ✅ PRIORITY 2: Generate from videofilename (exact public_id)
+  if (video.videofilename && video.videofilename.includes('youtube-clone/videos/')) {
+    const thumbnailUrl = `${CLOUDINARY_BASE}/so_0,w_640,h_360,c_fill,q_auto:good/${video.videofilename}.jpg`;
+    console.log('✅ Generated thumbnail from videofilename');
+    return thumbnailUrl;
+  }
   
-  if (videoUrl && videoUrl.includes('res.cloudinary.com')) {
+  // ✅ PRIORITY 3: Extract public_id from video URL
+  const videoSources = [
+    video.filepath,
+    video.videofile,
+    video.videoLink,
+    video.videoUrl
+  ].filter(Boolean);
+  
+  for (const source of videoSources) {
     try {
-      const urlStr = String(videoUrl).trim();
+      const urlStr = String(source).trim();
       
-      // ✅ CRITICAL: Remove version numbers FIRST
+      // Remove version numbers first
       const cleanUrlStr = urlStr.replace(/\/v\d+\//g, '/');
       
-      // Extract ONLY the filename
-      const filenameMatch = cleanUrlStr.match(/file_[a-z0-9]+/i);
+      // Extract public_id pattern
+      const publicIdMatch = cleanUrlStr.match(/youtube-clone\/videos\/file_\d+_[a-z0-9]+/i);
       
-      if (!filenameMatch) {
-        console.error('❌ No filename found in URL:', cleanUrlStr);
-        return '';
+      if (publicIdMatch) {
+        const publicId = publicIdMatch[0];
+        const thumbnailUrl = `${CLOUDINARY_BASE}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+        console.log('✅ Generated thumbnail from video URL');
+        return thumbnailUrl;
       }
-      
-      const filename = filenameMatch[0];
-      console.log('✅ Extracted clean filename:', filename);
-      
-      // ✅ Build CLEAN thumbnail URL WITHOUT version
-      const thumbnailUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${filename}.jpg`;
-      
-      console.log('🖼️ Generated clean thumbnail:', thumbnailUrl);
-      return thumbnailUrl;
     } catch (error) {
       console.error('❌ Error generating thumbnail:', error);
     }
   }
   
-  console.warn('⚠️ No valid thumbnail source');
-  return '';
+  console.warn('⚠️ No thumbnail available for:', video._id);
+  return null;
 };
 
 /**
  * ✅ COMPREHENSIVE URL NORMALIZER
- * Handles all types of URLs: Cloudinary, OAuth, backend, relative paths
+ * Handles Cloudinary, OAuth, backend, and relative paths
  */
 export const normalizeURL = (url: string | undefined | null): string | null => {
   if (!url) return null;
@@ -239,7 +240,6 @@ export const normalizeURL = (url: string | undefined | null): string | null => {
 
   // ========== CLOUDINARY URLs ==========
   if (urlStr.includes('res.cloudinary.com')) {
-    // Ensure HTTPS
     if (urlStr.startsWith('http://')) {
       return urlStr.replace('http://', 'https://');
     }
@@ -257,7 +257,6 @@ export const normalizeURL = (url: string | undefined | null): string | null => {
       urlStr.includes('googleapis.com') ||
       urlStr.includes('github.com') ||
       urlStr.includes('facebook.com')) {
-    // Ensure HTTPS
     if (urlStr.startsWith('http://')) {
       return urlStr.replace('http://', 'https://');
     }
@@ -269,12 +268,10 @@ export const normalizeURL = (url: string | undefined | null): string | null => {
 
   // ========== Complete HTTPS URLs ==========
   if (urlStr.startsWith('https://')) {
-    // Fix Vercel URLs with port
     if (urlStr.includes('vercel.app:5000')) {
       return urlStr.replace(/https:\/\/[^/]+:5000/, BACKEND_URL);
     }
     
-    // Fix port issues
     if (urlStr.includes(':5000')) {
       const pathMatch = urlStr.match(/:5000(\/.+)$/);
       if (pathMatch) {
@@ -283,7 +280,6 @@ export const normalizeURL = (url: string | undefined | null): string | null => {
       return urlStr.replace(/:5000/, '');
     }
     
-    // Already correct
     if (urlStr.startsWith(BACKEND_URL)) {
       return urlStr;
     }
@@ -295,12 +291,10 @@ export const normalizeURL = (url: string | undefined | null): string | null => {
   if (urlStr.startsWith('http://')) {
     let httpsUrl = urlStr.replace('http://', 'https://');
     
-    // Fix localhost/development URLs
-    if (httpsUrl.includes('192.168.0.181') || httpsUrl.includes('localhost')) {
-      return httpsUrl.replace(/https:\/\/(192\.168\.0\.181|localhost):5000/, BACKEND_URL);
+    if (httpsUrl.includes('localhost') || /192\.168\.\d+\.\d+/.test(httpsUrl)) {
+      return httpsUrl.replace(/https:\/\/[^:]+:5000/, BACKEND_URL);
     }
     
-    // Fix port issues
     if (httpsUrl.includes(':5000')) {
       const pathMatch = httpsUrl.match(/:5000(\/.+)$/);
       if (pathMatch) {
@@ -319,12 +313,10 @@ export const normalizeURL = (url: string | undefined | null): string | null => {
 
   if (!cleanPath) return null;
 
-  // Path starting with "uploads/"
   if (cleanPath.startsWith('uploads/')) {
     return `${BACKEND_URL}/${cleanPath}`;
   }
 
-  // Any other relative path
   const finalPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
   return `${BACKEND_URL}${finalPath}`;
 };
@@ -390,7 +382,7 @@ export const extractPublicId = (url: string | undefined | null): string | null =
     const parts = url.split('/upload/');
     if (parts.length > 1) {
       const afterUpload = parts[1].split('/').slice(1).join('/');
-      return afterUpload.replace(/\.[^/.]+$/, ''); // Remove file extension
+      return afterUpload.replace(/\.[^/.]+$/, '');
     }
   } catch (error) {
     console.error('Error extracting public ID:', error);
@@ -402,8 +394,8 @@ export const extractPublicId = (url: string | undefined | null): string | null =
 // ========== DEFAULT EXPORT ==========
 export default {
   getVideoUrl,
-  normalizeURL,
   getThumbnailUrl,
+  normalizeURL,
   getChannelImageUrl,
   getSecureMediaURL,
   fixMediaURL,
