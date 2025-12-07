@@ -100,6 +100,12 @@ export default function CompleteVideoPlayer({ videoId, videoUrl, video }: Comple
 const getProperVideoUrl = (): string => {
   console.log('🎬 getProperVideoUrl called');
 
+  // ✅ CRITICAL: Get cloud name from env or use correct default
+  const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dxuxxk0ss';
+  const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+  
+  console.log('☁️ Using Cloudinary cloud name:', CLOUDINARY_CLOUD_NAME);
+
   // ✅ Use the helper function from urlHelper
   if (video) {
     const url = getVideoUrl(video);
@@ -121,7 +127,7 @@ const getProperVideoUrl = (): string => {
     const match = videoUrl.match(/youtube-clone\/videos\/file_\d+_[a-z0-9]+/i);
     if (match) {
       const publicId = match[0];
-      const reconstructed = `https://res.cloudinary.com/dxuxxk0ss/video/upload/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
+      const reconstructed = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
       console.log('🔧 Reconstructed from videoUrl:', reconstructed.substring(0, 100));
       return reconstructed;
     }
