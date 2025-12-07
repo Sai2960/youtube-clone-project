@@ -287,7 +287,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
               </div>
             )}
 
-            <div className="flex justify-end gap-3">
+         <div className="flex justify-end gap-3">
               {!uploadComplete && (
                 <>
                   <Button 
