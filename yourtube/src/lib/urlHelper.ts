@@ -12,7 +12,7 @@ const getBackendURLInternal = (): string => {
     
     // Production (Vercel or custom domain)
     if (hostname.includes('vercel.app') || hostname.includes('your-domain.com')) {
-      return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://your-backend.onrender.com';
+      return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://youtube-clone-project-q3pd.onrender.com';
     }
     
     // Local development
@@ -24,13 +24,12 @@ const getBackendURLInternal = (): string => {
   // Fallback to environment variables or production URL
   return process.env.NEXT_PUBLIC_API_URL || 
          process.env.NEXT_PUBLIC_BACKEND_URL || 
-         'https://your-backend.onrender.com';
+         'https://youtube-clone-project-q3pd.onrender.com';
 };
 
 const BACKEND_URL = getBackendURLInternal();
-const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'your-cloud-name';
+const CLOUDINARY_CLOUD_NAME = 'dxuxxk0ss'; // ✅ HARDCODED
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-
 /**
  * ✅ ENHANCED VIDEO URL FUNCTION
  * Handles Cloudinary URLs with proper public_id extraction and cleaning
