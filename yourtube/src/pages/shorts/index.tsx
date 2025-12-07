@@ -144,70 +144,80 @@ const ShortsPage: React.FC = () => {
   };
 
   // ✅ Fetch shorts with proper cache busting
-  const fetchShorts = async (pageNum: number) => {
-    try {
-      setLoading(true);
-      setError("");
+  // Around line 150, update fetchShorts function:
+const fetchShorts = async (pageNum: number) => {
+  try {
+    setLoading(true);
+    setError("");
 
-      const token = localStorage.getItem("token");
-      const apiUrl = getApiUrl();
+    const token = localStorage.getItem("token");
+    const apiUrl = getApiUrl();
 
-      console.log(
-        "📡 Fetching shorts:",
-        `${apiUrl}/api/shorts?page=${pageNum}&limit=10`
-      );
+    console.log("📡 Fetching shorts from:", `${apiUrl}/api/shorts?page=${pageNum}`);
 
-      // ✅ Simplified axios config without problematic headers
-      const response = await axios.get(`${apiUrl}/api/shorts`, {
-        params: {
-          page: pageNum,
-          limit: 10,
-          _t: Date.now(), // Cache busting timestamp
-        },
-        headers: token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : {},
-      });
+    const response = await axios.get(`${apiUrl}/api/shorts`, {
+      params: {
+        page: pageNum,
+        limit: 10,
+        _t: Date.now(),
+      },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
 
-      console.log("✅ Shorts response:", response.data);
+    console.log("✅ Shorts response:", {
+      success: response.data.success,
+      count: response.data.data?.length,
+      firstShort: response.data.data?.[0] ? {
+        id: response.data.data[0]._id,
+        title: response.data.data[0].title,
+        videoUrl: response.data.data[0].videoUrl?.substring(0, 100),
+        hasCloudinary: response.data.data[0].videoUrl?.includes('cloudinary'),
+      } : null
+    });
 
-      if (response.data.success && Array.isArray(response.data.data)) {
-        const newShorts = response.data.data;
+    if (response.data.success && Array.isArray(response.data.data)) {
+      const newShorts = response.data.data;
 
-        if (newShorts.length === 0) {
-          setHasMore(false);
-        } else {
-          setShorts((prev) => {
-            const existingIds = new Set(prev.map((s) => s._id));
-            const uniqueNewShorts = newShorts.filter(
-              (s) => !existingIds.has(s._id)
-            );
-            return pageNum === 1 ? newShorts : [...prev, ...uniqueNewShorts];
-          });
-          setPage(pageNum);
+      // ✅ Validate video URLs
+      const validShorts = newShorts.filter(short => {
+        if (!short.videoUrl) {
+          console.error("❌ Short missing video URL:", short._id, short.title);
+          return false;
         }
-      } else {
-        setError("Failed to load shorts");
-      }
-    } catch (error: any) {
-      console.error("❌ Error fetching shorts:", error);
-      console.error("   Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
+        return true;
       });
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to load shorts. Please try again."
-      );
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
+      if (validShorts.length < newShorts.length) {
+        console.warn(`⚠️ Filtered out ${newShorts.length - validShorts.length} shorts without video URLs`);
+      }
+
+      if (validShorts.length === 0) {
+        setHasMore(false);
+        setError("No valid shorts available");
+      } else {
+        setShorts((prev) => {
+          const existingIds = new Set(prev.map((s) => s._id));
+          const uniqueNewShorts = validShorts.filter((s) => !existingIds.has(s._id));
+          return pageNum === 1 ? validShorts : [...prev, ...uniqueNewShorts];
+        });
+        setPage(pageNum);
+      }
+    } else {
+      setError("Failed to load shorts");
     }
-  };
+  } catch (error: any) {
+    console.error("❌ Error fetching shorts:", error);
+    console.error("   Response data:", error.response?.data);
+    console.error("   Status:", error.response?.status);
+
+    setError(
+      error.response?.data?.message || "Failed to load shorts. Please try again."
+    );
+  } finally {
+    setLoading(false);
+    setIsRefreshing(false);
+  }
+};
 
   // ✅ Handle short deletion
   const handleShortDeleted = useCallback(

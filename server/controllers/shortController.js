@@ -142,62 +142,80 @@ export const getAllShorts = async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
-    console.log(
-      "📥 Fetching shorts - Page:",
-      page,
-      "Limit:",
-      limit,
-      "Sort:",
-      sort
-    );
+    console.log("📥 Fetching shorts - Page:", page, "Limit:", limit, "Sort:", sort);
 
-   // ✅ AFTER
-const shorts = await Short.find({ isPublic: true, status: "active" })
-  .sort(sortOption)
-  .limit(limit * 1)
-  .skip((page - 1) * limit)
-  .populate('userId', 'name avatar image channelName channelname subscribers')
-  .lean()
-  .maxTimeMS(5000); // ✅ 5 second timeout
+    const shorts = await Short.find({ isPublic: true, status: "active" })
+      .sort(sortOption)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .populate('userId', 'name avatar image channelName channelname subscribers')
+      .lean()
+      .maxTimeMS(5000);
   
-
     console.log(`✅ Found ${shorts.length} shorts`);
 
+    // ✅ CRITICAL FIX: Proper URL construction
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    
     const shortsWithCounts = shorts.map((short) => {
-      // ✅ Get avatar from User model (most current)
-      let finalAvatar =
-        short.userId?.image || short.userId?.avatar || short.channelAvatar;
+      // Get fresh avatar
+      let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
 
-      // ✅ CRITICAL: Check if avatar file actually exists for local uploads
+      // Check if avatar file exists for local uploads
       if (finalAvatar && finalAvatar.startsWith("/uploads/")) {
         const avatarPath = path.join(__dirname, "..", finalAvatar);
         if (!fs.existsSync(avatarPath)) {
-          console.warn(`⚠️ Avatar file missing: ${finalAvatar}, using default`);
-          finalAvatar = null; // Will use fallback
+          console.warn(`⚠️ Avatar file missing: ${finalAvatar}`);
+          finalAvatar = null;
         }
       }
 
-      // ✅ Process avatar (proxy if needed, or use default)
-      finalAvatar =
-        processAvatar(finalAvatar, req) ||
-        `${req.protocol}://${req.get(
-          "host"
-        )}/api/proxy-image?url=${encodeURIComponent(
-          "https://github.com/shadcn.png"
-        )}`;
+      // Process avatar
+      finalAvatar = processAvatar(finalAvatar, req) || 
+        `${baseUrl}/api/proxy-image?url=${encodeURIComponent("https://github.com/shadcn.png")}`;
+
+      // ✅ CRITICAL: Construct proper video URL
+      let videoUrl = short.videoUrl;
+      if (videoUrl) {
+        // If Cloudinary URL, use as-is
+        if (videoUrl.includes('cloudinary.com')) {
+          console.log("✅ Cloudinary video:", videoUrl.substring(0, 80));
+        }
+        // If local path, construct full URL
+        else if (videoUrl.startsWith('/uploads/')) {
+          videoUrl = `${baseUrl}${videoUrl}`;
+          console.log("✅ Local video URL:", videoUrl.substring(0, 80));
+        }
+        // If relative path without leading slash
+        else if (!videoUrl.startsWith('http')) {
+          videoUrl = `${baseUrl}/uploads/shorts/videos/${videoUrl}`;
+          console.log("✅ Constructed video URL:", videoUrl.substring(0, 80));
+        }
+      } else {
+        console.error("❌ No video URL for short:", short._id);
+      }
+
+      // ✅ CRITICAL: Construct proper thumbnail URL
+      let thumbnailUrl = short.thumbnailUrl;
+      if (thumbnailUrl) {
+        if (thumbnailUrl.includes('cloudinary.com')) {
+          // Cloudinary - use as-is
+        } else if (thumbnailUrl.startsWith('/uploads/')) {
+          thumbnailUrl = `${baseUrl}${thumbnailUrl}`;
+        } else if (!thumbnailUrl.startsWith('http')) {
+          thumbnailUrl = `${baseUrl}/uploads/shorts/thumbnails/${thumbnailUrl}`;
+        }
+      }
 
       return {
         ...short,
-        videoUrl: `${req.protocol}://${req.get("host")}${short.videoUrl}`,
-        thumbnailUrl: `${req.protocol}://${req.get("host")}${
-          short.thumbnailUrl
-        }`,
+        videoUrl, // ✅ Use processed URL
+        thumbnailUrl, // ✅ Use processed URL
         channelAvatar: finalAvatar,
-        channelName:
-          short.channelName ||
-          short.userId?.channelName ||
-          short.userId?.channelname ||
-          short.userId?.name ||
+        channelName: short.channelName || 
+          short.userId?.channelName || 
+          short.userId?.channelname || 
+          short.userId?.name || 
           "Unknown",
         likesCount: short.likes ? short.likes.length : 0,
         dislikesCount: short.dislikes ? short.dislikes.length : 0,
@@ -214,6 +232,8 @@ const shorts = await Short.find({ isPublic: true, status: "active" })
       isPublic: true,
       status: "active",
     });
+
+    console.log(`✅ Returning ${shortsWithCounts.length} shorts with proper URLs`);
 
     res.status(200).json({
       success: true,
@@ -244,10 +264,7 @@ export const getShortById = async (req, res) => {
     console.log("📥 Fetching short:", id);
 
     const short = await Short.findById(id)
-      .populate(
-        "userId",
-        "name avatar image channelName channelname subscribers"
-      )
+      .populate("userId", "name avatar image channelName channelname subscribers")
       .lean();
 
     if (!short) {
@@ -264,27 +281,45 @@ export const getShortById = async (req, res) => {
       ? short.likes.some((like) => like.toString() === userId.toString())
       : false;
     const hasDisliked = userId
-      ? short.dislikes.some(
-          (dislike) => dislike.toString() === userId.toString()
-        )
+      ? short.dislikes.some((dislike) => dislike.toString() === userId.toString())
       : false;
 
     const finalAvatar = getBestAvatar(short, req);
+
+    // ✅ CRITICAL: Proper URL construction
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    
+    let videoUrl = short.videoUrl;
+    if (videoUrl && !videoUrl.startsWith('http') && !videoUrl.includes('cloudinary.com')) {
+      if (videoUrl.startsWith('/uploads/')) {
+        videoUrl = `${baseUrl}${videoUrl}`;
+      } else {
+        videoUrl = `${baseUrl}/uploads/shorts/videos/${videoUrl}`;
+      }
+    }
+
+    let thumbnailUrl = short.thumbnailUrl;
+    if (thumbnailUrl && !thumbnailUrl.startsWith('http') && !thumbnailUrl.includes('cloudinary.com')) {
+      if (thumbnailUrl.startsWith('/uploads/')) {
+        thumbnailUrl = `${baseUrl}${thumbnailUrl}`;
+      } else {
+        thumbnailUrl = `${baseUrl}/uploads/shorts/thumbnails/${thumbnailUrl}`;
+      }
+    }
+
+    console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
 
     res.status(200).json({
       success: true,
       data: {
         ...short,
-        videoUrl: `${req.protocol}://${req.get("host")}${short.videoUrl}`,
-        thumbnailUrl: `${req.protocol}://${req.get("host")}${
-          short.thumbnailUrl
-        }`,
+        videoUrl,
+        thumbnailUrl,
         channelAvatar: finalAvatar,
-        channelName:
-          short.channelName ||
-          short.userId?.channelName ||
-          short.userId?.channelname ||
-          short.userId?.name ||
+        channelName: short.channelName || 
+          short.userId?.channelName || 
+          short.userId?.channelname || 
+          short.userId?.name || 
           "Unknown",
         likesCount: short.likes.length,
         dislikesCount: short.dislikes.length,
@@ -308,7 +343,6 @@ export const getShortById = async (req, res) => {
     });
   }
 };
-
 // Upload new short
 export const uploadShort = async (req, res) => {
   try {

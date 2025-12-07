@@ -321,7 +321,26 @@ app.use(express.urlencoded({ limit: "30mb", extended: true }));
 app.use(bodyParser.json());
 
 // Static file serving for uploads and invoices
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+  setHeaders: (res, filePath) => {
+    // Set proper MIME types
+    if (filePath.endsWith('.mp4')) {
+      res.set('Content-Type', 'video/mp4');
+    } else if (filePath.endsWith('.webm')) {
+      res.set('Content-Type', 'video/webm');
+    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.set('Content-Type', 'image/jpeg');
+    } else if (filePath.endsWith('.png')) {
+      res.set('Content-Type', 'image/png');
+    }
+    
+    // Enable CORS for media files
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Range');
+    res.set('Accept-Ranges', 'bytes');
+  }
+}));
 app.use("/invoices", express.static(path.join(__dirname, "invoices")));
 // =================== API Routes ===================
 console.log("📋 Setting up API routes...");

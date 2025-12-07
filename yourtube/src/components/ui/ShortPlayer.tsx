@@ -930,6 +930,7 @@ useEffect(() => {
       }}
     >
       {/* Video */}
+       {/* Video */}
      <video
   ref={videoRef}
   src={short.videoUrl}
@@ -939,7 +940,26 @@ useEffect(() => {
   webkit-playsinline="true"
   x5-playsinline="true"
   onClick={togglePlayPause}
-  onError={(e) => console.error("Video error:", e)}
+  onError={(e) => {
+    console.error("❌ Video load error:", {
+      url: short.videoUrl,
+      error: e,
+      networkState: videoRef.current?.networkState,
+      readyState: videoRef.current?.readyState
+    });
+    // Try reloading once
+    if (videoRef.current && !videoRef.current.dataset.retried) {
+      videoRef.current.dataset.retried = 'true';
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.load();
+        }
+      }, 1000);
+    }
+  }}
+  onLoadedData={() => {
+    console.log("✅ Video loaded successfully:", short.videoUrl);
+  }}
   style={{
     WebkitTapHighlightColor: 'transparent',
     touchAction: 'pan-y',
