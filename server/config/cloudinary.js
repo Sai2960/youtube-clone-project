@@ -37,7 +37,7 @@ const videoStorage = new CloudinaryStorage({
     unique_filename: true,
     overwrite: false,
     invalidate: true,
-    // ✅ FIX: Remove nested public_id function
+    // ✅ FIX: Correct public_id function (NOT nested)
     public_id: (req, file) => {
       const timestamp = Date.now();
       const randomStr = Math.random().toString(36).substring(7);
@@ -49,8 +49,7 @@ const videoStorage = new CloudinaryStorage({
       audio_frequency: 44100,
       bit_rate: '1000k',
       quality: 'auto:good'
-    },
-    flags: 'attachment'
+    }
   }
 });
 
