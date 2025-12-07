@@ -1,4 +1,3 @@
-
 import { Check, FileVideo, Upload, X, Sparkles } from "lucide-react";
 import React, { ChangeEvent, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -70,32 +69,32 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   };
 
   const handleUpload = async () => {
-  if (!videoFile || !videoTitle.trim()) {
-    toast.error("Please provide file and title");
-    return;
-  }
+    if (!videoFile || !videoTitle.trim()) {
+      toast.error("Please provide file and title");
+      return;
+    }
 
-  // ✅ CRITICAL: Verify token exists BEFORE uploading
-  const token = localStorage.getItem('token');
-  if (!token || token === 'null' || token === 'undefined') {
-    console.error('❌ No valid token found!');
-    toast.error("You must be logged in to upload videos");
-    return;
-  }
-  
-  console.log('✅ Token verified before upload:', token.substring(0, 20) + '...');
+    // ✅ CRITICAL: Verify token exists BEFORE uploading
+    const token = localStorage.getItem('token');
+    if (!token || token === 'null' || token === 'undefined') {
+      console.error('❌ No valid token found!');
+      toast.error("You must be logged in to upload videos");
+      return;
+    }
+    
+    console.log('✅ Token verified before upload:', token.substring(0, 20) + '...');
 
-  const formdata = new FormData();
-  formdata.append("file", videoFile);
-  formdata.append("videotitle", videoTitle);
-  formdata.append("videodescription", videoDescription);
-  formdata.append("videochanel", channelName);
+    const formdata = new FormData();
+    formdata.append("file", videoFile);
+    formdata.append("videotitle", videoTitle);
+    formdata.append("videodescription", videoDescription);
+    formdata.append("videochanel", channelName);
 
-  try {
-    setIsUploading(true);
-    setUploadProgress(0);
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
 
-  const res = await axiosInstance.post("/video/upload", formdata, {
+      const res = await axiosInstance.post("/video/upload", formdata, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -129,37 +128,38 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           window.location.reload();
         }, 2000);
       }
-  } catch (error: any) {
-  console.error("❌ Upload error:", error);
-  
-  // ✅ CRITICAL: Log the FULL backend response
-  if (error.response) {
-    console.error("📛 Backend Error Response:", {
-      status: error.response.status,
-      statusText: error.response.statusText,
-      data: error.response.data,
-      headers: error.response.headers,
-    });
-    
-    // ✅ Show backend's actual error message
-    const backendMessage = error.response.data?.message || 
-                           error.response.data?.error ||
-                           JSON.stringify(error.response.data);
-    
-    console.error("💬 Backend says:", backendMessage);
-    toast.error(`Upload failed: ${backendMessage}`);
-  } else if (error.request) {
-    console.error("📡 No response received:", error.request);
-    toast.error("No response from server. Check your connection.");
-  } else {
-    console.error("⚠️ Error setting up request:", error.message);
-    toast.error(error.message);
-  }
-  
-  setUploadProgress(0);
-} finally {
-  setIsUploading(false);
-}
+    } catch (error: any) {
+      console.error("❌ Upload error:", error);
+      
+      // ✅ CRITICAL: Log the FULL backend response
+      if (error.response) {
+        console.error("📛 Backend Error Response:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+        
+        // ✅ Show backend's actual error message
+        const backendMessage = error.response.data?.message || 
+                               error.response.data?.error ||
+                               JSON.stringify(error.response.data);
+        
+        console.error("💬 Backend says:", backendMessage);
+        toast.error(`Upload failed: ${backendMessage}`);
+      } else if (error.request) {
+        console.error("📡 No response received:", error.request);
+        toast.error("No response from server. Check your connection.");
+      } else {
+        console.error("⚠️ Error setting up request:", error.message);
+        toast.error(error.message);
+      }
+      
+      setUploadProgress(0);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className="bg-gray-50 rounded-lg p-6">
@@ -287,7 +287,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
               </div>
             )}
 
-         <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3">
               {!uploadComplete && (
                 <>
                   <Button 
@@ -312,5 +312,5 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     </div>
   );
 };
-}
+
 export default VideoUploader;
