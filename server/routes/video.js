@@ -243,14 +243,9 @@ const localUpload = multer({
     fieldSize: 500 * 1024 * 1024,
   },
 });
-// =================== VIDEO UPLOAD ROUTES ===================
-
-// ✅ CRITICAL: Add comprehensive error handling
-// =================== VIDEO UPLOAD ROUTES ===================
-
-// 🔥 UPDATE: Lines 210-250
-// ✅ DEBUG: Log incoming upload request
+// 🔥 CRITICAL FIX: Ensure verifyToken completes BEFORE Multer runs
 router.post("/upload",
+  // Step 1: Log incoming request
   (req, res, next) => {
     console.log('\n📤 ===== UPLOAD REQUEST RECEIVED =====');
     console.log('Headers:', {
@@ -258,27 +253,46 @@ router.post("/upload",
       contentLength: req.headers['content-length'],
       authorization: req.headers.authorization ? 'Present ✅' : 'MISSING ❌'
     });
-    console.log('Body fields:', Object.keys(req.body));
-    console.log('Has files:', !!req.file || !!req.files);
-    console.log('=====================================\n');
     next();
   },
+  
+  // Step 2: Verify token and set req.userId
   verifyToken,
+  
+  // Step 3: CRITICAL - Validate auth completed
   (req, res, next) => {
-    console.log('✅ Token verified, userId:', req.userId);
+    console.log('\n🔒 ===== AUTH VALIDATION =====');
+    console.log('   req.userId:', req.userId);
+    console.log('   req.user exists:', !!req.user);
+    
+    if (!req.userId) {
+      console.error('❌ CRITICAL: Authentication failed - no userId set');
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login again.',
+        code: 'AUTH_FAILED'
+      });
+    }
+    
+    console.log('✅ Authentication validated, proceeding to upload...');
     next();
   },
+  
+  // Step 4: Handle file upload with Multer
   uploadVideo.single("file"),
+  
+  // Step 5: Handle Multer errors
   (err, req, res, next) => {
     if (err) {
       console.error('❌ Multer error:', err.message);
       return res.status(400).json({
         success: false,
-        message: 'File upload error: ' + err.message
+        message: 'File upload error: ' + err.message,
+        code: 'MULTER_ERROR'
       });
     }
     
-    console.log('📦 File received:', req.file ? 'YES ✅' : 'NO ❌');
+    console.log('✅ File received by Multer');
     if (req.file) {
       console.log('   Filename:', req.file.originalname);
       console.log('   Size:', (req.file.size / 1024 / 1024).toFixed(2) + ' MB');
@@ -286,8 +300,11 @@ router.post("/upload",
     
     next();
   },
+  
+  // Step 6: Process upload
   uploadvideo
 );
+
 // ✅ DEBUG: Log all upload route requests
 router.use((req, res, next) => {
   if (req.path.includes('/upload')) {

@@ -72,7 +72,7 @@ export const verifyToken = async (req, res, next) => {
       });
     }
 
-    console.log("🔍 Looking up user:", userId);
+    console.log('🔍 Looking up user:', userId);
 
     // Fetch user from database
     const user = await User.findById(userId).select("-password");
@@ -91,16 +91,14 @@ export const verifyToken = async (req, res, next) => {
       email: user.email,
     });
 
-    // ✅ CRITICAL FIX: Set BOTH req.user AND req.userId for maximum compatibility
-    req.userId = user._id.toString(); // ✅ String format for consistency
+    // ✅ CRITICAL FIX: Set BOTH req.user AND req.userId SYNCHRONOUSLY
+    req.userId = user._id.toString();
     req.user = {
       _id: user._id,
       id: user._id.toString(),
       email: user.email,
       name: user.name,
       channelName: user.channelname || user.channelName,
-      // Include decoded token data as well
-      ...decoded,
     };
 
     console.log("✅ Authentication complete:", {
@@ -108,10 +106,17 @@ export const verifyToken = async (req, res, next) => {
       userName: req.user.name,
       userEmail: req.user.email,
     });
-    console.log("   req.userId set to:", req.userId);
-    console.log("   req.user set to:", req.user.email);
+    
+    // ✅ CRITICAL: Verify it's set before calling next()
+    if (!req.userId) {
+      console.error("❌ CRITICAL: req.userId is STILL undefined after setting!");
+      return res.status(500).json({
+        success: false,
+        message: "Internal authentication error"
+      });
+    }
+    
     console.log("===== VERIFICATION COMPLETE =====\n");
-
     next();
   } catch (error) {
     console.error("\n❌ ===== TOKEN VERIFICATION FAILED =====");
