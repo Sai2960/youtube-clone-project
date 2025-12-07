@@ -1,44 +1,33 @@
-// server/routes/short.js - FIXED UPLOAD ROUTE
+// server/routes/short.js - COMPLETE WORKING VERSION
 
 import express from 'express';
+import multer from 'multer';
+import { cloudinary } from '../config/cloudinary.js';
 import * as shortController from '../controllers/shortController.js';
 import { verifyToken } from '../middleware/auth.js';
 import Comment from '../Modals/comment.js';
 import Short from '../Modals/short.js';
 import { translateComment } from '../controllers/translation.js';
-import { uploadShortsVideo, uploadShortsThumbnail } from '../config/cloudinary.js';
 
 const router = express.Router();
 
 console.log('✅ Shorts routes loading...');
 
 // ============================================================================
-// PUBLIC ROUTES (No authentication required)
+// PUBLIC ROUTES
 // ============================================================================
 
-// Get all shorts (feed/homepage)
 router.get('/', shortController.getAllShorts);
-
-// Get shorts by channel
 router.get('/channel/:userId', shortController.getShortsByChannel);
-
-// Get single short by ID
 router.get('/:id', shortController.getShortById);
-
-// Get comments for a short
 router.get('/:id/comments', shortController.getComments);
-
-// Share short (increment counter) - Public
 router.post('/:id/share', shortController.shareShort);
-
-// Increment view count - Public
 router.post('/:id/view', shortController.incrementView);
 
 // ============================================================================
-// PROTECTED ROUTES (Authentication required)
+// UPLOAD ROUTE - FIXED VERSION
 // ============================================================================
 
-// ✅ CRITICAL FIX: Upload route with proper Cloudinary multer handling
 router.post('/upload', 
   verifyToken,
   (req, res, next) => {
@@ -46,75 +35,131 @@ router.post('/upload',
     console.log('User:', req.user?.name);
     console.log('User ID:', req.user?._id);
     
-    // Create combined upload middleware
-    const upload = (req, res, next) => {
-      // First handle video upload
-      uploadShortsVideo.single('video')(req, res, (videoErr) => {
-        if (videoErr) {
-          console.error('❌ Video upload error:', videoErr);
-          return res.status(400).json({
-            success: false,
-            message: `Video upload failed: ${videoErr.message}`
-          });
-        }
+    // ✅ Use fields() to handle both video and thumbnail
+    const upload = multer({
+      storage: multer.memoryStorage(),
+      limits: {
+        fileSize: 100 * 1024 * 1024, // 100MB
+        files: 2
+      }
+    }).fields([
+      { name: 'video', maxCount: 1 },
+      { name: 'thumbnail', maxCount: 1 }
+    ]);
 
-        console.log('✅ Video uploaded:', req.file?.path?.substring(0, 80));
-
-        // Store video file info temporarily
-        const videoFile = req.file;
-
-        // Now handle thumbnail upload
-        uploadShortsThumbnail.single('thumbnail')(req, res, (thumbErr) => {
-          if (thumbErr) {
-            console.error('❌ Thumbnail upload error:', thumbErr);
-            return res.status(400).json({
-              success: false,
-              message: `Thumbnail upload failed: ${thumbErr.message}`
-            });
-          }
-
-          console.log('✅ Thumbnail uploaded:', req.file?.path?.substring(0, 80));
-
-          // Store thumbnail file info
-          const thumbnailFile = req.file;
-
-          // Create files object with both uploads
-          req.files = {
-            video: [videoFile],
-            thumbnail: [thumbnailFile]
-          };
-
-          console.log('✅ Both files uploaded successfully');
-          next();
+    upload(req, res, async (err) => {
+      if (err) {
+        console.error('❌ Multer error:', err);
+        return res.status(400).json({
+          success: false,
+          message: `File upload error: ${err.message}`
         });
-      });
-    };
+      }
 
-    upload(req, res, next);
+      if (!req.files || !req.files.video || !req.files.thumbnail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Both video and thumbnail files are required'
+        });
+      }
+
+      console.log('✅ Files received, uploading to Cloudinary...');
+
+      try {
+        const videoFile = req.files.video[0];
+        const thumbnailFile = req.files.thumbnail[0];
+
+        // Upload video
+        const videoUploadPromise = new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'youtube-clone/shorts/videos',
+              resource_type: 'video',
+              format: 'mp4',
+              chunk_size: 6000000,
+              transformation: [
+                {
+                  video_codec: 'auto',
+                  audio_codec: 'aac',
+                  audio_frequency: 44100,
+                  quality: 'auto'
+                }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(videoFile.buffer);
+        });
+
+        // Upload thumbnail
+        const thumbnailUploadPromise = new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'youtube-clone/shorts/thumbnails',
+              resource_type: 'image',
+              format: 'jpg',
+              transformation: [
+                {
+                  width: 720,
+                  height: 1280,
+                  crop: 'fill',
+                  quality: 'auto'
+                }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(thumbnailFile.buffer);
+        });
+
+        const [videoResult, thumbnailResult] = await Promise.all([
+          videoUploadPromise,
+          thumbnailUploadPromise
+        ]);
+
+        console.log('✅ Cloudinary uploads complete');
+        console.log('   Video:', videoResult.secure_url.substring(0, 80));
+        console.log('   Thumbnail:', thumbnailResult.secure_url.substring(0, 80));
+
+        // Attach URLs for controller
+        req.files.video[0].path = videoResult.secure_url;
+        req.files.video[0].filename = videoResult.public_id;
+        req.files.thumbnail[0].path = thumbnailResult.secure_url;
+        req.files.thumbnail[0].filename = thumbnailResult.public_id;
+
+        next();
+      } catch (cloudinaryError) {
+        console.error('❌ Cloudinary error:', cloudinaryError);
+        return res.status(500).json({
+          success: false,
+          message: `Cloudinary upload failed: ${cloudinaryError.message}`
+        });
+      }
+    });
   },
   shortController.uploadShort
 );
 
-// Like/unlike short
+// ============================================================================
+// OTHER PROTECTED ROUTES
+// ============================================================================
+
 router.post('/:id/like', verifyToken, shortController.likeShort);
-
-// Dislike/undislike short
 router.post('/:id/dislike', verifyToken, shortController.dislikeShort);
-
-// Add comment to short
 router.post('/:id/comment', verifyToken, shortController.addComment);
-
-// Subscribe to channel
 router.post('/channel/:channelId/subscribe', verifyToken, shortController.subscribeToChannel);
-
-// Delete short
 router.delete('/:id', verifyToken, shortController.deleteShort);
 
 // ============================================================================
-// COMMENT ROUTES
+// COMMENT ROUTES (keeping your existing code)
 // ============================================================================
 
-// Like comment
 router.post('/:shortId/comments/:commentId/like', verifyToken, async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -208,7 +253,6 @@ router.post('/:shortId/comments/:commentId/like', verifyToken, async (req, res) 
   }
 });
 
-// Dislike comment
 router.post('/:shortId/comments/:commentId/dislike', verifyToken, async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -302,7 +346,6 @@ router.post('/:shortId/comments/:commentId/dislike', verifyToken, async (req, re
   }
 });
 
-// Delete comment
 router.delete('/:shortId/comments/:commentId', verifyToken, async (req, res) => {
   try {
     const { shortId, commentId } = req.params;
@@ -365,7 +408,6 @@ router.delete('/:shortId/comments/:commentId', verifyToken, async (req, res) => 
   }
 });
 
-// Report comment
 router.post('/:shortId/comments/:commentId/report', verifyToken, async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -435,7 +477,6 @@ router.post('/:shortId/comments/:commentId/report', verifyToken, async (req, res
   }
 });
 
-// Translate comment
 router.post('/:shortId/comments/:commentId/translate', verifyToken, async (req, res) => {
   try {
     req.params.id = req.params.commentId;
