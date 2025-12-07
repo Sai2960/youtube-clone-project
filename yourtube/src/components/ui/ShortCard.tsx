@@ -88,7 +88,7 @@
             
             {/* Avatar + Channel Name */}
             <div className="flex items-center gap-2">
-            // REPLACE the avatar img (around line 85):
+            
 <img
   key={`card-${short._id}-${Date.now()}`}
   src={channelAvatar}

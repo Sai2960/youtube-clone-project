@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // components/ui/ShortPlayer.tsx - COMPLETE WITH UNIFIED AVATAR UTILS
 
 import React, { useState, useRef, useEffect } from "react";

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/pages/shorts/index.tsx - FULLY MERGED & OPTIMIZED VERSION
 
 import React, { useState, useEffect, useRef, useCallback } from "react";

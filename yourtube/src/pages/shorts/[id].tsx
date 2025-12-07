@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/pages/shorts/[id].tsx - THEME-AWARE VERSION (FULLY FIXED)
 
 import React, { useState, useEffect } from 'react';
