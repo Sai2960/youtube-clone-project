@@ -14,7 +14,7 @@ const BASE_URL = getBackendURL();
 export const getVideoURL = (filepath) => {
   if (!filepath) return null;
   
-  const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dxuxxk0ss';
+const CLOUDINARY_CLOUD_NAME = 'dxuxxk0ss';
   const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
   
   const fileStr = String(filepath).trim();
