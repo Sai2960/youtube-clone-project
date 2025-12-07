@@ -344,9 +344,14 @@ export const getShortById = async (req, res) => {
   }
 };
 // Upload new short
+// Upload new short - FIXED VERSION
 export const uploadShort = async (req, res) => {
   try {
-    console.log("📤 Processing short upload...");
+    console.log('📤 ===== UPLOAD SHORT STARTED =====');
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('Files:', req.files);
+    console.log('User:', req.user);
+    console.log('=====================================');
 
     const { title, description, duration, tags, category } = req.body;
     const userId = req.user._id;
@@ -354,21 +359,21 @@ export const uploadShort = async (req, res) => {
     if (!title || !duration) {
       return res.status(400).json({
         success: false,
-        message: "Title and duration are required",
+        message: 'Title and duration are required',
       });
     }
 
     if (!req.files || !req.files.video || !req.files.thumbnail) {
       return res.status(400).json({
         success: false,
-        message: "Both video and thumbnail files are required",
+        message: 'Both video and thumbnail files are required',
       });
     }
 
     if (parseInt(duration) > 60) {
       return res.status(400).json({
         success: false,
-        message: "Shorts must be 60 seconds or less",
+        message: 'Shorts must be 60 seconds or less',
       });
     }
 
@@ -376,19 +381,44 @@ export const uploadShort = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
+    // ✅ CRITICAL: Get Cloudinary URLs from uploaded files
     const videoFile = req.files.video[0];
     const thumbnailFile = req.files.thumbnail[0];
 
-    const videoUrl = req.files.video[0].path; // Cloudinary URL
-    const thumbnailUrl = req.files.thumbnail[0].path; // Cloudinary URL
+    console.log('📹 Video upload result:', {
+      path: videoFile.path,
+      filename: videoFile.filename,
+      size: videoFile.size,
+      mimetype: videoFile.mimetype
+    });
+
+    console.log('🖼️ Thumbnail upload result:', {
+      path: thumbnailFile.path,
+      filename: thumbnailFile.filename,
+      size: thumbnailFile.size,
+      mimetype: thumbnailFile.mimetype
+    });
+
+    // ✅ Cloudinary URLs are in file.path
+    const videoUrl = videoFile.path; // This is the Cloudinary URL
+    const thumbnailUrl = thumbnailFile.path; // This is the Cloudinary URL
+
+    if (!videoUrl || !thumbnailUrl) {
+      throw new Error('Failed to upload files to Cloudinary');
+    }
+
+    console.log('✅ Cloudinary URLs:', {
+      video: videoUrl.substring(0, 80),
+      thumbnail: thumbnailUrl.substring(0, 80)
+    });
 
     let tagsArray = [];
     try {
-      if (typeof tags === "string") {
+      if (typeof tags === 'string') {
         tagsArray = JSON.parse(tags);
       } else if (Array.isArray(tags)) {
         tagsArray = tags;
@@ -401,17 +431,17 @@ export const uploadShort = async (req, res) => {
 
     const newShort = new Short({
       title,
-      description: description || "",
-      videoUrl,
-      thumbnailUrl,
+      description: description || '',
+      videoUrl, // ✅ Full Cloudinary URL
+      thumbnailUrl, // ✅ Full Cloudinary URL
       duration: parseInt(duration),
       userId,
       channelName: user.channelName || user.channelname || user.name,
       channelAvatar: cleanAvatar || null,
       tags: tagsArray,
-      category: category || "Other",
+      category: category || 'Other',
       isPublic: true,
-      status: "active",
+      status: 'active',
       views: 0,
       likes: [],
       dislikes: [],
@@ -421,32 +451,26 @@ export const uploadShort = async (req, res) => {
 
     await newShort.save();
 
-    console.log("✅ Short uploaded successfully:", newShort._id);
+    console.log('✅ Short uploaded successfully:', newShort._id);
+    console.log('   Video URL:', newShort.videoUrl.substring(0, 80));
+    console.log('   Thumbnail URL:', newShort.thumbnailUrl.substring(0, 80));
 
     res.status(201).json({
       success: true,
-      message: "Short uploaded successfully",
+      message: 'Short uploaded successfully',
       data: {
         ...newShort.toObject(),
-        videoUrl: `${req.protocol}://${req.get("host")}${videoUrl}`,
-        thumbnailUrl: `${req.protocol}://${req.get("host")}${thumbnailUrl}`,
+        videoUrl: newShort.videoUrl, // Already full URL
+        thumbnailUrl: newShort.thumbnailUrl, // Already full URL
       },
     });
   } catch (error) {
-    console.error("❌ Error uploading short:", error);
-
-    if (req.files) {
-      if (req.files.video) {
-        fs.unlinkSync(req.files.video[0].path);
-      }
-      if (req.files.thumbnail) {
-        fs.unlinkSync(req.files.thumbnail[0].path);
-      }
-    }
+    console.error('❌ Error uploading short:', error);
+    console.error('   Stack:', error.stack);
 
     res.status(500).json({
       success: false,
-      message: "Error uploading short",
+      message: 'Error uploading short',
       error: error.message,
     });
   }

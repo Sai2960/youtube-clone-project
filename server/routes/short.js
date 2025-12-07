@@ -1,4 +1,4 @@
-// server/routes/short.js - VERIFIED WORKING VERSION
+// server/routes/short.js - FIXED UPLOAD ROUTE
 
 import express from 'express';
 import * as shortController from '../controllers/shortController.js';
@@ -6,6 +6,7 @@ import { verifyToken } from '../middleware/auth.js';
 import Comment from '../Modals/comment.js';
 import Short from '../Modals/short.js';
 import { translateComment } from '../controllers/translation.js';
+import { uploadShortsVideo, uploadShortsThumbnail } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -18,27 +19,10 @@ console.log('✅ Shorts routes loading...');
 // Get all shorts (feed/homepage)
 router.get('/', shortController.getAllShorts);
 
-// ⭐ CRITICAL: Get shorts by channel - MUST BE BEFORE /:id route
-// This ensures /channel/:userId doesn't get caught by /:id
-router.get('/channel/:userId', async (req, res) => {
-  console.log('\n📡 ===== GET CHANNEL SHORTS REQUEST =====');
-  console.log('Channel User ID:', req.params.userId);
-  console.log('Query params:', req.query);
-  
-  try {
-    // Call the controller function directly
-    await shortController.getShortsByChannel(req, res);
-  } catch (error) {
-    console.error('❌ Error in channel shorts route:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch channel shorts',
-      error: error.message
-    });
-  }
-});
+// Get shorts by channel
+router.get('/channel/:userId', shortController.getShortsByChannel);
 
-// Get single short by ID (MUST come after /channel/:userId)
+// Get single short by ID
 router.get('/:id', shortController.getShortById);
 
 // Get comments for a short
@@ -54,13 +38,60 @@ router.post('/:id/view', shortController.incrementView);
 // PROTECTED ROUTES (Authentication required)
 // ============================================================================
 
-// Upload new short
+// ✅ CRITICAL FIX: Upload route with proper Cloudinary multer handling
 router.post('/upload', 
-  verifyToken, 
-  shortController.upload.fields([
-    { name: 'video', maxCount: 1 },
-    { name: 'thumbnail', maxCount: 1 }
-  ]), 
+  verifyToken,
+  (req, res, next) => {
+    console.log('\n📤 ===== SHORTS UPLOAD REQUEST =====');
+    console.log('User:', req.user?.name);
+    console.log('User ID:', req.user?._id);
+    
+    // Create combined upload middleware
+    const upload = (req, res, next) => {
+      // First handle video upload
+      uploadShortsVideo.single('video')(req, res, (videoErr) => {
+        if (videoErr) {
+          console.error('❌ Video upload error:', videoErr);
+          return res.status(400).json({
+            success: false,
+            message: `Video upload failed: ${videoErr.message}`
+          });
+        }
+
+        console.log('✅ Video uploaded:', req.file?.path?.substring(0, 80));
+
+        // Store video file info temporarily
+        const videoFile = req.file;
+
+        // Now handle thumbnail upload
+        uploadShortsThumbnail.single('thumbnail')(req, res, (thumbErr) => {
+          if (thumbErr) {
+            console.error('❌ Thumbnail upload error:', thumbErr);
+            return res.status(400).json({
+              success: false,
+              message: `Thumbnail upload failed: ${thumbErr.message}`
+            });
+          }
+
+          console.log('✅ Thumbnail uploaded:', req.file?.path?.substring(0, 80));
+
+          // Store thumbnail file info
+          const thumbnailFile = req.file;
+
+          // Create files object with both uploads
+          req.files = {
+            video: [videoFile],
+            thumbnail: [thumbnailFile]
+          };
+
+          console.log('✅ Both files uploaded successfully');
+          next();
+        });
+      });
+    };
+
+    upload(req, res, next);
+  },
   shortController.uploadShort
 );
 
@@ -78,43 +109,6 @@ router.post('/channel/:channelId/subscribe', verifyToken, shortController.subscr
 
 // Delete short
 router.delete('/:id', verifyToken, shortController.deleteShort);
-
-
-// ✅ ONE-TIME: Sync all shorts with current user avatars
-router.get('/admin/sync-avatars', async (req, res) => {
-  try {
-    console.log('🔄 Starting avatar sync...');
-    
-    const shorts = await Short.find().populate('userId', 'avatar image channelName channelname name');
-    let updated = 0;
-    
-    for (const short of shorts) {
-      if (short.userId) {
-        const freshAvatar = short.userId.avatar || short.userId.image;
-        const freshChannelName = short.userId.channelName || short.userId.channelname || short.userId.name;
-        
-        // Only update if different
-        if (short.channelAvatar !== freshAvatar || short.channelName !== freshChannelName) {
-          short.channelAvatar = freshAvatar;
-          short.channelName = freshChannelName;
-          await short.save();
-          updated++;
-        }
-      }
-    }
-    
-    console.log(`✅ Synced ${updated} shorts`);
-    
-    res.json({
-      success: true,
-      message: `Updated ${updated} shorts`,
-      totalShorts: shorts.length
-    });
-  } catch (error) {
-    console.error('❌ Sync error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 
 // ============================================================================
 // COMMENT ROUTES
