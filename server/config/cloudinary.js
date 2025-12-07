@@ -24,32 +24,47 @@ console.log('🎨 Cloudinary configured:', {
 // ==================== STORAGE CONFIGURATIONS ====================
 
 // 🔥 CRITICAL FIX: Lines 24-55
+// 🔥 CRITICAL FIX: Video Storage Configuration
 const videoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'youtube-clone/videos',
-    resource_type: 'video',
-    format: 'mp4',
-    allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
-    chunk_size: 6000000,
-    timeout: 600000,
-    use_filename: true,
-    unique_filename: true,
-    overwrite: false,
-    invalidate: true,
-    // ✅ FIX: Correct public_id function (NOT nested)
-    public_id: (req, file) => {
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(7);
-      return `file_${timestamp}_${randomStr}`;
-    },
-    transformation: {
-      video_codec: 'h264',
-      audio_codec: 'aac',
-      audio_frequency: 44100,
-      bit_rate: '1000k',
-      quality: 'auto:good'
-    }
+  params: async (req, file) => {
+    console.log('📤 Configuring video upload:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+
+    // Generate unique public_id
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const publicId = `file_${timestamp}_${randomStr}`;
+
+    console.log('✅ Generated public_id:', publicId);
+
+    return {
+      folder: 'youtube-clone/videos',
+      resource_type: 'video',
+      public_id: publicId,  // ✅ Set directly, not as function
+      format: 'mp4',
+      allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv'],
+      chunk_size: 6000000,
+      timeout: 600000,
+      use_filename: false,  // ✅ Use our public_id instead
+      unique_filename: false,  // ✅ We're already making it unique
+      overwrite: false,
+      invalidate: true,
+      // ✅ CRITICAL: Preserve audio
+      transformation: [
+        {
+          video_codec: 'h264',
+          audio_codec: 'aac',
+          audio_frequency: 44100,
+          bit_rate: '1000k',
+          quality: 'auto:good',
+          flags: 'lossy'
+        }
+      ]
+    };
   }
 });
 

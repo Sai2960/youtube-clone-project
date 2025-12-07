@@ -2038,4 +2038,60 @@ router.post('/admin/fix-all-videos-final', async (req, res) => {
   }
 });
 
+// ✅ DEBUG: Test Cloudinary upload directly
+router.post('/test-cloudinary-upload',
+  verifyToken,
+  uploadVideo.single('file'),
+  async (req, res) => {
+    console.log('\n🧪 ===== CLOUDINARY UPLOAD TEST =====');
+    console.log('File received:', !!req.file);
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+    
+    console.log('Cloudinary Response:', JSON.stringify(req.file, null, 2));
+    
+    // Try to verify on Cloudinary
+    try {
+      const cloudinary = await import('../config/cloudinary.js');
+      const publicId = req.file.public_id || req.file.filename;
+      
+      console.log('Verifying public_id:', publicId);
+      
+      const videoInfo = await cloudinary.cloudinary.api.resource(publicId, {
+        resource_type: 'video'
+      });
+      
+      console.log('✅ Video found on Cloudinary:', videoInfo);
+      
+      res.json({
+        success: true,
+        message: 'Upload successful and verified!',
+        cloudinaryResponse: req.file,
+        verificationData: {
+          public_id: videoInfo.public_id,
+          url: videoInfo.secure_url,
+          duration: videoInfo.duration,
+          format: videoInfo.format,
+          bytes: videoInfo.bytes
+        }
+      });
+    } catch (error) {
+      console.error('❌ Verification failed:', error);
+      
+      res.status(500).json({
+        success: false,
+        message: 'Upload completed but verification failed',
+        error: error.message,
+        cloudinaryResponse: req.file
+      });
+    }
+  }
+);
+
+
 export default router;

@@ -293,50 +293,47 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    // ✅ CRITICAL: Log EVERYTHING Cloudinary returns
-    console.log("🔍 Full Cloudinary Response:", JSON.stringify(req.file, null, 2));
+    // ✅ CRITICAL: Log COMPLETE Cloudinary response
+    console.log("🔍 Full Cloudinary Response:");
+    console.log(JSON.stringify(req.file, null, 2));
 
-    // ✅ Extract data from req.file
-    const cloudinaryData = {
-      secure_url: req.file.secure_url || req.file.path,
-      public_id: req.file.public_id || req.file.filename,
-      url: req.file.url,
-      format: req.file.format,
-      resource_type: req.file.resource_type,
-      bytes: req.file.size,
-      duration: req.file.duration
-    };
-
-    console.log("📊 Extracted Cloudinary Data:", cloudinaryData);
-
-    // ✅ CRITICAL: Validate we have public_id
-    if (!cloudinaryData.public_id) {
-      console.error("❌ NO PUBLIC_ID IN RESPONSE!");
-      console.error("   Full req.file:", req.file);
+    // ✅ Extract public_id (most important field)
+    const publicId = req.file.public_id || req.file.filename;
+    
+    if (!publicId) {
+      console.error("❌ NO PUBLIC_ID RETURNED FROM CLOUDINARY!");
+      console.error("   This means the file was NOT uploaded!");
+      console.error("   Check Cloudinary dashboard for errors");
       
       return res.status(500).json({
         success: false,
         message: "Upload failed - Cloudinary did not return public_id",
         debug: {
-          hasPath: !!req.file.path,
-          hasFilename: !!req.file.filename,
-          hasSecureUrl: !!req.file.secure_url,
+          cloudinaryResponse: req.file,
           keys: Object.keys(req.file)
         }
       });
     }
 
-    const publicId = cloudinaryData.public_id; // e.g., "youtube-clone/videos/file_1234_abc"
     console.log("✅ Public ID:", publicId);
+    console.log("✅ Secure URL:", req.file.secure_url);
+    console.log("✅ Format:", req.file.format);
+    console.log("✅ Bytes:", req.file.bytes);
 
-    // ✅ Build clean URLs
-    const videoUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
-    const thumbnailUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+    // ✅ Build URLs - remove transforms from public_id if present
+    const cleanPublicId = publicId.replace(/^.*\/upload\/[^/]+\//, '');
+    const baseUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload`;
+    
+    // Video URL with transformations
+    const videoUrl = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
+    
+    // Thumbnail URL (auto-generated from video)
+    const thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
 
-    console.log("✅ Video URL:", videoUrl.substring(0, 80));
-    console.log("✅ Thumbnail URL:", thumbnailUrl.substring(0, 80));
+    console.log("✅ Video URL:", videoUrl.substring(0, 100));
+    console.log("✅ Thumbnail URL:", thumbnailUrl.substring(0, 100));
 
-    // ✅ Get request data
+    // Get request data
     const { videotitle, videodescription, videochanel } = req.body;
     const uploadedBy = req.userId;
 
@@ -368,15 +365,15 @@ export const uploadvideo = async (req, res) => {
     const newVideo = new videofiles({
       videotitle: title,
       videodescription: autoDescription,
-      videofilename: publicId, // ✅ Store public_id
+      videofilename: publicId,
       
-      // ✅ ALL video URL fields = same clean URL
+      // ✅ ALL video URL fields
       filepath: videoUrl,
       videofile: videoUrl,
       videoLink: videoUrl,
       videoUrl: videoUrl,
       
-      // ✅ ALL thumbnail fields = generated thumbnail
+      // ✅ ALL thumbnail fields
       thumbnail: thumbnailUrl,
       videothumbnail: thumbnailUrl,
       thumbnailUrl: thumbnailUrl,
@@ -384,7 +381,7 @@ export const uploadvideo = async (req, res) => {
 
       filename: req.file.originalname,
       filetype: req.file.mimetype,
-      filesize: `${(cloudinaryData.bytes / (1024 * 1024)).toFixed(2)} MB`,
+      filesize: `${(req.file.bytes / (1024 * 1024)).toFixed(2)} MB`,
       videotype: req.file.mimetype,
       uploadedBy,
       user: uploadedBy,
@@ -399,11 +396,11 @@ export const uploadvideo = async (req, res) => {
 
     const savedVideo = await newVideo.save();
 
-    console.log("✅ Video saved:", {
+    console.log("✅ Video saved to database:", {
       _id: savedVideo._id,
       title: savedVideo.videotitle,
-      videoUrl: savedVideo.filepath?.substring(0, 60),
-      thumbnailUrl: savedVideo.thumbnail?.substring(0, 60),
+      videoUrl: savedVideo.filepath?.substring(0, 80),
+      thumbnailUrl: savedVideo.thumbnail?.substring(0, 80),
     });
 
     await savedVideo.populate({
@@ -421,13 +418,39 @@ export const uploadvideo = async (req, res) => {
       console.log("⚠️ Cache clear skipped:", e.message);
     }
 
+    // ✅ CRITICAL: Verify video exists on Cloudinary
+    console.log("\n🔍 Verifying upload on Cloudinary...");
+    try {
+      const cloudinary = await import('../config/cloudinary.js');
+      const videoInfo = await cloudinary.cloudinary.api.resource(publicId, {
+        resource_type: 'video'
+      });
+      
+      console.log("✅ Video verified on Cloudinary:", {
+        duration: videoInfo.duration,
+        format: videoInfo.format,
+        bytes: videoInfo.bytes,
+        created: videoInfo.created_at
+      });
+    } catch (verifyError) {
+      console.error("❌ Video NOT found on Cloudinary:", verifyError.message);
+      console.error("   This means the upload FAILED silently!");
+    }
+
     res.status(201).json({
       success: true,
       message: "Video uploaded successfully",
       video: savedVideo,
       videoUrl: videoUrl,
       thumbnailUrl: thumbnailUrl,
-      publicId: publicId
+      publicId: publicId,
+      cloudinaryData: {
+        secure_url: req.file.secure_url,
+        public_id: publicId,
+        format: req.file.format,
+        bytes: req.file.bytes,
+        duration: req.file.duration
+      }
     });
   } catch (error) {
     console.error("\n❌ VIDEO UPLOAD ERROR:");
