@@ -1084,62 +1084,59 @@ useEffect(() => {
     className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-end md:items-center justify-center"
     onClick={closeDeleteConfirm}
   >
-{/* ✅ MOBILE MODAL - FIXED TEXT WRAPPING & ALIGNMENT */}
+
+{/* ✅ MOBILE MODAL - DESKTOP STYLE */}
 <div
   className="md:hidden rounded-t-3xl w-full shadow-2xl animate-slideUp max-w-md mx-auto overflow-hidden"
   onClick={(e) => e.stopPropagation()}
   style={{
     backgroundColor: 'var(--bg-secondary, #1f2937)',
-    maxHeight: '85vh',
+    maxHeight: '80vh',
   }}
 >
-  <div className="p-4 pb-6 overflow-y-auto max-h-[85vh]">
+  <div className="p-5 pb-6">
     {/* Header */}
-    <div className="flex items-center gap-2.5 mb-4">
-      <div className="bg-red-500/20 p-2 rounded-full flex-shrink-0">
-        <AlertTriangle size={20} className="text-red-500" />
+    <div className="flex items-center gap-3 mb-5">
+      <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
+        <AlertTriangle size={22} className="text-red-500" />
       </div>
-      <h3 className="text-base font-bold leading-tight" style={{ color: 'var(--text-primary, #fff)' }}>
+      <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--text-primary, #fff)' }}>
         Delete Short?
       </h3>
     </div>
 
-    {/* Title Text with Proper Wrapping */}
-    <div className="mb-4">
-      <p className="text-sm leading-relaxed mb-2" style={{ color: 'var(--text-secondary, #d1d5db)' }}>
-        Delete this short?
-      </p>
-      
-      {/* Short Title in Separate Line */}
-      <div 
-        className="bg-gray-800/50 rounded-lg p-2.5 mb-3"
-        style={{ 
-          borderLeft: '3px solid var(--text-primary, #ef4444)',
-        }}
+    {/* Content - Simple & Clean */}
+    <div className="mb-6">
+      <p 
+        className="text-base leading-relaxed mb-1" 
+        style={{ color: 'var(--text-secondary, #d1d5db)' }}
       >
-        <p 
-          className="text-sm font-bold break-words leading-relaxed"
+        Delete{' '}
+        <span 
+          className="font-bold break-words"
           style={{ 
             color: 'var(--text-primary, #fff)',
             wordBreak: 'break-word',
-            overflowWrap: 'break-word',
+            display: 'inline',
           }}
         >
           "{short.title}"
-        </p>
-      </div>
+        </span>
+        ?
+      </p>
       
-      <p className="text-red-400 font-semibold text-xs">
-        ⚠️ This action cannot be undone.
+      <p className="text-red-400 font-semibold text-sm mt-3 flex items-center gap-1.5">
+        <AlertTriangle size={16} />
+        This cannot be undone.
       </p>
     </div>
 
     {/* Buttons */}
-    <div className="flex gap-2">
+    <div className="flex gap-3">
       <button
         onClick={closeDeleteConfirm}
         disabled={isDeleting}
-        className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95"
+        className="flex-1 px-5 py-3.5 rounded-xl font-semibold text-base disabled:opacity-50 transition active:scale-95"
         style={{
           backgroundColor: 'var(--bg-tertiary, #374151)',
           color: 'var(--text-primary, #fff)',
@@ -1154,16 +1151,16 @@ useEffect(() => {
           handleDeleteShort();
         }}
         disabled={isDeleting}
-        className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-1.5 active:scale-95"
+        className="flex-1 px-5 py-3.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-base disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
       >
         {isDeleting ? (
           <>
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-            <span className="text-xs">Deleting...</span>
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+            <span>Deleting...</span>
           </>
         ) : (
           <>
-            <Trash2 size={16} />
+            <Trash2 size={18} />
             <span>Delete</span>
           </>
         )}
