@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320" fill="none">
+  <rect width="180" height="320" fill="#1F2937"/>
+  <circle cx="90" cy="140" r="30" fill="#374151"/>
+  <path d="M80 130L100 140L80 150V130Z" fill="#EF4444"/>
+  <text x="90" y="200" text-anchor="middle" fill="#9CA3AF" font-family="Arial" font-size="12" font-weight="600">
+    Short
+  </text>
+  <text x="90" y="220" text-anchor="middle" fill="#6B7280" font-family="Arial" font-size="10">
+    Thumbnail Loading...
+  </text>
+</svg>
