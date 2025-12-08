@@ -152,70 +152,75 @@ export const getAllShorts = async (req, res) => {
       .lean()
       .maxTimeMS(5000);
   
-    console.log(`✅ Found ${shorts.length} shorts`);
+    console.log(`✅ Found ${shorts.length} shorts from database`);
 
-    // ✅ CRITICAL FIX: Proper URL construction
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
     
     const shortsWithCounts = shorts.map((short) => {
-  // Get fresh avatar
-  let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
+      // Avatar processing
+      let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
+      
+      if (finalAvatar && finalAvatar.startsWith("/uploads/")) {
+        const avatarPath = path.join(__dirname, "..", finalAvatar);
+        if (!fs.existsSync(avatarPath)) {
+          console.warn(`⚠️ Avatar file missing: ${finalAvatar}`);
+          finalAvatar = null;
+        }
+      }
 
-  // Check if avatar file exists for local uploads
-  if (finalAvatar && finalAvatar.startsWith("/uploads/")) {
-    const avatarPath = path.join(__dirname, "..", finalAvatar);
-    if (!fs.existsSync(avatarPath)) {
-      console.warn(`⚠️ Avatar file missing: ${finalAvatar}`);
-      finalAvatar = null;
-    }
-  }
+      finalAvatar = processAvatar(finalAvatar, req) || 
+        `${baseUrl}/api/proxy-image?url=${encodeURIComponent("https://github.com/shadcn.png")}`;
 
-  // Process avatar
-  finalAvatar = processAvatar(finalAvatar, req) || 
-    `${baseUrl}/api/proxy-image?url=${encodeURIComponent("https://github.com/shadcn.png")}`;
+      // ✅ CRITICAL FIX: Use Cloudinary URLs directly - NO path construction
+      let videoUrl = short.videoUrl;
+      let thumbnailUrl = short.thumbnailUrl;
 
-  // ✅ CRITICAL FIX: Use Cloudinary URLs directly - NO manipulation
-  let videoUrl = short.videoUrl;
-  let thumbnailUrl = short.thumbnailUrl;
+      // Validate URLs
+      if (videoUrl) {
+        if (videoUrl.includes('cloudinary.com')) {
+          console.log("✅ Cloudinary video:", videoUrl.substring(0, 80));
+        } else {
+          console.error("❌ WARNING: Non-Cloudinary video URL:", short._id, videoUrl);
+        }
+      } else {
+        console.error("❌ CRITICAL: Missing video URL for short:", short._id);
+      }
 
-  // Validate URLs
-  if (videoUrl) {
-    if (videoUrl.includes('cloudinary.com')) {
-      console.log("✅ Cloudinary video URL:", videoUrl.substring(0, 80));
-    } else {
-      console.error("❌ WARNING: Non-Cloudinary video URL:", videoUrl);
-    }
-  } else {
-    console.error("❌ CRITICAL: Missing video URL for short:", short._id);
-  }
+      if (thumbnailUrl) {
+        if (thumbnailUrl.includes('cloudinary.com')) {
+          // Good
+        } else {
+          console.error("❌ WARNING: Non-Cloudinary thumbnail:", short._id, thumbnailUrl);
+        }
+      }
 
-  return {
-    ...short,
-    videoUrl,      // ✅ Use directly from database
-    thumbnailUrl,  // ✅ Use directly from database
-    channelAvatar: finalAvatar,
-    channelName: short.channelName || 
-      short.userId?.channelName || 
-      short.userId?.channelname || 
-      short.userId?.name || 
-      "Unknown",
-    likesCount: short.likes ? short.likes.length : 0,
-    dislikesCount: short.dislikes ? short.dislikes.length : 0,
-    commentsCount: short.comments ? short.comments.length : 0,
-    userId: {
-      ...short.userId,
-      avatar: finalAvatar,
-      image: finalAvatar,
-    },
-  };
-});
+      return {
+        ...short,
+        videoUrl,      // ✅ Use directly from database
+        thumbnailUrl,  // ✅ Use directly from database
+        channelAvatar: finalAvatar,
+        channelName: short.channelName || 
+          short.userId?.channelName || 
+          short.userId?.channelname || 
+          short.userId?.name || 
+          "Unknown",
+        likesCount: short.likes ? short.likes.length : 0,
+        dislikesCount: short.dislikes ? short.dislikes.length : 0,
+        commentsCount: short.comments ? short.comments.length : 0,
+        userId: {
+          ...short.userId,
+          avatar: finalAvatar,
+          image: finalAvatar,
+        },
+      };
+    });
 
     const total = await Short.countDocuments({
       isPublic: true,
       status: "active",
     });
 
-    console.log(`✅ Returning ${shortsWithCounts.length} shorts with proper URLs`);
+    console.log(`✅ Returning ${shortsWithCounts.length} shorts`);
 
     res.status(200).json({
       success: true,
@@ -265,7 +270,7 @@ export const getShortById = async (req, res) => {
     const hasDisliked = userId
       ? short.dislikes.some((dislike) => dislike.toString() === userId.toString())
       : false;
-      
+
 const finalAvatar = getBestAvatar(short, req);
 
 // ✅ CRITICAL FIX: Use Cloudinary URLs directly - NO construction

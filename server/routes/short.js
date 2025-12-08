@@ -493,4 +493,124 @@ router.post('/:shortId/comments/:commentId/translate', verifyToken, async (req, 
 
 console.log('✅ Shorts routes loaded successfully');
 
+// ✅ ADMIN: Fix all existing shorts URLs
+router.post('/admin/fix-all-shorts', async (req, res) => {
+  try {
+    console.log('\n🔧 ===== FIXING ALL SHORTS URLS =====');
+    
+    const shorts = await Short.find({});
+    
+    let fixed = 0;
+    let alreadyGood = 0;
+    let unfixable = 0;
+    const results = [];
+
+    for (const short of shorts) {
+      const isCloudinary = (url) => url && url.includes('cloudinary.com') && url.startsWith('https://');
+      
+      // Check if already good
+      if (isCloudinary(short.videoUrl) && isCloudinary(short.thumbnailUrl)) {
+        alreadyGood++;
+        continue;
+      }
+
+      // Try to fix
+      let videoFixed = false;
+      let thumbnailFixed = false;
+
+      // Video URL
+      if (!isCloudinary(short.videoUrl)) {
+        if (short.videoUrl && short.videoUrl.includes('cloudinary.com')) {
+          // Has cloudinary but wrong protocol
+          short.videoUrl = short.videoUrl.replace('http://', 'https://');
+          videoFixed = true;
+        } else {
+          console.error(`❌ Cannot fix video for short ${short._id}`);
+          unfixable++;
+          continue;
+        }
+      }
+
+      // Thumbnail URL
+      if (!isCloudinary(short.thumbnailUrl)) {
+        if (short.thumbnailUrl && short.thumbnailUrl.includes('cloudinary.com')) {
+          short.thumbnailUrl = short.thumbnailUrl.replace('http://', 'https://');
+          thumbnailFixed = true;
+        } else {
+          console.error(`❌ Cannot fix thumbnail for short ${short._id}`);
+        }
+      }
+
+      if (videoFixed || thumbnailFixed) {
+        await short.save();
+        fixed++;
+        results.push({
+          id: short._id,
+          title: short.title,
+          videoUrl: short.videoUrl.substring(0, 60),
+          thumbnailUrl: short.thumbnailUrl.substring(0, 60)
+        });
+        console.log(`✅ Fixed: ${short.title}`);
+      }
+    }
+
+    console.log(`\n✅ Fixed: ${fixed}, Already Good: ${alreadyGood}, Unfixable: ${unfixable}`);
+
+    res.json({
+      success: true,
+      summary: {
+        total: shorts.length,
+        fixed,
+        alreadyGood,
+        unfixable
+      },
+      results: results.slice(0, 10)
+    });
+  } catch (error) {
+    console.error('❌ Fix error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ✅ ADMIN: Check shorts status
+router.get('/admin/check-shorts', async (req, res) => {
+  try {
+    const shorts = await Short.find({})
+      .select('_id title videoUrl thumbnailUrl')
+      .lean();
+
+    const isCloudinary = (url) => url && url.includes('cloudinary.com') && url.startsWith('https://');
+
+    const analysis = shorts.map(s => ({
+      id: s._id,
+      title: s.title,
+      videoUrl: s.videoUrl?.substring(0, 60),
+      thumbnailUrl: s.thumbnailUrl?.substring(0, 60),
+      status: {
+        video: isCloudinary(s.videoUrl) ? '✅' : '❌',
+        thumbnail: isCloudinary(s.thumbnailUrl) ? '✅' : '❌'
+      }
+    }));
+
+    const summary = {
+      total: shorts.length,
+      valid: analysis.filter(s => s.status.video === '✅' && s.status.thumbnail === '✅').length,
+      invalid: analysis.filter(s => s.status.video === '❌' || s.status.thumbnail === '❌').length
+    };
+
+    res.json({
+      success: true,
+      summary,
+      shorts: analysis
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
 export default router;
