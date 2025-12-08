@@ -16,7 +16,6 @@ import {
   getShortChannelName,
 } from "@/lib/imageUtils";
 import { VideoGridSkeleton } from "@/components/VideoSkeleton";
-// Line ~10 - ADD this import
 import { getThumbnailUrl as getThumbnailUrlHelper } from '@/lib/urlHelper';
 
 interface Video {
@@ -48,6 +47,7 @@ interface Short {
   title: string;
   videoUrl: string;
   thumbnailUrl: string;
+  thumbnail?: string;
   views: number;
   channelName?: string;
   channelAvatar?: string;
@@ -59,6 +59,60 @@ interface Short {
     avatar?: string;
   };
 }
+// ============================================================================
+// THUMBNAIL HELPER FOR SHORTS - FIXED VERSION
+// ============================================================================
+const getShortThumbnail = (short: any): string => {
+  // Priority 1: Explicit thumbnail URL
+  if (short.thumbnailUrl && short.thumbnailUrl.startsWith('https://res.cloudinary.com')) {
+    return short.thumbnailUrl;
+  }
+  
+  if (short.thumbnail && short.thumbnail.startsWith('https://res.cloudinary.com')) {
+    return short.thumbnail;
+  }
+  
+  // Priority 2: Generate from video URL
+  if (short.videoUrl && short.videoUrl.includes('cloudinary.com')) {
+    try {
+      const videoUrl = short.videoUrl;
+      
+      // Extract public_id from video URL
+      if (videoUrl.includes('/video/upload/')) {
+        // Remove version numbers first
+        const cleanUrl = videoUrl.replace(/\/v\d+\//g, '/');
+        
+        const parts = cleanUrl.split('/video/upload/');
+        if (parts.length === 2) {
+          // Get the part after /video/upload/
+          const afterUpload = parts[1];
+          
+          // Remove any transformation parameters
+          const pathParts = afterUpload.split('/').filter(part => 
+            !part.includes('f_') && 
+            !part.includes('vc_') && 
+            !part.includes('ac_') &&
+            !part.includes('br_') &&
+            !part.includes('q_')
+          );
+          
+          const pathWithoutExtension = pathParts.join('/').replace(/\.(mp4|mov|avi|mkv|webm)$/i, '');
+          
+          // Build thumbnail URL
+          const thumbnailUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${pathWithoutExtension}.jpg`;
+          
+          console.log('🖼️ Generated short thumbnail:', thumbnailUrl.substring(0, 80));
+          return thumbnailUrl;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error generating short thumbnail:', error);
+    }
+  }
+  
+  // Fallback: inline SVG placeholder
+  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
+};
 
 // Dynamic API URL based on hostname
 const getApiUrl = () => {
@@ -81,7 +135,6 @@ const getBackendUrl = () => {
   }
   return process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.0.181:5000";
 };
-
 const Home: NextPage = () => {
   const router = useRouter();
   const [videos, setVideos] = useState<Video[]>([]);
@@ -99,7 +152,6 @@ const Home: NextPage = () => {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const isDragging = useRef(false);
-
   useEffect(() => {
     fetchVideos();
     fetchShorts();
@@ -112,7 +164,9 @@ const Home: NextPage = () => {
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
+  }, []);
 
+  useEffect(() => {
     // Listen for avatar updates
     const handleAvatarUpdate = () => {
       const newKeys: Record<string, number> = {};
@@ -127,8 +181,22 @@ const Home: NextPage = () => {
     window.addEventListener("avatarUpdated", handleAvatarUpdate);
     return () =>
       window.removeEventListener("avatarUpdated", handleAvatarUpdate);
-  }, []);
+  }, [videos]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener("touchstart", handleTouchStart as any);
+      container.addEventListener("touchmove", handleTouchMove as any);
+      container.addEventListener("touchend", handleTouchEnd);
+
+      return () => {
+        container.removeEventListener("touchstart", handleTouchStart as any);
+        container.removeEventListener("touchmove", handleTouchMove as any);
+        container.removeEventListener("touchend", handleTouchEnd);
+      };
+    }
+  }, [pullDistance]);
   const fetchVideos = async () => {
     try {
       setLoadingVideos(true);
@@ -211,43 +279,6 @@ const Home: NextPage = () => {
     }
     startY.current = 0;
   };
-
-  useEffect(() => {
-    const loadVideos = async () => {
-      try {
-        const response = await axiosInstance.get("/video/getall");
-        console.log("📊 Videos loaded:", {
-          total: response.data.videos?.length,
-          success: response.data.success,
-          firstVideo: response.data.videos?.[0],
-        });
-
-        if (response.data.success && response.data.videos) {
-          setVideos(response.data.videos);
-        }
-      } catch (error) {
-        console.error("❌ Load videos error:", error);
-      }
-    };
-
-    loadVideos();
-  }, []);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("touchstart", handleTouchStart as any);
-      container.addEventListener("touchmove", handleTouchMove as any);
-      container.addEventListener("touchend", handleTouchEnd);
-
-      return () => {
-        container.removeEventListener("touchstart", handleTouchStart as any);
-        container.removeEventListener("touchmove", handleTouchMove as any);
-        container.removeEventListener("touchend", handleTouchEnd);
-      };
-    }
-  }, [pullDistance]);
-
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";
     if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M views`;
@@ -286,7 +317,6 @@ const Home: NextPage = () => {
     return "Just now";
   };
 
-  // REPLACE lines 54-68 (the getVideoUrl function) with:
   const getVideoUrl = (video: Video) => {
     const backend = "https://youtube-clone-project-q3pd.onrender.com";
 
@@ -311,50 +341,21 @@ const Home: NextPage = () => {
 
     return "/video/vdo.mp4";
   };
-const getThumbnailUrl = (video: Video) => {
-    // Priority 1: Explicit thumbnail fields
-  const thumbnail = getThumbnailUrl(video);
-  
-  // If thumbnail exists and is a Cloudinary URL, use it
-if (thumbnail) {
-    console.log('✅ Thumbnail from helper:', thumbnail.substring(0, 60));
-    return thumbnail;
-  }
-  
-  // If thumbnail exists and is a full URL (non-Cloudinary), use it
- console.warn('⚠️ No thumbnail available, using placeholder');
-  return '/placeholder-thumbnail.jpg';
 
-  
-  
-  // Priority 2: Generate from video URL
-  const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
-  
-  if (videoUrl && videoUrl.includes('res.cloudinary.com') && videoUrl.includes('/video/upload/')) {
-    try {
-      // Extract path after /video/upload/ (removing any existing transformations)
-      const parts = videoUrl.split('/video/upload/');
-      if (parts.length === 2) {
-        const pathAfterUpload = parts[1]
-          .split('/')
-          .filter(part => !part.includes('f_') && !part.includes('vc_') && !part.includes('ac_'))
-          .join('/');
-        
-        const generatedThumbnail = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${pathAfterUpload}`
-          .replace(/\.(mp4|mov|avi|mkv|webm)$/i, '.jpg');
-        
-        console.log('🖼️ Generated thumbnail from video:', generatedThumbnail.substring(0, 80));
-        return generatedThumbnail;
-      }
-    } catch (error) {
-      console.error('❌ Error generating thumbnail:', error);
+  const getThumbnailUrl = (video: Video) => {
+    // Priority 1: Use helper function
+    const thumbnail = getThumbnailUrlHelper(video);
+    
+    // If thumbnail exists and is a Cloudinary URL, use it
+    if (thumbnail) {
+      console.log('✅ Thumbnail from helper:', thumbnail.substring(0, 60));
+      return thumbnail;
     }
-  }
-  
-  // Fallback
-  console.warn('⚠️ No thumbnail available for video:', video?._id);
-  return '/placeholder-thumbnail.jpg';
-};
+    
+    // Fallback
+    console.warn('⚠️ No thumbnail available, using placeholder');
+    return '/placeholder-thumbnail.jpg';
+  };
 
   const scrollShorts = (direction: "left" | "right") => {
     if (shortsScrollRef.current) {
@@ -413,7 +414,6 @@ if (thumbnail) {
       query: { start: index.toString() },
     });
   };
-
   return (
     <>
       <Head>
@@ -452,7 +452,6 @@ if (thumbnail) {
             </div>
           </div>
         )}
-
         {/* Shorts Section */}
         {shorts.length > 0 && (
           <section className="py-3 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
@@ -531,11 +530,32 @@ if (thumbnail) {
                         className="flex-shrink-0 w-[120px] cursor-pointer group/short lg:w-[200px]"
                       >
                         <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 border border-transparent lg:border-gray-200 dark:lg:border-gray-700">
+                          {/* FIXED THUMBNAIL */}
                           <img
-                            src={short.thumbnailUrl}
+                            src={getShortThumbnail(short)}
                             alt={short.title}
                             className="w-full h-full object-cover group-hover/short:scale-110 transition-transform duration-500"
                             loading="lazy"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              if (!target.src.includes('data:image/svg')) {
+                                // Try one more time with regex extraction
+                                if (short.videoUrl && short.videoUrl.includes('cloudinary.com')) {
+                                  try {
+                                    const match = short.videoUrl.match(/youtube-clone\/shorts\/videos\/([^.\/]+)/);
+                                    if (match) {
+                                      const publicId = `youtube-clone/shorts/videos/${match[1]}`;
+                                      target.src = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+                                      return;
+                                    }
+                                  } catch (err) {
+                                    console.error('❌ Retry failed:', err);
+                                  }
+                                }
+                                // Final fallback
+                                target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3C/svg%3E';
+                              }
+                            }}
                           />
 
                           <div className="hidden lg:flex absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/short:opacity-100 transition-all duration-300 items-center justify-center">
@@ -607,6 +627,9 @@ if (thumbnail) {
             )}
           </section>
         )}
+
+
+
 
         {/* Videos Section - FIXED MOBILE LAYOUT */}
         <section className="px-3 py-4 lg:px-6">
