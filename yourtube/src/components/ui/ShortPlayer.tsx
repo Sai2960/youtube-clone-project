@@ -1426,14 +1426,14 @@ useEffect(() => {
         </div>
       )}
 
-      {/* MOBILE OPTIMIZED CONTENT SECTION */}
+     {/* MOBILE OPTIMIZED CONTENT SECTION */}
       <div className="absolute bottom-0 left-0 right-0 z-[30]">
-        <div className="p-3 pb-24 md:p-4 md:pb-4">
-          <div className="flex items-end justify-between gap-3">
-              {/* Left Content */}
-            <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-120px)] lg:max-w-[calc(100%-140px)]">
+        <div className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24">
+          <div className="flex items-end justify-between gap-3 md:gap-4 lg:gap-6">
+            {/* Left Content */}
+            <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-140px)] lg:max-w-[calc(100%-160px)]">
               {/* Channel info */}
-              <div className="flex items-center mb-2.5 md:mb-3 pointer-events-auto">
+              <div className="flex items-center mb-2.5 md:mb-3 lg:mb-4 pointer-events-auto">
                 <img
                   key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
                   src={getImageUrl(
@@ -1441,7 +1441,7 @@ useEffect(() => {
                     true
                   )}
                   alt={channelName}
-                  className="w-9 h-9 md:w-11 md:h-11 lg:w-12 lg:h-12 rounded-full mr-2.5 md:mr-3 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
+                  className="w-9 h-9 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full mr-2.5 md:mr-3 lg:mr-4 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
                   onClick={handleChannelClick}
                   crossOrigin="anonymous"
                   loading="eager"
@@ -1465,7 +1465,7 @@ useEffect(() => {
                 />
                 <div className="flex-1 min-w-0 mr-2 md:mr-3">
                   <p
-                    className="font-semibold text-sm md:text-base lg:text-lg cursor-pointer hover:underline truncate leading-tight mb-0.5 md:mb-1"
+                    className="font-semibold text-sm md:text-lg lg:text-xl cursor-pointer hover:underline truncate leading-tight mb-0.5 md:mb-1"
                     onClick={handleChannelClick}
                   >
                     @{channelName}
@@ -1478,7 +1478,7 @@ useEffect(() => {
                 {!isOwnShort && (
                   <button
                     onClick={handleSubscribe}
-                    className={`ml-1 px-4 md:px-7 lg:px-8 py-1.5 md:py-2 lg:py-2.5 rounded-full font-semibold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 flex-shrink-0 ${
+                    className={`ml-1 px-4 md:px-8 lg:px-10 py-1.5 md:py-2.5 lg:py-3 rounded-full font-semibold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 flex-shrink-0 ${
                       isSubscribed
                         ? "bg-youtube-hover text-youtube-primary"
                         : "bg-white text-black hover:bg-gray-100"
@@ -1491,8 +1491,8 @@ useEffect(() => {
               </div>
 
               {/* Title & Description */}
-              <div className="mb-1.5 md:mb-2.5">
-                <h3 className="font-bold text-base md:text-lg lg:text-xl mb-1 md:mb-1.5 line-clamp-2 leading-snug">
+              <div className="mb-2 md:mb-3 lg:mb-4">
+                <h3 className="font-bold text-base md:text-xl lg:text-2xl mb-1 md:mb-2 line-clamp-2 leading-snug">
                   {translatedTitle}
                 </h3>
                 {translatedDescription && (
@@ -1502,38 +1502,37 @@ useEffect(() => {
                 )}
               </div>
 
-              {/* Views Count - Enhanced for Desktop */}
-              <p className="text-xs md:text-sm lg:text-base text-gray-400 font-medium md:font-semibold">
+              {/* Views Count - ALWAYS VISIBLE */}
+              <p className="text-xs md:text-base lg:text-lg text-gray-400 font-medium md:font-bold">
                 {formatCount(viewsCount)} views
               </p>
             </div>
 
-       {/* Right Action Buttons - FULLY RESPONSIVE */}
-            
-<div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-4 lg:gap-5 md:pb-0">
+            {/* Right Action Buttons - FULLY RESPONSIVE */}
+            <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-5 md:pb-0 lg:gap-6">
               {/* Like Button */}
               <button
                 onClick={handleLike}
-                className="flex flex-col items-center gap-0.5 md:gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <div
-                  className={`rounded-full p-2.5 md:p-3 lg:p-3.5 transition-all shadow-lg border flex items-center justify-center ${
+                  className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
                     hasLiked
                       ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
-                  } w-[48px] h-[48px] md:w-[58px] md:h-[58px] lg:w-[64px] lg:h-[64px]`}
+                  } p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]`}
                 >
                   <ThumbsUp
                     className={`${
                       hasLiked ? "text-white" : "text-white"
-                    } w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7`}
+                    } w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
                     fill={hasLiked ? "white" : "none"}
                     strokeWidth={2.5}
                   />
                 </div>
                 <span
-                  className="text-[10px] md:text-xs lg:text-sm font-bold transition-colors leading-none"
+                  className="text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none"
                   style={{ color: hasLiked ? "#60a5fa" : "white" }}
                 >
                   {formatCount(likesCount)}
@@ -1543,26 +1542,26 @@ useEffect(() => {
               {/* Dislike Button */}
               <button
                 onClick={handleDislike}
-                className="flex flex-col items-center gap-0.5 md:gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <div
-                  className={`rounded-full p-2.5 md:p-3 lg:p-3.5 transition-all shadow-lg border flex items-center justify-center ${
+                  className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
                     hasDisliked
                       ? "bg-red-600 border-red-500 shadow-red-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
-                  } w-[48px] h-[48px] md:w-[58px] md:h-[58px] lg:w-[64px] lg:h-[64px]`}
+                  } p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]`}
                 >
                   <ThumbsDown
                     className={`${
                       hasDisliked ? "text-white" : "text-white"
-                    } w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7`}
+                    } w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
                     fill={hasDisliked ? "white" : "none"}
                     strokeWidth={2.5}
                   />
                 </div>
                 <span
-                  className="text-[10px] md:text-xs lg:text-sm font-bold transition-colors leading-none"
+                  className="text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none"
                   style={{ color: hasDisliked ? "#f87171" : "white" }}
                 >
                   Dislike
@@ -1575,16 +1574,16 @@ useEffect(() => {
                   e.stopPropagation();
                   setShowComments(true);
                 }}
-                className="flex flex-col items-center gap-0.5 md:gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 md:p-3 lg:p-3.5 transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center w-[48px] h-[48px] md:w-[58px] md:h-[58px] lg:w-[64px] lg:h-[64px]">
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
                   <MessageCircle
-                    className="text-white w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
+                    className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
                     strokeWidth={2.5}
                   />
                 </div>
-                <span className="text-white text-[10px] md:text-xs lg:text-sm font-bold transition-colors leading-none">
+                <span className="text-white text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none">
                   {formatCount(commentsCount)}
                 </span>
               </button>
@@ -1592,67 +1591,68 @@ useEffect(() => {
               {/* Share Button */}
               <button
                 onClick={handleShareClick}
-                className="flex flex-col items-center gap-0.5 md:gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 md:p-3 lg:p-3.5 transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center w-[48px] h-[48px] md:w-[58px] md:h-[58px] lg:w-[64px] lg:h-[64px]">
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
                   <Share2
-                    className="text-white w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
+                    className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
                     strokeWidth={2.5}
                   />
                 </div>
-                <span className="text-white text-[10px] md:text-xs lg:text-sm font-bold transition-colors leading-none">
+                <span className="text-white text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none">
                   Share
                 </span>
               </button>
 
-              {/* Volume Control - THEME AWARE */}
+              {/* Volume Control - FIXED FOR DESKTOP */}
               <div className="relative flex flex-col items-center w-full volume-control">
                 <button
                   onClick={toggleVolumeSlider}
-                  className="flex flex-col items-center gap-0.5 md:gap-1 transition-all transform hover:scale-105 active:scale-95 group touch-manipulation w-full"
+                  className="flex flex-col items-center gap-1 transition-all transform hover:scale-105 active:scale-95 group touch-manipulation w-full"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 md:p-3 lg:p-3.5 transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center w-[48px] h-[48px] md:w-[58px] md:h-[58px] lg:w-[64px] lg:h-[64px]">
+                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
                     {isMuted || volume === 0 ? (
                       <VolumeX
-                        className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
+                        className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
                         strokeWidth={2.5}
                       />
                     ) : (
                       <Volume2
-                        className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
+                        className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
                         strokeWidth={2.5}
                       />
                     )}
                   </div>
-                  <span className="text-white text-[10px] md:text-xs lg:text-sm font-bold leading-none">
+                  {/* VOLUME PERCENTAGE - NOW ALWAYS VISIBLE */}
+                  <span className="text-white text-[11px] md:text-sm lg:text-base font-bold leading-none whitespace-nowrap">
                     {Math.round(volume * 100)}%
                   </span>
                 </button>
 
-                {/* Volume Slider Popup - THEME AWARE & PROPERLY POSITIONED */}
+                {/* Volume Slider Popup */}
                 {showVolumeSlider && (
                   <div
-                    className="absolute bottom-full mb-2 md:mb-3 rounded-xl p-2.5 shadow-2xl md:p-3.5 lg:p-4 border right-0"
+                    className="absolute bottom-full mb-3 rounded-xl shadow-2xl border right-0 p-3 md:p-4 lg:p-5"
                     style={{
                       backgroundColor: "var(--bg-secondary)",
                       backdropFilter: "blur(16px)",
                       borderColor: "var(--border-color)",
-                      minWidth: "90px",
+                      minWidth: "95px",
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex flex-col items-center gap-2.5 md:gap-3">
+                    <div className="flex flex-col items-center gap-3 md:gap-4">
                       <span
-                        className="text-sm md:text-base lg:text-lg font-bold"
+                        className="text-base md:text-lg lg:text-xl font-bold"
                         style={{ color: "var(--text-primary)" }}
                       >
                         {Math.round(volume * 100)}%
                       </span>
 
                       <div
-                        className="relative h-28 md:h-32 lg:h-36 w-2 md:w-2.5 rounded-full overflow-hidden"
+                        className="relative h-32 md:h-36 lg:h-40 w-2.5 md:w-3 rounded-full overflow-hidden"
                         style={{ backgroundColor: "var(--bg-hover)" }}
                       >
                         <div
@@ -1677,66 +1677,57 @@ useEffect(() => {
                         />
                       </div>
 
-                      <div className="flex flex-col gap-1 md:gap-1.5 w-full">
+                      <div className="flex flex-col gap-1.5 w-full">
                         <button
                           onClick={() => handleVolumeChange(1)}
-                          className="text-xs md:text-sm transition px-2 md:px-3 py-1.5 md:py-2 rounded text-center font-medium"
+                          className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
                           style={{
                             color: "var(--text-secondary)",
                             backgroundColor: "transparent",
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color =
-                              "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
                           }}
                         >
                           100%
                         </button>
                         <button
                           onClick={() => handleVolumeChange(0.5)}
-                          className="text-xs md:text-sm transition px-2 md:px-3 py-1.5 md:py-2 rounded text-center font-medium"
+                          className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
                           style={{
                             color: "var(--text-secondary)",
                             backgroundColor: "transparent",
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color =
-                              "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
                           }}
                         >
                           50%
                         </button>
                         <button
                           onClick={() => handleVolumeChange(0)}
-                          className="text-xs md:text-sm transition px-2 md:px-3 py-1.5 md:py-2 rounded text-center font-medium"
+                          className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
                           style={{
                             color: "var(--text-secondary)",
                             backgroundColor: "transparent",
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color =
-                              "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
                           }}
                         >
                           Mute
@@ -1751,6 +1742,8 @@ useEffect(() => {
         </div>
       </div>
 
+
+      
       {/* Modals */}
       {showShareModal && (
         <ShareModal
