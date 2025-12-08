@@ -1085,51 +1085,56 @@ useEffect(() => {
     onClick={closeDeleteConfirm}
   >
 
-{/* ✅ MOBILE MODAL - CLEAN & PROPER */}
+{/* ✅ MOBILE MODAL - WITH SCROLL */}
 <div
   className="md:hidden rounded-t-3xl w-full shadow-2xl animate-slideUp max-w-md mx-auto overflow-hidden"
   onClick={(e) => e.stopPropagation()}
   style={{
     backgroundColor: 'var(--bg-secondary, #2d2d2d)',
-    maxHeight: '85vh',
+    maxHeight: '80vh',
+    display: 'flex',
+    flexDirection: 'column',
   }}
 >
-  <div className="p-5 pb-6 overflow-y-auto max-h-[85vh]">
-    {/* Header */}
-    <div className="flex items-center gap-3 mb-5">
-      <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
-        <AlertTriangle size={22} className="text-red-500" />
-      </div>
-      <h3 className="text-lg font-bold leading-tight text-white">
-        Delete Short?
-      </h3>
+  {/* Fixed Header */}
+  <div className="flex items-center gap-3 p-5 pb-4 border-b border-gray-700 flex-shrink-0">
+    <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
+      <AlertTriangle size={22} className="text-red-500" />
     </div>
+    <h3 className="text-lg font-bold leading-tight text-white">
+      Delete Short?
+    </h3>
+  </div>
 
-    {/* Title Text - Multi-line with proper wrapping */}
-    <div className="mb-5">
-      <p className="text-[15px] leading-relaxed text-gray-300">
-        Delete{' '}
-        <span className="text-white font-semibold break-words block mt-1">
-          "{short.title}"
-        </span>
-        ?
+  {/* Scrollable Content */}
+  <div className="flex-1 overflow-y-auto px-5 py-4" style={{ overscrollBehavior: 'contain' }}>
+    {/* Title Text */}
+    <div className="mb-4">
+      <p className="text-[15px] leading-relaxed text-gray-300 mb-1">
+        Delete
       </p>
+      <p className="text-white font-semibold text-base leading-relaxed break-words">
+        "{short.title}"
+      </p>
+      <p className="text-[15px] text-gray-300 mt-1">?</p>
     </div>
     
     {/* Warning */}
-    <div className="flex items-start gap-2 mb-6">
+    <div className="flex items-start gap-2">
       <AlertTriangle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
       <p className="text-red-400 font-semibold text-sm">
         This cannot be undone.
       </p>
     </div>
+  </div>
 
-    {/* Buttons */}
+  {/* Fixed Buttons at Bottom */}
+  <div className="p-5 pt-4 border-t border-gray-700 flex-shrink-0">
     <div className="flex gap-3">
       <button
         onClick={closeDeleteConfirm}
         disabled={isDeleting}
-        className="flex-1 px-5 py-3.5 rounded-xl font-semibold text-base disabled:opacity-50 transition active:scale-95 bg-gray-700 text-white"
+        className="flex-1 px-5 py-3.5 rounded-xl font-semibold text-base disabled:opacity-50 transition active:scale-95 bg-gray-700 text-white hover:bg-gray-600"
       >
         Cancel
       </button>
