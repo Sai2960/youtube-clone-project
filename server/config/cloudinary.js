@@ -34,25 +34,21 @@ const videoStorage = new CloudinaryStorage({
       size: file.size
     });
 
-    // Generate unique public_id
+    // Generate unique filename
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
-    const publicId = `file_${timestamp}_${randomStr}`;
-
-    console.log('✅ Generated public_id:', publicId);
-
+    
     return {
       folder: 'youtube-clone/videos',
       resource_type: 'video',
-      public_id: publicId,  // ✅ Set directly, not as function
+      public_id: `file_${timestamp}_${randomStr}`, // ✅ Fixed: Direct string, not function
       format: 'mp4',
       allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv'],
       chunk_size: 6000000,
       timeout: 600000,
-      use_filename: false,  // ✅ Use our public_id instead
-      unique_filename: false,  // ✅ We're already making it unique
+      use_filename: false,
+      unique_filename: false,
       overwrite: false,
-      invalidate: true,
       // ✅ CRITICAL: Preserve audio
       transformation: [
         {

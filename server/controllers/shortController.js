@@ -158,75 +158,57 @@ export const getAllShorts = async (req, res) => {
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
     
     const shortsWithCounts = shorts.map((short) => {
-      // Get fresh avatar
-      let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
+  // Get fresh avatar
+  let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
 
-      // Check if avatar file exists for local uploads
-      if (finalAvatar && finalAvatar.startsWith("/uploads/")) {
-        const avatarPath = path.join(__dirname, "..", finalAvatar);
-        if (!fs.existsSync(avatarPath)) {
-          console.warn(`⚠️ Avatar file missing: ${finalAvatar}`);
-          finalAvatar = null;
-        }
-      }
+  // Check if avatar file exists for local uploads
+  if (finalAvatar && finalAvatar.startsWith("/uploads/")) {
+    const avatarPath = path.join(__dirname, "..", finalAvatar);
+    if (!fs.existsSync(avatarPath)) {
+      console.warn(`⚠️ Avatar file missing: ${finalAvatar}`);
+      finalAvatar = null;
+    }
+  }
 
-      // Process avatar
-      finalAvatar = processAvatar(finalAvatar, req) || 
-        `${baseUrl}/api/proxy-image?url=${encodeURIComponent("https://github.com/shadcn.png")}`;
+  // Process avatar
+  finalAvatar = processAvatar(finalAvatar, req) || 
+    `${baseUrl}/api/proxy-image?url=${encodeURIComponent("https://github.com/shadcn.png")}`;
 
-      // ✅ CRITICAL: Construct proper video URL
-      let videoUrl = short.videoUrl;
-      if (videoUrl) {
-        // If Cloudinary URL, use as-is
-        if (videoUrl.includes('cloudinary.com')) {
-          console.log("✅ Cloudinary video:", videoUrl.substring(0, 80));
-        }
-        // If local path, construct full URL
-        else if (videoUrl.startsWith('/uploads/')) {
-          videoUrl = `${baseUrl}${videoUrl}`;
-          console.log("✅ Local video URL:", videoUrl.substring(0, 80));
-        }
-        // If relative path without leading slash
-        else if (!videoUrl.startsWith('http')) {
-          videoUrl = `${baseUrl}/uploads/shorts/videos/${videoUrl}`;
-          console.log("✅ Constructed video URL:", videoUrl.substring(0, 80));
-        }
-      } else {
-        console.error("❌ No video URL for short:", short._id);
-      }
+  // ✅ CRITICAL FIX: Use Cloudinary URLs directly - NO manipulation
+  let videoUrl = short.videoUrl;
+  let thumbnailUrl = short.thumbnailUrl;
 
-      // ✅ CRITICAL: Construct proper thumbnail URL
-      let thumbnailUrl = short.thumbnailUrl;
-      if (thumbnailUrl) {
-        if (thumbnailUrl.includes('cloudinary.com')) {
-          // Cloudinary - use as-is
-        } else if (thumbnailUrl.startsWith('/uploads/')) {
-          thumbnailUrl = `${baseUrl}${thumbnailUrl}`;
-        } else if (!thumbnailUrl.startsWith('http')) {
-          thumbnailUrl = `${baseUrl}/uploads/shorts/thumbnails/${thumbnailUrl}`;
-        }
-      }
+  // Validate URLs
+  if (videoUrl) {
+    if (videoUrl.includes('cloudinary.com')) {
+      console.log("✅ Cloudinary video URL:", videoUrl.substring(0, 80));
+    } else {
+      console.error("❌ WARNING: Non-Cloudinary video URL:", videoUrl);
+    }
+  } else {
+    console.error("❌ CRITICAL: Missing video URL for short:", short._id);
+  }
 
-      return {
-        ...short,
-        videoUrl, // ✅ Use processed URL
-        thumbnailUrl, // ✅ Use processed URL
-        channelAvatar: finalAvatar,
-        channelName: short.channelName || 
-          short.userId?.channelName || 
-          short.userId?.channelname || 
-          short.userId?.name || 
-          "Unknown",
-        likesCount: short.likes ? short.likes.length : 0,
-        dislikesCount: short.dislikes ? short.dislikes.length : 0,
-        commentsCount: short.comments ? short.comments.length : 0,
-        userId: {
-          ...short.userId,
-          avatar: finalAvatar,
-          image: finalAvatar,
-        },
-      };
-    });
+  return {
+    ...short,
+    videoUrl,      // ✅ Use directly from database
+    thumbnailUrl,  // ✅ Use directly from database
+    channelAvatar: finalAvatar,
+    channelName: short.channelName || 
+      short.userId?.channelName || 
+      short.userId?.channelname || 
+      short.userId?.name || 
+      "Unknown",
+    likesCount: short.likes ? short.likes.length : 0,
+    dislikesCount: short.dislikes ? short.dislikes.length : 0,
+    commentsCount: short.comments ? short.comments.length : 0,
+    userId: {
+      ...short.userId,
+      avatar: finalAvatar,
+      image: finalAvatar,
+    },
+  };
+});
 
     const total = await Short.countDocuments({
       isPublic: true,
@@ -283,31 +265,25 @@ export const getShortById = async (req, res) => {
     const hasDisliked = userId
       ? short.dislikes.some((dislike) => dislike.toString() === userId.toString())
       : false;
+      
+const finalAvatar = getBestAvatar(short, req);
 
-    const finalAvatar = getBestAvatar(short, req);
+// ✅ CRITICAL FIX: Use Cloudinary URLs directly - NO construction
+let videoUrl = short.videoUrl;
+let thumbnailUrl = short.thumbnailUrl;
 
-    // ✅ CRITICAL: Proper URL construction
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-    
-    let videoUrl = short.videoUrl;
-    if (videoUrl && !videoUrl.startsWith('http') && !videoUrl.includes('cloudinary.com')) {
-      if (videoUrl.startsWith('/uploads/')) {
-        videoUrl = `${baseUrl}${videoUrl}`;
-      } else {
-        videoUrl = `${baseUrl}/uploads/shorts/videos/${videoUrl}`;
-      }
-    }
+// Validate and log only
+if (videoUrl) {
+  if (videoUrl.includes('cloudinary.com')) {
+    console.log("✅ Using Cloudinary video:", videoUrl.substring(0, 80));
+  } else {
+    console.error("❌ WARNING: Non-Cloudinary video URL:", videoUrl);
+  }
+} else {
+  console.error("❌ CRITICAL: Missing video URL for short:", short._id);
+}
 
-    let thumbnailUrl = short.thumbnailUrl;
-    if (thumbnailUrl && !thumbnailUrl.startsWith('http') && !thumbnailUrl.includes('cloudinary.com')) {
-      if (thumbnailUrl.startsWith('/uploads/')) {
-        thumbnailUrl = `${baseUrl}${thumbnailUrl}`;
-      } else {
-        thumbnailUrl = `${baseUrl}/uploads/shorts/thumbnails/${thumbnailUrl}`;
-      }
-    }
-
-    console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
+console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
 
     res.status(200).json({
       success: true,
