@@ -34,6 +34,10 @@ router.post('/upload',
     console.log('\n📤 ===== SHORTS UPLOAD REQUEST =====');
     console.log('User:', req.user?.name);
     console.log('User ID:', req.user?._id);
+    console.log('Headers:', {
+      contentType: req.headers['content-type'],
+      contentLength: req.headers['content-length']
+    });
     
     // ✅ Use fields() to handle both video and thumbnail
     const upload = multer({
@@ -52,23 +56,44 @@ router.post('/upload',
         console.error('❌ Multer error:', err);
         return res.status(400).json({
           success: false,
-          message: `File upload error: ${err.message}`
+          message: `File upload error: ${err.message}`,
+          code: 'MULTER_ERROR'
         });
       }
+
+      console.log('📦 Files received:');
+      console.log('   Video:', req.files?.video?.[0] ? `${req.files.video[0].originalname} (${(req.files.video[0].size / 1024 / 1024).toFixed(2)}MB)` : 'MISSING');
+      console.log('   Thumbnail:', req.files?.thumbnail?.[0] ? `${req.files.thumbnail[0].originalname} (${(req.files.thumbnail[0].size / 1024 / 1024).toFixed(2)}MB)` : 'MISSING');
 
       if (!req.files || !req.files.video || !req.files.thumbnail) {
+        console.error('❌ Missing files');
         return res.status(400).json({
           success: false,
-          message: 'Both video and thumbnail files are required'
+          message: 'Both video and thumbnail files are required',
+          received: {
+            video: !!req.files?.video,
+            thumbnail: !!req.files?.thumbnail
+          }
         });
       }
 
-      console.log('✅ Files received, uploading to Cloudinary...');
+      console.log('✅ Files validated, uploading to Cloudinary...');
 
       try {
         const videoFile = req.files.video[0];
         const thumbnailFile = req.files.thumbnail[0];
 
+        // ✅ Verify Cloudinary config
+        if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+          console.error('❌ Cloudinary not configured!');
+          return res.status(500).json({
+            success: false,
+            message: 'Server configuration error: Cloudinary credentials missing'
+          });
+        }
+
+        console.log('📤 Uploading video to Cloudinary...');
+        
         // Upload video
         const videoUploadPromise = new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
@@ -77,6 +102,7 @@ router.post('/upload',
               resource_type: 'video',
               format: 'mp4',
               chunk_size: 6000000,
+              timeout: 120000, // 2 minutes
               transformation: [
                 {
                   video_codec: 'auto',
@@ -87,12 +113,19 @@ router.post('/upload',
               ]
             },
             (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
+              if (error) {
+                console.error('❌ Video upload error:', error);
+                reject(error);
+              } else {
+                console.log('✅ Video uploaded:', result.secure_url.substring(0, 80));
+                resolve(result);
+              }
             }
           );
           uploadStream.end(videoFile.buffer);
         });
+
+        console.log('📤 Uploading thumbnail to Cloudinary...');
 
         // Upload thumbnail
         const thumbnailUploadPromise = new Promise((resolve, reject) => {
@@ -101,6 +134,7 @@ router.post('/upload',
               folder: 'youtube-clone/shorts/thumbnails',
               resource_type: 'image',
               format: 'jpg',
+              timeout: 60000, // 1 minute
               transformation: [
                 {
                   width: 720,
@@ -111,8 +145,13 @@ router.post('/upload',
               ]
             },
             (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
+              if (error) {
+                console.error('❌ Thumbnail upload error:', error);
+                reject(error);
+              } else {
+                console.log('✅ Thumbnail uploaded:', result.secure_url.substring(0, 80));
+                resolve(result);
+              }
             }
           );
           uploadStream.end(thumbnailFile.buffer);
@@ -123,9 +162,7 @@ router.post('/upload',
           thumbnailUploadPromise
         ]);
 
-        console.log('✅ Cloudinary uploads complete');
-        console.log('   Video:', videoResult.secure_url.substring(0, 80));
-        console.log('   Thumbnail:', thumbnailResult.secure_url.substring(0, 80));
+        console.log('✅ Both uploads complete');
 
         // Attach URLs for controller
         req.files.video[0].path = videoResult.secure_url;
@@ -138,14 +175,15 @@ router.post('/upload',
         console.error('❌ Cloudinary error:', cloudinaryError);
         return res.status(500).json({
           success: false,
-          message: `Cloudinary upload failed: ${cloudinaryError.message}`
+          message: `Upload failed: ${cloudinaryError.message}`,
+          code: 'CLOUDINARY_ERROR',
+          details: process.env.NODE_ENV === 'development' ? cloudinaryError : undefined
         });
       }
     });
   },
   shortController.uploadShort
 );
-
 // ============================================================================
 // OTHER PROTECTED ROUTES
 // ============================================================================
