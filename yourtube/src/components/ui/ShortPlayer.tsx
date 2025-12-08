@@ -1612,31 +1612,28 @@ useEffect(() => {
                 </span>
               </button>
 
-              {/* Volume Control - THEME AWARE */}
-              <div className="relative flex flex-col items-center min-h-[56px] min-w-[56px] justify-center md:min-h-[48px] md:min-w-[48px] volume-control">
+             {/* Volume Control - THEME AWARE */}
+              <div className="relative flex flex-col items-center min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px] volume-control">
                 <button
   onClick={toggleVolumeSlider}
-  className="flex flex-col items-center gap-1 transition-all transform hover:scale-110 active:scale-95 group"
+  className="flex flex-col items-center transition-all transform hover:scale-110 active:scale-95 group"
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
-                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-3 transition-all shadow-lg md:p-3.5">
+                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
                     {isMuted || volume === 0 ? (
                       <VolumeX
-                        size={24}
+                        size={22}
                         className="text-white group-hover:text-yellow-400 transition-colors md:w-[26px] md:h-[26px]"
                         strokeWidth={2.5}
                       />
                     ) : (
                       <Volume2
-                        size={24}
+                        size={22}
                         className="text-white group-hover:text-yellow-400 transition-colors md:w-[26px] md:h-[26px]"
                         strokeWidth={2.5}
                       />
                     )}
                   </div>
-                  <span className="text-white text-xs font-bold leading-none">
-                    {Math.round(volume * 100)}%
-                  </span>
                 </button>
 
                 {/* Volume Slider Popup - THEME AWARE */}
