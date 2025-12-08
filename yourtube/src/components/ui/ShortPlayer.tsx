@@ -1508,7 +1508,7 @@ useEffect(() => {
               </p>
             </div>
 
-        {/* Right Action Buttons - MOBILE OPTIMIZED */}
+      {/* Right Action Buttons - MOBILE OPTIMIZED */}
             
 <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-5 md:pb-0">
               {/* Like Button */}
@@ -1518,23 +1518,22 @@ useEffect(() => {
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
                 <div
-               className={`rounded-full p-2.5 transition-all shadow-lg border w-[48px] h-[48px] flex items-center justify-center ${
+               className={`rounded-full p-2.5 transition-all shadow-lg border flex items-center justify-center ${
                     hasLiked
                       ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50"
-                  }`}
+                  } w-[48px] h-[48px] md:w-[56px] md:h-[56px]`}
                 >
                   <ThumbsUp
-                    size={20}
                     className={`${
                       hasLiked ? "text-white" : "text-white"
-                    }`}
+                    } w-5 h-5 md:w-6 md:h-6`}
                     fill={hasLiked ? "white" : "none"}
                     strokeWidth={2.5}
                   />
                 </div>
                 <span
-                 className="text-[10px] font-bold transition-colors leading-none"
+                 className="text-[10px] md:text-xs font-bold transition-colors leading-none"
                   style={{ color: hasLiked ? "#60a5fa" : "white" }}
                 >
                   {formatCount(likesCount)}
@@ -1549,23 +1548,22 @@ useEffect(() => {
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
                 <div
-                  className={`rounded-full p-2.5 transition-all shadow-lg border w-[48px] h-[48px] flex items-center justify-center ${
+                  className={`rounded-full p-2.5 transition-all shadow-lg border flex items-center justify-center ${
                     hasDisliked
                       ? "bg-red-600 border-red-500 shadow-red-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50"
-                  }`}
+                  } w-[48px] h-[48px] md:w-[56px] md:h-[56px]`}
                 >
                   <ThumbsDown
-                    size={20}
                     className={`${
                       hasDisliked ? "text-white" : "text-white"
-                    }`}
+                    } w-5 h-5 md:w-6 md:h-6`}
                     fill={hasDisliked ? "white" : "none"}
                     strokeWidth={2.5}
                   />
                 </div>
                 <span
-                  className="text-[10px] font-bold transition-colors leading-none"
+                  className="text-[10px] md:text-xs font-bold transition-colors leading-none"
                   style={{ color: hasDisliked ? "#f87171" : "white" }}
                 >
                   Dislike
@@ -1581,14 +1579,13 @@ useEffect(() => {
   className="flex flex-col items-center gap-0.5 transition-all transform active:scale-95 group touch-manipulation w-full"
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg w-[48px] h-[48px] flex items-center justify-center">
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg flex items-center justify-center w-[48px] h-[48px] md:w-[56px] md:h-[56px]">
                   <MessageCircle
-                    size={20}
-                    className="text-white"
+                    className="text-white w-5 h-5 md:w-6 md:h-6"
                     strokeWidth={2.5}
                   />
                 </div>
-                <span className="text-white text-[10px] font-bold transition-colors leading-none">
+                <span className="text-white text-[10px] md:text-xs font-bold transition-colors leading-none">
                   {formatCount(commentsCount)}
                 </span>
               </button>
@@ -1600,14 +1597,13 @@ useEffect(() => {
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
 
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg w-[48px] h-[48px] flex items-center justify-center">
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg flex items-center justify-center w-[48px] h-[48px] md:w-[56px] md:h-[56px]">
                   <Share2
-                    size={20}
-                    className="text-white"
+                    className="text-white w-5 h-5 md:w-6 md:h-6"
                     strokeWidth={2.5}
                   />
                 </div>
-                <span className="text-white text-[10px] font-bold transition-colors leading-none">
+                <span className="text-white text-[10px] md:text-xs font-bold transition-colors leading-none">
                   Share
                 </span>
               </button>
@@ -1619,22 +1615,20 @@ useEffect(() => {
   className="flex flex-col items-center gap-0.5 transition-all transform hover:scale-105 active:scale-95 group touch-manipulation w-full"
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
-                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg w-[48px] h-[48px] flex items-center justify-center">
+                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg flex items-center justify-center w-[48px] h-[48px] md:w-[56px] md:h-[56px]">
                     {isMuted || volume === 0 ? (
                       <VolumeX
-                        size={20}
-                        className="text-white group-hover:text-yellow-400 transition-colors"
+                        className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6"
                         strokeWidth={2.5}
                       />
                     ) : (
                       <Volume2
-                        size={20}
-                        className="text-white group-hover:text-yellow-400 transition-colors"
+                        className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6"
                         strokeWidth={2.5}
                       />
                     )}
                   </div>
-                  <span className="text-white text-[10px] font-bold leading-none">
+                  <span className="text-white text-[10px] md:text-xs font-bold leading-none">
                     {Math.round(volume * 100)}%
                   </span>
                 </button>
@@ -1642,7 +1636,7 @@ useEffect(() => {
                 {/* Volume Slider Popup - THEME AWARE */}
                 {showVolumeSlider && (
                   <div
-                    className="absolute bottom-full right-0 mb-2 rounded-xl p-2.5 shadow-2xl md:p-3 border"
+                    className="absolute bottom-full mb-2 rounded-xl p-2.5 shadow-2xl md:p-3 border md:right-0 md:left-auto right-1/2 md:translate-x-0 translate-x-1/2"
                     style={{
                       backgroundColor: "var(--bg-secondary)",
                       backdropFilter: "blur(16px)",
