@@ -1085,48 +1085,41 @@ useEffect(() => {
     onClick={closeDeleteConfirm}
   >
 
-{/* ✅ MOBILE MODAL - DESKTOP STYLE */}
+{/* ✅ MOBILE MODAL - CLEAN & PROPER */}
 <div
   className="md:hidden rounded-t-3xl w-full shadow-2xl animate-slideUp max-w-md mx-auto overflow-hidden"
   onClick={(e) => e.stopPropagation()}
   style={{
-    backgroundColor: 'var(--bg-secondary, #1f2937)',
-    maxHeight: '80vh',
+    backgroundColor: 'var(--bg-secondary, #2d2d2d)',
+    maxHeight: '85vh',
   }}
 >
-  <div className="p-5 pb-6">
+  <div className="p-5 pb-6 overflow-y-auto max-h-[85vh]">
     {/* Header */}
     <div className="flex items-center gap-3 mb-5">
       <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
         <AlertTriangle size={22} className="text-red-500" />
       </div>
-      <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--text-primary, #fff)' }}>
+      <h3 className="text-lg font-bold leading-tight text-white">
         Delete Short?
       </h3>
     </div>
 
-    {/* Content - Simple & Clean */}
-    <div className="mb-6">
-      <p 
-        className="text-base leading-relaxed mb-1" 
-        style={{ color: 'var(--text-secondary, #d1d5db)' }}
-      >
+    {/* Title Text - Multi-line with proper wrapping */}
+    <div className="mb-5">
+      <p className="text-[15px] leading-relaxed text-gray-300">
         Delete{' '}
-        <span 
-          className="font-bold break-words"
-          style={{ 
-            color: 'var(--text-primary, #fff)',
-            wordBreak: 'break-word',
-            display: 'inline',
-          }}
-        >
+        <span className="text-white font-semibold break-words block mt-1">
           "{short.title}"
         </span>
         ?
       </p>
-      
-      <p className="text-red-400 font-semibold text-sm mt-3 flex items-center gap-1.5">
-        <AlertTriangle size={16} />
+    </div>
+    
+    {/* Warning */}
+    <div className="flex items-start gap-2 mb-6">
+      <AlertTriangle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+      <p className="text-red-400 font-semibold text-sm">
         This cannot be undone.
       </p>
     </div>
@@ -1136,11 +1129,7 @@ useEffect(() => {
       <button
         onClick={closeDeleteConfirm}
         disabled={isDeleting}
-        className="flex-1 px-5 py-3.5 rounded-xl font-semibold text-base disabled:opacity-50 transition active:scale-95"
-        style={{
-          backgroundColor: 'var(--bg-tertiary, #374151)',
-          color: 'var(--text-primary, #fff)',
-        }}
+        className="flex-1 px-5 py-3.5 rounded-xl font-semibold text-base disabled:opacity-50 transition active:scale-95 bg-gray-700 text-white"
       >
         Cancel
       </button>
