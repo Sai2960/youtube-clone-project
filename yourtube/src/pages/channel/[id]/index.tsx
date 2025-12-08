@@ -570,118 +570,144 @@ const ChannelPage = () => {
             </div>
           )}
 
-      {/* Shorts Content - MERGED BEST VERSION */}
-          {contentTab === 'shorts' && (
-            <div>
-              {shortsLoading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600 dark:text-gray-400">Loading shorts...</p>
-                </div>
-              ) : shortsError ? (
-                <div className="text-center py-12">
-                  <div className="bg-red-100 dark:bg-red-900/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                    <Film className="w-10 h-10 text-red-600" />
+    {/* Shorts Content - EXACT YOUTUBE LAYOUT */}
+{contentTab === 'shorts' && (
+  <div>
+    {shortsLoading ? (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-400">Loading shorts...</p>
+      </div>
+    ) : shortsError ? (
+      <div className="text-center py-12">
+        <div className="bg-red-100 dark:bg-red-900/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+          <Film className="w-10 h-10 text-red-600" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          Error Loading Shorts
+        </h3>
+        <p className="text-red-600 dark:text-red-400 mb-4">{shortsError}</p>
+        <button
+          onClick={() => setRefreshKey(prev => prev + 1)}
+          className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    ) : shorts.length > 0 ? (
+      <div>
+        {/* Header with count */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+              <Play className="w-5 h-5 text-white" fill="white" />
+            </div>
+            Shorts
+          </h2>
+          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+            {shorts.length} short{shorts.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {/* EXACT YOUTUBE SHORTS GRID - Mobile optimized */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3">
+          {shorts.map((short) => (
+            <div
+              key={short._id}
+              onClick={() => router.push(`/shorts?id=${short._id}`)}
+              className="group cursor-pointer"
+            >
+              {/* Shorts Card Container */}
+              <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden bg-black shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-500">
+                
+                {/* 9:16 Aspect Ratio Container */}
+                <div className="relative w-full" style={{ paddingBottom: '177.78%' }}>
+                  
+                  {/* Thumbnail Image */}
+                  <img
+                    src={short.thumbnailUrl || short.thumbnail || '/placeholder-thumbnail.jpg'}
+                    alt={short.title}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    onError={(e) => {
+                      console.error('❌ Short thumbnail failed:', short._id);
+                      e.currentTarget.src = '/placeholder-thumbnail.jpg';
+                    }}
+                  />
+                  
+                  {/* Bottom Gradient Overlay */}
+                  <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none" />
+
+                  {/* Views Badge - Bottom Left */}
+                  <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1">
+                    <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="white" />
+                    <span>{(short.views || 0).toLocaleString()}</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    Error Loading Shorts
-                  </h3>
-                  <p className="text-red-600 dark:text-red-400 mb-4">{shortsError}</p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : shorts.length > 0 ? (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      Shorts
-                    </h2>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {shorts.length} short{shorts.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
 
-                  {/* EXACT YOUTUBE SHORTS LAYOUT - Enhanced Version */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                    {shorts.map((short) => (
-                      <div
-                        key={short._id}
-                        onClick={() => router.push(`/shorts?id=${short._id}`)}
-                        className="group cursor-pointer"
-                      >
-                        {/* Shorts Card - Exact YouTube Style */}
-                        <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black shadow-lg hover:shadow-2xl transition-all duration-300">
-                          {/* 9:16 Aspect Ratio Container */}
-                          <div className="relative w-full" style={{ paddingBottom: '177.78%' }}>
-                            {/* Thumbnail */}
-                            <img
-                              src={short.thumbnailUrl || short.thumbnail}
-                              alt={short.title}
-                              className="absolute inset-0 w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                            
-                            {/* Dark Gradient Overlay at Bottom */}
-                            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none" />
+                  {/* Duration Badge - Bottom Right (if available) */}
+                  {short.duration && (
+                    <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md">
+                      {short.duration}s
+                    </div>
+                  )}
 
-                            {/* Views Badge - Bottom Left */}
-                            <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1">
-                              <Play className="w-3 h-3" fill="white" />
-                              <span>{(short.views || 0).toLocaleString()} views</span>
-                            </div>
-
-                            {/* Duration Badge - Bottom Right (if available) */}
-                            {short.duration && (
-                              <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-md">
-                                {short.duration}s
-                              </div>
-                            )}
-
-                            {/* Play Button Overlay - Center (on hover) */}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
-                              <div className="opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300">
-                                <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
-                                  <Play className="w-7 h-7 text-white ml-1" fill="white" />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Title & Channel Info Below Thumbnail */}
-                        <div className="mt-3 px-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-2 group-hover:text-red-600 transition-colors">
-                            {short.title}
-                          </h3>
-                          
-                          {/* Channel Info */}
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0">
-                              <Avatar className="w-full h-full">
-                                <AvatarImage
-                                  src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
-                                  alt={short.userId?.channelName || short.userId?.name || 'Channel'}
-                                  className="w-full h-full object-cover"
-                                />
-                                <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-xs font-bold">
-                                  {(short.userId?.channelName || short.userId?.name || 'U')[0].toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            </div>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1">
-                              {short.userId?.channelName || short.userId?.name || 'Unknown'}
-                            </p>
-                          </div>
-                        </div>
+                  {/* Hover Play Button Overlay - Desktop Only */}
+                  <div className="hidden sm:flex absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-red-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
+                        <Play className="w-5 h-5 sm:w-7 sm:h-7 text-white ml-0.5 sm:ml-1" fill="white" />
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
-              ) : (
+              </div>
+
+              {/* Title & Channel Info Below Card */}
+              <div className="mt-2 sm:mt-3 px-0.5">
+                {/* Video Title */}
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight sm:leading-snug mb-1.5 sm:mb-2 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
+                  {short.title}
+                </h3>
+                
+                {/* Channel Avatar + Name */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {/* Channel Avatar */}
+                  <div 
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/channel/${short.userId?._id || channel?._id}`);
+                    }}
+                  >
+                    <Avatar className="w-full h-full">
+                      <AvatarImage
+                        src={getImageUrl(short.userId?.image || short.userId?.avatar || channel?.image, true)}
+                        alt={short.userId?.channelName || short.userId?.name || channel?.channelname || 'Channel'}
+                        className="w-full h-full object-cover"
+                      />
+                      <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] sm:text-xs font-bold">
+                        {(short.userId?.channelName || short.userId?.name || channel?.channelname || 'U')[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  
+                  {/* Channel Name */}
+                  <p 
+                    className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/channel/${short.userId?._id || channel?._id}`);
+                    }}
+                  >
+                    {short.userId?.channelName || short.userId?.name || channel?.channelname || 'Unknown'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : (
       <div className="text-center py-12">
         <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4">
           <Film className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
@@ -697,7 +723,7 @@ const ChannelPage = () => {
         {isOwnChannel && (
           <button
             onClick={() => router.push('/shorts/upload')}
-            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2"
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2 shadow-lg"
           >
             <Upload className="w-5 h-5" />
             Upload Short
@@ -711,6 +737,5 @@ const ChannelPage = () => {
       </div>
     </div>
   );
-};
-
+}
 export default ChannelPage;
