@@ -143,69 +143,71 @@ Watch till the end! Don't forget to like and subscribe!
     }, 800);
   };
 
-  const handleVideoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+const handleVideoChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    if (!file.type.startsWith('video/')) {
-      setError('Please select a valid video file');
-      return;
-    }
+  if (!file.type.startsWith('video/')) {
+    setError('Please select a valid video file');
+    return;
+  }
 
-    if (file.size > 100 * 1024 * 1024) {
-      setError('Video file must be less than 100MB');
-      return;
-    }
+  if (file.size > 100 * 1024 * 1024) {
+    setError('Video file must be less than 100MB');
+    return;
+  }
 
-    setError('');
-    setVideoFile(file);
+  setError('');
+  setVideoFile(file); // ✅ Store the actual File object
+  
+  // ✅ Create preview URL (for display only, NOT for upload)
+  const url = URL.createObjectURL(file);
+  setVideoPreview(url);
+
+  const video = document.createElement('video');
+  video.preload = 'metadata';
+  video.onloadedmetadata = () => {
+    window.URL.revokeObjectURL(video.src);
+    const duration = Math.floor(video.duration);
     
-    const url = URL.createObjectURL(file);
-    setVideoPreview(url);
-
-    const video = document.createElement('video');
-    video.preload = 'metadata';
-    video.onloadedmetadata = () => {
-      window.URL.revokeObjectURL(video.src);
-      const duration = Math.floor(video.duration);
-      
-      if (duration > 60) {
-        setError('Video must be 60 seconds or less for Shorts');
-        setVideoFile(null);
-        setVideoPreview('');
-        return;
-      }
-      
-      setVideoDuration(duration);
-      
-      if (!formData.title) {
-        const filename = file.name.replace(/\.[^/.]+$/, '');
-        setFormData(prev => ({ ...prev, title: filename }));
-      }
-    };
-    video.src = url;
-  };
-
-  const handleThumbnailChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file');
+    if (duration > 60) {
+      setError('Video must be 60 seconds or less for Shorts');
+      setVideoFile(null);
+      setVideoPreview('');
       return;
     }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Thumbnail size must be less than 5MB');
-      return;
+    
+    setVideoDuration(duration);
+    
+    if (!formData.title) {
+      const filename = file.name.replace(/\.[^/.]+$/, '');
+      setFormData(prev => ({ ...prev, title: filename }));
     }
-
-    setThumbnailFile(file);
-    setError('');
-
-    const url = URL.createObjectURL(file);
-    setThumbnailPreview(url);
   };
+  video.src = url;
+};
+
+const handleThumbnailChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    setError('Please select a valid image file');
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    setError('Thumbnail size must be less than 5MB');
+    return;
+  }
+
+  setThumbnailFile(file); // ✅ Store the actual File object
+  setError('');
+
+  // ✅ Create preview URL (for display only, NOT for upload)
+  const url = URL.createObjectURL(file);
+  setThumbnailPreview(url);
+};
 
   const handleDrop = (e: React.DragEvent, type: 'video' | 'thumbnail') => {
     e.preventDefault();
