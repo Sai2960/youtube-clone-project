@@ -117,11 +117,6 @@ export const upload = {
   },
 };
 
-// ============================================================================
-// CONTROLLER FUNCTIONS
-// ============================================================================
-
-// Get all shorts with proper avatar proxying
 export const getAllShorts = async (req, res) => {
   try {
     res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
@@ -142,7 +137,7 @@ export const getAllShorts = async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
-    console.log("📥 Fetching shorts - Page:", page, "Limit:", limit, "Sort:", sort);
+    console.log("📥 Fetching shorts - Page:", page, "Limit:", limit);
 
     const shorts = await Short.find({ isPublic: true, status: "active" })
       .sort(sortOption)
@@ -154,50 +149,29 @@ export const getAllShorts = async (req, res) => {
   
     console.log(`✅ Found ${shorts.length} shorts from database`);
 
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-    
     const shortsWithCounts = shorts.map((short) => {
       // Avatar processing
       let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
-      
-      if (finalAvatar && finalAvatar.startsWith("/uploads/")) {
-        const avatarPath = path.join(__dirname, "..", finalAvatar);
-        if (!fs.existsSync(avatarPath)) {
-          console.warn(`⚠️ Avatar file missing: ${finalAvatar}`);
-          finalAvatar = null;
-        }
-      }
-
       finalAvatar = processAvatar(finalAvatar, req) || 
-        `${baseUrl}/api/proxy-image?url=${encodeURIComponent("https://github.com/shadcn.png")}`;
+        `https://github.com/shadcn.png`;
 
-      // ✅ CRITICAL FIX: Use Cloudinary URLs directly - NO path construction
+      // ✅ CRITICAL: Use Cloudinary URLs DIRECTLY - NO modification
       let videoUrl = short.videoUrl;
       let thumbnailUrl = short.thumbnailUrl;
 
       // Validate URLs
-      if (videoUrl) {
-        if (videoUrl.includes('cloudinary.com')) {
-          console.log("✅ Cloudinary video:", videoUrl.substring(0, 80));
-        } else {
-          console.error("❌ WARNING: Non-Cloudinary video URL:", short._id, videoUrl);
-        }
-      } else {
-        console.error("❌ CRITICAL: Missing video URL for short:", short._id);
+      if (!videoUrl || !videoUrl.includes('cloudinary.com')) {
+        console.error("❌ Invalid video URL for short:", short._id, videoUrl);
       }
 
-      if (thumbnailUrl) {
-        if (thumbnailUrl.includes('cloudinary.com')) {
-          // Good
-        } else {
-          console.error("❌ WARNING: Non-Cloudinary thumbnail:", short._id, thumbnailUrl);
-        }
+      if (!thumbnailUrl || !thumbnailUrl.includes('cloudinary.com')) {
+        console.warn("⚠️ Invalid thumbnail URL for short:", short._id);
       }
 
       return {
         ...short,
-        videoUrl,      // ✅ Use directly from database
-        thumbnailUrl,  // ✅ Use directly from database
+        videoUrl,      // ✅ Use directly
+        thumbnailUrl,  // ✅ Use directly
         channelAvatar: finalAvatar,
         channelName: short.channelName || 
           short.userId?.channelName || 
@@ -273,19 +247,13 @@ export const getShortById = async (req, res) => {
 
 const finalAvatar = getBestAvatar(short, req);
 
-// ✅ CRITICAL FIX: Use Cloudinary URLs directly - NO construction
+// ✅ Use Cloudinary URLs directly
 let videoUrl = short.videoUrl;
 let thumbnailUrl = short.thumbnailUrl;
 
-// Validate and log only
-if (videoUrl) {
-  if (videoUrl.includes('cloudinary.com')) {
-    console.log("✅ Using Cloudinary video:", videoUrl.substring(0, 80));
-  } else {
-    console.error("❌ WARNING: Non-Cloudinary video URL:", videoUrl);
-  }
-} else {
-  console.error("❌ CRITICAL: Missing video URL for short:", short._id);
+// Validate only
+if (!videoUrl || !videoUrl.includes('cloudinary.com')) {
+  console.error("❌ Invalid video URL:", videoUrl);
 }
 
 console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
@@ -326,13 +294,23 @@ console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
 };
 // Upload new short
 // Upload new short - FIXED VERSION
+// Upload new short - COMPLETELY FIXED VERSION
 export const uploadShort = async (req, res) => {
   try {
     console.log('📤 ===== UPLOAD SHORT STARTED =====');
     console.log('Body:', JSON.stringify(req.body, null, 2));
-    console.log('Files:', req.files);
-    console.log('User:', req.user);
-    console.log('=====================================');
+    console.log('Files:', JSON.stringify({
+      video: req.files?.video?.[0] ? {
+        originalname: req.files.video[0].originalname,
+        mimetype: req.files.video[0].mimetype,
+        size: req.files.video[0].size,
+        path: req.files.video[0].path?.substring(0, 80)
+      } : 'MISSING',
+      thumbnail: req.files?.thumbnail?.[0] ? {
+        originalname: req.files.thumbnail[0].originalname,
+        path: req.files.thumbnail[0].path?.substring(0, 80)
+      } : 'MISSING'
+    }, null, 2));
 
     const { title, description, duration, tags, category } = req.body;
     const userId = req.user._id;
@@ -348,6 +326,10 @@ export const uploadShort = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Both video and thumbnail files are required',
+        received: {
+          video: !!req.files?.video,
+          thumbnail: !!req.files?.thumbnail
+        }
       });
     }
 
@@ -366,36 +348,28 @@ export const uploadShort = async (req, res) => {
       });
     }
 
-    // ✅ CRITICAL: Get Cloudinary URLs from uploaded files
+    // ✅ CRITICAL FIX: Cloudinary URLs are ALREADY in file.path
     const videoFile = req.files.video[0];
     const thumbnailFile = req.files.thumbnail[0];
 
-    console.log('📹 Video upload result:', {
-      path: videoFile.path,
-      filename: videoFile.filename,
-      size: videoFile.size,
-      mimetype: videoFile.mimetype
-    });
-
-    console.log('🖼️ Thumbnail upload result:', {
-      path: thumbnailFile.path,
-      filename: thumbnailFile.filename,
-      size: thumbnailFile.size,
-      mimetype: thumbnailFile.mimetype
-    });
-
-    // ✅ Cloudinary URLs are in file.path
-    const videoUrl = videoFile.path; // This is the Cloudinary URL
-    const thumbnailUrl = thumbnailFile.path; // This is the Cloudinary URL
+    // Verify we got Cloudinary URLs
+    const videoUrl = videoFile.path;
+    const thumbnailUrl = thumbnailFile.path;
 
     if (!videoUrl || !thumbnailUrl) {
-      throw new Error('Failed to upload files to Cloudinary');
+      throw new Error('Failed to get Cloudinary URLs from upload');
     }
 
-    console.log('✅ Cloudinary URLs:', {
-      video: videoUrl.substring(0, 80),
-      thumbnail: thumbnailUrl.substring(0, 80)
-    });
+    if (!videoUrl.includes('cloudinary.com') || !thumbnailUrl.includes('cloudinary.com')) {
+      console.error('❌ CRITICAL: Non-Cloudinary URLs detected!');
+      console.error('   Video:', videoUrl);
+      console.error('   Thumbnail:', thumbnailUrl);
+      throw new Error('Invalid upload URLs - not from Cloudinary');
+    }
+
+    console.log('✅ Verified Cloudinary URLs:');
+    console.log('   Video:', videoUrl.substring(0, 80));
+    console.log('   Thumbnail:', thumbnailUrl.substring(0, 80));
 
     let tagsArray = [];
     try {
@@ -413,8 +387,8 @@ export const uploadShort = async (req, res) => {
     const newShort = new Short({
       title,
       description: description || '',
-      videoUrl, // ✅ Full Cloudinary URL
-      thumbnailUrl, // ✅ Full Cloudinary URL
+      videoUrl, // ✅ Already full Cloudinary URL
+      thumbnailUrl, // ✅ Already full Cloudinary URL
       duration: parseInt(duration),
       userId,
       channelName: user.channelName || user.channelname || user.name,
@@ -432,7 +406,7 @@ export const uploadShort = async (req, res) => {
 
     await newShort.save();
 
-    console.log('✅ Short uploaded successfully:', newShort._id);
+    console.log('✅ Short saved successfully:', newShort._id);
     console.log('   Video URL:', newShort.videoUrl.substring(0, 80));
     console.log('   Thumbnail URL:', newShort.thumbnailUrl.substring(0, 80));
 
@@ -441,8 +415,8 @@ export const uploadShort = async (req, res) => {
       message: 'Short uploaded successfully',
       data: {
         ...newShort.toObject(),
-        videoUrl: newShort.videoUrl, // Already full URL
-        thumbnailUrl: newShort.thumbnailUrl, // Already full URL
+        videoUrl: newShort.videoUrl,
+        thumbnailUrl: newShort.thumbnailUrl,
       },
     });
   } catch (error) {
