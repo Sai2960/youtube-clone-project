@@ -143,40 +143,45 @@ export const getAllShorts = async (req, res) => {
       .sort(sortOption)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .populate('userId', 'name avatar image channelName channelname subscribers')
+      .populate(
+        "userId",
+        "name avatar image channelName channelname subscribers"
+      )
       .lean()
       .maxTimeMS(5000);
-  
+
     console.log(`✅ Found ${shorts.length} shorts from database`);
 
     const shortsWithCounts = shorts.map((short) => {
       // Avatar processing
-      let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
-      finalAvatar = processAvatar(finalAvatar, req) || 
-        `https://github.com/shadcn.png`;
+      let finalAvatar =
+        short.userId?.image || short.userId?.avatar || short.channelAvatar;
+      finalAvatar =
+        processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
 
       // ✅ CRITICAL: Use Cloudinary URLs DIRECTLY - NO modification
       let videoUrl = short.videoUrl;
       let thumbnailUrl = short.thumbnailUrl;
 
       // Validate URLs
-      if (!videoUrl || !videoUrl.includes('cloudinary.com')) {
+      if (!videoUrl || !videoUrl.includes("cloudinary.com")) {
         console.error("❌ Invalid video URL for short:", short._id, videoUrl);
       }
 
-      if (!thumbnailUrl || !thumbnailUrl.includes('cloudinary.com')) {
+      if (!thumbnailUrl || !thumbnailUrl.includes("cloudinary.com")) {
         console.warn("⚠️ Invalid thumbnail URL for short:", short._id);
       }
 
       return {
         ...short,
-        videoUrl,      // ✅ Use directly
-        thumbnailUrl,  // ✅ Use directly
+        videoUrl, // ✅ Use directly
+        thumbnailUrl, // ✅ Use directly
         channelAvatar: finalAvatar,
-        channelName: short.channelName || 
-          short.userId?.channelName || 
-          short.userId?.channelname || 
-          short.userId?.name || 
+        channelName:
+          short.channelName ||
+          short.userId?.channelName ||
+          short.userId?.channelname ||
+          short.userId?.name ||
           "Unknown",
         likesCount: short.likes ? short.likes.length : 0,
         dislikesCount: short.dislikes ? short.dislikes.length : 0,
@@ -225,7 +230,10 @@ export const getShortById = async (req, res) => {
     console.log("📥 Fetching short:", id);
 
     const short = await Short.findById(id)
-      .populate("userId", "name avatar image channelName channelname subscribers")
+      .populate(
+        "userId",
+        "name avatar image channelName channelname subscribers"
+      )
       .lean();
 
     if (!short) {
@@ -242,21 +250,23 @@ export const getShortById = async (req, res) => {
       ? short.likes.some((like) => like.toString() === userId.toString())
       : false;
     const hasDisliked = userId
-      ? short.dislikes.some((dislike) => dislike.toString() === userId.toString())
+      ? short.dislikes.some(
+          (dislike) => dislike.toString() === userId.toString()
+        )
       : false;
 
-const finalAvatar = getBestAvatar(short, req);
+    const finalAvatar = getBestAvatar(short, req);
 
-// ✅ Use Cloudinary URLs directly
-let videoUrl = short.videoUrl;
-let thumbnailUrl = short.thumbnailUrl;
+    // ✅ Use Cloudinary URLs directly
+    let videoUrl = short.videoUrl;
+    let thumbnailUrl = short.thumbnailUrl;
 
-// Validate only
-if (!videoUrl || !videoUrl.includes('cloudinary.com')) {
-  console.error("❌ Invalid video URL:", videoUrl);
-}
+    // Validate only
+    if (!videoUrl || !videoUrl.includes("cloudinary.com")) {
+      console.error("❌ Invalid video URL:", videoUrl);
+    }
 
-console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
+    console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
 
     res.status(200).json({
       success: true,
@@ -265,10 +275,11 @@ console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
         videoUrl,
         thumbnailUrl,
         channelAvatar: finalAvatar,
-        channelName: short.channelName || 
-          short.userId?.channelName || 
-          short.userId?.channelname || 
-          short.userId?.name || 
+        channelName:
+          short.channelName ||
+          short.userId?.channelName ||
+          short.userId?.channelname ||
+          short.userId?.name ||
           "Unknown",
         likesCount: short.likes.length,
         dislikesCount: short.dislikes.length,
@@ -297,20 +308,31 @@ console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
 // Upload new short - COMPLETELY FIXED VERSION
 export const uploadShort = async (req, res) => {
   try {
-    console.log('📤 ===== UPLOAD SHORT STARTED =====');
-    console.log('Body:', JSON.stringify(req.body, null, 2));
-    console.log('Files:', JSON.stringify({
-      video: req.files?.video?.[0] ? {
-        originalname: req.files.video[0].originalname,
-        mimetype: req.files.video[0].mimetype,
-        size: req.files.video[0].size,
-        path: req.files.video[0].path?.substring(0, 80)
-      } : 'MISSING',
-      thumbnail: req.files?.thumbnail?.[0] ? {
-        originalname: req.files.thumbnail[0].originalname,
-        path: req.files.thumbnail[0].path?.substring(0, 80)
-      } : 'MISSING'
-    }, null, 2));
+    console.log("📤 ===== UPLOAD SHORT STARTED =====");
+    console.log("Body:", JSON.stringify(req.body, null, 2));
+    console.log(
+      "Files:",
+      JSON.stringify(
+        {
+          video: req.files?.video?.[0]
+            ? {
+                originalname: req.files.video[0].originalname,
+                mimetype: req.files.video[0].mimetype,
+                size: req.files.video[0].size,
+                path: req.files.video[0].path?.substring(0, 80),
+              }
+            : "MISSING",
+          thumbnail: req.files?.thumbnail?.[0]
+            ? {
+                originalname: req.files.thumbnail[0].originalname,
+                path: req.files.thumbnail[0].path?.substring(0, 80),
+              }
+            : "MISSING",
+        },
+        null,
+        2
+      )
+    );
 
     const { title, description, duration, tags, category } = req.body;
     const userId = req.user._id;
@@ -318,25 +340,34 @@ export const uploadShort = async (req, res) => {
     if (!title || !duration) {
       return res.status(400).json({
         success: false,
-        message: 'Title and duration are required',
+        message: "Title and duration are required",
+      });
+    }
+
+    if (title.length > 200) {
+      return res.status(400).json({
+        success: false,
+        message: `Title too long (${title.length} chars). Maximum 200 characters allowed.`,
+        titleLength: title.length,
+        maxLength: 200,
       });
     }
 
     if (!req.files || !req.files.video || !req.files.thumbnail) {
       return res.status(400).json({
         success: false,
-        message: 'Both video and thumbnail files are required',
+        message: "Both video and thumbnail files are required",
         received: {
           video: !!req.files?.video,
-          thumbnail: !!req.files?.thumbnail
-        }
+          thumbnail: !!req.files?.thumbnail,
+        },
       });
     }
 
     if (parseInt(duration) > 60) {
       return res.status(400).json({
         success: false,
-        message: 'Shorts must be 60 seconds or less',
+        message: "Shorts must be 60 seconds or less",
       });
     }
 
@@ -344,7 +375,7 @@ export const uploadShort = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: "User not found",
       });
     }
 
@@ -357,23 +388,26 @@ export const uploadShort = async (req, res) => {
     const thumbnailUrl = thumbnailFile.path;
 
     if (!videoUrl || !thumbnailUrl) {
-      throw new Error('Failed to get Cloudinary URLs from upload');
+      throw new Error("Failed to get Cloudinary URLs from upload");
     }
 
-    if (!videoUrl.includes('cloudinary.com') || !thumbnailUrl.includes('cloudinary.com')) {
-      console.error('❌ CRITICAL: Non-Cloudinary URLs detected!');
-      console.error('   Video:', videoUrl);
-      console.error('   Thumbnail:', thumbnailUrl);
-      throw new Error('Invalid upload URLs - not from Cloudinary');
+    if (
+      !videoUrl.includes("cloudinary.com") ||
+      !thumbnailUrl.includes("cloudinary.com")
+    ) {
+      console.error("❌ CRITICAL: Non-Cloudinary URLs detected!");
+      console.error("   Video:", videoUrl);
+      console.error("   Thumbnail:", thumbnailUrl);
+      throw new Error("Invalid upload URLs - not from Cloudinary");
     }
 
-    console.log('✅ Verified Cloudinary URLs:');
-    console.log('   Video:', videoUrl.substring(0, 80));
-    console.log('   Thumbnail:', thumbnailUrl.substring(0, 80));
+    console.log("✅ Verified Cloudinary URLs:");
+    console.log("   Video:", videoUrl.substring(0, 80));
+    console.log("   Thumbnail:", thumbnailUrl.substring(0, 80));
 
     let tagsArray = [];
     try {
-      if (typeof tags === 'string') {
+      if (typeof tags === "string") {
         tagsArray = JSON.parse(tags);
       } else if (Array.isArray(tags)) {
         tagsArray = tags;
@@ -386,7 +420,7 @@ export const uploadShort = async (req, res) => {
 
     const newShort = new Short({
       title,
-      description: description || '',
+      description: description || "",
       videoUrl, // ✅ Already full Cloudinary URL
       thumbnailUrl, // ✅ Already full Cloudinary URL
       duration: parseInt(duration),
@@ -394,9 +428,9 @@ export const uploadShort = async (req, res) => {
       channelName: user.channelName || user.channelname || user.name,
       channelAvatar: cleanAvatar || null,
       tags: tagsArray,
-      category: category || 'Other',
+      category: category || "Other",
       isPublic: true,
-      status: 'active',
+      status: "active",
       views: 0,
       likes: [],
       dislikes: [],
@@ -406,13 +440,13 @@ export const uploadShort = async (req, res) => {
 
     await newShort.save();
 
-    console.log('✅ Short saved successfully:', newShort._id);
-    console.log('   Video URL:', newShort.videoUrl.substring(0, 80));
-    console.log('   Thumbnail URL:', newShort.thumbnailUrl.substring(0, 80));
+    console.log("✅ Short saved successfully:", newShort._id);
+    console.log("   Video URL:", newShort.videoUrl.substring(0, 80));
+    console.log("   Thumbnail URL:", newShort.thumbnailUrl.substring(0, 80));
 
     res.status(201).json({
       success: true,
-      message: 'Short uploaded successfully',
+      message: "Short uploaded successfully",
       data: {
         ...newShort.toObject(),
         videoUrl: newShort.videoUrl,
@@ -420,12 +454,12 @@ export const uploadShort = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('❌ Error uploading short:', error);
-    console.error('   Stack:', error.stack);
+    console.error("❌ Error uploading short:", error);
+    console.error("   Stack:", error.stack);
 
     res.status(500).json({
       success: false,
-      message: 'Error uploading short',
+      message: "Error uploading short",
       error: error.message,
     });
   }
