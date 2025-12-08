@@ -932,7 +932,6 @@ export const getShortsByChannel = async (req, res) => {
       });
     }
 
-    // ✅ Fetch CURRENT user data
     const currentUser = await User.findById(userId).select(
       "name avatar image channelName channelname"
     );
@@ -957,17 +956,49 @@ export const getShortsByChannel = async (req, res) => {
     console.log(`✅ Database returned ${shorts.length} shorts`);
 
     const processedShorts = shorts.map((short) => {
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      // ✅ CRITICAL: Use Cloudinary URLs DIRECTLY - NO base URL prepending
+      let videoUrl = short.videoUrl;
+      let thumbnailUrl = short.thumbnailUrl;
 
-      // ✅ Use CURRENT user avatar
+      // Validate and clean URLs
+      if (videoUrl && videoUrl.includes('cloudinary.com')) {
+        // Remove version numbers and ensure HTTPS
+        videoUrl = videoUrl
+          .replace(/\/v\d+\//g, '/')
+          .replace(/^http:\/\//, 'https://');
+      } else {
+        console.error('❌ Invalid video URL for short:', short._id);
+      }
+
+      if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+        // Remove version numbers and ensure HTTPS
+        thumbnailUrl = thumbnailUrl
+          .replace(/\/v\d+\//g, '/')
+          .replace(/^http:\/\//, 'https://');
+      } else {
+        console.warn('⚠️ Invalid thumbnail URL for short:', short._id);
+        // Generate thumbnail from video if possible
+        if (videoUrl && videoUrl.includes('cloudinary.com')) {
+          try {
+            const match = videoUrl.match(/youtube-clone\/shorts\/videos\/([^.\/]+)/);
+            if (match) {
+              const publicId = `youtube-clone/shorts/videos/${match[1]}`;
+              thumbnailUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+              console.log('🔧 Generated thumbnail:', thumbnailUrl.substring(0, 80));
+            }
+          } catch (err) {
+            console.error('❌ Error generating thumbnail:', err);
+          }
+        }
+      }
+
+      // Process avatar
       let freshAvatar = currentUser.avatar || currentUser.image;
-
-      // ✅ CRITICAL: Check if file exists
       if (freshAvatar && freshAvatar.startsWith("/uploads/")) {
         const avatarPath = path.join(__dirname, "..", freshAvatar);
         if (!fs.existsSync(avatarPath)) {
           console.warn(`⚠️ Channel avatar file missing: ${freshAvatar}`);
-          freshAvatar = "https://github.com/shadcn.png"; // Reset to default
+          freshAvatar = "https://github.com/shadcn.png";
         }
       }
 
@@ -977,10 +1008,13 @@ export const getShortsByChannel = async (req, res) => {
         _id: short._id,
         title: short.title,
         description: short.description,
-        thumbnail: `${baseUrl}${short.thumbnailUrl}`,
-        thumbnailUrl: `${baseUrl}${short.thumbnailUrl}`,
-        videoUrl: `${baseUrl}${short.videoUrl}`,
-        video: `${baseUrl}${short.videoUrl}`,
+        
+        // ✅ CRITICAL: Return Cloudinary URLs as-is (NO base URL prepending)
+        thumbnail: thumbnailUrl,
+        thumbnailUrl: thumbnailUrl,
+        videoUrl: videoUrl,
+        video: videoUrl,
+        
         views: short.views || 0,
         likes: short.likes?.length || 0,
         dislikes: short.dislikes?.length || 0,
@@ -991,7 +1025,6 @@ export const getShortsByChannel = async (req, res) => {
         tags: short.tags || [],
         category: short.category || "Entertainment",
 
-        // ✅ Use fresh, validated avatar
         channelAvatar: finalAvatar,
         channelName:
           currentUser.channelName ||
@@ -1019,11 +1052,11 @@ export const getShortsByChannel = async (req, res) => {
       status: "active",
     });
 
-    console.log(
-      "✅ Sending",
-      processedShorts.length,
-      "shorts with validated avatars"
-    );
+    console.log('✅ Sending', processedShorts.length, 'shorts');
+    console.log('Sample URLs:', {
+      video: processedShorts[0]?.videoUrl?.substring(0, 80),
+      thumbnail: processedShorts[0]?.thumbnailUrl?.substring(0, 80)
+    });
 
     res.status(200).json({
       success: true,
