@@ -911,9 +911,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   ];
 
   return (
-    <div
+<div
       ref={containerRef}
-      className="relative w-full h-screen bg-black select-none flex items-center justify-center"
+      className="relative w-full h-screen bg-black select-none md:flex md:items-center md:justify-center"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -935,12 +935,12 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         userSelect: "none",
       }}
     >
-      {/* Video */}
-      {/* Video */}
-      <video
-        ref={videoRef}
-        src={short.videoUrl}
-        className="w-full h-full object-contain cursor-pointer bg-black md:max-w-[500px] md:max-h-[889px] md:aspect-[9/16]"
+     {/* Video Container Wrapper */}
+     <div className="relative w-full h-full md:w-auto md:h-full md:aspect-[9/16] md:max-w-[500px]">
+     <video
+  ref={videoRef}
+  src={short.videoUrl}
+  className="w-full h-full object-contain cursor-pointer bg-black"
         playsInline
         webkit-playsinline="true"
         x5-playsinline="true"
@@ -974,13 +974,13 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       />
 
       {/* Gradients */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none z-[20]">
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
       </div>
 
       {/* Header with Theme-Compatible Menu */}
-      <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto md:max-w-[500px] md:left-1/2 md:-translate-x-1/2">
+   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto md:w-[500px] md:left-1/2 md:-translate-x-1/2">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -1475,7 +1475,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       )}
 
       {/* MOBILE OPTIMIZED CONTENT SECTION */}
-      <div className="absolute bottom-0 left-0 right-0 z-[30] md:max-w-[500px] md:left-1/2 md:-translate-x-1/2">
+     <div className="absolute bottom-0 left-0 right-0 z-[30] md:w-[500px] md:left-1/2 md:-translate-x-1/2">
         <div className="p-3 pb-24 md:p-4 md:pb-4">
           <div className="flex items-end justify-between gap-3">
             {/* Left Content */}
@@ -1558,7 +1558,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
             {/* Right Action Buttons - MOBILE OPTIMIZED */}
 
-            <div className="flex flex-col items-center justify-end gap-3 pb-0 pointer-events-auto md:gap-4 md:pb-4">
+        <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-3 md:pb-6">
               {" "}
               {/* Like Button */}
               <button
@@ -1797,6 +1797,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Modals */}
