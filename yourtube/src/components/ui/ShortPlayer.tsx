@@ -1426,12 +1426,13 @@ useEffect(() => {
         </div>
       )}
 
-      {/* MOBILE OPTIMIZED CONTENT SECTION */}
+     {/* CONTENT SECTION - RESPONSIVE LAYOUT */}
       <div className="absolute bottom-0 left-0 right-0 z-[30]">
-        <div className="p-3 pb-24 md:p-4 md:pb-4">
+        {/* MOBILE LAYOUT */}
+        <div className="md:hidden p-3 pb-24">
           <div className="flex items-end justify-between gap-3">
             {/* Left Content */}
-            <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-80px)]">
+            <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)]">
               {/* Channel info */}
               <div className="flex items-center mb-2.5 pointer-events-auto">
                 <img
@@ -1441,7 +1442,7 @@ useEffect(() => {
                     true
                   )}
                   alt={channelName}
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-full mr-2.5 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
+                  className="w-9 h-9 rounded-full mr-2.5 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
                   onClick={handleChannelClick}
                   crossOrigin="anonymous"
                   loading="eager"
@@ -1451,10 +1452,7 @@ useEffect(() => {
                     minHeight: "36px",
                   }}
                   onError={(e) => {
-                    console.error(
-                      "❌ ShortPlayer avatar failed:",
-                      channelAvatar
-                    );
+                    console.error("❌ ShortPlayer avatar failed:", channelAvatar);
                     e.currentTarget.src = DEFAULT_AVATAR_SVG;
                     e.currentTarget.style.display = "block";
                   }}
@@ -1465,26 +1463,26 @@ useEffect(() => {
                 />
                 <div className="flex-1 min-w-0 mr-2">
                   <p
-                    className="font-semibold text-sm md:text-base cursor-pointer hover:underline truncate leading-tight mb-0.5"
+                    className="font-semibold text-sm cursor-pointer hover:underline truncate leading-tight mb-0.5"
                     onClick={handleChannelClick}
                   >
                     @{channelName}
                   </p>
-                  <p className="text-xs md:text-sm text-gray-300 leading-tight truncate">
+                  <p className="text-xs text-gray-300 leading-tight truncate">
                     {formatCount(subscribersCount)} subscribers
                   </p>
                 </div>
 
                 {!isOwnShort && (
-                 <button
-  onClick={handleSubscribe}
-  className={`ml-1 px-4 md:px-6 py-1.5 md:py-2 rounded-full font-semibold text-sm md:text-base transition-all transform hover:scale-105 flex-shrink-0 ${
-    isSubscribed
-      ? "bg-youtube-hover text-youtube-primary"
-      : "bg-white text-black hover:bg-gray-100"
-  }`}
-  style={{ WebkitTapHighlightColor: 'transparent' }}
->
+                  <button
+                    onClick={handleSubscribe}
+                    className={`ml-1 px-4 py-1.5 rounded-full font-semibold text-sm transition-all transform hover:scale-105 flex-shrink-0 ${
+                      isSubscribed
+                        ? "bg-youtube-hover text-youtube-primary"
+                        : "bg-white text-black hover:bg-gray-100"
+                    }`}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
                     {isSubscribed ? "Subscribed" : "Subscribe"}
                   </button>
                 )}
@@ -1492,33 +1490,32 @@ useEffect(() => {
 
               {/* Title & Description */}
               <div className="mb-1.5">
-                <h3 className="font-bold text-base md:text-lg mb-1 line-clamp-2 leading-snug">
+                <h3 className="font-bold text-base mb-1 line-clamp-2 leading-snug">
                   {translatedTitle}
                 </h3>
                 {translatedDescription && (
-                  <p className="text-sm md:text-base text-gray-300 line-clamp-2 leading-snug">
+                  <p className="text-sm text-gray-300 line-clamp-2 leading-snug">
                     {translatedDescription}
                   </p>
                 )}
               </div>
 
               {/* Views Count */}
-              <p className="text-xs md:text-sm text-gray-400 font-medium">
+              <p className="text-xs text-gray-400 font-medium">
                 {formatCount(viewsCount)} views
               </p>
             </div>
 
-            {/* Right Action Buttons - MOBILE OPTIMIZED */}
-            
-<div className="flex flex-col items-center justify-end gap-2.5 pb-0 pointer-events-auto md:gap-5">
+            {/* Right Action Buttons - MOBILE */}
+            <div className="flex flex-col items-center justify-end gap-2.5 pb-0 pointer-events-auto">
               {/* Like Button */}
-             <button
-  onClick={handleLike}
-  className="flex flex-col items-center gap-0.5 transition-all transform active:scale-95 group touch-manipulation min-h-[44px] min-w-[44px] justify-center md:min-h-[44px] md:min-w-[44px]"
-  style={{ WebkitTapHighlightColor: 'transparent' }}
->
+              <button
+                onClick={handleLike}
+                className="flex flex-col items-center gap-0.5 transition-all transform active:scale-95 group touch-manipulation min-h-[44px] min-w-[44px] justify-center"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
                 <div
-               className={`rounded-full p-2 transition-all shadow-lg border md:p-3.5 ${
+                  className={`rounded-full p-2 transition-all shadow-lg border ${
                     hasLiked
                       ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50"
@@ -1526,15 +1523,13 @@ useEffect(() => {
                 >
                   <ThumbsUp
                     size={22}
-                    className={`${
-                      hasLiked ? "text-white" : "text-white"
-                    } md:w-[26px] md:h-[26px]`}
+                    className={`${hasLiked ? "text-white" : "text-white"}`}
                     fill={hasLiked ? "white" : "none"}
                     strokeWidth={2.5}
                   />
                 </div>
                 <span
-                 className="text-[10px] font-semibold transition-colors md:text-xs leading-none"
+                  className="text-[10px] font-semibold transition-colors leading-none"
                   style={{ color: hasLiked ? "#60a5fa" : "white" }}
                 >
                   {formatCount(likesCount)}
@@ -1542,14 +1537,13 @@ useEffect(() => {
               </button>
 
               {/* Dislike Button */}
-             
-<button
-  onClick={handleDislike}
-  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
-  style={{ WebkitTapHighlightColor: 'transparent' }}
->
+              <button
+                onClick={handleDislike}
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
                 <div
-                  className={`rounded-full p-2.5 transition-all shadow-lg border md:p-3.5 ${
+                  className={`rounded-full p-2.5 transition-all shadow-lg border ${
                     hasDisliked
                       ? "bg-red-600 border-red-500 shadow-red-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50"
@@ -1557,15 +1551,13 @@ useEffect(() => {
                 >
                   <ThumbsDown
                     size={22}
-                    className={`${
-                      hasDisliked ? "text-white" : "text-white"
-                    } md:w-[26px] md:h-[26px]`}
+                    className={`${hasDisliked ? "text-white" : "text-white"}`}
                     fill={hasDisliked ? "white" : "none"}
                     strokeWidth={2.5}
                   />
                 </div>
                 <span
-                  className="text-[11px] font-bold transition-colors md:text-xs leading-tight"
+                  className="text-[11px] font-bold transition-colors leading-tight"
                   style={{ color: hasDisliked ? "#f87171" : "#9ca3af" }}
                 >
                   Dislike
@@ -1573,73 +1565,63 @@ useEffect(() => {
               </button>
 
               {/* Comments Button */}
-             <button
-  onClick={(e) => {
-    e.stopPropagation();
-    setShowComments(true);
-  }}
-  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
-  style={{ WebkitTapHighlightColor: 'transparent' }}
->
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
-                  <MessageCircle
-                    size={22}
-                    className="text-white md:w-[26px] md:h-[26px]"
-                    strokeWidth={2.5}
-                  />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowComments(true);
+                }}
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg">
+                  <MessageCircle size={22} className="text-white" strokeWidth={2.5} />
                 </div>
-                <span className="text-white text-[11px] font-bold transition-colors md:text-xs leading-tight">
+                <span className="text-white text-[11px] font-bold transition-colors leading-tight">
                   {formatCount(commentsCount)}
                 </span>
               </button>
 
               {/* Share Button */}
-             <button
-  onClick={handleShareClick}
-  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
-  style={{ WebkitTapHighlightColor: 'transparent' }}
->
-
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
-                  <Share2
-                    size={22}
-                    className="text-white md:w-[26px] md:h-[26px]"
-                    strokeWidth={2.5}
-                  />
+              <button
+                onClick={handleShareClick}
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg">
+                  <Share2 size={22} className="text-white" strokeWidth={2.5} />
                 </div>
-                <span className="text-white text-[11px] font-bold transition-colors md:text-xs leading-tight">
+                <span className="text-white text-[11px] font-bold transition-colors leading-tight">
                   Share
                 </span>
               </button>
 
-              {/* Volume Control - THEME AWARE */}
-              <div className="relative flex flex-col items-center min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px] volume-control">
+              {/* Volume Control */}
+              <div className="relative flex flex-col items-center min-h-[48px] min-w-[48px] justify-center volume-control">
                 <button
-  onClick={toggleVolumeSlider}
-  className="flex flex-col items-center transition-all transform hover:scale-110 active:scale-95 group"
-  style={{ WebkitTapHighlightColor: 'transparent' }}
->
-                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
+                  onClick={toggleVolumeSlider}
+                  className="flex flex-col items-center transition-all transform hover:scale-110 active:scale-95 group"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg">
                     {isMuted || volume === 0 ? (
                       <VolumeX
                         size={22}
-                        className="text-white group-hover:text-yellow-400 transition-colors md:w-[26px] md:h-[26px]"
+                        className="text-white group-hover:text-yellow-400 transition-colors"
                         strokeWidth={2.5}
                       />
                     ) : (
                       <Volume2
                         size={22}
-                        className="text-white group-hover:text-yellow-400 transition-colors md:w-[26px] md:h-[26px]"
+                        className="text-white group-hover:text-yellow-400 transition-colors"
                         strokeWidth={2.5}
                       />
                     )}
                   </div>
                 </button>
 
-                {/* Volume Slider Popup - THEME AWARE */}
                 {showVolumeSlider && (
                   <div
-                    className="absolute bottom-full right-0 mb-2 rounded-xl p-2.5 shadow-2xl md:p-3 border"
+                    className="absolute bottom-full right-0 mb-2 rounded-xl p-2.5 shadow-2xl border"
                     style={{
                       backgroundColor: "var(--bg-secondary)",
                       backdropFilter: "blur(16px)",
@@ -1692,14 +1674,11 @@ useEffect(() => {
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color =
-                              "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
                           }}
                         >
                           100%
@@ -1713,14 +1692,11 @@ useEffect(() => {
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color =
-                              "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
                           }}
                         >
                           50%
@@ -1734,14 +1710,301 @@ useEffect(() => {
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color =
-                              "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }}
+                        >
+                          Mute
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* DESKTOP LAYOUT - PROPERLY ALIGNED */}
+        <div className="hidden md:block">
+          <div className="flex items-end justify-between h-full px-6 pb-6">
+            {/* Left Content - Desktop */}
+            <div className="flex-1 max-w-[600px] text-white pointer-events-auto">
+              {/* Channel info */}
+              <div className="flex items-center mb-4">
+                <img
+                  key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
+                  src={getImageUrl(
+                    short.userId?.image || short.channelAvatar,
+                    true
+                  )}
+                  alt={channelName}
+                  className="w-12 h-12 rounded-full mr-3 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
+                  onClick={handleChannelClick}
+                  crossOrigin="anonymous"
+                  loading="eager"
+                  style={{
+                    display: "block",
+                    minWidth: "48px",
+                    minHeight: "48px",
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.src = DEFAULT_AVATAR_SVG;
+                    e.currentTarget.style.display = "block";
+                  }}
+                  onLoad={(e) => {
+                    e.currentTarget.style.display = "block";
+                  }}
+                />
+                <div className="flex-1 min-w-0 mr-4">
+                  <p
+                    className="font-bold text-base cursor-pointer hover:underline truncate mb-1"
+                    onClick={handleChannelClick}
+                  >
+                    @{channelName}
+                  </p>
+                  <p className="text-sm text-gray-300 truncate">
+                    {formatCount(subscribersCount)} subscribers
+                  </p>
+                </div>
+
+                {!isOwnShort && (
+                  <button
+                    onClick={handleSubscribe}
+                    className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all transform hover:scale-105 flex-shrink-0 ${
+                      isSubscribed
+                        ? "bg-youtube-hover text-youtube-primary"
+                        : "bg-white text-black hover:bg-gray-100"
+                    }`}
+                  >
+                    {isSubscribed ? "Subscribed" : "Subscribe"}
+                  </button>
+                )}
+              </div>
+
+              {/* Title & Description */}
+              <div className="mb-3">
+                <h3 className="font-bold text-xl mb-2 line-clamp-2 leading-tight">
+                  {translatedTitle}
+                </h3>
+                {translatedDescription && (
+                  <p className="text-base text-gray-300 line-clamp-3 leading-relaxed">
+                    {translatedDescription}
+                  </p>
+                )}
+              </div>
+
+              {/* Views Count */}
+              <p className="text-sm text-gray-400 font-medium">
+                {formatCount(viewsCount)} views
+              </p>
+            </div>
+
+            {/* Right Action Buttons - DESKTOP VERTICAL STACK */}
+            <div className="flex flex-col items-center gap-4 pb-4 pointer-events-auto">
+              {/* Like Button */}
+              <button
+                onClick={handleLike}
+                className="flex flex-col items-center gap-2 transition-all transform hover:scale-110 active:scale-95"
+              >
+                <div
+                  className={`rounded-full p-4 transition-all shadow-xl border-2 ${
+                    hasLiked
+                      ? "bg-blue-600 border-blue-400 shadow-blue-500/50"
+                      : "bg-gray-800/90 border-gray-700 shadow-black/50"
+                  }`}
+                >
+                  <ThumbsUp
+                    size={28}
+                    className="text-white"
+                    fill={hasLiked ? "white" : "none"}
+                    strokeWidth={2.5}
+                  />
+                </div>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: hasLiked ? "#60a5fa" : "white" }}
+                >
+                  {formatCount(likesCount)}
+                </span>
+              </button>
+
+              {/* Dislike Button */}
+              <button
+                onClick={handleDislike}
+                className="flex flex-col items-center gap-2 transition-all transform hover:scale-110 active:scale-95"
+              >
+                <div
+                  className={`rounded-full p-4 transition-all shadow-xl border-2 ${
+                    hasDisliked
+                      ? "bg-red-600 border-red-400 shadow-red-500/50"
+                      : "bg-gray-800/90 border-gray-700 shadow-black/50"
+                  }`}
+                >
+                  <ThumbsDown
+                    size={28}
+                    className="text-white"
+                    fill={hasDisliked ? "white" : "none"}
+                    strokeWidth={2.5}
+                  />
+                </div>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: hasDisliked ? "#f87171" : "#9ca3af" }}
+                >
+                  Dislike
+                </span>
+              </button>
+
+              {/* Comments Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowComments(true);
+                }}
+                className="flex flex-col items-center gap-2 transition-all transform hover:scale-110 active:scale-95"
+              >
+                <div className="bg-gray-800/90 border-2 border-gray-700 rounded-full p-4 transition-all shadow-xl">
+                  <MessageCircle size={28} className="text-white" strokeWidth={2.5} />
+                </div>
+                <span className="text-white text-sm font-bold">
+                  {formatCount(commentsCount)}
+                </span>
+              </button>
+
+              {/* Share Button */}
+              <button
+                onClick={handleShareClick}
+                className="flex flex-col items-center gap-2 transition-all transform hover:scale-110 active:scale-95"
+              >
+                <div className="bg-gray-800/90 border-2 border-gray-700 rounded-full p-4 transition-all shadow-xl">
+                  <Share2 size={28} className="text-white" strokeWidth={2.5} />
+                </div>
+                <span className="text-white text-sm font-bold">Share</span>
+              </button>
+
+              {/* Volume Control - Desktop */}
+              <div className="relative flex flex-col items-center volume-control">
+                <button
+                  onClick={toggleVolumeSlider}
+                  className="flex flex-col items-center gap-2 transition-all transform hover:scale-110 active:scale-95"
+                >
+                  <div className="bg-gray-800/90 border-2 border-gray-700 rounded-full p-4 transition-all shadow-xl">
+                    {isMuted || volume === 0 ? (
+                      <VolumeX
+                        size={28}
+                        className="text-white hover:text-yellow-400 transition-colors"
+                        strokeWidth={2.5}
+                      />
+                    ) : (
+                      <Volume2
+                        size={28}
+                        className="text-white hover:text-yellow-400 transition-colors"
+                        strokeWidth={2.5}
+                      />
+                    )}
+                  </div>
+                </button>
+
+                {showVolumeSlider && (
+                  <div
+                    className="absolute bottom-full right-0 mb-3 rounded-xl p-3 shadow-2xl border"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      backdropFilter: "blur(16px)",
+                      borderColor: "var(--border-color)",
+                      minWidth: "90px",
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      <span
+                        className="text-base font-bold"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {Math.round(volume * 100)}%
+                      </span>
+
+                      <div
+                        className="relative h-32 w-2.5 rounded-full overflow-hidden"
+                        style={{ backgroundColor: "var(--bg-hover)" }}
+                      >
+                        <div
+                          className="absolute bottom-0 w-full rounded-full transition-all bg-gradient-to-t from-blue-600 to-blue-400"
+                          style={{ height: `${volume * 100}%` }}
+                        />
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={volume}
+                          onChange={(e) =>
+                            handleVolumeChange(parseFloat(e.target.value))
+                          }
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          style={
+                            {
+                              WebkitAppearance: "slider-vertical",
+                            } as React.CSSProperties
+                          }
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 w-full">
+                        <button
+                          onClick={() => handleVolumeChange(1)}
+                          className="text-sm transition px-3 py-2 rounded text-center font-medium"
+                          style={{
+                            color: "var(--text-secondary)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--text-primary)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }}
+                        >
+                          100%
+                        </button>
+                        <button
+                          onClick={() => handleVolumeChange(0.5)}
+                          className="text-sm transition px-3 py-2 rounded text-center font-medium"
+                          style={{
+                            color: "var(--text-secondary)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--text-primary)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
+                          }}
+                        >
+                          50%
+                        </button>
+                        <button
+                          onClick={() => handleVolumeChange(0)}
+                          className="text-sm transition px-3 py-2 rounded text-center font-medium"
+                          style={{
+                            color: "var(--text-secondary)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--text-primary)";
+                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor = "transparent";
                           }}
                         >
                           Mute
@@ -1755,7 +2018,7 @@ useEffect(() => {
           </div>
         </div>
       </div>
-
+      
       {/* Modals */}
       {showShareModal && (
         <ShareModal
