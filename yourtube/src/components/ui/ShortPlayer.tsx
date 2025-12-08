@@ -1502,30 +1502,30 @@ useEffect(() => {
                 )}
               </div>
 
-              {/* Views Count */}
-              <p className="text-xs md:text-sm text-gray-400 font-medium">
+            {/* Views Count */}
+              <p className="text-xs md:text-sm text-gray-300 font-semibold">
                 {formatCount(viewsCount)} views
               </p>
             </div>
 
             {/* Right Action Buttons - MOBILE OPTIMIZED */}
             
-<div className="flex flex-col items-center justify-end gap-2.5 pb-0 pointer-events-auto md:gap-5">
+<div className="flex flex-col items-center justify-end gap-3 pb-1 pointer-events-auto md:gap-5 md:pb-0">
               {/* Like Button */}
              <button
   onClick={handleLike}
-  className="flex flex-col items-center gap-0.5 transition-all transform active:scale-95 group touch-manipulation min-h-[44px] min-w-[44px] justify-center md:min-h-[44px] md:min-w-[44px]"
+  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[56px] min-w-[56px] justify-center md:min-h-[48px] md:min-w-[48px]"
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
                 <div
-               className={`rounded-full p-2 transition-all shadow-lg border md:p-3.5 ${
+               className={`rounded-full p-3 transition-all shadow-lg border md:p-3.5 ${
                     hasLiked
                       ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50"
                   }`}
                 >
                   <ThumbsUp
-                    size={22}
+                    size={24}
                     className={`${
                       hasLiked ? "text-white" : "text-white"
                     } md:w-[26px] md:h-[26px]`}
@@ -1534,7 +1534,7 @@ useEffect(() => {
                   />
                 </div>
                 <span
-                 className="text-[10px] font-semibold transition-colors md:text-xs leading-none"
+                 className="text-xs font-bold md:text-xs leading-none"
                   style={{ color: hasLiked ? "#60a5fa" : "white" }}
                 >
                   {formatCount(likesCount)}
@@ -1545,18 +1545,18 @@ useEffect(() => {
              
 <button
   onClick={handleDislike}
-  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
+  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[56px] min-w-[56px] justify-center md:min-h-[48px] md:min-w-[48px]"
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
                 <div
-                  className={`rounded-full p-2.5 transition-all shadow-lg border md:p-3.5 ${
+                  className={`rounded-full p-3 transition-all shadow-lg border md:p-3.5 ${
                     hasDisliked
                       ? "bg-red-600 border-red-500 shadow-red-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50"
                   }`}
                 >
                   <ThumbsDown
-                    size={22}
+                    size={24}
                     className={`${
                       hasDisliked ? "text-white" : "text-white"
                     } md:w-[26px] md:h-[26px]`}
@@ -1565,8 +1565,8 @@ useEffect(() => {
                   />
                 </div>
                 <span
-                  className="text-[11px] font-bold transition-colors md:text-xs leading-tight"
-                  style={{ color: hasDisliked ? "#f87171" : "#9ca3af" }}
+                  className="text-xs font-bold md:text-xs leading-none"
+                  style={{ color: hasDisliked ? "#f87171" : "white" }}
                 >
                   Dislike
                 </span>
@@ -1578,17 +1578,17 @@ useEffect(() => {
     e.stopPropagation();
     setShowComments(true);
   }}
-  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
+  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[56px] min-w-[56px] justify-center md:min-h-[48px] md:min-w-[48px]"
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-3 transition-all shadow-lg md:p-3.5">
                   <MessageCircle
-                    size={22}
+                    size={24}
                     className="text-white md:w-[26px] md:h-[26px]"
                     strokeWidth={2.5}
                   />
                 </div>
-                <span className="text-white text-[11px] font-bold transition-colors md:text-xs leading-tight">
+                <span className="text-white text-xs font-bold md:text-xs leading-none">
                   {formatCount(commentsCount)}
                 </span>
               </button>
@@ -1596,21 +1596,48 @@ useEffect(() => {
               {/* Share Button */}
              <button
   onClick={handleShareClick}
-  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
+  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[56px] min-w-[56px] justify-center md:min-h-[48px] md:min-w-[48px]"
   style={{ WebkitTapHighlightColor: 'transparent' }}
 >
 
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-3 transition-all shadow-lg md:p-3.5">
                   <Share2
-                    size={22}
+                    size={24}
                     className="text-white md:w-[26px] md:h-[26px]"
                     strokeWidth={2.5}
                   />
                 </div>
-                <span className="text-white text-[11px] font-bold transition-colors md:text-xs leading-tight">
+                <span className="text-white text-xs font-bold md:text-xs leading-none">
                   Share
                 </span>
               </button>
+
+              {/* Volume Control - THEME AWARE */}
+              <div className="relative flex flex-col items-center min-h-[56px] min-w-[56px] justify-center md:min-h-[48px] md:min-w-[48px] volume-control">
+                <button
+  onClick={toggleVolumeSlider}
+  className="flex flex-col items-center gap-1 transition-all transform hover:scale-110 active:scale-95 group"
+  style={{ WebkitTapHighlightColor: 'transparent' }}
+>
+                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-3 transition-all shadow-lg md:p-3.5">
+                    {isMuted || volume === 0 ? (
+                      <VolumeX
+                        size={24}
+                        className="text-white group-hover:text-yellow-400 transition-colors md:w-[26px] md:h-[26px]"
+                        strokeWidth={2.5}
+                      />
+                    ) : (
+                      <Volume2
+                        size={24}
+                        className="text-white group-hover:text-yellow-400 transition-colors md:w-[26px] md:h-[26px]"
+                        strokeWidth={2.5}
+                      />
+                    )}
+                  </div>
+                  <span className="text-white text-xs font-bold leading-none">
+                    {Math.round(volume * 100)}%
+                  </span>
+                </button>
 
               {/* Volume Control - THEME AWARE */}
               <div className="relative flex flex-col items-center min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px] volume-control">
@@ -1754,6 +1781,7 @@ useEffect(() => {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Modals */}
