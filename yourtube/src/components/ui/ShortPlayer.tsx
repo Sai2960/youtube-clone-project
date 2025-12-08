@@ -72,7 +72,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isModalOpenRef = useRef(false);
 
-  const touchStartYRef = useRef(0);
+    const touchStartYRef = useRef(0);
   const touchEndYRef = useRef(0);
   const touchMoveCountRef = useRef(0);
   const lastNavigationTimeRef = useRef(0);
@@ -129,8 +129,8 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const channelName = getShortChannelName(short);
 
   const getApiUrl = () =>
-    // ✅ CORRECT - Simple fallback chain
-    "https://youtube-clone-project-q3pd.onrender.com";
+// ✅ CORRECT - Simple fallback chain
+"https://youtube-clone-project-q3pd.onrender.com"
   // Translation handlers
   const handleTranslated = (
     title: string,
@@ -184,43 +184,43 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   ]);
 
   useEffect(() => {
-    // Track short view in history
-    const trackShortView = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token || !short._id) return;
+  // Track short view in history
+  const trackShortView = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token || !short._id) return;
 
-        // Get userId from token
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        const userId = payload.userId || payload.id;
+      // Get userId from token
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const userId = payload.userId || payload.id;
 
-        if (!userId) return;
+      if (!userId) return;
 
-        const apiUrl = getApiUrl();
-
-        // Add to history
-        await axios.post(
-          `${apiUrl}/history/short/${short._id}`,
-          { userId },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        console.log("✅ Short added to history:", short._id);
-      } catch (error) {
-        console.error("Error tracking short view:", error);
-      }
-    };
-
-    // Only track if this short is active
-    if (isActive && short._id) {
-      // Add a small delay to ensure user actually watched
-      const timer = setTimeout(() => {
-        trackShortView();
-      }, 1000); // Track after 1 second of viewing
-
-      return () => clearTimeout(timer);
+      const apiUrl = getApiUrl();
+      
+      // Add to history
+      await axios.post(
+        `${apiUrl}/history/short/${short._id}`,
+        { userId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      console.log('✅ Short added to history:', short._id);
+    } catch (error) {
+      console.error("Error tracking short view:", error);
     }
-  }, [isActive, short._id]);
+  };
+
+  // Only track if this short is active
+  if (isActive && short._id) {
+    // Add a small delay to ensure user actually watched
+    const timer = setTimeout(() => {
+      trackShortView();
+    }, 1000); // Track after 1 second of viewing
+
+    return () => clearTimeout(timer);
+  }
+}, [isActive, short._id]);
 
   useEffect(() => {
     return () => {
@@ -267,20 +267,20 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     if (isActive && !isModalOpenRef.current) {
       // Critical: Set attributes for mobile
-      video.setAttribute("playsinline", "true");
-      video.setAttribute("webkit-playsinline", "true");
-      video.setAttribute("x5-playsinline", "true");
-
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('x5-playsinline', 'true');
+      
       // Ensure muted for autoplay policy
       const shouldMute = isMuted;
       video.muted = shouldMute;
-
+      
       // Use RAF for smoother start
       requestAnimationFrame(() => {
         const playPromise = video.play();
@@ -299,8 +299,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
               console.log("Autoplay prevented, trying muted:", err);
               // Fallback: force mute and retry
               video.muted = true;
-              video
-                .play()
+              video.play()
                 .then(() => setIsPlaying(true))
                 .catch(() => setIsPlaying(false));
             });
@@ -319,36 +318,34 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
     const preventDefaultTouch = (e: TouchEvent) => {
       if (isModalOpenRef.current) return;
-
+      
       const target = e.target as HTMLElement;
       // Don't prevent on buttons, inputs, or scrollable content
       if (
-        target.tagName === "BUTTON" ||
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.closest(".volume-control") ||
+        target.tagName === 'BUTTON' ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.closest('.volume-control') ||
         target.closest('[class*="Modal"]')
       ) {
         return;
       }
-
+      
       // Only prevent vertical scroll
       const touch = e.touches[0];
       const deltaY = Math.abs(touch.clientY - touchStartYRef.current);
       const deltaX = Math.abs(touch.clientX - (touchStartYRef.current || 0));
-
+      
       if (deltaY > deltaX && deltaY > 10) {
         e.preventDefault();
       }
     };
 
     // Use non-passive listener to allow preventDefault
-    container.addEventListener("touchmove", preventDefaultTouch, {
-      passive: false,
-    });
-
+    container.addEventListener('touchmove', preventDefaultTouch, { passive: false });
+    
     return () => {
-      container.removeEventListener("touchmove", preventDefaultTouch);
+      container.removeEventListener('touchmove', preventDefaultTouch);
     };
   }, []);
 
@@ -362,8 +359,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       setIsPlaying(false);
     } else if (!isModalOpenRef.current && isActive && !isPlaying) {
       const timer = setTimeout(() => {
-        video
-          .play()
+        video.play()
           .then(() => setIsPlaying(true))
           .catch(() => {});
       }, 100);
@@ -403,10 +399,10 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   }, [showMenu, showVolumeSlider]);
 
   // Touch/Mouse handlers
-  // ✅ OPTIMIZED Touch/Mouse handlers
+ // ✅ OPTIMIZED Touch/Mouse handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isModalOpenRef.current) return;
-
+    
     const y = e.targetTouches[0].clientY;
     touchStartYRef.current = y;
     touchEndYRef.current = y;
@@ -419,18 +415,17 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (isModalOpenRef.current) return;
-
+    
     // Throttle: only process every 3rd move event
     touchMoveCountRef.current++;
     if (touchMoveCountRef.current % 3 !== 0) return;
-
+    
     const y = e.targetTouches[0].clientY;
     touchEndYRef.current = y;
     setTouchEnd(y);
 
     const distance = Math.abs(touchStartYRef.current - y);
-    if (distance > 15) {
-      // Increased threshold
+    if (distance > 15) { // Increased threshold
       setIsDragging(true);
     }
   };
@@ -442,11 +437,10 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     const minSwipeDistance = 60; // Increased from 50
     const dragDuration = Date.now() - dragStartTimeRef.current;
     const velocity = Math.abs(distance) / (dragDuration + 1);
-
+    
     // Throttle navigation (prevent rapid swipes)
     const timeSinceLastNav = Date.now() - lastNavigationTimeRef.current;
-    if (timeSinceLastNav < 400) {
-      // 400ms cooldown
+    if (timeSinceLastNav < 400) { // 400ms cooldown
       setIsDragging(false);
       setTouchStart(0);
       setTouchEnd(0);
@@ -462,7 +456,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     ) {
       lastNavigationTimeRef.current = Date.now();
       setIsDragging(false);
-
+      
       // Use RAF for smoother transition
       requestAnimationFrame(() => {
         if (distance > 0) {
@@ -494,10 +488,10 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isModalOpenRef.current || touchStartYRef.current === 0) return;
-
+    
     touchMoveCountRef.current++;
     if (touchMoveCountRef.current % 2 !== 0) return;
-
+    
     const y = e.clientY;
     touchEndYRef.current = y;
     setTouchEnd(y);
@@ -515,7 +509,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     const minSwipeDistance = 60;
     const dragDuration = Date.now() - dragStartTimeRef.current;
     const velocity = Math.abs(distance) / (dragDuration + 1);
-
+    
     const timeSinceLastNav = Date.now() - lastNavigationTimeRef.current;
     if (timeSinceLastNav < 400) {
       setIsDragging(false);
@@ -534,7 +528,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     ) {
       lastNavigationTimeRef.current = Date.now();
       setIsDragging(false);
-
+      
       requestAnimationFrame(() => {
         if (distance > 0) {
           onNext();
@@ -911,9 +905,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   ];
 
   return (
-<div
+   <div
       ref={containerRef}
-      className="relative w-full h-screen bg-black select-none md:flex md:items-center md:justify-center"
+      className="relative w-full h-screen bg-black select-none"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -926,334 +920,301 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         }
       }}
       style={{
-        WebkitOverflowScrolling: "touch",
-        overscrollBehavior: "contain",
-        touchAction: "pan-y",
-        WebkitTapHighlightColor: "transparent",
-        WebkitTouchCallout: "none",
-        WebkitUserSelect: "none",
-        userSelect: "none",
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain',
+        touchAction: 'pan-y',
+        WebkitTapHighlightColor: 'transparent',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
       }}
     >
-     {/* Video Container Wrapper */}
-     <div className="relative w-full h-full md:w-auto md:h-full md:aspect-[9/16] md:max-w-[500px]">
+      {/* Video */}
+       {/* Video */}
      <video
   ref={videoRef}
   src={short.videoUrl}
   className="w-full h-full object-contain cursor-pointer bg-black"
-        playsInline
-        webkit-playsinline="true"
-        x5-playsinline="true"
-        onClick={togglePlayPause}
-        onError={(e) => {
-          console.error("❌ Video load error:", {
-            url: short.videoUrl,
-            error: e,
-            networkState: videoRef.current?.networkState,
-            readyState: videoRef.current?.readyState,
-          });
-          // Try reloading once
-          if (videoRef.current && !videoRef.current.dataset.retried) {
-            videoRef.current.dataset.retried = "true";
-            setTimeout(() => {
-              if (videoRef.current) {
-                videoRef.current.load();
-              }
-            }, 1000);
-          }
-        }}
-        onLoadedData={() => {
-          console.log("✅ Video loaded successfully:", short.videoUrl);
-        }}
-        style={{
-          WebkitTapHighlightColor: "transparent",
-          touchAction: "pan-y",
-          userSelect: "none",
-          WebkitUserSelect: "none",
-        }}
-      />
+  loop
+  playsInline
+  webkit-playsinline="true"
+  x5-playsinline="true"
+  onClick={togglePlayPause}
+  onError={(e) => {
+    console.error("❌ Video load error:", {
+      url: short.videoUrl,
+      error: e,
+      networkState: videoRef.current?.networkState,
+      readyState: videoRef.current?.readyState
+    });
+    // Try reloading once
+    if (videoRef.current && !videoRef.current.dataset.retried) {
+      videoRef.current.dataset.retried = 'true';
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.load();
+        }
+      }, 1000);
+    }
+  }}
+  onLoadedData={() => {
+    console.log("✅ Video loaded successfully:", short.videoUrl);
+  }}
+  style={{
+    WebkitTapHighlightColor: 'transparent',
+    touchAction: 'pan-y',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+  }}
+/>
 
       {/* Gradients */}
-      <div className="absolute inset-0 pointer-events-none z-[20]">
+      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
       </div>
 
-      {/* Header with Theme-Compatible Menu */}
-   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto md:w-[500px] md:left-1/2 md:-translate-x-1/2">
+ {/* Header with Theme-Compatible Menu */}
+<div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto">
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      router.push("/shorts");
+    }}
+    className="text-white text-2xl font-bold hover:text-gray-300 transition"
+  >
+    Shorts
+  </button>
+
+  <div className="relative menu-button">
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowMenu(!showMenu);
+      }}
+      className="text-white hover:bg-white/20 rounded-full p-2 transition"
+    >
+      <MoreVertical size={24} />
+    </button>
+
+
+ {showMenu && (
+      <>
+        {/* Backdrop for closing menu */}
+        <div 
+          className="fixed inset-0 z-[98]"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(false);
+          }}
+        />
+        
+        {/* UNIFIED MENU - Same style for both mobile and desktop */}
+        <div 
+          className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
+          style={{
+            backgroundColor: 'var(--bg-secondary, #272727)',
+            borderColor: 'var(--border-color, #3f3f3f)',
+            minWidth: '200px',
+            maxWidth: '280px',
+          }}
+        >
+          {/* Delete Short Option */}
+          {isOwnShort ? (
+            <button
+              onClick={openDeleteConfirm}
+              className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors"
+              style={{ 
+                color: 'var(--text-primary, #fff)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #3f3f3f)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <Trash2 size={20} className="text-red-500 flex-shrink-0" />
+              <span className="font-medium text-sm">Delete Short</span>
+            </button>
+          ) : (
+            <div 
+              className="w-full px-4 py-3 flex items-center gap-3 opacity-50 cursor-not-allowed"
+              style={{ 
+                color: 'var(--text-disabled, #717171)',
+              }}
+            >
+              <Trash2 size={20} className="flex-shrink-0" />
+              <span className="font-medium text-sm">Only Channel Owner</span>
+            </div>
+          )}
+          
+          {/* Divider */}
+          <div 
+            className="h-px mx-3"
+            style={{ backgroundColor: 'var(--border-color, #3f3f3f)' }}
+          />
+
+           <button
+            onClick={openReportModal}
+            className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors"
+            style={{ 
+              color: 'var(--text-primary, #fff)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #3f3f3f)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <Flag size={20} className="flex-shrink-0" style={{ color: 'var(--text-primary, #fff)' }} />
+            <span className="leading-none">Report</span>
+          </button>
+        </div>
+
+       </>
+    )}
+  </div>
+</div>
+
+     {/* Delete Confirmation Modal */}
+{showDeleteConfirm && (
+  <div
+    className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-end md:items-center justify-center"
+    onClick={closeDeleteConfirm}
+  >
+  {/* ✅ MOBILE MODAL - THEME COMPATIBLE BOTTOM SLIDE */}
+<div
+  className="md:hidden rounded-t-3xl p-4 pb-safe w-full shadow-2xl animate-slideUp max-w-md mx-auto"
+  onClick={(e) => e.stopPropagation()}
+  style={{
+    backgroundColor: 'var(--bg-secondary, #1f2937)',
+  }}
+>
+  <div className="flex items-center gap-2.5 mb-3">
+    <div className="bg-red-500/20 p-2 rounded-full flex-shrink-0">
+      <AlertTriangle size={20} className="text-red-500" />
+    </div>
+    <h3 className="text-base font-bold" style={{ color: 'var(--text-primary, #fff)' }}>
+      Delete Short?
+    </h3>
+  </div>
+
+  <p className="mb-1 text-sm leading-relaxed" style={{ color: 'var(--text-secondary, #d1d5db)' }}>
+    Delete <span className="font-bold" style={{ color: 'var(--text-primary, #fff)' }}>"{short.title}"</span>?
+  </p>
+  
+  <p className="text-red-400 font-semibold text-xs mb-5">
+    This action cannot be undone.
+  </p>
+
+  {/* TWO BUTTON LAYOUT FOR MOBILE */}
+  <div className="flex gap-2">
+    <button
+      onClick={closeDeleteConfirm}
+      disabled={isDeleting}
+      className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95"
+      style={{
+        backgroundColor: 'var(--bg-tertiary, #374151)',
+        color: 'var(--text-primary, #fff)',
+      }}
+    >
+      Cancel
+    </button>
+   
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleDeleteShort();
+      }}
+      disabled={isDeleting}
+      className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-1.5 active:scale-95"
+    >
+      {isDeleting ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+          <span className="text-xs">Deleting...</span>
+        </>
+      ) : (
+        <>
+          <Trash2 size={16} />
+          <span>Delete</span>
+        </>
+      )}
+    </button>
+  </div>
+</div>
+
+   {/* DESKTOP MODAL - THEME COMPATIBLE */}
+    <div
+      className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        backgroundColor: 'var(--bg-secondary, #1f2937)',
+        borderColor: 'var(--border-color, #374151)',
+      }}
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="bg-red-500/20 p-3 rounded-full">
+          <AlertTriangle size={28} className="text-red-500" />
+        </div>
+        <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary, #fff)' }}>
+          Delete Short?
+        </h3>
+      </div>
+
+      <p className="mb-2 text-base leading-relaxed" style={{ color: 'var(--text-secondary, #d1d5db)' }}>
+        Delete <span className="font-bold" style={{ color: 'var(--text-primary, #fff)' }}>"{short.title}"</span>?
+      </p>
+      
+      <p className="text-red-400 font-semibold mb-8">
+        This cannot be undone.
+      </p>
+
+      <div className="flex gap-4">
+        <button
+          onClick={closeDeleteConfirm}
+          disabled={isDeleting}
+          className="flex-1 px-6 py-3.5 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
+          style={{
+            backgroundColor: 'var(--bg-tertiary, #374151)',
+            color: 'var(--text-primary, #fff)',
+            borderColor: 'var(--border-color, #4b5563)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
+          }}
+        >
+          Cancel
+        </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
-            router.push("/shorts");
+            handleDeleteShort();
           }}
-          className="text-white text-xl md:text-2xl font-bold hover:text-gray-300 transition"
+          disabled={isDeleting}
+          className="flex-1 px-6 py-3.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
         >
-          Shorts
-        </button>
-
-        <div className="relative menu-button">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMenu(!showMenu);
-            }}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition"
-          >
-            <MoreVertical size={24} />
-          </button>
-
-          {showMenu && (
+          {isDeleting ? (
             <>
-              {/* Backdrop for closing menu */}
-              <div
-                className="fixed inset-0 z-[98]"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMenu(false);
-                }}
-              />
-
-              {/* UNIFIED MENU - Same style for both mobile and desktop */}
-              <div
-                className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
-                style={{
-                  backgroundColor: "var(--bg-secondary, #272727)",
-                  borderColor: "var(--border-color, #3f3f3f)",
-                  minWidth: "200px",
-                  maxWidth: "280px",
-                }}
-              >
-                {/* Delete Short Option */}
-                {isOwnShort ? (
-                  <button
-                    onClick={openDeleteConfirm}
-                    className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors"
-                    style={{
-                      color: "var(--text-primary, #fff)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-hover, #3f3f3f)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <Trash2 size={20} className="text-red-500 flex-shrink-0" />
-                    <span className="font-medium text-sm">Delete Short</span>
-                  </button>
-                ) : (
-                  <div
-                    className="w-full px-4 py-3 flex items-center gap-3 opacity-50 cursor-not-allowed"
-                    style={{
-                      color: "var(--text-disabled, #717171)",
-                    }}
-                  >
-                    <Trash2 size={20} className="flex-shrink-0" />
-                    <span className="font-medium text-sm">
-                      Only Channel Owner
-                    </span>
-                  </div>
-                )}
-
-                {/* Divider */}
-                <div
-                  className="h-px mx-3"
-                  style={{ backgroundColor: "var(--border-color, #3f3f3f)" }}
-                />
-
-                <button
-                  onClick={openReportModal}
-                  className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors"
-                  style={{
-                    color: "var(--text-primary, #fff)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "var(--bg-hover, #3f3f3f)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  <Flag
-                    size={20}
-                    className="flex-shrink-0"
-                    style={{ color: "var(--text-primary, #fff)" }}
-                  />
-                  <span className="leading-none">Report</span>
-                </button>
-              </div>
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+              Deleting...
+            </>
+          ) : (
+            <>
+              <Trash2 size={20} />
+              Delete
             </>
           )}
-        </div>
+        </button>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div
-          className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-end md:items-center justify-center"
-          onClick={closeDeleteConfirm}
-        >
-          {/* ✅ MOBILE MODAL - THEME COMPATIBLE BOTTOM SLIDE */}
-          <div
-            className="md:hidden rounded-t-3xl p-4 pb-safe w-full shadow-2xl animate-slideUp max-w-md mx-auto"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: "var(--bg-secondary, #1f2937)",
-            }}
-          >
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="bg-red-500/20 p-2 rounded-full flex-shrink-0">
-                <AlertTriangle size={20} className="text-red-500" />
-              </div>
-              <h3
-                className="text-base font-bold"
-                style={{ color: "var(--text-primary, #fff)" }}
-              >
-                Delete Short?
-              </h3>
-            </div>
-
-            <p
-              className="mb-1 text-sm leading-relaxed"
-              style={{ color: "var(--text-secondary, #d1d5db)" }}
-            >
-              Delete{" "}
-              <span
-                className="font-bold"
-                style={{ color: "var(--text-primary, #fff)" }}
-              >
-                "{short.title}"
-              </span>
-              ?
-            </p>
-
-            <p className="text-red-400 font-semibold text-xs mb-5">
-              This action cannot be undone.
-            </p>
-
-            {/* TWO BUTTON LAYOUT FOR MOBILE */}
-            <div className="flex gap-2">
-              <button
-                onClick={closeDeleteConfirm}
-                disabled={isDeleting}
-                className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95"
-                style={{
-                  backgroundColor: "var(--bg-tertiary, #374151)",
-                  color: "var(--text-primary, #fff)",
-                }}
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteShort();
-                }}
-                disabled={isDeleting}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-1.5 active:scale-95"
-              >
-                {isDeleting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    <span className="text-xs">Deleting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={16} />
-                    <span>Delete</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* DESKTOP MODAL - THEME COMPATIBLE */}
-          <div
-            className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: "var(--bg-secondary, #1f2937)",
-              borderColor: "var(--border-color, #374151)",
-            }}
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-red-500/20 p-3 rounded-full">
-                <AlertTriangle size={28} className="text-red-500" />
-              </div>
-              <h3
-                className="text-xl font-bold"
-                style={{ color: "var(--text-primary, #fff)" }}
-              >
-                Delete Short?
-              </h3>
-            </div>
-
-            <p
-              className="mb-2 text-base leading-relaxed"
-              style={{ color: "var(--text-secondary, #d1d5db)" }}
-            >
-              Delete{" "}
-              <span
-                className="font-bold"
-                style={{ color: "var(--text-primary, #fff)" }}
-              >
-                "{short.title}"
-              </span>
-              ?
-            </p>
-
-            <p className="text-red-400 font-semibold mb-8">
-              This cannot be undone.
-            </p>
-
-            <div className="flex gap-4">
-              <button
-                onClick={closeDeleteConfirm}
-                disabled={isDeleting}
-                className="flex-1 px-6 py-3.5 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
-                style={{
-                  backgroundColor: "var(--bg-tertiary, #374151)",
-                  color: "var(--text-primary, #fff)",
-                  borderColor: "var(--border-color, #4b5563)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "var(--bg-hover, #4b5563)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "var(--bg-tertiary, #374151)";
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteShort();
-                }}
-                disabled={isDeleting}
-                className="flex-1 px-6 py-3.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-              >
-                {isDeleting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={20} />
-                    Delete
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    </div>
+  </div>
+)}
 
       {/* Report Modal - MOBILE BOTTOM SLIDE */}
       {showReportModal && (
@@ -1334,13 +1295,13 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             </div>
           </div>
 
-          {/* DESKTOP MODAL - THEME COMPATIBLE */}
+         {/* DESKTOP MODAL - THEME COMPATIBLE */}
           <div
             className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: "var(--bg-secondary, #1f2937)",
-              borderColor: "var(--border-color, #374151)",
+              backgroundColor: 'var(--bg-secondary, #1f2937)',
+              borderColor: 'var(--border-color, #374151)',
             }}
           >
             <div className="flex items-center justify-between mb-6">
@@ -1348,33 +1309,26 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                 <div className="bg-blue-500/20 p-2 rounded-full">
                   <Flag size={22} className="text-blue-400" />
                 </div>
-                <h3
-                  className="text-xl font-bold"
-                  style={{ color: "var(--text-primary, #fff)" }}
-                >
+                <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary, #fff)' }}>
                   Report Short
                 </h3>
               </div>
               <button
                 onClick={closeReportModal}
                 className="transition"
-                style={{ color: "var(--text-secondary, #9ca3af)" }}
+                style={{ color: 'var(--text-secondary, #9ca3af)' }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--text-primary, #fff)";
+                  e.currentTarget.style.color = 'var(--text-primary, #fff)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color =
-                    "var(--text-secondary, #9ca3af)";
+                  e.currentTarget.style.color = 'var(--text-secondary, #9ca3af)';
                 }}
               >
                 <X size={24} />
               </button>
             </div>
 
-            <p
-              className="mb-4 text-sm"
-              style={{ color: "var(--text-secondary, #9ca3af)" }}
-            >
+            <p className="mb-4 text-sm" style={{ color: 'var(--text-secondary, #9ca3af)' }}>
               Help us understand what's wrong with this short
             </p>
 
@@ -1384,26 +1338,26 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   key={reason}
                   onClick={() => setReportReason(reason)}
                   className={`w-full text-left px-4 py-3 rounded-lg transition text-sm ${
-                    reportReason === reason ? "bg-blue-600 text-white" : ""
+                    reportReason === reason
+                      ? "bg-blue-600 text-white"
+                      : ""
                   }`}
                   style={
                     reportReason !== reason
                       ? {
-                          backgroundColor: "var(--bg-tertiary, #374151)",
-                          color: "var(--text-primary, #e5e7eb)",
+                          backgroundColor: 'var(--bg-tertiary, #374151)',
+                          color: 'var(--text-primary, #e5e7eb)',
                         }
                       : undefined
                   }
                   onMouseEnter={(e) => {
                     if (reportReason !== reason) {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-hover, #4b5563)";
+                      e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (reportReason !== reason) {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-tertiary, #374151)";
+                      e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
                     }
                   }}
                 >
@@ -1419,9 +1373,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
               rows={3}
               className="w-full rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
               style={{
-                backgroundColor: "var(--bg-tertiary, #374151)",
-                borderColor: "var(--border-color, #4b5563)",
-                color: "var(--text-primary, #fff)",
+                backgroundColor: 'var(--bg-tertiary, #374151)',
+                borderColor: 'var(--border-color, #4b5563)',
+                color: 'var(--text-primary, #fff)',
               }}
             />
 
@@ -1431,17 +1385,15 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                 disabled={isReporting}
                 className="flex-1 px-6 py-3 rounded-lg font-semibold disabled:opacity-50 transition active:scale-95 border-2"
                 style={{
-                  backgroundColor: "var(--bg-tertiary, #374151)",
-                  color: "var(--text-primary, #fff)",
-                  borderColor: "var(--border-color, #4b5563)",
+                  backgroundColor: 'var(--bg-tertiary, #374151)',
+                  color: 'var(--text-primary, #fff)',
+                  borderColor: 'var(--border-color, #4b5563)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "var(--bg-hover, #4b5563)";
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "var(--bg-tertiary, #374151)";
+                  e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
                 }}
               >
                 Cancel
@@ -1475,7 +1427,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       )}
 
       {/* MOBILE OPTIMIZED CONTENT SECTION */}
-     <div className="absolute bottom-0 left-0 right-0 z-[30] md:w-[500px] md:left-1/2 md:-translate-x-1/2">
+      <div className="absolute bottom-0 left-0 right-0 z-[30]">
         <div className="p-3 pb-24 md:p-4 md:pb-4">
           <div className="flex items-end justify-between gap-3">
             {/* Left Content */}
@@ -1524,15 +1476,15 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                 </div>
 
                 {!isOwnShort && (
-                  <button
-                    onClick={handleSubscribe}
-                    className={`ml-1 px-4 md:px-6 py-1.5 md:py-2 rounded-full font-semibold text-sm md:text-base transition-all transform hover:scale-105 flex-shrink-0 ${
-                      isSubscribed
-                        ? "bg-youtube-hover text-youtube-primary"
-                        : "bg-white text-black hover:bg-gray-100"
-                    }`}
-                    style={{ WebkitTapHighlightColor: "transparent" }}
-                  >
+                 <button
+  onClick={handleSubscribe}
+  className={`ml-1 px-4 md:px-6 py-1.5 md:py-2 rounded-full font-semibold text-sm md:text-base transition-all transform hover:scale-105 flex-shrink-0 ${
+    isSubscribed
+      ? "bg-youtube-hover text-youtube-primary"
+      : "bg-white text-black hover:bg-gray-100"
+  }`}
+  style={{ WebkitTapHighlightColor: 'transparent' }}
+>
                     {isSubscribed ? "Subscribed" : "Subscribe"}
                   </button>
                 )}
@@ -1557,17 +1509,16 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             </div>
 
             {/* Right Action Buttons - MOBILE OPTIMIZED */}
-
-        <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-3 md:pb-6">
-              {" "}
+            
+<div className="flex flex-col items-center justify-end gap-2.5 pb-0 pointer-events-auto md:gap-5">
               {/* Like Button */}
-              <button
-                onClick={handleLike}
-                className="flex flex-col items-center gap-0.5 transition-all transform active:scale-95 group touch-manipulation min-h-[44px] min-w-[44px] justify-center md:min-h-[44px] md:min-w-[44px]"
-                style={{ WebkitTapHighlightColor: "transparent" }}
-              >
+             <button
+  onClick={handleLike}
+  className="flex flex-col items-center gap-0.5 transition-all transform active:scale-95 group touch-manipulation min-h-[44px] min-w-[44px] justify-center md:min-h-[44px] md:min-w-[44px]"
+  style={{ WebkitTapHighlightColor: 'transparent' }}
+>
                 <div
-                  className={`rounded-full p-2 transition-all shadow-lg border md:p-3.5 ${
+               className={`rounded-full p-2 transition-all shadow-lg border md:p-3.5 ${
                     hasLiked
                       ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50"
@@ -1583,18 +1534,20 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   />
                 </div>
                 <span
-                  className="text-[10px] font-semibold transition-colors md:text-xs leading-none"
+                 className="text-[10px] font-semibold transition-colors md:text-xs leading-none"
                   style={{ color: hasLiked ? "#60a5fa" : "white" }}
                 >
                   {formatCount(likesCount)}
                 </span>
               </button>
+
               {/* Dislike Button */}
-              <button
-                onClick={handleDislike}
-                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
-                style={{ WebkitTapHighlightColor: "transparent" }}
-              >
+             
+<button
+  onClick={handleDislike}
+  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
+  style={{ WebkitTapHighlightColor: 'transparent' }}
+>
                 <div
                   className={`rounded-full p-2.5 transition-all shadow-lg border md:p-3.5 ${
                     hasDisliked
@@ -1618,15 +1571,16 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   Dislike
                 </span>
               </button>
+
               {/* Comments Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowComments(true);
-                }}
-                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
-                style={{ WebkitTapHighlightColor: "transparent" }}
-              >
+             <button
+  onClick={(e) => {
+    e.stopPropagation();
+    setShowComments(true);
+  }}
+  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
+  style={{ WebkitTapHighlightColor: 'transparent' }}
+>
                 <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
                   <MessageCircle
                     size={22}
@@ -1638,12 +1592,14 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   {formatCount(commentsCount)}
                 </span>
               </button>
+
               {/* Share Button */}
-              <button
-                onClick={handleShareClick}
-                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
-                style={{ WebkitTapHighlightColor: "transparent" }}
-              >
+             <button
+  onClick={handleShareClick}
+  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 group touch-manipulation min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px]"
+  style={{ WebkitTapHighlightColor: 'transparent' }}
+>
+
                 <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
                   <Share2
                     size={22}
@@ -1655,13 +1611,14 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   Share
                 </span>
               </button>
+
               {/* Volume Control - THEME AWARE */}
               <div className="relative flex flex-col items-center min-h-[48px] min-w-[48px] justify-center md:min-h-[44px] md:min-w-[44px] volume-control">
                 <button
-                  onClick={toggleVolumeSlider}
-                  className="flex flex-col items-center transition-all transform hover:scale-110 active:scale-95 group"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
+  onClick={toggleVolumeSlider}
+  className="flex flex-col items-center transition-all transform hover:scale-110 active:scale-95 group"
+  style={{ WebkitTapHighlightColor: 'transparent' }}
+>
                   <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full p-2.5 transition-all shadow-lg md:p-3.5">
                     {isMuted || volume === 0 ? (
                       <VolumeX
@@ -1797,7 +1754,6 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             </div>
           </div>
         </div>
-      </div>
       </div>
 
       {/* Modals */}
