@@ -613,4 +613,86 @@ router.get('/admin/check-shorts', async (req, res) => {
     });
   }
 });
+
+// Add this BEFORE export default router;
+
+// ✅ Delete all broken shorts
+router.post('/admin/delete-broken-shorts', async (req, res) => {
+  try {
+    console.log('\n🗑️ ===== DELETING BROKEN SHORTS =====');
+    
+    const shorts = await Short.find({
+      $or: [
+        { videoUrl: { $regex: '^/uploads/' } },
+        { thumbnailUrl: { $regex: '^/uploads/' } }
+      ]
+    });
+
+    console.log(`Found ${shorts.length} broken shorts`);
+
+    const deleted = [];
+    for (const short of shorts) {
+      deleted.push({
+        id: short._id,
+        title: short.title
+      });
+      await Short.findByIdAndDelete(short._id);
+      console.log(`✅ Deleted: ${short.title}`);
+    }
+
+    console.log(`\n✅ Deleted ${deleted.length} shorts`);
+
+    res.json({
+      success: true,
+      deleted: deleted.length,
+      shorts: deleted
+    });
+  } catch (error) {
+    console.error('❌ Delete error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ✅ Check if shorts exist on Cloudinary
+router.post('/admin/find-shorts-on-cloudinary', async (req, res) => {
+  try {
+    const { cloudinary } = await import('../config/cloudinary.js');
+    
+    console.log('\n🔍 ===== SEARCHING CLOUDINARY FOR SHORTS =====');
+    
+    // List all shorts videos on Cloudinary
+    const result = await cloudinary.api.resources({
+      type: 'upload',
+      resource_type: 'video',
+      prefix: 'youtube-clone/shorts/videos/',
+      max_results: 500
+    });
+
+    console.log(`Found ${result.resources.length} shorts on Cloudinary`);
+
+    const cloudinaryShorts = result.resources.map(r => ({
+      public_id: r.public_id,
+      url: r.secure_url,
+      created: r.created_at,
+      duration: r.duration,
+      format: r.format
+    }));
+
+    res.json({
+      success: true,
+      found: result.resources.length,
+      shorts: cloudinaryShorts
+    });
+  } catch (error) {
+    console.error('❌ Search error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 export default router;
