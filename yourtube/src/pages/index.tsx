@@ -456,21 +456,21 @@ if (thumbnail) {
         {/* Shorts Section */}
         {shorts.length > 0 && (
           <section className="py-3 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
-            <div className="flex items-center justify-between px-3 mb-3 lg:px-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center lg:hidden shadow-md">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-red-600">
-                    <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
-                  </svg>
-                </div>
-                <div className="hidden lg:flex w-10 h-10 bg-red-600 rounded-xl items-center justify-center shadow-lg shadow-red-600/30">
-                  <Play size={20} className="text-white ml-0.5" fill="white" />
-                </div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white lg:text-2xl">
-                  Shorts
-                </h2>
-              </div>
-            </div>
+         <div className="flex items-center justify-between px-3 mb-3 lg:px-6">
+  <div className="flex items-center gap-2 lg:gap-3">
+    <div className="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center lg:hidden shadow-sm flex-shrink-0">
+      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+        <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
+      </svg>
+    </div>
+    <div className="hidden lg:flex w-10 h-10 bg-red-600 rounded-xl items-center justify-center shadow-lg shadow-red-600/30">
+      <Play size={20} className="text-white ml-0.5" fill="white" />
+    </div>
+    <h2 className="text-base font-bold text-gray-900 dark:text-white lg:text-2xl">
+      Shorts
+    </h2>
+  </div>
+</div>
 
             {loadingShorts ? (
               <div className="flex gap-2 overflow-x-hidden px-3 lg:gap-4 lg:px-6">
