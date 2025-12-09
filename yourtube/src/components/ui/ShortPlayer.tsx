@@ -230,6 +230,49 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     };
   }, []);
 
+  // ✅ NEW: Fetch like/dislike status on mount
+  useEffect(() => {
+    const fetchLikeStatus = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token || !short._id) return;
+
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const userId = payload.userId || payload.id;
+        if (!userId) return;
+
+        const apiUrl = getApiUrl();
+
+        // Fetch the short details to get current like status
+        const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data.success && response.data.data) {
+          const shortData = response.data.data;
+          setHasLiked(shortData.hasLiked || false);
+          setHasDisliked(shortData.hasDisliked || false);
+          setLikesCount(shortData.likesCount || 0);
+          setDislikesCount(shortData.dislikesCount || 0);
+
+          console.log("✅ Short like status loaded:", {
+            shortId: short._id,
+            hasLiked: shortData.hasLiked,
+            hasDisliked: shortData.hasDisliked,
+            likes: shortData.likesCount,
+            dislikes: shortData.dislikesCount,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching like status:", error);
+      }
+    };
+
+    if (isActive) {
+      fetchLikeStatus();
+    }
+  }, [isActive, short._id]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -610,20 +653,54 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         return;
       }
 
+      // ✅ Optimistic update
+      const wasLiked = hasLiked;
+      const wasDisliked = hasDisliked;
+
+      if (wasLiked) {
+        setHasLiked(false);
+        setLikesCount((prev) => Math.max(0, prev - 1));
+      } else {
+        setHasLiked(true);
+        setLikesCount((prev) => prev + 1);
+        if (wasDisliked) {
+          setHasDisliked(false);
+          setDislikesCount((prev) => Math.max(0, prev - 1));
+        }
+      }
+
       const response = await axios.post(
         `${getApiUrl()}/api/shorts/${short._id}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // ✅ Sync with server response
       if (response.data.success) {
         setHasLiked(response.data.data.hasLiked);
         setHasDisliked(response.data.data.hasDisliked);
         setLikesCount(response.data.data.likesCount);
         setDislikesCount(response.data.data.dislikesCount);
+
+        console.log("✅ Like synced:", response.data.data);
       }
     } catch (error: any) {
       console.error("Error liking short:", error);
+
+      // ✅ Revert on error
+      const freshShort = await axios.get(
+        `${getApiUrl()}/api/shorts/${short._id}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      if (freshShort.data.success) {
+        setHasLiked(freshShort.data.data.hasLiked);
+        setHasDisliked(freshShort.data.data.hasDisliked);
+        setLikesCount(freshShort.data.data.likesCount);
+        setDislikesCount(freshShort.data.data.dislikesCount);
+      }
+
       if (error.response?.status === 401)
         router.push("/login?redirect=/shorts");
     }
@@ -638,20 +715,54 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         return;
       }
 
+      // ✅ Optimistic update
+      const wasLiked = hasLiked;
+      const wasDisliked = hasDisliked;
+
+      if (wasDisliked) {
+        setHasDisliked(false);
+        setDislikesCount((prev) => Math.max(0, prev - 1));
+      } else {
+        setHasDisliked(true);
+        setDislikesCount((prev) => prev + 1);
+        if (wasLiked) {
+          setHasLiked(false);
+          setLikesCount((prev) => Math.max(0, prev - 1));
+        }
+      }
+
       const response = await axios.post(
         `${getApiUrl()}/api/shorts/${short._id}/dislike`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // ✅ Sync with server response
       if (response.data.success) {
         setHasLiked(response.data.data.hasLiked);
         setHasDisliked(response.data.data.hasDisliked);
         setLikesCount(response.data.data.likesCount);
         setDislikesCount(response.data.data.dislikesCount);
+
+        console.log("✅ Dislike synced:", response.data.data);
       }
     } catch (error: any) {
       console.error("Error disliking short:", error);
+
+      // ✅ Revert on error
+      const freshShort = await axios.get(
+        `${getApiUrl()}/api/shorts/${short._id}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      if (freshShort.data.success) {
+        setHasLiked(freshShort.data.data.hasLiked);
+        setHasDisliked(freshShort.data.data.hasDisliked);
+        setLikesCount(freshShort.data.data.likesCount);
+        setDislikesCount(freshShort.data.data.dislikesCount);
+      }
+
       if (error.response?.status === 401)
         router.push("/login?redirect=/shorts");
     }
@@ -1307,39 +1418,39 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           >
             <div className="overflow-y-auto max-h-[85vh]">
               <div className="p-5 pb-6">
-               {/* Header - Line ~1285 - FIXED FOR LIGHT THEME */}
-<div 
-  className="flex items-center justify-between mb-4 sticky top-0 pb-3 z-10"
-  style={{
-    backgroundColor: "var(--bg-secondary, #ffffff)", // Changed from bg-[#2d2d2d]
-  }}
->
-  <div className="flex items-center gap-2.5">
-    <div className="bg-blue-500/20 p-2 rounded-full">
-      <Flag size={18} className="text-blue-400" />
-    </div>
-    <h3 
-      className="text-base font-bold"
-      style={{ color: "var(--text-primary, #000)" }} // Changed from text-white
-    >
-      Report Short
-    </h3>
-  </div>
-  <button
-    onClick={closeReportModal}
-    className="transition"
-    style={{ color: "var(--text-secondary, #666)" }} // Changed from text-gray-400
-  >
-    <X size={20} />
-  </button>
-</div>
+                {/* Header - Line ~1285 - FIXED FOR LIGHT THEME */}
+                <div
+                  className="flex items-center justify-between mb-4 sticky top-0 pb-3 z-10"
+                  style={{
+                    backgroundColor: "var(--bg-secondary, #ffffff)", // Changed from bg-[#2d2d2d]
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="bg-blue-500/20 p-2 rounded-full">
+                      <Flag size={18} className="text-blue-400" />
+                    </div>
+                    <h3
+                      className="text-base font-bold"
+                      style={{ color: "var(--text-primary, #000)" }} // Changed from text-white
+                    >
+                      Report Short
+                    </h3>
+                  </div>
+                  <button
+                    onClick={closeReportModal}
+                    className="transition"
+                    style={{ color: "var(--text-secondary, #666)" }} // Changed from text-gray-400
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
 
-<p 
-  className="mb-4 text-xs"
-  style={{ color: "var(--text-secondary, #666)" }} // Changed from text-gray-400
->
-  Help us understand what's wrong with this short
-</p>
+                <p
+                  className="mb-4 text-xs"
+                  style={{ color: "var(--text-secondary, #666)" }} // Changed from text-gray-400
+                >
+                  Help us understand what's wrong with this short
+                </p>
 
                 {/* Report Reasons */}
                 <div className="space-y-2 mb-4">
