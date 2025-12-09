@@ -463,52 +463,37 @@ useEffect(() => {
   };
 
   // Like button handler
-  const handleLike = async () => {
+ // ✅ FIXED handleLike function
+const handleLike = async () => {
   if (!user?._id) {
     setError("Please log in to like videos");
     setTimeout(() => setError(null), 3000);
     return;
   }
 
-  if (likeAnimation) return; // Prevent double-click
+  if (likeAnimation) return;
 
   try {
     setError(null);
     setLikeAnimation(true);
     setLikeRipple(true);
 
-    // ✅ Optimistic UI update
-    const wasLiked = isLiked;
-    const wasDisliked = isDisliked;
-
-    if (wasLiked) {
-      setIsLiked(false);
-      setLikes((prev) => Math.max(0, prev - 1));
-    } else {
-      setIsLiked(true);
-      setLikes((prev) => prev + 1);
-      if (wasDisliked) {
-        setIsDisliked(false);
-        setDislikes((prev) => Math.max(0, prev - 1));
-      }
-    }
-
-    // ✅ CRITICAL FIX: Use server response directly
-    const res = await axiosInstance.post(`/like/${video._id}`, {
+    // ✅ Call API FIRST (not optimistic update)
+    const res = await axiosInstance.post(`/like/video/${video._id}`, {
       userId: user._id,
       isLike: true,
     });
 
     console.log('✅ Server Response:', res.data);
 
-    // ✅ CRITICAL: Sync with server immediately
+    // ✅ Update UI based on server response
     if (res.data.success) {
-      setLikes(res.data.likes || res.data.Like || 0);
-      setDislikes(res.data.dislikes || res.data.Dislike || 0);
+      setLikes(res.data.likes);
+      setDislikes(res.data.dislikes);
       setIsLiked(res.data.liked);
       setIsDisliked(res.data.disliked);
       
-      console.log('✅ Counts updated:', {
+      console.log('✅ UI updated:', {
         likes: res.data.likes,
         dislikes: res.data.dislikes,
         liked: res.data.liked,
@@ -523,24 +508,12 @@ useEffect(() => {
 
   } catch (error: any) {
     console.error("❌ Like error:", error);
-
-    // ✅ Revert on error
-    try {
-      const freshVideo = await axiosInstance.get(`/video/${video._id}`);
-      if (freshVideo.data.success && freshVideo.data.video) {
-        setLikes(freshVideo.data.video.Like || 0);
-        setDislikes(freshVideo.data.video.Dislike || 0);
-      }
-    } catch (fetchError) {
-      console.error("Failed to revert:", fetchError);
-    }
-
     setError(error.response?.data?.message || "Failed to like video");
     setTimeout(() => setError(null), 3000);
   }
 };
 
-// Dislike button handler - FIXED VERSION
+// ✅ FIXED handleDislike function
 const handleDislike = async () => {
   if (!user?._id) {
     setError("Please log in to dislike videos");
@@ -548,45 +521,29 @@ const handleDislike = async () => {
     return;
   }
 
-  if (dislikeAnimation) return; // Prevent double-click
+  if (dislikeAnimation) return;
 
   try {
     setError(null);
     setDislikeAnimation(true);
     setDislikeRipple(true);
 
-    // ✅ Optimistic UI update
-    const wasLiked = isLiked;
-    const wasDisliked = isDisliked;
-
-    if (wasDisliked) {
-      setIsDisliked(false);
-      setDislikes((prev) => Math.max(0, prev - 1));
-    } else {
-      setIsDisliked(true);
-      setDislikes((prev) => prev + 1);
-      if (wasLiked) {
-        setIsLiked(false);
-        setLikes((prev) => Math.max(0, prev - 1));
-      }
-    }
-
-    // ✅ CRITICAL FIX: Use server response directly
-    const res = await axiosInstance.post(`/like/${video._id}`, {
+    // ✅ Call API FIRST (not optimistic update)
+    const res = await axiosInstance.post(`/like/video/${video._id}`, {
       userId: user._id,
       isLike: false,
     });
 
     console.log('✅ Server Response:', res.data);
 
-    // ✅ CRITICAL: Sync with server immediately
+    // ✅ Update UI based on server response
     if (res.data.success) {
-      setLikes(res.data.likes || res.data.Like || 0);
-      setDislikes(res.data.dislikes || res.data.Dislike || 0);
+      setLikes(res.data.likes);
+      setDislikes(res.data.dislikes);
       setIsLiked(res.data.liked);
       setIsDisliked(res.data.disliked);
       
-      console.log('✅ Counts updated:', {
+      console.log('✅ UI updated:', {
         likes: res.data.likes,
         dislikes: res.data.dislikes,
         liked: res.data.liked,
@@ -601,18 +558,6 @@ const handleDislike = async () => {
 
   } catch (error: any) {
     console.error("❌ Dislike error:", error);
-
-    // ✅ Revert on error
-    try {
-      const freshVideo = await axiosInstance.get(`/video/${video._id}`);
-      if (freshVideo.data.success && freshVideo.data.video) {
-        setLikes(freshVideo.data.video.Like || 0);
-        setDislikes(freshVideo.data.video.Dislike || 0);
-      }
-    } catch (fetchError) {
-      console.error("Failed to revert:", fetchError);
-    }
-
     setError(error.response?.data?.message || "Failed to dislike video");
     setTimeout(() => setError(null), 3000);
   }
