@@ -1,3 +1,4 @@
+// Modals/like.js - FIXED VERSION
 import mongoose from 'mongoose';
 
 const likeSchema = new mongoose.Schema({
@@ -23,10 +24,13 @@ const likeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index to ensure one reaction per user per video
+// ✅ CRITICAL: Compound index to ensure one reaction per user per video
 likeSchema.index({ viewer: 1, videoid: 1 }, { unique: true });
 
-// Index for finding likes by reaction type
+// ✅ Index for finding likes by reaction type
 likeSchema.index({ videoid: 1, reaction: 1 });
+
+// ✅ Index for finding all reactions by user
+likeSchema.index({ viewer: 1, createdAt: -1 });
 
 export default mongoose.model('Like', likeSchema);
