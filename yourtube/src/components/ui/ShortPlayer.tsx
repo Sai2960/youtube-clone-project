@@ -1307,27 +1307,39 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           >
             <div className="overflow-y-auto max-h-[85vh]">
               <div className="p-5 pb-6">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4 sticky top-0 bg-[#2d2d2d] pb-3 z-10">
-                  <div className="flex items-center gap-2.5">
-                    <div className="bg-blue-500/20 p-2 rounded-full">
-                      <Flag size={18} className="text-blue-400" />
-                    </div>
-                    <h3 className="text-base font-bold text-white">
-                      Report Short
-                    </h3>
-                  </div>
-                  <button
-                    onClick={closeReportModal}
-                    className="text-gray-400 hover:text-white transition"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
+               {/* Header - Line ~1285 - FIXED FOR LIGHT THEME */}
+<div 
+  className="flex items-center justify-between mb-4 sticky top-0 pb-3 z-10"
+  style={{
+    backgroundColor: "var(--bg-secondary, #ffffff)", // Changed from bg-[#2d2d2d]
+  }}
+>
+  <div className="flex items-center gap-2.5">
+    <div className="bg-blue-500/20 p-2 rounded-full">
+      <Flag size={18} className="text-blue-400" />
+    </div>
+    <h3 
+      className="text-base font-bold"
+      style={{ color: "var(--text-primary, #000)" }} // Changed from text-white
+    >
+      Report Short
+    </h3>
+  </div>
+  <button
+    onClick={closeReportModal}
+    className="transition"
+    style={{ color: "var(--text-secondary, #666)" }} // Changed from text-gray-400
+  >
+    <X size={20} />
+  </button>
+</div>
 
-                <p className="text-gray-400 mb-4 text-xs">
-                  Help us understand what's wrong with this short
-                </p>
+<p 
+  className="mb-4 text-xs"
+  style={{ color: "var(--text-secondary, #666)" }} // Changed from text-gray-400
+>
+  Help us understand what's wrong with this short
+</p>
 
                 {/* Report Reasons */}
                 <div className="space-y-2 mb-4">
