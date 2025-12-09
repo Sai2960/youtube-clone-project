@@ -280,7 +280,6 @@ export const getShortById = async (req, res) => {
   try {
     // ✅ Disable caching
     res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
-    res.set("Pragma", "no-cache");
     res.set("Expires", "0");
 
     const { id } = req.params;
