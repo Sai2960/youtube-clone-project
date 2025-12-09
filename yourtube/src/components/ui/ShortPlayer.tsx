@@ -232,7 +232,6 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
 
 
-
 useEffect(() => {
   const fetchLikeStatus = async () => {
     try {
@@ -253,9 +252,7 @@ useEffect(() => {
 
       const apiUrl = getApiUrl();
 
-      console.log("🔍 Fetching like status for short:", short._id);
-
-      // ✅ CRITICAL FIX: Remove the problematic Expires header
+      // ✅ Removed Expires header
       const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -263,29 +260,10 @@ useEffect(() => {
         },
       });
 
-      console.log("📥 Server response:", {
-        shortId: short._id,
-        hasLiked: response.data.data?.hasLiked,
-        hasDisliked: response.data.data?.hasDisliked,
-        likesCount: response.data.data?.likesCount,
-      });
-
       if (response.data.success && response.data.data) {
         const shortData = response.data.data;
-
-        // ✅ CRITICAL: Force boolean conversion and update state
-        const isLiked = Boolean(shortData.hasLiked);
-        const isDisliked = Boolean(shortData.hasDisliked);
-
-        console.log("✅ Setting like state:", {
-          shortId: short._id,
-          hasLiked: isLiked,
-          hasDisliked: isDisliked,
-          likesCount: shortData.likesCount,
-        });
-
-        setHasLiked(isLiked);
-        setHasDisliked(isDisliked);
+        setHasLiked(Boolean(shortData.hasLiked));
+        setHasDisliked(Boolean(shortData.hasDisliked));
         setLikesCount(shortData.likesCount || 0);
         setDislikesCount(shortData.dislikesCount || 0);
       }
@@ -296,11 +274,10 @@ useEffect(() => {
     }
   };
 
-  // ✅ CRITICAL: Fetch on mount AND whenever short ID changes
   if (short._id && isActive) {
     fetchLikeStatus();
   }
-}, [short._id, isActive]);
+}, [short._id, isActive]); // ✅ Re-runs when short changes
 
 
 
