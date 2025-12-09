@@ -1,4 +1,4 @@
-// server/Modals/video.js - COMPLETE FIXED VERSION
+// server/Modals/video.js - COMPLETE FIXED VERSION WITH ENHANCED MIDDLEWARE
 import mongoose from "mongoose";
 
 const videoSchema = new mongoose.Schema({
@@ -41,10 +41,11 @@ const videoSchema = new mongoose.Schema({
   filename: {
     type: String
   },
-  thumbnailUrl: {  // ✅ ADD THIS
-  type: String,
-  default: ""
-},
+  thumbnailUrl: {
+    type: String,
+    default: ""
+  },
+  
   // =================== THUMBNAILS ===================
   videothumb: {
     type: String,
@@ -184,6 +185,7 @@ const videoSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// =================== INDEXES ===================
 videoSchema.index({ shareCount: -1 });
 videoSchema.index({ 'shares.total': -1 });
 videoSchema.index({ category: 1 });
@@ -194,18 +196,42 @@ videoSchema.index({ views: -1 });
 videoSchema.index({ visibility: 1, createdAt: -1 });
 videoSchema.index({ videotitle: 'text', videodescription: 'text' });
 
-// =================== PRE-SAVE MIDDLEWARE ===================
+// =================== PRE-SAVE MIDDLEWARE (ENHANCED) ===================
 videoSchema.pre('save', function(next) {
-  // Sync dual fields
+  // ✅ CRITICAL: Sync Like/Dislike fields with validation
+  if (this.likes !== undefined && this.Like === undefined) {
+    this.Like = this.likes;
+  }
+  if (this.Like !== undefined && this.likes === undefined) {
+    this.likes = this.Like;
+  }
+  
+  if (this.dislikes !== undefined && this.Dislike === undefined) {
+    this.Dislike = this.dislikes;
+  }
+  if (this.Dislike !== undefined && this.dislikes === undefined) {
+    this.dislikes = this.Dislike;
+  }
+  
+  // ✅ Ensure counts are never negative
+  if (this.Like < 0) this.Like = 0;
+  if (this.likes < 0) this.likes = 0;
+  if (this.Dislike < 0) this.Dislike = 0;
+  if (this.dislikes < 0) this.dislikes = 0;
+  
+  // Sync title fields
   if (!this.title && this.videotitle) this.title = this.videotitle;
   if (!this.videotitle && this.title) this.videotitle = this.title;
   
+  // Sync description fields
   if (!this.description && this.videodescription) this.description = this.videodescription;
   if (!this.videodescription && this.description) this.videodescription = this.description;
   
+  // Sync video link fields
   if (!this.videoLink && this.videofile) this.videoLink = this.videofile;
   if (!this.videofile && this.videoLink) this.videofile = this.videoLink;
   
+  // Sync thumbnail fields
   if (!this.thumbnail && this.videothumb) this.thumbnail = this.videothumb;
   if (!this.videothumb && this.thumbnail) this.videothumb = this.thumbnail;
   
@@ -213,19 +239,31 @@ videoSchema.pre('save', function(next) {
   if (!this.user && this.uploadedBy) this.user = this.uploadedBy;
   if (!this.uploadedBy && this.user) this.uploadedBy = this.user;
   
-  // Sync like counts
-  if (this.likes && !this.Like) this.Like = this.likes;
-  if (this.Like && !this.likes) this.likes = this.Like;
-  
-  if (this.dislikes && !this.Dislike) this.Dislike = this.dislikes;
-  if (this.Dislike && !this.dislikes) this.dislikes = this.Dislike;
-  
-  // Sync share count
-  if (this.shares?.total && !this.shareCount) this.shareCount = this.shares.total;
-  if (this.shareCount && (!this.shares || !this.shares.total)) {
-    if (!this.shares) this.shares = { total: 0, platforms: {} };
+  // Sync share count with validation
+  if (this.shares?.total !== undefined && this.shareCount === undefined) {
+    this.shareCount = this.shares.total;
+  }
+  if (this.shareCount !== undefined && (!this.shares || this.shares.total === undefined)) {
+    if (!this.shares) {
+      this.shares = { 
+        total: 0, 
+        platforms: {
+          whatsapp: 0, facebook: 0, twitter: 0, telegram: 0,
+          linkedin: 0, reddit: 0, instagram: 0, copy: 0, other: 0
+        }
+      };
+    }
     this.shares.total = this.shareCount;
   }
+  
+  // ✅ Ensure share counts are never negative
+  if (this.shareCount < 0) this.shareCount = 0;
+  if (this.shares?.total < 0) this.shares.total = 0;
+  
+  // ✅ Ensure views and watch time are never negative
+  if (this.views < 0) this.views = 0;
+  if (this.averageWatchTime < 0) this.averageWatchTime = 0;
+  if (this.totalWatchTime < 0) this.totalWatchTime = 0;
   
   next();
 });

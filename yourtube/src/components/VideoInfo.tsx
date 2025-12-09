@@ -308,6 +308,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     }
   }, [video?._id, video?.Like, video?.Dislike]);
 
+  // ✅ DEBUG: Monitor like/dislike changes
+useEffect(() => {
+  console.log('📊 Like/Dislike State:', {
+    videoId: video._id,
+    likes,
+    dislikes,
+    isLiked,
+    isDisliked,
+    backendLikes: video.Like,
+    backendDislikes: video.Dislike
+  });
+}, [likes, dislikes, isLiked, isDisliked, video._id, video.Like, video.Dislike]);
+
   // Track video views
   useEffect(() => {
     const handleViews = async () => {
@@ -380,96 +393,162 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
   // Like button handler
   const handleLike = async () => {
-    if (!user?._id) {
-      setError("Please log in to like videos");
-      setTimeout(() => setError(null), 3000);
-      return;
+  if (!user?._id) {
+    setError("Please log in to like videos");
+    setTimeout(() => setError(null), 3000);
+    return;
+  }
+  
+  // ✅ Prevent double-clicking
+  if (likeAnimation) return;
+  
+  try {
+    setError(null);
+    setLikeAnimation(true);
+    setLikeRipple(true);
+    
+    // ✅ Optimistic UI update
+    const wasLiked = isLiked;
+    const wasDisliked = isDisliked;
+    
+    if (wasLiked) {
+      // Remove like
+      setIsLiked(false);
+      setLikes(prev => Math.max(0, prev - 1));
+    } else {
+      // Add like
+      setIsLiked(true);
+      setLikes(prev => prev + 1);
+      
+      // If switching from dislike
+      if (wasDisliked) {
+        setIsDisliked(false);
+        setDislikes(prev => Math.max(0, prev - 1));
+      }
     }
     
-    try {
-      setError(null);
-      setLikeAnimation(true);
-      setLikeRipple(true);
-      setTimeout(() => {
-        setLikeAnimation(false);
-        setLikeRipple(false);
-      }, 650);
-      const res = await axiosInstance.post(`/like/${video._id}`, {
-        userId: user._id,
-        isLike: true,
-      });
-      
-      if (res.data.success) {
-        setIsLiked(res.data.liked);
-        setIsDisliked(false);
-        
-        try {
-          const freshVideo = await axiosInstance.get(`/video/${video._id}`);
-          if (freshVideo.data.success && freshVideo.data.video) {
-            setLikes(freshVideo.data.video.Like);
-            setDislikes(freshVideo.data.video.Dislike);
-          }
-        } catch (fetchError) {
-          if (res.data.action === 'added') setLikes(prev => prev + 1);
-          else if (res.data.action === 'removed') setLikes(prev => prev - 1);
-          else if (res.data.action === 'switched') {
-            setLikes(prev => prev + 1);
-            setDislikes(prev => Math.max(0, prev - 1));
-          }
+    // ✅ Send request to backend
+    const res = await axiosInstance.post(`/like/${video._id}`, {
+      userId: user._id,
+      isLike: true,
+    });
+    
+    // ✅ Sync with server response after 500ms delay
+    setTimeout(async () => {
+      try {
+        const freshVideo = await axiosInstance.get(`/video/${video._id}`);
+        if (freshVideo.data.success && freshVideo.data.video) {
+          setLikes(freshVideo.data.video.Like || freshVideo.data.video.likes || 0);
+          setDislikes(freshVideo.data.video.Dislike || freshVideo.data.video.dislikes || 0);
+          
+          // Update state based on server
+          setIsLiked(res.data.liked);
+          setIsDisliked(res.data.disliked || false);
         }
+      } catch (fetchError) {
+        console.error("Failed to sync likes:", fetchError);
       }
-    } catch (error: any) {
-      setError(error.response?.data?.message || "Failed to like video");
-      setTimeout(() => setError(null), 3000);
+    }, 500);
+    
+    setTimeout(() => {
+      setLikeAnimation(false);
+      setLikeRipple(false);
+    }, 650);
+    
+  } catch (error: any) {
+    console.error("Like error:", error);
+    
+    // ✅ Revert optimistic update on error
+    const freshVideo = await axiosInstance.get(`/video/${video._id}`);
+    if (freshVideo.data.success && freshVideo.data.video) {
+      setLikes(freshVideo.data.video.Like || 0);
+      setDislikes(freshVideo.data.video.Dislike || 0);
     }
-  };
+    
+    setError(error.response?.data?.message || "Failed to like video");
+    setTimeout(() => setError(null), 3000);
+  }
+};
 
   // Dislike button handler
-  const handleDislike = async () => {
-    if (!user?._id) {
-      setError("Please log in to dislike videos");
-      setTimeout(() => setError(null), 3000);
-      return;
+  // Dislike button handler
+const handleDislike = async () => {
+  if (!user?._id) {
+    setError("Please log in to dislike videos");
+    setTimeout(() => setError(null), 3000);
+    return;
+  }
+  
+  // ✅ Prevent double-clicking
+  if (dislikeAnimation) return;
+  
+  try {
+    setError(null);
+    setDislikeAnimation(true);
+    setDislikeRipple(true);
+    
+    // ✅ Optimistic UI update
+    const wasLiked = isLiked;
+    const wasDisliked = isDisliked;
+    
+    if (wasDisliked) {
+      // Remove dislike
+      setIsDisliked(false);
+      setDislikes(prev => Math.max(0, prev - 1));
+    } else {
+      // Add dislike
+      setIsDisliked(true);
+      setDislikes(prev => prev + 1);
+      
+      // If switching from like
+      if (wasLiked) {
+        setIsLiked(false);
+        setLikes(prev => Math.max(0, prev - 1));
+      }
     }
     
-    try {
-      setError(null);
-      setDislikeAnimation(true);
-      setDislikeRipple(true);
-      setTimeout(() => {
-        setDislikeAnimation(false);
-        setDislikeRipple(false);
-      }, 650);
-      
-      const res = await axiosInstance.post(`/like/${video._id}`, {
-        userId: user._id,
-        isLike: false,
-      });
-      
-      if (res.data.success) {
-        setIsDisliked(res.data.disliked);
-        setIsLiked(false);
-        
-        try {
-          const freshVideo = await axiosInstance.get(`/video/${video._id}`);
-          if (freshVideo.data.success && freshVideo.data.video) {
-            setLikes(freshVideo.data.video.Like);
-            setDislikes(freshVideo.data.video.Dislike);
-          }
-        } catch (fetchError) {
-          if (res.data.action === 'added') setDislikes(prev => prev + 1);
-          else if (res.data.action === 'removed') setDislikes(prev => prev - 1);
-          else if (res.data.action === 'switched') {
-            setDislikes(prev => prev + 1);
-            setLikes(prev => Math.max(0, prev - 1));
-          }
+    // ✅ Send request to backend
+    const res = await axiosInstance.post(`/like/${video._id}`, {
+      userId: user._id,
+      isLike: false,
+    });
+    
+    // ✅ Sync with server response after 500ms delay
+    setTimeout(async () => {
+      try {
+        const freshVideo = await axiosInstance.get(`/video/${video._id}`);
+        if (freshVideo.data.success && freshVideo.data.video) {
+          setLikes(freshVideo.data.video.Like || freshVideo.data.video.likes || 0);
+          setDislikes(freshVideo.data.video.Dislike || freshVideo.data.video.dislikes || 0);
+          
+          // Update state based on server
+          setIsLiked(res.data.liked || false);
+          setIsDisliked(res.data.disliked);
         }
+      } catch (fetchError) {
+        console.error("Failed to sync dislikes:", fetchError);
       }
-    } catch (error: any) {
-      setError(error.response?.data?.message || "Failed to dislike video");
-      setTimeout(() => setError(null), 3000);
+    }, 500);
+    
+    setTimeout(() => {
+      setDislikeAnimation(false);
+      setDislikeRipple(false);
+    }, 650);
+    
+  } catch (error: any) {
+    console.error("Dislike error:", error);
+    
+    // ✅ Revert optimistic update on error
+    const freshVideo = await axiosInstance.get(`/video/${video._id}`);
+    if (freshVideo.data.success && freshVideo.data.video) {
+      setLikes(freshVideo.data.video.Like || 0);
+      setDislikes(freshVideo.data.video.Dislike || 0);
     }
-  };
+    
+    setError(error.response?.data?.message || "Failed to dislike video");
+    setTimeout(() => setError(null), 3000);
+  }
+};
   // Watch later handler
   const handleWatchLater = async () => {
     if (!user?._id) {
