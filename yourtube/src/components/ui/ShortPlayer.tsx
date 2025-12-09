@@ -72,7 +72,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isModalOpenRef = useRef(false);
 
-    const touchStartYRef = useRef(0);
+  const touchStartYRef = useRef(0);
   const touchEndYRef = useRef(0);
   const touchMoveCountRef = useRef(0);
   const lastNavigationTimeRef = useRef(0);
@@ -128,11 +128,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const channelAvatar = getShortAvatar(short);
   const channelName = getShortChannelName(short);
 
-  
-
   const getApiUrl = () =>
-// ✅ CORRECT - Simple fallback chain
-"https://youtube-clone-project-q3pd.onrender.com"
+    // ✅ CORRECT - Simple fallback chain
+    "https://youtube-clone-project-q3pd.onrender.com";
   // Translation handlers
   const handleTranslated = (
     title: string,
@@ -186,43 +184,43 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   ]);
 
   useEffect(() => {
-  // Track short view in history
-  const trackShortView = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token || !short._id) return;
+    // Track short view in history
+    const trackShortView = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token || !short._id) return;
 
-      // Get userId from token
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const userId = payload.userId || payload.id;
+        // Get userId from token
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const userId = payload.userId || payload.id;
 
-      if (!userId) return;
+        if (!userId) return;
 
-      const apiUrl = getApiUrl();
-      
-      // Add to history
-      await axios.post(
-        `${apiUrl}/history/short/${short._id}`,
-        { userId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      console.log('✅ Short added to history:', short._id);
-    } catch (error) {
-      console.error("Error tracking short view:", error);
+        const apiUrl = getApiUrl();
+
+        // Add to history
+        await axios.post(
+          `${apiUrl}/history/short/${short._id}`,
+          { userId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        console.log("✅ Short added to history:", short._id);
+      } catch (error) {
+        console.error("Error tracking short view:", error);
+      }
+    };
+
+    // Only track if this short is active
+    if (isActive && short._id) {
+      // Add a small delay to ensure user actually watched
+      const timer = setTimeout(() => {
+        trackShortView();
+      }, 1000); // Track after 1 second of viewing
+
+      return () => clearTimeout(timer);
     }
-  };
-
-  // Only track if this short is active
-  if (isActive && short._id) {
-    // Add a small delay to ensure user actually watched
-    const timer = setTimeout(() => {
-      trackShortView();
-    }, 1000); // Track after 1 second of viewing
-
-    return () => clearTimeout(timer);
-  }
-}, [isActive, short._id]);
+  }, [isActive, short._id]);
 
   useEffect(() => {
     return () => {
@@ -269,20 +267,20 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     }
   };
 
-useEffect(() => {
+  useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     if (isActive && !isModalOpenRef.current) {
       // Critical: Set attributes for mobile
-      video.setAttribute('playsinline', 'true');
-      video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('x5-playsinline', 'true');
-      
+      video.setAttribute("playsinline", "true");
+      video.setAttribute("webkit-playsinline", "true");
+      video.setAttribute("x5-playsinline", "true");
+
       // Ensure muted for autoplay policy
       const shouldMute = isMuted;
       video.muted = shouldMute;
-      
+
       // Use RAF for smoother start
       requestAnimationFrame(() => {
         const playPromise = video.play();
@@ -301,7 +299,8 @@ useEffect(() => {
               console.log("Autoplay prevented, trying muted:", err);
               // Fallback: force mute and retry
               video.muted = true;
-              video.play()
+              video
+                .play()
                 .then(() => setIsPlaying(true))
                 .catch(() => setIsPlaying(false));
             });
@@ -320,34 +319,36 @@ useEffect(() => {
 
     const preventDefaultTouch = (e: TouchEvent) => {
       if (isModalOpenRef.current) return;
-      
+
       const target = e.target as HTMLElement;
       // Don't prevent on buttons, inputs, or scrollable content
       if (
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.closest('.volume-control') ||
+        target.tagName === "BUTTON" ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.closest(".volume-control") ||
         target.closest('[class*="Modal"]')
       ) {
         return;
       }
-      
+
       // Only prevent vertical scroll
       const touch = e.touches[0];
       const deltaY = Math.abs(touch.clientY - touchStartYRef.current);
       const deltaX = Math.abs(touch.clientX - (touchStartYRef.current || 0));
-      
+
       if (deltaY > deltaX && deltaY > 10) {
         e.preventDefault();
       }
     };
 
     // Use non-passive listener to allow preventDefault
-    container.addEventListener('touchmove', preventDefaultTouch, { passive: false });
-    
+    container.addEventListener("touchmove", preventDefaultTouch, {
+      passive: false,
+    });
+
     return () => {
-      container.removeEventListener('touchmove', preventDefaultTouch);
+      container.removeEventListener("touchmove", preventDefaultTouch);
     };
   }, []);
 
@@ -361,7 +362,8 @@ useEffect(() => {
       setIsPlaying(false);
     } else if (!isModalOpenRef.current && isActive && !isPlaying) {
       const timer = setTimeout(() => {
-        video.play()
+        video
+          .play()
           .then(() => setIsPlaying(true))
           .catch(() => {});
       }, 100);
@@ -401,10 +403,10 @@ useEffect(() => {
   }, [showMenu, showVolumeSlider]);
 
   // Touch/Mouse handlers
- // ✅ OPTIMIZED Touch/Mouse handlers
+  // ✅ OPTIMIZED Touch/Mouse handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isModalOpenRef.current) return;
-    
+
     const y = e.targetTouches[0].clientY;
     touchStartYRef.current = y;
     touchEndYRef.current = y;
@@ -417,17 +419,18 @@ useEffect(() => {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (isModalOpenRef.current) return;
-    
+
     // Throttle: only process every 3rd move event
     touchMoveCountRef.current++;
     if (touchMoveCountRef.current % 3 !== 0) return;
-    
+
     const y = e.targetTouches[0].clientY;
     touchEndYRef.current = y;
     setTouchEnd(y);
 
     const distance = Math.abs(touchStartYRef.current - y);
-    if (distance > 15) { // Increased threshold
+    if (distance > 15) {
+      // Increased threshold
       setIsDragging(true);
     }
   };
@@ -439,10 +442,11 @@ useEffect(() => {
     const minSwipeDistance = 60; // Increased from 50
     const dragDuration = Date.now() - dragStartTimeRef.current;
     const velocity = Math.abs(distance) / (dragDuration + 1);
-    
+
     // Throttle navigation (prevent rapid swipes)
     const timeSinceLastNav = Date.now() - lastNavigationTimeRef.current;
-    if (timeSinceLastNav < 400) { // 400ms cooldown
+    if (timeSinceLastNav < 400) {
+      // 400ms cooldown
       setIsDragging(false);
       setTouchStart(0);
       setTouchEnd(0);
@@ -458,7 +462,7 @@ useEffect(() => {
     ) {
       lastNavigationTimeRef.current = Date.now();
       setIsDragging(false);
-      
+
       // Use RAF for smoother transition
       requestAnimationFrame(() => {
         if (distance > 0) {
@@ -490,10 +494,10 @@ useEffect(() => {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isModalOpenRef.current || touchStartYRef.current === 0) return;
-    
+
     touchMoveCountRef.current++;
     if (touchMoveCountRef.current % 2 !== 0) return;
-    
+
     const y = e.clientY;
     touchEndYRef.current = y;
     setTouchEnd(y);
@@ -511,7 +515,7 @@ useEffect(() => {
     const minSwipeDistance = 60;
     const dragDuration = Date.now() - dragStartTimeRef.current;
     const velocity = Math.abs(distance) / (dragDuration + 1);
-    
+
     const timeSinceLastNav = Date.now() - lastNavigationTimeRef.current;
     if (timeSinceLastNav < 400) {
       setIsDragging(false);
@@ -530,7 +534,7 @@ useEffect(() => {
     ) {
       lastNavigationTimeRef.current = Date.now();
       setIsDragging(false);
-      
+
       requestAnimationFrame(() => {
         if (distance > 0) {
           onNext();
@@ -681,50 +685,50 @@ useEffect(() => {
     }
   };
 
- const handleDeleteShort = async () => {
-  if (isDeleting) return;
-  setIsDeleting(true);
+  const handleDeleteShort = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
 
-  try {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+    try {
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
 
-    if (!token) {
-      alert("Please login to delete shorts");
-      router.push("/login?redirect=/shorts");
-      setIsDeleting(false);
-      return;
-    }
+      if (!token) {
+        alert("Please login to delete shorts");
+        router.push("/login?redirect=/shorts");
+        setIsDeleting(false);
+        return;
+      }
 
-    if (currentUserId !== short.userId._id) {
-      alert("You can only delete your own shorts");
-      setIsDeleting(false);
-      return;
-    }
+      if (currentUserId !== short.userId._id) {
+        alert("You can only delete your own shorts");
+        setIsDeleting(false);
+        return;
+      }
 
-    const apiUrl = getApiUrl();
-    const deleteUrl = `${apiUrl}/api/shorts/${short._id}`;
+      const apiUrl = getApiUrl();
+      const deleteUrl = `${apiUrl}/api/shorts/${short._id}`;
 
-    const response = await axios({
-      method: "DELETE",
-      url: deleteUrl,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      timeout: 15000,
-    });
+      const response = await axios({
+        method: "DELETE",
+        url: deleteUrl,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 15000,
+      });
 
-    if (response.data.success || response.status === 200) {
-      // Close modal
-      setShowDeleteConfirm(false);
-      setShowMenu(false);
-      isModalOpenRef.current = false;
+      if (response.data.success || response.status === 200) {
+        // Close modal
+        setShowDeleteConfirm(false);
+        setShowMenu(false);
+        isModalOpenRef.current = false;
 
-      // Success notification
-      const div = document.createElement("div");
-      div.innerHTML = "✅ Short deleted successfully!";
-      div.style.cssText = `
+        // Success notification
+        const div = document.createElement("div");
+        div.innerHTML = "✅ Short deleted successfully!";
+        div.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
@@ -738,76 +742,75 @@ useEffect(() => {
         z-index: 999999;
         box-shadow: 0 10px 40px rgba(0,0,0,0.3);
       `;
-      document.body.appendChild(div);
+        document.body.appendChild(div);
 
-      setTimeout(() => {
-        if (document.body.contains(div)) {
-          document.body.removeChild(div);
+        setTimeout(() => {
+          if (document.body.contains(div)) {
+            document.body.removeChild(div);
+          }
+        }, 2000);
+
+        // Call onDelete callback
+        if (onDelete) {
+          onDelete(short._id);
         }
-      }, 2000);
 
-      // Call onDelete callback
-      if (onDelete) {
-        onDelete(short._id);
+        // Move to next short
+        setTimeout(() => {
+          onNext();
+        }, 800);
+      } else {
+        throw new Error("Delete failed");
+      }
+    } catch (error: any) {
+      console.error("DELETE ERROR:", error);
+      setIsDeleting(false);
+
+      let msg = "Failed to delete short";
+
+      if (error.code === "ECONNABORTED") {
+        msg = "Request timeout - please try again";
+      } else if (error.code === "ERR_NETWORK") {
+        msg = "Network error - check your connection";
+      } else if (error.response) {
+        switch (error.response.status) {
+          case 401:
+            msg = "Session expired - please login again";
+            setTimeout(() => router.push("/login?redirect=/shorts"), 2000);
+            break;
+          case 403:
+            msg = "Not authorized to delete this short";
+            break;
+          case 404:
+            msg = "Short not found or already deleted";
+            break;
+          default:
+            msg = error.response.data?.message || msg;
+        }
       }
 
-      // Move to next short
-      setTimeout(() => {
-        onNext();
-      }, 800);
-    } else {
-      throw new Error("Delete failed");
+      alert(`❌ ${msg}`);
+
+      // Reset states
+      setShowDeleteConfirm(false);
+      setShowMenu(false);
+      isModalOpenRef.current = false;
+    } finally {
+      setTimeout(() => setIsDeleting(false), 500);
     }
-  } catch (error: any) {
-    console.error("DELETE ERROR:", error);
-    setIsDeleting(false);
+  };
 
-    let msg = "Failed to delete short";
-
-    if (error.code === "ECONNABORTED") {
-      msg = "Request timeout - please try again";
-    } else if (error.code === "ERR_NETWORK") {
-      msg = "Network error - check your connection";
-    } else if (error.response) {
-      switch (error.response.status) {
-        case 401:
-          msg = "Session expired - please login again";
-          setTimeout(() => router.push("/login?redirect=/shorts"), 2000);
-          break;
-        case 403:
-          msg = "Not authorized to delete this short";
-          break;
-        case 404:
-          msg = "Short not found or already deleted";
-          break;
-        default:
-          msg = error.response.data?.message || msg;
-      }
-    }
-
-    alert(`❌ ${msg}`);
-    
-    // Reset states
-    setShowDeleteConfirm(false);
+  const openDeleteConfirm = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setShowMenu(false);
-    isModalOpenRef.current = false;
-  } finally {
-    setTimeout(() => setIsDeleting(false), 500);
-  }
-};
 
-
-const openDeleteConfirm = (e: React.MouseEvent) => {
-  e.stopPropagation();
-  e.preventDefault();
-  setShowMenu(false);
-  
-  // Small delay to ensure menu closes first
-  setTimeout(() => {
-    setShowDeleteConfirm(true);
-    isModalOpenRef.current = true;
-  }, 50);
-};
+    // Small delay to ensure menu closes first
+    setTimeout(() => {
+      setShowDeleteConfirm(true);
+      isModalOpenRef.current = true;
+    }, 50);
+  };
   const closeDeleteConfirm = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowDeleteConfirm(false);
@@ -920,7 +923,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
   ];
 
   return (
-   <div
+    <div
       ref={containerRef}
       className="relative w-full h-screen bg-black select-none"
       onTouchStart={handleTouchStart}
@@ -935,533 +938,581 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
         }
       }}
       style={{
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehavior: 'contain',
-        touchAction: 'pan-y',
-        WebkitTapHighlightColor: 'transparent',
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
+        WebkitOverflowScrolling: "touch",
+        overscrollBehavior: "contain",
+        touchAction: "pan-y",
+        WebkitTapHighlightColor: "transparent",
+        WebkitTouchCallout: "none",
+        WebkitUserSelect: "none",
+        userSelect: "none",
       }}
     >
       {/* Video */}
-       {/* Video */}
-     <video
-  ref={videoRef}
-  src={short.videoUrl}
-  className="w-full h-full object-contain cursor-pointer bg-black"
-  loop
-  playsInline
-  webkit-playsinline="true"
-  x5-playsinline="true"
-  onClick={togglePlayPause}
-  onError={(e) => {
-    console.error("❌ Video load error:", {
-      url: short.videoUrl,
-      error: e,
-      networkState: videoRef.current?.networkState,
-      readyState: videoRef.current?.readyState
-    });
-    // Try reloading once
-    if (videoRef.current && !videoRef.current.dataset.retried) {
-      videoRef.current.dataset.retried = 'true';
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.load();
-        }
-      }, 1000);
-    }
-  }}
-  onLoadedData={() => {
-    console.log("✅ Video loaded successfully:", short.videoUrl);
-  }}
-  style={{
-    WebkitTapHighlightColor: 'transparent',
-    touchAction: 'pan-y',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  }}
-/>
+      {/* Video */}
+      <video
+        ref={videoRef}
+        src={short.videoUrl}
+        className="w-full h-full object-contain cursor-pointer bg-black"
+        loop
+        playsInline
+        webkit-playsinline="true"
+        x5-playsinline="true"
+        onClick={togglePlayPause}
+        onError={(e) => {
+          console.error("❌ Video load error:", {
+            url: short.videoUrl,
+            error: e,
+            networkState: videoRef.current?.networkState,
+            readyState: videoRef.current?.readyState,
+          });
+          // Try reloading once
+          if (videoRef.current && !videoRef.current.dataset.retried) {
+            videoRef.current.dataset.retried = "true";
+            setTimeout(() => {
+              if (videoRef.current) {
+                videoRef.current.load();
+              }
+            }, 1000);
+          }
+        }}
+        onLoadedData={() => {
+          console.log("✅ Video loaded successfully:", short.videoUrl);
+        }}
+        style={{
+          WebkitTapHighlightColor: "transparent",
+          touchAction: "pan-y",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+        }}
+      />
 
       {/* Gradients */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
       </div>
-{/* Header with Theme-Compatible Menu */}
-<div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto">
-  {/* Shorts button - HIDDEN on desktop (md and above) */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      router.push("/shorts");
-    }}
-    className="md:hidden text-white text-2xl font-bold hover:text-gray-300 transition"
-  >
-    Shorts
-  </button>
-
-  {/* Empty div for spacing on desktop */}
-  <div className="hidden md:block"></div>
-
-  <div className="relative menu-button ml-auto">
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowMenu(!showMenu);
-      }}
-      className="text-white hover:bg-white/20 rounded-full p-2 transition"
-    >
-      <MoreVertical size={24} />
-    </button>
-
-    {showMenu && (
-      <>
-        {/* Backdrop for closing menu */}
-        <div 
-          className="fixed inset-0 z-[98]"
+      {/* Header with Theme-Compatible Menu */}
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto">
+        {/* Shorts button - HIDDEN on desktop (md and above) */}
+        <button
           onClick={(e) => {
             e.stopPropagation();
-            setShowMenu(false);
+            router.push("/shorts");
           }}
-        />
-        
-        {/* UNIFIED MENU - Works for both mobile and desktop */}
-        <div 
-          className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
-          style={{
-            backgroundColor: 'var(--bg-secondary, #272727)',
-            borderColor: 'var(--border-color, #3f3f3f)',
-            minWidth: '220px',
-            maxWidth: '280px',
-          }}
+          className="md:hidden text-white text-2xl font-bold hover:text-gray-300 transition"
         >
-          {/* Delete Short Option */}
-          {isOwnShort ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openDeleteConfirm(e);
-              }}
-              className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors"
-              style={{ 
-                color: 'var(--text-primary, #fff)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #3f3f3f)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              <Trash2 size={20} className="text-red-500 flex-shrink-0" />
-              <span className="font-medium text-sm">Delete Short</span>
-            </button>
-          ) : (
-            <div 
-              className="w-full px-4 py-3.5 flex items-center gap-3 opacity-50 cursor-not-allowed"
-              style={{ 
-                color: 'var(--text-disabled, #717171)',
-              }}
-            >
-              <Trash2 size={20} className="flex-shrink-0" />
-              <span className="font-medium text-sm">Only Owner Can Delete</span>
-            </div>
-          )}
-          
-          {/* Divider */}
-          <div 
-            className="h-px mx-3"
-            style={{ backgroundColor: 'var(--border-color, #3f3f3f)' }}
-          />
+          Shorts
+        </button>
 
-          {/* Report Option */}
+        {/* Empty div for spacing on desktop */}
+        <div className="hidden md:block"></div>
+
+        <div className="relative menu-button ml-auto">
           <button
             onClick={(e) => {
               e.stopPropagation();
-              openReportModal(e);
+              setShowMenu(!showMenu);
             }}
-            className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors"
-            style={{ 
-              color: 'var(--text-primary, #fff)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--bg-hover, #3f3f3f)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
+            className="text-white hover:bg-white/20 rounded-full p-2 transition"
           >
-            <Flag size={20} className="flex-shrink-0" style={{ color: 'var(--text-primary, #fff)' }} />
-            <span className="font-medium text-sm">Report</span>
+            <MoreVertical size={24} />
           </button>
-        </div>
-      </>
-    )}
-  </div>
-</div>
 
-    {/* Delete Confirmation Modal */}
-{showDeleteConfirm && (
-  <div
-    className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
-    onClick={closeDeleteConfirm}
-  >
-    {/* MOBILE MODAL */}
-    <div
-      className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp"
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        backgroundColor: 'var(--bg-secondary, #2d2d2d)',
-      }}
-    >
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
-            <AlertTriangle size={22} className="text-red-500" />
-          </div>
-          <h3 className="text-lg font-bold text-white">
-            Delete Short?
-          </h3>
-        </div>
-
-        {/* Content */}
-        <div className="mb-4">
-          <p className="text-sm leading-relaxed text-gray-300 mb-3">
-            Are you sure you want to delete this short?
-          </p>
-          <p className="text-white font-semibold text-sm break-words bg-gray-800/50 p-3 rounded-lg">
-            "{short.title}"
-          </p>
-        </div>
-        
-        {/* Warning */}
-        <div className="flex items-center gap-2 mb-6 bg-red-500/10 p-3 rounded-lg">
-          <AlertTriangle size={16} className="text-red-400 flex-shrink-0" />
-          <p className="text-red-400 font-semibold text-xs">
-            This action cannot be undone
-          </p>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={closeDeleteConfirm}
-            disabled={isDeleting}
-            className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95 bg-gray-700 text-white hover:bg-gray-600"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleDeleteShort}
-            disabled={isDeleting}
-            className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-          >
-            {isDeleting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                <span>Deleting...</span>
-              </>
-            ) : (
-              <>
-                <Trash2 size={18} />
-                <span>Delete</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {/* DESKTOP MODAL */}
-    <div
-      className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        backgroundColor: 'var(--bg-secondary, #1f2937)',
-        borderColor: 'var(--border-color, #374151)',
-      }}
-    >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="bg-red-500/20 p-3 rounded-full">
-          <AlertTriangle size={28} className="text-red-500" />
-        </div>
-        <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary, #fff)' }}>
-          Delete Short?
-        </h3>
-      </div>
-
-      <p className="mb-3 text-base leading-relaxed" style={{ color: 'var(--text-secondary, #d1d5db)' }}>
-        Are you sure you want to delete this short?
-      </p>
-
-      <p className="mb-2 text-base font-bold break-words" style={{ 
-        color: 'var(--text-primary, #fff)',
-        backgroundColor: 'var(--bg-tertiary, #374151)',
-        padding: '12px',
-        borderRadius: '8px'
-      }}>
-        "{short.title}"
-      </p>
-      
-      <p className="text-red-400 font-semibold mb-8 text-sm">
-        ⚠️ This action cannot be undone
-      </p>
-
-      <div className="flex gap-4">
-        <button
-          onClick={closeDeleteConfirm}
-          disabled={isDeleting}
-          className="flex-1 px-6 py-3 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
-          style={{
-            backgroundColor: 'var(--bg-tertiary, #374151)',
-            color: 'var(--text-primary, #fff)',
-            borderColor: 'var(--border-color, #4b5563)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleDeleteShort}
-          disabled={isDeleting}
-          className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-        >
-          {isDeleting ? (
+          {showMenu && (
             <>
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-              Deleting...
-            </>
-          ) : (
-            <>
-              <Trash2 size={20} />
-              Delete
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              {/* Backdrop for closing menu */}
+              <div
+                className="fixed inset-0 z-[98]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+              />
 
-     {/* Report Modal */}
-{showReportModal && (
-  <div
-    className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
-    onClick={closeReportModal}
-  >
-    {/* MOBILE MODAL */}
-    <div
-      className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp max-h-[85vh] overflow-hidden"
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        backgroundColor: 'var(--bg-secondary, #2d2d2d)',
-      }}
-    >
-      <div className="overflow-y-auto max-h-[85vh]">
-        <div className="p-5 pb-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4 sticky top-0 bg-[#2d2d2d] pb-3 z-10">
-            <div className="flex items-center gap-2.5">
-              <div className="bg-blue-500/20 p-2 rounded-full">
-                <Flag size={18} className="text-blue-400" />
-              </div>
-              <h3 className="text-base font-bold text-white">Report Short</h3>
-            </div>
-            <button
-              onClick={closeReportModal}
-              className="text-gray-400 hover:text-white transition"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <p className="text-gray-400 mb-4 text-xs">
-            Help us understand what's wrong with this short
-          </p>
-
-          {/* Report Reasons */}
-          <div className="space-y-2 mb-4">
-            {reportReasons.map((reason) => (
-              <button
-                key={reason}
-                onClick={() => setReportReason(reason)}
-                className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
-                  reportReason === reason
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-800 text-gray-200 hover:bg-gray-700 active:bg-gray-600"
-                }`}
+              {/* UNIFIED MENU - Works for both mobile and desktop */}
+              <div
+                className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
+                style={{
+                  backgroundColor: "var(--bg-secondary, #272727)",
+                  borderColor: "var(--border-color, #3f3f3f)",
+                  minWidth: "220px",
+                  maxWidth: "280px",
+                }}
               >
-                {reason}
-              </button>
-            ))}
-          </div>
+                {/* Delete Short Option */}
+                {isOwnShort ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDeleteConfirm(e);
+                    }}
+                    className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors"
+                    style={{
+                      color: "var(--text-primary, #fff)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-hover, #3f3f3f)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <Trash2 size={20} className="text-red-500 flex-shrink-0" />
+                    <span className="font-medium text-sm">Delete Short</span>
+                  </button>
+                ) : (
+                  <div
+                    className="w-full px-4 py-3.5 flex items-center gap-3 opacity-50 cursor-not-allowed"
+                    style={{
+                      color: "var(--text-disabled, #717171)",
+                    }}
+                  >
+                    <Trash2 size={20} className="flex-shrink-0" />
+                    <span className="font-medium text-sm">
+                      Only Owner Can Delete
+                    </span>
+                  </div>
+                )}
 
-          {/* Additional Details */}
-          <textarea
-            value={reportDetails}
-            onChange={(e) => setReportDetails(e.target.value)}
-            placeholder="Additional details (optional)"
-            rows={3}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 text-sm"
-          />
+                {/* Divider */}
+                <div
+                  className="h-px mx-3"
+                  style={{ backgroundColor: "var(--border-color, #3f3f3f)" }}
+                />
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={closeReportModal}
-              disabled={isReporting}
-              className="flex-1 px-5 py-3 bg-gray-800 text-white border-2 border-gray-700 rounded-xl font-semibold text-sm disabled:opacity-50 transition hover:bg-gray-700 active:scale-95"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmitReport}
-              disabled={isReporting || !reportReason}
-              className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-            >
-              {isReporting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                "Submit Report"
-              )}
-            </button>
-          </div>
+                {/* Report Option */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openReportModal(e);
+                  }}
+                  className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors"
+                  style={{
+                    color: "var(--text-primary, #fff)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-hover, #3f3f3f)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <Flag
+                    size={20}
+                    className="flex-shrink-0"
+                    style={{ color: "var(--text-primary, #fff)" }}
+                  />
+                  <span className="font-medium text-sm">Report</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </div>
 
-    {/* DESKTOP MODAL */}
-    <div
-      className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        backgroundColor: 'var(--bg-secondary, #1f2937)',
-        borderColor: 'var(--border-color, #374151)',
-      }}
-    >
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-500/20 p-2 rounded-full">
-            <Flag size={22} className="text-blue-400" />
-          </div>
-          <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary, #fff)' }}>
-            Report Short
-          </h3>
-        </div>
-        <button
-          onClick={closeReportModal}
-          className="transition"
-          style={{ color: 'var(--text-secondary, #9ca3af)' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-primary, #fff)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-secondary, #9ca3af)';
-          }}
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
+          onClick={closeDeleteConfirm}
         >
-          <X size={24} />
-        </button>
-      </div>
-
-      <p className="mb-4 text-sm" style={{ color: 'var(--text-secondary, #9ca3af)' }}>
-        Help us understand what's wrong with this short
-      </p>
-
-      <div className="space-y-2 mb-4">
-        {reportReasons.map((reason) => (
-          <button
-            key={reason}
-            onClick={() => setReportReason(reason)}
-            className={`w-full text-left px-4 py-3 rounded-lg transition text-sm ${
-              reportReason === reason
-                ? "bg-blue-600 text-white"
-                : ""
-            }`}
-            style={
-              reportReason !== reason
-                ? {
-                    backgroundColor: 'var(--bg-tertiary, #374151)',
-                    color: 'var(--text-primary, #e5e7eb)',
-                  }
-                : undefined
-            }
-            onMouseEnter={(e) => {
-              if (reportReason !== reason) {
-                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (reportReason !== reason) {
-                e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
-              }
+          {/* MOBILE MODAL */}
+          <div
+            className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "var(--bg-secondary, #ffffff)", // Changed from #2d2d2d
             }}
           >
-            {reason}
-          </button>
-        ))}
-      </div>
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
+                  <AlertTriangle size={22} className="text-red-500" />
+                </div>
+                <h3
+                  className="text-lg font-bold"
+                  style={{ color: "var(--text-primary, #000)" }}
+                >
+                  Delete Short?
+                </h3>
+              </div>
 
-      <textarea
-        value={reportDetails}
-        onChange={(e) => setReportDetails(e.target.value)}
-        placeholder="Additional details (optional)"
-        rows={3}
-        className="w-full rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
-        style={{
-          backgroundColor: 'var(--bg-tertiary, #374151)',
-          borderColor: 'var(--border-color, #4b5563)',
-          color: 'var(--text-primary, #fff)',
-        }}
-      />
+              {/* Content */}
+              <div className="mb-4">
+                <p
+                  className="text-sm leading-relaxed mb-3"
+                  style={{ color: "var(--text-secondary, #666)" }}
+                >
+                  Are you sure you want to delete this short?
+                </p>
+                <p
+                  className="font-semibold text-sm break-words p-3 rounded-lg"
+                  style={{
+                    color: "var(--text-primary, #000)",
+                    backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                  }}
+                >
+                  "{short.title}"
+                </p>
+              </div>
 
-      <div className="flex gap-3">
-        <button
+              {/* Warning */}
+              <div className="flex items-center gap-2 mb-6 bg-red-500/10 p-3 rounded-lg">
+                <AlertTriangle
+                  size={16}
+                  className="text-red-400 flex-shrink-0"
+                />
+                <p className="text-red-400 font-semibold text-xs">
+                  This action cannot be undone
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={closeDeleteConfirm}
+                  disabled={isDeleting}
+                  className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95"
+                  style={{
+                    backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                    color: "var(--text-primary, #000)",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteShort}
+                  disabled={isDeleting}
+                  className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={18} />
+                      <span>Delete</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* DESKTOP MODAL */}
+          <div
+            className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "var(--bg-secondary, #1f2937)",
+              borderColor: "var(--border-color, #374151)",
+            }}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-red-500/20 p-3 rounded-full">
+                <AlertTriangle size={28} className="text-red-500" />
+              </div>
+              <h3
+                className="text-xl font-bold"
+                style={{ color: "var(--text-primary, #fff)" }}
+              >
+                Delete Short?
+              </h3>
+            </div>
+
+            <p
+              className="mb-3 text-base leading-relaxed"
+              style={{ color: "var(--text-secondary, #d1d5db)" }}
+            >
+              Are you sure you want to delete this short?
+            </p>
+
+            <p
+              className="mb-2 text-base font-bold break-words"
+              style={{
+                color: "var(--text-primary, #fff)",
+                backgroundColor: "var(--bg-tertiary, #374151)",
+                padding: "12px",
+                borderRadius: "8px",
+              }}
+            >
+              "{short.title}"
+            </p>
+
+            <p className="text-red-400 font-semibold mb-8 text-sm">
+              ⚠️ This action cannot be undone
+            </p>
+
+            <div className="flex gap-4">
+              <button
+                onClick={closeDeleteConfirm}
+                disabled={isDeleting}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
+                style={{
+                  backgroundColor: "var(--bg-tertiary, #374151)",
+                  color: "var(--text-primary, #fff)",
+                  borderColor: "var(--border-color, #4b5563)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-hover, #4b5563)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-tertiary, #374151)";
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteShort}
+                disabled={isDeleting}
+                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={20} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div
+          className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
           onClick={closeReportModal}
-          disabled={isReporting}
-          className="flex-1 px-6 py-3 rounded-lg font-semibold disabled:opacity-50 transition active:scale-95 border-2"
-          style={{
-            backgroundColor: 'var(--bg-tertiary, #374151)',
-            color: 'var(--text-primary, #fff)',
-            borderColor: 'var(--border-color, #4b5563)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
-          }}
         >
-          Cancel
-        </button>
-        <button
-          onClick={handleSubmitReport}
-          disabled={isReporting || !reportReason}
-          className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-        >
-          {isReporting ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Report"
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          {/* MOBILE MODAL */}
+          <div
+            className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp max-h-[85vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "var(--bg-secondary, #ffffff)", // Changed from #2d2d2d
+            }}
+          >
+            <div className="overflow-y-auto max-h-[85vh]">
+              <div className="p-5 pb-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4 sticky top-0 bg-[#2d2d2d] pb-3 z-10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="bg-blue-500/20 p-2 rounded-full">
+                      <Flag size={18} className="text-blue-400" />
+                    </div>
+                    <h3 className="text-base font-bold text-white">
+                      Report Short
+                    </h3>
+                  </div>
+                  <button
+                    onClick={closeReportModal}
+                    className="text-gray-400 hover:text-white transition"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
 
+                <p className="text-gray-400 mb-4 text-xs">
+                  Help us understand what's wrong with this short
+                </p>
+
+                {/* Report Reasons */}
+                <div className="space-y-2 mb-4">
+                  {reportReasons.map((reason) => (
+                    <button
+                      key={reason}
+                      onClick={() => setReportReason(reason)}
+                      className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
+                        reportReason === reason
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-800 text-gray-200 hover:bg-gray-700 active:bg-gray-600"
+                      }`}
+                    >
+                      {reason}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Additional Details */}
+                <textarea
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder="Additional details (optional)"
+                  rows={3}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 text-sm"
+                />
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeReportModal}
+                    disabled={isReporting}
+                    className="flex-1 px-5 py-3 bg-gray-800 text-white border-2 border-gray-700 rounded-xl font-semibold text-sm disabled:opacity-50 transition hover:bg-gray-700 active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitReport}
+                    disabled={isReporting || !reportReason}
+                    className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    {isReporting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      "Submit Report"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* DESKTOP MODAL */}
+          <div
+            className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "var(--bg-secondary, #1f2937)",
+              borderColor: "var(--border-color, #374151)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-500/20 p-2 rounded-full">
+                  <Flag size={22} className="text-blue-400" />
+                </div>
+                <h3
+                  className="text-xl font-bold"
+                  style={{ color: "var(--text-primary, #fff)" }}
+                >
+                  Report Short
+                </h3>
+              </div>
+              <button
+                onClick={closeReportModal}
+                className="transition"
+                style={{ color: "var(--text-secondary, #666)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--text-primary, #fff)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color =
+                    "var(--text-secondary, #9ca3af)";
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p
+              className="mb-4 text-xs"
+              style={{ color: "var(--text-secondary, #666)" }}
+            >
+              Help us understand what's wrong with this short
+            </p>
+
+            <div className="space-y-2 mb-4">
+              {reportReasons.map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => setReportReason(reason)}
+                  className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
+                    reportReason === reason ? "bg-blue-600 text-white" : ""
+                  }`}
+                  style={
+                    reportReason !== reason
+                      ? {
+                          backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                          color: "var(--text-primary, #000)",
+                        }
+                      : undefined
+                  }
+                  onMouseEnter={(e) => {
+                    if (reportReason !== reason) {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-hover, #4b5563)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (reportReason !== reason) {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-tertiary, #374151)";
+                    }
+                  }}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={reportDetails}
+              onChange={(e) => setReportDetails(e.target.value)}
+              placeholder="Additional details (optional)"
+              rows={3}
+              className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
+              style={{
+                backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                borderColor: "var(--border-color, #e5e7eb)",
+                color: "var(--text-primary, #000)",
+              }}
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={closeReportModal}
+                disabled={isReporting}
+                className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95 border-2"
+                style={{
+                  backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                  color: "var(--text-primary, #000)",
+                  borderColor: "var(--border-color, #e5e7eb)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-hover, #4b5563)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-tertiary, #374151)";
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReport}
+                disabled={isReporting || !reportReason}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+              >
+                {isReporting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Report"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Play Icon Overlay */}
       {!isPlaying && !isModalOpenRef.current && (
@@ -1472,7 +1523,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
         </div>
       )}
 
-     {/* MOBILE OPTIMIZED CONTENT SECTION */}
+      {/* MOBILE OPTIMIZED CONTENT SECTION */}
       <div className="absolute bottom-0 left-0 right-0 z-[30]">
         <div className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24">
           <div className="flex items-end justify-between gap-3 md:gap-4 lg:gap-6">
@@ -1529,7 +1580,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
                         ? "bg-youtube-hover text-youtube-primary"
                         : "bg-white text-black hover:bg-gray-100"
                     }`}
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    style={{ WebkitTapHighlightColor: "transparent" }}
                   >
                     {isSubscribed ? "Subscribed" : "Subscribe"}
                   </button>
@@ -1560,7 +1611,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
               <button
                 onClick={handleLike}
                 className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <div
                   className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
@@ -1589,7 +1640,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
               <button
                 onClick={handleDislike}
                 className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <div
                   className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
@@ -1621,7 +1672,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
                   setShowComments(true);
                 }}
                 className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
                   <MessageCircle
@@ -1638,7 +1689,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
               <button
                 onClick={handleShareClick}
                 className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
                   <Share2
@@ -1656,7 +1707,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
                 <button
                   onClick={toggleVolumeSlider}
                   className="flex flex-col items-center gap-1 transition-all transform hover:scale-105 active:scale-95 group touch-manipulation w-full"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
                     {isMuted || volume === 0 ? (
@@ -1733,11 +1784,14 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
                           }}
                         >
                           100%
@@ -1751,11 +1805,14 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
                           }}
                         >
                           50%
@@ -1769,11 +1826,14 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "var(--text-primary)";
-                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-hover)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
                           }}
                         >
                           Mute
@@ -1787,7 +1847,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
           </div>
         </div>
       </div>
-      
+
       {/* Modals */}
       {showShareModal && (
         <ShareModal
