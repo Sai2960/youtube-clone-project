@@ -469,6 +469,21 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.get('/api/keep-alive', (req, res) => {
+  console.log('🔔 Keep-alive ping received at', new Date().toISOString());
+  
+  res.status(200).json({
+    status: 'alive',
+    message: 'Server is awake and running',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+    mongodb: mongoConnected ? 'connected' : 'disconnected',
+    cronJobs: cronJobsRunning ? 'active' : 'inactive',
+    socketConnections: io.sockets.sockets.size,
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
 // Detailed health check for monitoring
 app.get("/health/detailed", (req, res) => {
   try {
