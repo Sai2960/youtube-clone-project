@@ -692,6 +692,15 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         return;
       }
 
+      // Get userId from token
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const userId = payload.userId || payload.id;
+
+      if (!userId) {
+        router.push("/login?redirect=/shorts");
+        return;
+      }
+
       // ✅ Optimistic update
       const wasLiked = hasLiked;
       const wasDisliked = hasDisliked;
@@ -708,36 +717,41 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         }
       }
 
+      // ✅ CRITICAL FIX: Use the LIKE controller endpoint, not the shorts endpoint
       const response = await axios.post(
-        `${getApiUrl()}/api/shorts/${short._id}/like`,
-        {},
+        `${getApiUrl()}/like/short/${short._id}`, // ✅ Changed from /api/shorts/${short._id}/like
+        { userId }, // ✅ Send userId in body
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       // ✅ Sync with server response
       if (response.data.success) {
-        setHasLiked(response.data.data.hasLiked);
-        setHasDisliked(response.data.data.hasDisliked);
-        setLikesCount(response.data.data.likesCount);
-        setDislikesCount(response.data.data.dislikesCount);
+        setHasLiked(Boolean(response.data.liked));
+        setLikesCount(response.data.likesCount || 0);
 
-        console.log("✅ Like synced:", response.data.data);
+        console.log("✅ Like synced:", {
+          liked: response.data.liked,
+          likesCount: response.data.likesCount,
+        });
       }
     } catch (error: any) {
       console.error("Error liking short:", error);
 
       // ✅ Revert on error
-      const freshShort = await axios.get(
-        `${getApiUrl()}/api/shorts/${short._id}`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      try {
+        const token = localStorage.getItem("token");
+        const freshShort = await axios.get(
+          `${getApiUrl()}/api/shorts/${short._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (freshShort.data.success) {
+          setHasLiked(Boolean(freshShort.data.data.hasLiked));
+          setHasDisliked(Boolean(freshShort.data.data.hasDisliked));
+          setLikesCount(freshShort.data.data.likesCount);
+          setDislikesCount(freshShort.data.data.dislikesCount);
         }
-      );
-      if (freshShort.data.success) {
-        setHasLiked(freshShort.data.data.hasLiked);
-        setHasDisliked(freshShort.data.data.hasDisliked);
-        setLikesCount(freshShort.data.data.likesCount);
-        setDislikesCount(freshShort.data.data.dislikesCount);
+      } catch (revertError) {
+        console.error("Failed to revert:", revertError);
       }
 
       if (error.response?.status === 401)
