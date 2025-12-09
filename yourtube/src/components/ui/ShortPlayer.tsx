@@ -233,78 +233,77 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   // ✅ NEW: Fetch like/dislike status on mount
   // ✅ IMPROVED: Fetch like/dislike status on mount
   // ✅ FIXED: Fetch like/dislike status on mount
-  useEffect(() => {
-    const fetchLikeStatus = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token || !short._id) {
-          setHasLiked(false);
-          setHasDisliked(false);
-          return;
-        }
-
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        const userId = payload.userId || payload.id;
-        if (!userId) {
-          setHasLiked(false);
-          setHasDisliked(false);
-          return;
-        }
-
-        const apiUrl = getApiUrl();
-
-        console.log("🔍 Fetching like status for short:", short._id);
-
-        // ✅ CRITICAL FIX: Fetch from the SHORT endpoint with proper headers
-        const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-          },
-        });
-
-        console.log("📥 Server response:", {
-          shortId: short._id,
-          hasLiked: response.data.data?.hasLiked,
-          hasDisliked: response.data.data?.hasDisliked,
-          likesCount: response.data.data?.likesCount,
-          rawData: response.data.data,
-        });
-
-        if (response.data.success && response.data.data) {
-          const shortData = response.data.data;
-
-          // ✅ CRITICAL: Explicit boolean conversion with detailed logging
-          const isLiked = Boolean(shortData.hasLiked);
-          const isDisliked = Boolean(shortData.hasDisliked);
-
-          console.log("✅ Setting like state:", {
-            shortId: short._id,
-            hasLiked: isLiked,
-            hasDisliked: isDisliked,
-            likesCount: shortData.likesCount,
-            dislikesCount: shortData.dislikesCount,
-          });
-
-          setHasLiked(isLiked);
-          setHasDisliked(isDisliked);
-          setLikesCount(shortData.likesCount || 0);
-          setDislikesCount(shortData.dislikesCount || 0);
-        }
-      } catch (error) {
-        console.error("❌ Error fetching like status:", error);
+// ✅ FIXED: Fetch like status on mount and when short changes
+useEffect(() => {
+  const fetchLikeStatus = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token || !short._id) {
         setHasLiked(false);
         setHasDisliked(false);
+        return;
       }
-    };
 
-    // ✅ Fetch on mount and when short becomes active
-    if (short._id) {
-      fetchLikeStatus();
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const userId = payload.userId || payload.id;
+      if (!userId) {
+        setHasLiked(false);
+        setHasDisliked(false);
+        return;
+      }
+
+      const apiUrl = getApiUrl();
+
+      console.log("🔍 Fetching like status for short:", short._id);
+
+      // ✅ CRITICAL FIX: Fetch fresh data from server
+      const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
+
+      console.log("📥 Server response:", {
+        shortId: short._id,
+        hasLiked: response.data.data?.hasLiked,
+        hasDisliked: response.data.data?.hasDisliked,
+        likesCount: response.data.data?.likesCount,
+      });
+
+      if (response.data.success && response.data.data) {
+        const shortData = response.data.data;
+
+        // ✅ CRITICAL: Force boolean conversion and update state
+        const isLiked = Boolean(shortData.hasLiked);
+        const isDisliked = Boolean(shortData.hasDisliked);
+
+        console.log("✅ Setting like state:", {
+          shortId: short._id,
+          hasLiked: isLiked,
+          hasDisliked: isDisliked,
+          likesCount: shortData.likesCount,
+        });
+
+        setHasLiked(isLiked);
+        setHasDisliked(isDisliked);
+        setLikesCount(shortData.likesCount || 0);
+        setDislikesCount(shortData.dislikesCount || 0);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching like status:", error);
+      setHasLiked(false);
+      setHasDisliked(false);
     }
-  }, [short._id, isActive]);
+  };
 
+  // ✅ CRITICAL: Fetch on mount AND whenever short ID changes
+  if (short._id && isActive) {
+    fetchLikeStatus();
+  }
+}, [short._id, isActive]); // ✅ Re-fetch when short changes or becomes active
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -387,25 +386,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     }
   }, [isActive, isMuted]);
 
-  // ✅ NEW: Sync state when short prop changes (e.g., navigating between shorts)
-  useEffect(() => {
-    setHasLiked(Boolean(short.hasLiked));
-    setHasDisliked(Boolean(short.hasDisliked));
-    setLikesCount(short.likesCount || 0);
-    setDislikesCount(short.dislikesCount || 0);
 
-    console.log("🔄 Synced like state from prop:", {
-      shortId: short._id,
-      hasLiked: Boolean(short.hasLiked),
-      hasDisliked: Boolean(short.hasDisliked),
-    });
-  }, [
-    short._id,
-    short.hasLiked,
-    short.hasDisliked,
-    short.likesCount,
-    short.dislikesCount,
-  ]);
 
   // ✅ ADD: Passive event listener fix
   useEffect(() => {
@@ -696,81 +677,99 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     setShowVolumeSlider(!showVolumeSlider);
   };
 
-  const handleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+ const handleLike = async (e: React.MouseEvent) => {
+  e.stopPropagation();
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login?redirect=/shorts");
+      return;
+    }
+
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const userId = payload.userId || payload.id;
+
+    if (!userId) {
+      router.push("/login?redirect=/shorts");
+      return;
+    }
+
+    console.log("👍 Like button clicked:", {
+      shortId: short._id,
+      currentlyLiked: hasLiked,
+      currentCount: likesCount,
+    });
+
+    // ✅ Optimistic update
+    const wasLiked = hasLiked;
+    const wasDisliked = hasDisliked;
+
+    if (wasLiked) {
+      setHasLiked(false);
+      setLikesCount((prev) => Math.max(0, prev - 1));
+    } else {
+      setHasLiked(true);
+      setLikesCount((prev) => prev + 1);
+      if (wasDisliked) {
+        setHasDisliked(false);
+        setDislikesCount((prev) => Math.max(0, prev - 1));
+      }
+    }
+
+    // ✅ CRITICAL FIX: Call the correct endpoint
+    const response = await axios.post(
+      `${getApiUrl()}/like/short/${short._id}`,
+      { userId },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache",
+        },
+      }
+    );
+
+    console.log("✅ Like response:", response.data);
+
+    // ✅ Sync with server response
+    if (response.data.success) {
+      setHasLiked(Boolean(response.data.liked));
+      setLikesCount(response.data.likesCount || 0);
+
+      console.log("✅ Like state synced with server:", {
+        liked: response.data.liked,
+        likesCount: response.data.likesCount,
+      });
+    }
+  } catch (error: any) {
+    console.error("❌ Error liking short:", error);
+
+    // ✅ Revert on error by fetching fresh data
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login?redirect=/shorts");
-        return;
-      }
-
-      // Get userId from token
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const userId = payload.userId || payload.id;
-
-      if (!userId) {
-        router.push("/login?redirect=/shorts");
-        return;
-      }
-
-      // ✅ Optimistic update
-      const wasLiked = hasLiked;
-      const wasDisliked = hasDisliked;
-
-      if (wasLiked) {
-        setHasLiked(false);
-        setLikesCount((prev) => Math.max(0, prev - 1));
-      } else {
-        setHasLiked(true);
-        setLikesCount((prev) => prev + 1);
-        if (wasDisliked) {
-          setHasDisliked(false);
-          setDislikesCount((prev) => Math.max(0, prev - 1));
+      const freshShort = await axios.get(
+        `${getApiUrl()}/api/shorts/${short._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Cache-Control": "no-cache",
+          },
         }
-      }
-
-      // ✅ CRITICAL FIX: Use the LIKE controller endpoint, not the shorts endpoint
-      const response = await axios.post(
-        `${getApiUrl()}/like/short/${short._id}`, // ✅ Changed from /api/shorts/${short._id}/like
-        { userId }, // ✅ Send userId in body
-        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // ✅ Sync with server response
-      if (response.data.success) {
-        setHasLiked(Boolean(response.data.liked));
-        setLikesCount(response.data.likesCount || 0);
-
-        console.log("✅ Like synced:", {
-          liked: response.data.liked,
-          likesCount: response.data.likesCount,
-        });
+      if (freshShort.data.success) {
+        setHasLiked(Boolean(freshShort.data.data.hasLiked));
+        setHasDisliked(Boolean(freshShort.data.data.hasDisliked));
+        setLikesCount(freshShort.data.data.likesCount);
+        setDislikesCount(freshShort.data.data.dislikesCount);
       }
-    } catch (error: any) {
-      console.error("Error liking short:", error);
-
-      // ✅ Revert on error
-      try {
-        const token = localStorage.getItem("token");
-        const freshShort = await axios.get(
-          `${getApiUrl()}/api/shorts/${short._id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (freshShort.data.success) {
-          setHasLiked(Boolean(freshShort.data.data.hasLiked));
-          setHasDisliked(Boolean(freshShort.data.data.hasDisliked));
-          setLikesCount(freshShort.data.data.likesCount);
-          setDislikesCount(freshShort.data.data.dislikesCount);
-        }
-      } catch (revertError) {
-        console.error("Failed to revert:", revertError);
-      }
-
-      if (error.response?.status === 401)
-        router.push("/login?redirect=/shorts");
+    } catch (revertError) {
+      console.error("Failed to revert:", revertError);
     }
-  };
+
+    if (error.response?.status === 401) {
+      router.push("/login?redirect=/shorts");
+    }
+  }
+};
 
   const handleDislike = async (e: React.MouseEvent) => {
     e.stopPropagation();
