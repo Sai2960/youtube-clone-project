@@ -232,12 +232,12 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
   // ✅ NEW: Fetch like/dislike status on mount
   // ✅ IMPROVED: Fetch like/dislike status on mount
+  // ✅ FIXED: Fetch like/dislike status on mount
   useEffect(() => {
     const fetchLikeStatus = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token || !short._id) {
-          // If no token, ensure states are false
           setHasLiked(false);
           setHasDisliked(false);
           return;
@@ -253,44 +253,57 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
         const apiUrl = getApiUrl();
 
-        // Fetch the short details to get current like status
+        console.log("🔍 Fetching like status for short:", short._id);
+
+        // ✅ CRITICAL FIX: Fetch from the SHORT endpoint with proper headers
         const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        });
+
+        console.log("📥 Server response:", {
+          shortId: short._id,
+          hasLiked: response.data.data?.hasLiked,
+          hasDisliked: response.data.data?.hasDisliked,
+          likesCount: response.data.data?.likesCount,
+          rawData: response.data.data,
         });
 
         if (response.data.success && response.data.data) {
           const shortData = response.data.data;
 
-          // ✅ CRITICAL: Force boolean conversion and update states
+          // ✅ CRITICAL: Explicit boolean conversion with detailed logging
           const isLiked = Boolean(shortData.hasLiked);
           const isDisliked = Boolean(shortData.hasDisliked);
+
+          console.log("✅ Setting like state:", {
+            shortId: short._id,
+            hasLiked: isLiked,
+            hasDisliked: isDisliked,
+            likesCount: shortData.likesCount,
+            dislikesCount: shortData.dislikesCount,
+          });
 
           setHasLiked(isLiked);
           setHasDisliked(isDisliked);
           setLikesCount(shortData.likesCount || 0);
           setDislikesCount(shortData.dislikesCount || 0);
-
-          console.log("✅ Short like status loaded:", {
-            shortId: short._id,
-            hasLiked: isLiked,
-            hasDisliked: isDisliked,
-            likes: shortData.likesCount,
-            dislikes: shortData.dislikesCount,
-          });
         }
       } catch (error) {
-        console.error("Error fetching like status:", error);
-        // On error, reset to safe defaults
+        console.error("❌ Error fetching like status:", error);
         setHasLiked(false);
         setHasDisliked(false);
       }
     };
 
-    // ✅ Always fetch when short becomes active OR when short._id changes
-    if (isActive && short._id) {
+    // ✅ Fetch on mount and when short becomes active
+    if (short._id) {
       fetchLikeStatus();
     }
-  }, [isActive, short._id]); // ✅ Added short._id to dependencies
+  }, [short._id, isActive]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
