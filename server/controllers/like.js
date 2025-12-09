@@ -22,11 +22,25 @@ export const handlelike = async (req, res) => {
 
     const reactionType = isLike ? 'like' : 'dislike';
 
-    // ✅ FIX: Use findOneAndUpdate with upsert to avoid duplicates
+    // ✅ Find existing reaction
     const existingReaction = await Like.findOne({
       viewer: userId,
       videoid: videoId,
     });
+
+    // ✅ Get current video state
+    const video = await Video.findById(videoId).select('Like Dislike');
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found"
+      });
+    }
+
+    let currentLikes = video.Like || 0;
+    let currentDislikes = video.Dislike || 0;
+    let isLiked = false;
+    let isDisliked = false;
 
     if (existingReaction) {
       // If clicking the same reaction, remove it (toggle off)
@@ -34,77 +48,72 @@ export const handlelike = async (req, res) => {
         await Like.findByIdAndDelete(existingReaction._id);
         
         // Decrement count
-        const updateField = isLike ? { Like: -1 } : { Dislike: -1 };
-        await Video.findByIdAndUpdate(videoId, { $inc: updateField });
+        if (isLike) {
+          currentLikes = Math.max(0, currentLikes - 1);
+          await Video.findByIdAndUpdate(videoId, { Like: currentLikes });
+        } else {
+          currentDislikes = Math.max(0, currentDislikes - 1);
+          await Video.findByIdAndUpdate(videoId, { Dislike: currentDislikes });
+        }
         
         console.log(`✅ Removed ${reactionType}`);
-        return res.status(200).json({ 
-          success: true,
-          liked: false,
-          disliked: false,
-          action: 'removed',
-          reaction: reactionType
-        });
       } else {
         // Switch reaction
         existingReaction.reaction = reactionType;
         await existingReaction.save();
         
         // Adjust counts
-        const updateFields = isLike 
-          ? { Like: 1, Dislike: -1 }
-          : { Like: -1, Dislike: 1 };
-        await Video.findByIdAndUpdate(videoId, { $inc: updateFields });
+        if (isLike) {
+          currentLikes = currentLikes + 1;
+          currentDislikes = Math.max(0, currentDislikes - 1);
+          isLiked = true;
+        } else {
+          currentDislikes = currentDislikes + 1;
+          currentLikes = Math.max(0, currentLikes - 1);
+          isDisliked = true;
+        }
+        
+        await Video.findByIdAndUpdate(videoId, { 
+          Like: currentLikes,
+          Dislike: currentDislikes
+        });
         
         console.log(`✅ Switched to ${reactionType}`);
-        return res.status(200).json({ 
-          success: true,
-          liked: isLike,
-          disliked: !isLike,
-          action: 'switched',
-          reaction: reactionType
-        });
       }
     } else {
-      // ✅ CRITICAL FIX: Use try-catch for duplicate key errors
-      try {
-        await Like.create({ 
-          viewer: userId, 
-          videoid: videoId,
-          reaction: reactionType
-        });
-        
-        // Increment count
-        const updateField = isLike ? { Like: 1 } : { Dislike: 1 };
-        await Video.findByIdAndUpdate(videoId, { $inc: updateField });
-        
-        console.log(`✅ Added ${reactionType}`);
-        return res.status(200).json({ 
-          success: true,
-          liked: isLike,
-          disliked: !isLike,
-          action: 'added',
-          reaction: reactionType
-        });
-      } catch (createError) {
-        // Handle race condition - reaction was created by another request
-        if (createError.code === 11000) {
-          console.log('⚠️ Duplicate reaction detected, retrying...');
-          // Retry by checking again
-          const retryReaction = await Like.findOne({ viewer: userId, videoid: videoId });
-          if (retryReaction) {
-            return res.status(200).json({
-              success: true,
-              liked: retryReaction.reaction === 'like',
-              disliked: retryReaction.reaction === 'dislike',
-              action: 'already_exists',
-              reaction: retryReaction.reaction
-            });
-          }
-        }
-        throw createError;
+      // Create new reaction
+      await Like.create({ 
+        viewer: userId, 
+        videoid: videoId,
+        reaction: reactionType
+      });
+      
+      // Increment count
+      if (isLike) {
+        currentLikes = currentLikes + 1;
+        isLiked = true;
+        await Video.findByIdAndUpdate(videoId, { Like: currentLikes });
+      } else {
+        currentDislikes = currentDislikes + 1;
+        isDisliked = true;
+        await Video.findByIdAndUpdate(videoId, { Dislike: currentDislikes });
       }
+      
+      console.log(`✅ Added ${reactionType}`);
     }
+
+    // ✅ CRITICAL FIX: Return data in the EXACT format the frontend expects
+    return res.status(200).json({ 
+      success: true,
+      liked: isLiked,
+      disliked: isDisliked,
+      likes: currentLikes,        // ✅ Frontend expects this
+      dislikes: currentDislikes,  // ✅ Frontend expects this
+      Like: currentLikes,         // ✅ Backup field
+      Dislike: currentDislikes,   // ✅ Backup field
+      action: existingReaction ? (existingReaction.reaction === reactionType ? 'removed' : 'switched') : 'added',
+      reaction: reactionType
+    });
   } catch (error) {
     console.error("Video like/dislike error:", error);
     return res.status(500).json({ 
@@ -121,7 +130,6 @@ export const getallLikedVideo = async (req, res) => {
   try {
     console.log('📋 Fetching all reactions for user:', userId);
 
-    // ✅ Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
@@ -129,7 +137,6 @@ export const getallLikedVideo = async (req, res) => {
       });
     }
 
-    // ✅ Fetch ALL reactions (both likes and dislikes)
     const allReactions = await Like
       .find({ viewer: userId })
       .populate({
@@ -147,10 +154,8 @@ export const getallLikedVideo = async (req, res) => {
 
     console.log(`📊 Found ${allReactions.length} total reactions`);
 
-    // Filter out deleted videos
     const validReactions = allReactions.filter(item => item.videoid != null);
 
-    // ✅ Handle documents without reaction field
     const likes = validReactions.filter(item => 
       !item.reaction || item.reaction === 'like'
     );
@@ -304,7 +309,6 @@ export const getAllLikedContent = async (req, res) => {
   try {
     console.log('📋 Fetching all liked content for user:', userId);
 
-    // ✅ Validate userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
@@ -312,7 +316,6 @@ export const getAllLikedContent = async (req, res) => {
       });
     }
 
-    // Fetch both videos and shorts in parallel
     const [likedVideos, likedShorts] = await Promise.all([
       Like.find({ 
         viewer: userId,
@@ -349,7 +352,6 @@ export const getAllLikedContent = async (req, res) => {
         .exec()
     ]);
 
-    // Filter and format videos
     const validVideos = likedVideos
       .filter(item => item.videoid != null)
       .map(item => ({
@@ -357,7 +359,6 @@ export const getAllLikedContent = async (req, res) => {
         contentType: 'video'
       }));
 
-    // Filter and format shorts
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const validShorts = likedShorts
       .filter(item => item.shortid != null)
@@ -376,7 +377,6 @@ export const getAllLikedContent = async (req, res) => {
         };
       });
 
-    // Combine and sort by date
     const combined = [...validVideos, ...validShorts].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
