@@ -81,8 +81,8 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [hasLiked, setHasLiked] = useState(short.hasLiked || false);
-  const [hasDisliked, setHasDisliked] = useState(short.hasDisliked || false);
+  const [hasLiked, setHasLiked] = useState(Boolean(short.hasLiked));
+  const [hasDisliked, setHasDisliked] = useState(Boolean(short.hasDisliked));
   const [likesCount, setLikesCount] = useState(short.likesCount || 0);
   const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
   const [sharesCount, setSharesCount] = useState(short.shares || 0);
@@ -231,15 +231,25 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   }, []);
 
   // ✅ NEW: Fetch like/dislike status on mount
+  // ✅ IMPROVED: Fetch like/dislike status on mount
   useEffect(() => {
     const fetchLikeStatus = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token || !short._id) return;
+        if (!token || !short._id) {
+          // If no token, ensure states are false
+          setHasLiked(false);
+          setHasDisliked(false);
+          return;
+        }
 
         const payload = JSON.parse(atob(token.split(".")[1]));
         const userId = payload.userId || payload.id;
-        if (!userId) return;
+        if (!userId) {
+          setHasLiked(false);
+          setHasDisliked(false);
+          return;
+        }
 
         const apiUrl = getApiUrl();
 
@@ -250,28 +260,37 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
         if (response.data.success && response.data.data) {
           const shortData = response.data.data;
-          setHasLiked(shortData.hasLiked || false);
-          setHasDisliked(shortData.hasDisliked || false);
+
+          // ✅ CRITICAL: Force boolean conversion and update states
+          const isLiked = Boolean(shortData.hasLiked);
+          const isDisliked = Boolean(shortData.hasDisliked);
+
+          setHasLiked(isLiked);
+          setHasDisliked(isDisliked);
           setLikesCount(shortData.likesCount || 0);
           setDislikesCount(shortData.dislikesCount || 0);
 
           console.log("✅ Short like status loaded:", {
             shortId: short._id,
-            hasLiked: shortData.hasLiked,
-            hasDisliked: shortData.hasDisliked,
+            hasLiked: isLiked,
+            hasDisliked: isDisliked,
             likes: shortData.likesCount,
             dislikes: shortData.dislikesCount,
           });
         }
       } catch (error) {
         console.error("Error fetching like status:", error);
+        // On error, reset to safe defaults
+        setHasLiked(false);
+        setHasDisliked(false);
       }
     };
 
-    if (isActive) {
+    // ✅ Always fetch when short becomes active OR when short._id changes
+    if (isActive && short._id) {
       fetchLikeStatus();
     }
-  }, [isActive, short._id]);
+  }, [isActive, short._id]); // ✅ Added short._id to dependencies
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -354,6 +373,26 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       setIsPlaying(false);
     }
   }, [isActive, isMuted]);
+
+  // ✅ NEW: Sync state when short prop changes (e.g., navigating between shorts)
+  useEffect(() => {
+    setHasLiked(Boolean(short.hasLiked));
+    setHasDisliked(Boolean(short.hasDisliked));
+    setLikesCount(short.likesCount || 0);
+    setDislikesCount(short.dislikesCount || 0);
+
+    console.log("🔄 Synced like state from prop:", {
+      shortId: short._id,
+      hasLiked: Boolean(short.hasLiked),
+      hasDisliked: Boolean(short.hasDisliked),
+    });
+  }, [
+    short._id,
+    short.hasLiked,
+    short.hasDisliked,
+    short.likesCount,
+    short.dislikesCount,
+  ]);
 
   // ✅ ADD: Passive event listener fix
   useEffect(() => {
