@@ -156,7 +156,9 @@ export const getAllShorts = async (req, res) => {
       // Get user ID from request if authenticated
       const userId = req.user ? req.user._id : null;
 
-      // Check if user has liked/disliked this short
+      // ✅ CRITICAL: Check likes array in Short model
+      // Note: We can't check LikedShort collection here without async,
+      // but the Short model should be kept in sync by the like controller
       const hasLiked = userId
         ? short.likes?.some((like) => like.toString() === userId.toString())
         : false;
@@ -197,8 +199,8 @@ export const getAllShorts = async (req, res) => {
         likesCount: short.likes ? short.likes.length : 0,
         dislikesCount: short.dislikes ? short.dislikes.length : 0,
         commentsCount: short.comments ? short.comments.length : 0,
-        hasLiked, // ✅ Add this
-        hasDisliked, // ✅ Add this
+        hasLiked, // ✅ This is now properly set
+        hasDisliked,
         userId: {
           ...short.userId,
           avatar: finalAvatar,
@@ -259,24 +261,39 @@ export const getShortById = async (req, res) => {
     // Increment view count
     await Short.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
-    // ✅ CRITICAL: Check if user has liked/disliked THIS short
-    const hasLiked = userId
-      ? short.likes.some((like) => like.toString() === userId.toString())
-      : false;
-    const hasDisliked = userId
-      ? short.dislikes.some(
-          (dislike) => dislike.toString() === userId.toString()
-        )
-      : false;
+    // ✅ CRITICAL: Check BOTH the Short model AND LikedShort collection
+    let hasLiked = false;
+    let hasDisliked = false;
 
-    console.log("✅ Short reaction status:", {
-      shortId: id,
-      userId: userId?.toString(),
-      hasLiked,
-      hasDisliked,
-      totalLikes: short.likes.length,
-      totalDislikes: short.dislikes.length,
-    });
+    if (userId) {
+      // Check Short model
+      const inShortModel = short.likes?.some(
+        (like) => like.toString() === userId.toString()
+      );
+
+      // Check LikedShort collection
+      const inLikedShort = await LikedShort.findOne({
+        viewer: userId,
+        shortid: id,
+      }).lean();
+
+      // User has liked if it's in EITHER place
+      hasLiked = inShortModel || Boolean(inLikedShort);
+
+      // Check dislikes only in Short model
+      hasDisliked = short.dislikes?.some(
+        (dislike) => dislike.toString() === userId.toString()
+      );
+
+      console.log("✅ Like status check:", {
+        shortId: id,
+        userId: userId.toString(),
+        inShortModel,
+        inLikedShort: Boolean(inLikedShort),
+        hasLiked,
+        hasDisliked,
+      });
+    }
 
     const finalAvatar = getBestAvatar(short, req);
     let videoUrl = short.videoUrl;
@@ -302,8 +319,8 @@ export const getShortById = async (req, res) => {
         likesCount: short.likes.length,
         dislikesCount: short.dislikes.length,
         commentsCount: short.comments.length,
-        hasLiked, // ✅ Include this
-        hasDisliked, // ✅ Include this
+        hasLiked, // ✅ Now checks both places
+        hasDisliked,
         views: short.views + 1,
         userId: {
           ...short.userId,
@@ -526,21 +543,19 @@ export const likeShort = async (req, res) => {
         );
       }
 
-      // Add to LikedShort collection
-      // Add to LikedShort collection
+      // Add to LikedShort collection (ignore duplicates)
       try {
-        const likedShort = await LikedShort.create({
+        await LikedShort.create({
           viewer: userId,
           shortid: id,
         });
-        console.log("✅ Added to liked shorts collection:", likedShort._id);
+        console.log("✅ Added to liked shorts collection");
       } catch (likeError) {
         // If duplicate (code 11000), it already exists - that's fine
         if (likeError.code === 11000) {
           console.log("ℹ️ Like entry already exists in collection");
         } else {
           console.error("❌ Error creating liked short entry:", likeError);
-          // Don't fail the request, just log it
         }
       }
     }
