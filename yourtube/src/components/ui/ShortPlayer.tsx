@@ -679,120 +679,133 @@ useEffect(() => {
     }
   };
 
-  const handleDeleteShort = async () => {
-    if (isDeleting) return;
-    setIsDeleting(true);
+ const handleDeleteShort = async () => {
+  if (isDeleting) return;
+  setIsDeleting(true);
 
-    try {
-      const token =
-        localStorage.getItem("token") || sessionStorage.getItem("token");
+  try {
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
 
-      if (!token) {
-        alert("Please login to delete shorts");
-        router.push("/login?redirect=/shorts");
-        setIsDeleting(false);
-        return;
-      }
-
-      if (currentUserId !== short.userId._id) {
-        alert("You can only delete your own shorts");
-        setIsDeleting(false);
-        return;
-      }
-
-      const apiUrl = getApiUrl();
-      const deleteUrl = `${apiUrl}/api/shorts/${short._id}`;
-
-      const response = await axios({
-        method: "DELETE",
-        url: deleteUrl,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        timeout: 15000,
-      });
-
-      if (response.data.success || response.status === 200) {
-        setShowDeleteConfirm(false);
-        setShowMenu(false);
-        isModalOpenRef.current = false;
-
-        const div = document.createElement("div");
-        div.innerHTML = "✅ Short deleted successfully!";
-        div.style.cssText = `
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: #22c55e;
-          color: white;
-          padding: 24px 48px;
-          border-radius: 16px;
-          font-size: 20px;
-          font-weight: bold;
-          z-index: 999999;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        `;
-        document.body.appendChild(div);
-
-        deleteTimeoutRef.current = setTimeout(() => {
-          if (document.body.contains(div)) {
-            document.body.removeChild(div);
-          }
-        }, 2000);
-
-        if (onDelete) {
-          onDelete(short._id);
-        }
-
-        deleteTimeoutRef.current = setTimeout(() => {
-          onNext();
-        }, 1000);
-      } else {
-        throw new Error("Delete failed");
-      }
-    } catch (error: any) {
-      console.error("DELETE ERROR:", error);
+    if (!token) {
+      alert("Please login to delete shorts");
+      router.push("/login?redirect=/shorts");
       setIsDeleting(false);
+      return;
+    }
 
-      let msg = "Failed to delete short";
+    if (currentUserId !== short.userId._id) {
+      alert("You can only delete your own shorts");
+      setIsDeleting(false);
+      return;
+    }
 
-      if (error.code === "ECONNABORTED") {
-        msg = "Request timeout";
-      } else if (error.code === "ERR_NETWORK") {
-        msg = "Network error";
-      } else if (error.response) {
-        switch (error.response.status) {
-          case 401:
-            msg = "Session expired";
-            setTimeout(() => router.push("/login?redirect=/shorts"), 2000);
-            break;
-          case 403:
-            msg = "Not authorized";
-            break;
-          case 404:
-            msg = "Short not found";
-            break;
-          default:
-            msg = error.response.data?.message || msg;
+    const apiUrl = getApiUrl();
+    const deleteUrl = `${apiUrl}/api/shorts/${short._id}`;
+
+    const response = await axios({
+      method: "DELETE",
+      url: deleteUrl,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 15000,
+    });
+
+    if (response.data.success || response.status === 200) {
+      // Close modal
+      setShowDeleteConfirm(false);
+      setShowMenu(false);
+      isModalOpenRef.current = false;
+
+      // Success notification
+      const div = document.createElement("div");
+      div.innerHTML = "✅ Short deleted successfully!";
+      div.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #22c55e;
+        color: white;
+        padding: 20px 40px;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 999999;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      `;
+      document.body.appendChild(div);
+
+      setTimeout(() => {
+        if (document.body.contains(div)) {
+          document.body.removeChild(div);
         }
+      }, 2000);
+
+      // Call onDelete callback
+      if (onDelete) {
+        onDelete(short._id);
       }
 
-      alert(`❌ ${msg}`);
-    } finally {
-      setTimeout(() => setIsDeleting(false), 1000);
+      // Move to next short
+      setTimeout(() => {
+        onNext();
+      }, 800);
+    } else {
+      throw new Error("Delete failed");
     }
-  };
+  } catch (error: any) {
+    console.error("DELETE ERROR:", error);
+    setIsDeleting(false);
 
-  const openDeleteConfirm = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+    let msg = "Failed to delete short";
+
+    if (error.code === "ECONNABORTED") {
+      msg = "Request timeout - please try again";
+    } else if (error.code === "ERR_NETWORK") {
+      msg = "Network error - check your connection";
+    } else if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          msg = "Session expired - please login again";
+          setTimeout(() => router.push("/login?redirect=/shorts"), 2000);
+          break;
+        case 403:
+          msg = "Not authorized to delete this short";
+          break;
+        case 404:
+          msg = "Short not found or already deleted";
+          break;
+        default:
+          msg = error.response.data?.message || msg;
+      }
+    }
+
+    alert(`❌ ${msg}`);
+    
+    // Reset states
+    setShowDeleteConfirm(false);
     setShowMenu(false);
+    isModalOpenRef.current = false;
+  } finally {
+    setTimeout(() => setIsDeleting(false), 500);
+  }
+};
+
+
+const openDeleteConfirm = (e: React.MouseEvent) => {
+  e.stopPropagation();
+  e.preventDefault();
+  setShowMenu(false);
+  
+  // Small delay to ensure menu closes first
+  setTimeout(() => {
     setShowDeleteConfirm(true);
     isModalOpenRef.current = true;
-  };
-
+  }, 50);
+};
   const closeDeleteConfirm = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowDeleteConfirm(false);
@@ -974,7 +987,7 @@ useEffect(() => {
         <div className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
       </div>
 
- {/* Header with Theme-Compatible Menu */}
+{/* Header with Theme-Compatible Menu */}
 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto">
   <button
     onClick={(e) => {
@@ -997,8 +1010,7 @@ useEffect(() => {
       <MoreVertical size={24} />
     </button>
 
-
- {showMenu && (
+    {showMenu && (
       <>
         {/* Backdrop for closing menu */}
         <div 
@@ -1009,21 +1021,24 @@ useEffect(() => {
           }}
         />
         
-        {/* UNIFIED MENU - Same style for both mobile and desktop */}
+        {/* UNIFIED MENU - Works for both mobile and desktop */}
         <div 
           className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
           style={{
             backgroundColor: 'var(--bg-secondary, #272727)',
             borderColor: 'var(--border-color, #3f3f3f)',
-            minWidth: '200px',
+            minWidth: '220px',
             maxWidth: '280px',
           }}
         >
           {/* Delete Short Option */}
           {isOwnShort ? (
             <button
-              onClick={openDeleteConfirm}
-              className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                openDeleteConfirm(e);
+              }}
+              className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors"
               style={{ 
                 color: 'var(--text-primary, #fff)',
               }}
@@ -1039,13 +1054,13 @@ useEffect(() => {
             </button>
           ) : (
             <div 
-              className="w-full px-4 py-3 flex items-center gap-3 opacity-50 cursor-not-allowed"
+              className="w-full px-4 py-3.5 flex items-center gap-3 opacity-50 cursor-not-allowed"
               style={{ 
                 color: 'var(--text-disabled, #717171)',
               }}
             >
               <Trash2 size={20} className="flex-shrink-0" />
-              <span className="font-medium text-sm">Only Channel Owner</span>
+              <span className="font-medium text-sm">Only Owner Can Delete</span>
             </div>
           )}
           
@@ -1055,9 +1070,13 @@ useEffect(() => {
             style={{ backgroundColor: 'var(--border-color, #3f3f3f)' }}
           />
 
-           <button
-            onClick={openReportModal}
-            className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors"
+          {/* Report Option */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openReportModal(e);
+            }}
+            className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors"
             style={{ 
               color: 'var(--text-primary, #fff)',
             }}
@@ -1069,101 +1088,88 @@ useEffect(() => {
             }}
           >
             <Flag size={20} className="flex-shrink-0" style={{ color: 'var(--text-primary, #fff)' }} />
-            <span className="leading-none">Report</span>
+            <span className="font-medium text-sm">Report</span>
           </button>
         </div>
-
-       </>
+      </>
     )}
   </div>
 </div>
 
-     {/* Delete Confirmation Modal */}
+    {/* Delete Confirmation Modal */}
 {showDeleteConfirm && (
   <div
-    className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-end md:items-center justify-center"
+    className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
     onClick={closeDeleteConfirm}
   >
+    {/* MOBILE MODAL */}
+    <div
+      className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        backgroundColor: 'var(--bg-secondary, #2d2d2d)',
+      }}
+    >
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
+            <AlertTriangle size={22} className="text-red-500" />
+          </div>
+          <h3 className="text-lg font-bold text-white">
+            Delete Short?
+          </h3>
+        </div>
 
-{/* ✅ MOBILE MODAL - WITH SCROLL */}
-<div
-  className="md:hidden rounded-t-3xl w-full shadow-2xl animate-slideUp max-w-md mx-auto overflow-hidden"
-  onClick={(e) => e.stopPropagation()}
-  style={{
-    backgroundColor: 'var(--bg-secondary, #2d2d2d)',
-    maxHeight: '80vh',
-    display: 'flex',
-    flexDirection: 'column',
-  }}
->
-  {/* Fixed Header */}
-  <div className="flex items-center gap-3 p-5 pb-4 border-b border-gray-700 flex-shrink-0">
-    <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
-      <AlertTriangle size={22} className="text-red-500" />
-    </div>
-    <h3 className="text-lg font-bold leading-tight text-white">
-      Delete Short?
-    </h3>
-  </div>
+        {/* Content */}
+        <div className="mb-4">
+          <p className="text-sm leading-relaxed text-gray-300 mb-3">
+            Are you sure you want to delete this short?
+          </p>
+          <p className="text-white font-semibold text-sm break-words bg-gray-800/50 p-3 rounded-lg">
+            "{short.title}"
+          </p>
+        </div>
+        
+        {/* Warning */}
+        <div className="flex items-center gap-2 mb-6 bg-red-500/10 p-3 rounded-lg">
+          <AlertTriangle size={16} className="text-red-400 flex-shrink-0" />
+          <p className="text-red-400 font-semibold text-xs">
+            This action cannot be undone
+          </p>
+        </div>
 
-  {/* Scrollable Content */}
-  <div className="flex-1 overflow-y-auto px-5 py-4" style={{ overscrollBehavior: 'contain' }}>
-    {/* Title Text */}
-    <div className="mb-4">
-      <p className="text-[15px] leading-relaxed text-gray-300 mb-1">
-        Delete
-      </p>
-      <p className="text-white font-semibold text-base leading-relaxed break-words">
-        "{short.title}"
-      </p>
-      <p className="text-[15px] text-gray-300 mt-1">?</p>
+        {/* Buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={closeDeleteConfirm}
+            disabled={isDeleting}
+            className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95 bg-gray-700 text-white hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteShort}
+            disabled={isDeleting}
+            className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+          >
+            {isDeleting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                <span>Deleting...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 size={18} />
+                <span>Delete</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
-    
-    {/* Warning */}
-    <div className="flex items-start gap-2">
-      <AlertTriangle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
-      <p className="text-red-400 font-semibold text-sm">
-        This cannot be undone.
-      </p>
-    </div>
-  </div>
 
-  {/* Fixed Buttons at Bottom */}
-  <div className="p-5 pt-4 border-t border-gray-700 flex-shrink-0">
-    <div className="flex gap-3">
-      <button
-        onClick={closeDeleteConfirm}
-        disabled={isDeleting}
-        className="flex-1 px-5 py-3.5 rounded-xl font-semibold text-base disabled:opacity-50 transition active:scale-95 bg-gray-700 text-white hover:bg-gray-600"
-      >
-        Cancel
-      </button>
-     
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDeleteShort();
-        }}
-        disabled={isDeleting}
-        className="flex-1 px-5 py-3.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-base disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-      >
-        {isDeleting ? (
-          <>
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-            <span>Deleting...</span>
-          </>
-        ) : (
-          <>
-            <Trash2 size={18} />
-            <span>Delete</span>
-          </>
-        )}
-      </button>
-    </div>
-  </div>
-</div>
-
-   {/* DESKTOP MODAL - THEME COMPATIBLE */}
+    {/* DESKTOP MODAL */}
     <div
       className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
       onClick={(e) => e.stopPropagation()}
@@ -1181,19 +1187,28 @@ useEffect(() => {
         </h3>
       </div>
 
-      <p className="mb-2 text-base leading-relaxed" style={{ color: 'var(--text-secondary, #d1d5db)' }}>
-        Delete <span className="font-bold" style={{ color: 'var(--text-primary, #fff)' }}>"{short.title}"</span>?
+      <p className="mb-3 text-base leading-relaxed" style={{ color: 'var(--text-secondary, #d1d5db)' }}>
+        Are you sure you want to delete this short?
+      </p>
+
+      <p className="mb-2 text-base font-bold break-words" style={{ 
+        color: 'var(--text-primary, #fff)',
+        backgroundColor: 'var(--bg-tertiary, #374151)',
+        padding: '12px',
+        borderRadius: '8px'
+      }}>
+        "{short.title}"
       </p>
       
-      <p className="text-red-400 font-semibold mb-8">
-        This cannot be undone.
+      <p className="text-red-400 font-semibold mb-8 text-sm">
+        ⚠️ This action cannot be undone
       </p>
 
       <div className="flex gap-4">
         <button
           onClick={closeDeleteConfirm}
           disabled={isDeleting}
-          className="flex-1 px-6 py-3.5 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
+          className="flex-1 px-6 py-3 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
           style={{
             backgroundColor: 'var(--bg-tertiary, #374151)',
             color: 'var(--text-primary, #fff)',
@@ -1209,12 +1224,9 @@ useEffect(() => {
           Cancel
         </button>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDeleteShort();
-          }}
+          onClick={handleDeleteShort}
           disabled={isDeleting}
-          className="flex-1 px-6 py-3.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+          className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
         >
           {isDeleting ? (
             <>
@@ -1233,206 +1245,218 @@ useEffect(() => {
   </div>
 )}
 
-      {/* Report Modal - MOBILE BOTTOM SLIDE */}
-      {showReportModal && (
-        <div
-          className="fixed inset-0 bg-black/80 z-[999999] pointer-events-auto flex items-end md:items-center justify-center"
-          onClick={closeReportModal}
-        >
-          {/* ✅ MOBILE MODAL - BOTTOM SLIDE */}
-          <div
-            className="md:hidden bg-gray-900 rounded-t-3xl p-5 pb-8 w-full max-h-[85vh] overflow-y-auto shadow-2xl animate-slideUp"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="bg-blue-500/20 p-2 rounded-full">
-                  <Flag size={18} className="text-blue-400" />
-                </div>
-                <h3 className="text-base font-bold text-white">Report Short</h3>
+     {/* Report Modal */}
+{showReportModal && (
+  <div
+    className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
+    onClick={closeReportModal}
+  >
+    {/* MOBILE MODAL */}
+    <div
+      className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp max-h-[85vh] overflow-hidden"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        backgroundColor: 'var(--bg-secondary, #2d2d2d)',
+      }}
+    >
+      <div className="overflow-y-auto max-h-[85vh]">
+        <div className="p-5 pb-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4 sticky top-0 bg-[#2d2d2d] pb-3 z-10">
+            <div className="flex items-center gap-2.5">
+              <div className="bg-blue-500/20 p-2 rounded-full">
+                <Flag size={18} className="text-blue-400" />
               </div>
-              <button
-                onClick={closeReportModal}
-                className="text-gray-400 hover:text-white transition"
-              >
-                <X size={20} />
-              </button>
+              <h3 className="text-base font-bold text-white">Report Short</h3>
             </div>
-
-            <p className="text-gray-400 mb-4 text-xs">
-              Help us understand what's wrong with this short
-            </p>
-
-            <div className="space-y-2 mb-4">
-              {reportReasons.map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => setReportReason(reason)}
-                  className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
-                    reportReason === reason
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-200 hover:bg-gray-700 active:bg-gray-600"
-                  }`}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-
-            <textarea
-              value={reportDetails}
-              onChange={(e) => setReportDetails(e.target.value)}
-              placeholder="Additional details (optional)"
-              rows={3}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 text-sm"
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={closeReportModal}
-                disabled={isReporting}
-                className="flex-1 px-5 py-3.5 bg-gray-800 text-white border-2 border-gray-700 rounded-xl font-semibold text-sm disabled:opacity-50 transition hover:bg-gray-700 active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitReport}
-                disabled={isReporting || !reportReason}
-                className="flex-1 px-5 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-              >
-                {isReporting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Report"
-                )}
-              </button>
-            </div>
+            <button
+              onClick={closeReportModal}
+              className="text-gray-400 hover:text-white transition"
+            >
+              <X size={20} />
+            </button>
           </div>
 
-         {/* DESKTOP MODAL - THEME COMPATIBLE */}
-          <div
-            className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: 'var(--bg-secondary, #1f2937)',
-              borderColor: 'var(--border-color, #374151)',
-            }}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-500/20 p-2 rounded-full">
-                  <Flag size={22} className="text-blue-400" />
-                </div>
-                <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary, #fff)' }}>
-                  Report Short
-                </h3>
-              </div>
+          <p className="text-gray-400 mb-4 text-xs">
+            Help us understand what's wrong with this short
+          </p>
+
+          {/* Report Reasons */}
+          <div className="space-y-2 mb-4">
+            {reportReasons.map((reason) => (
               <button
-                onClick={closeReportModal}
-                className="transition"
-                style={{ color: 'var(--text-secondary, #9ca3af)' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--text-primary, #fff)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--text-secondary, #9ca3af)';
-                }}
+                key={reason}
+                onClick={() => setReportReason(reason)}
+                className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
+                  reportReason === reason
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-800 text-gray-200 hover:bg-gray-700 active:bg-gray-600"
+                }`}
               >
-                <X size={24} />
+                {reason}
               </button>
-            </div>
+            ))}
+          </div>
 
-            <p className="mb-4 text-sm" style={{ color: 'var(--text-secondary, #9ca3af)' }}>
-              Help us understand what's wrong with this short
-            </p>
+          {/* Additional Details */}
+          <textarea
+            value={reportDetails}
+            onChange={(e) => setReportDetails(e.target.value)}
+            placeholder="Additional details (optional)"
+            rows={3}
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 text-sm"
+          />
 
-            <div className="space-y-2 mb-4">
-              {reportReasons.map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => setReportReason(reason)}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition text-sm ${
-                    reportReason === reason
-                      ? "bg-blue-600 text-white"
-                      : ""
-                  }`}
-                  style={
-                    reportReason !== reason
-                      ? {
-                          backgroundColor: 'var(--bg-tertiary, #374151)',
-                          color: 'var(--text-primary, #e5e7eb)',
-                        }
-                      : undefined
-                  }
-                  onMouseEnter={(e) => {
-                    if (reportReason !== reason) {
-                      e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (reportReason !== reason) {
-                      e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
-                    }
-                  }}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-
-            <textarea
-              value={reportDetails}
-              onChange={(e) => setReportDetails(e.target.value)}
-              placeholder="Additional details (optional)"
-              rows={3}
-              className="w-full rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
-              style={{
-                backgroundColor: 'var(--bg-tertiary, #374151)',
-                borderColor: 'var(--border-color, #4b5563)',
-                color: 'var(--text-primary, #fff)',
-              }}
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={closeReportModal}
-                disabled={isReporting}
-                className="flex-1 px-6 py-3 rounded-lg font-semibold disabled:opacity-50 transition active:scale-95 border-2"
-                style={{
-                  backgroundColor: 'var(--bg-tertiary, #374151)',
-                  color: 'var(--text-primary, #fff)',
-                  borderColor: 'var(--border-color, #4b5563)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitReport}
-                disabled={isReporting || !reportReason}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-              >
-                {isReporting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Report"
-                )}
-              </button>
-            </div>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={closeReportModal}
+              disabled={isReporting}
+              className="flex-1 px-5 py-3 bg-gray-800 text-white border-2 border-gray-700 rounded-xl font-semibold text-sm disabled:opacity-50 transition hover:bg-gray-700 active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmitReport}
+              disabled={isReporting || !reportReason}
+              className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+            >
+              {isReporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                "Submit Report"
+              )}
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    </div>
+
+    {/* DESKTOP MODAL */}
+    <div
+      className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        backgroundColor: 'var(--bg-secondary, #1f2937)',
+        borderColor: 'var(--border-color, #374151)',
+      }}
+    >
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-500/20 p-2 rounded-full">
+            <Flag size={22} className="text-blue-400" />
+          </div>
+          <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary, #fff)' }}>
+            Report Short
+          </h3>
+        </div>
+        <button
+          onClick={closeReportModal}
+          className="transition"
+          style={{ color: 'var(--text-secondary, #9ca3af)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary, #fff)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary, #9ca3af)';
+          }}
+        >
+          <X size={24} />
+        </button>
+      </div>
+
+      <p className="mb-4 text-sm" style={{ color: 'var(--text-secondary, #9ca3af)' }}>
+        Help us understand what's wrong with this short
+      </p>
+
+      <div className="space-y-2 mb-4">
+        {reportReasons.map((reason) => (
+          <button
+            key={reason}
+            onClick={() => setReportReason(reason)}
+            className={`w-full text-left px-4 py-3 rounded-lg transition text-sm ${
+              reportReason === reason
+                ? "bg-blue-600 text-white"
+                : ""
+            }`}
+            style={
+              reportReason !== reason
+                ? {
+                    backgroundColor: 'var(--bg-tertiary, #374151)',
+                    color: 'var(--text-primary, #e5e7eb)',
+                  }
+                : undefined
+            }
+            onMouseEnter={(e) => {
+              if (reportReason !== reason) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (reportReason !== reason) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
+              }
+            }}
+          >
+            {reason}
+          </button>
+        ))}
+      </div>
+
+      <textarea
+        value={reportDetails}
+        onChange={(e) => setReportDetails(e.target.value)}
+        placeholder="Additional details (optional)"
+        rows={3}
+        className="w-full rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
+        style={{
+          backgroundColor: 'var(--bg-tertiary, #374151)',
+          borderColor: 'var(--border-color, #4b5563)',
+          color: 'var(--text-primary, #fff)',
+        }}
+      />
+
+      <div className="flex gap-3">
+        <button
+          onClick={closeReportModal}
+          disabled={isReporting}
+          className="flex-1 px-6 py-3 rounded-lg font-semibold disabled:opacity-50 transition active:scale-95 border-2"
+          style={{
+            backgroundColor: 'var(--bg-tertiary, #374151)',
+            color: 'var(--text-primary, #fff)',
+            borderColor: 'var(--border-color, #4b5563)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, #4b5563)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-tertiary, #374151)';
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmitReport}
+          disabled={isReporting || !reportReason}
+          className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+        >
+          {isReporting ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+              Submitting...
+            </>
+          ) : (
+            "Submit Report"
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Play Icon Overlay */}
       {!isPlaying && !isModalOpenRef.current && (
