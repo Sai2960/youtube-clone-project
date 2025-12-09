@@ -695,16 +695,14 @@ const handleLike = async (e: React.MouseEvent) => {
       }
     }
 
-    // ✅ CRITICAL FIX: Call the correct endpoint
+    // ✅ FIX: Only use Cache-Control (most reliable)
     const response = await axios.post(
       `${getApiUrl()}/like/short/${short._id}`,
       { userId },
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0",
+          "Cache-Control": "no-cache",
         },
       }
     );
@@ -732,9 +730,7 @@ const handleLike = async (e: React.MouseEvent) => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0",
+            "Cache-Control": "no-cache",
           },
         }
       );
