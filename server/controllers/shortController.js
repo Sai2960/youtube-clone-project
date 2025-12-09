@@ -153,17 +153,28 @@ export const getAllShorts = async (req, res) => {
     console.log(`✅ Found ${shorts.length} shorts from database`);
 
     const shortsWithCounts = shorts.map((short) => {
+      // Get user ID from request if authenticated
+      const userId = req.user ? req.user._id : null;
+
+      // Check if user has liked/disliked this short
+      const hasLiked = userId
+        ? short.likes?.some((like) => like.toString() === userId.toString())
+        : false;
+      const hasDisliked = userId
+        ? short.dislikes?.some(
+            (dislike) => dislike.toString() === userId.toString()
+          )
+        : false;
+
       // Avatar processing
       let finalAvatar =
         short.userId?.image || short.userId?.avatar || short.channelAvatar;
       finalAvatar =
         processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
 
-      // ✅ CRITICAL: Use Cloudinary URLs DIRECTLY - NO modification
       let videoUrl = short.videoUrl;
       let thumbnailUrl = short.thumbnailUrl;
 
-      // Validate URLs
       if (!videoUrl || !videoUrl.includes("cloudinary.com")) {
         console.error("❌ Invalid video URL for short:", short._id, videoUrl);
       }
@@ -174,8 +185,8 @@ export const getAllShorts = async (req, res) => {
 
       return {
         ...short,
-        videoUrl, // ✅ Use directly
-        thumbnailUrl, // ✅ Use directly
+        videoUrl,
+        thumbnailUrl,
         channelAvatar: finalAvatar,
         channelName:
           short.channelName ||
@@ -186,6 +197,8 @@ export const getAllShorts = async (req, res) => {
         likesCount: short.likes ? short.likes.length : 0,
         dislikesCount: short.dislikes ? short.dislikes.length : 0,
         commentsCount: short.comments ? short.comments.length : 0,
+        hasLiked, // ✅ Add this
+        hasDisliked, // ✅ Add this
         userId: {
           ...short.userId,
           avatar: finalAvatar,
@@ -256,13 +269,13 @@ export const getShortById = async (req, res) => {
         )
       : false;
 
-    console.log('✅ Short reaction status:', {
+    console.log("✅ Short reaction status:", {
       shortId: id,
       userId: userId?.toString(),
       hasLiked,
       hasDisliked,
       totalLikes: short.likes.length,
-      totalDislikes: short.dislikes.length
+      totalDislikes: short.dislikes.length,
     });
 
     const finalAvatar = getBestAvatar(short, req);
@@ -289,8 +302,8 @@ export const getShortById = async (req, res) => {
         likesCount: short.likes.length,
         dislikesCount: short.dislikes.length,
         commentsCount: short.comments.length,
-        hasLiked,        // ✅ Include this
-        hasDisliked,     // ✅ Include this
+        hasLiked, // ✅ Include this
+        hasDisliked, // ✅ Include this
         views: short.views + 1,
         userId: {
           ...short.userId,
@@ -514,18 +527,20 @@ export const likeShort = async (req, res) => {
       }
 
       // Add to LikedShort collection
+      // Add to LikedShort collection
       try {
-        await LikedShort.create({
+        const likedShort = await LikedShort.create({
           viewer: userId,
           shortid: id,
         });
-        console.log("✅ Added to liked shorts collection");
+        console.log("✅ Added to liked shorts collection:", likedShort._id);
       } catch (likeError) {
         // If duplicate (code 11000), it already exists - that's fine
-        if (likeError.code !== 11000) {
-          console.error("❌ Error creating liked short entry:", likeError);
-        } else {
+        if (likeError.code === 11000) {
           console.log("ℹ️ Like entry already exists in collection");
+        } else {
+          console.error("❌ Error creating liked short entry:", likeError);
+          // Don't fail the request, just log it
         }
       }
     }
@@ -966,33 +981,38 @@ export const getShortsByChannel = async (req, res) => {
       let thumbnailUrl = short.thumbnailUrl;
 
       // Validate and clean URLs
-      if (videoUrl && videoUrl.includes('cloudinary.com')) {
+      if (videoUrl && videoUrl.includes("cloudinary.com")) {
         // Remove version numbers and ensure HTTPS
         videoUrl = videoUrl
-          .replace(/\/v\d+\//g, '/')
-          .replace(/^http:\/\//, 'https://');
+          .replace(/\/v\d+\//g, "/")
+          .replace(/^http:\/\//, "https://");
       } else {
-        console.error('❌ Invalid video URL for short:', short._id);
+        console.error("❌ Invalid video URL for short:", short._id);
       }
 
-      if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+      if (thumbnailUrl && thumbnailUrl.includes("cloudinary.com")) {
         // Remove version numbers and ensure HTTPS
         thumbnailUrl = thumbnailUrl
-          .replace(/\/v\d+\//g, '/')
-          .replace(/^http:\/\//, 'https://');
+          .replace(/\/v\d+\//g, "/")
+          .replace(/^http:\/\//, "https://");
       } else {
-        console.warn('⚠️ Invalid thumbnail URL for short:', short._id);
+        console.warn("⚠️ Invalid thumbnail URL for short:", short._id);
         // Generate thumbnail from video if possible
-        if (videoUrl && videoUrl.includes('cloudinary.com')) {
+        if (videoUrl && videoUrl.includes("cloudinary.com")) {
           try {
-            const match = videoUrl.match(/youtube-clone\/shorts\/videos\/([^.\/]+)/);
+            const match = videoUrl.match(
+              /youtube-clone\/shorts\/videos\/([^.\/]+)/
+            );
             if (match) {
               const publicId = `youtube-clone/shorts/videos/${match[1]}`;
               thumbnailUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-              console.log('🔧 Generated thumbnail:', thumbnailUrl.substring(0, 80));
+              console.log(
+                "🔧 Generated thumbnail:",
+                thumbnailUrl.substring(0, 80)
+              );
             }
           } catch (err) {
-            console.error('❌ Error generating thumbnail:', err);
+            console.error("❌ Error generating thumbnail:", err);
           }
         }
       }
@@ -1013,13 +1033,13 @@ export const getShortsByChannel = async (req, res) => {
         _id: short._id,
         title: short.title,
         description: short.description,
-        
+
         // ✅ CRITICAL: Return Cloudinary URLs as-is (NO base URL prepending)
         thumbnail: thumbnailUrl,
         thumbnailUrl: thumbnailUrl,
         videoUrl: videoUrl,
         video: videoUrl,
-        
+
         views: short.views || 0,
         likes: short.likes?.length || 0,
         dislikes: short.dislikes?.length || 0,
@@ -1057,10 +1077,10 @@ export const getShortsByChannel = async (req, res) => {
       status: "active",
     });
 
-    console.log('✅ Sending', processedShorts.length, 'shorts');
-    console.log('Sample URLs:', {
+    console.log("✅ Sending", processedShorts.length, "shorts");
+    console.log("Sample URLs:", {
       video: processedShorts[0]?.videoUrl?.substring(0, 80),
-      thumbnail: processedShorts[0]?.thumbnailUrl?.substring(0, 80)
+      thumbnail: processedShorts[0]?.thumbnailUrl?.substring(0, 80),
     });
 
     res.status(200).json({
