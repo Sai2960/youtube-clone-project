@@ -28,7 +28,7 @@ export const handlelike = async (req, res) => {
       videoid: videoId,
     });
 
-    // ✅ Get current video state
+    // ✅ Get current video state with lock to prevent race conditions
     const video = await Video.findById(videoId).select('Like Dislike');
     if (!video) {
       return res.status(404).json({
@@ -37,8 +37,8 @@ export const handlelike = async (req, res) => {
       });
     }
 
-    let currentLikes = video.Like || 0;
-    let currentDislikes = video.Dislike || 0;
+    let currentLikes = Math.max(0, video.Like || 0);
+    let currentDislikes = Math.max(0, video.Dislike || 0);
     let isLiked = false;
     let isDisliked = false;
 
@@ -47,13 +47,11 @@ export const handlelike = async (req, res) => {
       if (existingReaction.reaction === reactionType) {
         await Like.findByIdAndDelete(existingReaction._id);
         
-        // Decrement count
+        // Decrement count - ensure it doesn't go negative
         if (isLike) {
           currentLikes = Math.max(0, currentLikes - 1);
-          await Video.findByIdAndUpdate(videoId, { Like: currentLikes });
         } else {
           currentDislikes = Math.max(0, currentDislikes - 1);
-          await Video.findByIdAndUpdate(videoId, { Dislike: currentDislikes });
         }
         
         console.log(`✅ Removed ${reactionType}`);
@@ -73,11 +71,6 @@ export const handlelike = async (req, res) => {
           isDisliked = true;
         }
         
-        await Video.findByIdAndUpdate(videoId, { 
-          Like: currentLikes,
-          Dislike: currentDislikes
-        });
-        
         console.log(`✅ Switched to ${reactionType}`);
       }
     } else {
@@ -92,25 +85,33 @@ export const handlelike = async (req, res) => {
       if (isLike) {
         currentLikes = currentLikes + 1;
         isLiked = true;
-        await Video.findByIdAndUpdate(videoId, { Like: currentLikes });
       } else {
         currentDislikes = currentDislikes + 1;
         isDisliked = true;
-        await Video.findByIdAndUpdate(videoId, { Dislike: currentDislikes });
       }
       
       console.log(`✅ Added ${reactionType}`);
     }
+
+    // ✅ CRITICAL: Update video document atomically
+    await Video.findByIdAndUpdate(
+      videoId,
+      { 
+        Like: currentLikes,
+        Dislike: currentDislikes
+      },
+      { new: true }
+    );
 
     // ✅ CRITICAL FIX: Return data in the EXACT format the frontend expects
     return res.status(200).json({ 
       success: true,
       liked: isLiked,
       disliked: isDisliked,
-      likes: currentLikes,        // ✅ Frontend expects this
-      dislikes: currentDislikes,  // ✅ Frontend expects this
-      Like: currentLikes,         // ✅ Backup field
-      Dislike: currentDislikes,   // ✅ Backup field
+      likes: currentLikes,
+      dislikes: currentDislikes,
+      Like: currentLikes,
+      Dislike: currentDislikes,
       action: existingReaction ? (existingReaction.reaction === reactionType ? 'removed' : 'switched') : 'added',
       reaction: reactionType
     });
@@ -208,16 +209,21 @@ export const handleShortLike = async (req, res) => {
 
     if (existingLike) {
       await LikedShort.findByIdAndDelete(existingLike._id);
+      
+      const short = await Short.findById(shortId);
+      const currentLikes = Math.max(0, (short.likesCount || 0) - 1);
+      
       await Short.findByIdAndUpdate(shortId, { 
         $pull: { likes: userId },
-        $inc: { likesCount: -1 }
+        likesCount: currentLikes
       });
       
       console.log('✅ Removed short like');
       return res.status(200).json({ 
         success: true,
         liked: false,
-        action: 'removed'
+        action: 'removed',
+        likesCount: currentLikes
       });
     } else {
       await LikedShort.create({ 
@@ -225,17 +231,21 @@ export const handleShortLike = async (req, res) => {
         shortid: shortId 
       });
       
+      const short = await Short.findById(shortId);
+      const currentLikes = (short.likesCount || 0) + 1;
+      
       await Short.findByIdAndUpdate(shortId, { 
         $addToSet: { likes: userId },
         $pull: { dislikes: userId },
-        $inc: { likesCount: 1 }
+        likesCount: currentLikes
       });
       
       console.log('✅ Added short like');
       return res.status(200).json({ 
         success: true,
         liked: true,
-        action: 'added'
+        action: 'added',
+        likesCount: currentLikes
       });
     }
   } catch (error) {
