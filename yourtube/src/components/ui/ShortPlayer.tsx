@@ -986,20 +986,23 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
       </div>
-
 {/* Header with Theme-Compatible Menu */}
 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto">
+  {/* Shorts button - HIDDEN on desktop (md and above) */}
   <button
     onClick={(e) => {
       e.stopPropagation();
       router.push("/shorts");
     }}
-    className="text-white text-2xl font-bold hover:text-gray-300 transition"
+    className="md:hidden text-white text-2xl font-bold hover:text-gray-300 transition"
   >
     Shorts
   </button>
 
-  <div className="relative menu-button">
+  {/* Empty div for spacing on desktop */}
+  <div className="hidden md:block"></div>
+
+  <div className="relative menu-button ml-auto">
     <button
       onClick={(e) => {
         e.stopPropagation();
