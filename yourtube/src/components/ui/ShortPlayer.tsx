@@ -252,11 +252,11 @@ useEffect(() => {
 
       const apiUrl = getApiUrl();
 
-      // ✅ Removed Expires header
+      // ✅ FIXED: Only use Cache-Control
       const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Cache-Control": "no-cache",
         },
       });
 
@@ -277,7 +277,7 @@ useEffect(() => {
   if (short._id && isActive) {
     fetchLikeStatus();
   }
-}, [short._id, isActive]); // ✅ Re-runs when short changes
+}, [short._id, isActive]); 
 
 
 
