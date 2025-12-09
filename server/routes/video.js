@@ -2070,6 +2070,45 @@ router.post('/test-cloudinary-upload',
     }
   }
 );
+// ✅ NEW: Force refresh video counts
+router.get('/refresh/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid video ID'
+      });
+    }
 
+    const video = await videofiles
+      .findById(id)
+      .select('Like Dislike likes dislikes views')
+      .lean();
+
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: 'Video not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      counts: {
+        likes: video.Like || video.likes || 0,
+        dislikes: video.Dislike || video.dislikes || 0,
+        views: video.views || 0
+      }
+    });
+  } catch (error) {
+    console.error('Refresh error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to refresh counts'
+    });
+  }
+});
 
 export default router;

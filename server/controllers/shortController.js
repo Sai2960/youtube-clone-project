@@ -227,7 +227,7 @@ export const getShortById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user ? req.user._id : null;
 
-    console.log("📥 Fetching short:", id);
+    console.log("📥 Fetching short:", id, "User:", userId?.toString());
 
     const short = await Short.findById(id)
       .populate(
@@ -246,6 +246,7 @@ export const getShortById = async (req, res) => {
     // Increment view count
     await Short.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
+    // ✅ CRITICAL: Check if user has liked/disliked THIS short
     const hasLiked = userId
       ? short.likes.some((like) => like.toString() === userId.toString())
       : false;
@@ -255,18 +256,22 @@ export const getShortById = async (req, res) => {
         )
       : false;
 
-    const finalAvatar = getBestAvatar(short, req);
+    console.log('✅ Short reaction status:', {
+      shortId: id,
+      userId: userId?.toString(),
+      hasLiked,
+      hasDisliked,
+      totalLikes: short.likes.length,
+      totalDislikes: short.dislikes.length
+    });
 
-    // ✅ Use Cloudinary URLs directly
+    const finalAvatar = getBestAvatar(short, req);
     let videoUrl = short.videoUrl;
     let thumbnailUrl = short.thumbnailUrl;
 
-    // Validate only
     if (!videoUrl || !videoUrl.includes("cloudinary.com")) {
       console.error("❌ Invalid video URL:", videoUrl);
     }
-
-    console.log("✅ Short video URL:", videoUrl?.substring(0, 80));
 
     res.status(200).json({
       success: true,
@@ -284,8 +289,8 @@ export const getShortById = async (req, res) => {
         likesCount: short.likes.length,
         dislikesCount: short.dislikes.length,
         commentsCount: short.comments.length,
-        hasLiked,
-        hasDisliked,
+        hasLiked,        // ✅ Include this
+        hasDisliked,     // ✅ Include this
         views: short.views + 1,
         userId: {
           ...short.userId,
