@@ -128,6 +128,13 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const channelAvatar = getShortAvatar(short);
   const channelName = getShortChannelName(short);
 
+  // Add these after your existing useState declarations
+const [duration, setDuration] = useState(0);
+const [progress, setProgress] = useState(0);
+const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
+
+  
+
   const getApiUrl = () =>
 // ✅ CORRECT - Simple fallback chain
 "https://youtube-clone-project-q3pd.onrender.com"
@@ -182,6 +189,36 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     showReportModal,
     showVolumeSlider,
   ]);
+
+  // Update progress as video plays
+useEffect(() => {
+  const video = videoRef.current;
+  if (!video) return;
+
+  const updateProgress = () => {
+    if (video.duration) {
+      const currentProgress = (video.currentTime / video.duration) * 100;
+      setProgress(currentProgress);
+      setCurrentTime(video.currentTime);
+    }
+  };
+
+  const updateDuration = () => {
+    if (video.duration) {
+      setDuration(video.duration);
+    }
+  };
+
+  video.addEventListener('timeupdate', updateProgress);
+  video.addEventListener('loadedmetadata', updateDuration);
+  video.addEventListener('durationchange', updateDuration);
+
+  return () => {
+    video.removeEventListener('timeupdate', updateProgress);
+    video.removeEventListener('loadedmetadata', updateDuration);
+    video.removeEventListener('durationchange', updateDuration);
+  };
+}, []);
 
   useEffect(() => {
   // Track short view in history
@@ -651,6 +688,81 @@ useEffect(() => {
     }
   };
 
+  // Timeline seek handler
+const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  if (!videoRef.current) return;
+  
+  const timeline = e.currentTarget;
+  const rect = timeline.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const percentage = (clickX / rect.width) * 100;
+  const newTime = (percentage / 100) * videoRef.current.duration;
+  
+  videoRef.current.currentTime = newTime;
+  setProgress(percentage);
+};
+
+// Timeline drag start
+const handleTimelineDragStart = (e: React.MouseEvent<HTMLDivElement>) => {
+  setIsDraggingTimeline(true);
+  handleTimelineClick(e);
+};
+
+// Timeline drag move
+const handleTimelineDragMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  if (!isDraggingTimeline || !videoRef.current) return;
+  handleTimelineClick(e);
+};
+
+// Timeline drag end
+const handleTimelineDragEnd = () => {
+  setIsDraggingTimeline(false);
+};
+
+// Format time helper (mm:ss)
+const formatTime = (seconds: number): string => {
+  if (!seconds || isNaN(seconds)) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Touch handlers for timeline
+const handleTimelineTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+  e.stopPropagation();
+  setIsDraggingTimeline(true);
+  
+  if (!videoRef.current) return;
+  
+  const timeline = e.currentTarget;
+  const rect = timeline.getBoundingClientRect();
+  const touchX = e.touches[0].clientX - rect.left;
+  const percentage = (touchX / rect.width) * 100;
+  const newTime = (percentage / 100) * videoRef.current.duration;
+  
+  videoRef.current.currentTime = newTime;
+  setProgress(percentage);
+};
+
+const handleTimelineTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+  e.stopPropagation();
+  if (!isDraggingTimeline || !videoRef.current) return;
+  
+  const timeline = e.currentTarget;
+  const rect = timeline.getBoundingClientRect();
+  const touchX = e.touches[0].clientX - rect.left;
+  const percentage = Math.max(0, Math.min(100, (touchX / rect.width) * 100));
+  const newTime = (percentage / 100) * videoRef.current.duration;
+  
+  videoRef.current.currentTime = newTime;
+  setProgress(percentage);
+};
+
+const handleTimelineTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+  e.stopPropagation();
+  setIsDraggingTimeline(false);
+};
+
   const handleSubscribe = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -944,7 +1056,8 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
     >
       {/* Video */}
        {/* Video */}
-     <video
+   {/* Video */}
+<video
   ref={videoRef}
   src={short.videoUrl}
   className="w-full h-full object-contain cursor-pointer bg-black"
@@ -980,6 +1093,57 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
     WebkitUserSelect: 'none',
   }}
 />
+
+{/* ✅ ADD THIS TIMELINE COMPONENT HERE */}
+{/* Video Timeline - Desktop & Mobile */}
+<div className="absolute bottom-0 left-0 right-0 z-[40] pb-[140px] md:pb-[120px] lg:pb-[140px] pointer-events-auto">
+  <div className="px-4 md:px-6 lg:px-8">
+    {/* Time Display */}
+    <div className="flex items-center justify-between mb-2 text-white text-xs md:text-sm font-semibold">
+      <span className="drop-shadow-lg">{formatTime(currentTime)}</span>
+      <span className="drop-shadow-lg">{formatTime(duration)}</span>
+    </div>
+    
+    {/* Timeline Bar */}
+    <div
+      className="relative w-full h-1 md:h-1.5 bg-white/30 rounded-full cursor-pointer group overflow-visible"
+      onClick={handleTimelineClick}
+      onMouseDown={handleTimelineDragStart}
+      onMouseMove={handleTimelineDragMove}
+      onMouseUp={handleTimelineDragEnd}
+      onMouseLeave={handleTimelineDragEnd}
+      onTouchStart={handleTimelineTouchStart}
+      onTouchMove={handleTimelineTouchMove}
+      onTouchEnd={handleTimelineTouchEnd}
+      style={{
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'none',
+      }}
+    >
+      {/* Progress Bar */}
+      <div
+        className="absolute top-0 left-0 h-full bg-red-600 rounded-full transition-all duration-100"
+        style={{ width: `${progress}%` }}
+      />
+      
+      {/* Draggable Handle */}
+      <div
+        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 bg-red-600 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        style={{
+          left: `${progress}%`,
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'none',
+        }}
+      />
+      
+      {/* Hover Effect Bar */}
+      <div className="absolute top-0 left-0 w-full h-full bg-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+    </div>
+  </div>
+</div>
+
+{/* Gradients */}
+<div className="absolute inset-0 pointer-events-none"></div>
 
       {/* Gradients */}
       <div className="absolute inset-0 pointer-events-none">
@@ -1098,6 +1262,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
     )}
   </div>
 </div>
+
 
     {/* Delete Confirmation Modal */}
 {showDeleteConfirm && (
@@ -1472,7 +1637,7 @@ const openDeleteConfirm = (e: React.MouseEvent) => {
 
      {/* MOBILE OPTIMIZED CONTENT SECTION */}
       <div className="absolute bottom-0 left-0 right-0 z-[30]">
-        <div className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24">
+  <div className="p-3 pb-32 md:p-5 md:pb-28 lg:p-6 lg:pb-32">
           <div className="flex items-end justify-between gap-3 md:gap-4 lg:gap-6">
             {/* Left Content */}
             <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-140px)] lg:max-w-[calc(100%-160px)]">
