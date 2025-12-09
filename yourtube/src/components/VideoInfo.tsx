@@ -65,13 +65,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       console.log("❌ No user logged in");
       return null;
     }
-    
+
     const id = user._id || user.id;
     console.log("👤 Current User:", {
       id: id,
       email: user.email,
       name: user.name,
-      fullUser: user
+      fullUser: user,
     });
     return id;
   };
@@ -82,28 +82,28 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       console.log("❌ No video data");
       return null;
     }
-    
+
     // Try all possible locations for the uploader ID
-    const uploaderId = 
-      video.uploadedBy?._id ||     // Most common: { uploadedBy: { _id: "..." } }
-      video.uploadedBy?.id ||      // Alternative: { uploadedBy: { id: "..." } }
-      video.uploadedBy ||          // Direct ID: { uploadedBy: "string-id" }
-      video.user?._id ||           // Alternative field: { user: { _id: "..." } }
-      video.user?.id ||            // Alternative field: { user: { id: "..." } }
-      video.user ||                // Direct ID: { user: "string-id" }
-      video.videoowner?._id ||     // Legacy field: { videoowner: { _id: "..." } }
-      video.videoowner?.id ||      // Legacy field: { videoowner: { id: "..." } }
-      video.videoowner;            // Direct ID: { videoowner: "string-id" }
-    
+    const uploaderId =
+      video.uploadedBy?._id || // Most common: { uploadedBy: { _id: "..." } }
+      video.uploadedBy?.id || // Alternative: { uploadedBy: { id: "..." } }
+      video.uploadedBy || // Direct ID: { uploadedBy: "string-id" }
+      video.user?._id || // Alternative field: { user: { _id: "..." } }
+      video.user?.id || // Alternative field: { user: { id: "..." } }
+      video.user || // Direct ID: { user: "string-id" }
+      video.videoowner?._id || // Legacy field: { videoowner: { _id: "..." } }
+      video.videoowner?.id || // Legacy field: { videoowner: { id: "..." } }
+      video.videoowner; // Direct ID: { videoowner: "string-id" }
+
     console.log("🎥 Video Uploader:", {
       uploaderId: uploaderId,
       videoId: video._id,
       videoTitle: video.videotitle,
       uploadedByRaw: video.uploadedBy,
       userRaw: video.user,
-      videoownerRaw: video.videoowner
+      videoownerRaw: video.videoowner,
     });
-    
+
     return uploaderId;
   };
 
@@ -117,27 +117,27 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       console.log("❌ isOwner = false: User not logged in");
       return false;
     }
-    
+
     if (!videoUploaderId) {
       console.log("❌ isOwner = false: Video uploader ID not found");
       return false;
     }
-    
+
     // Convert both to strings and trim whitespace
     const userId = String(currentUserId).trim();
     const uploaderId = String(videoUploaderId).trim();
-    
+
     // Perform comparison
     const match = userId === uploaderId;
-    
+
     console.log("🔐 OWNERSHIP CHECK:", {
       currentUserId: userId,
       videoUploaderId: uploaderId,
       match: match,
       comparison: `"${userId}" === "${uploaderId}"`,
-      result: match ? "✅ USER OWNS VIDEO" : "❌ NOT OWNER"
+      result: match ? "✅ USER OWNS VIDEO" : "❌ NOT OWNER",
     });
-    
+
     return match;
   })();
 
@@ -157,18 +157,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       const scrollLeft = container.scrollLeft;
       const scrollWidth = container.scrollWidth;
       const clientWidth = container.clientWidth;
-      
+
       const hasMoreContent = scrollWidth > clientWidth;
       const isAtEnd = scrollLeft + clientWidth >= scrollWidth - 10;
-      
+
       setShowScrollIndicator(hasMoreContent && !isAtEnd);
     };
 
-    container.addEventListener('scroll', handleScroll);
+    container.addEventListener("scroll", handleScroll);
     const timeoutId = setTimeout(handleScroll, 100);
 
     return () => {
-      container.removeEventListener('scroll', handleScroll);
+      container.removeEventListener("scroll", handleScroll);
       clearTimeout(timeoutId);
     };
   }, [video._id]);
@@ -182,10 +182,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       const scrollWidth = container.scrollWidth;
       const clientWidth = container.clientWidth;
       const scrollLeft = container.scrollLeft;
-      
+
       const hasMoreContent = scrollWidth > clientWidth;
       const isAtEnd = scrollLeft + clientWidth >= scrollWidth - 10;
-      
+
       setShowScrollIndicator(hasMoreContent && !isAtEnd);
     });
 
@@ -260,33 +260,33 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         setIsDisliked(false);
         return;
       }
-      
+
       try {
         const response = await axiosInstance.get(`/like/${user._id}`);
         if (response.data.success) {
           let likesArray = response.data.likes || [];
           let dislikesArray = response.data.dislikes || [];
-          
+
           if (likesArray.length === 0 && response.data.videos) {
             const allVideos = response.data.videos || response.data.data || [];
-            likesArray = allVideos.filter((item: any) => 
-              !item.reaction || item.reaction === 'like'
+            likesArray = allVideos.filter(
+              (item: any) => !item.reaction || item.reaction === "like"
             );
-            dislikesArray = allVideos.filter((item: any) => 
-              item.reaction === 'dislike'
+            dislikesArray = allVideos.filter(
+              (item: any) => item.reaction === "dislike"
             );
           }
-          
+
           const videoIsLiked = likesArray.some((item: any) => {
             const videoId = item.videoid?._id || item.videoid;
             return String(videoId) === String(video._id);
           });
-          
+
           const videoIsDisliked = dislikesArray.some((item: any) => {
             const videoId = item.videoid?._id || item.videoid;
             return String(videoId) === String(video._id);
           });
-          
+
           setIsLiked(videoIsLiked);
           setIsDisliked(videoIsDisliked);
         }
@@ -296,7 +296,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         setIsDisliked(false);
       }
     };
-    
+
     fetchReactionStatus();
   }, [user?._id, video?._id]);
 
@@ -309,17 +309,25 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   }, [video?._id, video?.Like, video?.Dislike]);
 
   // ✅ DEBUG: Monitor like/dislike changes
-useEffect(() => {
-  console.log('📊 Like/Dislike State:', {
-    videoId: video._id,
+  useEffect(() => {
+    console.log("📊 Like/Dislike State:", {
+      videoId: video._id,
+      likes,
+      dislikes,
+      isLiked,
+      isDisliked,
+      backendLikes: video.Like,
+      backendDislikes: video.Dislike,
+    });
+  }, [
     likes,
     dislikes,
     isLiked,
     isDisliked,
-    backendLikes: video.Like,
-    backendDislikes: video.Dislike
-  });
-}, [likes, dislikes, isLiked, isDisliked, video._id, video.Like, video.Dislike]);
+    video._id,
+    video.Like,
+    video.Dislike,
+  ]);
 
   // Track video views
   useEffect(() => {
@@ -378,9 +386,7 @@ useEffect(() => {
   };
 
   // Notification preference handler
-  const handleNotificationChange = (
-    pref: "all" | "personalized" | "none"
-  ) => {
+  const handleNotificationChange = (pref: "all" | "personalized" | "none") => {
     setNotificationPreference(pref);
     setShowSubscribeMenu(false);
   };
@@ -398,153 +404,150 @@ useEffect(() => {
     setTimeout(() => setError(null), 3000);
     return;
   }
-  
-  // ✅ Prevent double-clicking
-  if (likeAnimation) return;
-  
+
+  if (likeAnimation) return; // Prevent double-click
+
   try {
     setError(null);
     setLikeAnimation(true);
     setLikeRipple(true);
-    
+
     // ✅ Optimistic UI update
     const wasLiked = isLiked;
     const wasDisliked = isDisliked;
-    
+
     if (wasLiked) {
-      // Remove like
       setIsLiked(false);
-      setLikes(prev => Math.max(0, prev - 1));
+      setLikes((prev) => Math.max(0, prev - 1));
     } else {
-      // Add like
       setIsLiked(true);
-      setLikes(prev => prev + 1);
-      
-      // If switching from dislike
+      setLikes((prev) => prev + 1);
       if (wasDisliked) {
         setIsDisliked(false);
-        setDislikes(prev => Math.max(0, prev - 1));
+        setDislikes((prev) => Math.max(0, prev - 1));
       }
     }
-    
-    // ✅ Send request to backend
+
+    // ✅ CRITICAL FIX: Use server response directly
     const res = await axiosInstance.post(`/like/${video._id}`, {
       userId: user._id,
       isLike: true,
     });
-    
-    // ✅ Sync with server response after 500ms delay
-    setTimeout(async () => {
-      try {
-        const freshVideo = await axiosInstance.get(`/video/${video._id}`);
-        if (freshVideo.data.success && freshVideo.data.video) {
-          setLikes(freshVideo.data.video.Like || freshVideo.data.video.likes || 0);
-          setDislikes(freshVideo.data.video.Dislike || freshVideo.data.video.dislikes || 0);
-          
-          // Update state based on server
-          setIsLiked(res.data.liked);
-          setIsDisliked(res.data.disliked || false);
-        }
-      } catch (fetchError) {
-        console.error("Failed to sync likes:", fetchError);
-      }
-    }, 500);
-    
+
+    console.log('✅ Server Response:', res.data);
+
+    // ✅ CRITICAL: Sync with server immediately
+    if (res.data.success) {
+      setLikes(res.data.likes || res.data.Like || 0);
+      setDislikes(res.data.dislikes || res.data.Dislike || 0);
+      setIsLiked(res.data.liked);
+      setIsDisliked(res.data.disliked);
+      
+      console.log('✅ Counts updated:', {
+        likes: res.data.likes,
+        dislikes: res.data.dislikes,
+        liked: res.data.liked,
+        disliked: res.data.disliked
+      });
+    }
+
     setTimeout(() => {
       setLikeAnimation(false);
       setLikeRipple(false);
     }, 650);
-    
+
   } catch (error: any) {
-    console.error("Like error:", error);
-    
-    // ✅ Revert optimistic update on error
-    const freshVideo = await axiosInstance.get(`/video/${video._id}`);
-    if (freshVideo.data.success && freshVideo.data.video) {
-      setLikes(freshVideo.data.video.Like || 0);
-      setDislikes(freshVideo.data.video.Dislike || 0);
+    console.error("❌ Like error:", error);
+
+    // ✅ Revert on error
+    try {
+      const freshVideo = await axiosInstance.get(`/video/${video._id}`);
+      if (freshVideo.data.success && freshVideo.data.video) {
+        setLikes(freshVideo.data.video.Like || 0);
+        setDislikes(freshVideo.data.video.Dislike || 0);
+      }
+    } catch (fetchError) {
+      console.error("Failed to revert:", fetchError);
     }
-    
+
     setError(error.response?.data?.message || "Failed to like video");
     setTimeout(() => setError(null), 3000);
   }
 };
 
-  // Dislike button handler
-  // Dislike button handler
+// Dislike button handler - FIXED VERSION
 const handleDislike = async () => {
   if (!user?._id) {
     setError("Please log in to dislike videos");
     setTimeout(() => setError(null), 3000);
     return;
   }
-  
-  // ✅ Prevent double-clicking
-  if (dislikeAnimation) return;
-  
+
+  if (dislikeAnimation) return; // Prevent double-click
+
   try {
     setError(null);
     setDislikeAnimation(true);
     setDislikeRipple(true);
-    
+
     // ✅ Optimistic UI update
     const wasLiked = isLiked;
     const wasDisliked = isDisliked;
-    
+
     if (wasDisliked) {
-      // Remove dislike
       setIsDisliked(false);
-      setDislikes(prev => Math.max(0, prev - 1));
+      setDislikes((prev) => Math.max(0, prev - 1));
     } else {
-      // Add dislike
       setIsDisliked(true);
-      setDislikes(prev => prev + 1);
-      
-      // If switching from like
+      setDislikes((prev) => prev + 1);
       if (wasLiked) {
         setIsLiked(false);
-        setLikes(prev => Math.max(0, prev - 1));
+        setLikes((prev) => Math.max(0, prev - 1));
       }
     }
-    
-    // ✅ Send request to backend
+
+    // ✅ CRITICAL FIX: Use server response directly
     const res = await axiosInstance.post(`/like/${video._id}`, {
       userId: user._id,
       isLike: false,
     });
-    
-    // ✅ Sync with server response after 500ms delay
-    setTimeout(async () => {
-      try {
-        const freshVideo = await axiosInstance.get(`/video/${video._id}`);
-        if (freshVideo.data.success && freshVideo.data.video) {
-          setLikes(freshVideo.data.video.Like || freshVideo.data.video.likes || 0);
-          setDislikes(freshVideo.data.video.Dislike || freshVideo.data.video.dislikes || 0);
-          
-          // Update state based on server
-          setIsLiked(res.data.liked || false);
-          setIsDisliked(res.data.disliked);
-        }
-      } catch (fetchError) {
-        console.error("Failed to sync dislikes:", fetchError);
-      }
-    }, 500);
-    
+
+    console.log('✅ Server Response:', res.data);
+
+    // ✅ CRITICAL: Sync with server immediately
+    if (res.data.success) {
+      setLikes(res.data.likes || res.data.Like || 0);
+      setDislikes(res.data.dislikes || res.data.Dislike || 0);
+      setIsLiked(res.data.liked);
+      setIsDisliked(res.data.disliked);
+      
+      console.log('✅ Counts updated:', {
+        likes: res.data.likes,
+        dislikes: res.data.dislikes,
+        liked: res.data.liked,
+        disliked: res.data.disliked
+      });
+    }
+
     setTimeout(() => {
       setDislikeAnimation(false);
       setDislikeRipple(false);
     }, 650);
-    
+
   } catch (error: any) {
-    console.error("Dislike error:", error);
-    
-    // ✅ Revert optimistic update on error
-    const freshVideo = await axiosInstance.get(`/video/${video._id}`);
-    if (freshVideo.data.success && freshVideo.data.video) {
-      setLikes(freshVideo.data.video.Like || 0);
-      setDislikes(freshVideo.data.video.Dislike || 0);
+    console.error("❌ Dislike error:", error);
+
+    // ✅ Revert on error
+    try {
+      const freshVideo = await axiosInstance.get(`/video/${video._id}`);
+      if (freshVideo.data.success && freshVideo.data.video) {
+        setLikes(freshVideo.data.video.Like || 0);
+        setDislikes(freshVideo.data.video.Dislike || 0);
+      }
+    } catch (fetchError) {
+      console.error("Failed to revert:", fetchError);
     }
-    
+
     setError(error.response?.data?.message || "Failed to dislike video");
     setTimeout(() => setError(null), 3000);
   }
@@ -595,7 +598,6 @@ const handleDislike = async () => {
   };
   return (
     <div className="w-full space-y-0 overflow-x-hidden bg-white dark:bg-[#0f0f0f]">
-
       {/* 1. Title and Views Section */}
       <div className="px-3 pt-3 pb-1 md:px-0 md:pt-0">
         <h1 className="text-[18px] md:text-xl font-semibold text-youtube-primary mb-1 leading-snug line-clamp-2">
@@ -713,14 +715,28 @@ const handleDislike = async () => {
                         >
                           <Bell className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-youtube-primary">All</div>
+                            <div className="font-medium text-sm text-youtube-primary">
+                              All
+                            </div>
                           </div>
                           {notificationPreference === "all" && (
-                            <svg className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                            <svg
+                              className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
                           )}
                         </button>
                         <button
-                          onClick={() => handleNotificationChange("personalized")}
+                          onClick={() =>
+                            handleNotificationChange("personalized")
+                          }
                           className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
                             notificationPreference === "personalized"
                               ? "bg-youtube-hover dark:bg-neutral-800"
@@ -729,10 +745,22 @@ const handleDislike = async () => {
                         >
                           <Bell className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-youtube-primary">Personalized</div>
+                            <div className="font-medium text-sm text-youtube-primary">
+                              Personalized
+                            </div>
                           </div>
                           {notificationPreference === "personalized" && (
-                            <svg className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                            <svg
+                              className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
                           )}
                         </button>
                         <button
@@ -745,10 +773,22 @@ const handleDislike = async () => {
                         >
                           <BellOff className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-youtube-primary">None</div>
+                            <div className="font-medium text-sm text-youtube-primary">
+                              None
+                            </div>
                           </div>
                           {notificationPreference === "none" && (
-                            <svg className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                            <svg
+                              className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
                           )}
                         </button>
                         <div className="border-t border-youtube dark:border-neutral-800 my-2"></div>
@@ -773,29 +813,47 @@ const handleDislike = async () => {
             <div className="flex items-center bg-youtube-secondary dark:bg-neutral-800 rounded-full overflow-hidden shadow-sm">
               <button
                 className={`relative px-4 py-2 flex items-center gap-2 transition-all duration-200 ${
-                  isLiked ? "text-blue-600 dark:text-blue-500" : "text-youtube-primary"
-                } ${likeAnimation ? "animate-like-bounce" : ""} overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
+                  isLiked
+                    ? "text-blue-600 dark:text-blue-500"
+                    : "text-youtube-primary"
+                } ${
+                  likeAnimation ? "animate-like-bounce" : ""
+                } overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
                 onClick={handleLike}
                 disabled={!user}
               >
                 {likeRipple && (
                   <span className="absolute inset-0 animate-ripple-effect bg-blue-500/30 rounded-full pointer-events-none" />
                 )}
-                <ThumbsUp className="w-5 h-5 relative z-10" fill={isLiked ? "currentColor" : "none"} strokeWidth={2.5} />
-                <span className="text-sm font-medium tabular-nums relative z-10">{likes}</span>
+                <ThumbsUp
+                  className="w-5 h-5 relative z-10"
+                  fill={isLiked ? "currentColor" : "none"}
+                  strokeWidth={2.5}
+                />
+                <span className="text-sm font-medium tabular-nums relative z-10">
+                  {likes}
+                </span>
               </button>
               <div className="w-px h-6 bg-youtube dark:bg-neutral-700" />
               <button
                 className={`relative px-4 py-2 transition-all duration-200 ${
-                  isDisliked ? "text-blue-600 dark:text-blue-500" : "text-youtube-primary"
-                } ${dislikeAnimation ? "animate-dislike-bounce" : ""} overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
+                  isDisliked
+                    ? "text-blue-600 dark:text-blue-500"
+                    : "text-youtube-primary"
+                } ${
+                  dislikeAnimation ? "animate-dislike-bounce" : ""
+                } overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
                 onClick={handleDislike}
                 disabled={!user}
               >
                 {dislikeRipple && (
                   <span className="absolute inset-0 animate-ripple-effect bg-blue-500/30 rounded-full pointer-events-none" />
                 )}
-                <ThumbsDown className="w-5 h-5 relative z-10" fill={isDisliked ? "currentColor" : "none"} strokeWidth={2.5} />
+                <ThumbsDown
+                  className="w-5 h-5 relative z-10"
+                  fill={isDisliked ? "currentColor" : "none"}
+                  strokeWidth={2.5}
+                />
               </button>
             </div>
 
@@ -818,13 +876,20 @@ const handleDislike = async () => {
 
             <button
               className={`px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm ${
-                isWatchLater ? "text-blue-600 dark:text-blue-500" : "text-youtube-primary"
+                isWatchLater
+                  ? "text-blue-600 dark:text-blue-500"
+                  : "text-youtube-primary"
               }`}
               onClick={handleWatchLater}
               disabled={!user}
             >
-              <Bookmark className="w-5 h-5" fill={isWatchLater ? "currentColor" : "none"} />
-              <span className="text-sm font-medium">{isWatchLater ? "Saved" : "Save"}</span>
+              <Bookmark
+                className="w-5 h-5"
+                fill={isWatchLater ? "currentColor" : "none"}
+              />
+              <span className="text-sm font-medium">
+                {isWatchLater ? "Saved" : "Save"}
+              </span>
             </button>
 
             {isOwner && (
@@ -841,37 +906,46 @@ const handleDislike = async () => {
       </div>
       {/* Mobile Action Buttons - YouTube Style Pills with Text */}
       <div className="md:hidden border-t border-youtube-tertiary dark:border-neutral-800 bg-white dark:bg-[#0f0f0f]">
-        <div 
+        <div
           ref={scrollContainerRef}
           className="overflow-x-auto overflow-y-hidden mobile-scroll-container"
           style={{
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         >
           <div className="flex items-center gap-2 px-3 py-3 w-max">
-            
             {/* Like/Dislike Combined Pill */}
             <div className="flex items-center bg-youtube-secondary dark:bg-neutral-800 rounded-full h-9 flex-shrink-0 overflow-hidden">
               <button
                 className={`flex items-center gap-2 px-3 h-full border-r border-youtube-tertiary dark:border-neutral-700 hover:bg-youtube-hover dark:hover:bg-neutral-700/50 rounded-l-full transition-all ${
-                  isLiked ? "text-blue-600 dark:text-blue-500" : "text-youtube-primary"
+                  isLiked
+                    ? "text-blue-600 dark:text-blue-500"
+                    : "text-youtube-primary"
                 }`}
                 onClick={handleLike}
                 disabled={!user}
               >
-                <ThumbsUp className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} strokeWidth={2} />
+                <ThumbsUp
+                  className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`}
+                  strokeWidth={2}
+                />
                 <span className="text-xs font-bold tabular-nums">{likes}</span>
               </button>
               <button
                 className={`px-3 h-full hover:bg-youtube-hover dark:hover:bg-neutral-700/50 rounded-r-full transition-all ${
-                  isDisliked ? "text-blue-600 dark:text-blue-500" : "text-youtube-primary"
+                  isDisliked
+                    ? "text-blue-600 dark:text-blue-500"
+                    : "text-youtube-primary"
                 }`}
                 onClick={handleDislike}
                 disabled={!user}
               >
-                <ThumbsDown className={`w-4 h-4 ${isDisliked ? "fill-current" : ""}`} strokeWidth={2} />
+                <ThumbsDown
+                  className={`w-4 h-4 ${isDisliked ? "fill-current" : ""}`}
+                  strokeWidth={2}
+                />
               </button>
             </div>
 
@@ -880,8 +954,13 @@ const handleDislike = async () => {
               className="flex items-center gap-2 px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 flex-shrink-0"
               onClick={handleShare}
             >
-              <Share2 className="w-4 h-4 text-youtube-primary" strokeWidth={2} />
-              <span className="text-xs font-bold text-youtube-primary">Share</span>
+              <Share2
+                className="w-4 h-4 text-youtube-primary"
+                strokeWidth={2}
+              />
+              <span className="text-xs font-bold text-youtube-primary">
+                Share
+              </span>
             </button>
 
             {/* Download Pill */}
@@ -900,12 +979,19 @@ const handleDislike = async () => {
             {user && (
               <button
                 className={`flex items-center gap-2 px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 flex-shrink-0 ${
-                  isWatchLater ? "text-blue-600 dark:text-blue-500" : "text-youtube-primary"
+                  isWatchLater
+                    ? "text-blue-600 dark:text-blue-500"
+                    : "text-youtube-primary"
                 }`}
                 onClick={handleWatchLater}
               >
-                <Bookmark className={`w-4 h-4 ${isWatchLater ? "fill-current" : ""}`} strokeWidth={2} />
-                <span className="text-xs font-bold text-youtube-primary">Save</span>
+                <Bookmark
+                  className={`w-4 h-4 ${isWatchLater ? "fill-current" : ""}`}
+                  strokeWidth={2}
+                />
+                <span className="text-xs font-bold text-youtube-primary">
+                  Save
+                </span>
               </button>
             )}
 
@@ -920,7 +1006,6 @@ const handleDislike = async () => {
                 />
               </div>
             )}
-            
           </div>
         </div>
       </div>
@@ -930,7 +1015,7 @@ const handleDislike = async () => {
         .mobile-scroll-container::-webkit-scrollbar {
           display: none;
         }
-        
+
         .mobile-scroll-container {
           -ms-overflow-style: none;
           scrollbar-width: none;

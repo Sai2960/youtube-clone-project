@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -82,29 +82,56 @@ export default function LikedVideosContent() {
     }
   };
 
-  const handleUnlikeVideo = async (videoId: string, likedVideoId: string) => {
-    if (!user) return;
+const handleUnlikeVideo = async (videoId: string, likedVideoId: string) => {
+  if (!user) return;
 
-    try {
-      await axiosInstance.post(`/like/video/${videoId}`, { userId: user._id });
+  try {
+    console.log('🗑️ Unliking video:', { videoId, likedVideoId });
+    
+    // ✅ CRITICAL FIX: Use the correct endpoint
+    const response = await axiosInstance.post(`/like/video/${videoId}`, { 
+      userId: user._id,
+      isLike: true  // Toggle off the like
+    });
+
+    console.log('✅ Unlike response:', response.data);
+
+    if (response.data.success) {
+      // Remove from UI
       setLikedVideos(likedVideos.filter((item) => item._id !== likedVideoId));
       setAllLiked(allLiked.filter((item) => item._id !== likedVideoId));
-    } catch (error) {
-      console.error("Error unliking video:", error);
+      
+      console.log('✅ Video removed from liked list');
     }
-  };
+  } catch (error) {
+    console.error("❌ Error unliking video:", error);
+  }
+};
 
-  const handleUnlikeShort = async (shortId: string, likedShortId: string) => {
-    if (!user) return;
+const handleUnlikeShort = async (shortId: string, likedShortId: string) => {
+  if (!user) return;
 
-    try {
-      await axiosInstance.post(`/like/short/${shortId}`, { userId: user._id });
+  try {
+    console.log('🗑️ Unliking short:', { shortId, likedShortId });
+    
+    // ✅ Use the correct endpoint
+    const response = await axiosInstance.post(`/like/short/${shortId}`, { 
+      userId: user._id
+    });
+
+    console.log('✅ Unlike short response:', response.data);
+
+    if (response.data.success || response.data.liked === false) {
+      // Remove from UI
       setLikedShorts(likedShorts.filter((item) => item._id !== likedShortId));
       setAllLiked(allLiked.filter((item) => item._id !== likedShortId));
-    } catch (error) {
-      console.error("Error unliking short:", error);
+      
+      console.log('✅ Short removed from liked list');
     }
-  };
+  } catch (error) {
+    console.error("❌ Error unliking short:", error);
+  }
+};
 
 const getVideoUrl = (video: any) => {
   const url = getProperVideoUrl(video);
