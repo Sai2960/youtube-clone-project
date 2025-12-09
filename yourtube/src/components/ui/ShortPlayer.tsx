@@ -257,14 +257,14 @@ useEffect(() => {
       console.log("🔍 Fetching like status for short:", short._id);
 
       // ✅ CRITICAL FIX: Fetch fresh data from server
-      const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
+// ✅ FIXED: Removed Pragma header to avoid CORS issues
+const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Expires: "0",
+  },
+});
 
       console.log("📥 Server response:", {
         shortId: short._id,
