@@ -695,7 +695,7 @@ const handleLike = async (e: React.MouseEvent) => {
       }
     }
 
-    // ✅ FIX: Only use Cache-Control (most reliable)
+    // ✅ FIXED: Correct endpoint and response handling
     const response = await axios.post(
       `${getApiUrl()}/like/short/${short._id}`,
       { userId },
@@ -709,14 +709,16 @@ const handleLike = async (e: React.MouseEvent) => {
 
     console.log("✅ Like response:", response.data);
 
-    // ✅ Sync with server response
-    if (response.data.success) {
-      setHasLiked(Boolean(response.data.liked));
-      setLikesCount(response.data.likesCount || 0);
+    // ✅ FIXED: Access nested data object correctly
+    if (response.data.success && response.data.data) {
+      setHasLiked(Boolean(response.data.data.hasLiked));
+      setHasDisliked(Boolean(response.data.data.hasDisliked));
+      setLikesCount(response.data.data.likesCount || 0);
+      setDislikesCount(response.data.data.dislikesCount || 0);
 
       console.log("✅ Like state synced with server:", {
-        liked: response.data.liked,
-        likesCount: response.data.likesCount,
+        hasLiked: response.data.data.hasLiked,
+        likesCount: response.data.data.likesCount,
       });
     }
   } catch (error: any) {
