@@ -82,9 +82,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [hasLiked, setHasLiked] = useState(Boolean(short.hasLiked));
-  const [hasDisliked, setHasDisliked] = useState(Boolean(short.hasDisliked));
-  const [likesCount, setLikesCount] = useState(short.likesCount || 0);
-  const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
+const [hasDisliked, setHasDisliked] = useState(Boolean(short.hasDisliked));
+const [likesCount, setLikesCount] = useState(short.likesCount || 0);
+const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
   const [sharesCount, setSharesCount] = useState(short.shares || 0);
   const [commentsCount, setCommentsCount] = useState(short.commentsCount || 0);
   const [viewsCount, setViewsCount] = useState(short.views || 0);
@@ -229,7 +229,19 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       }
     };
   }, []);
-
+// ✅ NEW: Sync state when short prop changes
+useEffect(() => {
+  console.log("🔄 Short changed, syncing state:", {
+    shortId: short._id,
+    hasLiked: short.hasLiked,
+    likesCount: short.likesCount
+  });
+  
+  setHasLiked(Boolean(short.hasLiked));
+  setHasDisliked(Boolean(short.hasDisliked));
+  setLikesCount(short.likesCount || 0);
+  setDislikesCount(short.dislikesCount || 0);
+}, [short._id, short.hasLiked, short.hasDisliked, short.likesCount, short.dislikesCount]);
 
 
 useEffect(() => {
@@ -252,7 +264,8 @@ useEffect(() => {
 
       const apiUrl = getApiUrl();
 
-      // ✅ FIXED: Only use Cache-Control
+      console.log("🔍 Fetching like status for:", short._id);
+
       const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -262,6 +275,12 @@ useEffect(() => {
 
       if (response.data.success && response.data.data) {
         const shortData = response.data.data;
+        
+        console.log("✅ Fetched like status:", {
+          hasLiked: shortData.hasLiked,
+          likesCount: shortData.likesCount
+        });
+        
         setHasLiked(Boolean(shortData.hasLiked));
         setHasDisliked(Boolean(shortData.hasDisliked));
         setLikesCount(shortData.likesCount || 0);
@@ -269,15 +288,15 @@ useEffect(() => {
       }
     } catch (error) {
       console.error("❌ Error fetching like status:", error);
-      setHasLiked(false);
-      setHasDisliked(false);
+      // Don't reset on error - keep current state
     }
   };
 
+  // ✅ CRITICAL: Fetch when short changes OR becomes active
   if (short._id && isActive) {
     fetchLikeStatus();
   }
-}, [short._id, isActive]); 
+}, [short._id, isActive]); // ✅ This will re-run when navigating to new shorts
 
 
 
