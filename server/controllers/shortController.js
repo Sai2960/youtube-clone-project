@@ -98,6 +98,49 @@ const getCleanAvatar = (avatar) => {
   return avatar;
 };
 
+// ✅ NEW: Utility to sync likes between Short model and LikedShort collection
+const syncShortLikeStatus = async (shortId, userId) => {
+  try {
+    const short = await Short.findById(shortId).select('likes');
+    const likedShortEntry = await LikedShort.findOne({
+      viewer: userId,
+      shortid: shortId,
+    });
+
+    const inShortModel = short.likes?.some(
+      (like) => like.toString() === userId.toString()
+    );
+    const inLikedShort = Boolean(likedShortEntry);
+
+    // If they're out of sync, fix it
+    if (inShortModel !== inLikedShort) {
+      console.log("⚠️ Like status out of sync, fixing...");
+      
+      if (inShortModel && !inLikedShort) {
+        // Add to LikedShort collection
+        await LikedShort.create({
+          viewer: userId,
+          shortid: shortId,
+        });
+        console.log("✅ Added missing entry to LikedShort collection");
+      } else if (!inShortModel && inLikedShort) {
+        // Remove from LikedShort collection
+        await LikedShort.findOneAndDelete({
+          viewer: userId,
+          shortid: shortId,
+        });
+        console.log("✅ Removed extra entry from LikedShort collection");
+      }
+    }
+
+    // Return the correct status (prefer Short model as source of truth)
+    return inShortModel;
+  } catch (error) {
+    console.error("❌ Error syncing like status:", error);
+    return false;
+  }
+};
+
 // ============================================================================
 // MULTER CONFIGURATION
 // ============================================================================
@@ -235,6 +278,7 @@ export const getAllShorts = async (req, res) => {
 // Get single short by ID with proper avatar
 export const getShortById = async (req, res) => {
   try {
+    // ✅ Disable caching
     res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
     res.set("Pragma", "no-cache");
     res.set("Expires", "0");
@@ -242,7 +286,9 @@ export const getShortById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user ? req.user._id : null;
 
-    console.log("📥 Fetching short:", id, "User:", userId?.toString());
+    console.log("\n🔍 ===== GET SHORT BY ID =====");
+    console.log("Short ID:", id);
+    console.log("User ID:", userId?.toString());
 
     const short = await Short.findById(id)
       .populate(
@@ -261,38 +307,38 @@ export const getShortById = async (req, res) => {
     // Increment view count
     await Short.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
-    // ✅ CRITICAL: Check BOTH the Short model AND LikedShort collection
+    // ✅ CRITICAL FIX: Check like status in BOTH places
     let hasLiked = false;
     let hasDisliked = false;
 
     if (userId) {
-      // Check Short model
-      const inShortModel = short.likes?.some(
+      // Check 1: Short model likes array
+      const inShortLikes = short.likes?.some(
         (like) => like.toString() === userId.toString()
       );
-
-      // Check LikedShort collection
-      const inLikedShort = await LikedShort.findOne({
+      
+      // Check 2: LikedShort collection
+      const likedShortEntry = await LikedShort.findOne({
         viewer: userId,
         shortid: id,
       }).lean();
 
-      // User has liked if it's in EITHER place
-      hasLiked = inShortModel || Boolean(inLikedShort);
+      // User has liked if it exists in EITHER place
+      hasLiked = inShortLikes || Boolean(likedShortEntry);
 
       // Check dislikes only in Short model
       hasDisliked = short.dislikes?.some(
         (dislike) => dislike.toString() === userId.toString()
       );
 
-      console.log("✅ Like status check:", {
-        shortId: id,
-        userId: userId.toString(),
-        inShortModel,
-        inLikedShort: Boolean(inLikedShort),
-        hasLiked,
-        hasDisliked,
-      });
+      console.log("✅ Like Status Check Results:");
+      console.log("   Short ID:", id);
+      console.log("   User ID:", userId.toString());
+      console.log("   In Short.likes array:", inShortLikes);
+      console.log("   In LikedShort collection:", Boolean(likedShortEntry));
+      console.log("   FINAL hasLiked:", hasLiked);
+      console.log("   hasDisliked:", hasDisliked);
+      console.log("   Total likes:", short.likes?.length || 0);
     }
 
     const finalAvatar = getBestAvatar(short, req);
@@ -303,31 +349,39 @@ export const getShortById = async (req, res) => {
       console.error("❌ Invalid video URL:", videoUrl);
     }
 
+    const responseData = {
+      ...short,
+      videoUrl,
+      thumbnailUrl,
+      channelAvatar: finalAvatar,
+      channelName:
+        short.channelName ||
+        short.userId?.channelName ||
+        short.userId?.channelname ||
+        short.userId?.name ||
+        "Unknown",
+      likesCount: short.likes?.length || 0,
+      dislikesCount: short.dislikes?.length || 0,
+      commentsCount: short.comments?.length || 0,
+      hasLiked, // ✅ This is now properly calculated
+      hasDisliked,
+      views: short.views + 1,
+      userId: {
+        ...short.userId,
+        avatar: finalAvatar,
+        image: finalAvatar,
+      },
+    };
+
+    console.log("📤 Sending response:");
+    console.log("   hasLiked:", responseData.hasLiked);
+    console.log("   hasDisliked:", responseData.hasDisliked);
+    console.log("   likesCount:", responseData.likesCount);
+    console.log("=========================\n");
+
     res.status(200).json({
       success: true,
-      data: {
-        ...short,
-        videoUrl,
-        thumbnailUrl,
-        channelAvatar: finalAvatar,
-        channelName:
-          short.channelName ||
-          short.userId?.channelName ||
-          short.userId?.channelname ||
-          short.userId?.name ||
-          "Unknown",
-        likesCount: short.likes.length,
-        dislikesCount: short.dislikes.length,
-        commentsCount: short.comments.length,
-        hasLiked, // ✅ Now checks both places
-        hasDisliked,
-        views: short.views + 1,
-        userId: {
-          ...short.userId,
-          avatar: finalAvatar,
-          image: finalAvatar,
-        },
-      },
+      data: responseData,
     });
   } catch (error) {
     console.error("❌ Error fetching short:", error);
@@ -506,10 +560,9 @@ export const likeShort = async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    console.log("👍 Like short request:", {
-      shortId: id,
-      userId: userId.toString(),
-    });
+    console.log("\n👍 ===== LIKE SHORT REQUEST =====");
+    console.log("Short ID:", id);
+    console.log("User ID:", userId.toString());
 
     const short = await Short.findById(id);
     if (!short) {
@@ -519,60 +572,88 @@ export const likeShort = async (req, res) => {
       });
     }
 
-    const hasLiked = short.likes.includes(userId);
-    const hasDisliked = short.dislikes.includes(userId);
+    const hasLiked = short.likes.some(
+      (like) => like.toString() === userId.toString()
+    );
+    const hasDisliked = short.dislikes.some(
+      (dislike) => dislike.toString() === userId.toString()
+    );
+
+    console.log("Current status:", { hasLiked, hasDisliked });
 
     if (hasLiked) {
-      // ✅ UNLIKE - Remove from both Short model AND LikedShort collection
-      short.likes = short.likes.filter(
-        (id) => id.toString() !== userId.toString()
-      );
+      // ✅ UNLIKE - Remove from BOTH places atomically
+      console.log("🔄 Removing like...");
+      
+      // Update Short model
+      await Short.findByIdAndUpdate(id, {
+        $pull: { likes: userId }
+      });
 
-      // Remove from LikedShort collection
+      // Update LikedShort collection
       await LikedShort.findOneAndDelete({
         viewer: userId,
         shortid: id,
       });
-      console.log("✅ Removed from liked shorts collection");
-    } else {
-      // ✅ LIKE - Add to both Short model AND LikedShort collection
-      short.likes.push(userId);
-      if (hasDisliked) {
-        short.dislikes = short.dislikes.filter(
-          (id) => id.toString() !== userId.toString()
-        );
-      }
+      
+      // Get fresh count
+      const updatedShort = await Short.findById(id).select('likes dislikes');
+      
+      console.log("✅ Like removed from both places");
+      console.log("New count:", updatedShort.likes.length);
 
-      // Add to LikedShort collection (ignore duplicates)
+      return res.status(200).json({
+        success: true,
+        message: "Like removed",
+        data: {
+          likesCount: updatedShort.likes.length,
+          dislikesCount: updatedShort.dislikes.length,
+          hasLiked: false,
+          hasDisliked: false,
+        },
+      });
+    } else {
+      // ✅ LIKE - Add to BOTH places atomically
+      console.log("🔄 Adding like...");
+      
+      // Update Short model (addToSet prevents duplicates)
+      await Short.findByIdAndUpdate(id, {
+        $addToSet: { likes: userId },
+        $pull: { dislikes: userId } // Remove dislike if exists
+      });
+
+      // Update LikedShort collection (ignore duplicate errors)
       try {
         await LikedShort.create({
           viewer: userId,
           shortid: id,
         });
-        console.log("✅ Added to liked shorts collection");
+        console.log("✅ Added to LikedShort collection");
       } catch (likeError) {
-        // If duplicate (code 11000), it already exists - that's fine
         if (likeError.code === 11000) {
-          console.log("ℹ️ Like entry already exists in collection");
+          console.log("ℹ️ Like entry already exists in collection (OK)");
         } else {
           console.error("❌ Error creating liked short entry:", likeError);
         }
       }
+      
+      // Get fresh count
+      const updatedShort = await Short.findById(id).select('likes dislikes');
+      
+      console.log("✅ Like added to both places");
+      console.log("New count:", updatedShort.likes.length);
+
+      return res.status(200).json({
+        success: true,
+        message: "Short liked",
+        data: {
+          likesCount: updatedShort.likes.length,
+          dislikesCount: updatedShort.dislikes.length,
+          hasLiked: true,
+          hasDisliked: false,
+        },
+      });
     }
-
-    // Save the short
-    await short.save();
-
-    res.status(200).json({
-      success: true,
-      message: hasLiked ? "Like removed" : "Short liked",
-      data: {
-        likesCount: short.likes.length,
-        dislikesCount: short.dislikes.length,
-        hasLiked: !hasLiked,
-        hasDisliked: false,
-      },
-    });
   } catch (error) {
     console.error("❌ Error liking short:", error);
     res.status(500).json({

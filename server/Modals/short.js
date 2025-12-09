@@ -93,11 +93,13 @@ const shortSchema = new mongoose.Schema({
     // ------------------------------------------------------------------------
     likes: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+          default: []
     }],
     dislikes: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+          default: []
     }],
 
     // 🧩 Legacy compatibility arrays (if older data exists)
