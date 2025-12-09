@@ -308,38 +308,27 @@ useEffect(() => {
     }
 
     try {
-      const response = await axiosInstance.get(`/like/${user._id}`);
+      // ✅ NEW: Fetch the user's specific reaction for THIS video
+      const response = await axiosInstance.get(`/like/check/${video._id}/${user._id}`);
+      
+      console.log('🔍 Reaction check response:', response.data);
+      
       if (response.data.success) {
-        let likesArray = response.data.likes || [];
-        let dislikesArray = response.data.dislikes || [];
-
-        if (likesArray.length === 0 && response.data.videos) {
-          const allVideos = response.data.videos || response.data.data || [];
-          likesArray = allVideos.filter(
-            (item: any) => !item.reaction || item.reaction === "like"
-          );
-          dislikesArray = allVideos.filter(
-            (item: any) => item.reaction === "dislike"
-          );
-        }
-
-        const videoIsLiked = likesArray.some((item: any) => {
-          const videoId = item.videoid?._id || item.videoid;
-          return String(videoId) === String(video._id);
-        });
-
-        const videoIsDisliked = dislikesArray.some((item: any) => {
-          const videoId = item.videoid?._id || item.videoid;
-          return String(videoId) === String(video._id);
-        });
-
-        setIsLiked(videoIsLiked);
-        setIsDisliked(videoIsDisliked);
+        setIsLiked(response.data.liked || false);
+        setIsDisliked(response.data.disliked || false);
         
-        console.log('🔄 Reaction status refreshed:', {
+        // Also update counts from the response
+        if (response.data.video) {
+          setLikes(response.data.video.Like || 0);
+          setDislikes(response.data.video.Dislike || 0);
+        }
+        
+        console.log('✅ Reaction state loaded:', {
           videoId: video._id,
-          isLiked: videoIsLiked,
-          isDisliked: videoIsDisliked
+          isLiked: response.data.liked,
+          isDisliked: response.data.disliked,
+          likes: response.data.video?.Like,
+          dislikes: response.data.video?.Dislike
         });
       }
     } catch (error: any) {
@@ -351,7 +340,7 @@ useEffect(() => {
 
   fetchReactionStatus();
   
-  // ✅ NEW: Refetch when user navigates back to the page
+  // ✅ Refetch when user navigates back to the page
   const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
       fetchReactionStatus();
@@ -364,7 +353,6 @@ useEffect(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange);
   };
 }, [user?._id, video?._id, router.asPath]);
-
   // Update likes/dislikes counts
   useEffect(() => {
     if (video?._id) {

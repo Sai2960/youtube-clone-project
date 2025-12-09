@@ -88,18 +88,18 @@ const handleUnlikeVideo = async (videoId: string, likedVideoId: string) => {
   try {
     console.log('🗑️ Unliking video:', { videoId, likedVideoId });
     
-    // ✅ CRITICAL FIX: Use the correct endpoint
+    // ✅ Toggle the like off
     const response = await axiosInstance.post(`/like/video/${videoId}`, { 
       userId: user._id,
-      isLike: true  // Toggle off the like
+      isLike: true  // Send true to toggle it off
     });
 
     console.log('✅ Unlike response:', response.data);
 
-    if (response.data.success) {
-      // Remove from UI
-      setLikedVideos(likedVideos.filter((item) => item._id !== likedVideoId));
-      setAllLiked(allLiked.filter((item) => item._id !== likedVideoId));
+    if (response.data.success && !response.data.liked) {
+      // Remove from UI only if the server confirms it's unliked
+      setLikedVideos(prev => prev.filter((item) => item._id !== likedVideoId));
+      setAllLiked(prev => prev.filter((item) => item._id !== likedVideoId));
       
       console.log('✅ Video removed from liked list');
     }
@@ -114,17 +114,16 @@ const handleUnlikeShort = async (shortId: string, likedShortId: string) => {
   try {
     console.log('🗑️ Unliking short:', { shortId, likedShortId });
     
-    // ✅ Use the correct endpoint
     const response = await axiosInstance.post(`/like/short/${shortId}`, { 
       userId: user._id
     });
 
     console.log('✅ Unlike short response:', response.data);
 
-    if (response.data.success || response.data.liked === false) {
-      // Remove from UI
-      setLikedShorts(likedShorts.filter((item) => item._id !== likedShortId));
-      setAllLiked(allLiked.filter((item) => item._id !== likedShortId));
+    if (response.data.success && !response.data.liked) {
+      // Remove from UI only if the server confirms it's unliked
+      setLikedShorts(prev => prev.filter((item) => item._id !== likedShortId));
+      setAllLiked(prev => prev.filter((item) => item._id !== likedShortId));
       
       console.log('✅ Short removed from liked list');
     }
