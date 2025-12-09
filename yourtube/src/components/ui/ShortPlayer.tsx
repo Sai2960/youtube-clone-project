@@ -230,10 +230,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     };
   }, []);
 
-  // ✅ NEW: Fetch like/dislike status on mount
-  // ✅ IMPROVED: Fetch like/dislike status on mount
-  // ✅ FIXED: Fetch like/dislike status on mount
-// ✅ FIXED: Fetch like status on mount and when short changes
+
+
+
 useEffect(() => {
   const fetchLikeStatus = async () => {
     try {
@@ -256,15 +255,13 @@ useEffect(() => {
 
       console.log("🔍 Fetching like status for short:", short._id);
 
-      // ✅ CRITICAL FIX: Fetch fresh data from server
-// ✅ FIXED: Removed Pragma header to avoid CORS issues
-const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Expires: "0",
-  },
-});
+      // ✅ CRITICAL FIX: Remove the problematic Expires header
+      const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      });
 
       console.log("📥 Server response:", {
         shortId: short._id,
@@ -303,8 +300,13 @@ const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
   if (short._id && isActive) {
     fetchLikeStatus();
   }
-}, [short._id, isActive]); // ✅ Re-fetch when short changes or becomes active
-  useEffect(() => {
+}, [short._id, isActive]);
+
+
+
+
+
+useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
@@ -677,7 +679,7 @@ const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
     setShowVolumeSlider(!showVolumeSlider);
   };
 
- const handleLike = async (e: React.MouseEvent) => {
+const handleLike = async (e: React.MouseEvent) => {
   e.stopPropagation();
   try {
     const token = localStorage.getItem("token");
