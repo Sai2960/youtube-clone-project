@@ -1,4 +1,3 @@
-// routes/like.js - COMPLETE FIXED VERSION
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { 
@@ -6,12 +5,13 @@ import {
   getallLikedVideo,
   handleShortLike, 
   getAllLikedShorts,
-  getAllLikedContent
+  getAllLikedContent,
+  checkVideoReaction  // ✅ ADD THIS
 } from '../controllers/like.js';
 
 const router = express.Router();
 
-// ==================== TEST ROUTE ====================
+// ✅ Test route
 router.get('/test', (req, res) => {
   res.json({
     success: true,
@@ -20,7 +20,8 @@ router.get('/test', (req, res) => {
   });
 });
 
-// ==================== MOST SPECIFIC ROUTES FIRST ====================
+// ✅ NEW: Check user's reaction for a specific video (MUST BE BEFORE /:userId)
+router.get('/check/:videoId/:userId', verifyToken, checkVideoReaction);
 
 // ✅ Get all liked content (videos + shorts combined)
 router.get('/all/:userId', verifyToken, getAllLikedContent);
@@ -34,14 +35,13 @@ router.get('/shorts/:userId', verifyToken, getAllLikedShorts);
 // ✅ Like/unlike a short
 router.post('/short/:shortId', verifyToken, handleShortLike);
 
-// ✅ Like/unlike/dislike a video (MOST IMPORTANT)
+// ✅ Like/unlike/dislike a video
 router.post('/video/:videoId', verifyToken, handlelike);
 
-// ✅ CRITICAL FIX: This should call getAllLikedContent (not getallLikedVideo)
-// This is the endpoint that the LikedVideosContent component uses
+// ✅ Get all liked content for user
 router.get('/:userId', verifyToken, getAllLikedContent);
 
-// ✅ Alternative endpoint for just video ID (used by VideoInfo)
+// ✅ Alternative endpoint (used by VideoInfo)
 router.post('/:videoId', verifyToken, handlelike);
 
 export default router;

@@ -409,3 +409,64 @@ export const getAllLikedContent = async (req, res) => {
     });
   }
 };
+
+// ✅ NEW: Check user's reaction for a specific video
+export const checkVideoReaction = async (req, res) => {
+  const { videoId, userId } = req.params;
+  
+  try {
+    console.log('🔍 Checking reaction:', { userId, videoId });
+
+    if (!userId || !videoId) {
+      return res.status(400).json({ 
+        success: false,
+        message: "User ID and Video ID are required" 
+      });
+    }
+
+    // Get the video with current counts
+    const video = await Video.findById(videoId).select('Like Dislike').lean();
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found"
+      });
+    }
+
+    // Check if user has reacted to this video
+    const reaction = await Like.findOne({
+      viewer: userId,
+      videoid: videoId
+    }).lean();
+
+    const liked = reaction?.reaction === 'like';
+    const disliked = reaction?.reaction === 'dislike';
+
+    console.log('✅ Reaction found:', {
+      userId,
+      videoId,
+      liked,
+      disliked,
+      likes: video.Like,
+      dislikes: video.Dislike
+    });
+
+    return res.status(200).json({
+      success: true,
+      liked,
+      disliked,
+      reaction: reaction?.reaction || null,
+      video: {
+        Like: video.Like || 0,
+        Dislike: video.Dislike || 0
+      }
+    });
+  } catch (error) {
+    console.error("❌ Check reaction error:", error);
+    return res.status(500).json({ 
+      success: false,
+      message: "Failed to check reaction status",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
