@@ -141,6 +141,52 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     return match;
   })();
 
+  // ✅ NEW: Refetch reaction status on route change
+useEffect(() => {
+  const handleRouteChange = () => {
+    // Refetch reaction status when route changes
+    if (user?._id && video?._id) {
+      axiosInstance.get(`/like/${user._id}`).then(response => {
+        if (response.data.success) {
+          let likesArray = response.data.likes || [];
+          let dislikesArray = response.data.dislikes || [];
+
+          if (likesArray.length === 0 && response.data.videos) {
+            const allVideos = response.data.videos || response.data.data || [];
+            likesArray = allVideos.filter(
+              (item: any) => !item.reaction || item.reaction === "like"
+            );
+            dislikesArray = allVideos.filter(
+              (item: any) => item.reaction === "dislike"
+            );
+          }
+
+          const videoIsLiked = likesArray.some((item: any) => {
+            const videoId = item.videoid?._id || item.videoid;
+            return String(videoId) === String(video._id);
+          });
+
+          const videoIsDisliked = dislikesArray.some((item: any) => {
+            const videoId = item.videoid?._id || item.videoid;
+            return String(videoId) === String(video._id);
+          });
+
+          setIsLiked(videoIsLiked);
+          setIsDisliked(videoIsDisliked);
+        }
+      }).catch(error => {
+        console.error("Error refetching reactions:", error);
+      });
+    }
+  };
+
+  router.events.on('routeChangeComplete', handleRouteChange);
+  
+  return () => {
+    router.events.off('routeChangeComplete', handleRouteChange);
+  };
+}, [router.events, user?._id, video?._id]);
+
   const handleChannelClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     const channelId = video?.uploadedBy?._id || video?.uploadedBy;
@@ -253,52 +299,71 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     fetchSubscriptionStatus();
   }, [user, videoUploaderId, isOwner]);
   // Fetch reaction status (likes/dislikes)
-  useEffect(() => {
-    const fetchReactionStatus = async () => {
-      if (!user?._id || !video?._id) {
-        setIsLiked(false);
-        setIsDisliked(false);
-        return;
-      }
+useEffect(() => {
+  const fetchReactionStatus = async () => {
+    if (!user?._id || !video?._id) {
+      setIsLiked(false);
+      setIsDisliked(false);
+      return;
+    }
 
-      try {
-        const response = await axiosInstance.get(`/like/${user._id}`);
-        if (response.data.success) {
-          let likesArray = response.data.likes || [];
-          let dislikesArray = response.data.dislikes || [];
+    try {
+      const response = await axiosInstance.get(`/like/${user._id}`);
+      if (response.data.success) {
+        let likesArray = response.data.likes || [];
+        let dislikesArray = response.data.dislikes || [];
 
-          if (likesArray.length === 0 && response.data.videos) {
-            const allVideos = response.data.videos || response.data.data || [];
-            likesArray = allVideos.filter(
-              (item: any) => !item.reaction || item.reaction === "like"
-            );
-            dislikesArray = allVideos.filter(
-              (item: any) => item.reaction === "dislike"
-            );
-          }
-
-          const videoIsLiked = likesArray.some((item: any) => {
-            const videoId = item.videoid?._id || item.videoid;
-            return String(videoId) === String(video._id);
-          });
-
-          const videoIsDisliked = dislikesArray.some((item: any) => {
-            const videoId = item.videoid?._id || item.videoid;
-            return String(videoId) === String(video._id);
-          });
-
-          setIsLiked(videoIsLiked);
-          setIsDisliked(videoIsDisliked);
+        if (likesArray.length === 0 && response.data.videos) {
+          const allVideos = response.data.videos || response.data.data || [];
+          likesArray = allVideos.filter(
+            (item: any) => !item.reaction || item.reaction === "like"
+          );
+          dislikesArray = allVideos.filter(
+            (item: any) => item.reaction === "dislike"
+          );
         }
-      } catch (error: any) {
-        console.error("Error fetching reaction status:", error);
-        setIsLiked(false);
-        setIsDisliked(false);
-      }
-    };
 
-    fetchReactionStatus();
-  }, [user?._id, video?._id]);
+        const videoIsLiked = likesArray.some((item: any) => {
+          const videoId = item.videoid?._id || item.videoid;
+          return String(videoId) === String(video._id);
+        });
+
+        const videoIsDisliked = dislikesArray.some((item: any) => {
+          const videoId = item.videoid?._id || item.videoid;
+          return String(videoId) === String(video._id);
+        });
+
+        setIsLiked(videoIsLiked);
+        setIsDisliked(videoIsDisliked);
+        
+        console.log('🔄 Reaction status refreshed:', {
+          videoId: video._id,
+          isLiked: videoIsLiked,
+          isDisliked: videoIsDisliked
+        });
+      }
+    } catch (error: any) {
+      console.error("Error fetching reaction status:", error);
+      setIsLiked(false);
+      setIsDisliked(false);
+    }
+  };
+
+  fetchReactionStatus();
+  
+  // ✅ NEW: Refetch when user navigates back to the page
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      fetchReactionStatus();
+    }
+  };
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+}, [user?._id, video?._id, router.asPath]);
 
   // Update likes/dislikes counts
   useEffect(() => {
