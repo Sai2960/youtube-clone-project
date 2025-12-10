@@ -69,6 +69,18 @@ const ShortsPage: React.FC = () => {
     fetchShorts(1);
   }, []);
 
+
+  // ✅ Listen for avatar updates
+useEffect(() => {
+  const handleAvatarUpdate = () => {
+    console.log('🔄 Avatar updated, refreshing shorts');
+    // Force re-render of current short
+    setShorts(prev => [...prev]);
+  };
+
+  window.addEventListener('avatarUpdated', handleAvatarUpdate);
+  return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+}, []);
   // ✅ Handle start query parameter
   useEffect(() => {
     if (router.query.start && shorts.length > 0) {

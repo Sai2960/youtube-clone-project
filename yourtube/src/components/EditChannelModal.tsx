@@ -1,4 +1,5 @@
-// src/components/EditChannelModal.tsx - COMPLETE MERGED VERSION
+// src/components/EditChannelModal.tsx - FIXED VERSION WITH channelUpdated EVENT
+
 import React, { useState, useRef } from "react";
 import {
   X,
@@ -131,15 +132,15 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
           console.log("🖼️ Banner updated in localStorage:", newImageUrl);
         }
 
-        // Dispatch event for other components
-        window.dispatchEvent(new Event('avatarUpdated'));
-        window.dispatchEvent(new Event('channelUpdated'));
-        
-        console.log("✅ Dispatched channelUpdated event");
-        
-        toast.success('Channel information updated successfully!');
-        onClose();
+        // ✅ CRITICAL FIX: Dispatch avatarUpdated event
+        window.dispatchEvent(new Event("avatarUpdated"));
+        console.log("🔔 Dispatched avatarUpdated event");
 
+        toast.success(
+          `${
+            activeTab === "avatar" ? "Profile picture" : "Banner"
+          } updated successfully!`
+        );
 
         // Reset upload state
         setSelectedFile(null);
@@ -166,7 +167,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   };
 
   // ============================================================================
-  // INFO UPDATE HANDLER
+  // INFO UPDATE HANDLER - WITH channelUpdated EVENT
   // ============================================================================
   const handleInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,6 +200,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         const updatedData =
           response.data.result || response.data.user || response.data;
 
+        console.log("✅ Channel info updated:", updatedData);
+
         // Update parent component
         onUpdate("info", {
           channelname: channelName.trim(),
@@ -213,6 +216,13 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         };
         updateUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        // ✅ CRITICAL FIX: Dispatch BOTH events for channel updates
+        window.dispatchEvent(new Event("channelUpdated"));
+        window.dispatchEvent(new Event("avatarUpdated"));
+        window.dispatchEvent(new Event("storage"));
+        
+        console.log("🔔 Dispatched channelUpdated, avatarUpdated, and storage events");
 
         toast.success("Channel information updated successfully!");
         onClose();
@@ -331,12 +341,9 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* ============================================================ */}
-          {/* IMAGE UPLOAD TABS (AVATAR & BANNER) */}
-          {/* ============================================================ */}
+          {/* IMAGE UPLOAD TABS */}
           {(activeTab === "avatar" || activeTab === "banner") && (
             <>
-              {/* Info Banner */}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
                 <div className="flex items-start gap-3">
                   <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg">
@@ -360,7 +367,6 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 </div>
               </div>
 
-              {/* Current Image */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   Current{" "}
@@ -378,14 +384,12 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     alt={activeTab}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.error("❌ Image load error");
                       e.currentTarget.src = "https://github.com/shadcn.png";
                     }}
                   />
                 </div>
               </div>
 
-              {/* Upload Area */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   Upload New{" "}
@@ -430,15 +434,6 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     >
                       <X className="w-4 h-4" />
                     </button>
-                    <div className="mt-3 text-center">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {selectedFile?.name}
-                        </span>
-                        <br />
-                        {(selectedFile!.size / 1024).toFixed(0)}KB
-                      </p>
-                    </div>
                   </div>
                 )}
 
@@ -451,7 +446,6 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 />
               </div>
 
-              {/* Buttons */}
               <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={onClose}
@@ -481,9 +475,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
             </>
           )}
 
-          {/* ============================================================ */}
           {/* CHANNEL INFO TAB */}
-          {/* ============================================================ */}
           {activeTab === "info" && (
             <form onSubmit={handleInfoSubmit} className="space-y-6">
               {error && (
@@ -492,7 +484,6 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 </div>
               )}
 
-              {/* Channel Name */}
               <div>
                 <Label
                   htmlFor="channelName"
@@ -514,7 +505,6 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 </p>
               </div>
 
-              {/* Description */}
               <div>
                 <Label
                   htmlFor="description"
@@ -537,7 +527,6 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 </p>
               </div>
 
-              {/* Submit Button */}
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <Button
                   type="button"
