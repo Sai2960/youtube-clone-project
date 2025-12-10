@@ -337,13 +337,18 @@ router.post("/login", locationMiddleware, async (req, res) => {
 // ==================== UPDATE ROUTE ====================
 
 // ✅ UPDATE: Channel info (name + description)
+// ✅ UPDATE: Channel info (name + description)
 router.patch('/update/:userId', verifyToken, async (req, res) => {
   try {
     const { userId } = req.params;
     const { channelname, description } = req.body;
     
-    // Verify user is updating their own channel
-    if (req.userId !== userId) {
+    // ✅ FIX: Verify user is updating their own channel (use req.user.id from token)
+    if (req.user.id !== userId) {
+      console.error('❌ Unauthorized update attempt:', { 
+        tokenUserId: req.user.id, 
+        requestedUserId: userId 
+      });
       return res.status(403).json({
         success: false,
         message: 'Unauthorized to update this channel'
@@ -418,6 +423,7 @@ router.patch('/update/:userId', verifyToken, async (req, res) => {
     });
   }
 });
+
 // ==================== USER/CHANNEL ROUTES ====================
 
 router.get("/all", async (req, res) => {
