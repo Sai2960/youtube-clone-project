@@ -1,29 +1,39 @@
 // src/components/EditChannelModal.tsx - COMPLETE MERGED VERSION
-import React, { useState, useRef } from 'react';
-import { X, Camera, Upload, Loader2, Check, Image as ImageIcon, Edit2 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Label } from './ui/label';
-import axiosInstance from '@/lib/axiosinstance';
-import { useUser } from '@/lib/AuthContext';
-import { toast } from 'sonner';
-import { getImageUrl } from '@/lib/imageUtils';
+import React, { useState, useRef } from "react";
+import {
+  X,
+  Camera,
+  Upload,
+  Loader2,
+  Check,
+  Image as ImageIcon,
+  Edit2,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Label } from "./ui/label";
+import axiosInstance from "@/lib/axiosinstance";
+import { useUser } from "@/lib/AuthContext";
+import { toast } from "sonner";
+import { getImageUrl } from "@/lib/imageUtils";
 
 interface EditChannelModalProps {
   channel: any;
   onClose: () => void;
-  onUpdate: (type: 'avatar' | 'banner' | 'info', data: any) => void;
+  onUpdate: (type: "avatar" | "banner" | "info", data: any) => void;
 }
 
-const EditChannelModal: React.FC<EditChannelModalProps> = ({ 
-  channel, 
-  onClose, 
-  onUpdate 
+const EditChannelModal: React.FC<EditChannelModalProps> = ({
+  channel,
+  onClose,
+  onUpdate,
 }) => {
   const { user, updateUser } = useUser();
-  const [activeTab, setActiveTab] = useState<'avatar' | 'banner' | 'info'>('avatar');
-  
+  const [activeTab, setActiveTab] = useState<"avatar" | "banner" | "info">(
+    "avatar"
+  );
+
   // Image upload states
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -31,10 +41,12 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Info edit states
-  const [channelName, setChannelName] = useState(channel?.channelname || channel?.name || '');
-  const [description, setDescription] = useState(channel?.description || '');
+  const [channelName, setChannelName] = useState(
+    channel?.channelname || channel?.name || ""
+  );
+  const [description, setDescription] = useState(channel?.description || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // ============================================================================
   // IMAGE UPLOAD HANDLERS
@@ -43,13 +55,13 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
+      toast.error("File size must be less than 5MB");
       return;
     }
 
@@ -60,7 +72,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      toast.error('Please select an image first');
+      toast.error("Please select an image first");
       return;
     }
 
@@ -68,14 +80,17 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
       setUploading(true);
 
       const formData = new FormData();
-      formData.append('image', selectedFile);
-      formData.append('imageType', activeTab === 'avatar' ? 'profile' : 'banner');
+      formData.append("image", selectedFile);
+      formData.append(
+        "imageType",
+        activeTab === "avatar" ? "profile" : "banner"
+      );
 
-      console.log('📤 Uploading:', {
+      console.log("📤 Uploading:", {
         type: activeTab,
-        imageType: activeTab === 'avatar' ? 'profile' : 'banner',
+        imageType: activeTab === "avatar" ? "profile" : "banner",
         file: selectedFile.name,
-        channelId: channel._id
+        channelId: channel._id,
       });
 
       const response = await axiosInstance.post(
@@ -83,52 +98,59 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         }
       );
 
-      console.log('✅ Upload response:', response.data);
+      console.log("✅ Upload response:", response.data);
 
       if (response.data.success) {
         const newImageUrl = response.data.imageUrl;
-        
-        console.log('📸 New image URL from server:', newImageUrl);
-        
+
+        console.log("📸 New image URL from server:", newImageUrl);
+
         // Update parent component
         onUpdate(activeTab, newImageUrl);
-        
+
         // Update user context
-        if (activeTab === 'avatar' && user) {
+        if (activeTab === "avatar" && user) {
           const updatedUser = { ...user, image: newImageUrl };
           updateUser(updatedUser);
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          console.log('👤 User context and localStorage updated with:', newImageUrl);
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          console.log(
+            "👤 User context and localStorage updated with:",
+            newImageUrl
+          );
         }
-        
-        if (activeTab === 'banner' && user) {
+
+        if (activeTab === "banner" && user) {
           const updatedUser = { ...user, bannerImage: newImageUrl };
           updateUser(updatedUser);
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          console.log('🖼️ Banner updated in localStorage:', newImageUrl);
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          console.log("🖼️ Banner updated in localStorage:", newImageUrl);
         }
 
         // Dispatch event for other components
-        window.dispatchEvent(new Event('avatarUpdated'));
+        window.dispatchEvent(new Event("avatarUpdated"));
 
-        toast.success(`${activeTab === 'avatar' ? 'Profile picture' : 'Banner'} updated successfully!`);
-        
+        toast.success(
+          `${
+            activeTab === "avatar" ? "Profile picture" : "Banner"
+          } updated successfully!`
+        );
+
         // Reset upload state
         setSelectedFile(null);
         setPreviewUrl(null);
         if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+          fileInputRef.current.value = "";
         }
       }
     } catch (error: any) {
-      console.error('❌ Upload error:', error);
-      console.error('   Response:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Failed to upload image');
+      console.error("❌ Upload error:", error);
+      console.error("   Response:", error.response?.data);
+      toast.error(error.response?.data?.message || "Failed to upload image");
     } finally {
       setUploading(false);
     }
@@ -138,7 +160,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
     setSelectedFile(null);
     setPreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -147,62 +169,59 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   // ============================================================================
   const handleInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!channelName.trim()) {
-      setError('Channel name is required');
+      setError("Channel name is required");
       return;
     }
 
     if (channelName.trim().length < 3) {
-      setError('Channel name must be at least 3 characters');
+      setError("Channel name must be at least 3 characters");
       return;
     }
 
     if (channelName.trim().length > 50) {
-      setError('Channel name must be less than 50 characters');
+      setError("Channel name must be less than 50 characters");
       return;
     }
 
     setIsSubmitting(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await axiosInstance.patch(
-        `/user/update/${user._id}`,
-        {
-          channelname: channelName.trim(),
-          description: description.trim()
-        }
-      );
+      const response = await axiosInstance.patch(`/auth/update/${user._id}`, {
+        channelname: channelName.trim(),
+        description: description.trim(),
+      });
 
       if (response.data.success) {
-        const updatedData = response.data.result || response.data.user || response.data;
-        
+        const updatedData =
+          response.data.result || response.data.user || response.data;
+
         // Update parent component
-        onUpdate('info', {
+        onUpdate("info", {
           channelname: channelName.trim(),
-          description: description.trim()
+          description: description.trim(),
         });
-        
+
         // Update user context
         const updatedUser = {
           ...user,
           channelname: channelName.trim(),
-          description: description.trim()
+          description: description.trim(),
         };
         updateUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        toast.success('Channel information updated successfully!');
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        toast.success("Channel information updated successfully!");
         onClose();
       }
     } catch (error: any) {
-      console.error('Update error:', error);
+      console.error("Update error:", error);
       setError(
-        error.response?.data?.message || 
-        'Failed to update channel information'
+        error.response?.data?.message || "Failed to update channel information"
       );
-      toast.error('Failed to update channel information');
+      toast.error("Failed to update channel information");
     } finally {
       setIsSubmitting(false);
     }
@@ -212,30 +231,30 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   // HELPER FUNCTIONS
   // ============================================================================
   const getCurrentImage = () => {
-    const imageUrl = activeTab === 'avatar' ? channel.image : channel.bannerImage;
+    const imageUrl =
+      activeTab === "avatar" ? channel.image : channel.bannerImage;
     return getImageUrl(imageUrl, true);
   };
 
   const getRecommendedSize = () => {
-    if (activeTab === 'avatar') {
-      return '500x500px (Square)';
+    if (activeTab === "avatar") {
+      return "500x500px (Square)";
     }
-    return '2560x1440px (16:9)';
+    return "2560x1440px (16:9)";
   };
 
-  const handleTabChange = (tab: 'avatar' | 'banner' | 'info') => {
+  const handleTabChange = (tab: "avatar" | "banner" | "info") => {
     setActiveTab(tab);
     setPreviewUrl(null);
     setSelectedFile(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-scaleIn">
-        
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
           <div>
@@ -258,52 +277,52 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         {/* Tabs */}
         <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <button
-            onClick={() => handleTabChange('avatar')}
+            onClick={() => handleTabChange("avatar")}
             className={`flex-1 py-4 px-6 font-semibold transition-all relative ${
-              activeTab === 'avatar'
-                ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              activeTab === "avatar"
+                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             <div className="flex items-center justify-center gap-2">
               <ImageIcon className="w-4 h-4" />
               Profile Picture
             </div>
-            {activeTab === 'avatar' && (
+            {activeTab === "avatar" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
             )}
           </button>
-          
+
           <button
-            onClick={() => handleTabChange('banner')}
+            onClick={() => handleTabChange("banner")}
             className={`flex-1 py-4 px-6 font-semibold transition-all relative ${
-              activeTab === 'banner'
-                ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              activeTab === "banner"
+                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             <div className="flex items-center justify-center gap-2">
               <Camera className="w-4 h-4" />
               Banner Image
             </div>
-            {activeTab === 'banner' && (
+            {activeTab === "banner" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
             )}
           </button>
-          
+
           <button
-            onClick={() => handleTabChange('info')}
+            onClick={() => handleTabChange("info")}
             className={`flex-1 py-4 px-6 font-semibold transition-all relative ${
-              activeTab === 'info'
-                ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              activeTab === "info"
+                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             <div className="flex items-center justify-center gap-2">
               <Edit2 className="w-4 h-4" />
               Channel Info
             </div>
-            {activeTab === 'info' && (
+            {activeTab === "info" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
             )}
           </button>
@@ -311,11 +330,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          
           {/* ============================================================ */}
           {/* IMAGE UPLOAD TABS (AVATAR & BANNER) */}
           {/* ============================================================ */}
-          {(activeTab === 'avatar' || activeTab === 'banner') && (
+          {(activeTab === "avatar" || activeTab === "banner") && (
             <>
               {/* Info Banner */}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
@@ -325,10 +343,15 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   </div>
                   <div>
                     <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                      {activeTab === 'avatar' ? 'Profile Picture Guidelines' : 'Banner Guidelines'}
+                      {activeTab === "avatar"
+                        ? "Profile Picture Guidelines"
+                        : "Banner Guidelines"}
                     </h3>
                     <p className="text-sm text-blue-700 dark:text-blue-300">
-                      Recommended size: <span className="font-semibold">{getRecommendedSize()}</span>
+                      Recommended size:{" "}
+                      <span className="font-semibold">
+                        {getRecommendedSize()}
+                      </span>
                       <br />
                       Format: JPG, PNG, or WebP • Max size: 5MB
                     </p>
@@ -339,18 +362,23 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
               {/* Current Image */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  Current {activeTab === 'avatar' ? 'Profile Picture' : 'Banner'}
+                  Current{" "}
+                  {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                 </label>
-                <div className={`rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-md ${
-                  activeTab === 'avatar' ? 'w-32 h-32 mx-auto' : 'w-full aspect-[21/9]'
-                }`}>
+                <div
+                  className={`rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-md ${
+                    activeTab === "avatar"
+                      ? "w-32 h-32 mx-auto"
+                      : "w-full aspect-[21/9]"
+                  }`}
+                >
                   <img
                     src={getCurrentImage()}
                     alt={activeTab}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.error('❌ Image load error');
-                      e.currentTarget.src = 'https://github.com/shadcn.png';
+                      console.error("❌ Image load error");
+                      e.currentTarget.src = "https://github.com/shadcn.png";
                     }}
                   />
                 </div>
@@ -359,9 +387,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
               {/* Upload Area */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  Upload New {activeTab === 'avatar' ? 'Profile Picture' : 'Banner'}
+                  Upload New{" "}
+                  {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                 </label>
-                
+
                 {!previewUrl ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
@@ -374,14 +403,20 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                       Click to upload or drag and drop
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {activeTab === 'avatar' ? 'Square images work best' : 'Wide images (16:9) recommended'}
+                      {activeTab === "avatar"
+                        ? "Square images work best"
+                        : "Wide images (16:9) recommended"}
                     </p>
                   </div>
                 ) : (
                   <div className="relative">
-                    <div className={`rounded-xl overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 shadow-lg ${
-                      activeTab === 'avatar' ? 'w-32 h-32 mx-auto' : 'w-full aspect-[21/9]'
-                    }`}>
+                    <div
+                      className={`rounded-xl overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 shadow-lg ${
+                        activeTab === "avatar"
+                          ? "w-32 h-32 mx-auto"
+                          : "w-full aspect-[21/9]"
+                      }`}
+                    >
                       <img
                         src={previewUrl}
                         alt="Preview"
@@ -396,7 +431,9 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     </button>
                     <div className="mt-3 text-center">
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-semibold text-gray-900 dark:text-white">{selectedFile?.name}</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {selectedFile?.name}
+                        </span>
                         <br />
                         {(selectedFile!.size / 1024).toFixed(0)}KB
                       </p>
@@ -446,9 +483,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
           {/* ============================================================ */}
           {/* CHANNEL INFO TAB */}
           {/* ============================================================ */}
-          {activeTab === 'info' && (
+          {activeTab === "info" && (
             <form onSubmit={handleInfoSubmit} className="space-y-6">
-              
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
                   {error}
@@ -457,7 +493,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
               {/* Channel Name */}
               <div>
-                <Label htmlFor="channelName" className="text-base font-semibold mb-2 block">
+                <Label
+                  htmlFor="channelName"
+                  className="text-base font-semibold mb-2 block"
+                >
                   Channel Name <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -476,7 +515,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
               {/* Description */}
               <div>
-                <Label htmlFor="description" className="text-base font-semibold mb-2 block">
+                <Label
+                  htmlFor="description"
+                  className="text-base font-semibold mb-2 block"
+                >
                   Description
                 </Label>
                 <Textarea
@@ -515,7 +557,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                       Saving...
                     </>
                   ) : (
-                    'Save Changes'
+                    "Save Changes"
                   )}
                 </Button>
               </div>
