@@ -270,6 +270,8 @@ useEffect(() => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Cache-Control": "no-cache",
+          "Pragma": "no-cache",  // ✅ ADDED
+          "Expires": "0"         // ✅ ADDED
         },
       });
 
@@ -281,24 +283,34 @@ useEffect(() => {
           likesCount: shortData.likesCount
         });
         
-        setHasLiked(Boolean(shortData.hasLiked));
-        setHasDisliked(Boolean(shortData.hasDisliked));
+        // ✅ CRITICAL FIX: Force boolean conversion and update state
+        const isLiked = Boolean(shortData.hasLiked);
+        const isDisliked = Boolean(shortData.hasDisliked);
+        
+        setHasLiked(isLiked);
+        setHasDisliked(isDisliked);
         setLikesCount(shortData.likesCount || 0);
         setDislikesCount(shortData.dislikesCount || 0);
+        
+        // ✅ CRITICAL: Force re-render by logging
+        console.log("🔄 State updated:", { isLiked, likesCount: shortData.likesCount });
       }
     } catch (error) {
       console.error("❌ Error fetching like status:", error);
-      // Don't reset on error - keep current state
+      // ✅ On error, keep current state instead of resetting
     }
   };
 
   // ✅ CRITICAL: Fetch when short changes OR becomes active
   if (short._id && isActive) {
-    fetchLikeStatus();
+    // ✅ Add small delay to ensure video is loaded
+    const timer = setTimeout(() => {
+      fetchLikeStatus();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }
-}, [short._id, isActive]); // ✅ This will re-run when navigating to new shorts
-
-
+}, [short._id, isActive]);
 
 
 
@@ -722,22 +734,27 @@ const handleLike = async (e: React.MouseEvent) => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Cache-Control": "no-cache",
+          "Pragma": "no-cache",      // ✅ ADDED
+          "Expires": "0"              // ✅ ADDED
         },
       }
     );
 
     console.log("✅ Like response:", response.data);
 
-    // ✅ FIXED: Access nested data object correctly
-    if (response.data.success && response.data.data) {
-      setHasLiked(Boolean(response.data.data.hasLiked));
-      setHasDisliked(Boolean(response.data.data.hasDisliked));
-      setLikesCount(response.data.data.likesCount || 0);
-      setDislikesCount(response.data.data.dislikesCount || 0);
+    // ✅ CRITICAL: Sync with server response
+    if (response.data.success) {
+      const finalLiked = Boolean(response.data.liked);
+      const finalCount = response.data.likesCount || 0;
+      
+      setHasLiked(finalLiked);
+      setHasDisliked(false);
+      setLikesCount(finalCount);
+      setDislikesCount(response.data.dislikesCount || 0);
 
       console.log("✅ Like state synced with server:", {
-        hasLiked: response.data.data.hasLiked,
-        likesCount: response.data.data.likesCount,
+        hasLiked: finalLiked,
+        likesCount: finalCount,
       });
     }
   } catch (error: any) {
@@ -752,6 +769,8 @@ const handleLike = async (e: React.MouseEvent) => {
           headers: {
             Authorization: `Bearer ${token}`,
             "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "Expires": "0"
           },
         }
       );
