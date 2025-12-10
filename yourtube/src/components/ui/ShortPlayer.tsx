@@ -51,11 +51,11 @@ interface ShortPlayerProps {
     hasDisliked?: boolean;
     isSubscribed?: boolean;
   };
-  isActive: boolean;
+ isActive: boolean;
   onNext: () => void;
   onPrevious: () => void;
   onDelete?: (shortId: string) => void;
-  onLikeUpdate?: (shortId: string, liked: boolean, likesCount: number) => void; // ✅ ADD THIS
+  onLikeUpdate?: (shortId: string, liked: boolean, likesCount: number, disliked?: boolean, dislikesCount?: number) => void; // ✅ ADD THIS
 }
 
 const DEFAULT_AVATAR_SVG =
@@ -232,8 +232,9 @@ const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
     };
   }, []);
 // ✅ NEW: Sync state when short prop changes
+// ✅ CRITICAL: Sync state when short prop changes
 useEffect(() => {
-  console.log("🔄 Short changed, syncing state:", {
+  console.log("🔄 Short prop changed, syncing state:", {
     shortId: short._id,
     hasLiked: short.hasLiked,
     likesCount: short.likesCount
@@ -244,7 +245,6 @@ useEffect(() => {
   setLikesCount(short.likesCount || 0);
   setDislikesCount(short.dislikesCount || 0);
 }, [short._id, short.hasLiked, short.hasDisliked, short.likesCount, short.dislikesCount]);
-
 
 useEffect(() => {
   const fetchLikeStatus = async () => {
@@ -712,17 +712,20 @@ const handleLike = async (e: React.MouseEvent) => {
       currentCount: likesCount,
     });
 
-    // ✅ Optimistic update
-    const wasLiked = hasLiked;
-    const wasDisliked = hasDisliked;
+    // ✅ Store previous state for rollback
+    const previousLiked = hasLiked;
+    const previousCount = likesCount;
+    const previousDisliked = hasDisliked;
+    const previousDislikeCount = dislikesCount;
 
-    if (wasLiked) {
+    // ✅ Optimistic update
+    if (previousLiked) {
       setHasLiked(false);
       setLikesCount((prev) => Math.max(0, prev - 1));
     } else {
       setHasLiked(true);
       setLikesCount((prev) => prev + 1);
-      if (wasDisliked) {
+      if (previousDisliked) {
         setHasDisliked(false);
         setDislikesCount((prev) => Math.max(0, prev - 1));
       }
@@ -742,40 +745,41 @@ const handleLike = async (e: React.MouseEvent) => {
       }
     );
 
-    console.log("✅ Like response:", response.data);
+    console.log("✅ Like API response:", response.data);
 
-    // ✅ CRITICAL FIX: Sync with server response
+    // ✅ CRITICAL FIX: Read from TOP-LEVEL fields
     if (response.data.success) {
-      // ✅ Read from top-level AND nested data
-      const finalLiked = Boolean(
-        response.data.liked ?? response.data.data?.hasLiked
-      );
-      const finalCount = 
-        response.data.likesCount ?? 
-        response.data.data?.likesCount ?? 
-        0;
-      const finalDislikeCount = 
-        response.data.dislikesCount ?? 
-        response.data.data?.dislikesCount ?? 
-        0;
-      
-      setHasLiked(finalLiked);
-      setHasDisliked(false);
-      setLikesCount(finalCount);
-      setDislikesCount(finalDislikeCount);
+      const serverLiked = response.data.liked;        // ✅ Read top-level
+      const serverCount = response.data.likesCount;   // ✅ Read top-level
+      const serverDislikeCount = response.data.dislikesCount;
 
-      console.log("✅ State synced:", {
-        hasLiked: finalLiked,
-        likesCount: finalCount,
+      console.log("🔄 Syncing with server state:", {
+        serverLiked,
+        serverCount,
       });
+
+      // ✅ Update local state to match server
+      setHasLiked(serverLiked);
+      setHasDisliked(false);
+      setLikesCount(serverCount);
+      setDislikesCount(serverDislikeCount);
+
+      // ✅ CRITICAL: Update parent component's shorts array
+      if (onLikeUpdate) {
+        onLikeUpdate(short._id, serverLiked, serverCount, false, serverDislikeCount);
+      }
+
+      console.log("✅ Like state synced successfully");
     }
   } catch (error: any) {
     console.error("❌ Error liking short:", error);
 
-    // ✅ Revert on error
+    // ✅ Rollback optimistic update on error
+    console.log("🔄 Rolling back optimistic update...");
+    
     try {
       const token = localStorage.getItem("token");
-      const freshShort = await axios.get(
+      const freshResponse = await axios.get(
         `${getApiUrl()}/api/shorts/${short._id}`,
         {
           headers: {
@@ -786,14 +790,18 @@ const handleLike = async (e: React.MouseEvent) => {
           },
         }
       );
-      if (freshShort.data.success) {
-        setHasLiked(Boolean(freshShort.data.data.hasLiked));
-        setHasDisliked(Boolean(freshShort.data.data.hasDisliked));
-        setLikesCount(freshShort.data.data.likesCount);
-        setDislikesCount(freshShort.data.data.dislikesCount);
+      
+      if (freshResponse.data.success) {
+        const freshData = freshResponse.data.data;
+        setHasLiked(Boolean(freshData.hasLiked));
+        setHasDisliked(Boolean(freshData.hasDisliked));
+        setLikesCount(freshData.likesCount);
+        setDislikesCount(freshData.dislikesCount);
+        
+        console.log("✅ State rolled back to server state");
       }
     } catch (revertError) {
-      console.error("Failed to revert:", revertError);
+      console.error("❌ Failed to revert state:", revertError);
     }
 
     if (error.response?.status === 401) {

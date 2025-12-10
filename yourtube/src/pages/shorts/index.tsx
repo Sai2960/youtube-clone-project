@@ -219,24 +219,24 @@ const ShortsPage: React.FC = () => {
   };
 
   // ✅ NEW: Callback to update short in array when liked/disliked
-  const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCount: number, disliked?: boolean, dislikesCount?: number) => {
-    console.log('🔄 Updating short in array:', { shortId, liked, likesCount, disliked, dislikesCount });
-    
-    setShorts(prevShorts => 
-      prevShorts.map(s => 
-        s._id === shortId 
-          ? { 
-              ...s, 
-              hasLiked: liked, 
-              likesCount: likesCount,
-              ...(disliked !== undefined && { hasDisliked: disliked }),
-              ...(dislikesCount !== undefined && { dislikesCount: dislikesCount })
-            }
-          : s
-      )
-    );
-  }, []);
-
+// ✅ NEW: Callback to update short in array when liked/disliked
+const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCount: number, disliked?: boolean, dislikesCount?: number) => {
+  console.log('🔄 Updating short in array:', { shortId, liked, likesCount, disliked, dislikesCount });
+  
+  setShorts(prevShorts => 
+    prevShorts.map(s => 
+      s._id === shortId 
+        ? { 
+            ...s, 
+            hasLiked: liked, 
+            likesCount: likesCount,
+            ...(disliked !== undefined && { hasDisliked: disliked }),
+            ...(dislikesCount !== undefined && { dislikesCount: dislikesCount })
+          }
+        : s
+    )
+  );
+}, []);
   // ✅ Handle short deletion
   const handleShortDeleted = useCallback(
     (deletedShortId: string) => {
@@ -556,14 +556,14 @@ const ShortsPage: React.FC = () => {
                   pointerEvents: isActive ? "auto" : "none",
                 }}
               >
-                <ShortPlayer
-                  short={short}
-                  isActive={isActive}
-                  onNext={handleNext}
-                  onPrevious={handlePrevious}
-                  onDelete={handleShortDeleted}
-                  onLikeUpdate={handleShortLiked}
-                />
+               <ShortPlayer
+  short={short}
+  isActive={isActive}
+  onNext={handleNext}
+  onPrevious={handlePrevious}
+  onDelete={handleShortDeleted}
+  onLikeUpdate={handleShortLiked}  
+/>
               </div>
             );
           })}
