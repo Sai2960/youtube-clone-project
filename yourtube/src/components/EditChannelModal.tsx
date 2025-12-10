@@ -132,13 +132,14 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         }
 
         // Dispatch event for other components
-        window.dispatchEvent(new Event("avatarUpdated"));
+        window.dispatchEvent(new Event('avatarUpdated'));
+        window.dispatchEvent(new Event('channelUpdated'));
+        
+        console.log("✅ Dispatched channelUpdated event");
+        
+        toast.success('Channel information updated successfully!');
+        onClose();
 
-        toast.success(
-          `${
-            activeTab === "avatar" ? "Profile picture" : "Banner"
-          } updated successfully!`
-        );
 
         // Reset upload state
         setSelectedFile(null);
