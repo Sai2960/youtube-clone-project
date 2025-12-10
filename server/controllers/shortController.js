@@ -195,13 +195,30 @@ export const getAllShorts = async (req, res) => {
 
     console.log(`✅ Found ${shorts.length} shorts from database`);
 
-    const shortsWithCounts = shorts.map((short) => {
-      // Get user ID from request if authenticated
-      const userId = req.user ? req.user._id : null;
+    // ✅ CRITICAL: Get userId from request
+    let userId = null;
+    if (req.user) {
+      userId = req.user._id || req.user.id || req.user.userId;
+    }
+    
+    // Try to decode token manually if req.user doesn't exist
+    if (!userId) {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        try {
+          const jwt = await import('jsonwebtoken');
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          userId = decoded._id || decoded.id || decoded.userId;
+        } catch (err) {
+          // User not authenticated, that's okay
+        }
+      }
+    }
 
+    console.log("👤 Authenticated user:", userId ? userId.toString() : "NOT AUTHENTICATED");
+
+    const shortsWithCounts = shorts.map((short) => {
       // ✅ CRITICAL: Check likes array in Short model
-      // Note: We can't check LikedShort collection here without async,
-      // but the Short model should be kept in sync by the like controller
       const hasLiked = userId
         ? short.likes?.some((like) => like.toString() === userId.toString())
         : false;
@@ -282,11 +299,35 @@ export const getShortById = async (req, res) => {
     res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
 
     const { id } = req.params;
-    const userId = req.user ? req.user._id : null;
+    
+    // ✅ CRITICAL FIX: Get userId from authenticated request OR from req.user
+    let userId = null;
+    
+    // Try multiple sources for userId
+    if (req.user) {
+      userId = req.user._id || req.user.id || req.user.userId;
+    }
+    
+    // If no req.user, try to extract from token manually
+    if (!userId) {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        try {
+          const jwt = await import('jsonwebtoken');
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          userId = decoded._id || decoded.id || decoded.userId;
+          console.log("🔓 Manually decoded userId from token:", userId?.toString());
+        } catch (err) {
+          console.log("⚠️ Could not decode token manually:", err.message);
+        }
+      }
+    }
 
     console.log("\n🔍 ===== GET SHORT BY ID =====");
     console.log("Short ID:", id);
-    console.log("User ID:", userId?.toString());
+    console.log("User ID:", userId ? userId.toString() : "NOT AUTHENTICATED");
+    console.log("req.user:", req.user ? "exists" : "undefined");
+    console.log("Auth header:", req.headers.authorization ? "present" : "missing");
 
     const short = await Short.findById(id)
       .populate("userId", "name avatar image channelName channelname subscribers")
@@ -334,6 +375,8 @@ export const getShortById = async (req, res) => {
       console.log("   FINAL hasLiked:", hasLiked);
       console.log("   hasDisliked:", hasDisliked);
       console.log("   Total likes:", short.likes?.length || 0);
+    } else {
+      console.log("⚠️ No userId - returning hasLiked: false");
     }
 
     const finalAvatar = getBestAvatar(short, req);
