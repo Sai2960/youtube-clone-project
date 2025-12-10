@@ -231,19 +231,28 @@ const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
       }
     };
   }, []);
-// ✅ NEW: Sync state when short prop changes
-// ✅ CRITICAL: Sync state when short prop changes
 useEffect(() => {
-  console.log("🔄 Short prop changed, syncing state:", {
+  console.log("\n🔵 ===== SHORT PROP CHANGED (useEffect) =====");
+  console.log("📥 New short prop:", {
     shortId: short._id,
     hasLiked: short.hasLiked,
-    likesCount: short.likesCount
+    likesCount: short.likesCount,
+    hasDisliked: short.hasDisliked,
+    dislikesCount: short.dislikesCount
   });
+  
+  console.log("🔄 Syncing local state with prop...");
   
   setHasLiked(Boolean(short.hasLiked));
   setHasDisliked(Boolean(short.hasDisliked));
   setLikesCount(short.likesCount || 0);
   setDislikesCount(short.dislikesCount || 0);
+  
+  console.log("✅ Local state synced to:", {
+    hasLiked: Boolean(short.hasLiked),
+    likesCount: short.likesCount || 0
+  });
+  console.log("===== SYNC COMPLETE =====\n");
 }, [short._id, short.hasLiked, short.hasDisliked, short.likesCount, short.dislikesCount]);
 
 useEffect(() => {
@@ -691,9 +700,19 @@ useEffect(() => {
 
 const handleLike = async (e: React.MouseEvent) => {
   e.stopPropagation();
+  
+  console.log("\n🔵 ===== LIKE BUTTON CLICKED =====");
+  console.log("📍 Current State BEFORE API call:");
+  console.log("   Short ID:", short._id);
+  console.log("   hasLiked:", hasLiked);
+  console.log("   likesCount:", likesCount);
+  console.log("   hasDisliked:", hasDisliked);
+  console.log("   dislikesCount:", dislikesCount);
+  
   try {
     const token = localStorage.getItem("token");
     if (!token) {
+      console.log("❌ No token found, redirecting to login");
       router.push("/login?redirect=/shorts");
       return;
     }
@@ -702,15 +721,12 @@ const handleLike = async (e: React.MouseEvent) => {
     const userId = payload.userId || payload.id;
 
     if (!userId) {
+      console.log("❌ No userId in token, redirecting to login");
       router.push("/login?redirect=/shorts");
       return;
     }
 
-    console.log("👍 Like button clicked:", {
-      shortId: short._id,
-      currentlyLiked: hasLiked,
-      currentCount: likesCount,
-    });
+    console.log("✅ User authenticated:", userId);
 
     // ✅ Store previous state for rollback
     const previousLiked = hasLiked;
@@ -718,19 +734,26 @@ const handleLike = async (e: React.MouseEvent) => {
     const previousDisliked = hasDisliked;
     const previousDislikeCount = dislikesCount;
 
+    console.log("\n🔄 OPTIMISTIC UPDATE:");
     // ✅ Optimistic update
     if (previousLiked) {
+      console.log("   Action: UNLIKE (remove like)");
       setHasLiked(false);
       setLikesCount((prev) => Math.max(0, prev - 1));
     } else {
+      console.log("   Action: LIKE (add like)");
       setHasLiked(true);
       setLikesCount((prev) => prev + 1);
       if (previousDisliked) {
+        console.log("   Also removing dislike");
         setHasDisliked(false);
         setDislikesCount((prev) => Math.max(0, prev - 1));
       }
     }
 
+    console.log("\n📡 MAKING API CALL...");
+    console.log("   URL:", `${getApiUrl()}/like/short/${short._id}`);
+    
     // ✅ Make API call
     const response = await axios.post(
       `${getApiUrl()}/like/short/${short._id}`,
@@ -745,18 +768,24 @@ const handleLike = async (e: React.MouseEvent) => {
       }
     );
 
-    console.log("✅ Like API response:", response.data);
+    console.log("\n✅ API RESPONSE RECEIVED:");
+    console.log("   Full response:", JSON.stringify(response.data, null, 2));
+    console.log("   response.data.success:", response.data.success);
+    console.log("   response.data.liked:", response.data.liked);
+    console.log("   response.data.likesCount:", response.data.likesCount);
+    console.log("   response.data.action:", response.data.action);
+    console.log("   response.data.data:", response.data.data);
 
     // ✅ CRITICAL FIX: Read from TOP-LEVEL fields
     if (response.data.success) {
-      const serverLiked = response.data.liked;        // ✅ Read top-level
-      const serverCount = response.data.likesCount;   // ✅ Read top-level
+      const serverLiked = response.data.liked;
+      const serverCount = response.data.likesCount;
       const serverDislikeCount = response.data.dislikesCount;
 
-      console.log("🔄 Syncing with server state:", {
-        serverLiked,
-        serverCount,
-      });
+      console.log("\n🔄 SYNCING WITH SERVER STATE:");
+      console.log("   serverLiked:", serverLiked);
+      console.log("   serverCount:", serverCount);
+      console.log("   serverDislikeCount:", serverDislikeCount);
 
       // ✅ Update local state to match server
       setHasLiked(serverLiked);
@@ -764,18 +793,38 @@ const handleLike = async (e: React.MouseEvent) => {
       setLikesCount(serverCount);
       setDislikesCount(serverDislikeCount);
 
+      console.log("\n📤 CALLING onLikeUpdate callback:");
+      console.log("   onLikeUpdate exists?", !!onLikeUpdate);
+      
       // ✅ CRITICAL: Update parent component's shorts array
       if (onLikeUpdate) {
+        console.log("   Calling with:", {
+          shortId: short._id,
+          liked: serverLiked,
+          likesCount: serverCount,
+          disliked: false,
+          dislikesCount: serverDislikeCount
+        });
         onLikeUpdate(short._id, serverLiked, serverCount, false, serverDislikeCount);
+      } else {
+        console.warn("⚠️ onLikeUpdate callback is NOT defined!");
       }
 
-      console.log("✅ Like state synced successfully");
+      console.log("\n✅ LIKE STATE SYNCED SUCCESSFULLY");
+      console.log("📍 Final State AFTER sync:");
+      console.log("   hasLiked:", serverLiked);
+      console.log("   likesCount:", serverCount);
+    } else {
+      console.error("❌ API returned success: false");
     }
   } catch (error: any) {
-    console.error("❌ Error liking short:", error);
+    console.error("\n❌ ERROR IN handleLike:");
+    console.error("   Error:", error);
+    console.error("   Response data:", error.response?.data);
+    console.error("   Status:", error.response?.status);
 
     // ✅ Rollback optimistic update on error
-    console.log("🔄 Rolling back optimistic update...");
+    console.log("\n🔄 ROLLING BACK OPTIMISTIC UPDATE...");
     
     try {
       const token = localStorage.getItem("token");
@@ -791,8 +840,15 @@ const handleLike = async (e: React.MouseEvent) => {
         }
       );
       
+      console.log("📡 Fresh data fetched:", freshResponse.data);
+      
       if (freshResponse.data.success) {
         const freshData = freshResponse.data.data;
+        console.log("🔄 Rolling back to:", {
+          hasLiked: freshData.hasLiked,
+          likesCount: freshData.likesCount
+        });
+        
         setHasLiked(Boolean(freshData.hasLiked));
         setHasDisliked(Boolean(freshData.hasDisliked));
         setLikesCount(freshData.likesCount);
@@ -805,9 +861,13 @@ const handleLike = async (e: React.MouseEvent) => {
     }
 
     if (error.response?.status === 401) {
+      console.log("❌ 401 Unauthorized, redirecting to login");
       router.push("/login?redirect=/shorts");
     }
+
   }
+  
+  console.log("===== LIKE HANDLER COMPLETE =====\n");
 };
 
   const handleDislike = async (e: React.MouseEvent) => {

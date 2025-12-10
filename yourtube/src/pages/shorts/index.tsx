@@ -221,21 +221,36 @@ const ShortsPage: React.FC = () => {
   // ✅ NEW: Callback to update short in array when liked/disliked
 // ✅ NEW: Callback to update short in array when liked/disliked
 const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCount: number, disliked?: boolean, dislikesCount?: number) => {
-  console.log('🔄 Updating short in array:', { shortId, liked, likesCount, disliked, dislikesCount });
+  console.log("\n🔵 ===== handleShortLiked CALLED IN PARENT =====");
+  console.log("📥 Received:", { shortId, liked, likesCount, disliked, dislikesCount });
   
-  setShorts(prevShorts => 
-    prevShorts.map(s => 
-      s._id === shortId 
-        ? { 
-            ...s, 
-            hasLiked: liked, 
-            likesCount: likesCount,
-            ...(disliked !== undefined && { hasDisliked: disliked }),
-            ...(dislikesCount !== undefined && { dislikesCount: dislikesCount })
-          }
-        : s
-    )
-  );
+  setShorts(prevShorts => {
+    console.log("📊 Current shorts array length:", prevShorts.length);
+    
+    const updatedShorts = prevShorts.map(s => {
+      if (s._id === shortId) {
+        console.log("✅ Found matching short, updating:");
+        console.log("   Before:", { hasLiked: s.hasLiked, likesCount: s.likesCount });
+        
+        const updated = { 
+          ...s, 
+          hasLiked: liked, 
+          likesCount: likesCount,
+          ...(disliked !== undefined && { hasDisliked: disliked }),
+          ...(dislikesCount !== undefined && { dislikesCount: dislikesCount })
+        };
+        
+        console.log("   After:", { hasLiked: updated.hasLiked, likesCount: updated.likesCount });
+        return updated;
+      }
+      return s;
+    });
+    
+    console.log("✅ Shorts array updated");
+    return updatedShorts;
+  });
+  
+  console.log("===== handleShortLiked COMPLETE =====\n");
 }, []);
   // ✅ Handle short deletion
   const handleShortDeleted = useCallback(
