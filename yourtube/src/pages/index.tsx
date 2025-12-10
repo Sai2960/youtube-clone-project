@@ -312,27 +312,53 @@ const Home: NextPage = () => {
     return "/video/vdo.mp4";
   };
 const getThumbnailUrl = (video: Video) => {
-    // Priority 1: Explicit thumbnail fields
-  const thumbnail = getThumbnailUrl(video);
-  
-  // If thumbnail exists and is a Cloudinary URL, use it
-if (thumbnail) {
-    console.log('✅ Thumbnail from helper:', thumbnail.substring(0, 60));
-    return thumbnail;
+  // ✅ Priority 1: Use helper function first
+  const helperThumbnail = getThumbnailUrlHelper(video);
+  if (helperThumbnail && !helperThumbnail.includes('placeholder')) {
+    console.log('✅ Thumbnail from helper:', helperThumbnail.substring(0, 60));
+    return helperThumbnail;
   }
-  
-  // If thumbnail exists and is a full URL (non-Cloudinary), use it
- console.warn('⚠️ No thumbnail available, using placeholder');
-  return '/placeholder-thumbnail.jpg';
 
-  
-  
-  // Priority 2: Generate from video URL
+  // ✅ Priority 2: Check explicit thumbnail fields
+  if (video?.thumbnailUrl) {
+    if (video.thumbnailUrl.startsWith('http')) {
+      console.log('✅ Using video.thumbnailUrl:', video.thumbnailUrl.substring(0, 60));
+      return video.thumbnailUrl;
+    }
+    const backend = "https://youtube-clone-project-q3pd.onrender.com";
+    return `${backend}${video.thumbnailUrl}`;
+  }
+
+  if (video?.thumbnail) {
+    if (video.thumbnail.startsWith('http')) {
+      console.log('✅ Using video.thumbnail:', video.thumbnail.substring(0, 60));
+      return video.thumbnail;
+    }
+    const backend = "https://youtube-clone-project-q3pd.onrender.com";
+    return `${backend}${video.thumbnail}`;
+  }
+
+  if (video?.videothumbnail) {
+    if (video.videothumbnail.startsWith('http')) {
+      return video.videothumbnail;
+    }
+    const backend = "https://youtube-clone-project-q3pd.onrender.com";
+    return `${backend}${video.videothumbnail}`;
+  }
+
+  if (video?.videothumb) {
+    if (video.videothumb.startsWith('http')) {
+      return video.videothumb;
+    }
+    const backend = "https://youtube-clone-project-q3pd.onrender.com";
+    return `${backend}${video.videothumb}`;
+  }
+
+  // ✅ Priority 3: Generate from video URL
   const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
   
   if (videoUrl && videoUrl.includes('res.cloudinary.com') && videoUrl.includes('/video/upload/')) {
     try {
-      // Extract path after /video/upload/ (removing any existing transformations)
       const parts = videoUrl.split('/video/upload/');
       if (parts.length === 2) {
         const pathAfterUpload = parts[1]
@@ -351,7 +377,7 @@ if (thumbnail) {
     }
   }
   
-  // Fallback
+  // ✅ Fallback
   console.warn('⚠️ No thumbnail available for video:', video?._id);
   return '/placeholder-thumbnail.jpg';
 };
