@@ -336,51 +336,88 @@ router.post("/login", locationMiddleware, async (req, res) => {
 });
 // ==================== UPDATE ROUTE ====================
 
-router.patch("/update/:id", async (req, res) => {
+// ✅ UPDATE: Channel info (name + description)
+router.patch('/update/:userId', verifyToken, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { userId } = req.params;
+    const { channelname, description } = req.body;
     
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ 
+    // Verify user is updating their own channel
+    if (req.userId !== userId) {
+      return res.status(403).json({
         success: false,
-        message: "Invalid user ID format" 
+        message: 'Unauthorized to update this channel'
       });
     }
-    
-    const updateData = {};
-    Object.keys(req.body).forEach(key => {
-      if (req.body[key] !== undefined) {
-        updateData[key] = req.body[key];
+
+    // Validate channel name
+    if (channelname) {
+      const trimmed = channelname.trim();
+      
+      if (trimmed.length < 3) {
+        return res.status(400).json({
+          success: false,
+          message: 'Channel name must be at least 3 characters'
+        });
       }
-    });
+      
+      if (trimmed.length > 50) {
+        return res.status(400).json({
+          success: false,
+          message: 'Channel name must be less than 50 characters'
+        });
+      }
+      
+      // Check if channel name is already taken (optional)
+      const existing = await User.findOne({ 
+        channelname: trimmed,
+        _id: { $ne: userId }
+      });
+      
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: 'Channel name is already taken'
+        });
+      }
+    }
+
+    // Update user
+    const updateData = {};
+    if (channelname) updateData.channelname = channelname.trim();
+    if (description !== undefined) updateData.description = description.trim();
 
     const updatedUser = await User.findByIdAndUpdate(
-      id, 
-      { $set: updateData }, 
-      { new: true, runValidators: true }
+      userId,
+      { $set: updateData },
+      { new: true, select: '-password' }
     );
 
     if (!updatedUser) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: 'User not found'
       });
     }
 
+    console.log('✅ Channel updated:', updatedUser.channelname);
+
     res.status(200).json({
       success: true,
+      message: 'Channel updated successfully',
+      user: updatedUser,
       result: updatedUser
     });
+
   } catch (error) {
-    console.error("❌ Update error:", error);
-    res.status(500).json({ 
+    console.error('❌ Update error:', error);
+    res.status(500).json({
       success: false,
-      message: "Update failed",
-      error: error.message 
+      message: 'Failed to update channel',
+      error: error.message
     });
   }
 });
-
 // ==================== USER/CHANNEL ROUTES ====================
 
 router.get("/all", async (req, res) => {
