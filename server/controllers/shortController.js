@@ -163,6 +163,7 @@ export const upload = {
 
 export const getAllShorts = async (req, res) => {
   try {
+    // ✅ Disable caching
     res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
     res.set("Pragma", "no-cache");
     res.set("Expires", "0");
@@ -181,7 +182,6 @@ export const getAllShorts = async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
-    // ✅ CRITICAL: Extract userId from token
     let userId = null;
     
     if (req.user) {
@@ -195,74 +195,83 @@ export const getAllShorts = async (req, res) => {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           userId = decoded._id || decoded.id || decoded.userId;
-          console.log("✅ getAllShorts - userId from token:", userId?.toString());
         } catch (err) {
-          console.log("⚠️ getAllShorts - Could not verify token");
+          console.log("⚠️ Could not verify token");
         }
       }
     }
-
-    console.log("📥 Fetching shorts - Page:", page, "User:", userId ? userId.toString() : "GUEST");
 
     const shorts = await Short.find({ isPublic: true, status: "active" })
       .sort(sortOption)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .populate("userId", "name avatar image channelName channelname subscribers")
+      // ✅ CRITICAL FIX: Populate with select to get ALL user fields
+      .populate({
+        path: "userId",
+        select: "name avatar image channelName channelname subscribers",
+        options: { lean: true }
+      })
       .lean()
       .maxTimeMS(5000);
 
-    console.log(`✅ Found ${shorts.length} shorts`);
+    // ✅ CRITICAL FIX: Re-fetch user data to ensure it's fresh
+    const shortsWithFreshData = await Promise.all(
+      shorts.map(async (short) => {
+        // Fetch fresh user data directly from User model
+        const freshUser = await User.findById(short.userId._id)
+          .select('name avatar image channelName channelname subscribers')
+          .lean();
 
-    const shortsWithCounts = shorts.map((short) => {
-      // ✅ Check if user has liked this short
-      const hasLiked = userId
-        ? short.likes?.some((like) => like.toString() === userId.toString())
-        : false;
-      
-      const hasDisliked = userId
-        ? short.dislikes?.some((dislike) => dislike.toString() === userId.toString())
-        : false;
+        const hasLiked = userId
+          ? short.likes?.some((like) => like.toString() === userId.toString())
+          : false;
+        
+        const hasDisliked = userId
+          ? short.dislikes?.some((dislike) => dislike.toString() === userId.toString())
+          : false;
 
-      let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
-      finalAvatar = processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
+        // ✅ Use fresh user data
+        let finalAvatar = freshUser?.image || freshUser?.avatar || short.channelAvatar;
+        finalAvatar = processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
 
-      let videoUrl = short.videoUrl;
-      let thumbnailUrl = short.thumbnailUrl;
+        // ✅ Use fresh channel name
+        const freshChannelName = freshUser?.channelname || 
+                                 freshUser?.channelName || 
+                                 freshUser?.name || 
+                                 short.channelName || 
+                                 "Unknown";
 
-      if (!videoUrl || !videoUrl.includes("cloudinary.com")) {
-        console.error("❌ Invalid video URL for short:", short._id);
-      }
-
-      return {
-        ...short,
-        videoUrl,
-        thumbnailUrl,
-        channelAvatar: finalAvatar,
-        channelName:
-          short.channelName ||
-          short.userId?.channelName ||
-          short.userId?.channelname ||
-          short.userId?.name ||
-          "Unknown",
-        likesCount: short.likes ? short.likes.length : 0,
-        dislikesCount: short.dislikes ? short.dislikes.length : 0,
-        commentsCount: short.comments ? short.comments.length : 0,
-        hasLiked,
-        hasDisliked,
-        userId: {
-          ...short.userId,
-          avatar: finalAvatar,
-          image: finalAvatar,
-        },
-      };
-    });
+        return {
+          ...short,
+          videoUrl: short.videoUrl,
+          thumbnailUrl: short.thumbnailUrl,
+          channelAvatar: finalAvatar,
+          channelName: freshChannelName,
+          likesCount: short.likes ? short.likes.length : 0,
+          dislikesCount: short.dislikes ? short.dislikes.length : 0,
+          commentsCount: short.comments ? short.comments.length : 0,
+          hasLiked,
+          hasDisliked,
+          userId: {
+            _id: freshUser._id,
+            name: freshUser.name,
+            avatar: finalAvatar,
+            image: finalAvatar,
+            channelName: freshUser.channelname || freshUser.channelName,
+            channelname: freshUser.channelname || freshUser.channelName,
+            subscribers: freshUser.subscribers
+          },
+        };
+      })
+    );
 
     const total = await Short.countDocuments({ isPublic: true, status: "active" });
 
+    console.log(`✅ Returning ${shortsWithFreshData.length} shorts with FRESH user data`);
+
     res.status(200).json({
       success: true,
-      data: shortsWithCounts,
+      data: shortsWithFreshData,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
     });
@@ -275,43 +284,35 @@ export const getAllShorts = async (req, res) => {
     });
   }
 };
+
+
 // Get single short by ID with proper avatar
 export const getShortById = async (req, res) => {
   try {
-    // ✅ Disable caching
     res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
     res.set("Pragma", "no-cache");
     res.set("Expires", "0");
 
     const { id } = req.params;
     
-    // ✅ CRITICAL FIX: Extract userId from token
     let userId = null;
     
-    // Method 1: Check req.user (if auth middleware worked)
     if (req.user) {
       userId = req.user._id || req.user.id || req.user.userId;
-      console.log("✅ userId from req.user:", userId?.toString());
     }
     
-    // Method 2: Manually decode JWT token if req.user doesn't exist
     if (!userId) {
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7); // Remove 'Bearer '
+        const token = authHeader.substring(7);
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           userId = decoded._id || decoded.id || decoded.userId;
-          console.log("✅ userId decoded from token:", userId?.toString());
         } catch (err) {
-          console.log("⚠️ Could not verify token:", err.message);
+          console.log("⚠️ Could not verify token");
         }
       }
     }
-
-    console.log("\n🔍 ===== GET SHORT BY ID =====");
-    console.log("Short ID:", id);
-    console.log("Final User ID:", userId ? userId.toString() : "NOT AUTHENTICATED");
 
     const short = await Short.findById(id)
       .populate("userId", "name avatar image channelName channelname subscribers")
@@ -324,79 +325,74 @@ export const getShortById = async (req, res) => {
       });
     }
 
-    // Increment view count
+    // ✅ CRITICAL FIX: Fetch fresh user data
+    const freshUser = await User.findById(short.userId._id)
+      .select('name avatar image channelName channelname subscribers')
+      .lean();
+
+    console.log("🔄 Fresh user data:", {
+      userId: freshUser._id,
+      channelname: freshUser.channelname,
+      name: freshUser.name,
+      image: freshUser.image
+    });
+
     await Short.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
-    // ✅ CRITICAL FIX: Check like status in BOTH places
     let hasLiked = false;
     let hasDisliked = false;
 
     if (userId) {
-      // Check 1: Short model likes array
       const inShortLikes = short.likes?.some(
         (like) => like.toString() === userId.toString()
       );
       
-      // Check 2: LikedShort collection
       const likedShortEntry = await LikedShort.findOne({
         viewer: userId,
         shortid: id,
       }).lean();
 
-      // User has liked if it exists in EITHER place
       hasLiked = inShortLikes || Boolean(likedShortEntry);
-
-      // Check dislikes only in Short model
       hasDisliked = short.dislikes?.some(
         (dislike) => dislike.toString() === userId.toString()
       );
-
-      console.log("✅ Like Status Check:");
-      console.log("   User ID:", userId.toString());
-      console.log("   In Short.likes[]:", inShortLikes);
-      console.log("   In LikedShort collection:", Boolean(likedShortEntry));
-      console.log("   ➡️ FINAL hasLiked:", hasLiked);
-      console.log("   ➡️ FINAL hasDisliked:", hasDisliked);
-    } else {
-      console.log("⚠️ No userId - user not authenticated, returning hasLiked: false");
     }
 
-    const finalAvatar = getBestAvatar(short, req);
-    let videoUrl = short.videoUrl;
-    let thumbnailUrl = short.thumbnailUrl;
+    // ✅ Use fresh user data
+    const finalAvatar = processAvatar(
+      freshUser.image || freshUser.avatar,
+      req
+    ) || `https://github.com/shadcn.png`;
 
-    if (!videoUrl || !videoUrl.includes("cloudinary.com")) {
-      console.error("❌ Invalid video URL:", videoUrl);
-    }
+    const freshChannelName = freshUser.channelname || 
+                             freshUser.channelName || 
+                             freshUser.name || 
+                             "Unknown";
 
     const responseData = {
       ...short,
-      videoUrl,
-      thumbnailUrl,
+      videoUrl: short.videoUrl,
+      thumbnailUrl: short.thumbnailUrl,
       channelAvatar: finalAvatar,
-      channelName:
-        short.channelName ||
-        short.userId?.channelName ||
-        short.userId?.channelname ||
-        short.userId?.name ||
-        "Unknown",
+      channelName: freshChannelName,
       likesCount: short.likes?.length || 0,
       dislikesCount: short.dislikes?.length || 0,
       commentsCount: short.comments?.length || 0,
-      hasLiked, // ✅ Now properly calculated
+      hasLiked,
       hasDisliked,
       views: short.views + 1,
       userId: {
-        ...short.userId,
+        _id: freshUser._id,
+        name: freshUser.name,
         avatar: finalAvatar,
         image: finalAvatar,
+        channelName: freshUser.channelname || freshUser.channelName,
+        channelname: freshUser.channelname || freshUser.channelName,
+        subscribers: freshUser.subscribers
       },
     };
 
-    console.log("📤 RESPONSE:");
-    console.log("   hasLiked:", responseData.hasLiked);
-    console.log("   likesCount:", responseData.likesCount);
-    console.log("=========================\n");
+    console.log("📤 Sending short with fresh channel name:", freshChannelName);
 
     res.status(200).json({
       success: true,
@@ -411,8 +407,7 @@ export const getShortById = async (req, res) => {
     });
   }
 };
-// Upload new short
-// Upload new short - FIXED VERSION
+
 // Upload new short - COMPLETELY FIXED VERSION
 export const uploadShort = async (req, res) => {
   try {
@@ -1055,9 +1050,6 @@ export const getShortsByChannel = async (req, res) => {
     const { userId } = req.params;
     const { page = 1, limit = 100 } = req.query;
 
-    console.log("📡 ===== GET SHORTS BY CHANNEL =====");
-    console.log("Channel User ID:", userId);
-
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -1065,16 +1057,23 @@ export const getShortsByChannel = async (req, res) => {
       });
     }
 
-    const currentUser = await User.findById(userId).select(
+    // ✅ CRITICAL FIX: Fetch fresh user data FIRST
+    const freshUser = await User.findById(userId).select(
       "name avatar image channelName channelname"
-    );
+    ).lean();
 
-    if (!currentUser) {
+    if (!freshUser) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
+
+    console.log("🔄 Fresh channel data:", {
+      userId: freshUser._id,
+      channelname: freshUser.channelname,
+      name: freshUser.name
+    });
 
     const shorts = await Short.find({
       userId: userId,
@@ -1086,73 +1085,40 @@ export const getShortsByChannel = async (req, res) => {
       .skip((parseInt(page) - 1) * parseInt(limit))
       .lean();
 
-    console.log(`✅ Database returned ${shorts.length} shorts`);
-
     const processedShorts = shorts.map((short) => {
-      // ✅ CRITICAL: Use Cloudinary URLs DIRECTLY - NO base URL prepending
       let videoUrl = short.videoUrl;
       let thumbnailUrl = short.thumbnailUrl;
 
-      // Validate and clean URLs
       if (videoUrl && videoUrl.includes("cloudinary.com")) {
-        // Remove version numbers and ensure HTTPS
         videoUrl = videoUrl
           .replace(/\/v\d+\//g, "/")
           .replace(/^http:\/\//, "https://");
-      } else {
-        console.error("❌ Invalid video URL for short:", short._id);
       }
 
       if (thumbnailUrl && thumbnailUrl.includes("cloudinary.com")) {
-        // Remove version numbers and ensure HTTPS
         thumbnailUrl = thumbnailUrl
           .replace(/\/v\d+\//g, "/")
           .replace(/^http:\/\//, "https://");
-      } else {
-        console.warn("⚠️ Invalid thumbnail URL for short:", short._id);
-        // Generate thumbnail from video if possible
-        if (videoUrl && videoUrl.includes("cloudinary.com")) {
-          try {
-            const match = videoUrl.match(
-              /youtube-clone\/shorts\/videos\/([^.\/]+)/
-            );
-            if (match) {
-              const publicId = `youtube-clone/shorts/videos/${match[1]}`;
-              thumbnailUrl = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-              console.log(
-                "🔧 Generated thumbnail:",
-                thumbnailUrl.substring(0, 80)
-              );
-            }
-          } catch (err) {
-            console.error("❌ Error generating thumbnail:", err);
-          }
-        }
       }
 
-      // Process avatar
-      let freshAvatar = currentUser.avatar || currentUser.image;
-      if (freshAvatar && freshAvatar.startsWith("/uploads/")) {
-        const avatarPath = path.join(__dirname, "..", freshAvatar);
-        if (!fs.existsSync(avatarPath)) {
-          console.warn(`⚠️ Channel avatar file missing: ${freshAvatar}`);
-          freshAvatar = "https://github.com/shadcn.png";
-        }
-      }
+      // ✅ Use fresh user data
+      const finalAvatar = processAvatar(
+        freshUser.image || freshUser.avatar,
+        req
+      ) || `https://github.com/shadcn.png`;
 
-      const finalAvatar = processAvatar(freshAvatar, req);
+      const freshChannelName = freshUser.channelname || 
+                               freshUser.channelName || 
+                               freshUser.name;
 
       return {
         _id: short._id,
         title: short.title,
         description: short.description,
-
-        // ✅ CRITICAL: Return Cloudinary URLs as-is (NO base URL prepending)
         thumbnail: thumbnailUrl,
         thumbnailUrl: thumbnailUrl,
         videoUrl: videoUrl,
         video: videoUrl,
-
         views: short.views || 0,
         likes: short.likes?.length || 0,
         dislikes: short.dislikes?.length || 0,
@@ -1162,24 +1128,18 @@ export const getShortsByChannel = async (req, res) => {
         duration: short.duration,
         tags: short.tags || [],
         category: short.category || "Entertainment",
-
         channelAvatar: finalAvatar,
-        channelName:
-          currentUser.channelName ||
-          currentUser.channelname ||
-          currentUser.name,
-
+        channelName: freshChannelName,
         likesCount: short.likes?.length || 0,
         dislikesCount: short.dislikes?.length || 0,
         commentsCount: short.comments?.length || 0,
-
         userId: {
-          _id: currentUser._id,
-          name: currentUser.name,
+          _id: freshUser._id,
+          name: freshUser.name,
           avatar: finalAvatar,
           image: finalAvatar,
-          channelName: currentUser.channelName || currentUser.channelname,
-          channelname: currentUser.channelname || currentUser.channelName,
+          channelName: freshUser.channelname || freshUser.channelName,
+          channelname: freshUser.channelname || freshUser.channelName,
         },
       };
     });
@@ -1190,11 +1150,7 @@ export const getShortsByChannel = async (req, res) => {
       status: "active",
     });
 
-    console.log("✅ Sending", processedShorts.length, "shorts");
-    console.log("Sample URLs:", {
-      video: processedShorts[0]?.videoUrl?.substring(0, 80),
-      thumbnail: processedShorts[0]?.thumbnailUrl?.substring(0, 80),
-    });
+    console.log(`✅ Sending ${processedShorts.length} shorts with FRESH channel name: ${freshUser.channelname}`);
 
     res.status(200).json({
       success: true,
