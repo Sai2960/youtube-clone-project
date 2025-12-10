@@ -570,86 +570,80 @@ export const likeShort = async (req, res) => {
     const hasLiked = short.likes.some(
       (like) => like.toString() === userId.toString()
     );
-    const hasDisliked = short.dislikes.some(
-      (dislike) => dislike.toString() === userId.toString()
-    );
 
-    console.log("Current status:", { hasLiked, hasDisliked });
+    console.log("Current status:", { hasLiked });
 
     if (hasLiked) {
-      // ✅ UNLIKE - Remove from BOTH places atomically
+      // ✅ UNLIKE - Remove from BOTH places
       console.log("🔄 Removing like...");
       
-      // Update Short model
       await Short.findByIdAndUpdate(id, {
         $pull: { likes: userId }
       });
 
-      // Update LikedShort collection
       await LikedShort.findOneAndDelete({
         viewer: userId,
         shortid: id,
       });
       
-      // Get fresh count
       const updatedShort = await Short.findById(id).select('likes dislikes');
       
-      console.log("✅ Like removed from both places");
+      console.log("✅ Like removed");
       console.log("New count:", updatedShort.likes.length);
 
       return res.status(200).json({
         success: true,
         message: "Like removed",
-        liked: false,        // ✅ ADDED
-        action: "removed",   // ✅ ADDED
+        liked: false,                    // ✅ TOP-LEVEL (frontend reads this)
+        action: "removed",
+        likesCount: updatedShort.likes.length,    // ✅ TOP-LEVEL
+        dislikesCount: updatedShort.dislikes.length,
         data: {
-          likesCount: updatedShort.likes.length,
-          dislikesCount: updatedShort.dislikes.length,
           hasLiked: false,
           hasDisliked: false,
+          likesCount: updatedShort.likes.length,
+          dislikesCount: updatedShort.dislikes.length,
         },
       });
     } else {
-      // ✅ LIKE - Add to BOTH places atomically
+      // ✅ LIKE - Add to BOTH places
       console.log("🔄 Adding like...");
       
-      // Update Short model (addToSet prevents duplicates)
       await Short.findByIdAndUpdate(id, {
         $addToSet: { likes: userId },
-        $pull: { dislikes: userId } // Remove dislike if exists
+        $pull: { dislikes: userId }
       });
 
-      // Update LikedShort collection (ignore duplicate errors)
       try {
         await LikedShort.create({
           viewer: userId,
           shortid: id,
         });
-        console.log("✅ Added to LikedShort collection");
       } catch (likeError) {
         if (likeError.code === 11000) {
-          console.log("ℹ️ Like entry already exists in collection (OK)");
+          console.log("ℹ️ Like already exists in collection");
         } else {
-          console.error("❌ Error creating liked short entry:", likeError);
+          throw likeError;
         }
       }
       
-      // Get fresh count
       const updatedShort = await Short.findById(id).select('likes dislikes');
       
-      console.log("✅ Like added to both places");
+      console.log("✅ Like added");
       console.log("New count:", updatedShort.likes.length);
 
       return res.status(200).json({
         success: true,
         message: "Short liked",
-        liked: true,         // ✅ ADDED
-        action: "added",     // ✅ ADDED
+        liked: true,                     // ✅ TOP-LEVEL (frontend reads this)
+        action: "added",
+        likesCount: updatedShort.likes.length,    // ✅ TOP-LEVEL
+        dislikesCount: updatedShort.dislikes.length,
         data: {
-          likesCount: updatedShort.likes.length,
-          dislikesCount: updatedShort.dislikes.length,
           hasLiked: true,
           hasDisliked: false,
+          likesCount: updatedShort.likes.length,
+          dislikesCount: updatedShort.dislikes.length,
         },
       });
     }
