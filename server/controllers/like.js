@@ -224,15 +224,25 @@ export const handleShortLike = async (req, res) => {
         $pull: { likes: userId }
       });
       
-      const updatedShort = await Short.findById(shortId);
+      const updatedShort = await Short.findById(shortId).select('likes dislikes');
       const currentLikes = updatedShort.likes.length;
+      const currentDislikes = updatedShort.dislikes.length;
       
       console.log('✅ Removed short like from both places');
+      
+      // ✅ CRITICAL: Return in EXACT format frontend expects
       return res.status(200).json({ 
         success: true,
-        liked: false,
+        liked: false,           // ✅ Frontend checks this
         action: 'removed',
-        likesCount: currentLikes
+        likesCount: currentLikes,    // ✅ Frontend checks this
+        dislikesCount: currentDislikes,
+        data: {                  // ✅ ALSO include nested format for compatibility
+          hasLiked: false,
+          hasDisliked: false,
+          likesCount: currentLikes,
+          dislikesCount: currentDislikes
+        }
       });
     } else {
       // ✅ LIKE: Add to BOTH places
@@ -246,15 +256,25 @@ export const handleShortLike = async (req, res) => {
         $pull: { dislikes: userId }
       });
       
-      const updatedShort = await Short.findById(shortId);
+      const updatedShort = await Short.findById(shortId).select('likes dislikes');
       const currentLikes = updatedShort.likes.length;
+      const currentDislikes = updatedShort.dislikes.length;
       
       console.log('✅ Added short like to both places');
+      
+      // ✅ CRITICAL: Return in EXACT format frontend expects
       return res.status(200).json({ 
         success: true,
-        liked: true,
+        liked: true,            // ✅ Frontend checks this
         action: 'added',
-        likesCount: currentLikes
+        likesCount: currentLikes,    // ✅ Frontend checks this
+        dislikesCount: currentDislikes,
+        data: {                  // ✅ ALSO include nested format for compatibility
+          hasLiked: true,
+          hasDisliked: false,
+          likesCount: currentLikes,
+          dislikesCount: currentDislikes
+        }
       });
     }
   } catch (error) {
