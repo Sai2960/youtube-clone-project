@@ -180,69 +180,57 @@ export const getAllShorts = async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
-    console.log("📥 Fetching shorts - Page:", page, "Limit:", limit);
+    // ✅ CRITICAL: Extract userId from token
+    let userId = null;
+    
+    if (req.user) {
+      userId = req.user._id || req.user.id || req.user.userId;
+    }
+    
+    if (!userId) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          userId = decoded._id || decoded.id || decoded.userId;
+          console.log("✅ getAllShorts - userId from token:", userId?.toString());
+        } catch (err) {
+          console.log("⚠️ getAllShorts - Could not verify token");
+        }
+      }
+    }
+
+    console.log("📥 Fetching shorts - Page:", page, "User:", userId ? userId.toString() : "GUEST");
 
     const shorts = await Short.find({ isPublic: true, status: "active" })
       .sort(sortOption)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .populate(
-        "userId",
-        "name avatar image channelName channelname subscribers"
-      )
+      .populate("userId", "name avatar image channelName channelname subscribers")
       .lean()
       .maxTimeMS(5000);
 
-    console.log(`✅ Found ${shorts.length} shorts from database`);
-
-    // ✅ CRITICAL: Get userId from request
-    let userId = null;
-    if (req.user) {
-      userId = req.user._id || req.user.id || req.user.userId;
-    }
-    
-    // Try to decode token manually if req.user doesn't exist
-    if (!userId) {
-      const token = req.headers.authorization?.replace('Bearer ', '');
-      if (token) {
-        try {
-          const jwt = await import('jsonwebtoken');
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          userId = decoded._id || decoded.id || decoded.userId;
-        } catch (err) {
-          // User not authenticated, that's okay
-        }
-      }
-    }
-
-    console.log("👤 Authenticated user:", userId ? userId.toString() : "NOT AUTHENTICATED");
+    console.log(`✅ Found ${shorts.length} shorts`);
 
     const shortsWithCounts = shorts.map((short) => {
-      // ✅ CRITICAL: Check likes array in Short model
+      // ✅ Check if user has liked this short
       const hasLiked = userId
         ? short.likes?.some((like) => like.toString() === userId.toString())
         : false;
+      
       const hasDisliked = userId
-        ? short.dislikes?.some(
-            (dislike) => dislike.toString() === userId.toString()
-          )
+        ? short.dislikes?.some((dislike) => dislike.toString() === userId.toString())
         : false;
 
-      // Avatar processing
-      let finalAvatar =
-        short.userId?.image || short.userId?.avatar || short.channelAvatar;
-      finalAvatar =
-        processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
+      let finalAvatar = short.userId?.image || short.userId?.avatar || short.channelAvatar;
+      finalAvatar = processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
 
       let videoUrl = short.videoUrl;
       let thumbnailUrl = short.thumbnailUrl;
 
       if (!videoUrl || !videoUrl.includes("cloudinary.com")) {
-        console.error("❌ Invalid video URL for short:", short._id, videoUrl);
-      }
-
-      if (!thumbnailUrl || !thumbnailUrl.includes("cloudinary.com")) {
-        console.warn("⚠️ Invalid thumbnail URL for short:", short._id);
+        console.error("❌ Invalid video URL for short:", short._id);
       }
 
       return {
@@ -259,7 +247,7 @@ export const getAllShorts = async (req, res) => {
         likesCount: short.likes ? short.likes.length : 0,
         dislikesCount: short.dislikes ? short.dislikes.length : 0,
         commentsCount: short.comments ? short.comments.length : 0,
-        hasLiked, // ✅ This is now properly set
+        hasLiked,
         hasDisliked,
         userId: {
           ...short.userId,
@@ -269,12 +257,7 @@ export const getAllShorts = async (req, res) => {
       };
     });
 
-    const total = await Short.countDocuments({
-      isPublic: true,
-      status: "active",
-    });
-
-    console.log(`✅ Returning ${shortsWithCounts.length} shorts`);
+    const total = await Short.countDocuments({ isPublic: true, status: "active" });
 
     res.status(200).json({
       success: true,
@@ -291,43 +274,43 @@ export const getAllShorts = async (req, res) => {
     });
   }
 };
-
 // Get single short by ID with proper avatar
 export const getShortById = async (req, res) => {
   try {
     // ✅ Disable caching
     res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
 
     const { id } = req.params;
     
-    // ✅ CRITICAL FIX: Get userId from authenticated request OR from req.user
+    // ✅ CRITICAL FIX: Extract userId from token
     let userId = null;
     
-    // Try multiple sources for userId
+    // Method 1: Check req.user (if auth middleware worked)
     if (req.user) {
       userId = req.user._id || req.user.id || req.user.userId;
+      console.log("✅ userId from req.user:", userId?.toString());
     }
     
-    // If no req.user, try to extract from token manually
+    // Method 2: Manually decode JWT token if req.user doesn't exist
     if (!userId) {
-      const token = req.headers.authorization?.replace('Bearer ', '');
-      if (token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7); // Remove 'Bearer '
         try {
-          const jwt = await import('jsonwebtoken');
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           userId = decoded._id || decoded.id || decoded.userId;
-          console.log("🔓 Manually decoded userId from token:", userId?.toString());
+          console.log("✅ userId decoded from token:", userId?.toString());
         } catch (err) {
-          console.log("⚠️ Could not decode token manually:", err.message);
+          console.log("⚠️ Could not verify token:", err.message);
         }
       }
     }
 
     console.log("\n🔍 ===== GET SHORT BY ID =====");
     console.log("Short ID:", id);
-    console.log("User ID:", userId ? userId.toString() : "NOT AUTHENTICATED");
-    console.log("req.user:", req.user ? "exists" : "undefined");
-    console.log("Auth header:", req.headers.authorization ? "present" : "missing");
+    console.log("Final User ID:", userId ? userId.toString() : "NOT AUTHENTICATED");
 
     const short = await Short.findById(id)
       .populate("userId", "name avatar image channelName channelname subscribers")
@@ -367,16 +350,14 @@ export const getShortById = async (req, res) => {
         (dislike) => dislike.toString() === userId.toString()
       );
 
-      console.log("✅ Like Status Check Results:");
-      console.log("   Short ID:", id);
+      console.log("✅ Like Status Check:");
       console.log("   User ID:", userId.toString());
-      console.log("   In Short.likes array:", inShortLikes);
+      console.log("   In Short.likes[]:", inShortLikes);
       console.log("   In LikedShort collection:", Boolean(likedShortEntry));
-      console.log("   FINAL hasLiked:", hasLiked);
-      console.log("   hasDisliked:", hasDisliked);
-      console.log("   Total likes:", short.likes?.length || 0);
+      console.log("   ➡️ FINAL hasLiked:", hasLiked);
+      console.log("   ➡️ FINAL hasDisliked:", hasDisliked);
     } else {
-      console.log("⚠️ No userId - returning hasLiked: false");
+      console.log("⚠️ No userId - user not authenticated, returning hasLiked: false");
     }
 
     const finalAvatar = getBestAvatar(short, req);
@@ -401,7 +382,7 @@ export const getShortById = async (req, res) => {
       likesCount: short.likes?.length || 0,
       dislikesCount: short.dislikes?.length || 0,
       commentsCount: short.comments?.length || 0,
-      hasLiked, // ✅ This is now properly calculated
+      hasLiked, // ✅ Now properly calculated
       hasDisliked,
       views: short.views + 1,
       userId: {
@@ -411,9 +392,8 @@ export const getShortById = async (req, res) => {
       },
     };
 
-    console.log("📤 Sending response:");
+    console.log("📤 RESPONSE:");
     console.log("   hasLiked:", responseData.hasLiked);
-    console.log("   hasDisliked:", responseData.hasDisliked);
     console.log("   likesCount:", responseData.likesCount);
     console.log("=========================\n");
 
