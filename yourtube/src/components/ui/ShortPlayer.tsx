@@ -726,7 +726,7 @@ const handleLike = async (e: React.MouseEvent) => {
       }
     }
 
-    // ✅ FIXED: Correct endpoint and response handling
+    // ✅ Make API call
     const response = await axios.post(
       `${getApiUrl()}/like/short/${short._id}`,
       { userId },
@@ -734,25 +734,35 @@ const handleLike = async (e: React.MouseEvent) => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Cache-Control": "no-cache",
-          "Pragma": "no-cache",      // ✅ ADDED
-          "Expires": "0"              // ✅ ADDED
+          "Pragma": "no-cache",
+          "Expires": "0"
         },
       }
     );
 
     console.log("✅ Like response:", response.data);
 
-    // ✅ CRITICAL: Sync with server response
+    // ✅ CRITICAL FIX: Sync with server response
     if (response.data.success) {
-      const finalLiked = Boolean(response.data.liked);
-      const finalCount = response.data.likesCount || 0;
+      // ✅ Read from top-level AND nested data
+      const finalLiked = Boolean(
+        response.data.liked ?? response.data.data?.hasLiked
+      );
+      const finalCount = 
+        response.data.likesCount ?? 
+        response.data.data?.likesCount ?? 
+        0;
+      const finalDislikeCount = 
+        response.data.dislikesCount ?? 
+        response.data.data?.dislikesCount ?? 
+        0;
       
       setHasLiked(finalLiked);
       setHasDisliked(false);
       setLikesCount(finalCount);
-      setDislikesCount(response.data.dislikesCount || 0);
+      setDislikesCount(finalDislikeCount);
 
-      console.log("✅ Like state synced with server:", {
+      console.log("✅ State synced:", {
         hasLiked: finalLiked,
         likesCount: finalCount,
       });
@@ -760,7 +770,7 @@ const handleLike = async (e: React.MouseEvent) => {
   } catch (error: any) {
     console.error("❌ Error liking short:", error);
 
-    // ✅ Revert on error by fetching fresh data
+    // ✅ Revert on error
     try {
       const token = localStorage.getItem("token");
       const freshShort = await axios.get(
