@@ -98,7 +98,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        timeout: 600000, // ✅ 10 minutes for upload
+  timeout: 900000, // ✅ 15 minutes (matches backend)
         onUploadProgress: (progressEvent: any) => {
           const progress = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
