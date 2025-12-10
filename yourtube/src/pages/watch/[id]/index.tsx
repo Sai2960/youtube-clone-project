@@ -177,6 +177,20 @@ useEffect(() => {
   fetchVideo();
 }, [id]);
 
+// ✅ Refresh on avatar update
+useEffect(() => {
+  const handleAvatarUpdate = () => {
+    console.log('🔄 Avatar updated on watch page');
+    // Force refresh of current video data
+    if (currentVideo) {
+      setCurrentVideo({...currentVideo});
+    }
+  };
+
+  window.addEventListener('avatarUpdated', handleAvatarUpdate);
+  return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+}, [currentVideo]);
+
   // ✅ Debug related videos data
   useEffect(() => {
     if (relatedVideos.length > 0) {

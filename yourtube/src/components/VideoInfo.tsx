@@ -141,51 +141,67 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     return match;
   })();
 
+  // ✅ Refresh channel info on avatar update
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      console.log("🔄 Avatar updated, refreshing video info");
+      setImageKey(Date.now());
+    };
+
+    window.addEventListener("avatarUpdated", handleAvatarUpdate);
+    return () =>
+      window.removeEventListener("avatarUpdated", handleAvatarUpdate);
+  }, []);
+
   // ✅ NEW: Refetch reaction status on route change
-useEffect(() => {
-  const handleRouteChange = () => {
-    // Refetch reaction status when route changes
-    if (user?._id && video?._id) {
-      axiosInstance.get(`/like/${user._id}`).then(response => {
-        if (response.data.success) {
-          let likesArray = response.data.likes || [];
-          let dislikesArray = response.data.dislikes || [];
+  useEffect(() => {
+    const handleRouteChange = () => {
+      // Refetch reaction status when route changes
+      if (user?._id && video?._id) {
+        axiosInstance
+          .get(`/like/${user._id}`)
+          .then((response) => {
+            if (response.data.success) {
+              let likesArray = response.data.likes || [];
+              let dislikesArray = response.data.dislikes || [];
 
-          if (likesArray.length === 0 && response.data.videos) {
-            const allVideos = response.data.videos || response.data.data || [];
-            likesArray = allVideos.filter(
-              (item: any) => !item.reaction || item.reaction === "like"
-            );
-            dislikesArray = allVideos.filter(
-              (item: any) => item.reaction === "dislike"
-            );
-          }
+              if (likesArray.length === 0 && response.data.videos) {
+                const allVideos =
+                  response.data.videos || response.data.data || [];
+                likesArray = allVideos.filter(
+                  (item: any) => !item.reaction || item.reaction === "like"
+                );
+                dislikesArray = allVideos.filter(
+                  (item: any) => item.reaction === "dislike"
+                );
+              }
 
-          const videoIsLiked = likesArray.some((item: any) => {
-            const videoId = item.videoid?._id || item.videoid;
-            return String(videoId) === String(video._id);
+              const videoIsLiked = likesArray.some((item: any) => {
+                const videoId = item.videoid?._id || item.videoid;
+                return String(videoId) === String(video._id);
+              });
+
+              const videoIsDisliked = dislikesArray.some((item: any) => {
+                const videoId = item.videoid?._id || item.videoid;
+                return String(videoId) === String(video._id);
+              });
+
+              setIsLiked(videoIsLiked);
+              setIsDisliked(videoIsDisliked);
+            }
+          })
+          .catch((error) => {
+            console.error("Error refetching reactions:", error);
           });
+      }
+    };
 
-          const videoIsDisliked = dislikesArray.some((item: any) => {
-            const videoId = item.videoid?._id || item.videoid;
-            return String(videoId) === String(video._id);
-          });
+    router.events.on("routeChangeComplete", handleRouteChange);
 
-          setIsLiked(videoIsLiked);
-          setIsDisliked(videoIsDisliked);
-        }
-      }).catch(error => {
-        console.error("Error refetching reactions:", error);
-      });
-    }
-  };
-
-  router.events.on('routeChangeComplete', handleRouteChange);
-  
-  return () => {
-    router.events.off('routeChangeComplete', handleRouteChange);
-  };
-}, [router.events, user?._id, video?._id]);
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router.events, user?._id, video?._id]);
 
   const handleChannelClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -299,60 +315,62 @@ useEffect(() => {
     fetchSubscriptionStatus();
   }, [user, videoUploaderId, isOwner]);
   // Fetch reaction status (likes/dislikes)
-useEffect(() => {
-  const fetchReactionStatus = async () => {
-    if (!user?._id || !video?._id) {
-      setIsLiked(false);
-      setIsDisliked(false);
-      return;
-    }
-
-    try {
-      // ✅ NEW: Fetch the user's specific reaction for THIS video
-      const response = await axiosInstance.get(`/like/check/${video._id}/${user._id}`);
-      
-      console.log('🔍 Reaction check response:', response.data);
-      
-      if (response.data.success) {
-        setIsLiked(response.data.liked || false);
-        setIsDisliked(response.data.disliked || false);
-        
-        // Also update counts from the response
-        if (response.data.video) {
-          setLikes(response.data.video.Like || 0);
-          setDislikes(response.data.video.Dislike || 0);
-        }
-        
-        console.log('✅ Reaction state loaded:', {
-          videoId: video._id,
-          isLiked: response.data.liked,
-          isDisliked: response.data.disliked,
-          likes: response.data.video?.Like,
-          dislikes: response.data.video?.Dislike
-        });
+  useEffect(() => {
+    const fetchReactionStatus = async () => {
+      if (!user?._id || !video?._id) {
+        setIsLiked(false);
+        setIsDisliked(false);
+        return;
       }
-    } catch (error: any) {
-      console.error("Error fetching reaction status:", error);
-      setIsLiked(false);
-      setIsDisliked(false);
-    }
-  };
 
-  fetchReactionStatus();
-  
-  // ✅ Refetch when user navigates back to the page
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === 'visible') {
-      fetchReactionStatus();
-    }
-  };
-  
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  
-  return () => {
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-  };
-}, [user?._id, video?._id, router.asPath]);
+      try {
+        // ✅ NEW: Fetch the user's specific reaction for THIS video
+        const response = await axiosInstance.get(
+          `/like/check/${video._id}/${user._id}`
+        );
+
+        console.log("🔍 Reaction check response:", response.data);
+
+        if (response.data.success) {
+          setIsLiked(response.data.liked || false);
+          setIsDisliked(response.data.disliked || false);
+
+          // Also update counts from the response
+          if (response.data.video) {
+            setLikes(response.data.video.Like || 0);
+            setDislikes(response.data.video.Dislike || 0);
+          }
+
+          console.log("✅ Reaction state loaded:", {
+            videoId: video._id,
+            isLiked: response.data.liked,
+            isDisliked: response.data.disliked,
+            likes: response.data.video?.Like,
+            dislikes: response.data.video?.Dislike,
+          });
+        }
+      } catch (error: any) {
+        console.error("Error fetching reaction status:", error);
+        setIsLiked(false);
+        setIsDisliked(false);
+      }
+    };
+
+    fetchReactionStatus();
+
+    // ✅ Refetch when user navigates back to the page
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchReactionStatus();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user?._id, video?._id, router.asPath]);
   // Update likes/dislikes counts
   useEffect(() => {
     if (video?._id) {
@@ -451,105 +469,103 @@ useEffect(() => {
   };
 
   // Like button handler
- // ✅ FIXED handleLike function
-const handleLike = async () => {
-  if (!user?._id) {
-    setError("Please log in to like videos");
-    setTimeout(() => setError(null), 3000);
-    return;
-  }
-
-  if (likeAnimation) return;
-
-  try {
-    setError(null);
-    setLikeAnimation(true);
-    setLikeRipple(true);
-
-    // ✅ Call API FIRST (not optimistic update)
-    const res = await axiosInstance.post(`/like/video/${video._id}`, {
-      userId: user._id,
-      isLike: true,
-    });
-
-    console.log('✅ Server Response:', res.data);
-
-    // ✅ Update UI based on server response
-    if (res.data.success) {
-      setLikes(res.data.likes);
-      setDislikes(res.data.dislikes);
-      setIsLiked(res.data.liked);
-      setIsDisliked(res.data.disliked);
-      
-      console.log('✅ UI updated:', {
-        likes: res.data.likes,
-        dislikes: res.data.dislikes,
-        liked: res.data.liked,
-        disliked: res.data.disliked
-      });
+  // ✅ FIXED handleLike function
+  const handleLike = async () => {
+    if (!user?._id) {
+      setError("Please log in to like videos");
+      setTimeout(() => setError(null), 3000);
+      return;
     }
 
-    setTimeout(() => {
-      setLikeAnimation(false);
-      setLikeRipple(false);
-    }, 650);
+    if (likeAnimation) return;
 
-  } catch (error: any) {
-    console.error("❌ Like error:", error);
-    setError(error.response?.data?.message || "Failed to like video");
-    setTimeout(() => setError(null), 3000);
-  }
-};
+    try {
+      setError(null);
+      setLikeAnimation(true);
+      setLikeRipple(true);
 
-// ✅ FIXED handleDislike function
-const handleDislike = async () => {
-  if (!user?._id) {
-    setError("Please log in to dislike videos");
-    setTimeout(() => setError(null), 3000);
-    return;
-  }
-
-  if (dislikeAnimation) return;
-
-  try {
-    setError(null);
-    setDislikeAnimation(true);
-    setDislikeRipple(true);
-
-    // ✅ Call API FIRST (not optimistic update)
-    const res = await axiosInstance.post(`/like/video/${video._id}`, {
-      userId: user._id,
-      isLike: false,
-    });
-
-    console.log('✅ Server Response:', res.data);
-
-    // ✅ Update UI based on server response
-    if (res.data.success) {
-      setLikes(res.data.likes);
-      setDislikes(res.data.dislikes);
-      setIsLiked(res.data.liked);
-      setIsDisliked(res.data.disliked);
-      
-      console.log('✅ UI updated:', {
-        likes: res.data.likes,
-        dislikes: res.data.dislikes,
-        liked: res.data.liked,
-        disliked: res.data.disliked
+      // ✅ Call API FIRST (not optimistic update)
+      const res = await axiosInstance.post(`/like/video/${video._id}`, {
+        userId: user._id,
+        isLike: true,
       });
+
+      console.log("✅ Server Response:", res.data);
+
+      // ✅ Update UI based on server response
+      if (res.data.success) {
+        setLikes(res.data.likes);
+        setDislikes(res.data.dislikes);
+        setIsLiked(res.data.liked);
+        setIsDisliked(res.data.disliked);
+
+        console.log("✅ UI updated:", {
+          likes: res.data.likes,
+          dislikes: res.data.dislikes,
+          liked: res.data.liked,
+          disliked: res.data.disliked,
+        });
+      }
+
+      setTimeout(() => {
+        setLikeAnimation(false);
+        setLikeRipple(false);
+      }, 650);
+    } catch (error: any) {
+      console.error("❌ Like error:", error);
+      setError(error.response?.data?.message || "Failed to like video");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // ✅ FIXED handleDislike function
+  const handleDislike = async () => {
+    if (!user?._id) {
+      setError("Please log in to dislike videos");
+      setTimeout(() => setError(null), 3000);
+      return;
     }
 
-    setTimeout(() => {
-      setDislikeAnimation(false);
-      setDislikeRipple(false);
-    }, 650);
+    if (dislikeAnimation) return;
 
-  } catch (error: any) {
-    console.error("❌ Dislike error:", error);
-    setError(error.response?.data?.message || "Failed to dislike video");
-    setTimeout(() => setError(null), 3000);
-  }
-};
+    try {
+      setError(null);
+      setDislikeAnimation(true);
+      setDislikeRipple(true);
+
+      // ✅ Call API FIRST (not optimistic update)
+      const res = await axiosInstance.post(`/like/video/${video._id}`, {
+        userId: user._id,
+        isLike: false,
+      });
+
+      console.log("✅ Server Response:", res.data);
+
+      // ✅ Update UI based on server response
+      if (res.data.success) {
+        setLikes(res.data.likes);
+        setDislikes(res.data.dislikes);
+        setIsLiked(res.data.liked);
+        setIsDisliked(res.data.disliked);
+
+        console.log("✅ UI updated:", {
+          likes: res.data.likes,
+          dislikes: res.data.dislikes,
+          liked: res.data.liked,
+          disliked: res.data.disliked,
+        });
+      }
+
+      setTimeout(() => {
+        setDislikeAnimation(false);
+        setDislikeRipple(false);
+      }, 650);
+    } catch (error: any) {
+      console.error("❌ Dislike error:", error);
+      setError(error.response?.data?.message || "Failed to dislike video");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
   // Watch later handler
   const handleWatchLater = async () => {
     if (!user?._id) {
@@ -631,7 +647,10 @@ const handleDislike = async () => {
             </Avatar>
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-[15px] text-youtube-primary truncate group-hover:text-blue-600 transition-colors">
-                {video.videochanel || "Unknown"}
+                {video.uploadedBy?.channelname ||
+                  video.uploadedBy?.name ||
+                  video.videochanel ||
+                  "Unknown Channel"}
               </h3>
               <p className="text-xs text-youtube-secondary truncate">
                 {subscriberCount > 0

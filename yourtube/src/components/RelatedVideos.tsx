@@ -36,6 +36,26 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
   const [imageKeys, setImageKeys] = useState<Record<string, number>>({});
   const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(new Set());
 
+
+
+  // ✅ Refresh on avatar update
+useEffect(() => {
+  const handleAvatarUpdate = () => {
+    console.log('🔄 Avatar updated, refreshing related videos');
+    const updatedKeys: Record<string, number> = {};
+    videos.forEach(video => {
+      if (video.uploadedBy?._id) {
+        updatedKeys[video.uploadedBy._id] = Date.now();
+      }
+    });
+    setImageKeys(updatedKeys);
+  };
+
+  window.addEventListener('avatarUpdated', handleAvatarUpdate);
+  return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+}, [videos]);
+
+
   // ========== Avatar Cache Management ==========
   useEffect(() => {
     const newKeys: Record<string, number> = {};

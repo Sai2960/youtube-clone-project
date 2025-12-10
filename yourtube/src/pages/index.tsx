@@ -17,7 +17,7 @@ import {
 } from "@/lib/imageUtils";
 import { VideoGridSkeleton } from "@/components/VideoSkeleton";
 // Line ~10 - ADD this import
-import { getThumbnailUrl as getThumbnailUrlHelper } from '@/lib/urlHelper';
+import { getThumbnailUrl as getThumbnailUrlHelper } from "@/lib/urlHelper";
 
 interface Video {
   videoLink: string;
@@ -52,6 +52,7 @@ interface Short {
   channelName?: string;
   channelAvatar?: string;
   userId: {
+    [x: string]: string;
     _id: string;
     name: string;
     channelName?: string;
@@ -311,76 +312,100 @@ const Home: NextPage = () => {
 
     return "/video/vdo.mp4";
   };
-const getThumbnailUrl = (video: Video) => {
-  // ✅ Priority 1: Use helper function first
-  const helperThumbnail = getThumbnailUrlHelper(video);
-  if (helperThumbnail && !helperThumbnail.includes('placeholder')) {
-    console.log('✅ Thumbnail from helper:', helperThumbnail.substring(0, 60));
-    return helperThumbnail;
-  }
-
-  // ✅ Priority 2: Check explicit thumbnail fields
-  if (video?.thumbnailUrl) {
-    if (video.thumbnailUrl.startsWith('http')) {
-      console.log('✅ Using video.thumbnailUrl:', video.thumbnailUrl.substring(0, 60));
-      return video.thumbnailUrl;
+  const getThumbnailUrl = (video: Video) => {
+    // ✅ Priority 1: Use helper function first
+    const helperThumbnail = getThumbnailUrlHelper(video);
+    if (helperThumbnail && !helperThumbnail.includes("placeholder")) {
+      console.log(
+        "✅ Thumbnail from helper:",
+        helperThumbnail.substring(0, 60)
+      );
+      return helperThumbnail;
     }
-    const backend = "https://youtube-clone-project-q3pd.onrender.com";
-    return `${backend}${video.thumbnailUrl}`;
-  }
 
-  if (video?.thumbnail) {
-    if (video.thumbnail.startsWith('http')) {
-      console.log('✅ Using video.thumbnail:', video.thumbnail.substring(0, 60));
-      return video.thumbnail;
-    }
-    const backend = "https://youtube-clone-project-q3pd.onrender.com";
-    return `${backend}${video.thumbnail}`;
-  }
-
-  if (video?.videothumbnail) {
-    if (video.videothumbnail.startsWith('http')) {
-      return video.videothumbnail;
-    }
-    const backend = "https://youtube-clone-project-q3pd.onrender.com";
-    return `${backend}${video.videothumbnail}`;
-  }
-
-  if (video?.videothumb) {
-    if (video.videothumb.startsWith('http')) {
-      return video.videothumb;
-    }
-    const backend = "https://youtube-clone-project-q3pd.onrender.com";
-    return `${backend}${video.videothumb}`;
-  }
-
-  // ✅ Priority 3: Generate from video URL
-  const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
-  
-  if (videoUrl && videoUrl.includes('res.cloudinary.com') && videoUrl.includes('/video/upload/')) {
-    try {
-      const parts = videoUrl.split('/video/upload/');
-      if (parts.length === 2) {
-        const pathAfterUpload = parts[1]
-          .split('/')
-          .filter(part => !part.includes('f_') && !part.includes('vc_') && !part.includes('ac_'))
-          .join('/');
-        
-        const generatedThumbnail = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${pathAfterUpload}`
-          .replace(/\.(mp4|mov|avi|mkv|webm)$/i, '.jpg');
-        
-        console.log('🖼️ Generated thumbnail from video:', generatedThumbnail.substring(0, 80));
-        return generatedThumbnail;
+    // ✅ Priority 2: Check explicit thumbnail fields
+    if (video?.thumbnailUrl) {
+      if (video.thumbnailUrl.startsWith("http")) {
+        console.log(
+          "✅ Using video.thumbnailUrl:",
+          video.thumbnailUrl.substring(0, 60)
+        );
+        return video.thumbnailUrl;
       }
-    } catch (error) {
-      console.error('❌ Error generating thumbnail:', error);
+      const backend = "https://youtube-clone-project-q3pd.onrender.com";
+      return `${backend}${video.thumbnailUrl}`;
     }
-  }
-  
-  // ✅ Fallback
-  console.warn('⚠️ No thumbnail available for video:', video?._id);
-  return '/placeholder-thumbnail.jpg';
-};
+
+    if (video?.thumbnail) {
+      if (video.thumbnail.startsWith("http")) {
+        console.log(
+          "✅ Using video.thumbnail:",
+          video.thumbnail.substring(0, 60)
+        );
+        return video.thumbnail;
+      }
+      const backend = "https://youtube-clone-project-q3pd.onrender.com";
+      return `${backend}${video.thumbnail}`;
+    }
+
+    if (video?.videothumbnail) {
+      if (video.videothumbnail.startsWith("http")) {
+        return video.videothumbnail;
+      }
+      const backend = "https://youtube-clone-project-q3pd.onrender.com";
+      return `${backend}${video.videothumbnail}`;
+    }
+
+    if (video?.videothumb) {
+      if (video.videothumb.startsWith("http")) {
+        return video.videothumb;
+      }
+      const backend = "https://youtube-clone-project-q3pd.onrender.com";
+      return `${backend}${video.videothumb}`;
+    }
+
+    // ✅ Priority 3: Generate from video URL
+    const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
+
+    if (
+      videoUrl &&
+      videoUrl.includes("res.cloudinary.com") &&
+      videoUrl.includes("/video/upload/")
+    ) {
+      try {
+        const parts = videoUrl.split("/video/upload/");
+        if (parts.length === 2) {
+          const pathAfterUpload = parts[1]
+            .split("/")
+            .filter(
+              (part) =>
+                !part.includes("f_") &&
+                !part.includes("vc_") &&
+                !part.includes("ac_")
+            )
+            .join("/");
+
+          const generatedThumbnail =
+            `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${pathAfterUpload}`.replace(
+              /\.(mp4|mov|avi|mkv|webm)$/i,
+              ".jpg"
+            );
+
+          console.log(
+            "🖼️ Generated thumbnail from video:",
+            generatedThumbnail.substring(0, 80)
+          );
+          return generatedThumbnail;
+        }
+      } catch (error) {
+        console.error("❌ Error generating thumbnail:", error);
+      }
+    }
+
+    // ✅ Fallback
+    console.warn("⚠️ No thumbnail available for video:", video?._id);
+    return "/placeholder-thumbnail.jpg";
+  };
 
   const scrollShorts = (direction: "left" | "right") => {
     if (shortsScrollRef.current) {
@@ -482,21 +507,21 @@ const getThumbnailUrl = (video: Video) => {
         {/* Shorts Section */}
         {shorts.length > 0 && (
           <section className="py-3 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
-         <div className="flex items-center justify-between px-3 mb-3 lg:px-6">
-  <div className="flex items-center gap-2 lg:gap-3">
-    <div className="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center lg:hidden shadow-sm flex-shrink-0">
-      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
-        <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
-      </svg>
-    </div>
-    <div className="hidden lg:flex w-10 h-10 bg-red-600 rounded-xl items-center justify-center shadow-lg shadow-red-600/30">
-      <Play size={20} className="text-white ml-0.5" fill="white" />
-    </div>
-    <h2 className="text-base font-bold text-gray-900 dark:text-white lg:text-2xl">
-      Shorts
-    </h2>
-  </div>
-</div>
+            <div className="flex items-center justify-between px-3 mb-3 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center lg:hidden shadow-sm flex-shrink-0">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                    <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
+                  </svg>
+                </div>
+                <div className="hidden lg:flex w-10 h-10 bg-red-600 rounded-xl items-center justify-center shadow-lg shadow-red-600/30">
+                  <Play size={20} className="text-white ml-0.5" fill="white" />
+                </div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white lg:text-2xl">
+                  Shorts
+                </h2>
+              </div>
+            </div>
 
             {loadingShorts ? (
               <div className="flex gap-2 overflow-x-hidden px-3 lg:gap-4 lg:px-6">
@@ -588,9 +613,18 @@ const getThumbnailUrl = (video: Video) => {
                         {/* ✅ FIXED: Avatar + Channel Name - NO NESTED LINKS */}
                         <div className="flex items-center gap-1.5">
                           <img
-                            key={`short-${short._id}-${Date.now()}`}
-                            src={shortAvatar}
-                            alt={shortChannelName}
+                            key={`short-avatar-${short._id}-${
+                              short.userId?._id || "unknown"
+                            }-${Date.now()}`}
+                            src={getImageUrl(
+                              short.userId?.image || short.userId?.avatar,
+                              true
+                            )}
+                            alt={
+                              short.userId?.channelname ||
+                              short.userId?.name ||
+                              "Channel"
+                            }
                             className="avatar-link w-5 h-5 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
                             crossOrigin="anonymous"
                             loading="eager"
@@ -606,12 +640,9 @@ const getThumbnailUrl = (video: Video) => {
                               router.push(`/channel/${short.userId?._id}`);
                             }}
                             onError={(e) => {
-                              console.error("❌ Avatar failed:", shortAvatar);
+                              console.error("❌ Short avatar failed");
                               e.currentTarget.src =
                                 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-                              e.currentTarget.style.display = "block";
-                            }}
-                            onLoad={(e) => {
                               e.currentTarget.style.display = "block";
                             }}
                           />
@@ -622,7 +653,10 @@ const getThumbnailUrl = (video: Video) => {
                               router.push(`/channel/${short.userId?._id}`);
                             }}
                           >
-                            {shortChannelName}
+                            {short.userId?.channelname ||
+                              short.userId?.name ||
+                              short.channelName ||
+                              "Unknown Channel"}
                           </p>
                         </div>
                       </div>
