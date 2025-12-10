@@ -8,6 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import LikedShort from "../Modals/likedShort.js";
+import jwt from 'jsonwebtoken';  // ✅ ADD THIS LINE
 import {
   uploadShortsVideo,
   uploadShortsThumbnail,
