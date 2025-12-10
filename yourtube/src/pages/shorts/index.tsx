@@ -584,30 +584,7 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
           })}
         </div>
 
-       
-        {currentIndex < shorts.length - 1 && (
-          <button
-            onClick={handleNext}
-            className="fixed top-1/2 right-6 transform -translate-y-1/2 z-[80] bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-full p-3 text-white transition-all hidden lg:block"
-            style={{ marginTop: "60px" }}
-            aria-label="Next short"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-        )}
-
+     
         {/* Loading indicator */}
         {loading && shorts.length > 0 && (
           <div className="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-[80] lg:bottom-8">
