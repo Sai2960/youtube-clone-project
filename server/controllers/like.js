@@ -202,23 +202,32 @@ export const handleShortLike = async (req, res) => {
       });
     }
 
+    // ✅ Check if already liked in LikedShort collection
     const existingLike = await LikedShort.findOne({
       viewer: userId,
       shortid: shortId,
     });
 
+    const short = await Short.findById(shortId);
+    if (!short) {
+      return res.status(404).json({
+        success: false,
+        message: "Short not found"
+      });
+    }
+
     if (existingLike) {
+      // ✅ UNLIKE: Remove from BOTH places
       await LikedShort.findByIdAndDelete(existingLike._id);
       
-      const short = await Short.findById(shortId);
-      const currentLikes = Math.max(0, (short.likesCount || 0) - 1);
-      
       await Short.findByIdAndUpdate(shortId, { 
-        $pull: { likes: userId },
-        likesCount: currentLikes
+        $pull: { likes: userId }
       });
       
-      console.log('✅ Removed short like');
+      const updatedShort = await Short.findById(shortId);
+      const currentLikes = updatedShort.likes.length;
+      
+      console.log('✅ Removed short like from both places');
       return res.status(200).json({ 
         success: true,
         liked: false,
@@ -226,21 +235,21 @@ export const handleShortLike = async (req, res) => {
         likesCount: currentLikes
       });
     } else {
+      // ✅ LIKE: Add to BOTH places
       await LikedShort.create({ 
         viewer: userId, 
         shortid: shortId 
       });
       
-      const short = await Short.findById(shortId);
-      const currentLikes = (short.likesCount || 0) + 1;
-      
       await Short.findByIdAndUpdate(shortId, { 
         $addToSet: { likes: userId },
-        $pull: { dislikes: userId },
-        likesCount: currentLikes
+        $pull: { dislikes: userId }
       });
       
-      console.log('✅ Added short like');
+      const updatedShort = await Short.findById(shortId);
+      const currentLikes = updatedShort.likes.length;
+      
+      console.log('✅ Added short like to both places');
       return res.status(200).json({ 
         success: true,
         liked: true,
@@ -252,7 +261,8 @@ export const handleShortLike = async (req, res) => {
     console.error("Short like error:", error);
     return res.status(500).json({ 
       success: false,
-      message: "Failed to process short like" 
+      message: "Failed to process short like",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

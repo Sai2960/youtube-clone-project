@@ -600,6 +600,8 @@ export const likeShort = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "Like removed",
+        liked: false,        // ✅ ADDED
+        action: "removed",   // ✅ ADDED
         data: {
           likesCount: updatedShort.likes.length,
           dislikesCount: updatedShort.dislikes.length,
@@ -641,6 +643,8 @@ export const likeShort = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "Short liked",
+        liked: true,         // ✅ ADDED
+        action: "added",     // ✅ ADDED
         data: {
           likesCount: updatedShort.likes.length,
           dislikesCount: updatedShort.dislikes.length,
