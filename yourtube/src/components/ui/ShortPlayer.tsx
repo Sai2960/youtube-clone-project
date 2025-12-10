@@ -127,8 +127,8 @@ const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
   const [isReporting, setIsReporting] = useState(false);
 
   // ✅ USE UTILITY FUNCTIONS FOR AVATAR & CHANNEL NAME
-  const channelAvatar = getShortAvatar(short);
-  const channelName = getShortChannelName(short);
+const [channelName, setChannelName] = useState(getShortChannelName(short));
+const channelAvatar = getShortAvatar(short);
 
   const getApiUrl = () =>
     // ✅ CORRECT - Simple fallback chain
