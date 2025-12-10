@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/pages/shorts/index.tsx - FULLY MERGED & OPTIMIZED VERSION
+// src/pages/shorts/index.tsx - FULLY MERGED & OPTIMIZED VERSION WITH LIKE STATE MANAGEMENT
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
@@ -144,80 +144,98 @@ const ShortsPage: React.FC = () => {
   };
 
   // ✅ Fetch shorts with proper cache busting
-  // Around line 150, update fetchShorts function:
-const fetchShorts = async (pageNum: number) => {
-  try {
-    setLoading(true);
-    setError("");
+  const fetchShorts = async (pageNum: number) => {
+    try {
+      setLoading(true);
+      setError("");
 
-    const token = localStorage.getItem("token");
-    const apiUrl = getApiUrl();
+      const token = localStorage.getItem("token");
+      const apiUrl = getApiUrl();
 
-    console.log("📡 Fetching shorts from:", `${apiUrl}/api/shorts?page=${pageNum}`);
+      console.log("📡 Fetching shorts from:", `${apiUrl}/api/shorts?page=${pageNum}`);
 
-    const response = await axios.get(`${apiUrl}/api/shorts`, {
-      params: {
-        page: pageNum,
-        limit: 10,
-        _t: Date.now(),
-      },
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    console.log("✅ Shorts response:", {
-      success: response.data.success,
-      count: response.data.data?.length,
-      firstShort: response.data.data?.[0] ? {
-        id: response.data.data[0]._id,
-        title: response.data.data[0].title,
-        videoUrl: response.data.data[0].videoUrl?.substring(0, 100),
-        hasCloudinary: response.data.data[0].videoUrl?.includes('cloudinary'),
-      } : null
-    });
-
-    if (response.data.success && Array.isArray(response.data.data)) {
-      const newShorts = response.data.data;
-
-      // ✅ Validate video URLs
-      const validShorts = newShorts.filter(short => {
-        if (!short.videoUrl) {
-          console.error("❌ Short missing video URL:", short._id, short.title);
-          return false;
-        }
-        return true;
+      const response = await axios.get(`${apiUrl}/api/shorts`, {
+        params: {
+          page: pageNum,
+          limit: 10,
+          _t: Date.now(),
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      if (validShorts.length < newShorts.length) {
-        console.warn(`⚠️ Filtered out ${newShorts.length - validShorts.length} shorts without video URLs`);
-      }
+      console.log("✅ Shorts response:", {
+        success: response.data.success,
+        count: response.data.data?.length,
+        firstShort: response.data.data?.[0] ? {
+          id: response.data.data[0]._id,
+          title: response.data.data[0].title,
+          videoUrl: response.data.data[0].videoUrl?.substring(0, 100),
+          hasCloudinary: response.data.data[0].videoUrl?.includes('cloudinary'),
+        } : null
+      });
 
-      if (validShorts.length === 0) {
-        setHasMore(false);
-        setError("No valid shorts available");
-      } else {
-        setShorts((prev) => {
-          const existingIds = new Set(prev.map((s) => s._id));
-          const uniqueNewShorts = validShorts.filter((s) => !existingIds.has(s._id));
-          return pageNum === 1 ? validShorts : [...prev, ...uniqueNewShorts];
+      if (response.data.success && Array.isArray(response.data.data)) {
+        const newShorts = response.data.data;
+
+        // ✅ Validate video URLs
+        const validShorts = newShorts.filter(short => {
+          if (!short.videoUrl) {
+            console.error("❌ Short missing video URL:", short._id, short.title);
+            return false;
+          }
+          return true;
         });
-        setPage(pageNum);
-      }
-    } else {
-      setError("Failed to load shorts");
-    }
-  } catch (error: any) {
-    console.error("❌ Error fetching shorts:", error);
-    console.error("   Response data:", error.response?.data);
-    console.error("   Status:", error.response?.status);
 
-    setError(
-      error.response?.data?.message || "Failed to load shorts. Please try again."
+        if (validShorts.length < newShorts.length) {
+          console.warn(`⚠️ Filtered out ${newShorts.length - validShorts.length} shorts without video URLs`);
+        }
+
+        if (validShorts.length === 0) {
+          setHasMore(false);
+          setError("No valid shorts available");
+        } else {
+          setShorts((prev) => {
+            const existingIds = new Set(prev.map((s) => s._id));
+            const uniqueNewShorts = validShorts.filter((s) => !existingIds.has(s._id));
+            return pageNum === 1 ? validShorts : [...prev, ...uniqueNewShorts];
+          });
+          setPage(pageNum);
+        }
+      } else {
+        setError("Failed to load shorts");
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching shorts:", error);
+      console.error("   Response data:", error.response?.data);
+      console.error("   Status:", error.response?.status);
+
+      setError(
+        error.response?.data?.message || "Failed to load shorts. Please try again."
+      );
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // ✅ NEW: Callback to update short in array when liked/disliked
+  const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCount: number, disliked?: boolean, dislikesCount?: number) => {
+    console.log('🔄 Updating short in array:', { shortId, liked, likesCount, disliked, dislikesCount });
+    
+    setShorts(prevShorts => 
+      prevShorts.map(s => 
+        s._id === shortId 
+          ? { 
+              ...s, 
+              hasLiked: liked, 
+              likesCount: likesCount,
+              ...(disliked !== undefined && { hasDisliked: disliked }),
+              ...(dislikesCount !== undefined && { dislikesCount: dislikesCount })
+            }
+          : s
+      )
     );
-  } finally {
-    setLoading(false);
-    setIsRefreshing(false);
-  }
-};
+  }, []);
 
   // ✅ Handle short deletion
   const handleShortDeleted = useCallback(
@@ -544,6 +562,7 @@ const fetchShorts = async (pageNum: number) => {
                   onNext={handleNext}
                   onPrevious={handlePrevious}
                   onDelete={handleShortDeleted}
+                  onLikeUpdate={handleShortLiked}
                 />
               </div>
             );
@@ -635,4 +654,4 @@ const fetchShorts = async (pageNum: number) => {
   );
 };
 
-export default ShortsPage;  
+export default ShortsPage;

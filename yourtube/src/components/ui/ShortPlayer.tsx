@@ -55,6 +55,7 @@ interface ShortPlayerProps {
   onNext: () => void;
   onPrevious: () => void;
   onDelete?: (shortId: string) => void;
+  onLikeUpdate?: (shortId: string, liked: boolean, likesCount: number) => void; // ✅ ADD THIS
 }
 
 const DEFAULT_AVATAR_SVG =
@@ -66,6 +67,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   onNext,
   onPrevious,
   onDelete,
+  onLikeUpdate,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
