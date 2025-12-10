@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/components/ChannelHeader.tsx - COMPLETE FIXED VERSION
 import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -77,39 +78,42 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
   }, [onAvatarUpdate]); // Include dependency to keep callback fresh
 
   // ✅ HANDLE IMAGE UPDATES FROM MODAL
-  const handleImageUpdate = (type: 'avatar' | 'banner', newUrl: string) => {
-    console.log('🔄 Image update:', type, newUrl);
+  const handleImageUpdate = (type: 'avatar' | 'banner' | 'info', data: any) => {
+  console.log('🔄 Channel update:', type, data);
+  
+  setLocalChannel((prev: any) => {
+    let updated = { ...prev };
     
-    setLocalChannel((prev: any) => {
-      const updated = {
-        ...prev,
-        [type === 'avatar' ? 'image' : 'bannerImage']: newUrl
-      };
+    if (type === 'avatar') {
+      updated.image = data;
+    } else if (type === 'banner') {
+      updated.bannerImage = data;
+    } else if (type === 'info') {
+      // Update channel name and description
+      updated.channelname = data.channelname;
+      updated.description = data.description;
+    }
+    
+    // Update localStorage if it's the current user's channel
+    if (user && user._id === prev._id) {
+      const updatedUser = { ...user, ...updated };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
       
-      // Update user in localStorage if it's the current user's channel
-      if (user && user._id === prev._id) {
-        const updatedUser = { 
-          ...user, 
-          [type === 'avatar' ? 'image' : 'bannerImage']: newUrl 
-        };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        // Dispatch event for other components to listen
-        window.dispatchEvent(new Event('avatarUpdated'));
-        
-        // ✅ TRIGGER CALLBACK IMMEDIATELY FOR AVATAR CHANGES
-        if (type === 'avatar' && onAvatarUpdate) {
-          console.log('📢 Avatar changed, triggering immediate refresh...');
-          setTimeout(() => onAvatarUpdate(), 100); // Small delay to ensure state updates
-        }
+      // Dispatch event for other components
+      window.dispatchEvent(new Event('avatarUpdated'));
+      
+      // Trigger callback for avatar changes
+      if (type === 'avatar' && onAvatarUpdate) {
+        setTimeout(() => onAvatarUpdate(), 100);
       }
-      
-      return updated;
-    });
+    }
     
-    // Force image refresh
-    setImageKey(Date.now());
-  };
+    return updated;
+  });
+  
+  // Force image refresh
+  setImageKey(Date.now());
+};
 
   const isOwnChannel = user?._id === localChannel._id;
   const displayName = localChannel.channelname || localChannel.name || 'Unknown Channel';
