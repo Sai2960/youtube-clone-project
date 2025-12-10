@@ -193,7 +193,9 @@ export const handleShortLike = async (req, res) => {
   const { shortId } = req.params;
   
   try {
-    console.log('👍 Short like request:', { userId, shortId });
+    console.log('\n👍 ===== SHORT LIKE REQUEST =====');
+    console.log('Short ID:', shortId);
+    console.log('User ID:', userId);
 
     if (!userId || !shortId) {
       return res.status(400).json({ 
@@ -202,12 +204,7 @@ export const handleShortLike = async (req, res) => {
       });
     }
 
-    // ✅ Check if already liked in LikedShort collection
-    const existingLike = await LikedShort.findOne({
-      viewer: userId,
-      shortid: shortId,
-    });
-
+    // ✅ Get current short state
     const short = await Short.findById(shortId);
     if (!short) {
       return res.status(404).json({
@@ -216,69 +213,112 @@ export const handleShortLike = async (req, res) => {
       });
     }
 
-    if (existingLike) {
-      // ✅ UNLIKE: Remove from BOTH places
-      await LikedShort.findByIdAndDelete(existingLike._id);
+    // ✅ Check both places for like status
+    const existingLikeInCollection = await LikedShort.findOne({
+      viewer: userId,
+      shortid: shortId,
+    });
+
+    const likedInShortModel = short.likes.some(
+      (like) => like.toString() === userId.toString()
+    );
+
+    console.log('Current status:', {
+      inCollection: Boolean(existingLikeInCollection),
+      inModel: likedInShortModel,
+    });
+
+    // ✅ Determine action based on either source
+    const isCurrentlyLiked = existingLikeInCollection || likedInShortModel;
+
+    if (isCurrentlyLiked) {
+      // ✅ UNLIKE - Remove from BOTH places
+      console.log('🔄 Removing like...');
       
-      await Short.findByIdAndUpdate(shortId, { 
+      // Remove from LikedShort collection
+      if (existingLikeInCollection) {
+        await LikedShort.findByIdAndDelete(existingLikeInCollection._id);
+        console.log('  ✓ Removed from LikedShort collection');
+      }
+      
+      // Remove from Short model
+      await Short.findByIdAndUpdate(shortId, {
         $pull: { likes: userId }
       });
+      console.log('  ✓ Removed from Short model');
       
+      // Get fresh counts
       const updatedShort = await Short.findById(shortId).select('likes dislikes');
-      const currentLikes = updatedShort.likes.length;
-      const currentDislikes = updatedShort.dislikes.length;
       
-      console.log('✅ Removed short like from both places');
-      
-      // ✅ CRITICAL: Return in EXACT format frontend expects
+      console.log('✅ Like removed successfully');
+      console.log('   New count:', updatedShort.likes.length);
+
+      // ✅ CRITICAL: Return BOTH formats for compatibility
       return res.status(200).json({ 
         success: true,
-        liked: false,           // ✅ Frontend checks this
-        action: 'removed',
-        likesCount: currentLikes,    // ✅ Frontend checks this
-        dislikesCount: currentDislikes,
-        data: {                  // ✅ ALSO include nested format for compatibility
+        message: "Like removed",
+        liked: false,                    // ✅ Top-level for frontend
+        action: "removed",
+        likesCount: updatedShort.likes.length,    // ✅ Top-level for frontend
+        dislikesCount: updatedShort.dislikes.length,
+        data: {                          // ✅ Nested for compatibility
           hasLiked: false,
           hasDisliked: false,
-          likesCount: currentLikes,
-          dislikesCount: currentDislikes
-        }
+          likesCount: updatedShort.likes.length,
+          dislikesCount: updatedShort.dislikes.length,
+        },
       });
     } else {
-      // ✅ LIKE: Add to BOTH places
-      await LikedShort.create({ 
-        viewer: userId, 
-        shortid: shortId 
-      });
+      // ✅ LIKE - Add to BOTH places
+      console.log('🔄 Adding like...');
       
-      await Short.findByIdAndUpdate(shortId, { 
+      // Add to LikedShort collection (ignore duplicates)
+      try {
+        await LikedShort.create({
+          viewer: userId,
+          shortid: shortId,
+        });
+        console.log('  ✓ Added to LikedShort collection');
+      } catch (likeError) {
+        // ✅ FIX: Check if error has code property
+        if (likeError && typeof likeError === 'object' && 'code' in likeError && likeError.code === 11000) {
+          console.log('  ℹ️ Already in LikedShort collection');
+        } else {
+          throw likeError;
+        }
+      }
+      
+      // Add to Short model (addToSet prevents duplicates)
+      await Short.findByIdAndUpdate(shortId, {
         $addToSet: { likes: userId },
         $pull: { dislikes: userId }
       });
+      console.log('  ✓ Added to Short model');
       
+      // Get fresh counts
       const updatedShort = await Short.findById(shortId).select('likes dislikes');
-      const currentLikes = updatedShort.likes.length;
-      const currentDislikes = updatedShort.dislikes.length;
       
-      console.log('✅ Added short like to both places');
-      
-      // ✅ CRITICAL: Return in EXACT format frontend expects
+      console.log('✅ Like added successfully');
+      console.log('   New count:', updatedShort.likes.length);
+
+      // ✅ CRITICAL: Return BOTH formats for compatibility
       return res.status(200).json({ 
         success: true,
-        liked: true,            // ✅ Frontend checks this
-        action: 'added',
-        likesCount: currentLikes,    // ✅ Frontend checks this
-        dislikesCount: currentDislikes,
-        data: {                  // ✅ ALSO include nested format for compatibility
+        message: "Short liked",
+        liked: true,                     // ✅ Top-level for frontend
+        action: "added",
+        likesCount: updatedShort.likes.length,    // ✅ Top-level for frontend
+        dislikesCount: updatedShort.dislikes.length,
+        data: {                          // ✅ Nested for compatibility
           hasLiked: true,
           hasDisliked: false,
-          likesCount: currentLikes,
-          dislikesCount: currentDislikes
-        }
+          likesCount: updatedShort.likes.length,
+          dislikesCount: updatedShort.dislikes.length,
+        },
       });
     }
   } catch (error) {
-    console.error("Short like error:", error);
+    console.error("❌ Short like error:", error);
     return res.status(500).json({ 
       success: false,
       message: "Failed to process short like",
