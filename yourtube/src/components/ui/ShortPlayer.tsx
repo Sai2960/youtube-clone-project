@@ -167,6 +167,42 @@ const channelAvatar = getShortAvatar(short);
     };
   }, []);
 
+  useEffect(() => {
+  const handleChannelUpdate = () => {
+    console.log("🔄 ShortPlayer: Channel update event detected!");
+    
+    // Get updated user from localStorage
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const updatedUser = JSON.parse(userStr);
+        console.log("📝 Updated channel name from localStorage:", updatedUser.channelname);
+        
+        // Update channel name if this short belongs to the current user
+        if (short.userId._id === updatedUser._id) {
+          const newChannelName = updatedUser.channelname || updatedUser.name || 'Unknown';
+          setChannelName(newChannelName);
+          console.log("✅ Channel name updated in ShortPlayer to:", newChannelName);
+        }
+      } catch (error) {
+        console.error("❌ Error parsing user data:", error);
+      }
+    }
+  };
+
+  // Listen for both custom events and storage events
+  window.addEventListener("channelUpdated", handleChannelUpdate);
+  window.addEventListener("avatarUpdated", handleChannelUpdate);
+  window.addEventListener("storage", handleChannelUpdate);
+
+  return () => {
+    window.removeEventListener("channelUpdated", handleChannelUpdate);
+    window.removeEventListener("avatarUpdated", handleChannelUpdate);
+    window.removeEventListener("storage", handleChannelUpdate);
+  };
+}, [short.userId._id]);
+
+
   // Update modal ref
   useEffect(() => {
     isModalOpenRef.current =
@@ -254,6 +290,16 @@ useEffect(() => {
   });
   console.log("===== SYNC COMPLETE =====\n");
 }, [short._id, short.hasLiked, short.hasDisliked, short.likesCount, short.dislikesCount]);
+
+
+useEffect(() => {
+  console.log("🔄 Short changed, syncing channel name...");
+  const newChannelName = getShortChannelName(short);
+  setChannelName(newChannelName);
+  console.log("✅ Channel name synced to:", newChannelName);
+}, [short._id, short.userId?.channelname, short.channelName]);
+
+
 
 useEffect(() => {
   const fetchLikeStatus = async () => {
