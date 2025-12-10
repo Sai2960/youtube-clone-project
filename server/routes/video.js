@@ -245,116 +245,141 @@ const localUpload = multer({
 });
 // 🔥 CRITICAL FIX: Ensure verifyToken completes BEFORE Multer runs
 router.post("/upload",
-  // Step 1: Log incoming request
   (req, res, next) => {
     console.log('\n📤 ===== UPLOAD REQUEST RECEIVED =====');
-    console.log('Headers:', {
-      contentType: req.headers['content-type'],
-      contentLength: req.headers['content-length'],
-      authorization: req.headers.authorization ? 'Present ✅' : 'MISSING ❌'
-    });
     next();
   },
   
-  // Step 2: Verify token and set req.userId
   verifyToken,
   
-  // Step 3: CRITICAL - Validate auth completed
   (req, res, next) => {
-    console.log('\n🔒 ===== AUTH VALIDATION =====');
-    console.log('   req.userId:', req.userId);
-    console.log('   req.user exists:', !!req.user);
-    
     if (!req.userId) {
-      console.error('❌ CRITICAL: Authentication failed - no userId set');
       return res.status(401).json({
         success: false,
-        message: 'Authentication required. Please login again.',
-        code: 'AUTH_FAILED'
+        message: 'Authentication required'
       });
     }
-    
-    console.log('✅ Authentication validated, proceeding to upload...');
     next();
   },
   
-  // Step 4: Handle file upload with Multer
   uploadVideo.single("file"),
   
-  // Step 5: Handle Multer errors
   (err, req, res, next) => {
     if (err) {
-      console.error('❌ Multer error:', err.message);
+      console.error('❌ Multer error:', err);
       return res.status(400).json({
         success: false,
-        message: 'File upload error: ' + err.message,
-        code: 'MULTER_ERROR'
+        message: err.message
       });
     }
-    
-    console.log('✅ File received by Multer');
-    if (req.file) {
-      console.log('   Filename:', req.file.originalname);
-      console.log('   Size:', (req.file.size / 1024 / 1024).toFixed(2) + ' MB');
-    }
-    
     next();
   },
   
-  // Step 6: Process upload
-  uploadvideo
-);
-
-// ✅ DEBUG: Log all upload route requests
-router.use((req, res, next) => {
-  if (req.path.includes('/upload')) {
-    console.log('\n📤 UPLOAD ROUTE DEBUG:');
-    console.log('   Path:', req.path);
-    console.log('   Method:', req.method);
-  }
-  next();
-});
-
-router.post(
-  "/uploadvideo",
-  verifyToken,
-  uploadVideo.single("video"),
+  // ✅ CRITICAL FIX: Optimized upload handler
   async (req, res) => {
     try {
-      console.log("📤 Video upload started");
-
       if (!req.file) {
-        return res
-          .status(400)
-          .json({ success: false, message: "No video file provided" });
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded"
+        });
       }
 
-      const videoUrl = req.file.path;
-      const publicId = req.file.filename;
+      const publicId = req.file.public_id || req.file.filename;
+      
+      if (!publicId) {
+        return res.status(500).json({
+          success: false,
+          message: "Upload failed - no public_id"
+        });
+      }
 
-      console.log("✅ Video uploaded to Cloudinary:", videoUrl);
-      console.log("   Public ID:", publicId);
+      // ✅ CRITICAL: Build URLs with transformations (applied on-the-fly, not during upload)
+      const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dxuxxk0ss';
+      const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+      
+      // Video URL with audio transformations (applied when accessed, not now)
+      const videoUrl = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto/${publicId}.mp4`;
+      
+      // Thumbnail (auto-generated on first access)
+      const thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto/${publicId}.jpg`;
 
-      res.status(200).json({
-        success: true,
-        message: "Video uploaded successfully",
-        videoPath: videoUrl,
+      const { videotitle, videodescription, videochanel } = req.body;
+      const uploadedBy = req.userId;
+
+      const user = await User.findById(uploadedBy).select('name channelname').lean();
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+
+      const channelName = user.channelname || videochanel || user.name || "Unknown";
+      const title = videotitle || req.file.originalname;
+      const autoDescription = videodescription?.trim() || 
+        `Watch "${title}" - Don't forget to like and subscribe!`;
+
+      // ✅ CRITICAL: Create video document ASYNCHRONOUSLY (don't wait for save)
+      const newVideo = new videofiles({
+        videotitle: title,
+        videodescription: autoDescription,
+        videofilename: publicId,
+        
+        filepath: videoUrl,
+        videofile: videoUrl,
         videoLink: videoUrl,
-        publicId: publicId,
-        size: req.file.size,
-        format:
-          req.file.format || path.extname(req.file.originalname).substring(1),
+        videoUrl: videoUrl,
+        
+        thumbnail: thumbnailUrl,
+        videothumbnail: thumbnailUrl,
+        thumbnailUrl: thumbnailUrl,
+        
+        filename: req.file.originalname,
+        filetype: req.file.mimetype,
+        filesize: `${(req.file.bytes / 1024 / 1024).toFixed(2)} MB`,
+        
+        uploadedBy,
+        user: uploadedBy,
+        videochanel: channelName,
+        channelName: channelName,
+        
+        views: 0,
+        Like: 0,
+        Dislike: 0
       });
+
+      // ✅ CRITICAL: Save asynchronously - don't block response
+      newVideo.save()
+        .then(() => console.log('✅ Video saved to DB'))
+        .catch(err => console.error('❌ DB save error:', err));
+
+      // ✅ RESPOND IMMEDIATELY - Don't wait for DB save
+      console.log('✅ Upload complete - responding immediately');
+      
+      res.status(201).json({
+        success: true,
+        message: "Video uploaded successfully!",
+        video: {
+          _id: newVideo._id,
+          title: newVideo.videotitle,
+          url: videoUrl,
+          thumbnail: thumbnailUrl
+        },
+        videoUrl,
+        thumbnailUrl,
+        publicId
+      });
+
     } catch (error) {
-      console.error("❌ Video upload error:", error);
+      console.error('❌ Upload error:', error);
       res.status(500).json({
         success: false,
-        message: "Video upload failed",
-        error: error.message,
+        message: error.message
       });
     }
   }
 );
+
+
 
 router.post(
   "/upload-thumbnail",

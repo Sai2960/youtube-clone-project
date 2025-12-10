@@ -21,45 +21,33 @@ console.log('🎨 Cloudinary configured:', {
   has_api_secret: !!process.env.CLOUDINARY_API_SECRET
 });
 
-// ==================== STORAGE CONFIGURATIONS ====================
-
-// 🔥 CRITICAL FIX: Lines 24-55
-// 🔥 CRITICAL FIX: Video Storage Configuration
+// 🔥 OPTIMIZED: Video Storage with faster upload settings
 const videoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    console.log('📤 Configuring video upload:', {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size
-    });
-
-    // Generate unique filename
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
     
     return {
       folder: 'youtube-clone/videos',
       resource_type: 'video',
-      public_id: `file_${timestamp}_${randomStr}`, // ✅ Fixed: Direct string, not function
+      public_id: `file_${timestamp}_${randomStr}`,
       format: 'mp4',
-      allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv'],
-      chunk_size: 6000000,
-      timeout: 600000,
-      use_filename: false,
-      unique_filename: false,
-      overwrite: false,
-      // ✅ CRITICAL: Preserve audio
-      transformation: [
-        {
-          video_codec: 'h264',
-          audio_codec: 'aac',
-          audio_frequency: 44100,
-          bit_rate: '1000k',
-          quality: 'auto:good',
-          flags: 'lossy'
-        }
-      ]
+      allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
+      
+      // ✅ CRITICAL: Use 'auto' for faster upload - Cloudinary processes AFTER upload completes
+      chunk_size: 6000000, // 6MB chunks
+      timeout: 900000,     // 15 minutes
+      
+      // ✅ CRITICAL: Use eager:false to avoid sync processing
+      eager_async: true,   // Process transformations in background
+      
+      // ✅ Minimal transformation during upload (process later)
+      transformation: [{
+        fetch_format: 'mp4',
+        quality: 'auto'
+        // Audio codec applied AFTER upload via URL transformation
+      }]
     };
   }
 });

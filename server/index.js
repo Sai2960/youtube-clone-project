@@ -97,17 +97,13 @@ app.use(compression({
   level: 6 // Good balance between speed and compression
 }));
 
-// ✅ Global request timeout (25 seconds)
-// ✅ FIXED: Smart timeout - exempt upload routes
+// ✅ CRITICAL: Smart timeout - LONGER for uploads
 app.use((req, res, next) => {
-  // ✅ CRITICAL: Skip timeout for upload routes
- if (
+  // Upload routes: 15 minute timeout
+  if (
     req.path.includes('/upload') || 
-    req.path.includes('/video/upload') ||
-    req.path.includes('/shorts/upload') ||
     req.method === 'POST' && req.headers['content-type']?.includes('multipart/form-data')
   ) {
-    // ✅ Upload routes: 15 minute timeout (Render free tier needs this)
     req.setTimeout(900000); // 15 minutes
     res.setTimeout(900000);
     console.log('⏱️ Extended timeout for upload:', req.path);
@@ -123,13 +119,12 @@ app.use((req, res, next) => {
       console.error('⏱️ Request timeout:', req.method, req.path);
       res.status(504).json({
         success: false,
-        message: 'Request timeout - server took too long to respond'
+        message: 'Request timeout'
       });
     }
   }, 25000);
   
   res.on('finish', () => clearTimeout(timeout));
-  
   next();
 });
 
