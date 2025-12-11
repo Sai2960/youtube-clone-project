@@ -636,7 +636,7 @@ const Home: NextPage = () => {
 
                         {/* Title */}
                         <h3
-                          className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5"
+                          className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3"
                           style={{
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
@@ -652,7 +652,7 @@ const Home: NextPage = () => {
                         </h3>
 
                         {/* Channel Info */}
-                        <div className="flex items-center gap-2 no-click w-full">
+                        <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
                           {/* Avatar */}
                           <div
                             className="cursor-pointer flex-shrink-0"
@@ -667,7 +667,7 @@ const Home: NextPage = () => {
                                 true
                               )}
                               alt={shortChannelName}
-                              className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                              className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2"
                               onError={(e) => {
                                 e.currentTarget.src =
                                   'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
@@ -676,9 +676,8 @@ const Home: NextPage = () => {
                           </div>
 
                           {/* Channel Name */}
-                          {/* Channel Name */}
                           <span
-                            className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors truncate flex-1 min-w-0"
+                            className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
                             style={{
                               textShadow: "0 1px 2px rgba(0,0,0,0.05)",
                             }}
