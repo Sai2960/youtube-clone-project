@@ -1,3 +1,4 @@
+/* eslint-disable import/no-anonymous-default-export */
 // src/lib/imageUtils.ts - COMPLETE MERGED & FIXED VERSION
 // Combines all features from both implementations
 
