@@ -339,24 +339,23 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-        {/* Channel Info Bar */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6 max-w-7xl mx-auto">
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6 text-sm">
+       {/* Channel Info Bar - MOBILE FIXED */}
+        <div className="block w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="w-full max-w-7xl mx-auto">
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
               {/* Channel Name Display */}
-              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold w-full sm:w-auto">
-                <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-sm sm:text-base truncate">
-                  {channel.channelname || channel.name || "Unknown"}
+              <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                <User className="w-5 h-5 flex-shrink-0" />
+                <span className="text-base truncate">
+                  {channel?.channelname || channel?.name || "Unknown"}
                 </span>
               </div>
 
               {/* Joined Date */}
               <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-xs sm:text-sm whitespace-nowrap">
-                  Joined{" "}
-                  {channel.joinedon
+                <Calendar className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm whitespace-nowrap">
+                  {channel?.joinedon
                     ? new Date(channel.joinedon).toLocaleDateString("en-US", {
                         month: "short",
                         year: "numeric",
@@ -367,17 +366,17 @@ const ChannelPage = () => {
 
               {/* Video Count */}
               <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <Video className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-xs sm:text-sm whitespace-nowrap">
-                  {videos.length} video{videos.length !== 1 ? "s" : ""}
+                <Video className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm whitespace-nowrap">
+                  {videos?.length || 0} video{videos?.length !== 1 ? "s" : ""}
                 </span>
               </div>
 
               {/* Shorts Count */}
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <Film className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-xs sm:text-sm whitespace-nowrap">
-                  {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <Film className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm whitespace-nowrap">
+                  {shorts?.length || 0} short{shorts?.length !== 1 ? "s" : ""}
                 </span>
               </div>
             </div>
