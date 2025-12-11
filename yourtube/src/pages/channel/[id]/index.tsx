@@ -87,13 +87,21 @@ const ChannelPage = () => {
   const [shortsError, setShortsError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"videos" | "shorts">("videos");
   const [contentTab, setContentTab] = useState<"videos" | "shorts">("videos");
- const [refreshKey, setRefreshKey] = useState(0);
+const [refreshKey, setRefreshKey] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+  const [renderKey, setRenderKey] = useState(0); // ✅ NEW: Force re-render
 
   // ✅ Set mounted on client side only
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // ✅ NEW: Force re-render when data changes
+  useEffect(() => {
+    if (channel && videos.length >= 0 && shorts.length >= 0) {
+      setRenderKey(prev => prev + 1);
+    }
+  }, [channel, videos.length, shorts.length]);
   // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
@@ -412,20 +420,21 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-      {/* Channel Info Bar - FORCE RENDER WITH SAFE DEFAULTS */}
-       {/* ✅ Channel Info Bar - FIXED FOR MOBILE */}
-        {isMounted && !loading && channel && (
+       {/* ✅ Channel Info Bar - FORCE RENDER FIX */}
+        {channel && (
           <div 
-            key={`channel-info-${channel._id}`}
+            key={`info-${channel._id}-${videos.length}-${shorts.length}`}
             className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
             style={{ 
-              transform: 'translateZ(0)',
-              willChange: 'transform'
+              transform: 'translate3d(0, 0, 0)',
+              WebkitTransform: 'translate3d(0, 0, 0)',
+              display: 'block',
+              opacity: 1
             }}
           >
             <div className="w-full max-w-7xl mx-auto">
               <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
-                {/* Channel Name Display */}
+                {/* Channel Name */}
                 <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
                   <User className="w-5 h-5 flex-shrink-0" />
                   <span className="text-base truncate">
@@ -446,12 +455,6 @@ const ChannelPage = () => {
                       : "Recently"}
                   </span>
                 </div>
-
-                {/* DEBUG INFO - REMOVE AFTER FIXING */}
-        <div className="bg-red-500 text-white p-2 text-xs">
-          Debug: loading={loading.toString()}, hasChannel={!!channel}, 
-          videos={videos.length}, shorts={shorts.length}
-        </div>
 
                 {/* Video Count */}
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
