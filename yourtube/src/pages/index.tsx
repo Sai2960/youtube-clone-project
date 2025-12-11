@@ -506,6 +506,7 @@ const Home: NextPage = () => {
 
        {/* Shorts Section - YouTube Style */}
 {/* Shorts Section - YouTube Style */}
+{/* Shorts Section - YouTube Style */}
 {shorts.length > 0 && (
   <section className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
     {/* Header */}
@@ -528,9 +529,8 @@ const Home: NextPage = () => {
         {[...Array(6)].map((_, i) => (
           <div 
             key={i} 
-            className="flex-shrink-0"
+            className="flex-shrink-0 w-[160px] lg:w-[200px]"
             style={{ 
-              width: '160px',
               minWidth: '160px'
             }}
           >
@@ -589,9 +589,8 @@ const Home: NextPage = () => {
                     handleShortClick(e, short._id, index);
                   }
                 }}
-                className="cursor-pointer group/short flex-shrink-0"
+                className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px]"
                 style={{
-                  width: '160px',
                   minWidth: '160px'
                 }}
               >
@@ -599,7 +598,7 @@ const Home: NextPage = () => {
                 <div 
                   className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full"
                   style={{
-                    paddingBottom: '177.5%' // 9:16 aspect ratio (16/9 = 1.777...)
+                    paddingBottom: '177.5%'
                   }}
                 >
                   <img
@@ -612,7 +611,7 @@ const Home: NextPage = () => {
                   {/* Bottom Gradient Overlay */}
                   <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-                  {/* 🔥 FIXED: Views Badge with "views" text */}
+                  {/* Views Badge with "views" text */}
                   <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
                       <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
@@ -640,9 +639,7 @@ const Home: NextPage = () => {
                 </h3>
 
                 {/* Channel Info */}
-                <div 
-                  className="flex items-center gap-2 no-click w-full"
-                >
+                <div className="flex items-center gap-2 no-click w-full">
                   {/* Avatar */}
                   <div
                     className="cursor-pointer flex-shrink-0"
@@ -677,16 +674,6 @@ const Home: NextPage = () => {
             );
           })}
         </div>
-
-        {/* 🔥 DESKTOP: Larger cards (200px) */}
-        <style jsx>{`
-          @media (min-width: 1024px) {
-            .group\\/short {
-              width: 200px !important;
-              min-width: 200px !important;
-            }
-          }
-        `}</style>
       </div>
     )}
   </section>
@@ -910,6 +897,7 @@ const Home: NextPage = () => {
 
       <MobileBottomNav />
 
+       {/* 🔥 COMBINED STYLES - SINGLE BLOCK AT THE END */}
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
@@ -922,8 +910,7 @@ const Home: NextPage = () => {
           animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         @keyframes pulse {
-          0%,
-          100% {
+          0%, 100% {
             opacity: 1;
           }
           50% {
