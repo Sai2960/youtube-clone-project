@@ -564,96 +564,84 @@ const Home: NextPage = () => {
   onTouchMove={handleShortsScrollTouchMove}
   onTouchEnd={handleShortsScrollTouchEnd}
 >
-  {shorts.slice(0, 12).map((short, index) => {
-    const shortAvatar = getShortAvatar(short);
-    const shortChannelName = getShortChannelName(short);
+{shorts.slice(0, 12).map((short, index) => {
+  const shortAvatar = getShortAvatar(short);
+  const shortChannelName = getShortChannelName(short);
 
-    return (
-      <div
-        key={short._id}
-        onClick={(e) => {
-          if (!(e.target as HTMLElement).closest(".channel-info")) {
-            handleShortClick(e, short._id, index);
-          }
-        }}
-        className="flex-shrink-0 w-[120px] cursor-pointer group/short lg:w-[200px]"
-      >
-        {/* Thumbnail */}
-        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 border border-transparent lg:border-gray-200 dark:lg:border-gray-700">
-          <img
-            src={short.thumbnailUrl}
-            alt={short.title}
-            className="w-full h-full object-cover group-hover/short:scale-110 transition-transform duration-500"
-            loading="lazy"
-          />
+  return (
+    <div
+      key={short._id}
+      onClick={(e) => {
+        if (!(e.target as HTMLElement).closest(".channel-info-wrapper")) {
+          handleShortClick(e, short._id, index);
+        }
+      }}
+      className="flex-shrink-0 w-[120px] cursor-pointer group/short lg:w-[200px]"
+    >
+      {/* Thumbnail */}
+      <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 border border-transparent lg:border-gray-200 dark:lg:border-gray-700">
+        <img
+          src={short.thumbnailUrl}
+          alt={short.title}
+          className="w-full h-full object-cover group-hover/short:scale-110 transition-transform duration-500"
+          loading="lazy"
+        />
 
-          {/* Desktop hover effect */}
-          <div className="hidden lg:flex absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/short:opacity-100 transition-all duration-300 items-center justify-center">
-            <div className="bg-white/30 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover/short:scale-100 transition-transform duration-300">
-              <Play size={32} className="text-white" fill="white" />
-            </div>
-          </div>
-
-          {/* Mobile gradient */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
-
-          {/* Views count */}
-          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white lg:rounded-lg lg:px-3 lg:py-1.5 lg:bottom-3 lg:left-3">
-            {formatViewsShort(short.views)} views
+        {/* Desktop hover effect */}
+        <div className="hidden lg:flex absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/short:opacity-100 transition-all duration-300 items-center justify-center">
+          <div className="bg-white/30 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover/short:scale-100 transition-transform duration-300">
+            <Play size={32} className="text-white" fill="white" />
           </div>
         </div>
 
-        {/* Title - 2 lines max */}
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1.5 leading-tight lg:text-[15px] lg:group-hover/short:text-red-500 lg:transition-colors lg:leading-snug">
-          {short.title}
-        </h3>
+        {/* Mobile gradient */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
 
-        {/* 🔥 FIXED: Channel info with PROPER truncation */}
-        <div 
-          className="channel-info flex items-center gap-1.5 w-full"
-          onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/channel/${short.userId?._id}`);
-          }}
-        >
-          {/* Avatar - Fixed 20px */}
-          <div className="flex-shrink-0">
-            <img
-              key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
-              src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
-              alt={shortChannelName}
-              className="w-5 h-5 rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all cursor-pointer"
-              crossOrigin="anonymous"
-              loading="eager"
-              onError={(e) => {
-                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-              }}
-            />
-          </div>
-
-          {/* 🔥 CRITICAL FIX: Proper text truncation with explicit width calculation */}
-          <div 
-            className="flex-1 min-w-0"
-            style={{ 
-              maxWidth: 'calc(100% - 26px)' // 120px container - 20px avatar - 6px gap = 94px
-            }}
-          >
-            <p 
-              className="text-xs text-gray-600 dark:text-gray-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer overflow-hidden whitespace-nowrap"
-              style={{
-                textOverflow: 'ellipsis',
-                display: 'block',
-                width: '100%'
-              }}
-              title={shortChannelName}
-            >
-              {shortChannelName}
-            </p>
-          </div>
+        {/* Views count */}
+        <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white lg:rounded-lg lg:px-3 lg:py-1.5 lg:bottom-3 lg:left-3">
+          {formatViewsShort(short.views)} views
         </div>
       </div>
-    );
-  })}
+
+      {/* Title - 2 lines max */}
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1.5 leading-tight lg:text-[15px] lg:group-hover/short:text-red-500 lg:transition-colors lg:leading-snug">
+        {short.title}
+      </h3>
+
+      {/* 🔥 FIXED: Channel info - PROPER FLEX ROW LAYOUT */}
+      <div 
+        className="channel-info-wrapper flex flex-row items-center gap-1.5 w-full overflow-hidden"
+        onClick={(e) => {
+          e.stopPropagation();
+          router.push(`/channel/${short.userId?._id}`);
+        }}
+      >
+        {/* Avatar - Fixed size, no shrink */}
+        <div className="flex-shrink-0 w-5 h-5">
+          <img
+            key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
+            src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
+            alt={shortChannelName}
+            className="w-full h-full rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all cursor-pointer"
+            crossOrigin="anonymous"
+            loading="eager"
+            onError={(e) => {
+              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+            }}
+          />
+        </div>
+
+        {/* Channel Name - Truncated with ellipsis */}
+        <span 
+          className="text-xs text-gray-600 dark:text-gray-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer truncate block flex-1 min-w-0"
+          title={shortChannelName}
+        >
+          {shortChannelName}
+        </span>
+      </div>
+    </div>
+  );
+})}
 </div>
               </div>
             )}
