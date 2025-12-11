@@ -11528,12 +11528,30 @@ button {
   animation: slideUp 0.3s ease-out;
 }
 
+/* CRITICAL: Force single-line truncation for shorts channel names */
+.avatar-link {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
 /* Mobile-specific fixes */
 @media (max-width: 768px) {
   /* Ensure avatars don't shrink */
   img[alt*="Channel"], img[alt*="channel"] {
-    min-width: 36px !important;
-    min-height: 36px !important;
+    min-width: 20px !important;
+    max-width: 20px !important;
+    min-height: 20px !important;
+    max-height: 20px !important;
+  }
+  
+  /* Force single line for channel names in shorts */
+  .avatar-link p,
+  .avatar-link span {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
   }
   
   /* Better text truncation on small screens */
