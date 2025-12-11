@@ -564,7 +564,7 @@ const Home: NextPage = () => {
   onTouchMove={handleShortsScrollTouchMove}
   onTouchEnd={handleShortsScrollTouchEnd}
 >
-                 {shorts.slice(0, 12).map((short, index) => {
+  {shorts.slice(0, 12).map((short, index) => {
     const shortAvatar = getShortAvatar(short);
     const shortChannelName = getShortChannelName(short);
 
@@ -578,7 +578,7 @@ const Home: NextPage = () => {
         }}
         className="flex-shrink-0 w-[120px] cursor-pointer group/short lg:w-[200px]"
       >
-                          {/* Thumbnail */}
+        {/* Thumbnail */}
         <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 border border-transparent lg:border-gray-200 dark:lg:border-gray-700">
           <img
             src={short.thumbnailUrl}
@@ -608,51 +608,58 @@ const Home: NextPage = () => {
           {short.title}
         </h3>
 
-                    {/* ✅ CRITICAL FIX: Channel info - SINGLE LINE ONLY */}
-        <div className="flex items-center gap-1.5 min-w-0 w-full overflow-hidden">
-          <img
-            key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
-            src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
-            alt={shortChannelName}
-            className="w-5 h-5 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
-            crossOrigin="anonymous"
-            loading="eager"
-            style={{
-              display: "block",
-              minWidth: "20px",
-              minHeight: "20px",
-              maxWidth: "20px",
-              maxHeight: "20px",
-            }}
+        {/* 🔥 CRITICAL FIX: Channel info with proper constraints */}
+        <div className="flex items-center gap-1.5 w-full min-w-0">
+          {/* Avatar - FIXED SIZE */}
+          <div
+            className="flex-shrink-0 cursor-pointer"
+            style={{ width: '20px', height: '20px' }}
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/channel/${short.userId?._id}`);
-            }}
-            onError={(e) => {
-              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-              e.currentTarget.style.display = "block";
-            }}
-          />
-          <span
-            className="text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 flex-1 min-w-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/channel/${short.userId?._id}`);
-            }}
-            style={{
-              display: "block",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
             }}
           >
-            {shortChannelName}
-          </span>
+            <img
+              key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
+              src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
+              alt={shortChannelName}
+              className="w-full h-full rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all"
+              crossOrigin="anonymous"
+              loading="eager"
+              style={{
+                width: '20px',
+                height: '20px',
+                minWidth: '20px',
+                minHeight: '20px',
+                maxWidth: '20px',
+                maxHeight: '20px',
+                display: 'block'
+              }}
+              onError={(e) => {
+                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+              }}
+            />
+          </div>
+
+          {/* Channel Name - PROPER TRUNCATION */}
+          <div 
+            className="flex-1 min-w-0 overflow-hidden"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/channel/${short.userId?._id}`);
+            }}
+          >
+            <span className="block text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate w-full">
+              {shortChannelName}
+            </span>
+          </div>
         </div>
       </div>
     );
   })}
 </div>
+
+
               </div>
             )}
           </section>
