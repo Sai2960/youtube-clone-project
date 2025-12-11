@@ -557,7 +557,7 @@ const Home: NextPage = () => {
                   />
                 </button>
 
-            <div
+          <div
   ref={shortsScrollRef}
   className="flex gap-2 px-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2 lg:gap-4 lg:px-6"
   onTouchStart={handleShortsScrollTouchStart}
@@ -576,12 +576,11 @@ const Home: NextPage = () => {
             handleShortClick(e, short._id, index);
           }
         }}
-        // 🔥 CRITICAL: Fixed width with max-width constraint
-        className="flex-shrink-0 cursor-pointer group/short"
-        style={{ width: '120px', maxWidth: '120px' }}
+        className="flex-shrink-0 cursor-pointer group/short w-[120px] lg:w-[200px]"
+        style={{ minWidth: '120px', maxWidth: '120px' }}
       >
         {/* Thumbnail */}
-        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2">
+        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 w-full">
           <img
             src={short.thumbnailUrl}
             alt={short.title}
@@ -593,14 +592,14 @@ const Home: NextPage = () => {
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
 
           {/* Views badge */}
-          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white">
+          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white whitespace-nowrap">
             {formatViewsShort(short.views)} views
           </div>
         </div>
 
-        {/* Title - Max 2 lines */}
+        {/* Title - Max 2 lines with proper wrapping */}
         <h3 
-          className="text-sm font-semibold text-gray-900 dark:text-white mb-1.5 leading-tight"
+          className="text-sm font-semibold text-gray-900 dark:text-white mb-1.5 leading-tight w-full"
           style={{
             display: '-webkit-box',
             WebkitLineClamp: 2,
@@ -608,67 +607,39 @@ const Home: NextPage = () => {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             wordBreak: 'break-word',
-            maxWidth: '120px'
+            minHeight: '2.5rem'
           }}
         >
           {short.title}
         </h3>
 
-        {/* 🔥 CRITICAL FIX: Channel Info - Single Line Only */}
-        <div 
-          className="flex items-center gap-1.5"
-          style={{ 
-            width: '120px',
-            maxWidth: '120px',
-            minWidth: '120px'
-          }}
-        >
-          {/* Avatar Container - Fixed 18px */}
+        {/* Channel Info - Single Line */}
+        <div className="flex items-center gap-1.5 w-full overflow-hidden">
+          {/* Avatar - Fixed size */}
           <div
             className="flex-shrink-0 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/channel/${short.userId?._id}`);
             }}
-            style={{ 
-              width: '18px', 
-              height: '18px',
-              minWidth: '18px',
-              minHeight: '18px',
-              flexShrink: 0
-            }}
           >
             <img
               key={`short-avatar-${short._id}-${Date.now()}`}
               src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
               alt={shortChannelName}
-              className="rounded-full object-cover border border-gray-200 dark:border-gray-700"
-              style={{
-                width: '18px',
-                height: '18px',
-                display: 'block'
-              }}
+              className="w-[18px] h-[18px] rounded-full object-cover border border-gray-200 dark:border-gray-700"
               onError={(e) => {
                 e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
               }}
             />
           </div>
 
-          {/* Channel Name - Truncated text */}
+          {/* Channel Name - Truncated */}
           <span
-            className="text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate flex-1 min-w-0"
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/channel/${short.userId?._id}`);
-            }}
-            style={{
-              flex: '1 1 auto',
-              minWidth: 0,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              display: 'block',
-              maxWidth: 'calc(120px - 18px - 6px)' // Card width - avatar - gap
             }}
           >
             {shortChannelName}
