@@ -608,32 +608,47 @@ const Home: NextPage = () => {
         {short.title}
       </h3>
 
-      {/* 🔥 FIXED: Channel info - PROPER FLEX ROW LAYOUT */}
+      {/* 🔥 GUARANTEED FIX: Channel info with INLINE CSS */}
       <div 
-        className="channel-info-wrapper flex flex-row items-center gap-1.5 w-full overflow-hidden"
+        className="channel-info-wrapper flex items-center gap-1.5 cursor-pointer"
+        style={{ width: '100%' }}
         onClick={(e) => {
           e.stopPropagation();
           router.push(`/channel/${short.userId?._id}`);
         }}
       >
-        {/* Avatar - Fixed size, no shrink */}
-        <div className="flex-shrink-0 w-5 h-5">
-          <img
-            key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
-            src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
-            alt={shortChannelName}
-            className="w-full h-full rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all cursor-pointer"
-            crossOrigin="anonymous"
-            loading="eager"
-            onError={(e) => {
-              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-            }}
-          />
-        </div>
+        {/* Avatar - Fixed 20px */}
+        <img
+          key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
+          src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
+          alt={shortChannelName}
+          className="rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all"
+          style={{
+            width: '20px',
+            height: '20px',
+            minWidth: '20px',
+            minHeight: '20px',
+            flexShrink: 0
+          }}
+          crossOrigin="anonymous"
+          loading="eager"
+          onError={(e) => {
+            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+          }}
+        />
 
-        {/* Channel Name - Truncated with ellipsis */}
+        {/* 🔥 CRITICAL: Channel Name with EXPLICIT width */}
         <span 
-          className="text-xs text-gray-600 dark:text-gray-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer truncate block flex-1 min-w-0"
+          className="text-xs text-gray-600 dark:text-gray-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          style={{
+            display: 'block',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            width: 'calc(100% - 26px)', // 120px - 20px avatar - 6px gap
+            minWidth: 0,
+            maxWidth: '94px' // Explicit max width for mobile
+          }}
           title={shortChannelName}
         >
           {shortChannelName}
