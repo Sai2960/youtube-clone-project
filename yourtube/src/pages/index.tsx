@@ -608,51 +608,70 @@ const Home: NextPage = () => {
         {short.title}
       </h3>
 
-      {/* 🔥 GUARANTEED FIX: Channel info with INLINE CSS */}
+      {/* 🔥 NUCLEAR FIX: Pure inline CSS, zero Tailwind classes for truncation */}
       <div 
-        className="channel-info-wrapper flex items-center gap-1.5 cursor-pointer"
-        style={{ width: '100%' }}
         onClick={(e) => {
           e.stopPropagation();
           router.push(`/channel/${short.userId?._id}`);
         }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          width: '100%',
+          cursor: 'pointer'
+        }}
       >
-        {/* Avatar - Fixed 20px */}
+        {/* Avatar */}
         <img
           key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
           src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
           alt={shortChannelName}
-          className="rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all"
-          style={{
-            width: '20px',
-            height: '20px',
-            minWidth: '20px',
-            minHeight: '20px',
-            flexShrink: 0
-          }}
           crossOrigin="anonymous"
           loading="eager"
           onError={(e) => {
             e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
           }}
+          style={{
+            width: '20px',
+            height: '20px',
+            minWidth: '20px',
+            minHeight: '20px',
+            flexShrink: 0,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: '1px solid #e5e7eb',
+            backgroundColor: '#f3f4f6',
+            transition: 'all 0.2s'
+          }}
         />
 
-        {/* 🔥 CRITICAL: Channel Name with EXPLICIT width */}
-        <span 
-          className="text-xs text-gray-600 dark:text-gray-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+        {/* Channel Name - PURE CSS TRUNCATION */}
+        <div
+          title={shortChannelName}
           style={{
-            display: 'block',
+            fontSize: '12px',
+            fontWeight: 500,
+            color: '#6b7280',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            width: 'calc(100% - 26px)', // 120px - 20px avatar - 6px gap
+            display: 'block',
+            flex: '1 1 0%',
             minWidth: 0,
-            maxWidth: '94px' // Explicit max width for mobile
+            maxWidth: '94px',
+            lineHeight: '1.2',
+            transition: 'color 0.2s'
           }}
-          title={shortChannelName}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#2563eb';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#6b7280';
+          }}
         >
           {shortChannelName}
-        </span>
+        </div>
       </div>
     </div>
   );
