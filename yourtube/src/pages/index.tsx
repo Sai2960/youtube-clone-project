@@ -505,6 +505,7 @@ const Home: NextPage = () => {
         )}
 
        {/* Shorts Section - YouTube Style */}
+{/* Shorts Section - YouTube Style */}
 {shorts.length > 0 && (
   <section className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
     {/* Header */}
@@ -527,15 +528,15 @@ const Home: NextPage = () => {
         {[...Array(6)].map((_, i) => (
           <div 
             key={i} 
+            className="flex-shrink-0"
             style={{ 
-              flex: '0 0 160px',
               width: '160px',
               minWidth: '160px'
             }}
           >
             <div 
               className="bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-2"
-              style={{ width: '160px', height: '284px' }}
+              style={{ width: '100%', paddingBottom: '177.5%' }}
             />
             <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-2" />
             <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton w-3/4" />
@@ -588,48 +589,44 @@ const Home: NextPage = () => {
                     handleShortClick(e, short._id, index);
                   }
                 }}
-                className="cursor-pointer group/short"
+                className="cursor-pointer group/short flex-shrink-0"
                 style={{
-                  flex: '0 0 160px',
                   width: '160px',
-                  minWidth: '160px',
-                  maxWidth: '160px'
+                  minWidth: '160px'
                 }}
               >
                 {/* Thumbnail Card */}
                 <div 
-                  className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md"
+                  className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full"
                   style={{
-                    width: '160px',
-                    height: '284px'
+                    paddingBottom: '177.5%' // 9:16 aspect ratio (16/9 = 1.777...)
                   }}
                 >
                   <img
                     src={short.thumbnailUrl}
                     alt={short.title}
-                    className="w-full h-full object-cover group-hover/short:scale-105 transition-transform duration-300"
+                    className="absolute inset-0 w-full h-full object-cover group-hover/short:scale-105 transition-transform duration-300"
                     loading="lazy"
                   />
 
                   {/* Bottom Gradient Overlay */}
                   <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-                  {/* Views Badge */}
+                  {/* 🔥 FIXED: Views Badge with "views" text */}
                   <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
                       <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
                     </svg>
-                    <span className="text-xs font-bold text-white">
-                      {formatViewsShort(short.views)}
+                    <span className="text-xs font-bold text-white whitespace-nowrap">
+                      {formatViewsShort(short.views)} views
                     </span>
                   </div>
                 </div>
 
                 {/* Title */}
                 <h3 
-                  className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2"
+                  className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full"
                   style={{
-                    width: '160px',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
@@ -644,8 +641,7 @@ const Home: NextPage = () => {
 
                 {/* Channel Info */}
                 <div 
-                  className="flex items-center gap-2 no-click"
-                  style={{ width: '160px' }}
+                  className="flex items-center gap-2 no-click w-full"
                 >
                   {/* Avatar */}
                   <div
@@ -665,7 +661,7 @@ const Home: NextPage = () => {
                     />
                   </div>
 
-                  {/* Channel Name - THE KEY FIX */}
+                  {/* Channel Name */}
                   <span
                     className="text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors truncate flex-1 min-w-0"
                     onClick={(e) => {
@@ -681,6 +677,16 @@ const Home: NextPage = () => {
             );
           })}
         </div>
+
+        {/* 🔥 DESKTOP: Larger cards (200px) */}
+        <style jsx>{`
+          @media (min-width: 1024px) {
+            .group\\/short {
+              width: 200px !important;
+              min-width: 200px !important;
+            }
+          }
+        `}</style>
       </div>
     )}
   </section>
