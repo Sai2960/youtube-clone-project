@@ -69,10 +69,9 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
 
     console.log('📥 Starting download:', { videoId, quality, userId: user._id });
 
-    // ✅ FIX: Use correct backend URL
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://youtube-clone-project-q3pd.onrender.com';
     
-    // ✅ CRITICAL: Record download with audio quality parameter
+    // ✅ Record download
     const recordResponse = await fetch(`${backendUrl}/api/download/video/${videoId}`, {
       method: 'POST',
       headers: {
@@ -82,37 +81,25 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
       body: JSON.stringify({
         userId: user._id,
         quality: quality || '480p',
-        withAudio: true, // ✅ NEW: Explicitly request audio
       })
     });
 
     const data = await recordResponse.json();
-    console.log('✅ Download record response:', data);
 
     if (!data.success) {
       throw new Error(data.message || 'Download authorization failed');
     }
 
-    // Get stream URL with audio transformations
     const { streamUrl, downloadFilename } = data.download;
+    const fullStreamUrl = `${backendUrl}${streamUrl}`;
     
-    // ✅ CRITICAL: Build audio-enabled stream URL
-    let fullStreamUrl = `${backendUrl}${streamUrl}`;
-    
-    // Add audio parameters if not already present
-    if (!fullStreamUrl.includes('withAudio')) {
-      fullStreamUrl += fullStreamUrl.includes('?') ? '&withAudio=true' : '?withAudio=true';
-    }
-    
-    console.log('📥 Downloading from (with audio):', fullStreamUrl);
+    console.log('📥 Downloading original file:', fullStreamUrl);
 
-    // ✅ Trigger download with proper MIME type
+    // ✅ Trigger download
     const link = document.createElement('a');
     link.href = fullStreamUrl;
     link.download = downloadFilename;
     link.style.display = 'none';
-    link.target = '_blank';
-    link.type = 'video/mp4'; // ✅ Explicit MIME type
     
     document.body.appendChild(link);
     link.click();
@@ -125,23 +112,14 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
     
   } catch (error: any) {
     console.error('❌ Download error:', error);
-
-    if (error.response?.status === 403 || error.response?.data?.needsPremium) {
-      setShowUpgradePrompt(true);
-    } else if (error.response?.status === 404) {
-      setError('Video not found or has been removed');
-    } else {
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Download failed. Please try again.';
-      setError(errorMessage);
-    }
-    
+    setError(error.message || 'Download failed');
     setTimeout(() => setError(null), 5000);
   } finally {
     setDownloading(false);
   }
 };
+
+
 
   const handleUpgrade = () => (window.location.href = "/premium");
 
