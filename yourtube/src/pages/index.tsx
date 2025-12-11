@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/pages/index.tsx - COMPLETE FIXED VERSION (NO NESTED LINKS)
+// src/pages/index.tsx - COMPLETE FIXED VERSION
 
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
@@ -15,8 +15,7 @@ import {
   getShortAvatar,
   getShortChannelName,
 } from "@/lib/imageUtils";
-import { VideoGridSkeleton } from "@/components/VideoSkeleton";
-// Line ~10 - ADD this import
+// Line ~10 - Import helper
 import { getThumbnailUrl as getThumbnailUrlHelper } from "@/lib/urlHelper";
 
 interface Video {
@@ -61,28 +60,6 @@ interface Short {
   };
 }
 
-// Dynamic API URL based on hostname
-const getApiUrl = () => {
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `http://${hostname}:5000`;
-    }
-  }
-  return process.env.NEXT_PUBLIC_API_URL || "http://192.168.0.181:5000";
-};
-
-// Dynamic backend URL based on hostname
-const getBackendUrl = () => {
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `http://${hostname}:5000`;
-    }
-  }
-  return process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.0.181:5000";
-};
-
 const Home: NextPage = () => {
   const router = useRouter();
   const [videos, setVideos] = useState<Video[]>([]);
@@ -105,7 +82,7 @@ const Home: NextPage = () => {
     fetchVideos();
     fetchShorts();
 
-    // ✅ CRITICAL FIX: Refresh on window focus
+    // ✅ Refresh on window focus
     const handleFocus = () => {
       console.log("🔄 Window focused - refreshing data");
       fetchVideos();
@@ -135,7 +112,7 @@ const Home: NextPage = () => {
       setLoadingVideos(true);
       console.log("📹 Fetching videos...");
 
-      // ✅ CRITICAL FIX: Add timestamp to prevent caching
+      // ✅ Add timestamp to prevent caching
       const res = await axiosInstance.get("/video/getall", {
         params: { _t: Date.now() },
       });
@@ -217,12 +194,6 @@ const Home: NextPage = () => {
     const loadVideos = async () => {
       try {
         const response = await axiosInstance.get("/video/getall");
-        console.log("📊 Videos loaded:", {
-          total: response.data.videos?.length,
-          success: response.data.success,
-          firstVideo: response.data.videos?.[0],
-        });
-
         if (response.data.success && response.data.videos) {
           setVideos(response.data.videos);
         }
@@ -287,7 +258,6 @@ const Home: NextPage = () => {
     return "Just now";
   };
 
-  // REPLACE lines 54-68 (the getVideoUrl function) with:
   const getVideoUrl = (video: Video) => {
     const backend = "https://youtube-clone-project-q3pd.onrender.com";
 
@@ -312,54 +282,35 @@ const Home: NextPage = () => {
 
     return "/video/vdo.mp4";
   };
+
   const getThumbnailUrl = (video: Video) => {
     // ✅ Priority 1: Use helper function first
     const helperThumbnail = getThumbnailUrlHelper(video);
     if (helperThumbnail && !helperThumbnail.includes("placeholder")) {
-      console.log(
-        "✅ Thumbnail from helper:",
-        helperThumbnail.substring(0, 60)
-      );
       return helperThumbnail;
     }
 
     // ✅ Priority 2: Check explicit thumbnail fields
     if (video?.thumbnailUrl) {
-      if (video.thumbnailUrl.startsWith("http")) {
-        console.log(
-          "✅ Using video.thumbnailUrl:",
-          video.thumbnailUrl.substring(0, 60)
-        );
-        return video.thumbnailUrl;
-      }
+      if (video.thumbnailUrl.startsWith("http")) return video.thumbnailUrl;
       const backend = "https://youtube-clone-project-q3pd.onrender.com";
       return `${backend}${video.thumbnailUrl}`;
     }
 
     if (video?.thumbnail) {
-      if (video.thumbnail.startsWith("http")) {
-        console.log(
-          "✅ Using video.thumbnail:",
-          video.thumbnail.substring(0, 60)
-        );
-        return video.thumbnail;
-      }
+      if (video.thumbnail.startsWith("http")) return video.thumbnail;
       const backend = "https://youtube-clone-project-q3pd.onrender.com";
       return `${backend}${video.thumbnail}`;
     }
 
     if (video?.videothumbnail) {
-      if (video.videothumbnail.startsWith("http")) {
-        return video.videothumbnail;
-      }
+      if (video.videothumbnail.startsWith("http")) return video.videothumbnail;
       const backend = "https://youtube-clone-project-q3pd.onrender.com";
       return `${backend}${video.videothumbnail}`;
     }
 
     if (video?.videothumb) {
-      if (video.videothumb.startsWith("http")) {
-        return video.videothumb;
-      }
+      if (video.videothumb.startsWith("http")) return video.videothumb;
       const backend = "https://youtube-clone-project-q3pd.onrender.com";
       return `${backend}${video.videothumb}`;
     }
@@ -390,11 +341,6 @@ const Home: NextPage = () => {
               /\.(mp4|mov|avi|mkv|webm)$/i,
               ".jpg"
             );
-
-          console.log(
-            "🖼️ Generated thumbnail from video:",
-            generatedThumbnail.substring(0, 80)
-          );
           return generatedThumbnail;
         }
       } catch (error) {
@@ -403,7 +349,6 @@ const Home: NextPage = () => {
     }
 
     // ✅ Fallback
-    console.warn("⚠️ No thumbnail available for video:", video?._id);
     return "/placeholder-thumbnail.jpg";
   };
 
@@ -558,108 +503,118 @@ const Home: NextPage = () => {
                 </button>
 
                 <div
-  ref={shortsScrollRef}
-  className="flex gap-2 px-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2 lg:gap-4 lg:px-6"
-  onTouchStart={handleShortsScrollTouchStart}
-  onTouchMove={handleShortsScrollTouchMove}
-  onTouchEnd={handleShortsScrollTouchEnd}
->
-  {shorts.slice(0, 12).map((short, index) => {
-    const shortAvatar = getShortAvatar(short);
-    const shortChannelName = getShortChannelName(short);
+                  ref={shortsScrollRef}
+                  className="flex gap-2 px-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2 lg:gap-4 lg:px-6"
+                  onTouchStart={handleShortsScrollTouchStart}
+                  onTouchMove={handleShortsScrollTouchMove}
+                  onTouchEnd={handleShortsScrollTouchEnd}
+                >
+                  {shorts.slice(0, 12).map((short, index) => {
+                    const shortAvatar = getShortAvatar(short);
+                    const shortChannelName = getShortChannelName(short);
 
-    return (
-      <div
-        key={short._id}
-        onClick={(e) => {
-          if (!(e.target as HTMLElement).closest(".avatar-link")) {
-            handleShortClick(e, short._id, index);
-          }
-        }}
-        className="flex-shrink-0 w-[120px] cursor-pointer group/short lg:w-[200px]"
-      >
-        {/* Thumbnail */}
-        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 border border-transparent lg:border-gray-200 dark:lg:border-gray-700">
-          <img
-            src={short.thumbnailUrl}
-            alt={short.title}
-            className="w-full h-full object-cover group-hover/short:scale-110 transition-transform duration-500"
-            loading="lazy"
-          />
+                    return (
+                      <div
+                        key={short._id}
+                        onClick={(e) => {
+                          if (
+                            !(e.target as HTMLElement).closest(".avatar-link")
+                          ) {
+                            handleShortClick(e, short._id, index);
+                          }
+                        }}
+                        className="flex-shrink-0 w-[120px] cursor-pointer group/short lg:w-[200px]"
+                      >
+                        {/* Thumbnail */}
+                        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 border border-transparent lg:border-gray-200 dark:lg:border-gray-700">
+                          <img
+                            src={short.thumbnailUrl}
+                            alt={short.title}
+                            className="w-full h-full object-cover group-hover/short:scale-110 transition-transform duration-500"
+                            loading="lazy"
+                          />
 
-          {/* Desktop hover effect */}
-          <div className="hidden lg:flex absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/short:opacity-100 transition-all duration-300 items-center justify-center">
-            <div className="bg-white/30 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover/short:scale-100 transition-transform duration-300">
-              <Play size={32} className="text-white" fill="white" />
-            </div>
-          </div>
+                          {/* Desktop hover effect */}
+                          <div className="hidden lg:flex absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/short:opacity-100 transition-all duration-300 items-center justify-center">
+                            <div className="bg-white/30 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover/short:scale-100 transition-transform duration-300">
+                              <Play
+                                size={32}
+                                className="text-white"
+                                fill="white"
+                              />
+                            </div>
+                          </div>
 
-          {/* Mobile gradient */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
+                          {/* Mobile gradient */}
+                          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
 
-          {/* Views count */}
-          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white lg:rounded-lg lg:px-3 lg:py-1.5 lg:bottom-3 lg:left-3">
-            {formatViewsShort(short.views)} views
-          </div>
-        </div>
+                          {/* Views count */}
+                          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white lg:rounded-lg lg:px-3 lg:py-1.5 lg:bottom-3 lg:left-3">
+                            {formatViewsShort(short.views)} views
+                          </div>
+                        </div>
 
-        {/* Title - 2 lines max */}
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1.5 leading-tight lg:text-[15px] lg:group-hover/short:text-red-500 lg:transition-colors lg:leading-snug">
-          {short.title}
-        </h3>
+                        {/* Title - 2 lines max */}
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1.5 leading-tight lg:text-[15px] lg:group-hover/short:text-red-500 lg:transition-colors lg:leading-snug">
+                          {short.title}
+                        </h3>
 
-        {/* 🔥 CRITICAL FIX: Channel info with proper constraints */}
-        <div className="flex items-center gap-1.5 w-full min-w-0">
-          {/* Avatar - FIXED SIZE */}
-          <div
-            className="flex-shrink-0 cursor-pointer"
-            style={{ width: '20px', height: '20px' }}
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/channel/${short.userId?._id}`);
-            }}
-          >
-            <img
-              key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
-              src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
-              alt={shortChannelName}
-              className="w-full h-full rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all"
-              crossOrigin="anonymous"
-              loading="eager"
-              style={{
-                width: '20px',
-                height: '20px',
-                minWidth: '20px',
-                minHeight: '20px',
-                maxWidth: '20px',
-                maxHeight: '20px',
-                display: 'block'
-              }}
-              onError={(e) => {
-                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-              }}
-            />
-          </div>
+                        {/* 🔥 CRITICAL FIX: Channel info with proper constraints */}
+                        <div className="flex items-center gap-1.5 w-full min-w-0">
+                          {/* Avatar - FIXED SIZE INCREASED FOR MOBILE */}
+                          <div
+                            className="flex-shrink-0 cursor-pointer"
+                            style={{ width: "24px", height: "24px" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/channel/${short.userId?._id}`);
+                            }}
+                          >
+                            <img
+                              key={`short-avatar-${short._id}-${
+                                short.userId?._id || "unknown"
+                              }-${Date.now()}`}
+                              src={getImageUrl(
+                                short.userId?.image || short.userId?.avatar,
+                                true
+                              )}
+                              alt={shortChannelName}
+                              className="w-full h-full rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all"
+                              crossOrigin="anonymous"
+                              loading="eager"
+                              style={{
+                                width: "24px",
+                                height: "24px",
+                                minWidth: "24px",
+                                minHeight: "24px",
+                                maxWidth: "24px",
+                                maxHeight: "24px",
+                                display: "block",
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.src =
+                                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+                              }}
+                            />
+                          </div>
 
-          {/* Channel Name - PROPER TRUNCATION */}
-          <div 
-            className="flex-1 min-w-0 overflow-hidden"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/channel/${short.userId?._id}`);
-            }}
-          >
-            <span className="block text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate w-full">
-              {shortChannelName}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
-
-
+                          {/* Channel Name - PROPER TRUNCATION */}
+                          <div
+                            className="flex-1 min-w-0 overflow-hidden"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/channel/${short.userId?._id}`);
+                            }}
+                          >
+                            <span className="block text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate w-full">
+                              {shortChannelName}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </section>
@@ -684,99 +639,115 @@ const Home: NextPage = () => {
             </div>
           ) : videos.length > 0 ? (
             <div className="space-y-4 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
-            {videos.slice(0, 12).map((video) => {
-  const channelName =
-    video.uploadedBy?.channelname ||
-    video.uploadedBy?.name ||
-    video?.videochanel ||
-    "Unknown Channel";
-  const channelInitial = channelName[0]?.toUpperCase() || "U";
+              {videos.slice(0, 12).map((video) => {
+                const channelName =
+                  video.uploadedBy?.channelname ||
+                  video.uploadedBy?.name ||
+                  video?.videochanel ||
+                  "Unknown Channel";
+                const channelInitial = channelName[0]?.toUpperCase() || "U";
 
-  return (
-    <div key={video._id} className="block group">
-      {/* Video Thumbnail */}
-      <Link href={`/watch/${video._id}`} className="block mb-3">
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
-          <video
-            src={getVideoUrl(video)}
-            className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-            preload="metadata"
-            poster={getThumbnailUrl(video)}
-          />
-          {video?.duration && (
-            <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
-              {video.duration}
-            </div>
-          )}
-        </div>
-      </Link>
+                return (
+                  <div key={video._id} className="block group">
+                    {/* Video Thumbnail */}
+                    <Link href={`/watch/${video._id}`} className="block mb-3">
+                      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
+                        {/* ✅ FIX: Replaced <video> with <img> for mobile performance */}
+                        <img
+                          src={getThumbnailUrl(video)}
+                          alt={video.videotitle || "Video thumbnail"}
+                          className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.src = "/placeholder-thumbnail.jpg";
+                          }}
+                        />
+                        {video?.duration && (
+                          <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
+                            {video.duration}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
 
-      {/* ✅ FIXED: Video Info with proper mobile constraints */}
-      <div className="flex gap-2.5 min-w-0">
-        {/* Avatar - Fixed sizing */}
-        <div
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            router.push(`/channel/${video.uploadedBy?._id || "unknown"}`);
-          }}
-          className="flex-shrink-0 cursor-pointer"
-        >
-          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-            {/* Fallback */}
-            <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
-              {channelInitial}
-            </div>
-            {/* Avatar Image */}
-            <img
-              key={`video-avatar-${video._id}-${imageKeys[video.uploadedBy?._id || ""] || Date.now()}`}
-              src={getImageUrl(video.uploadedBy?.image, true)}
-              alt={channelName}
-              className="absolute inset-0 w-full h-full object-cover"
-              crossOrigin="anonymous"
-              loading="eager"
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.style.opacity = "0";
-                target.style.zIndex = "1";
-              }}
-              onLoad={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.style.opacity = "1";
-                target.style.zIndex = "10";
-              }}
-            />
-          </div>
-        </div>
+                    {/* ✅ FIXED: Video Info with proper mobile constraints */}
+                    <div className="flex gap-2.5 min-w-0">
+                      {/* Avatar - Fixed sizing */}
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          router.push(
+                            `/channel/${video.uploadedBy?._id || "unknown"}`
+                          );
+                        }}
+                        className="flex-shrink-0 cursor-pointer"
+                      >
+                        <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
+                          {/* Fallback */}
+                          <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
+                            {channelInitial}
+                          </div>
+                          {/* Avatar Image */}
+                          <img
+                            key={`video-avatar-${video._id}-${
+                              imageKeys[video.uploadedBy?._id || ""] ||
+                              Date.now()
+                            }`}
+                            src={getImageUrl(video.uploadedBy?.image, true)}
+                            alt={channelName}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            crossOrigin="anonymous"
+                            loading="eager"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.opacity = "0";
+                              target.style.zIndex = "1";
+                            }}
+                            onLoad={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.opacity = "1";
+                              target.style.zIndex = "10";
+                            }}
+                          />
+                        </div>
+                      </div>
 
-        {/* Text Info - Proper truncation */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <Link href={`/watch/${video._id}`}>
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors">
-              {video?.videotitle || "Untitled Video"}
-            </h3>
-          </Link>
+                      {/* Text Info - Proper truncation */}
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <Link href={`/watch/${video._id}`}>
+                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors">
+                            {video?.videotitle || "Untitled Video"}
+                          </h3>
+                        </Link>
 
-          <p
-            onClick={(e) => {
-              e.preventDefault();
-              router.push(`/channel/${video.uploadedBy?._id || "unknown"}`);
-            }}
-            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            {channelName}
-          </p>
+                        <p
+                          onClick={(e) => {
+                            e.preventDefault();
+                            router.push(
+                              `/channel/${video.uploadedBy?._id || "unknown"}`
+                            );
+                          }}
+                          className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                        >
+                          {channelName}
+                        </p>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
-            <span className="font-semibold truncate">{formatViews(video?.views)}</span>
-            <span className="font-bold flex-shrink-0">•</span>
-            <span className="truncate">{formatTimeAgo(video?.createdAt)}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-})}
+                        <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
+                          <span className="font-semibold truncate">
+                            {formatViews(video?.views)}
+                          </span>
+                          <span className="font-bold flex-shrink-0">•</span>
+                          <span className="truncate">
+                            {formatTimeAgo(video?.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -802,15 +773,15 @@ const Home: NextPage = () => {
                 >
                   <div className="w-full">
                     <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3 shadow-sm">
-                      <video
-                        src={getVideoUrl(video)}
+                      {/* ✅ FIX: Replaced <video> with <img> here as well */}
+                      <img
+                        src={getThumbnailUrl(video)}
+                        alt={video.videotitle || "Video thumbnail"}
                         className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-                        preload="metadata"
-                        poster={getThumbnailUrl(video)}
+                        loading="lazy"
                         onError={(e) => {
-                          console.error("❌ Video load failed:", video._id);
-                          const target = e.currentTarget;
-                          target.poster = "/placeholder-thumbnail.jpg";
+                          const target = e.currentTarget as HTMLImageElement;
+                          target.src = "/placeholder-thumbnail.jpg";
                         }}
                       />
                       {video?.duration && (
