@@ -557,7 +557,7 @@ const Home: NextPage = () => {
                   />
                 </button>
 
-            <div
+                <div
   ref={shortsScrollRef}
   className="flex gap-2 px-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2 lg:gap-4 lg:px-6"
   onTouchStart={handleShortsScrollTouchStart}
@@ -576,12 +576,10 @@ const Home: NextPage = () => {
             handleShortClick(e, short._id, index);
           }
         }}
-        // 🔥 CRITICAL: Fixed width with max-width constraint
-        className="flex-shrink-0 cursor-pointer group/short"
-        style={{ width: '120px', maxWidth: '120px' }}
+        className="flex-shrink-0 w-[120px] cursor-pointer group/short lg:w-[200px]"
       >
         {/* Thumbnail */}
-        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2">
+        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 border border-transparent lg:border-gray-200 dark:lg:border-gray-700">
           <img
             src={short.thumbnailUrl}
             alt={short.title}
@@ -589,63 +587,52 @@ const Home: NextPage = () => {
             loading="lazy"
           />
 
-          {/* Mobile gradient overlay */}
+          {/* Desktop hover effect */}
+          <div className="hidden lg:flex absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/short:opacity-100 transition-all duration-300 items-center justify-center">
+            <div className="bg-white/30 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover/short:scale-100 transition-transform duration-300">
+              <Play size={32} className="text-white" fill="white" />
+            </div>
+          </div>
+
+          {/* Mobile gradient */}
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
 
-          {/* Views badge */}
-          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white">
+          {/* Views count */}
+          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white lg:rounded-lg lg:px-3 lg:py-1.5 lg:bottom-3 lg:left-3">
             {formatViewsShort(short.views)} views
           </div>
         </div>
 
-        {/* Title - Max 2 lines */}
-        <h3 
-          className="text-sm font-semibold text-gray-900 dark:text-white mb-1.5 leading-tight"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            wordBreak: 'break-word',
-            maxWidth: '120px'
-          }}
-        >
+        {/* Title - 2 lines max */}
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1.5 leading-tight lg:text-[15px] lg:group-hover/short:text-red-500 lg:transition-colors lg:leading-snug">
           {short.title}
         </h3>
 
-        {/* 🔥 CRITICAL FIX: Channel Info - Single Line Only */}
-        <div 
-          className="flex items-center gap-1.5"
-          style={{ 
-            width: '120px',
-            maxWidth: '120px',
-            minWidth: '120px'
-          }}
-        >
-          {/* Avatar Container - Fixed 18px */}
+        {/* 🔥 CRITICAL FIX: Channel info with proper constraints */}
+        <div className="flex items-center gap-1.5 w-full min-w-0">
+          {/* Avatar - FIXED SIZE */}
           <div
             className="flex-shrink-0 cursor-pointer"
+            style={{ width: '20px', height: '20px' }}
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/channel/${short.userId?._id}`);
             }}
-            style={{ 
-              width: '18px', 
-              height: '18px',
-              minWidth: '18px',
-              minHeight: '18px',
-              flexShrink: 0
-            }}
           >
             <img
-              key={`short-avatar-${short._id}-${Date.now()}`}
+              key={`short-avatar-${short._id}-${short.userId?._id || "unknown"}-${Date.now()}`}
               src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
               alt={shortChannelName}
-              className="rounded-full object-cover border border-gray-200 dark:border-gray-700"
+              className="w-full h-full rounded-full object-cover border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:ring-2 hover:ring-blue-500 transition-all"
+              crossOrigin="anonymous"
+              loading="eager"
               style={{
-                width: '18px',
-                height: '18px',
+                width: '20px',
+                height: '20px',
+                minWidth: '20px',
+                minHeight: '20px',
+                maxWidth: '20px',
+                maxHeight: '20px',
                 display: 'block'
               }}
               onError={(e) => {
@@ -654,25 +641,18 @@ const Home: NextPage = () => {
             />
           </div>
 
-          {/* Channel Name - Truncated text */}
-          <span
-            className="text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          {/* Channel Name - PROPER TRUNCATION */}
+          <div 
+            className="flex-1 min-w-0 overflow-hidden"
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/channel/${short.userId?._id}`);
             }}
-            style={{
-              flex: '1 1 auto',
-              minWidth: 0,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              display: 'block',
-              maxWidth: 'calc(120px - 18px - 6px)' // Card width - avatar - gap
-            }}
           >
-            {shortChannelName}
-          </span>
+            <span className="block text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate w-full">
+              {shortChannelName}
+            </span>
+          </div>
         </div>
       </div>
     );
