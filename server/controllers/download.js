@@ -346,6 +346,7 @@ export const downloadVideo = async (req, res) => {
 };
 
 // ✅ FIXED: Stream video download with audio preservation
+// ✅ FIXED: Stream video download with proper Cloudinary URL handling
 export const streamVideoDownload = async (req, res) => {
   try {
     const { videoId } = req.params;
@@ -371,34 +372,46 @@ export const streamVideoDownload = async (req, res) => {
 
     const isCloudinary = videoUrl.includes("cloudinary.com");
 
-    // ✅ CLOUDINARY VIDEO - USE RAW URL (NO TRANSFORMATIONS)
+    // ✅ CLOUDINARY VIDEO - GET ORIGINAL URL
     if (isCloudinary) {
-      console.log("☁️  Streaming ORIGINAL Cloudinary video (no transformations)");
+      console.log("☁️  Streaming ORIGINAL Cloudinary video");
+      console.log("📹 Input URL:", videoUrl);
 
       try {
-        // ✅ CRITICAL: Use the ORIGINAL upload URL without ANY transformations
         let originalUrl = videoUrl;
 
-        // Remove any existing transformations from URL
-        if (videoUrl.includes("/upload/v")) {
-          // Format: .../upload/v1234567890/folder/file.mp4
+        // ✅ CRITICAL FIX: Proper URL parsing to preserve folder structure
+        if (videoUrl.includes("/upload/")) {
           const parts = videoUrl.split("/upload/");
+          
           if (parts.length === 2) {
-            // Keep only base URL + /upload/ + version/path
-            originalUrl = parts[0] + "/upload/" + parts[1];
-          }
-        } else if (videoUrl.includes("/upload/")) {
-          // Format with transformations: .../upload/transformations/v1234567890/...
-          const parts = videoUrl.split("/upload/");
-          if (parts.length === 2) {
-            // Extract everything after transformations
-            const afterUpload = parts[1];
-            const versionIndex = afterUpload.indexOf("/v");
-            if (versionIndex > 0) {
-              // Skip transformation part, keep only version/path
-              originalUrl = parts[0] + "/upload" + afterUpload.substring(versionIndex);
+            const baseUrl = parts[0]; // https://res.cloudinary.com/dxuxxk0ss
+            const afterUpload = parts[1]; // Everything after /upload/
+            
+            // ✅ Check if there are transformations
+            // Transformations are between /upload/ and the folder path
+            // Format: /upload/[transformations]/folder/file.ext
+            // OR: /upload/folder/file.ext (no transformations)
+            
+            // Split by "/" to analyze structure
+            const pathSegments = afterUpload.split('/');
+            
+            // ✅ Identify if first segment is a transformation
+            // Transformations contain letters like "f_mp4,vc_h264,ac_aac" etc.
+            const firstSegment = pathSegments[0];
+            const hasTransformations = firstSegment.includes('_') || 
+                                      firstSegment.includes(',') || 
+                                      firstSegment.match(/^[a-z]_/);
+            
+            if (hasTransformations) {
+              // Remove first segment (transformations) and rebuild URL
+              const pathWithoutTransformations = pathSegments.slice(1).join('/');
+              originalUrl = `${baseUrl}/upload/${pathWithoutTransformations}`;
+              console.log("🔧 Removed transformations from URL");
             } else {
-              originalUrl = videoUrl; // No transformations found
+              // No transformations, use as-is
+              originalUrl = videoUrl;
+              console.log("✅ No transformations found in URL");
             }
           }
         }
@@ -407,7 +420,7 @@ export const streamVideoDownload = async (req, res) => {
 
         const fetch = (await import("node-fetch")).default;
 
-        // ✅ Request with proper headers
+        // ✅ Fetch with proper headers
         const fetchOptions = {
           method: "GET",
           headers: {
@@ -426,6 +439,11 @@ export const streamVideoDownload = async (req, res) => {
         const response = await fetch(originalUrl, fetchOptions);
 
         if (!response.ok) {
+          console.error("❌ Cloudinary fetch failed:", {
+            status: response.status,
+            statusText: response.statusText,
+            url: originalUrl
+          });
           throw new Error(
             `Cloudinary fetch failed: ${response.status} ${response.statusText}`
           );
@@ -471,7 +489,7 @@ export const streamVideoDownload = async (req, res) => {
         res.setHeader("Cache-Control", "public, max-age=31536000");
         res.setHeader("X-Content-Type-Options", "nosniff");
 
-        // ✅ Stream to client with progress tracking
+        // ✅ Stream to client
         let bytesStreamed = 0;
         const startTime = Date.now();
 
