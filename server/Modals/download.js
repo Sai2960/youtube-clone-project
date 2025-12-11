@@ -33,6 +33,10 @@ const downloadSchema = mongoose.Schema(
       enum: ['720p', '480p', '360p'],
       default: '480p',
     },
+    withAudio: {  // ✅ NEW FIELD
+      type: Boolean,
+      default: true,
+    },
     downloadedAt: {
       type: Date,
       default: Date.now,

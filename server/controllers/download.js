@@ -372,9 +372,7 @@ export const streamVideoDownload = async (req, res) => {
 
     const isCloudinary = videoUrl.includes("cloudinary.com");
 
-    // ✅ CLOUDINARY VIDEO WITH AUDIO
-   // ✅ CLOUDINARY VIDEO WITH AUDIO - Replace lines 280-330
-if (isCloudinary) {
+   if (isCloudinary) {
   console.log("☁️  Streaming Cloudinary video with audio preservation");
 
   try {
@@ -508,6 +506,8 @@ if (isCloudinary) {
 
   return;
 }
+
+
 
     // ✅ LOCAL VIDEO HANDLING (unchanged)
     const filename = extractFilename(video);
