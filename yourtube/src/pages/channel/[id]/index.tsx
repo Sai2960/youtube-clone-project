@@ -135,52 +135,109 @@ const ChannelPage = () => {
   // ============================================================================
   // FETCH VIDEOS
   // ============================================================================
-  useEffect(() => {
+    useEffect(() => {
     const fetchVideos = async () => {
-      if (!id || typeof id !== "string") return;
+      if (!id || typeof id !== "string") {
+        console.log("⚠️ No channel ID for videos");
+        return;
+      }
 
       try {
         setVideosLoading(true);
-        const response = await axiosInstance.get(`/video/channel/${id}`);
+        console.log("📹 Fetching videos for channel:", id);
+        
+        // ✅ CRITICAL: Force no-cache headers on mobile
+        const response = await axiosInstance.get(`/video/channel/${id}`, {
+          params: { 
+            _t: Date.now(),
+            nocache: "true" 
+          },
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+
+        console.log("📹 Videos API response:", {
+          success: response.data.success,
+          count: response.data.data?.length || response.data.videos?.length || 0
+        });
 
         if (response.data.success && Array.isArray(response.data.data)) {
+          console.log("✅ Setting videos:", response.data.data.length);
           setVideos(response.data.data);
+        } else if (response.data.videos && Array.isArray(response.data.videos)) {
+          console.log("✅ Setting videos (alternate):", response.data.videos.length);
+          setVideos(response.data.videos);
         } else if (response.data.data) {
           const videoList = Array.isArray(response.data.data)
             ? response.data.data
             : [response.data.data];
+          console.log("✅ Setting videos (converted):", videoList.length);
           setVideos(videoList);
         } else {
+          console.log("⚠️ No videos in response");
           setVideos([]);
         }
       } catch (error: any) {
+        console.error("❌ Error fetching videos:", error.message);
+        console.error("   Status:", error.response?.status);
+        console.error("   Response:", error.response?.data);
         setVideos([]);
       } finally {
         setVideosLoading(false);
       }
     };
 
-    fetchVideos();
+    // ✅ Add small delay to ensure component is mounted
+    const timer = setTimeout(() => {
+      fetchVideos();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [id]);
 
   // ============================================================================
   // FETCH SHORTS
   // ============================================================================
-  useEffect(() => {
+   useEffect(() => {
     const fetchShorts = async () => {
-      if (!id || typeof id !== "string") return;
+      if (!id || typeof id !== "string") {
+        console.log("⚠️ No channel ID for shorts");
+        return;
+      }
 
       try {
         setShortsLoading(true);
         setShortsError(null);
+        console.log("🎬 Fetching shorts for channel:", id);
 
+        // ✅ CRITICAL: Force no-cache headers on mobile
         const response = await axiosInstance.get(`/shorts/channel/${id}`, {
-          params: { page: 1, limit: 100, _t: Date.now() },
+          params: { 
+            page: 1, 
+            limit: 100, 
+            _t: Date.now(),
+            nocache: "true"
+          },
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+
+        console.log("🎬 Shorts API response:", {
+          success: response.data.success,
+          count: response.data.data?.length || response.data.shorts?.length || 0
         });
 
         if (response.data.success) {
           const fetchedShorts =
             response.data.data || response.data.shorts || [];
+          console.log("✅ Setting shorts:", fetchedShorts.length);
+          
           const processedShorts = fetchedShorts.map((short: any) => ({
             ...short,
             thumbnailUrl: short.thumbnailUrl || short.thumbnail,
@@ -188,9 +245,14 @@ const ChannelPage = () => {
           }));
           setShorts(processedShorts);
         } else {
+          console.log("⚠️ No shorts in response");
           setShorts([]);
         }
       } catch (error: any) {
+        console.error("❌ Error fetching shorts:", error.message);
+        console.error("   Status:", error.response?.status);
+        console.error("   Response:", error.response?.data);
+        
         if (error.response?.status !== 404) {
           setShortsError("Failed to load shorts");
         }
@@ -200,7 +262,12 @@ const ChannelPage = () => {
       }
     };
 
-    fetchShorts();
+    // ✅ Add small delay to ensure component is mounted
+    const timer = setTimeout(() => {
+      fetchShorts();
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, [id, refreshKey]);
   // ============================================================================
   // HANDLERS
@@ -339,57 +406,47 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-       {/* Channel Info Bar - FORCE RENDER WITH SAFE DEFAULTS */}
-        {!loading && channel && (
-          <div className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-full max-w-7xl mx-auto">
-              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
-                {/* Channel Name Display */}
-                <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                  <User className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-base truncate">
-                    {channel.channelname || channel.name || "Unknown"}
-                  </span>
-                </div>
+        {/* Channel Info Bar */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6 max-w-7xl mx-auto">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
+              {/* ✅ ADDED: Channel Name Display */}
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="text-sm sm:text-base">
+                  {channel.channelname || channel.name || "Unknown"}
+                </span>
+              </div>
 
-                {/* Joined Date */}
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    Joined{" "}
-                    {channel.joinedon
-                      ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "Recently"}
-                  </span
-                  >
-                </div>
-{/* DEBUG INFO - REMOVE AFTER FIXING */}
-        <div className="bg-red-500 text-white p-2 text-xs">
-          Debug: loading={loading.toString()}, hasChannel={!!channel}, 
-          videos={videos.length}, shorts={shorts.length}
-        </div>
-                {/* Video Count */}
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Video className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    {videos.length} video{videos.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm">
+                  Joined{" "}
+                  {channel.joinedon
+                    ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "Recently"}
+                </span>
+              </div>
 
-                {/* Shorts Count */}
-                <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Film className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <Video className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm">
+                  {videos.length} video{videos.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <Film className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm">
+                  {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+                </span>
               </div>
             </div>
           </div>
-        )}
+        </div>
         {/* ============================================================================
             UPLOAD SECTION - COMPLETELY FIXED
             ============================================================================ */}
