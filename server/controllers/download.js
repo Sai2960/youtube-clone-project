@@ -373,164 +373,190 @@ export const streamVideoDownload = async (req, res) => {
     const isCloudinary = videoUrl.includes("cloudinary.com");
 
     // ✅ CLOUDINARY VIDEO - GET ORIGINAL URL
-    if (isCloudinary) {
-      console.log("☁️  Streaming ORIGINAL Cloudinary video");
-      console.log("📹 Input URL:", videoUrl);
+    // ✅ CLOUDINARY VIDEO - GET ORIGINAL URL WITH AUDIO
+if (isCloudinary) {
+  console.log("☁️  Streaming ORIGINAL Cloudinary video WITH AUDIO");
+  console.log("📹 Input URL:", videoUrl);
 
-      try {
-        let originalUrl = videoUrl;
+  try {
+    let originalUrl = videoUrl;
 
-        // ✅ CRITICAL FIX: Proper URL parsing to preserve folder structure
-        if (videoUrl.includes("/upload/")) {
-          const parts = videoUrl.split("/upload/");
+    // ✅ IMPROVED FIX: Remove ALL transformations completely
+    if (videoUrl.includes("/upload/")) {
+      const parts = videoUrl.split("/upload/");
+      
+      if (parts.length === 2) {
+        const baseUrl = parts[0]; // https://res.cloudinary.com/dxuxxk0ss
+        const afterUpload = parts[1]; // Everything after /upload/
+        
+        // Split the path after /upload/
+        const pathSegments = afterUpload.split('/');
+        
+        // ✅ Find where the actual file path starts (usually after folder name)
+        // Transformations look like: f_mp4,vc_h264,q_auto
+        // Folder paths look like: videos/ or users/videos/
+        // Files end with extensions like .mp4
+        
+        let filePathStartIndex = 0;
+        
+        // Skip any segments that look like transformations
+        // Transformations contain: commas, underscores in specific patterns, or quality params
+        for (let i = 0; i < pathSegments.length; i++) {
+          const segment = pathSegments[i];
           
-          if (parts.length === 2) {
-            const baseUrl = parts[0]; // https://res.cloudinary.com/dxuxxk0ss
-            const afterUpload = parts[1]; // Everything after /upload/
-            
-            // ✅ Check if there are transformations
-            // Transformations are between /upload/ and the folder path
-            // Format: /upload/[transformations]/folder/file.ext
-            // OR: /upload/folder/file.ext (no transformations)
-            
-            // Split by "/" to analyze structure
-            const pathSegments = afterUpload.split('/');
-            
-            // ✅ Identify if first segment is a transformation
-            // Transformations contain letters like "f_mp4,vc_h264,ac_aac" etc.
-            const firstSegment = pathSegments[0];
-            const hasTransformations = firstSegment.includes('_') || 
-                                      firstSegment.includes(',') || 
-                                      firstSegment.match(/^[a-z]_/);
-            
-            if (hasTransformations) {
-              // Remove first segment (transformations) and rebuild URL
-              const pathWithoutTransformations = pathSegments.slice(1).join('/');
-              originalUrl = `${baseUrl}/upload/${pathWithoutTransformations}`;
-              console.log("🔧 Removed transformations from URL");
-            } else {
-              // No transformations, use as-is
-              originalUrl = videoUrl;
-              console.log("✅ No transformations found in URL");
-            }
+          // If segment has comma OR starts with letter + underscore (like f_, q_, vc_)
+          // OR contains quality/format params, it's a transformation
+          if (
+            segment.includes(',') || 
+            segment.match(/^[a-z]+_/) ||
+            segment.match(/^(f|q|vc|ac|br|h|w)_/) ||
+            segment === 'auto' ||
+            segment === 'video'
+          ) {
+            filePathStartIndex = i + 1;
+          } else {
+            // Found the actual path, stop
+            break;
           }
         }
-
-        console.log("📹 Original URL:", originalUrl);
-
-        const fetch = (await import("node-fetch")).default;
-
-        // ✅ Fetch with proper headers
-        const fetchOptions = {
-          method: "GET",
-          headers: {
-            "Accept": "video/mp4,video/*",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          },
-          timeout: 120000, // 2 minutes
-        };
-
-        // Support range requests
-        if (req.headers.range) {
-          fetchOptions.headers["Range"] = req.headers.range;
-          console.log("📍 Range request:", req.headers.range);
-        }
-
-        const response = await fetch(originalUrl, fetchOptions);
-
-        if (!response.ok) {
-          console.error("❌ Cloudinary fetch failed:", {
-            status: response.status,
-            statusText: response.statusText,
-            url: originalUrl
-          });
-          throw new Error(
-            `Cloudinary fetch failed: ${response.status} ${response.statusText}`
-          );
-        }
-
-        const contentType = response.headers.get("content-type") || "video/mp4";
-        const contentLength = response.headers.get("content-length");
-        const acceptRanges = response.headers.get("accept-ranges") || "bytes";
-        const contentRange = response.headers.get("content-range");
-
-        console.log("📊 Response:", {
-          status: response.status,
-          contentType,
-          contentLength: contentLength ? `${(contentLength / (1024 * 1024)).toFixed(2)}MB` : "unknown",
-          acceptRanges,
-          hasRange: !!contentRange
-        });
-
-        // ✅ Sanitize filename
-        const sanitizedTitle = (video.videotitle || "video")
-          .replace(/[^a-zA-Z0-9-_\s]/g, "")
-          .replace(/\s+/g, "-")
-          .substring(0, 100);
-        const downloadFilename = `${sanitizedTitle}-${quality}.mp4`;
-
-        // ✅ Set response headers
-        if (response.status === 206) {
-          res.status(206);
-          if (contentRange) {
-            res.setHeader("Content-Range", contentRange);
-          }
-        }
-
-        res.setHeader("Content-Type", "video/mp4");
-        if (contentLength) {
-          res.setHeader("Content-Length", contentLength);
-        }
-        res.setHeader(
-          "Content-Disposition",
-          `attachment; filename*=UTF-8''${encodeURIComponent(downloadFilename)}`
-        );
-        res.setHeader("Accept-Ranges", acceptRanges);
-        res.setHeader("Cache-Control", "public, max-age=31536000");
-        res.setHeader("X-Content-Type-Options", "nosniff");
-
-        // ✅ Stream to client
-        let bytesStreamed = 0;
-        const startTime = Date.now();
-
-        response.body.on("data", (chunk) => {
-          bytesStreamed += chunk.length;
-          
-          // Log progress every 5MB
-          if (bytesStreamed % (5 * 1024 * 1024) < chunk.length) {
-            const sizeMB = (bytesStreamed / (1024 * 1024)).toFixed(2);
-            console.log(`📊 Progress: ${sizeMB}MB streamed`);
-          }
-        });
-
-        response.body.on("end", () => {
-          const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-          const sizeMB = (bytesStreamed / (1024 * 1024)).toFixed(2);
-          console.log(`✅ Download complete: ${sizeMB}MB in ${duration}s - ORIGINAL FILE WITH AUDIO`);
-        });
-
-        response.body.on("error", (error) => {
-          console.error("❌ Stream error:", error);
-          if (!res.headersSent) {
-            res.status(500).json({ message: "Stream interrupted" });
-          }
-        });
-
-        // Pipe directly to response
-        response.body.pipe(res);
-
-      } catch (error) {
-        console.error("❌ Cloudinary download error:", error);
-        if (!res.headersSent) {
-          res.status(500).json({
-            message: "Failed to download video",
-            error: error.message,
-          });
-        }
+        
+        // Rebuild URL without transformations
+        const pathWithoutTransformations = pathSegments.slice(filePathStartIndex).join('/');
+        originalUrl = `${baseUrl}/upload/${pathWithoutTransformations}`;
+        
+        console.log("🔧 Transformation segments removed:", pathSegments.slice(0, filePathStartIndex));
+        console.log("✅ Clean path:", pathWithoutTransformations);
       }
-
-      return;
     }
+
+    console.log("📹 Final Original URL:", originalUrl);
+
+    const fetch = (await import("node-fetch")).default;
+
+    // ✅ Fetch with proper headers to get FULL video with audio
+    const fetchOptions = {
+      method: "GET",
+      headers: {
+        "Accept": "video/mp4,video/*;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept-Encoding": "identity", // ✅ Prevent compression
+      },
+      timeout: 300000, // 5 minutes for larger files
+    };
+
+    // Support range requests
+    if (req.headers.range) {
+      fetchOptions.headers["Range"] = req.headers.range;
+      console.log("📍 Range request:", req.headers.range);
+    }
+
+    console.log("🌐 Fetching from Cloudinary...");
+    const response = await fetch(originalUrl, fetchOptions);
+
+    if (!response.ok) {
+      console.error("❌ Cloudinary fetch failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        url: originalUrl
+      });
+      throw new Error(
+        `Cloudinary fetch failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const contentType = response.headers.get("content-type") || "video/mp4";
+    const contentLength = response.headers.get("content-length");
+    const acceptRanges = response.headers.get("accept-ranges") || "bytes";
+    const contentRange = response.headers.get("content-range");
+
+    console.log("📊 Response Headers:", {
+      status: response.status,
+      contentType,
+      contentLength: contentLength ? `${(contentLength / (1024 * 1024)).toFixed(2)}MB` : "unknown",
+      acceptRanges,
+      hasRange: !!contentRange
+    });
+
+    // ✅ Verify we got a proper video file
+    if (!contentLength || parseInt(contentLength) < 10000) {
+      throw new Error("Received invalid video file (too small or empty)");
+    }
+
+    // ✅ Sanitize filename
+    const sanitizedTitle = (video.videotitle || "video")
+      .replace(/[^a-zA-Z0-9-_\s]/g, "")
+      .replace(/\s+/g, "-")
+      .substring(0, 100);
+    const downloadFilename = `${sanitizedTitle}-${quality}-with-audio.mp4`;
+
+    // ✅ Set response headers for download
+    if (response.status === 206) {
+      res.status(206);
+      if (contentRange) {
+        res.setHeader("Content-Range", contentRange);
+      }
+    }
+
+    res.setHeader("Content-Type", "video/mp4");
+    if (contentLength) {
+      res.setHeader("Content-Length", contentLength);
+    }
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename*=UTF-8''${encodeURIComponent(downloadFilename)}`
+    );
+    res.setHeader("Accept-Ranges", acceptRanges);
+    res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 1 day
+    res.setHeader("X-Content-Type-Options", "nosniff");
+
+    // ✅ Stream to client with progress tracking
+    let bytesStreamed = 0;
+    const startTime = Date.now();
+    let lastLogTime = startTime;
+
+    response.body.on("data", (chunk) => {
+      bytesStreamed += chunk.length;
+      
+      // Log progress every 10MB or every 5 seconds
+      const now = Date.now();
+      if (bytesStreamed % (10 * 1024 * 1024) < chunk.length || now - lastLogTime > 5000) {
+        const sizeMB = (bytesStreamed / (1024 * 1024)).toFixed(2);
+        const elapsed = ((now - startTime) / 1000).toFixed(1);
+        const speed = (bytesStreamed / (now - startTime) * 1000 / (1024 * 1024)).toFixed(2);
+        console.log(`📊 Progress: ${sizeMB}MB streamed in ${elapsed}s (${speed} MB/s)`);
+        lastLogTime = now;
+      }
+    });
+
+    response.body.on("end", () => {
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+      const sizeMB = (bytesStreamed / (1024 * 1024)).toFixed(2);
+      const avgSpeed = (bytesStreamed / (Date.now() - startTime) * 1000 / (1024 * 1024)).toFixed(2);
+      console.log(`✅ Download complete: ${sizeMB}MB in ${duration}s (avg ${avgSpeed} MB/s) - ORIGINAL FILE WITH AUDIO`);
+    });
+
+    response.body.on("error", (error) => {
+      console.error("❌ Stream error:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ message: "Stream interrupted", error: error.message });
+      }
+    });
+
+    // Pipe directly to response
+    response.body.pipe(res);
+
+  } catch (error) {
+    console.error("❌ Cloudinary download error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        message: "Failed to download video from Cloudinary",
+        error: error.message,
+      });
+    }
+  }
+
+  return;
+}
 
     // ✅ LOCAL VIDEO HANDLING (unchanged)
     const filename = extractFilename(video);
