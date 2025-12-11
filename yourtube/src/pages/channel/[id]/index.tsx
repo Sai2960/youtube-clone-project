@@ -342,18 +342,19 @@ const ChannelPage = () => {
         {/* Channel Info Bar */}
         <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6 max-w-7xl mx-auto">
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
-              {/* ✅ ADDED: Channel Name Display */}
-              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6 text-sm">
+              {/* Channel Name Display */}
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold w-full sm:w-auto">
                 <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-sm sm:text-base">
+                <span className="text-sm sm:text-base truncate">
                   {channel.channelname || channel.name || "Unknown"}
                 </span>
               </div>
 
+              {/* Joined Date */}
               <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-xs sm:text-sm">
+                <span className="text-xs sm:text-sm whitespace-nowrap">
                   Joined{" "}
                   {channel.joinedon
                     ? new Date(channel.joinedon).toLocaleDateString("en-US", {
@@ -364,16 +365,18 @@ const ChannelPage = () => {
                 </span>
               </div>
 
+              {/* Video Count */}
               <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <Video className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-xs sm:text-sm">
+                <span className="text-xs sm:text-sm whitespace-nowrap">
                   {videos.length} video{videos.length !== 1 ? "s" : ""}
                 </span>
               </div>
 
+              {/* Shorts Count */}
               <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <Film className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-xs sm:text-sm">
+                <span className="text-xs sm:text-sm whitespace-nowrap">
                   {shorts.length} short{shorts.length !== 1 ? "s" : ""}
                 </span>
               </div>
