@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // FRONTEND/pages/downloads/index.tsx
 import React from 'react';
 import { useUser } from '../../lib/AuthContext';
