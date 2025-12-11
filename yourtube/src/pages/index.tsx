@@ -504,157 +504,202 @@ const Home: NextPage = () => {
           </div>
         )}
 
-        {/* Shorts Section */}
-        {shorts.length > 0 && (
-          <section className="py-3 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
-            <div className="flex items-center justify-between px-3 mb-3 lg:px-6">
-              <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center lg:hidden shadow-sm flex-shrink-0">
-                  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
-                    <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
-                  </svg>
-                </div>
-                <div className="hidden lg:flex w-10 h-10 bg-red-600 rounded-xl items-center justify-center shadow-lg shadow-red-600/30">
-                  <Play size={20} className="text-white ml-0.5" fill="white" />
-                </div>
-                <h2 className="text-base font-bold text-gray-900 dark:text-white lg:text-2xl">
-                  Shorts
-                </h2>
-              </div>
-            </div>
-
-            {loadingShorts ? (
-              <div className="flex gap-2 overflow-x-hidden px-3 lg:gap-4 lg:px-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="flex-shrink-0 w-[120px] lg:w-[200px]">
-                    <div className="aspect-[9/16] bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-2" />
-                    <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-1 lg:h-4" />
-                    <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded skeleton w-2/3 lg:h-3" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="relative group/container">
-                <button
-                  onClick={() => scrollShorts("left")}
-                  className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-xl"
-                  aria-label="Scroll left"
-                >
-                  <ChevronRight
-                    size={24}
-                    className="rotate-180 text-gray-900 dark:text-white"
-                  />
-                </button>
-
-                <button
-                  onClick={() => scrollShorts("right")}
-                  className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-xl"
-                  aria-label="Scroll right"
-                >
-                  <ChevronRight
-                    size={24}
-                    className="text-gray-900 dark:text-white"
-                  />
-                </button>
-
-          <div
-  ref={shortsScrollRef}
-  className="flex gap-2 px-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2 lg:gap-4 lg:px-6"
-  onTouchStart={handleShortsScrollTouchStart}
-  onTouchMove={handleShortsScrollTouchMove}
-  onTouchEnd={handleShortsScrollTouchEnd}
->
-  {shorts.slice(0, 12).map((short, index) => {
-    const shortAvatar = getShortAvatar(short);
-    const shortChannelName = getShortChannelName(short);
-
-    return (
-      <div
-        key={short._id}
-        onClick={(e) => {
-          if (!(e.target as HTMLElement).closest(".avatar-link")) {
-            handleShortClick(e, short._id, index);
-          }
-        }}
-        className="flex-shrink-0 cursor-pointer group/short w-[120px] lg:w-[200px]"
-        style={{ minWidth: '120px', maxWidth: '120px' }}
-      >
-        {/* Thumbnail */}
-        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 w-full">
-          <img
-            src={short.thumbnailUrl}
-            alt={short.title}
-            className="w-full h-full object-cover group-hover/short:scale-110 transition-transform duration-500"
-            loading="lazy"
-          />
-
-          {/* Mobile gradient overlay */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
-
-          {/* Views badge */}
-          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white whitespace-nowrap">
-            {formatViewsShort(short.views)} views
-          </div>
+       {/* Shorts Section - FIXED FOR MOBILE */}
+{shorts.length > 0 && (
+  <section className="py-3 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
+    <div className="flex items-center justify-between px-3 mb-3 lg:px-6">
+      <div className="flex items-center gap-2 lg:gap-3">
+        <div className="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center lg:hidden shadow-sm flex-shrink-0">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+            <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
+          </svg>
         </div>
+        <div className="hidden lg:flex w-10 h-10 bg-red-600 rounded-xl items-center justify-center shadow-lg shadow-red-600/30">
+          <Play size={20} className="text-white ml-0.5" fill="white" />
+        </div>
+        <h2 className="text-base font-bold text-gray-900 dark:text-white lg:text-2xl">
+          Shorts
+        </h2>
+      </div>
+    </div>
 
-        {/* Title - Max 2 lines with proper wrapping */}
-        <h3 
-          className="text-sm font-semibold text-gray-900 dark:text-white mb-1.5 leading-tight w-full"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            wordBreak: 'break-word',
-            minHeight: '2.5rem'
-          }}
-        >
-          {short.title}
-        </h3>
-
-        {/* Channel Info - Single Line */}
-        <div className="flex items-center gap-1.5 w-full overflow-hidden">
-          {/* Avatar - Fixed size */}
-          <div
-            className="flex-shrink-0 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/channel/${short.userId?._id}`);
-            }}
-          >
-            <img
-              key={`short-avatar-${short._id}-${Date.now()}`}
-              src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
-              alt={shortChannelName}
-              className="w-[18px] h-[18px] rounded-full object-cover border border-gray-200 dark:border-gray-700"
-              onError={(e) => {
-                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-              }}
-            />
+    {loadingShorts ? (
+      <div className="flex gap-2 overflow-x-hidden px-3 lg:gap-4 lg:px-6">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex-shrink-0" style={{ width: '120px', minWidth: '120px' }}>
+            <div className="aspect-[9/16] bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-2" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-1 lg:h-4" />
+            <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded skeleton w-2/3 lg:h-3" />
           </div>
+        ))}
+      </div>
+    ) : (
+      <div className="relative group/container">
+        {/* Desktop scroll buttons */}
+        <button
+          onClick={() => scrollShorts("left")}
+          className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-xl"
+          aria-label="Scroll left"
+        >
+          <ChevronRight
+            size={24}
+            className="rotate-180 text-gray-900 dark:text-white"
+          />
+        </button>
 
-          {/* Channel Name - Truncated */}
-          <span
-            className="text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate flex-1 min-w-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/channel/${short.userId?._id}`);
-            }}
-          >
-            {shortChannelName}
-          </span>
+        <button
+          onClick={() => scrollShorts("right")}
+          className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-xl"
+          aria-label="Scroll right"
+        >
+          <ChevronRight
+            size={24}
+            className="text-gray-900 dark:text-white"
+          />
+        </button>
+
+        {/* 🔥 CRITICAL FIX: Proper container with overflow-x-scroll */}
+        <div
+          ref={shortsScrollRef}
+          className="overflow-x-scroll scrollbar-hide"
+          style={{
+            display: 'flex',
+            gap: '8px',
+            padding: '0 12px',
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch'
+          }}
+          onTouchStart={handleShortsScrollTouchStart}
+          onTouchMove={handleShortsScrollTouchMove}
+          onTouchEnd={handleShortsScrollTouchEnd}
+        >
+          {shorts.slice(0, 12).map((short, index) => {
+            const shortAvatar = getShortAvatar(short);
+            const shortChannelName = getShortChannelName(short);
+
+            return (
+              <div
+                key={short._id}
+                onClick={(e) => {
+                  if (!(e.target as HTMLElement).closest(".avatar-link")) {
+                    handleShortClick(e, short._id, index);
+                  }
+                }}
+                className="cursor-pointer group/short"
+                style={{
+                  flex: '0 0 120px',
+                  width: '120px',
+                  minWidth: '120px',
+                  maxWidth: '120px'
+                }}
+              >
+                {/* Thumbnail */}
+                <div 
+                  className="relative rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2"
+                  style={{
+                    width: '120px',
+                    height: '213px' // 120px * 16/9 = 213px for 9:16 aspect ratio
+                  }}
+                >
+                  <img
+                    src={short.thumbnailUrl}
+                    alt={short.title}
+                    className="w-full h-full object-cover group-hover/short:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                  />
+
+                  {/* Mobile gradient overlay */}
+                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
+
+                  {/* Views badge */}
+                  <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white whitespace-nowrap">
+                    {formatViewsShort(short.views)} views
+                  </div>
+                </div>
+
+                {/* Title - Exactly 2 lines, 120px width */}
+                <div 
+                  className="text-sm font-semibold text-gray-900 dark:text-white mb-1.5 leading-[1.3]"
+                  style={{
+                    width: '120px',
+                    height: '2.6rem',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    wordBreak: 'break-word'
+                  }}
+                >
+                  {short.title}
+                </div>
+
+                {/* Channel Info - Strict single line */}
+                <div 
+                  className="flex items-center"
+                  style={{
+                    width: '120px',
+                    height: '18px',
+                    gap: '6px'
+                  }}
+                >
+                  {/* Avatar - Fixed 18x18px */}
+                  <div
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/channel/${short.userId?._id}`);
+                    }}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      minWidth: '18px',
+                      flexShrink: 0
+                    }}
+                  >
+                    <img
+                      key={`short-avatar-${short._id}-${Date.now()}`}
+                      src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
+                      alt={shortChannelName}
+                      className="rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+                      }}
+                    />
+                  </div>
+
+                  {/* Channel Name - Truncated to fit remaining space */}
+                  <span
+                    className="text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/channel/${short.userId?._id}`);
+                    }}
+                    style={{
+                      width: '96px', // 120px - 18px - 6px gap
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'block',
+                      lineHeight: '18px'
+                    }}
+                  >
+                    {shortChannelName}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-    );
-  })}
-</div>
-
-
-              </div>
-            )}
-          </section>
-        )}
+    )}
+  </section>
+)}
 
         {/* Videos Section - FIXED MOBILE LAYOUT */}
         <section className="px-3 py-4 lg:px-6">
