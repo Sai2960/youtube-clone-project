@@ -504,180 +504,201 @@ const Home: NextPage = () => {
           </div>
         )}
 
-       {/* Shorts Section - YouTube Style */}
-{/* Shorts Section - YouTube Style */}
-{/* Shorts Section - YouTube Style */}
-{shorts.length > 0 && (
-  <section className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
-    {/* Header */}
-    <div className="flex items-center gap-3 px-4 mb-4 lg:px-6">
-      <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl">
-        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white lg:w-5 lg:h-5">
-          <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
-        </svg>
-      </div>
-      <h2 className="text-lg font-bold text-gray-900 dark:text-white lg:text-2xl">
-        Shorts
-      </h2>
-    </div>
+        {/* Shorts Section - YouTube Style */}
+        {/* Shorts Section - YouTube Style */}
+        {/* Shorts Section - YouTube Style */}
+        {shorts.length > 0 && (
+          <section className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-4 mb-4 lg:px-6">
+              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4 fill-white lg:w-5 lg:h-5"
+                >
+                  <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white lg:text-2xl">
+                Shorts
+              </h2>
+            </div>
 
-    {loadingShorts ? (
-      <div 
-        className="overflow-x-hidden px-4 lg:px-6"
-        style={{ display: 'flex', gap: '12px' }}
-      >
-        {[...Array(6)].map((_, i) => (
-          <div 
-            key={i} 
-            className="flex-shrink-0 w-[160px] lg:w-[200px]"
-            style={{ 
-              minWidth: '160px'
-            }}
-          >
-            <div 
-              className="bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-2"
-              style={{ width: '100%', paddingBottom: '177.5%' }}
-            />
-            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-2" />
-            <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton w-3/4" />
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="relative group/container">
-        {/* Desktop Navigation Buttons */}
-        <button
-          onClick={() => scrollShorts("left")}
-          className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
-          aria-label="Scroll left"
-        >
-          <ChevronRight size={20} className="rotate-180 text-gray-900 dark:text-white" />
-        </button>
-
-        <button
-          onClick={() => scrollShorts("right")}
-          className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
-          aria-label="Scroll right"
-        >
-          <ChevronRight size={20} className="text-gray-900 dark:text-white" />
-        </button>
-
-        {/* Shorts Container */}
-        <div
-          ref={shortsScrollRef}
-          className="overflow-x-scroll scrollbar-hide"
-          style={{
-            display: 'flex',
-            gap: '12px',
-            padding: '0 16px',
-            scrollBehavior: 'smooth',
-            WebkitOverflowScrolling: 'touch'
-          }}
-          onTouchStart={handleShortsScrollTouchStart}
-          onTouchMove={handleShortsScrollTouchMove}
-          onTouchEnd={handleShortsScrollTouchEnd}
-        >
-          {shorts.slice(0, 12).map((short, index) => {
-            const shortAvatar = getShortAvatar(short);
-            const shortChannelName = getShortChannelName(short);
-
-            return (
+            {loadingShorts ? (
               <div
-                key={short._id}
-                onClick={(e) => {
-                  if (!(e.target as HTMLElement).closest(".no-click")) {
-                    handleShortClick(e, short._id, index);
-                  }
-                }}
-                className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px]"
-                style={{
-                  minWidth: '160px'
-                }}
+                className="overflow-x-hidden px-4 lg:px-6"
+                style={{ display: "flex", gap: "12px" }}
               >
-                {/* Thumbnail Card */}
-                <div 
-                  className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full"
-                  style={{
-                    paddingBottom: '177.5%'
-                  }}
-                >
-                  <img
-                    src={short.thumbnailUrl}
-                    alt={short.title}
-                    className="absolute inset-0 w-full h-full object-cover group-hover/short:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-
-                  {/* Bottom Gradient Overlay */}
-                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
-
-                  {/* Views Badge with "views" text */}
-                  <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                    </svg>
-                    <span className="text-xs font-bold text-white whitespace-nowrap">
-                      {formatViewsShort(short.views)} views
-                    </span>
-                  </div>
-                </div>
-
-                {/* Title */}
-                <h3 
-                  className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full"
-                  style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    wordBreak: 'break-word',
-                    minHeight: '2.5rem'
-                  }}
-                >
-                  {short.title}
-                </h3>
-
-                {/* Channel Info */}
-                <div className="flex items-center gap-2 no-click w-full">
-                  {/* Avatar */}
+                {[...Array(6)].map((_, i) => (
                   <div
-                    className="cursor-pointer flex-shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/channel/${short.userId?._id}`);
+                    key={i}
+                    className="flex-shrink-0 w-[160px] lg:w-[200px]"
+                    style={{
+                      minWidth: "160px",
                     }}
                   >
-                    <img
-                      src={getImageUrl(short.userId?.image || short.userId?.avatar, true)}
-                      alt={shortChannelName}
-                      className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
-                      onError={(e) => {
-                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-                      }}
+                    <div
+                      className="bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-2"
+                      style={{ width: "100%", paddingBottom: "177.5%" }}
                     />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-2" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton w-3/4" />
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="relative group/container">
+                {/* Desktop Navigation Buttons */}
+                <button
+                  onClick={() => scrollShorts("left")}
+                  className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
+                  aria-label="Scroll left"
+                >
+                  <ChevronRight
+                    size={20}
+                    className="rotate-180 text-gray-900 dark:text-white"
+                  />
+                </button>
 
-                  {/* Channel Name */}
-                  <span
-                    className="text-xs text-gray-600 dark:text-gray-400 font-medium cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors truncate flex-1 min-w-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/channel/${short.userId?._id}`);
-                    }}
-                    title={shortChannelName}
-                  >
-                    {shortChannelName}
-                  </span>
+                <button
+                  onClick={() => scrollShorts("right")}
+                  className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight
+                    size={20}
+                    className="text-gray-900 dark:text-white"
+                  />
+                </button>
+
+                {/* Shorts Container */}
+                <div
+                  ref={shortsScrollRef}
+                  className="overflow-x-scroll scrollbar-hide"
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    padding: "0 16px",
+                    scrollBehavior: "smooth",
+                    WebkitOverflowScrolling: "touch",
+                  }}
+                  onTouchStart={handleShortsScrollTouchStart}
+                  onTouchMove={handleShortsScrollTouchMove}
+                  onTouchEnd={handleShortsScrollTouchEnd}
+                >
+                  {shorts.slice(0, 12).map((short, index) => {
+                    const shortAvatar = getShortAvatar(short);
+                    const shortChannelName = getShortChannelName(short);
+
+                    return (
+                      <div
+                        key={short._id}
+                        onClick={(e) => {
+                          if (!(e.target as HTMLElement).closest(".no-click")) {
+                            handleShortClick(e, short._id, index);
+                          }
+                        }}
+                        className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px]"
+                        style={{
+                          minWidth: "160px",
+                        }}
+                      >
+                        {/* Thumbnail Card */}
+                        <div
+                          className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full"
+                          style={{
+                            paddingBottom: "177.5%",
+                          }}
+                        >
+                          <img
+                            src={short.thumbnailUrl}
+                            alt={short.title}
+                            className="absolute inset-0 w-full h-full object-cover group-hover/short:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+
+                          {/* Bottom Gradient Overlay */}
+                          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+
+                          {/* Views Badge with "views" text */}
+                          <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5">
+                            <svg
+                              className="w-3.5 h-3.5 fill-white"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                            </svg>
+                            <span className="text-xs font-bold text-white whitespace-nowrap">
+                              {formatViewsShort(short.views)} views
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3
+                          className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            wordBreak: "break-word",
+                            minHeight: "2.5rem",
+                            textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                          }}
+                        >
+                          {short.title}
+                        </h3>
+
+                        {/* Channel Info */}
+                        <div className="flex items-center gap-2 no-click w-full">
+                          {/* Avatar */}
+                          <div
+                            className="cursor-pointer flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/channel/${short.userId?._id}`);
+                            }}
+                          >
+                            <img
+                              src={getImageUrl(
+                                short.userId?.image || short.userId?.avatar,
+                                true
+                              )}
+                              alt={shortChannelName}
+                              className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                              onError={(e) => {
+                                e.currentTarget.src =
+                                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+                              }}
+                            />
+                          </div>
+
+                          {/* Channel Name */}
+                          {/* Channel Name */}
+                          <span
+                            className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors truncate flex-1 min-w-0"
+                            style={{
+                              textShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/channel/${short.userId?._id}`);
+                            }}
+                            title={shortChannelName}
+                          >
+                            {shortChannelName}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-    )}
-  </section>
-)}
+            )}
+          </section>
+        )}
         {/* Videos Section - FIXED MOBILE LAYOUT */}
         <section className="px-3 py-4 lg:px-6">
           {loadingVideos ? (
@@ -697,99 +718,112 @@ const Home: NextPage = () => {
             </div>
           ) : videos.length > 0 ? (
             <div className="space-y-4 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
-            {videos.slice(0, 12).map((video) => {
-  const channelName =
-    video.uploadedBy?.channelname ||
-    video.uploadedBy?.name ||
-    video?.videochanel ||
-    "Unknown Channel";
-  const channelInitial = channelName[0]?.toUpperCase() || "U";
+              {videos.slice(0, 12).map((video) => {
+                const channelName =
+                  video.uploadedBy?.channelname ||
+                  video.uploadedBy?.name ||
+                  video?.videochanel ||
+                  "Unknown Channel";
+                const channelInitial = channelName[0]?.toUpperCase() || "U";
 
-  return (
-    <div key={video._id} className="block group">
-      {/* Video Thumbnail */}
-      <Link href={`/watch/${video._id}`} className="block mb-3">
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
-          <video
-            src={getVideoUrl(video)}
-            className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-            preload="metadata"
-            poster={getThumbnailUrl(video)}
-          />
-          {video?.duration && (
-            <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
-              {video.duration}
-            </div>
-          )}
-        </div>
-      </Link>
+                return (
+                  <div key={video._id} className="block group">
+                    {/* Video Thumbnail */}
+                    <Link href={`/watch/${video._id}`} className="block mb-3">
+                      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
+                        <video
+                          src={getVideoUrl(video)}
+                          className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
+                          preload="metadata"
+                          poster={getThumbnailUrl(video)}
+                        />
+                        {video?.duration && (
+                          <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
+                            {video.duration}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
 
-      {/* ✅ FIXED: Video Info with proper mobile constraints */}
-      <div className="flex gap-2.5 min-w-0">
-        {/* Avatar - Fixed sizing */}
-        <div
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            router.push(`/channel/${video.uploadedBy?._id || "unknown"}`);
-          }}
-          className="flex-shrink-0 cursor-pointer"
-        >
-          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-            {/* Fallback */}
-            <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
-              {channelInitial}
-            </div>
-            {/* Avatar Image */}
-            <img
-              key={`video-avatar-${video._id}-${imageKeys[video.uploadedBy?._id || ""] || Date.now()}`}
-              src={getImageUrl(video.uploadedBy?.image, true)}
-              alt={channelName}
-              className="absolute inset-0 w-full h-full object-cover"
-              crossOrigin="anonymous"
-              loading="eager"
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.style.opacity = "0";
-                target.style.zIndex = "1";
-              }}
-              onLoad={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.style.opacity = "1";
-                target.style.zIndex = "10";
-              }}
-            />
-          </div>
-        </div>
+                    {/* ✅ FIXED: Video Info with proper mobile constraints */}
+                    <div className="flex gap-2.5 min-w-0">
+                      {/* Avatar - Fixed sizing */}
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          router.push(
+                            `/channel/${video.uploadedBy?._id || "unknown"}`
+                          );
+                        }}
+                        className="flex-shrink-0 cursor-pointer"
+                      >
+                        <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
+                          {/* Fallback */}
+                          <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
+                            {channelInitial}
+                          </div>
+                          {/* Avatar Image */}
+                          <img
+                            key={`video-avatar-${video._id}-${
+                              imageKeys[video.uploadedBy?._id || ""] ||
+                              Date.now()
+                            }`}
+                            src={getImageUrl(video.uploadedBy?.image, true)}
+                            alt={channelName}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            crossOrigin="anonymous"
+                            loading="eager"
+                            onError={(e) => {
+                              const target =
+                                e.currentTarget as HTMLImageElement;
+                              target.style.opacity = "0";
+                              target.style.zIndex = "1";
+                            }}
+                            onLoad={(e) => {
+                              const target =
+                                e.currentTarget as HTMLImageElement;
+                              target.style.opacity = "1";
+                              target.style.zIndex = "10";
+                            }}
+                          />
+                        </div>
+                      </div>
 
-        {/* Text Info - Proper truncation */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <Link href={`/watch/${video._id}`}>
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors">
-              {video?.videotitle || "Untitled Video"}
-            </h3>
-          </Link>
+                      {/* Text Info - Proper truncation */}
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <Link href={`/watch/${video._id}`}>
+                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors">
+                            {video?.videotitle || "Untitled Video"}
+                          </h3>
+                        </Link>
 
-          <p
-            onClick={(e) => {
-              e.preventDefault();
-              router.push(`/channel/${video.uploadedBy?._id || "unknown"}`);
-            }}
-            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            {channelName}
-          </p>
+                        <p
+                          onClick={(e) => {
+                            e.preventDefault();
+                            router.push(
+                              `/channel/${video.uploadedBy?._id || "unknown"}`
+                            );
+                          }}
+                          className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                        >
+                          {channelName}
+                        </p>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
-            <span className="font-semibold truncate">{formatViews(video?.views)}</span>
-            <span className="font-bold flex-shrink-0">•</span>
-            <span className="truncate">{formatTimeAgo(video?.createdAt)}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-})}
+                        <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
+                          <span className="font-semibold truncate">
+                            {formatViews(video?.views)}
+                          </span>
+                          <span className="font-bold flex-shrink-0">•</span>
+                          <span className="truncate">
+                            {formatTimeAgo(video?.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -897,7 +931,7 @@ const Home: NextPage = () => {
 
       <MobileBottomNav />
 
-       {/* 🔥 COMBINED STYLES - SINGLE BLOCK AT THE END */}
+      {/* 🔥 COMBINED STYLES - SINGLE BLOCK AT THE END */}
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
@@ -910,7 +944,8 @@ const Home: NextPage = () => {
           animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         @keyframes pulse {
-          0%, 100% {
+          0%,
+          100% {
             opacity: 1;
           }
           50% {
