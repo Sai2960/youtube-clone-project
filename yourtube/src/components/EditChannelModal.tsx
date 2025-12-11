@@ -221,8 +221,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         window.dispatchEvent(new Event("channelUpdated"));
         window.dispatchEvent(new Event("avatarUpdated"));
         window.dispatchEvent(new Event("storage"));
-        
-        console.log("🔔 Dispatched channelUpdated, avatarUpdated, and storage events");
+
+        console.log(
+          "🔔 Dispatched channelUpdated, avatarUpdated, and storage events"
+        );
 
         toast.success("Channel information updated successfully!");
         onClose();
@@ -286,18 +288,18 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => handleTabChange("avatar")}
-            className={`flex-1 py-4 px-6 font-semibold transition-all relative ${
+            className={`flex-1 min-w-[100px] py-3 px-3 text-xs font-semibold transition-all relative lg:py-4 lg:px-6 lg:text-base ${
               activeTab === "avatar"
                 ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
-              <ImageIcon className="w-4 h-4" />
-              Profile Picture
+            <div className="flex flex-col items-center justify-center gap-1 lg:flex-row lg:gap-2">
+              <ImageIcon className="w-4 h-4 lg:w-4 lg:h-4" />
+              <span className="whitespace-nowrap">Profile Picture</span>
             </div>
             {activeTab === "avatar" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
@@ -306,15 +308,15 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
           <button
             onClick={() => handleTabChange("banner")}
-            className={`flex-1 py-4 px-6 font-semibold transition-all relative ${
+            className={`flex-1 min-w-[100px] py-3 px-3 text-xs font-semibold transition-all relative lg:py-4 lg:px-6 lg:text-base ${
               activeTab === "banner"
                 ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
-              <Camera className="w-4 h-4" />
-              Banner Image
+            <div className="flex flex-col items-center justify-center gap-1 lg:flex-row lg:gap-2">
+              <Camera className="w-4 h-4 lg:w-4 lg:h-4" />
+              <span className="whitespace-nowrap">Banner Image</span>
             </div>
             {activeTab === "banner" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
@@ -323,15 +325,15 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
           <button
             onClick={() => handleTabChange("info")}
-            className={`flex-1 py-4 px-6 font-semibold transition-all relative ${
+            className={`flex-1 min-w-[100px] py-3 px-3 text-xs font-semibold transition-all relative lg:py-4 lg:px-6 lg:text-base ${
               activeTab === "info"
                 ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
-              <Edit2 className="w-4 h-4" />
-              Channel Info
+            <div className="flex flex-col items-center justify-center gap-1 lg:flex-row lg:gap-2">
+              <Edit2 className="w-4 h-4 lg:w-4 lg:h-4" />
+              <span className="whitespace-nowrap">Channel Info</span>
             </div>
             {activeTab === "info" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
@@ -340,22 +342,22 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-4 lg:p-6 lg:space-y-6">
           {/* IMAGE UPLOAD TABS */}
           {(activeTab === "avatar" || activeTab === "banner") && (
             <>
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg">
-                    <ImageIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 lg:rounded-xl lg:p-4">
+                <div className="flex items-start gap-2 lg:gap-3">
+                  <div className="bg-blue-100 dark:bg-blue-900/50 p-1.5 rounded-lg lg:p-2">
+                    <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 lg:w-5 lg:h-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                    <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1 lg:text-base">
                       {activeTab === "avatar"
                         ? "Profile Picture Guidelines"
                         : "Banner Guidelines"}
                     </h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed lg:text-sm">
                       Recommended size:{" "}
                       <span className="font-semibold">
                         {getRecommendedSize()}
@@ -368,15 +370,15 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 lg:text-sm lg:mb-3">
                   Current{" "}
                   {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                 </label>
                 <div
-                  className={`rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-md ${
+                  className={`rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-md lg:rounded-xl ${
                     activeTab === "avatar"
-                      ? "w-32 h-32 mx-auto"
-                      : "w-full aspect-[21/9]"
+                      ? "w-24 h-24 mx-auto lg:w-32 lg:h-32"
+                      : "w-full aspect-[16/9] lg:aspect-[21/9]"
                   }`}
                 >
                   <img
@@ -391,7 +393,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 lg:text-sm lg:mb-3">
                   Upload New{" "}
                   {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                 </label>
@@ -399,15 +401,15 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 {!previewUrl ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
+                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group lg:rounded-xl lg:p-12"
                   >
-                    <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                    <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform lg:w-16 lg:h-16 lg:mb-4">
+                      <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400 lg:w-8 lg:h-8" />
                     </div>
-                    <p className="text-gray-900 dark:text-white font-semibold text-lg mb-2">
+                    <p className="text-gray-900 dark:text-white font-semibold text-sm mb-1.5 lg:text-lg lg:mb-2">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 lg:text-sm">
                       {activeTab === "avatar"
                         ? "Square images work best"
                         : "Wide images (16:9) recommended"}
@@ -416,10 +418,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 ) : (
                   <div className="relative">
                     <div
-                      className={`rounded-xl overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 shadow-lg ${
+                      className={`rounded-lg overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 shadow-lg lg:rounded-xl ${
                         activeTab === "avatar"
-                          ? "w-32 h-32 mx-auto"
-                          : "w-full aspect-[21/9]"
+                          ? "w-24 h-24 mx-auto lg:w-32 lg:h-32"
+                          : "w-full aspect-[16/9] lg:aspect-[21/9]"
                       }`}
                     >
                       <img
@@ -430,9 +432,9 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     </div>
                     <button
                       onClick={handleRemove}
-                      className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full shadow-lg transition-all ring-2 ring-white dark:ring-gray-900"
+                      className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg transition-all ring-2 ring-white dark:ring-gray-900 lg:-top-3 lg:-right-3 lg:p-2.5"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                     </button>
                   </div>
                 )}
@@ -446,28 +448,30 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 />
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700 lg:gap-3 lg:pt-4">
                 <button
                   onClick={onClose}
                   disabled={uploading}
-                  className="flex-1 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed lg:px-6 lg:py-3 lg:rounded-xl lg:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleUpload}
                   disabled={!selectedFile || uploading}
-                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none disabled:cursor-not-allowed lg:px-6 lg:py-3 lg:rounded-xl lg:text-base"
                 >
                   {uploading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Uploading...
+                      <Loader2 className="w-4 h-4 animate-spin lg:w-5 lg:h-5" />
+                      <span className="hidden sm:inline">Uploading...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
                     <>
-                      <Check className="w-5 h-5" />
-                      Save Changes
+                      <Check className="w-4 h-4 lg:w-5 lg:h-5" />
+                      <span className="hidden sm:inline">Save Changes</span>
+                      <span className="sm:hidden">Save</span>
                     </>
                   )}
                 </button>
@@ -558,5 +562,14 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
     </div>
   );
 };
+<style jsx global>{`
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`}</style>;
 
 export default EditChannelModal;
