@@ -572,7 +572,6 @@ const Home: NextPage = () => {
                       <div
                         key={short._id}
                         onClick={(e) => {
-                          // Only navigate to shorts if not clicking avatar/channel
                           if (
                             !(e.target as HTMLElement).closest(".avatar-link")
                           ) {
@@ -581,6 +580,7 @@ const Home: NextPage = () => {
                         }}
                         className="flex-shrink-0 w-[120px] cursor-pointer group/short lg:w-[200px]"
                       >
+                        {/* Thumbnail */}
                         <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-2 border border-transparent lg:border-gray-200 dark:lg:border-gray-700">
                           <img
                             src={short.thumbnailUrl}
@@ -588,75 +588,44 @@ const Home: NextPage = () => {
                             className="w-full h-full object-cover group-hover/short:scale-110 transition-transform duration-500"
                             loading="lazy"
                           />
-
-                          <div className="hidden lg:flex absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/short:opacity-100 transition-all duration-300 items-center justify-center">
-                            <div className="bg-white/30 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover/short:scale-100 transition-transform duration-300">
-                              <Play
-                                size={32}
-                                className="text-white"
-                                fill="white"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none lg:hidden" />
-
-                          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white lg:rounded-lg lg:px-3 lg:py-1.5 lg:bottom-3 lg:left-3">
+                          <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-[11px] font-bold text-white">
                             {formatViewsShort(short.views)} views
                           </div>
                         </div>
 
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1.5 leading-tight lg:text-[15px] lg:group-hover/short:text-red-500 lg:transition-colors lg:leading-snug">
+                        {/* Title */}
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1.5 leading-tight lg:text-[15px]">
                           {short.title}
                         </h3>
 
-                        {/* ✅ FIXED: Avatar + Channel Name - NO NESTED LINKS */}
-                        <div className="flex items-center gap-1.5">
+                        {/* ✅ FIXED: Avatar + Channel Name */}
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <img
-                            key={`short-avatar-${short._id}-${
-                              short.userId?._id || "unknown"
-                            }-${Date.now()}`}
                             src={getImageUrl(
                               short.userId?.image || short.userId?.avatar,
                               true
                             )}
-                            alt={
-                              short.userId?.channelname ||
-                              short.userId?.name ||
-                              "Channel"
-                            }
+                            alt={shortChannelName}
                             className="avatar-link w-5 h-5 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
                             crossOrigin="anonymous"
                             loading="eager"
-                            style={{
-                              display: "block !important",
-                              visibility: "visible",
-                              opacity: 1,
-                              minWidth: "20px",
-                              minHeight: "20px",
-                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(`/channel/${short.userId?._id}`);
                             }}
                             onError={(e) => {
-                              console.error("❌ Short avatar failed");
                               e.currentTarget.src =
                                 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-                              e.currentTarget.style.display = "block";
                             }}
                           />
                           <p
-                            className="avatar-link text-xs text-gray-600 dark:text-gray-400 line-clamp-1 font-medium lg:group-hover/short:text-gray-900 dark:lg:group-hover/short:text-white lg:transition-colors flex-1 min-w-0 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                            className="avatar-link text-xs text-gray-600 dark:text-gray-400 font-medium flex-1 min-w-0 truncate cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(`/channel/${short.userId?._id}`);
                             }}
                           >
-                            {short.userId?.channelname ||
-                              short.userId?.name ||
-                              short.channelName ||
-                              "Unknown Channel"}
+                            {shortChannelName}
                           </p>
                         </div>
                       </div>
@@ -704,7 +673,7 @@ const Home: NextPage = () => {
                           src={getVideoUrl(video)}
                           className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
                           preload="metadata"
-                          poster={video?.thumbnail}
+                          poster={getThumbnailUrl(video)}
                         />
                         {video?.duration && (
                           <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
@@ -714,9 +683,9 @@ const Home: NextPage = () => {
                       </div>
                     </Link>
 
-                    {/* Video Info - FIXED MOBILE LAYOUT */}
-                    <div className="flex gap-2.5">
-                      {/* Avatar - Always Visible */}
+                    {/* ✅ FIXED: Video Info with proper mobile constraints */}
+                    <div className="flex gap-2.5 min-w-0">
+                      {/* Avatar - Fixed sizing */}
                       <div
                         onClick={(e) => {
                           e.preventDefault();
@@ -728,11 +697,10 @@ const Home: NextPage = () => {
                         className="flex-shrink-0 cursor-pointer"
                       >
                         <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-                          {/* Fallback Initial */}
+                          {/* Fallback */}
                           <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
                             {channelInitial}
                           </div>
-
                           {/* Avatar Image */}
                           <img
                             key={`video-avatar-${video._id}-${
@@ -744,14 +712,7 @@ const Home: NextPage = () => {
                             className="absolute inset-0 w-full h-full object-cover"
                             crossOrigin="anonymous"
                             loading="eager"
-                            style={{
-                              display: "block",
-                              visibility: "visible",
-                              opacity: 1,
-                              zIndex: 10,
-                            }}
                             onError={(e) => {
-                              console.error("❌ Video avatar failed");
                               const target =
                                 e.currentTarget as HTMLImageElement;
                               target.style.opacity = "0";
@@ -767,8 +728,8 @@ const Home: NextPage = () => {
                         </div>
                       </div>
 
-                      {/* Text Info */}
-                      <div className="flex-1 min-w-0">
+                      {/* Text Info - Proper truncation */}
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <Link href={`/watch/${video._id}`}>
                           <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors">
                             {video?.videotitle || "Untitled Video"}
@@ -782,17 +743,19 @@ const Home: NextPage = () => {
                               `/channel/${video.uploadedBy?._id || "unknown"}`
                             );
                           }}
-                          className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                          className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
                         >
                           {channelName}
                         </p>
 
                         <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
-                          <span className="font-semibold">
+                          <span className="font-semibold truncate">
                             {formatViews(video?.views)}
                           </span>
-                          <span className="font-bold">•</span>
-                          <span>{formatTimeAgo(video?.createdAt)}</span>
+                          <span className="font-bold flex-shrink-0">•</span>
+                          <span className="truncate">
+                            {formatTimeAgo(video?.createdAt)}
+                          </span>
                         </div>
                       </div>
                     </div>
