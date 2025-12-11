@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   poweredByHeader: false,
   
-  // ✅ ADD THIS LINE to fix workspace warning
+  // ✅ Workspace warning fix
   outputFileTracingRoot: process.cwd(),
   
   experimental: {
@@ -65,6 +65,14 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+      // ✅ Mobile hydration fix for channel pages
+      {
+        source: '/channel/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+          { key: 'Pragma', value: 'no-cache' },
         ],
       },
     ];

@@ -11604,3 +11604,20 @@ button {
     display: -webkit-box;
   }
 }
+/* ===== MOBILE RENDERING FIXES ===== */
+@media (max-width: 768px) {
+  /* Force GPU acceleration */
+  [class*="channel-info"],
+  [style*="translateZ"] {
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+  }
+
+  /* Prevent layout shift */
+  .channel-page-container {
+    contain: layout style paint;
+  }
+}

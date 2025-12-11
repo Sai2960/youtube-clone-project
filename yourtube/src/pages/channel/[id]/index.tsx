@@ -87,7 +87,13 @@ const ChannelPage = () => {
   const [shortsError, setShortsError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"videos" | "shorts">("videos");
   const [contentTab, setContentTab] = useState<"videos" | "shorts">("videos");
-  const [refreshKey, setRefreshKey] = useState(0);
+ const [refreshKey, setRefreshKey] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // ✅ Set mounted on client side only
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
@@ -407,8 +413,16 @@ const ChannelPage = () => {
         />
 
       {/* Channel Info Bar - FORCE RENDER WITH SAFE DEFAULTS */}
-        {!loading && channel && (
-          <div className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+       {/* ✅ Channel Info Bar - FIXED FOR MOBILE */}
+        {isMounted && !loading && channel && (
+          <div 
+            key={`channel-info-${channel._id}`}
+            className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+            style={{ 
+              transform: 'translateZ(0)',
+              willChange: 'transform'
+            }}
+          >
             <div className="w-full max-w-7xl mx-auto">
               <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
                 {/* Channel Name Display */}
