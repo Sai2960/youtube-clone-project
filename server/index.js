@@ -350,6 +350,32 @@ app.use("/user", userroutes);
 
 // Video content routes
 // ✅ CRITICAL FIX: Add video list endpoint
+// ✅ ADD THIS BEFORE app.use("/video", videoroutes);
+
+// Force no-cache headers for channel video endpoints
+app.use('/video/channel/:id', (req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store',
+    'Vary': '*',
+  });
+  next();
+});
+
+// Force no-cache for shorts endpoints
+app.use('/shorts/channel/:id', (req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store',
+    'Vary': '*',
+  });
+  next();
+});
+
 
 app.use("/video", videoroutes);
 // ✅ TEMPORARY: Add direct /video GET endpoint until routes are fixed
