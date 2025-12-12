@@ -227,157 +227,137 @@ const ChannelPage = () => {
   // FETCH VIDEOS
   // ============================================================================
 
-// ✅ ANDROID FIX: Fetch videos with proper cache busting
-useEffect(() => {
-  const fetchVideos = async () => {
-    if (!id || typeof id !== "string") {
-      console.log("⚠️ No channel ID for videos");
-      return;
-    }
-
-    try {
-      setVideosLoading(true);
-      console.log("📹 Fetching videos for channel (Android optimized):", id);
-
-      // ✅ CRITICAL: Multiple cache-busting strategies
-      const timestamp = Date.now();
-      const randomParam = Math.random().toString(36).substring(7);
-      
-      const response = await axiosInstance.get(`/video/channel/${id}`, {
-        params: {
-          _t: timestamp,
-          nocache: "true",
-          rand: randomParam,
-          // Android-specific param
-          mobile: "true"
-        },
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-          "Pragma": "no-cache",
-          "Expires": "0",
-          // Android Chrome workaround
-          "If-None-Match": timestamp.toString()
-        },
-        // Force new request
-        timeout: 10000
-      });
-
-      console.log("📹 Videos API response (Android):", {
-        success: response.data.success,
-        count: response.data.data?.length || response.data.videos?.length || 0,
-        timestamp: new Date().toISOString()
-      });
-
-      if (response.data.success && Array.isArray(response.data.data)) {
-        console.log("✅ Setting videos on Android:", response.data.data.length);
-        setVideos(response.data.data);
-      } else if (response.data.videos && Array.isArray(response.data.videos)) {
-        console.log("✅ Setting videos (alternate) on Android:", response.data.videos.length);
-        setVideos(response.data.videos);
-      } else {
-        console.log("⚠️ No videos found on Android");
-        setVideos([]);
+  useEffect(() => {
+    const fetchVideos = async () => {
+      if (!id || typeof id !== "string") {
+        console.log("⚠️ No channel ID for videos");
+        return;
       }
-    } catch (error: any) {
-      console.error("❌ Error fetching videos on Android:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      setVideos([]);
-    } finally {
-      setVideosLoading(false);
-    }
-  };
 
-  // ✅ Android fix: Slightly longer delay
-  const timer = setTimeout(fetchVideos, 200);
-  return () => clearTimeout(timer);
-}, [id]);
+      try {
+        setVideosLoading(true);
+        console.log("📹 Fetching videos for channel:", id);
+
+        // ✅ CRITICAL: Force no-cache on mobile
+        const response = await axiosInstance.get(`/video/channel/${id}`, {
+          params: {
+            _t: Date.now(),
+            nocache: "true",
+          },
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
+
+        console.log("📹 Videos API response:", {
+          success: response.data.success,
+          count: response.data.data?.length || response.data.videos?.length || 0,
+        });
+
+        if (response.data.success && Array.isArray(response.data.data)) {
+          console.log("✅ Setting videos:", response.data.data.length);
+          setVideos(response.data.data);
+        } else if (response.data.videos && Array.isArray(response.data.videos)) {
+          console.log("✅ Setting videos (alternate):", response.data.videos.length);
+          setVideos(response.data.videos);
+        } else if (response.data.data) {
+          const videoList = Array.isArray(response.data.data)
+            ? response.data.data
+            : [response.data.data];
+          console.log("✅ Setting videos (converted):", videoList.length);
+          setVideos(videoList);
+        } else {
+          console.log("⚠️ No videos in response");
+          setVideos([]);
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching videos:", {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        setVideos([]);
+      } finally {
+        setVideosLoading(false);
+      }
+    };
+
+    const timer = setTimeout(fetchVideos, 100);
+    return () => clearTimeout(timer);
+  }, [id]);
 
     // ============================================================================
   // FETCH SHORTS
   // ============================================================================
 
-  // ✅ ANDROID FIX: Fetch shorts with aggressive cache busting
-useEffect(() => {
-  const fetchShorts = async () => {
-    if (!id || typeof id !== "string") {
-      console.log("⚠️ No channel ID for shorts");
-      return;
-    }
+  useEffect(() => {
+    const fetchShorts = async () => {
+      if (!id || typeof id !== "string") {
+        console.log("⚠️ No channel ID for shorts");
+        return;
+      }
 
-    try {
-      setShortsLoading(true);
-      setShortsError(null);
-      console.log("🎬 Fetching shorts for channel (Android):", id);
+      try {
+        setShortsLoading(true);
+        setShortsError(null);
+        console.log("🎬 Fetching shorts for channel:", id);
 
-      // ✅ CRITICAL: Android-specific cache busting
-      const timestamp = Date.now();
-      const randomParam = Math.random().toString(36).substring(7);
+        // ✅ CRITICAL: Force no-cache on mobile
+        const response = await axiosInstance.get(`/shorts/channel/${id}`, {
+          params: {
+            page: 1,
+            limit: 100,
+            _t: Date.now(),
+            nocache: "true",
+          },
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
 
-      const response = await axiosInstance.get(`/shorts/channel/${id}`, {
-        params: {
-          page: 1,
-          limit: 100,
-          _t: timestamp,
-          nocache: "true",
-          rand: randomParam,
-          mobile: "android", // Specific flag
-          v: "2" // API version flag
-        },
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-          "Pragma": "no-cache",
-          "Expires": "0",
-          "If-None-Match": timestamp.toString(),
-          // Android WebView workaround
-          "X-Requested-With": "XMLHttpRequest"
-        },
-        timeout: 15000 // Longer timeout for Android
-      });
+        console.log("🎬 Shorts API response:", {
+          success: response.data.success,
+          count: response.data.data?.length || response.data.shorts?.length || 0,
+        });
 
-      console.log("🎬 Shorts API response (Android):", {
-        success: response.data.success,
-        count: response.data.data?.length || response.data.shorts?.length || 0,
-        timestamp: new Date().toISOString()
-      });
+        if (response.data.success) {
+          const fetchedShorts = response.data.data || response.data.shorts || [];
+          console.log("✅ Setting shorts:", fetchedShorts.length);
 
-      if (response.data.success) {
-        const fetchedShorts = response.data.data || response.data.shorts || [];
-        console.log("✅ Setting shorts on Android:", fetchedShorts.length);
+          const processedShorts = fetchedShorts.map((short: any) => ({
+            ...short,
+            thumbnailUrl: short.thumbnailUrl || short.thumbnail,
+            videoUrl: short.videoUrl || short.video,
+          }));
 
-        const processedShorts = fetchedShorts.map((short: any) => ({
-          ...short,
-          thumbnailUrl: short.thumbnailUrl || short.thumbnail,
-          videoUrl: short.videoUrl || short.video,
-        }));
+          setShorts(processedShorts);
+        } else {
+          console.log("⚠️ No shorts in response");
+          setShorts([]);
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching shorts:", {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
 
-        setShorts(processedShorts);
-      } else {
-        console.log("⚠️ No shorts in response on Android");
+        if (error.response?.status !== 404) {
+          setShortsError("Failed to load shorts");
+        }
         setShorts([]);
+      } finally {
+        setShortsLoading(false);
       }
-    } catch (error: any) {
-      console.error("❌ Error fetching shorts on Android:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
+    };
 
-      if (error.response?.status !== 404) {
-        setShortsError("Failed to load shorts");
-      }
-      setShorts([]);
-    } finally {
-      setShortsLoading(false);
-    }
-  };
-
-  // ✅ Android fix: Longer delay to ensure render
-  const timer = setTimeout(fetchShorts, 300);
-  return () => clearTimeout(timer);
-}, [id, refreshKey]);
+    const timer = setTimeout(fetchShorts, 150);
+    return () => clearTimeout(timer);
+  }, [id, refreshKey]);
 
     // ============================================================================
   // EVENT HANDLERS
@@ -527,66 +507,62 @@ useEffect(() => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-     {/* ✅ CHANNEL INFO BAR - ANDROID FIXED VERSION */}
-{channel && isMounted && (
-  <div
-    ref={infoBarRef}
-    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-    className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-    style={{
-      display: 'block',
-      minHeight: '80px',
-      visibility: 'visible',
-      opacity: 1,
-      position: 'relative',
-      zIndex: 1
-    }}
-  >
-    <div className="w-full max-w-7xl mx-auto">
-      {/* Force content visibility */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center lg:gap-6" style={{ minHeight: '40px' }}>
-        
-        {/* Channel Name - ALWAYS VISIBLE */}
-        <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold" style={{ display: 'flex' }}>
-          <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-          <span className="text-sm sm:text-base truncate">
-            {channel.channelname || channel.name || "Channel"}
-          </span>
-        </div>
+        {/* ✅ CHANNEL INFO BAR - FORCE VISIBLE ON ANDROID */}
+        {channel && videos.length >= 0 && shorts.length >= 0 && isMounted && (
+          <div
+            ref={infoBarRef}
+            key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+            className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+            style={{
+              display: "block",
+              minHeight: "80px",
+              visibility: "visible",
+              opacity: 1,
+            }}
+          >
+            <div className="w-full max-w-7xl mx-auto">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
+                {/* Channel Name */}
+                <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span className="text-sm sm:text-base truncate">
+                    {channel.channelname || channel.name || "Unknown"}
+                  </span>
+                </div>
 
-        {/* Joined Date */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400" style={{ display: 'flex' }}>
-          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="text-xs sm:text-sm whitespace-nowrap">
-            Joined{" "}
-            {channel.joinedon
-              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                  month: "short",
-                  year: "numeric",
-                })
-              : "Recently"}
-          </span>
-        </div>
+                {/* Joined Date */}
+                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                    Joined{" "}
+                    {channel.joinedon
+                      ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "Recently"}
+                  </span>
+                </div>
 
-        {/* Video Count */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400" style={{ display: 'flex' }}>
-          <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="text-xs sm:text-sm whitespace-nowrap">
-            {videos.length} video{videos.length !== 1 ? "s" : ""}
-          </span>
-        </div>
+                {/* Video Count */}
+                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+                  <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                    {videos.length} video{videos.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
 
-        {/* Shorts Count */}
-        <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400" style={{ display: 'flex' }}>
-          <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="text-xs sm:text-sm whitespace-nowrap">
-            {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                {/* Shorts Count */}
+                <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+                  <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                    {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* ============================================================================
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}

@@ -10,18 +10,6 @@ export default function CustomDocument() {  return (
         <meta name="apple-mobile-web-app-title" content="YourTube" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-
-          {/* ✅ ANDROID-SPECIFIC META TAGS */}
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
-  
-  {/* Prevent Android Chrome from caching aggressively */}
-  <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta httpEquiv="Pragma" content="no-cache" />
-  <meta httpEquiv="Expires" content="0" />
-  
-  {/* PWA Meta Tags */}
-  <meta name="application-name" content="YourTube" />
         
         {/* Theme Color - Dynamic based on theme */}
         <meta name="theme-color" content="#0f0f0f" />
