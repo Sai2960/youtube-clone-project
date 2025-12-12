@@ -2,7 +2,7 @@
 // lib/AuthContext.tsx - SECURE VERSION
 
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
-import { useState, createContext, useEffect, useContext, useRef, useMemo } from "react";
+import { useState, createContext, useEffect, useContext, useRef, useMemo, useCallback } from "react";
 import { provider, auth } from "./firebase";
 import axiosInstance from "./axiosinstance";
 import { applyTheme } from './theme';
