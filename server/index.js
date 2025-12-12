@@ -275,21 +275,203 @@ app.use(
     maxAge: 86400,
   })
 );
+
+// ✅ CRITICAL: Video streaming route with range support
+app.get('/uploads/shorts/videos/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const videoPath = path.join(__dirname, 'uploads', 'shorts', 'videos', filename);
+  
+  console.log('🎬 Video stream request:', filename);
+  
+  // Check if file exists
+  if (!fs.existsSync(videoPath)) {
+    console.error('❌ Video file not found:', videoPath);
+    return res.status(404).json({ success: false, message: 'Video not found' });
+  }
+  
+  const stat = fs.statSync(videoPath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+  
+  console.log('📊 Video info:', {
+    size: fileSize,
+    range: range || 'no range',
+    path: videoPath.substring(0, 60)
+  });
+  
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+  
+  if (range) {
+    // Parse range header
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    
+    if (start >= fileSize) {
+      res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+      return res.end();
+    }
+    
+    const chunksize = (end - start) + 1;
+    const file = fs.createReadStream(videoPath, { start, end });
+    
+    const head = {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunksize,
+      'Content-Type': 'video/mp4',
+    };
+    
+    console.log('✅ Streaming partial content:', { start, end, chunksize });
+    res.writeHead(206, head);
+    file.pipe(res);
+  } else {
+    // No range request, send entire file
+    const head = {
+      'Content-Length': fileSize,
+      'Content-Type': 'video/mp4',
+      'Accept-Ranges': 'bytes',
+    };
+    
+    console.log('✅ Streaming full video');
+    res.writeHead(200, head);
+    fs.createReadStream(videoPath).pipe(res);
+  }
+});
+
+// Debug endpoint to test video URL
+app.get('/api/test-video/:shortId', async (req, res) => {
+  try {
+    const { shortId } = req.params;
+    console.log('🔍 Testing video access for short:', shortId);
+    
+    const mongoose = await import('mongoose');
+    const Short = mongoose.connection.model('Short');
+    
+    const short = await Short.findById(shortId);
+    
+    if (!short) {
+      return res.status(404).json({ success: false, message: 'Short not found' });
+    }
+    
+    const videoUrl = short.videoUrl;
+    console.log('📹 Video URL:', videoUrl);
+    
+    // Check if file exists
+    let fileExists = false;
+    let filePath = '';
+    
+    if (videoUrl.includes('/uploads/')) {
+      filePath = path.join(__dirname, videoUrl.replace(/^\//, ''));
+      fileExists = fs.existsSync(filePath);
+    }
+    
+    res.json({
+      success: true,
+      videoUrl,
+      fileExists,
+      filePath: fileExists ? filePath : 'N/A',
+      isCloudinary: videoUrl.includes('cloudinary.com'),
+      isLocal: videoUrl.includes('/uploads/'),
+    });
+  } catch (error) {
+    console.error('❌ Test video error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Same for regular videos
+app.get('/uploads/videos/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const videoPath = path.join(__dirname, 'uploads', 'videos', filename);
+  
+  if (!fs.existsSync(videoPath)) {
+    console.error('❌ Video file not found:', videoPath);
+    return res.status(404).json({ success: false, message: 'Video not found' });
+  }
+  
+  const stat = fs.statSync(videoPath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+  
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+  
+  if (range) {
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    
+    if (start >= fileSize) {
+      res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+      return res.end();
+    }
+    
+    const chunksize = (end - start) + 1;
+    const file = fs.createReadStream(videoPath, { start, end });
+    
+    const head = {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunksize,
+      'Content-Type': 'video/mp4',
+    };
+    
+    res.writeHead(206, head);
+    file.pipe(res);
+  } else {
+    const head = {
+      'Content-Length': fileSize,
+      'Content-Type': 'video/mp4',
+      'Accept-Ranges': 'bytes',
+    };
+    
+    res.writeHead(200, head);
+    fs.createReadStream(videoPath).pipe(res);
+  }
+});
+// Enhanced preflight handler
 // Enhanced preflight handler
 // Enhanced preflight handler
 // Enhanced preflight handler
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // ✅ CRITICAL: For uploads and API calls, be VERY permissive
-  if (req.path.includes('/upload') || req.path.includes('/api/') || req.path.includes('/video/')) {
+  // ✅ CRITICAL: Always set CORS headers for video content
+  if (req.path.includes('/uploads/') || 
+      req.path.includes('/video/') || 
+      req.path.includes('/shorts/')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 
+      'Content-Type, Authorization, Range, Accept, Origin, Cache-Control'
+    );
+    res.setHeader('Access-Control-Expose-Headers', 
+      'Content-Length, Content-Range, Accept-Ranges, Content-Type'
+    );
+    
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
+  }
+  
+  // For API calls, be permissive
+  if (req.path.includes('/api/')) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400');
     res.setHeader('Access-Control-Allow-Headers', 
       'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since, X-Auth-Token'
     );
-    console.log('🚀 Permissive CORS for:', req.path);
   } else if (origin && isOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else if (process.env.NODE_ENV === 'production') {
@@ -297,15 +479,10 @@ app.use((req, res, next) => {
   }
   
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 
-    'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since, X-Auth-Token'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD');
   res.setHeader('Access-Control-Max-Age', '86400');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range, ETag');
   
   if (req.method === 'OPTIONS') {
-    console.log("✅ Preflight request handled for:", req.path);
     return res.status(204).end();
   }
   
@@ -320,6 +497,7 @@ app.use(express.urlencoded({ limit: "30mb", extended: true }));
 app.use(bodyParser.json());
 
 // Static file serving for uploads and invoices
+// Static file serving for uploads and invoices
 app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
   setHeaders: (res, filePath) => {
     // Set proper MIME types
@@ -333,11 +511,18 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
       res.set('Content-Type', 'image/png');
     }
     
-    // Enable CORS for media files
+    // ✅ CRITICAL: Enable CORS for media files
     res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Range');
+    res.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Range, Content-Type, Authorization');
+    res.set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+    
+    // ✅ CRITICAL: Enable range requests for video streaming
     res.set('Accept-Ranges', 'bytes');
+    
+    // ✅ CRITICAL: Prevent caching issues
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.set('X-Content-Type-Options', 'nosniff');
   }
 }));
 app.use("/invoices", express.static(path.join(__dirname, "invoices")));
