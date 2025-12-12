@@ -791,6 +791,14 @@ router.get("/channel/:channelId", async (req, res) => {
 
     console.log(`✅ Found ${videos.length} videos for channel`);
 
+    // ✅ ANDROID FIX: Aggressive anti-caching headers
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+    // Android Chrome specific
+    res.setHeader("X-Accel-Expires", "0");
+
     res.json({
       success: true,
       data: videos,
@@ -799,6 +807,11 @@ router.get("/channel/:channelId", async (req, res) => {
       total: totalCount,
       page: parseInt(page),
       totalPages: Math.ceil(totalCount / parseInt(limit)),
+      // Android debug info
+      _debug: {
+        timestamp: Date.now(),
+        mobile: req.query.mobile || 'unknown'
+      }
     });
   } catch (error) {
     console.error("❌ Error fetching channel videos:", error);
