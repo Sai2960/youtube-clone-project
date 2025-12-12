@@ -591,24 +591,7 @@ useEffect(() => {
   </div>
 )}
 
-{/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
-{process.env.NODE_ENV === 'development' && (
-  <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
-    <button
-      onClick={() => {
-        console.log('🔄 Force refresh triggered');
-        setRefreshKey(prev => prev + 1);
-        setRenderKey(prev => prev + 1);
-      }}
-      className="px-4 py-2 bg-blue-600 text-white rounded"
-    >
-      Force Refresh (Debug)
-    </button>
-    <span className="ml-4 text-xs">
-      Videos: {videos.length} | Shorts: {shorts.length} | Render: {renderKey}
-    </span>
-  </div>
-)}
+
         {/* ============================================================================
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}
