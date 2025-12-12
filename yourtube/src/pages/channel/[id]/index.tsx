@@ -171,104 +171,57 @@ const ChannelPage = () => {
     }
   }, [channel, videos.length, shorts.length, isMounted, renderKey]);
 
-   // ============================================================================
-// FETCH CHANNEL DATA - ANDROID FORCE REFRESH
-// ============================================================================
+    // ============================================================================
+  // FETCH CHANNEL DATA
+  // ============================================================================
 
-useEffect(() => {
-  const fetchChannel = async () => {
-    if (!id || typeof id !== "string") return;
+  useEffect(() => {
+    const fetchChannel = async () => {
+      if (!id || typeof id !== "string") return;
 
-    try {
-      setLoading(true);
-      console.log("📡 Fetching channel:", id);
+      try {
+        setLoading(true);
+        console.log("📡 Fetching channel:", id);
 
-      // ✅ ANDROID FIX: Force complete cache bypass
-      const timestamp = Date.now();
-      const randomSalt = Math.random().toString(36).substring(7);
-      
-      const response = await axiosInstance.get(`/auth/channel/${id}`, {
-        params: {
-          _t: timestamp,
-          _nocache: timestamp,
-          _refresh: 'force',
-          _salt: randomSalt,
-          _android: 'true'
-        },
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-          'If-None-Match': '*',
-          'If-Modified-Since': '0',
-        },
-        // ✅ Force Axios to bypass its internal cache
-        adapter: 'xhr', 
-      });
+        const response = await axiosInstance.get(`/auth/channel/${id}`);
 
-      console.log("📥 Channel response:", response.data);
+        if (response.data.success && response.data.user) {
+          const channelData = response.data.user;
 
-      if (response.data.success && response.data.user) {
-        const channelData = response.data.user;
+          // ✅ Ensure subscribers is a number
+          if (typeof channelData.subscribers !== "number") {
+            channelData.subscribers = 0;
+          }
 
-        // ✅ Ensure subscribers is a number
-        if (typeof channelData.subscribers !== "number") {
-          channelData.subscribers = 0;
+          setChannel(channelData);
+          console.log("✅ Channel loaded:", channelData.channelname);
+
+          // ✅ Update user context if viewing own channel
+          if (user && user._id === id) {
+            const updatedUser = {
+              ...user,
+              image: channelData.image || user.image,
+              bannerImage: channelData.bannerImage || user.bannerImage,
+              channelname: channelData.channelname || user.channelname,
+              description: channelData.description || user.description,
+              subscribers: channelData.subscribers,
+            };
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+            updateUser(updatedUser);
+          }
+        } else {
+          setChannel(null);
         }
-
-        // ✅ Force image URLs to be fresh
-        if (channelData.image) {
-          channelData.image = `${channelData.image}?t=${timestamp}`;
-        }
-        if (channelData.bannerImage) {
-          channelData.bannerImage = `${channelData.bannerImage}?t=${timestamp}`;
-        }
-
-        console.log("✅ Channel loaded:", {
-          name: channelData.channelname,
-          image: channelData.image?.substring(0, 60),
-          banner: channelData.bannerImage?.substring(0, 60),
-        });
-
-        setChannel(channelData);
-
-        // ✅ Update user context if viewing own channel
-        if (user && user._id === id) {
-          const updatedUser = {
-            ...user,
-            image: channelData.image || user.image,
-            bannerImage: channelData.bannerImage || user.bannerImage,
-            channelname: channelData.channelname || user.channelname,
-            description: channelData.description || user.description,
-            subscribers: channelData.subscribers,
-          };
-          
-          // ✅ Update localStorage
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-          updateUser(updatedUser);
-          
-          console.log("✅ Updated user context");
-        }
-      } else {
-        console.warn("⚠️ Invalid channel response");
+      } catch (error: any) {
+        console.error("❌ Channel fetch error:", error);
         setChannel(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      console.error("❌ Channel fetch error:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      setChannel(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  // ✅ Force immediate fetch without debounce
-  fetchChannel();
-  
-}, [id, user?._id, refreshKey]); // ✅ Add refreshKey as dependency
+    fetchChannel();
+  }, [id, user?._id]);
 
     // ============================================================================
   // FETCH VIDEOS

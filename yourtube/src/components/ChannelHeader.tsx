@@ -38,21 +38,6 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
   const [localChannel, setLocalChannel] = useState(channel);
   const [imageKey, setImageKey] = useState(Date.now());
 
-  {/* ✅ ANDROID: Manual Refresh Button */}
-{typeof window !== 'undefined' && /android/i.test(navigator.userAgent) && (
-  <button
-    onClick={() => {
-      console.log('🔄 Force refresh triggered');
-      setImageKey(Date.now());
-      if (onAvatarUpdate) onAvatarUpdate();
-      window.location.reload();
-    }}
-    className="absolute top-2 left-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-lg"
-  >
-    🔄 Refresh
-  </button>
-)}
-
   useEffect(() => {
     if (user?._id) {
       try {
@@ -145,39 +130,22 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       {/* ============================================================ */}
       {/* BANNER - Responsive with Edit Button */}
       {/* ============================================================ */}
-     <div className="relative w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 overflow-hidden group">
-  {localChannel.bannerImage ? (
-    <img 
-      key={`banner-${imageKey}-${Date.now()}`}
-      src={`${displayBanner}${displayBanner.includes('?') ? '&' : '?'}t=${Date.now()}&nocache=true`}
-      alt="Channel Banner" 
-      className="w-full h-full object-cover"
-      loading="eager"
-      crossOrigin="anonymous"
-      onError={(e) => {
-        console.error('❌ Banner load failed:', displayBanner);
-        const target = e.currentTarget as HTMLImageElement;
-        
-        // ✅ Try one more time with fresh URL
-        if (!target.dataset.retried) {
-          target.dataset.retried = 'true';
-          const freshUrl = displayBanner.split('?')[0];
-          target.src = `${freshUrl}?force=${Date.now()}&retry=1`;
-          console.log('🔄 Retrying banner load');
-          return;
-        }
-        
-        // ✅ Final fallback - hide image
-        target.style.display = 'none';
-      }}
-      onLoad={() => {
-        console.log('✅ Banner loaded successfully');
-      }}
-    />
-  ) : (
+      <div className="relative w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 overflow-hidden group">
+        {localChannel.bannerImage ? (
+          <img 
+            key={`banner-${imageKey}`}
+            src={displayBanner}
+            alt="Channel Banner" 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error('❌ Banner error');
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500">
-      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle,rgba(255,255,255,0.3),rgba(255,255,255,0))]"></div>
-    </div>
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle,rgba(255,255,255,0.3),rgba(255,255,255,0))]"></div>
+          </div>
         )}
         
         {isOwnChannel && (
@@ -207,20 +175,10 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
             <div className="relative flex-shrink-0">
               <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white dark:border-gray-900 shadow-xl ring-2 ring-gray-200 dark:ring-gray-700">
                 <AvatarImage 
-  key={`avatar-${imageKey}-${Date.now()}`}
-  src={`${displayImage}${displayImage.includes('?') ? '&' : '?'}t=${Date.now()}&nocache=true`}
-  alt={displayName}
-  loading="eager"
-  crossOrigin="anonymous"
-  onError={(e) => {
-    console.error('❌ Avatar load failed');
-    const target = e.currentTarget as HTMLImageElement;
-    if (!target.dataset.retried) {
-      target.dataset.retried = 'true';
-      target.src = `${displayImage.split('?')[0]}?force=${Date.now()}`;
-    }
-  }}
-/>
+                  key={`mobile-avatar-${imageKey}`}
+                  src={displayImage}
+                  alt={displayName}
+                />
                 <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                   {displayName[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
