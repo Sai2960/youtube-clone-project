@@ -11631,3 +11631,59 @@ button {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+/* ✅ ANDROID CRITICAL FIXES */
+
+/* Force visibility on Android */
+@media (max-width: 768px) {
+  /* Prevent elements from being hidden */
+  [style*="display: none"] {
+    display: block !important;
+  }
+  
+  /* Force channel info bar visibility */
+  div[class*="bg-gray-50"][class*="border-b"] {
+    display: block !important;
+    min-height: 80px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Force banner visibility */
+  img[alt="Channel Banner"] {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* Prevent Android from hiding overflow */
+  body, html {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Fix Android input zoom */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  
+  /* Fix Android touch delay */
+  * {
+    touch-action: manipulation;
+  }
+  
+  /* Prevent pull-to-refresh interference */
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* Android Chrome specific */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for Android Chrome hiding elements */
+  .channel-info-bar,
+  [data-channel-info],
+  div[role="banner"] {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+}

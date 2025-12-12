@@ -37,7 +37,6 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [localChannel, setLocalChannel] = useState(channel);
   const [imageKey, setImageKey] = useState(Date.now());
-  
 
   useEffect(() => {
     if (user?._id) {
@@ -122,8 +121,8 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   const isOwnChannel = user?._id === localChannel._id;
   const displayName = localChannel.channelname || localChannel.name || 'Unknown Channel';
- const displayImage = getImageUrl(localChannel.image, true) + `?t=${imageKey}`;
-const displayBanner = getImageUrl(localChannel.bannerImage, true) + `?t=${imageKey}`;
+  const displayImage = getImageUrl(localChannel.image, true);
+  const displayBanner = getImageUrl(localChannel.bannerImage, true);
   const displayHandle = displayName.toLowerCase().replace(/\s+/g, "");
 
   return (
@@ -132,37 +131,52 @@ const displayBanner = getImageUrl(localChannel.bannerImage, true) + `?t=${imageK
       {/* BANNER - Responsive with Edit Button */}
       {/* ============================================================ */}
       <div className="relative w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 overflow-hidden group">
-       {localChannel.bannerImage ? (
-  <img 
-    key={`banner-${imageKey}-${Date.now()}`}
-    src={`${displayBanner}&bust=${Date.now()}`}
-    alt="Channel Banner" 
-    className="w-full h-full object-cover"
-    onError={(e) => {
-      console.error('❌ Banner error:', displayBanner);
-      e.currentTarget.style.display = 'none';
-    }}
-    onLoad={() => console.log('✅ Banner loaded')}
-  />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500">
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle,rgba(255,255,255,0.3),rgba(255,255,255,0))]"></div>
-          </div>
-        )}
-        
-        {isOwnChannel && (
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/70 hover:bg-black/90 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs sm:text-sm backdrop-blur-sm shadow-lg font-medium"
-          >
-            <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Edit Banner</span>
-            <span className="sm:hidden">Edit</span>
-          </button>
-        )}
-        
-        <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-20 bg-gradient-to-t from-white dark:from-gray-900 to-transparent"></div>
-      </div>
+  {localChannel.bannerImage ? (
+    <img 
+      key={`banner-${imageKey}`}
+      src={displayBanner}
+      alt="Channel Banner" 
+      className="w-full h-full object-cover"
+      loading="eager"
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover'
+      }}
+      onLoad={() => {
+        console.log('✅ Banner loaded on Android');
+      }}
+      onError={(e) => {
+        console.error('❌ Banner error on Android');
+        e.currentTarget.style.display = 'none';
+        // Force gradient fallback
+        const parent = e.currentTarget.parentElement;
+        if (parent) {
+          parent.style.background = 'linear-gradient(to right, rgb(59, 130, 246), rgb(168, 85, 247), rgb(236, 72, 153))';
+        }
+      }}
+    />
+  ) : (
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500">
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle,rgba(255,255,255,0.3),rgba(255,255,255,0))]"></div>
+    </div>
+  )}
+  
+  {isOwnChannel && (
+    <button
+      onClick={() => setShowEditModal(true)}
+      className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/70 hover:bg-black/90 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs sm:text-sm backdrop-blur-sm shadow-lg font-medium"
+      style={{ zIndex: 10 }}
+    >
+      <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
+      <span className="hidden sm:inline">Edit Banner</span>
+      <span className="sm:hidden">Edit</span>
+    </button>
+  )}
+  
+  <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-20 bg-gradient-to-t from-white dark:from-gray-900 to-transparent"></div>
+</div>
 
       {/* ============================================================ */}
       {/* CHANNEL INFO CONTAINER */}
@@ -175,17 +189,16 @@ const displayBanner = getImageUrl(localChannel.bannerImage, true) + `?t=${imageK
         <div className="md:hidden">
           <div className="flex items-start gap-4 mb-4">
             <div className="relative flex-shrink-0">
-             <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white dark:border-gray-900 shadow-xl ring-2 ring-gray-200 dark:ring-gray-700">
-  <AvatarImage 
-    key={`mobile-avatar-${imageKey}-${Date.now()}`}
-    src={`${displayImage}&bust=${Date.now()}`}
-    alt={displayName}
-    onLoad={() => console.log('✅ Mobile avatar loaded')}
-  />
-  <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-    {displayName[0]?.toUpperCase() || 'U'}
-  </AvatarFallback>
-</Avatar>
+              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white dark:border-gray-900 shadow-xl ring-2 ring-gray-200 dark:ring-gray-700">
+                <AvatarImage 
+                  key={`mobile-avatar-${imageKey}`}
+                  src={displayImage}
+                  alt={displayName}
+                />
+                <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                  {displayName[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
               
               {isOwnChannel && (
                 <button
