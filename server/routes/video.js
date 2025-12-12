@@ -150,14 +150,26 @@ router.post("/test-upload",
 );
 
 router.use((req, res, next) => {
-  if (req.path.startsWith('/upload')) {
-    console.log('\n📤 UPLOAD ROUTE DEBUG:');
-    console.log('   Path:', req.path);
-    console.log('   Method:', req.method);
-    console.log('   Headers:', req.headers.authorization ? 'Token present' : 'No token');
-    console.log('   req.userId:', req.userId);
-    console.log('   req.user:', req.user ? 'User object exists' : 'No user object');
+  const origin = req.headers.origin;
+  
+  // Allow all Vercel domains
+  if (origin && /vercel\.app$/.test(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 
+    'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since'
+  ); // ✅ ADDED if-none-match
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  
   next();
 });
 // =================== HELPER FUNCTIONS ===================
@@ -760,7 +772,7 @@ router.get("/trending/videos", cache(180), async (req, res) => {
 router.get("/channel/:channelId", async (req, res) => {
   try {
     const { channelId } = req.params;
-    const { page = 1, limit = 50, sort = "createdAt" } = req.query;
+    const { page = 1, limit = 50 } = req.query;
 
     console.log("📹 Fetching videos for channel:", channelId);
 
@@ -771,9 +783,15 @@ router.get("/channel/:channelId", async (req, res) => {
       });
     }
 
+    // ✅ CRITICAL: Aggressive no-cache headers for mobile
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    res.setHeader('X-Accel-Expires', '0');
+    res.setHeader('ETag', `"${Date.now()}"`);
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const sortOptions = {};
-    sortOptions[sort] = -1;
 
     const [videos, totalCount] = await Promise.all([
       videofiles
@@ -782,20 +800,20 @@ router.get("/channel/:channelId", async (req, res) => {
         })
         .populate({
           path: "uploadedBy user",
-          select:
-            "name email channelname channelName image avatar bannerImage subscribers",
+          select: "name email channelname channelName image avatar bannerImage subscribers",
           options: { strictPopulate: false },
         })
-        .sort(sortOptions)
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
-        .lean(),
+        .lean()
+        .hint({ createdAt: -1 }),
       videofiles.countDocuments({
         $or: [{ uploadedBy: channelId }, { user: channelId }],
       }),
     ]);
 
-    console.log(`✅ Found ${videos.length} videos for channel`);
+    console.log(`✅ Found ${videos.length} videos for channel (timestamp: ${Date.now()})`);
 
     res.json({
       success: true,
@@ -805,16 +823,14 @@ router.get("/channel/:channelId", async (req, res) => {
       total: totalCount,
       page: parseInt(page),
       totalPages: Math.ceil(totalCount / parseInt(limit)),
+      timestamp: Date.now(),
     });
   } catch (error) {
     console.error("❌ Error fetching channel videos:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch channel videos",
-      error:
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : "Internal server error",
+      error: error.message,
     });
   }
 });
