@@ -9,6 +9,10 @@ import SubscribeButton from "./SubscribeButton";
 import EditChannelModal from "./EditChannelModal";
 import { getImageUrl } from "@/lib/imageUtils";
 
+
+const DEFAULT_AVATAR = process.env.NEXT_PUBLIC_DEFAULT_AVATAR || '/images/default-avatar.png';
+
+
 interface ChannelHeaderProps {
   channel: any;
   user: any;

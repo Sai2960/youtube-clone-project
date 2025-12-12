@@ -51,7 +51,8 @@ export const UserProvider = ({ children }) => {
   const hasInitializedRef = useRef(false);
   const authUnsubscribeRef = useRef(null);
 
- const login = (userdata, token, theme = null, location = null, otpMethod = 'sms') => {
+  // ✅ CRITICAL: Move login INSIDE component
+  const login = useCallback((userdata, token, theme = null, location = null, otpMethod = 'sms') => {
     console.log('🔐 ===== LOGIN FUNCTION =====');
     console.log('📦 User data:', {
       id: userdata._id || userdata.id,
@@ -61,54 +62,50 @@ export const UserProvider = ({ children }) => {
     console.log('🔑 Token received:', token ? `Yes (${token.length} chars)` : 'NO TOKEN!');
     
     if (!token) {
-      console.error('❌ CRITICAL: No token provided to login function!');
+      console.error('❌ CRITICAL: No token provided!');
       setError('Authentication failed - no token received');
       return;
     }
     
     if (!userdata._id && !userdata.id) {
-      console.error('❌ CRITICAL: No user ID in user data!');
+      console.error('❌ CRITICAL: No user ID!');
       setError('Authentication failed - invalid user data');
       return;
     }
+    
+    const DEFAULT_AVATAR = '/images/default-avatar.png';
     
     const enrichedUser = {
       ...userdata,
       _id: userdata._id || userdata.id,
       id: userdata._id || userdata.id,
-      image: userdata.image || userdata.avatar || '/default-avatar.png',
+      image: userdata.image || userdata.avatar || DEFAULT_AVATAR,
       theme: theme || userdata.theme || localStorage.getItem('theme') || 'dark',
       location: location || null,
       preferredOtpMethod: otpMethod || 'sms'
     };
     
-    console.log('💾 Saving to localStorage:', {
-      userId: enrichedUser._id,
-      tokenLength: token.length,
-    });
+    console.log('💾 Saving to localStorage');
     
-    // ✅ CRITICAL: Save user FIRST, then token
+    // ✅ Save user FIRST, then token
     localStorage.setItem("user", JSON.stringify(enrichedUser));
     localStorage.setItem("token", token);
     
     // ✅ THEN update state
     setUser(enrichedUser);
     
-    console.log('✅ User logged in successfully');
-    console.log('🔑 Token saved to localStorage');
-    console.log('===== LOGIN COMPLETE =====\n');
+    console.log('✅ Login complete\n');
     
     if (theme || userdata.theme) {
       applyTheme(enrichedUser.theme);
     }
     
-    // ✅ Dispatch AFTER everything is saved
     window.dispatchEvent(new Event('tokenUpdated'));
     setError(null);
-  };
+  }, []); // ✅ Empty deps - stable function
 
-  const updateUser = (userData) => {
-    console.log('🔄 Updating user data:', userData);
+  const updateUser = useCallback((userData) => {
+    console.log('🔄 Updating user data');
     
     setUser(currentUser => {
       const updatedUser = {
@@ -121,7 +118,7 @@ export const UserProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(updatedUser));
       
       if (userData.theme && userData.theme !== currentUser?.theme) {
-        console.log('🎨 User theme changed, applying IMMEDIATELY:', userData.theme);
+        console.log('🎨 Applying theme:', userData.theme);
         applyTheme(userData.theme);
       }
       
@@ -133,9 +130,9 @@ export const UserProvider = ({ children }) => {
       newValue: JSON.stringify(userData),
       url: window.location.href
     }));
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     console.log('🚪 Logging out...');
     
     setUser(null);
@@ -144,26 +141,26 @@ export const UserProvider = ({ children }) => {
     localStorage.removeItem("token");
     
     disconnectSocket();
-    
     window.dispatchEvent(new Event('tokenUpdated'));
     
     try {
       await signOut(auth);
-      console.log('✅ Firebase sign out successful');
+      console.log('✅ Sign out successful');
     } catch (error) {
-      console.error("❌ Error during sign out:", error);
+      console.error("❌ Sign out error:", error);
     }
-  };
+  }, []);
 
-  const handlegooglesignin = async () => {
+  const handlegooglesignin = useCallback(async () => {
     try {
       setError(null);
-      console.log('🔵 Initiating Google Sign-In...');
+      console.log('🔵 Google Sign-In...');
       
       const result = await signInWithPopup(auth, provider);
       const firebaseuser = result.user;
       
-      // ✅ FIXED: Use constant instead of hardcoded URL
+      const DEFAULT_AVATAR = '/images/default-avatar.png';
+      
       const payload = {
         email: firebaseuser.email,
         name: firebaseuser.displayName,
@@ -197,7 +194,7 @@ export const UserProvider = ({ children }) => {
           errorMessage = serverMessage || errorMessage;
         }
       } else if (error.request) {
-        errorMessage = 'Cannot connect to server. Check if backend is running.';
+        errorMessage = 'Cannot connect to server.';
       } else {
         errorMessage = error.message;
       }
@@ -205,7 +202,7 @@ export const UserProvider = ({ children }) => {
       setError(errorMessage);
       throw new Error(errorMessage);
     }
-  };
+  }, [login]); 
 
   useEffect(() => {
     if (hasInitializedRef.current) {
