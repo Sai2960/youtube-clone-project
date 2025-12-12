@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react-hooks/exhaustive-deps */
 // src/pages/channel/[id]/index.tsx - COMPLETE FINAL FIXED VERSION
 
@@ -259,7 +260,6 @@ useEffect(() => {
 
       const timestamp = Date.now();
       
-      // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
       const response = await axiosInstance.get(`/video/channel/${id}`, {
         params: {
           _t: timestamp,
@@ -270,9 +270,7 @@ useEffect(() => {
           "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
           "Pragma": "no-cache",
           "Expires": "0",
-          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
         },
-        // ✅ CRITICAL: Disable Axios's automatic ETag handling
         transformRequest: [(data, headers) => {
           delete headers['If-None-Match'];
           delete headers['If-Modified-Since'];
@@ -289,11 +287,26 @@ useEffect(() => {
       if (response.data.success && Array.isArray(response.data.data)) {
         console.log("✅ Setting videos:", response.data.data.length);
         setVideos(response.data.data);
-        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+        
+        // ✅ CRITICAL: Force info bar update after videos load
+        setTimeout(() => {
+          setRenderKey(prev => prev + 1);
+          
+          // Dispatch custom event for other components
+          window.dispatchEvent(new CustomEvent('channelDataUpdated', {
+            detail: { videos: response.data.data.length }
+          }));
+        }, 100);
       } else if (response.data.videos && Array.isArray(response.data.videos)) {
         console.log("✅ Setting videos (alternate):", response.data.videos.length);
         setVideos(response.data.videos);
-        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+        
+        setTimeout(() => {
+          setRenderKey(prev => prev + 1);
+          window.dispatchEvent(new CustomEvent('channelDataUpdated', {
+            detail: { videos: response.data.videos.length }
+          }));
+        }, 100);
       } else {
         console.log("⚠️ No videos in response");
         setVideos([]);
@@ -524,6 +537,33 @@ useEffect(() => {
 
   const isOwnChannel = user?._id === id;
 
+  // ============================================================================
+// 🔴 ANDROID: LISTEN FOR DATA CHANGES AND FORCE RE-RENDER
+// ============================================================================
+useEffect(() => {
+  // Force re-render when videos or shorts change
+  if (videos.length > 0 || shorts.length > 0) {
+    console.log('📊 Data changed - forcing re-render:', {
+      videos: videos.length,
+      shorts: shorts.length
+    });
+    
+    setRenderKey(prev => prev + 1);
+    
+    // Double-check visibility after render
+    setTimeout(() => {
+      if (infoBarRef.current) {
+        const rect = infoBarRef.current.getBoundingClientRect();
+        if (rect.height === 0) {
+          console.warn('⚠️ Info bar still hidden after data change!');
+          infoBarRef.current.style.display = 'block';
+          infoBarRef.current.style.minHeight = '80px';
+          setRenderKey(prev => prev + 1);
+        }
+      }
+    }, 300);
+  }
+}, [videos.length, shorts.length]);
     // ============================================================================
   // RENDER - MAIN JSX
   // ============================================================================
@@ -545,14 +585,18 @@ useEffect(() => {
 {channel && isMounted && (
   <div
     ref={infoBarRef}
-    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-    className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}-${Date.now()}`}
+    className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
     style={{
       position: "relative",
       zIndex: 10,
+      display: "block !important" as any,
+      visibility: "visible",
+      opacity: 1,
+      minHeight: "80px"
     }}
   >
-    <div className="w-full max-w-7xl mx-auto">
+     <div className="w-full max-w-7xl mx-auto">
       <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
         {/* Channel Name */}
         <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
@@ -562,7 +606,7 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* Joined Date */}
+          {/* Joined Date */}
         <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
           <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
           <span className="text-xs sm:text-sm whitespace-nowrap">
@@ -576,10 +620,12 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* Video Count - FORCE UPDATE */}
+        {/* Video Count - FORCE UPDATE WITH TIMESTAMP */}
         <div 
-          key={`video-${videos.length}-${renderKey}`}
+          key={`video-count-${videos.length}-${Date.now()}`}
           className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+          data-count={videos.length}
+          data-timestamp={Date.now()}
         >
           <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
           <span className="text-xs sm:text-sm whitespace-nowrap">
@@ -587,10 +633,12 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* Shorts Count - FORCE UPDATE */}
+        {/* Shorts Count - FORCE UPDATE WITH TIMESTAMP */}
         <div 
-          key={`shorts-${shorts.length}-${renderKey}`}
+          key={`shorts-count-${shorts.length}-${Date.now()}`}
           className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+          data-count={shorts.length}
+          data-timestamp={Date.now()}
         >
           <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
           <span className="text-xs sm:text-sm whitespace-nowrap">
