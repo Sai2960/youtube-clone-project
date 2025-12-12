@@ -237,24 +237,20 @@ app.use(
     origin: function (origin, callback) {
       console.log("🔍 CORS origin check:", origin || "no origin");
       
-      // Always allow requests with no origin
       if (!origin) {
         return callback(null, true);
       }
 
-      // Check if origin is allowed
       if (isOriginAllowed(origin)) {
         console.log("   ✅ Origin allowed");
         return callback(null, true);
       }
 
-      // In production, be permissive but log
       if (process.env.NODE_ENV === 'production') {
         console.log("   ⚠️  Unknown origin in production, allowing:", origin);
         return callback(null, true);
       }
 
-      // Development: strict
       console.log("   ❌ Origin blocked");
       callback(new Error("Not allowed by CORS"));
     },
@@ -267,24 +263,24 @@ app.use(
       "Accept",
       "Origin",
       "Cache-Control",
-      "Pragma",              // ✅ ADDED
-      "Expires",             // ✅ ADDED
-      "X-Auth-Token"
+      "Pragma",
+      "Expires",
+      "X-Auth-Token",
+      "if-none-match",        // ✅ ADD THIS
+      "if-modified-since",    // ✅ ADD THIS
+      "etag"                  // ✅ ADD THIS
     ],
-    exposedHeaders: ["Content-Range", "X-Content-Range"],
+    exposedHeaders: ["Content-Range", "X-Content-Range", "etag", "cache-control"],  // ✅ UPDATE THIS
     preflightContinue: false,
     optionsSuccessStatus: 204,
-    maxAge: 86400, // 24 hours
+    maxAge: 86400,
   })
 );
 
 // Enhanced preflight handler
-// Enhanced preflight handler
-// Enhanced preflight handler
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // ✅ CRITICAL: For uploads, be VERY permissive
   if (req.path.includes('/upload')) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -298,11 +294,10 @@ app.use((req, res, next) => {
   
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Cache-Control,Pragma,Expires,X-Auth-Token'); // ✅ ADDED Pragma, Expires
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Cache-Control,Pragma,Expires,X-Auth-Token,if-none-match,if-modified-since,etag');  // ✅ UPDATE THIS LINE
   res.setHeader('Access-Control-Max-Age', '86400');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Range,X-Content-Range');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Range,X-Content-Range,etag,cache-control');  // ✅ UPDATE THIS LINE
   
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     console.log("✅ Preflight request handled for:", req.path);
     return res.status(204).end();
