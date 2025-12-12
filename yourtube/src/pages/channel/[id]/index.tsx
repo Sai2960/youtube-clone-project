@@ -227,138 +227,144 @@ const ChannelPage = () => {
   // FETCH VIDEOS
   // ============================================================================
 
-  useEffect(() => {
-    const fetchVideos = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for videos");
-        return;
-      }
+useEffect(() => {
+  const fetchVideos = async () => {
+    if (!id || typeof id !== "string") {
+      console.log("⚠️ No channel ID for videos");
+      return;
+    }
 
-      try {
-        setVideosLoading(true);
-        console.log("📹 Fetching videos for channel:", id);
+    try {
+      setVideosLoading(true);
+      console.log("📹 Fetching videos for channel:", id);
 
-        // ✅ CRITICAL: Force no-cache on mobile
-        const response = await axiosInstance.get(`/video/channel/${id}`, {
-          params: {
-            _t: Date.now(),
-            nocache: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        });
+      // ✅ CRITICAL: Force no-cache with multiple strategies
+      const timestamp = Date.now();
+      const response = await axiosInstance.get(`/video/channel/${id}`, {
+        params: {
+          _t: timestamp,
+          nocache: "true",
+          mobile: "true" // ✅ Flag for mobile
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+          "If-None-Match": `"${timestamp}"` // ✅ Force unique request
+        },
+      });
 
-        console.log("📹 Videos API response:", {
-          success: response.data.success,
-          count: response.data.data?.length || response.data.videos?.length || 0,
-        });
+      console.log("📹 Videos API response:", {
+        success: response.data.success,
+        count: response.data.data?.length || response.data.videos?.length || 0,
+        timestamp: response.data.timestamp
+      });
 
-        if (response.data.success && Array.isArray(response.data.data)) {
-          console.log("✅ Setting videos:", response.data.data.length);
-          setVideos(response.data.data);
-        } else if (response.data.videos && Array.isArray(response.data.videos)) {
-          console.log("✅ Setting videos (alternate):", response.data.videos.length);
-          setVideos(response.data.videos);
-        } else if (response.data.data) {
-          const videoList = Array.isArray(response.data.data)
-            ? response.data.data
-            : [response.data.data];
-          console.log("✅ Setting videos (converted):", videoList.length);
-          setVideos(videoList);
-        } else {
-          console.log("⚠️ No videos in response");
-          setVideos([]);
-        }
-      } catch (error: any) {
-        console.error("❌ Error fetching videos:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
+      if (response.data.success && Array.isArray(response.data.data)) {
+        console.log("✅ Setting videos:", response.data.data.length);
+        setVideos(response.data.data);
+        // ✅ Force re-render on mobile
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+      } else if (response.data.videos && Array.isArray(response.data.videos)) {
+        console.log("✅ Setting videos (alternate):", response.data.videos.length);
+        setVideos(response.data.videos);
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+      } else {
+        console.log("⚠️ No videos in response");
         setVideos([]);
-      } finally {
-        setVideosLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error("❌ Error fetching videos:", {
+        message: error.message,
+        status: error.response?.status,
+      });
+      setVideos([]);
+    } finally {
+      setVideosLoading(false);
+    }
+  };
 
-    const timer = setTimeout(fetchVideos, 100);
-    return () => clearTimeout(timer);
-  }, [id]);
+  // ✅ CRITICAL: Delay slightly for mobile render
+  const timer = setTimeout(fetchVideos, 150);
+  return () => clearTimeout(timer);
+}, [id, refreshKey]); // ✅ Add refreshKey dependency
 
     // ============================================================================
   // FETCH SHORTS
   // ============================================================================
 
-  useEffect(() => {
-    const fetchShorts = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for shorts");
-        return;
-      }
+useEffect(() => {
+  const fetchShorts = async () => {
+    if (!id || typeof id !== "string") {
+      console.log("⚠️ No channel ID for shorts");
+      return;
+    }
 
-      try {
-        setShortsLoading(true);
-        setShortsError(null);
-        console.log("🎬 Fetching shorts for channel:", id);
+    try {
+      setShortsLoading(true);
+      setShortsError(null);
+      console.log("🎬 Fetching shorts for channel:", id);
 
-        // ✅ CRITICAL: Force no-cache on mobile
-        const response = await axiosInstance.get(`/shorts/channel/${id}`, {
-          params: {
-            page: 1,
-            limit: 100,
-            _t: Date.now(),
-            nocache: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        });
+      // ✅ CRITICAL: Force no-cache with multiple strategies
+      const timestamp = Date.now();
+      const response = await axiosInstance.get(`/shorts/channel/${id}`, {
+        params: {
+          page: 1,
+          limit: 100,
+          _t: timestamp,
+          nocache: "true",
+          mobile: "true"
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+          "If-None-Match": `"${timestamp}"`
+        },
+      });
 
-        console.log("🎬 Shorts API response:", {
-          success: response.data.success,
-          count: response.data.data?.length || response.data.shorts?.length || 0,
-        });
+      console.log("🎬 Shorts API response:", {
+        success: response.data.success,
+        count: response.data.data?.length || response.data.shorts?.length || 0,
+        timestamp: response.data.timestamp
+      });
 
-        if (response.data.success) {
-          const fetchedShorts = response.data.data || response.data.shorts || [];
-          console.log("✅ Setting shorts:", fetchedShorts.length);
+      if (response.data.success) {
+        const fetchedShorts = response.data.data || response.data.shorts || [];
+        console.log("✅ Setting shorts:", fetchedShorts.length);
 
-          const processedShorts = fetchedShorts.map((short: any) => ({
-            ...short,
-            thumbnailUrl: short.thumbnailUrl || short.thumbnail,
-            videoUrl: short.videoUrl || short.video,
-          }));
+        const processedShorts = fetchedShorts.map((short: any) => ({
+          ...short,
+          thumbnailUrl: short.thumbnailUrl || short.thumbnail,
+          videoUrl: short.videoUrl || short.video,
+        }));
 
-          setShorts(processedShorts);
-        } else {
-          console.log("⚠️ No shorts in response");
-          setShorts([]);
-        }
-      } catch (error: any) {
-        console.error("❌ Error fetching shorts:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
-
-        if (error.response?.status !== 404) {
-          setShortsError("Failed to load shorts");
-        }
+        setShorts(processedShorts);
+        // ✅ Force re-render on mobile
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+      } else {
+        console.log("⚠️ No shorts in response");
         setShorts([]);
-      } finally {
-        setShortsLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error("❌ Error fetching shorts:", {
+        message: error.message,
+        status: error.response?.status,
+      });
 
-    const timer = setTimeout(fetchShorts, 150);
-    return () => clearTimeout(timer);
-  }, [id, refreshKey]);
+      if (error.response?.status !== 404) {
+        setShortsError("Failed to load shorts");
+      }
+      setShorts([]);
+    } finally {
+      setShortsLoading(false);
+    }
+  };
 
+  // ✅ CRITICAL: Delay slightly for mobile render
+  const timer = setTimeout(fetchShorts, 200);
+  return () => clearTimeout(timer);
+}, [id, refreshKey]); // ✅ Add refreshKey dependency
     // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
@@ -507,62 +513,102 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-        {/* ✅ CHANNEL INFO BAR - FORCE VISIBLE ON ANDROID */}
-        {channel && videos.length >= 0 && shorts.length >= 0 && isMounted && (
-          <div
-            ref={infoBarRef}
-            key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-            style={{
-              display: "block",
-              minHeight: "80px",
-              visibility: "visible",
-              opacity: 1,
-            }}
-          >
-            <div className="w-full max-w-7xl mx-auto">
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
-                {/* Channel Name */}
-                <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-sm sm:text-base truncate">
-                    {channel.channelname || channel.name || "Unknown"}
-                  </span>
-                </div>
+  {/* ✅ CHANNEL INFO BAR - FORCE VISIBLE ON ANDROID */}
+{channel && isMounted && (
+  <div
+    ref={infoBarRef}
+    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}-${Date.now()}`}
+    className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+    style={{
+      display: "block",
+      minHeight: "80px",
+      visibility: "visible",
+      opacity: 1,
+      position: "relative" as const,
+      zIndex: 1
+    }}
+  >
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
+        {/* Channel Name */}
+        <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+          <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <span className="text-sm sm:text-base truncate">
+            {channel.channelname || channel.name || "Unknown"}
+          </span>
+        </div>
 
-                {/* Joined Date */}
-                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    Joined{" "}
-                    {channel.joinedon
-                      ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "Recently"}
-                  </span>
-                </div>
+        {/* Joined Date */}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            Joined{" "}
+            {channel.joinedon
+              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "Recently"}
+          </span>
+        </div>
 
-                {/* Video Count */}
-                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-                  <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    {videos.length} video{videos.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+        {/* Video Count */}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+          <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {videos.length} video{videos.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
-                {/* Shorts Count */}
-                <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-                  <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Shorts Count */}
+        <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+          <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
+{process.env.NODE_ENV === 'development' && (
+  <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
+    <button
+      onClick={() => {
+        console.log('🔄 Force refresh triggered');
+        setRefreshKey(prev => prev + 1);
+        setRenderKey(prev => prev + 1);
+      }}
+      className="px-4 py-2 bg-blue-600 text-white rounded"
+    >
+      Force Refresh (Debug)
+    </button>
+    <span className="ml-4 text-xs">
+      Videos: {videos.length} | Shorts: {shorts.length} | Render: {renderKey}
+    </span>
+  </div>
+)}
+
+{/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
+{process.env.NODE_ENV === 'development' && (
+  <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
+    <button
+      onClick={() => {
+        console.log('🔄 Force refresh triggered');
+        setRefreshKey(prev => prev + 1);
+        setRenderKey(prev => prev + 1);
+      }}
+      className="px-4 py-2 bg-blue-600 text-white rounded"
+    >
+      Force Refresh (Debug)
+    </button>
+    <span className="ml-4 text-xs">
+      Videos: {videos.length} | Shorts: {shorts.length} | Render: {renderKey}
+    </span>
+  </div>
+)}
         {/* ============================================================================
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}
