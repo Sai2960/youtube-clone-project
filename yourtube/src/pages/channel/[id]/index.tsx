@@ -258,24 +258,26 @@ useEffect(() => {
       console.log("📹 Fetching videos for channel:", id);
 
       const timestamp = Date.now();
-      const randomId = Math.random().toString(36).substring(7);
       
-      // ✅ CRITICAL FIX: Bypass cache completely
+      // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
       const response = await axiosInstance.get(`/video/channel/${id}`, {
         params: {
           _t: timestamp,
-          _r: randomId,
           nocache: "true",
-          mobile: "true",
-          bypass: timestamp // Extra cache buster
+          mobile: "true"
         },
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
           "Pragma": "no-cache",
           "Expires": "0",
+          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
         },
-        // ✅ Force Axios to skip cache validation
-        adapter: 'fetch', // Use fetch instead of xhr
+        // ✅ CRITICAL: Disable Axios's automatic ETag handling
+        transformRequest: [(data, headers) => {
+          delete headers['If-None-Match'];
+          delete headers['If-Modified-Since'];
+          return data;
+        }],
       });
 
       console.log("📹 Videos API response:", {
@@ -307,11 +309,13 @@ useEffect(() => {
     }
   };
 
-  fetchVideos();
-}, [id, refreshKey, renderKey]);
+  const timer = setTimeout(fetchVideos, 150);
+  return () => clearTimeout(timer);
+}, [id, refreshKey]);
+    // ============================================================================
+  // FETCH SHORTS
   // ============================================================================
-// FETCH SHORTS - REPLACE ENTIRE useEffect
-// ============================================================================
+
 useEffect(() => {
   const fetchShorts = async () => {
     if (!id || typeof id !== "string") {
@@ -325,24 +329,28 @@ useEffect(() => {
       console.log("🎬 Fetching shorts for channel:", id);
 
       const timestamp = Date.now();
-      const randomId = Math.random().toString(36).substring(7);
       
+      // ✅ CRITICAL FIX: Remove if-none-match header
       const response = await axiosInstance.get(`/shorts/channel/${id}`, {
         params: {
           page: 1,
           limit: 100,
           _t: timestamp,
-          _r: randomId,
           nocache: "true",
-          mobile: "true",
-          bypass: timestamp
+          mobile: "true"
         },
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
           "Pragma": "no-cache",
           "Expires": "0",
+          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
         },
-        adapter: 'fetch', // ✅ Use fetch adapter
+        // ✅ CRITICAL: Disable Axios's automatic ETag handling
+        transformRequest: [(data, headers) => {
+          delete headers['If-None-Match'];
+          delete headers['If-Modified-Since'];
+          return data;
+        }],
       });
 
       console.log("🎬 Shorts API response:", {
@@ -382,8 +390,9 @@ useEffect(() => {
     }
   };
 
-  fetchShorts();
-}, [id, refreshKey, renderKey]); // ✅ Add renderKey to dependencies
+  const timer = setTimeout(fetchShorts, 200);
+  return () => clearTimeout(timer);
+}, [id, refreshKey]);
     // ============================================================================
   // EVENT HANDLERS
   // ============================================================================

@@ -58,16 +58,15 @@ const axiosInstance: AxiosInstance = axios.create({
 });
 
 // ✅ CRITICAL: Request Interceptor with aggressive cache busting
-// ✅ REPLACE ENTIRE REQUEST INTERCEPTOR
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Extended timeout for uploads
+    // ✅ Extended timeout for uploads
     if (config.url?.includes('/upload') || config.url?.includes('/video')) {
       config.timeout = 600000;
       console.log('⏱️ Extended timeout to 10 minutes for upload');
     }
     
-    // ✅ CRITICAL: Remove ALL ETag headers
+    // ✅ CRITICAL: Remove ALL cache-related headers that cause CORS issues
     if (config.headers) {
       delete config.headers['If-None-Match'];
       delete config.headers['If-Modified-Since'];
@@ -75,7 +74,7 @@ axiosInstance.interceptors.request.use(
       delete config.headers['Last-Modified'];
     }
     
-    // Read token
+    // ✅ Read fresh token
     if (typeof window !== 'undefined') {
       const token = window.localStorage.getItem('token');
       
@@ -87,7 +86,7 @@ axiosInstance.interceptors.request.use(
       }
     }
     
-    // ✅ Ultra-aggressive cache busting
+    // ✅ ANDROID: Ultra-aggressive cache busting
     if (!config.headers) {
       config.headers = {} as any;
     }
@@ -95,18 +94,63 @@ axiosInstance.interceptors.request.use(
     config.headers['Pragma'] = 'no-cache';
     config.headers['Expires'] = '0';
     
-    // ✅ ANDROID: Triple cache busters
+    // ✅ ANDROID: Force unique request with multiple cache busters
     if (!config.params) {
       config.params = {};
     }
     config.params._t = Date.now();
     config.params._r = Math.random().toString(36).substring(7);
-    config.params._m = 'android'; // Mobile flag
     
     return config;
   },
   (error) => {
     console.error('❌ Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// ✅ Response Interceptor
+axiosInstance.interceptors.response.use(
+  (response) => {
+    console.log('✅ API Response:', {
+      url: response.config.url,
+      status: response.status,
+      dataSize: JSON.stringify(response.data).length
+    });
+    return response;
+  },
+  (error) => {
+    console.error('❌ API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      code: error.code
+    });
+
+    if (error.code === 'ERR_NETWORK') {
+      console.error('🌐 NETWORK ERROR - Backend unreachable');
+      console.error('   Backend URL:', BACKEND_URL);
+    }
+
+    if (error.message?.includes('CORS')) {
+      console.error('🚫 CORS ERROR - Origin not allowed');
+    }
+
+    if (error.response?.status === 401) {
+      console.log('🔒 Unauthorized - Token expired or invalid');
+      
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        
+        if (!currentPath.includes('/login')) {
+          console.log('   Redirecting to login');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );
