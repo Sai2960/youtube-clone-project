@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/pages/channel/[id]/index.tsx - ANDROID MOBILE FIX
+// src/pages/channel/[id]/index.tsx - COMPLETE FINAL FIXED VERSION
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
@@ -14,7 +14,7 @@ import { getImageUrl } from "@/lib/imageUtils";
 import { Calendar, Video, Upload, Play, Film, Grid, User } from "lucide-react";
 
 // ============================================================================
-// THUMBNAIL HELPER
+// THUMBNAIL HELPER - FIXED VERSION
 // ============================================================================
 const getShortThumbnail = (short: any): string => {
   console.log("🖼️ Getting thumbnail for short:", short._id);
@@ -35,6 +35,8 @@ const getShortThumbnail = (short: any): string => {
       const cleanThumb = thumb
         .replace(/\/v\d+\//g, "/")
         .replace(/^http:\/\//, "https://");
+
+      console.log("✅ Using existing thumbnail:", cleanThumb.substring(0, 80));
       return cleanThumb;
     }
   }
@@ -49,6 +51,10 @@ const getShortThumbnail = (short: any): string => {
       if (match) {
         const publicId = `youtube-clone/shorts/videos/${match[1]}`;
         const generatedThumbnail = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+        console.log(
+          "✅ Generated thumbnail:",
+          generatedThumbnail.substring(0, 80)
+        );
         return generatedThumbnail;
       }
     } catch (error) {
@@ -56,22 +62,22 @@ const getShortThumbnail = (short: any): string => {
     }
   }
 
+  console.warn("⚠️ No thumbnail available for short:", short._id);
   return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
 };
 
 // ============================================================================
-// MAIN COMPONENT
+// MAIN COMPONENT - STATE & REFS
 // ============================================================================
+
 const ChannelPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { user, updateUser } = useUser();
 
-  // Refs
+  // ✅ Refs for Android visibility fix
   const infoBarRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
-  const lastFetchTimestamp = useRef<number>(0);
-  const isRefreshing = useRef(false);
 
   // State: Channel Data
   const [channel, setChannel] = useState<any>(null);
@@ -98,10 +104,11 @@ const ChannelPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [renderKey, setRenderKey] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+  // ============================================================================
+  // LIFECYCLE HOOKS - CLIENT MOUNTING & VISIBILITY
+  // ============================================================================
 
-  // ============================================================================
-  // 🔴 CRITICAL: CLIENT MOUNTING
-  // ============================================================================
+  // ✅ Client-side mounting
   useEffect(() => {
     isMountedRef.current = true;
     setIsMounted(true);
@@ -111,15 +118,18 @@ const ChannelPage = () => {
     };
   }, []);
 
-  // ============================================================================
-  // 🔴 CRITICAL: ANDROID VISIBILITY FIX
-  // ============================================================================
+  // ✅ ANDROID FIX: Force info bar visibility
   useEffect(() => {
     if (channel && isMountedRef.current && infoBarRef.current) {
       const checkVisibility = () => {
         if (!infoBarRef.current) return;
 
         const rect = infoBarRef.current.getBoundingClientRect();
+        console.log("📏 Info bar:", {
+          height: rect.height,
+          width: rect.width,
+          top: rect.top,
+        });
 
         if (rect.height === 0) {
           console.warn("⚠️ Info bar hidden! Forcing re-render...");
@@ -135,97 +145,55 @@ const ChannelPage = () => {
       const timer = setTimeout(checkVisibility, 200);
       return () => clearTimeout(timer);
     }
-  }, [channel?._id, videos.length, shorts.length, renderKey]);
+  }, [channel?._id, videos.length, shorts.length]);
 
-  // ============================================================================
-  // 🔴 CRITICAL: FORCE REFRESH ON PAGE VISIBILITY (Android Tab Switch)
-  // ============================================================================
+  // ✅ DEBUG: Log data changes
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !isRefreshing.current) {
-        const now = Date.now();
-        // Prevent rapid refreshes (debounce 1 second)
-        if (now - lastFetchTimestamp.current < 1000) {
-          console.log('⏭️ Skipping refresh - too soon');
-          return;
-        }
-        
-        console.log('👁️ Page visible - forcing data refresh');
-        isRefreshing.current = true;
-        lastFetchTimestamp.current = now;
-        
-        // Force complete data refresh
-        setRefreshKey(prev => prev + 1);
-        setRenderKey(prev => prev + 1);
-        
-        // Reset flag after refresh completes
-        setTimeout(() => {
-          isRefreshing.current = false;
-        }, 500);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+    if (typeof window !== "undefined") {
+      console.log("🔍 CHANNEL PAGE DEBUG:", {
+        channelLoaded: !!channel,
+        channelId: channel?._id,
+        channelName: channel?.channelname || channel?.name,
+        videosCount: videos.length,
+        shortsCount: shorts.length,
+        isMounted,
+        renderKey,
+        timestamp: new Date().toISOString(),
+      });
+
+      (window as any).__debugChannelPage = {
+        channel,
+        videos,
+        shorts,
+        isMounted,
+        renderKey,
+      };
+    }
+  }, [channel, videos.length, shorts.length, isMounted, renderKey]);
 
   // ============================================================================
-  // 🔴 CRITICAL: FORCE REFRESH ON WINDOW FOCUS (Android)
-  // ============================================================================
-  useEffect(() => {
-    const handleFocus = () => {
-      if (!isRefreshing.current) {
-        const now = Date.now();
-        if (now - lastFetchTimestamp.current < 1000) {
-          return;
-        }
-        
-        console.log('🎯 Window focused - forcing refresh');
-        isRefreshing.current = true;
-        lastFetchTimestamp.current = now;
-        
-        setRefreshKey(prev => prev + 1);
-        setRenderKey(prev => prev + 1);
-        
-        setTimeout(() => {
-          isRefreshing.current = false;
-        }, 500);
-      }
-    };
+// 🔴 ANDROID: LISTEN FOR FORCE REFRESH EVENTS
+// ============================================================================
+useEffect(() => {
+  const handleForceRefresh = (event: CustomEvent) => {
+    console.log('🔄 Force refresh event received:', event.detail);
     
-    window.addEventListener('focus', handleFocus);
-    
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
+    // Increment both keys to force complete re-render
+    setRefreshKey(prev => prev + 1);
+    setRenderKey(prev => prev + 1);
+  };
+  
+  window.addEventListener('forceChannelRefresh', handleForceRefresh as EventListener);
+  
+  return () => {
+    window.removeEventListener('forceChannelRefresh', handleForceRefresh as EventListener);
+  };
+}, []);
 
-  // ============================================================================
-  // 🔴 CRITICAL: PAGESHOW EVENT (Handles BFCache on Android)
-  // ============================================================================
-  useEffect(() => {
-    const handlePageShow = (event: PageTransitionEvent) => {
-      // If page is loaded from BFCache (back/forward cache)
-      if (event.persisted) {
-        console.log('🔄 Page loaded from BFCache - forcing refresh');
-        setRefreshKey(prev => prev + 1);
-        setRenderKey(prev => prev + 1);
-      }
-    };
-    
-    window.addEventListener('pageshow', handlePageShow);
-    
-    return () => {
-      window.removeEventListener('pageshow', handlePageShow);
-    };
-  }, []);
-
-  // ============================================================================
+    // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
+
   useEffect(() => {
     const fetchChannel = async () => {
       if (!id || typeof id !== "string") return;
@@ -239,12 +207,15 @@ const ChannelPage = () => {
         if (response.data.success && response.data.user) {
           const channelData = response.data.user;
 
+          // ✅ Ensure subscribers is a number
           if (typeof channelData.subscribers !== "number") {
             channelData.subscribers = 0;
           }
 
           setChannel(channelData);
+          console.log("✅ Channel loaded:", channelData.channelname);
 
+          // ✅ Update user context if viewing own channel
           if (user && user._id === id) {
             const updatedUser = {
               ...user,
@@ -269,130 +240,161 @@ const ChannelPage = () => {
     };
 
     fetchChannel();
-  }, [id, user?._id, refreshKey]);
+  }, [id, user?._id]);
 
+    // ============================================================================
+  // FETCH VIDEOS
   // ============================================================================
-  // FETCH VIDEOS - WITH ANDROID CACHE FIX
-  // ============================================================================
-  useEffect(() => {
-    const fetchVideos = async () => {
-      if (!id || typeof id !== "string") return;
 
-      try {
-        setVideosLoading(true);
+useEffect(() => {
+  const fetchVideos = async () => {
+    if (!id || typeof id !== "string") {
+      console.log("⚠️ No channel ID for videos");
+      return;
+    }
 
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substring(7);
+    try {
+      setVideosLoading(true);
+      console.log("📹 Fetching videos for channel:", id);
 
-        const response = await axiosInstance.get(`/video/channel/${id}`, {
-          params: {
-            _t: timestamp,
-            _r: random,
-            nocache: "true",
-            mobile: "true",
-            force: "true"
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-            "Pragma": "no-cache",
-            "Expires": "0",
-          },
-        });
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(7);
+      
+      // ✅ CRITICAL FIX: Bypass cache completely
+      const response = await axiosInstance.get(`/video/channel/${id}`, {
+        params: {
+          _t: timestamp,
+          _r: randomId,
+          nocache: "true",
+          mobile: "true",
+          bypass: timestamp // Extra cache buster
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+        },
+        // ✅ Force Axios to skip cache validation
+        adapter: 'fetch', // Use fetch instead of xhr
+      });
 
-        if (response.data.success && Array.isArray(response.data.data)) {
-          console.log("✅ Videos loaded:", response.data.data.length);
-          setVideos(response.data.data);
-          setTimeout(() => setRenderKey(prev => prev + 1), 100);
-        } else if (response.data.videos && Array.isArray(response.data.videos)) {
-          console.log("✅ Videos loaded (alt):", response.data.videos.length);
-          setVideos(response.data.videos);
-          setTimeout(() => setRenderKey(prev => prev + 1), 100);
-        } else {
-          setVideos([]);
-        }
-      } catch (error: any) {
-        console.error("❌ Error fetching videos:", error.message);
+      console.log("📹 Videos API response:", {
+        success: response.data.success,
+        count: response.data.data?.length || response.data.videos?.length || 0,
+        timestamp: response.data.timestamp
+      });
+
+      if (response.data.success && Array.isArray(response.data.data)) {
+        console.log("✅ Setting videos:", response.data.data.length);
+        setVideos(response.data.data);
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+      } else if (response.data.videos && Array.isArray(response.data.videos)) {
+        console.log("✅ Setting videos (alternate):", response.data.videos.length);
+        setVideos(response.data.videos);
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+      } else {
+        console.log("⚠️ No videos in response");
         setVideos([]);
-      } finally {
-        setVideosLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error("❌ Error fetching videos:", {
+        message: error.message,
+        status: error.response?.status,
+      });
+      setVideos([]);
+    } finally {
+      setVideosLoading(false);
+    }
+  };
 
-    const timer = setTimeout(fetchVideos, 150);
-    return () => clearTimeout(timer);
-  }, [id, refreshKey]);
-
+  fetchVideos();
+}, [id, refreshKey, renderKey]);
   // ============================================================================
-  // FETCH SHORTS - WITH ANDROID CACHE FIX
-  // ============================================================================
-  useEffect(() => {
-    const fetchShorts = async () => {
-      if (!id || typeof id !== "string") return;
+// FETCH SHORTS - REPLACE ENTIRE useEffect
+// ============================================================================
+useEffect(() => {
+  const fetchShorts = async () => {
+    if (!id || typeof id !== "string") {
+      console.log("⚠️ No channel ID for shorts");
+      return;
+    }
 
-      try {
-        setShortsLoading(true);
-        setShortsError(null);
+    try {
+      setShortsLoading(true);
+      setShortsError(null);
+      console.log("🎬 Fetching shorts for channel:", id);
 
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substring(7);
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(7);
+      
+      const response = await axiosInstance.get(`/shorts/channel/${id}`, {
+        params: {
+          page: 1,
+          limit: 100,
+          _t: timestamp,
+          _r: randomId,
+          nocache: "true",
+          mobile: "true",
+          bypass: timestamp
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+        },
+        adapter: 'fetch', // ✅ Use fetch adapter
+      });
 
-        const response = await axiosInstance.get(`/shorts/channel/${id}`, {
-          params: {
-            page: 1,
-            limit: 100,
-            _t: timestamp,
-            _r: random,
-            nocache: "true",
-            mobile: "true",
-            force: "true"
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-            "Pragma": "no-cache",
-            "Expires": "0",
-          },
-        });
+      console.log("🎬 Shorts API response:", {
+        success: response.data.success,
+        count: response.data.data?.length || response.data.shorts?.length || 0,
+        timestamp: response.data.timestamp
+      });
 
-        if (response.data.success) {
-          const fetchedShorts = response.data.data || response.data.shorts || [];
-          console.log("✅ Shorts loaded:", fetchedShorts.length);
+      if (response.data.success) {
+        const fetchedShorts = response.data.data || response.data.shorts || [];
+        console.log("✅ Setting shorts:", fetchedShorts.length);
 
-          const processedShorts = fetchedShorts.map((short: any) => ({
-            ...short,
-            thumbnailUrl: short.thumbnailUrl || short.thumbnail,
-            videoUrl: short.videoUrl || short.video,
-          }));
+        const processedShorts = fetchedShorts.map((short: any) => ({
+          ...short,
+          thumbnailUrl: short.thumbnailUrl || short.thumbnail,
+          videoUrl: short.videoUrl || short.video,
+        }));
 
-          setShorts(processedShorts);
-          setTimeout(() => setRenderKey(prev => prev + 1), 100);
-        } else {
-          setShorts([]);
-        }
-      } catch (error: any) {
-        console.error("❌ Error fetching shorts:", error.message);
-        if (error.response?.status !== 404) {
-          setShortsError("Failed to load shorts");
-        }
+        setShorts(processedShorts);
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+      } else {
+        console.log("⚠️ No shorts in response");
         setShorts([]);
-      } finally {
-        setShortsLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error("❌ Error fetching shorts:", {
+        message: error.message,
+        status: error.response?.status,
+      });
 
-    const timer = setTimeout(fetchShorts, 200);
-    return () => clearTimeout(timer);
-  }, [id, refreshKey]);
+      if (error.response?.status !== 404) {
+        setShortsError("Failed to load shorts");
+      }
+      setShorts([]);
+    } finally {
+      setShortsLoading(false);
+    }
+  };
 
-  // ============================================================================
+  fetchShorts();
+}, [id, refreshKey, renderKey]); // ✅ Add renderKey to dependencies
+    // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
+
   const handleVideoUploadSuccess = (newVideo: any) => {
-    console.log("✅ Video upload success");
+    console.log("✅ Video upload success:", newVideo._id);
     setVideos((prevVideos) => [newVideo, ...prevVideos]);
-    setRefreshKey(prev => prev + 1);
   };
 
   const handleStartCall = async () => {
+    // ✅ Validation checks
     if (!user) {
       setCallError("Please login to make calls");
       setTimeout(() => setCallError(null), 3000);
@@ -426,6 +428,7 @@ const ChannelPage = () => {
       const remotePersonImage =
         channel.image || "https://github.com/shadcn.png";
 
+      // ✅ Initiate call via API
       const response = await axiosInstance.post("/call/initiate", {
         receiverId: id,
       });
@@ -436,10 +439,12 @@ const ChannelPage = () => {
 
       const { call } = response.data;
 
+      // ✅ Check socket connection
       if (!isSocketConnected()) {
         throw new Error("Socket not connected. Please refresh the page.");
       }
 
+      // ✅ Emit socket event
       const socket = getSocket();
       socket.emit("call-user", {
         userToCall: id,
@@ -450,6 +455,7 @@ const ChannelPage = () => {
         callId: call._id,
       });
 
+      // ✅ Navigate to call page
       router.push({
         pathname: `/call/${call.roomId}`,
         query: {
@@ -471,9 +477,10 @@ const ChannelPage = () => {
     }
   };
 
-  // ============================================================================
+    // ============================================================================
   // LOADING & ERROR STATES
   // ============================================================================
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
@@ -508,90 +515,113 @@ const ChannelPage = () => {
 
   const isOwnChannel = user?._id === id;
 
-  // ============================================================================
+    // ============================================================================
   // RENDER - MAIN JSX
   // ============================================================================
+
   return (
     <div className="flex-1 min-h-screen bg-white dark:bg-gray-900">
       <div className="max-w-full mx-auto">
+        {/* Channel Header */}
         <ChannelHeader
           channel={channel}
           user={user}
           onStartCall={handleStartCall}
           isInitiatingCall={isInitiatingCall}
           callError={callError}
-          onAvatarUpdate={() => {
-            setRefreshKey((prev) => prev + 1);
-            setRenderKey((prev) => prev + 1);
-          }}
+          onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-        {/* CHANNEL INFO BAR */}
-        {channel && isMounted && (
-          <div
-            ref={infoBarRef}
-            key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-            style={{
-              display: "block",
-              visibility: "visible",
-              opacity: 1,
-              minHeight: "80px",
-              position: "relative",
-              zIndex: 10,
-            }}
-          >
-            <div className="w-full max-w-7xl mx-auto">
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
-                <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-sm sm:text-base truncate">
-                    {channel.channelname || channel.name || "Unknown"}
-                  </span>
-                </div>
+{/* ✅ CHANNEL INFO BAR - ANDROID FORCE VISIBLE */}
+{channel && isMounted && (
+  <div
+    ref={infoBarRef}
+    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+    className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+    style={{
+      position: "relative",
+      zIndex: 10,
+    }}
+  >
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
+        {/* Channel Name */}
+        <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+          <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <span className="text-sm sm:text-base truncate">
+            {channel.channelname || channel.name || "Unknown"}
+          </span>
+        </div>
 
-                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    Joined{" "}
-                    {channel.joinedon
-                      ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "Recently"}
-                  </span>
-                </div>
+        {/* Joined Date */}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            Joined{" "}
+            {channel.joinedon
+              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "Recently"}
+          </span>
+        </div>
 
-                <div 
-                  key={`video-count-${videos.length}-${renderKey}`}
-                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
-                >
-                  <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    {videos.length} video{videos.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+        {/* Video Count - FORCE UPDATE */}
+        <div 
+          key={`video-${videos.length}-${renderKey}`}
+          className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+        >
+          <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {videos.length} video{videos.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
-                <div 
-                  key={`shorts-count-${shorts.length}-${renderKey}`}
-                  className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
-                >
-                  <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Shorts Count - FORCE UPDATE */}
+        <div 
+          key={`shorts-${shorts.length}-${renderKey}`}
+          className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+        >
+          <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
-        {/* UPLOAD SECTION */}
+{/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
+{process.env.NODE_ENV === 'development' && (
+  <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
+    <button
+      onClick={() => {
+        console.log('🔄 Force refresh triggered');
+        setRefreshKey(prev => prev + 1);
+        setRenderKey(prev => prev + 1);
+      }}
+      className="px-4 py-2 bg-blue-600 text-white rounded"
+    >
+      Force Refresh (Debug)
+    </button>
+    <span className="ml-4 text-xs">
+      Videos: {videos.length} | Shorts: {shorts.length} | Render: {renderKey}
+    </span>
+  </div>
+)}
+
+
+        {/* ============================================================================
+            UPLOAD SECTION - OWN CHANNEL ONLY
+            ============================================================================ */}
         {isOwnChannel && (
           <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6 max-w-7xl mx-auto">
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+              {/* Upload Tabs */}
               <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+                {/* Videos Upload Tab */}
                 <button
                   type="button"
                   onClick={() => setActiveTab("videos")}
@@ -620,6 +650,7 @@ const ChannelPage = () => {
                   <span className="text-sm sm:text-base">Upload Videos</span>
                 </button>
 
+                {/* Shorts Upload Tab */}
                 <button
                   type="button"
                   onClick={() => setActiveTab("shorts")}
@@ -649,6 +680,7 @@ const ChannelPage = () => {
                 </button>
               </div>
 
+              {/* Tab Content */}
               {activeTab === "videos" ? (
                 <div>
                   <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
@@ -672,6 +704,29 @@ const ChannelPage = () => {
                     </h2>
                   </div>
 
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 sm:p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-red-600">
+                      <Avatar className="w-full h-full">
+                        <AvatarImage
+                          src={getImageUrl(channel?.image, true)}
+                          alt={channel?.channelname || channel?.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white font-semibold text-sm">
+                          {(channel?.channelname || channel?.name || "C")[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
+                        {channel?.channelname || channel?.name}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        Uploading as this channel
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="text-center py-6 sm:py-8">
                     <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 sm:p-8 max-w-md mx-auto">
                       <div className="bg-red-100 dark:bg-red-900/50 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
@@ -681,11 +736,11 @@ const ChannelPage = () => {
                         Upload Shorts
                       </h3>
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
-                        Go to the Shorts section to upload vertical videos
+                        Go to the Shorts section to upload vertical videos (9:16 aspect ratio)
                       </p>
                       <button
                         onClick={() => router.push("/shorts/upload")}
-                        className="bg-red-600 hover:bg-red-700 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg text-sm sm:text-base"
+                        className="bg-red-600 hover:bg-red-700 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
                       >
                         <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                         Go to Shorts Upload
@@ -698,9 +753,13 @@ const ChannelPage = () => {
           </div>
         )}
 
-        {/* CONTENT TABS */}
+        {/* ============================================================================
+            CONTENT TABS - VIEW VIDEOS & SHORTS
+            ============================================================================ */}
         <div className="px-4 sm:px-6 pb-6 sm:pb-8 max-w-7xl mx-auto">
+          {/* Tab Navigation */}
           <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+            {/* Videos Tab */}
             <button
               onClick={() => setContentTab("videos")}
               className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all relative ${
@@ -719,6 +778,7 @@ const ChannelPage = () => {
               )}
             </button>
 
+            {/* Shorts Tab */}
             <button
               onClick={() => setContentTab("shorts")}
               className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all relative ${
@@ -740,23 +800,25 @@ const ChannelPage = () => {
 
           {/* Videos Content */}
           {contentTab === "videos" && (
-            <div key={`videos-${videos.length}-${renderKey}`}>
+            <div>
               {videosLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600 dark:text-gray-400">Loading videos...</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Loading videos...
+                  </p>
                 </div>
               ) : videos.length > 0 ? (
                 <ChannelVideos videos={videos} />
               ) : (
                 <div className="text-center py-12">
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                    <Video className="w-10 h-10 text-gray-400" />
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4">
+                    <Video className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                     No videos yet
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                     {isOwnChannel
                       ? "Upload your first video to get started!"
                       : "This channel hasn't uploaded any videos yet."}
@@ -765,14 +827,15 @@ const ChannelPage = () => {
               )}
             </div>
           )}
-
-          {/* Shorts Content */}
+          {/* Shorts Content - COMPLETE WITH FIXED THUMBNAILS */}
           {contentTab === "shorts" && (
-            <div key={`shorts-${shorts.length}-${renderKey}`}>
+            <div>
               {shortsLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600 dark:text-gray-400">Loading shorts...</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Loading shorts...
+                  </p>
                 </div>
               ) : shortsError ? (
                 <div className="text-center py-12">
@@ -782,7 +845,9 @@ const ChannelPage = () => {
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                     Error Loading Shorts
                   </h3>
-                  <p className="text-red-600 dark:text-red-400 mb-4">{shortsError}</p>
+                  <p className="text-red-600 dark:text-red-400 mb-4">
+                    {shortsError}
+                  </p>
                   <button
                     onClick={() => setRefreshKey((prev) => prev + 1)}
                     className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
@@ -792,8 +857,9 @@ const ChannelPage = () => {
                 </div>
               ) : shorts.length > 0 ? (
                 <div>
+                  {/* Header */}
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                       <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
                         <Play className="w-5 h-5 text-white" fill="white" />
                       </div>
@@ -804,53 +870,177 @@ const ChannelPage = () => {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+                  {/* Shorts Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3">
                     {shorts.map((short) => {
                       const thumbnailUrl = getShortThumbnail(short);
+                      console.log("📸 Rendering short:", {
+                        id: short._id,
+                        url: thumbnailUrl?.substring(0, 80),
+                      });
 
                       return (
                         <div
-                          key={`short-${short._id}-${renderKey}`}
+                          key={short._id}
                           onClick={() => router.push(`/shorts?id=${short._id}`)}
                           className="group cursor-pointer"
                         >
-                          <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-md hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 hover:border-red-500">
+                          {/* Thumbnail Container */}
+                          <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden bg-black shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-500">
                             <div
                               className="relative w-full"
                               style={{ paddingBottom: "177.78%" }}
                             >
+                              {/* Thumbnail Image */}
                               <img
                                 src={thumbnailUrl}
                                 alt={short.title}
                                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 loading="lazy"
                                 onError={(e) => {
-                                  const target = e.currentTarget as HTMLImageElement;
-                                  if (target.src.includes("data:image/svg")) return;
+                                  console.error(
+                                    "❌ Thumbnail failed for:",
+                                    short._id
+                                  );
+                                  const target =
+                                    e.currentTarget as HTMLImageElement;
+
+                                  // Prevent infinite loops
+                                  if (target.src.includes("data:image/svg")) {
+                                    return;
+                                  }
+
+                                  // Try one more time with fresh generation
+                                  if (
+                                    short.videoUrl &&
+                                    short.videoUrl.includes("cloudinary.com")
+                                  ) {
+                                    const cleanUrl = short.videoUrl.replace(
+                                      /\/v\d+\//g,
+                                      "/"
+                                    );
+                                    const match = cleanUrl.match(
+                                      /youtube-clone\/shorts\/videos\/([^.\/]+)/
+                                    );
+                                    if (match) {
+                                      const retry = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/shorts/videos/${match[1]}.jpg`;
+                                      console.log(
+                                        "🔄 Retrying thumbnail with:",
+                                        retry.substring(0, 80)
+                                      );
+                                      target.src = retry;
+                                      return;
+                                    }
+                                  }
+
+                                  // Final fallback
                                   target.src =
                                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
                                 }}
+                                onLoad={() => {
+                                  console.log(
+                                    "✅ Thumbnail loaded for:",
+                                    short._id
+                                  );
+                                }}
                               />
 
-                              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                              {/* Gradient Overlay */}
+                              <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none" />
 
-                              <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                                <Play className="w-3 h-3" fill="white" />
-                                <span>{(short.views || 0).toLocaleString()}</span>
+                              {/* Views Badge */}
+                              <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1">
+                                <Play
+                                  className="w-2.5 h-2.5 sm:w-3 sm:h-3"
+                                  fill="white"
+                                />
+                                <span>
+                                  {(short.views || 0).toLocaleString()}
+                                </span>
                               </div>
 
+                              {/* Duration Badge */}
                               {short.duration && (
-                                <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-md">
+                                <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md">
                                   {short.duration}s
                                 </div>
                               )}
+
+                              {/* Play Button Overlay */}
+                              <div className="hidden sm:flex absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 items-center justify-center">
+                                <div className="opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300">
+                                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-red-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
+                                    <Play
+                                      className="w-5 h-5 sm:w-7 sm:h-7 text-white ml-0.5 sm:ml-1"
+                                      fill="white"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="mt-2 px-0.5">
-                            <h3 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1.5 group-hover:text-red-600 transition-colors">
+                          {/* Title & Channel Info */}
+                          <div className="mt-2 sm:mt-3 px-0.5">
+                            <h3 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight sm:leading-snug mb-1.5 sm:mb-2 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
                               {short.title}
                             </h3>
+
+                            {/* Channel Avatar & Name */}
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <div
+                                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(
+                                    `/channel/${
+                                      short.userId?._id || channel?._id
+                                    }`
+                                  );
+                                }}
+                              >
+                                <Avatar className="w-full h-full">
+                                  <AvatarImage
+                                    src={getImageUrl(
+                                      short.userId?.image ||
+                                        short.userId?.avatar ||
+                                        channel?.image,
+                                      true
+                                    )}
+                                    alt={
+                                      short.userId?.channelName ||
+                                      short.userId?.name ||
+                                      channel?.channelname ||
+                                      "Channel"
+                                    }
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] sm:text-xs font-bold">
+                                    {(short.userId?.channelName ||
+                                      short.userId?.name ||
+                                      channel?.channelname ||
+                                      "U")[0].toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
+
+                              <p
+                                className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(
+                                    `/channel/${
+                                      short.userId?._id || channel?._id
+                                    }`
+                                  );
+                                }}
+                              >
+                                {short.userId?.channelName ||
+                                  short.userId?.name ||
+                                  channel?.channelname ||
+                                  "Unknown"}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       );
@@ -859,13 +1049,13 @@ const ChannelPage = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                    <Film className="w-10 h-10 text-gray-400" />
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4">
+                    <Film className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                     No shorts yet
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">
                     {isOwnChannel
                       ? "Upload your first short to get started!"
                       : "This channel hasn't uploaded any shorts yet."}
@@ -873,7 +1063,7 @@ const ChannelPage = () => {
                   {isOwnChannel && (
                     <button
                       onClick={() => router.push("/shorts/upload")}
-                      className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2"
+                      className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2 shadow-lg"
                     >
                       <Upload className="w-5 h-5" />
                       Upload Short

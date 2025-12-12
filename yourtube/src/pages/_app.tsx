@@ -38,6 +38,45 @@ function AppContent({ Component, pageProps }: AppProps) {
   const [isThemeReady, setIsThemeReady] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
+
+  // ============================================================================
+// 🔴 ANDROID: FORCE HARD REFRESH ON TAB SWITCH
+// ============================================================================
+useEffect(() => {
+  let lastVisibilityChange = 0;
+  
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      const now = Date.now();
+      
+      // Prevent rapid successive reloads
+      if (now - lastVisibilityChange < 1000) {
+        return;
+      }
+      
+      lastVisibilityChange = now;
+      
+      console.log('👁️ Page visible - forcing hard refresh');
+      
+      // Force reload if channel page
+      if (window.location.pathname.includes('/channel/')) {
+        console.log('🔄 Channel page detected - hard reload');
+        window.location.reload();
+      } else {
+        // Just dispatch event for other pages
+        window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
+          detail: { timestamp: now }
+        }));
+      }
+    }
+  };
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+}, []);
   // ============================================================================
   // 🔴 CRITICAL: ANDROID CACHE CLEARING
   // ============================================================================
