@@ -190,13 +190,28 @@ useEffect(() => {
         const newShorts = response.data.data;
 
         // ✅ Validate video URLs
-        const validShorts = newShorts.filter(short => {
-          if (!short.videoUrl) {
-            console.error("❌ Short missing video URL:", short._id, short.title);
-            return false;
-          }
-          return true;
-        });
+      // ✅ Validate video URLs more thoroughly
+const validShorts = newShorts.filter(short => {
+  if (!short.videoUrl) {
+    console.error("❌ Short missing video URL:", short._id, short.title);
+    return false;
+  }
+  
+  // Check if URL is accessible
+  const url = short.videoUrl;
+  const isValid = url.startsWith('http://') || 
+                  url.startsWith('https://') || 
+                  url.includes('cloudinary.com') ||
+                  url.includes('res.cloudinary.com');
+  
+  if (!isValid) {
+    console.error("❌ Invalid video URL format:", url);
+    return false;
+  }
+  
+  console.log("✅ Valid short:", short._id, url.substring(0, 50));
+  return true;
+});
 
         if (validShorts.length < newShorts.length) {
           console.warn(`⚠️ Filtered out ${newShorts.length - validShorts.length} shorts without video URLs`);
