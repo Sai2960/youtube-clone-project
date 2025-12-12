@@ -171,6 +171,25 @@ const ChannelPage = () => {
     }
   }, [channel, videos.length, shorts.length, isMounted, renderKey]);
 
+  // ============================================================================
+// 🔴 ANDROID: LISTEN FOR FORCE REFRESH EVENTS
+// ============================================================================
+useEffect(() => {
+  const handleForceRefresh = (event: CustomEvent) => {
+    console.log('🔄 Force refresh event received:', event.detail);
+    
+    // Increment both keys to force complete re-render
+    setRefreshKey(prev => prev + 1);
+    setRenderKey(prev => prev + 1);
+  };
+  
+  window.addEventListener('forceChannelRefresh', handleForceRefresh as EventListener);
+  
+  return () => {
+    window.removeEventListener('forceChannelRefresh', handleForceRefresh as EventListener);
+  };
+}, []);
+
     // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
@@ -238,39 +257,43 @@ useEffect(() => {
       setVideosLoading(true);
       console.log("📹 Fetching videos for channel:", id);
 
-      // ✅ CRITICAL: Force no-cache with timestamp
       const timestamp = Date.now();
+      
+      // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
       const response = await axiosInstance.get(`/video/channel/${id}`, {
         params: {
           _t: timestamp,
           nocache: "true",
-          refresh: refreshKey, // Add refresh key to params
+          mobile: "true"
         },
         headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
         },
+        // ✅ CRITICAL: Disable Axios's automatic ETag handling
+        transformRequest: [(data, headers) => {
+          delete headers['If-None-Match'];
+          delete headers['If-Modified-Since'];
+          return data;
+        }],
       });
 
       console.log("📹 Videos API response:", {
         success: response.data.success,
         count: response.data.data?.length || response.data.videos?.length || 0,
-        timestamp,
+        timestamp: response.data.timestamp
       });
 
       if (response.data.success && Array.isArray(response.data.data)) {
         console.log("✅ Setting videos:", response.data.data.length);
         setVideos(response.data.data);
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
       } else if (response.data.videos && Array.isArray(response.data.videos)) {
         console.log("✅ Setting videos (alternate):", response.data.videos.length);
         setVideos(response.data.videos);
-      } else if (response.data.data) {
-        const videoList = Array.isArray(response.data.data)
-          ? response.data.data
-          : [response.data.data];
-        console.log("✅ Setting videos (converted):", videoList.length);
-        setVideos(videoList);
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
       } else {
         console.log("⚠️ No videos in response");
         setVideos([]);
@@ -279,7 +302,6 @@ useEffect(() => {
       console.error("❌ Error fetching videos:", {
         message: error.message,
         status: error.response?.status,
-        data: error.response?.data,
       });
       setVideos([]);
     } finally {
@@ -287,43 +309,9 @@ useEffect(() => {
     }
   };
 
-  fetchVideos();
-}, [id, refreshKey]); // ✅ Add refreshKey dependency
-
-
-// ✅ Refresh when page becomes visible (tab switch, return from another page)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && id) {
-        console.log("👁️ Page visible - refreshing data");
-        setRefreshKey((prev) => prev + 1);
-      }
-    };
-
-    const handleFocus = () => {
-      if (id) {
-        console.log("🎯 Window focused - refreshing data");
-        setRefreshKey((prev) => prev + 1);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    // Check if returning from shorts upload
-    const returnChannel = sessionStorage.getItem('returnToChannel');
-    if (returnChannel === id) {
-      console.log("↩️ Returned from upload - forcing refresh");
-      sessionStorage.removeItem('returnToChannel');
-      setRefreshKey((prev) => prev + 1);
-      setRenderKey((prev) => prev + 1);
-    }
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [id]);
+  const timer = setTimeout(fetchVideos, 150);
+  return () => clearTimeout(timer);
+}, [id, refreshKey]);
     // ============================================================================
   // FETCH SHORTS
   // ============================================================================
@@ -340,27 +328,35 @@ useEffect(() => {
       setShortsError(null);
       console.log("🎬 Fetching shorts for channel:", id);
 
-      // ✅ CRITICAL: Force no-cache with timestamp
       const timestamp = Date.now();
+      
+      // ✅ CRITICAL FIX: Remove if-none-match header
       const response = await axiosInstance.get(`/shorts/channel/${id}`, {
         params: {
           page: 1,
           limit: 100,
           _t: timestamp,
           nocache: "true",
-          refresh: refreshKey, // Add refresh key to params
+          mobile: "true"
         },
         headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
         },
+        // ✅ CRITICAL: Disable Axios's automatic ETag handling
+        transformRequest: [(data, headers) => {
+          delete headers['If-None-Match'];
+          delete headers['If-Modified-Since'];
+          return data;
+        }],
       });
 
       console.log("🎬 Shorts API response:", {
         success: response.data.success,
         count: response.data.data?.length || response.data.shorts?.length || 0,
-        timestamp,
+        timestamp: response.data.timestamp
       });
 
       if (response.data.success) {
@@ -374,6 +370,7 @@ useEffect(() => {
         }));
 
         setShorts(processedShorts);
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
       } else {
         console.log("⚠️ No shorts in response");
         setShorts([]);
@@ -382,7 +379,6 @@ useEffect(() => {
       console.error("❌ Error fetching shorts:", {
         message: error.message,
         status: error.response?.status,
-        data: error.response?.data,
       });
 
       if (error.response?.status !== 404) {
@@ -394,20 +390,17 @@ useEffect(() => {
     }
   };
 
-  fetchShorts();
-}, [id, refreshKey]); // ✅ Add refreshKey dependency
-
+  const timer = setTimeout(fetchShorts, 200);
+  return () => clearTimeout(timer);
+}, [id, refreshKey]);
     // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
 
-const handleVideoUploadSuccess = (newVideo: any) => {
-  console.log("✅ Video upload success:", newVideo._id);
-  setVideos((prevVideos) => [newVideo, ...prevVideos]);
-  // Force full refresh to update counts
-  setRefreshKey((prev) => prev + 1);
-  setRenderKey((prev) => prev + 1);
-};
+  const handleVideoUploadSuccess = (newVideo: any) => {
+    console.log("✅ Video upload success:", newVideo._id);
+    setVideos((prevVideos) => [newVideo, ...prevVideos]);
+  };
 
   const handleStartCall = async () => {
     // ✅ Validation checks
@@ -548,78 +541,87 @@ const handleVideoUploadSuccess = (newVideo: any) => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-        {/* ✅ CHANNEL INFO BAR - FORCE VISIBLE ON ANDROID */}
-        {channel && videos.length >= 0 && shorts.length >= 0 && isMounted && (
-          <div
-            ref={infoBarRef}
-            key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-            style={{
-              display: "block",
-              minHeight: "80px",
-              visibility: "visible",
-              opacity: 1,
-            }}
-          >
-            <div className="w-full max-w-7xl mx-auto">
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
-                {/* Channel Name */}
-                <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-sm sm:text-base truncate">
-                    {channel.channelname || channel.name || "Unknown"}
-                  </span>
-                </div>
+{/* ✅ CHANNEL INFO BAR - ANDROID FORCE VISIBLE */}
+{channel && isMounted && (
+  <div
+    ref={infoBarRef}
+    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+    className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+    style={{
+      position: "relative",
+      zIndex: 10,
+    }}
+  >
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
+        {/* Channel Name */}
+        <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+          <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <span className="text-sm sm:text-base truncate">
+            {channel.channelname || channel.name || "Unknown"}
+          </span>
+        </div>
 
-                {/* Joined Date */}
-                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    Joined{" "}
-                    {channel.joinedon
-                      ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "Recently"}
-                  </span>
-                </div>
+        {/* Joined Date */}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            Joined{" "}
+            {channel.joinedon
+              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "Recently"}
+          </span>
+        </div>
 
-                {/* Video Count */}
-                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-                  <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    {videos.length} video{videos.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+        {/* Video Count - FORCE UPDATE */}
+        <div 
+          key={`video-${videos.length}-${renderKey}`}
+          className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+        >
+          <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {videos.length} video{videos.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
-                {/* Shorts Count */}
-                <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-                  <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
-                    {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Refresh Button */}
-                <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2">
-                  <button
-                    onClick={() => {
-                      console.log("🔄 Manual refresh triggered");
-                      setRefreshKey((prev) => prev + 1);
-                      setRenderKey((prev) => prev + 1);
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs sm:text-sm font-medium"
-                  >
-                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Refresh
-                  </button>
-                </div>
+        {/* Shorts Count - FORCE UPDATE */}
+        <div 
+          key={`shorts-${shorts.length}-${renderKey}`}
+          className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+        >
+          <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
+{process.env.NODE_ENV === 'development' && (
+  <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
+    <button
+      onClick={() => {
+        console.log('🔄 Force refresh triggered');
+        setRefreshKey(prev => prev + 1);
+        setRenderKey(prev => prev + 1);
+      }}
+      className="px-4 py-2 bg-blue-600 text-white rounded"
+    >
+      Force Refresh (Debug)
+    </button>
+    <span className="ml-4 text-xs">
+      Videos: {videos.length} | Shorts: {shorts.length} | Render: {renderKey}
+    </span>
+  </div>
+)}
+
+
         {/* ============================================================================
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}
@@ -745,14 +747,10 @@ const handleVideoUploadSuccess = (newVideo: any) => {
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
                         Go to the Shorts section to upload vertical videos (9:16 aspect ratio)
                       </p>
-                     <button
-  onClick={() => {
-    // Store current channel ID for return
-    sessionStorage.setItem('returnToChannel', id as string);
-    router.push("/shorts/upload");
-  }}
-  className="bg-red-600 hover:bg-red-700 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
->
+                      <button
+                        onClick={() => router.push("/shorts/upload")}
+                        className="bg-red-600 hover:bg-red-700 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
+                      >
                         <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                         Go to Shorts Upload
                       </button>
