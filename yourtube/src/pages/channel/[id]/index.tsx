@@ -227,146 +227,187 @@ const ChannelPage = () => {
   // FETCH VIDEOS
   // ============================================================================
 
-  useEffect(() => {
-    const fetchVideos = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for videos");
-        return;
-      }
+useEffect(() => {
+  const fetchVideos = async () => {
+    if (!id || typeof id !== "string") {
+      console.log("⚠️ No channel ID for videos");
+      return;
+    }
 
-      try {
-        setVideosLoading(true);
-        console.log("📹 Fetching videos for channel:", id);
+    try {
+      setVideosLoading(true);
+      console.log("📹 Fetching videos for channel:", id);
 
-        // ✅ CRITICAL: Force no-cache on mobile
-        const response = await axiosInstance.get(`/video/channel/${id}`, {
-          params: {
-            _t: Date.now(),
-            nocache: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        });
+      // ✅ CRITICAL: Force no-cache with timestamp
+      const timestamp = Date.now();
+      const response = await axiosInstance.get(`/video/channel/${id}`, {
+        params: {
+          _t: timestamp,
+          nocache: "true",
+          refresh: refreshKey, // Add refresh key to params
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
 
-        console.log("📹 Videos API response:", {
-          success: response.data.success,
-          count: response.data.data?.length || response.data.videos?.length || 0,
-        });
+      console.log("📹 Videos API response:", {
+        success: response.data.success,
+        count: response.data.data?.length || response.data.videos?.length || 0,
+        timestamp,
+      });
 
-        if (response.data.success && Array.isArray(response.data.data)) {
-          console.log("✅ Setting videos:", response.data.data.length);
-          setVideos(response.data.data);
-        } else if (response.data.videos && Array.isArray(response.data.videos)) {
-          console.log("✅ Setting videos (alternate):", response.data.videos.length);
-          setVideos(response.data.videos);
-        } else if (response.data.data) {
-          const videoList = Array.isArray(response.data.data)
-            ? response.data.data
-            : [response.data.data];
-          console.log("✅ Setting videos (converted):", videoList.length);
-          setVideos(videoList);
-        } else {
-          console.log("⚠️ No videos in response");
-          setVideos([]);
-        }
-      } catch (error: any) {
-        console.error("❌ Error fetching videos:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
+      if (response.data.success && Array.isArray(response.data.data)) {
+        console.log("✅ Setting videos:", response.data.data.length);
+        setVideos(response.data.data);
+      } else if (response.data.videos && Array.isArray(response.data.videos)) {
+        console.log("✅ Setting videos (alternate):", response.data.videos.length);
+        setVideos(response.data.videos);
+      } else if (response.data.data) {
+        const videoList = Array.isArray(response.data.data)
+          ? response.data.data
+          : [response.data.data];
+        console.log("✅ Setting videos (converted):", videoList.length);
+        setVideos(videoList);
+      } else {
+        console.log("⚠️ No videos in response");
         setVideos([]);
-      } finally {
-        setVideosLoading(false);
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching videos:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      setVideos([]);
+    } finally {
+      setVideosLoading(false);
+    }
+  };
+
+  fetchVideos();
+}, [id, refreshKey]); // ✅ Add refreshKey dependency
+
+
+// ✅ Refresh when page becomes visible (tab switch, return from another page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && id) {
+        console.log("👁️ Page visible - refreshing data");
+        setRefreshKey((prev) => prev + 1);
       }
     };
 
-    const timer = setTimeout(fetchVideos, 100);
-    return () => clearTimeout(timer);
-  }, [id]);
+    const handleFocus = () => {
+      if (id) {
+        console.log("🎯 Window focused - refreshing data");
+        setRefreshKey((prev) => prev + 1);
+      }
+    };
 
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    // Check if returning from shorts upload
+    const returnChannel = sessionStorage.getItem('returnToChannel');
+    if (returnChannel === id) {
+      console.log("↩️ Returned from upload - forcing refresh");
+      sessionStorage.removeItem('returnToChannel');
+      setRefreshKey((prev) => prev + 1);
+      setRenderKey((prev) => prev + 1);
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [id]);
     // ============================================================================
   // FETCH SHORTS
   // ============================================================================
 
-  useEffect(() => {
-    const fetchShorts = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for shorts");
-        return;
-      }
+useEffect(() => {
+  const fetchShorts = async () => {
+    if (!id || typeof id !== "string") {
+      console.log("⚠️ No channel ID for shorts");
+      return;
+    }
 
-      try {
-        setShortsLoading(true);
-        setShortsError(null);
-        console.log("🎬 Fetching shorts for channel:", id);
+    try {
+      setShortsLoading(true);
+      setShortsError(null);
+      console.log("🎬 Fetching shorts for channel:", id);
 
-        // ✅ CRITICAL: Force no-cache on mobile
-        const response = await axiosInstance.get(`/shorts/channel/${id}`, {
-          params: {
-            page: 1,
-            limit: 100,
-            _t: Date.now(),
-            nocache: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        });
+      // ✅ CRITICAL: Force no-cache with timestamp
+      const timestamp = Date.now();
+      const response = await axiosInstance.get(`/shorts/channel/${id}`, {
+        params: {
+          page: 1,
+          limit: 100,
+          _t: timestamp,
+          nocache: "true",
+          refresh: refreshKey, // Add refresh key to params
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
 
-        console.log("🎬 Shorts API response:", {
-          success: response.data.success,
-          count: response.data.data?.length || response.data.shorts?.length || 0,
-        });
+      console.log("🎬 Shorts API response:", {
+        success: response.data.success,
+        count: response.data.data?.length || response.data.shorts?.length || 0,
+        timestamp,
+      });
 
-        if (response.data.success) {
-          const fetchedShorts = response.data.data || response.data.shorts || [];
-          console.log("✅ Setting shorts:", fetchedShorts.length);
+      if (response.data.success) {
+        const fetchedShorts = response.data.data || response.data.shorts || [];
+        console.log("✅ Setting shorts:", fetchedShorts.length);
 
-          const processedShorts = fetchedShorts.map((short: any) => ({
-            ...short,
-            thumbnailUrl: short.thumbnailUrl || short.thumbnail,
-            videoUrl: short.videoUrl || short.video,
-          }));
+        const processedShorts = fetchedShorts.map((short: any) => ({
+          ...short,
+          thumbnailUrl: short.thumbnailUrl || short.thumbnail,
+          videoUrl: short.videoUrl || short.video,
+        }));
 
-          setShorts(processedShorts);
-        } else {
-          console.log("⚠️ No shorts in response");
-          setShorts([]);
-        }
-      } catch (error: any) {
-        console.error("❌ Error fetching shorts:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
-
-        if (error.response?.status !== 404) {
-          setShortsError("Failed to load shorts");
-        }
+        setShorts(processedShorts);
+      } else {
+        console.log("⚠️ No shorts in response");
         setShorts([]);
-      } finally {
-        setShortsLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error("❌ Error fetching shorts:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
 
-    const timer = setTimeout(fetchShorts, 150);
-    return () => clearTimeout(timer);
-  }, [id, refreshKey]);
+      if (error.response?.status !== 404) {
+        setShortsError("Failed to load shorts");
+      }
+      setShorts([]);
+    } finally {
+      setShortsLoading(false);
+    }
+  };
+
+  fetchShorts();
+}, [id, refreshKey]); // ✅ Add refreshKey dependency
 
     // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
 
-  const handleVideoUploadSuccess = (newVideo: any) => {
-    console.log("✅ Video upload success:", newVideo._id);
-    setVideos((prevVideos) => [newVideo, ...prevVideos]);
-  };
+const handleVideoUploadSuccess = (newVideo: any) => {
+  console.log("✅ Video upload success:", newVideo._id);
+  setVideos((prevVideos) => [newVideo, ...prevVideos]);
+  // Force full refresh to update counts
+  setRefreshKey((prev) => prev + 1);
+  setRenderKey((prev) => prev + 1);
+};
 
   const handleStartCall = async () => {
     // ✅ Validation checks
@@ -563,6 +604,22 @@ const ChannelPage = () => {
             </div>
           </div>
         )}
+        {/* Refresh Button */}
+                <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={() => {
+                      console.log("🔄 Manual refresh triggered");
+                      setRefreshKey((prev) => prev + 1);
+                      setRenderKey((prev) => prev + 1);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs sm:text-sm font-medium"
+                  >
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
         {/* ============================================================================
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}
@@ -688,10 +745,14 @@ const ChannelPage = () => {
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
                         Go to the Shorts section to upload vertical videos (9:16 aspect ratio)
                       </p>
-                      <button
-                        onClick={() => router.push("/shorts/upload")}
-                        className="bg-red-600 hover:bg-red-700 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
-                      >
+                     <button
+  onClick={() => {
+    // Store current channel ID for return
+    sessionStorage.setItem('returnToChannel', id as string);
+    router.push("/shorts/upload");
+  }}
+  className="bg-red-600 hover:bg-red-700 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
+>
                         <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                         Go to Shorts Upload
                       </button>
