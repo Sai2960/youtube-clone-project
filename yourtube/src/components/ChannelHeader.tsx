@@ -82,33 +82,31 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
   }, [onAvatarUpdate]); // Include dependency to keep callback fresh
 
   // ✅ HANDLE IMAGE UPDATES FROM MODAL
-const handleImageUpdate = (type: 'avatar' | 'banner' | 'info', data: any) => {
+  const handleImageUpdate = (type: 'avatar' | 'banner' | 'info', data: any) => {
   console.log('🔄 Channel update:', type, data);
   
   setLocalChannel((prev: any) => {
-    const updated = {
-      ...prev,
-      ...(type === 'avatar' && { image: data }),
-      ...(type === 'banner' && { bannerImage: data }),
-      ...(type === 'info' && { 
-        channelname: data.channelname,
-        description: data.description 
-      }),
-    };
+    let updated = { ...prev };
     
-    // Update localStorage
+    if (type === 'avatar') {
+      updated.image = data;
+    } else if (type === 'banner') {
+      updated.bannerImage = data;
+    } else if (type === 'info') {
+      // Update channel name and description
+      updated.channelname = data.channelname;
+      updated.description = data.description;
+    }
+    
+    // Update localStorage if it's the current user's channel
     if (user && user._id === prev._id) {
       const updatedUser = { ...user, ...updated };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
-      // Broadcast update
+      // Dispatch event for other components
       window.dispatchEvent(new Event('avatarUpdated'));
       
-      // Trigger force refresh for mobile
-      window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
-        detail: { type, timestamp: Date.now() }
-      }));
-      
+      // Trigger callback for avatar changes
       if (type === 'avatar' && onAvatarUpdate) {
         setTimeout(() => onAvatarUpdate(), 100);
       }
@@ -117,6 +115,7 @@ const handleImageUpdate = (type: 'avatar' | 'banner' | 'info', data: any) => {
     return updated;
   });
   
+  // Force image refresh
   setImageKey(Date.now());
 };
 
