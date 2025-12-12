@@ -57,53 +57,91 @@ const axiosInstance: AxiosInstance = axios.create({
 });
 
 // ✅ CRITICAL: Request Interceptor with better mobile handling
-// ✅ ANDROID FIX: Request Interceptor with proper order
+// ✅ CRITICAL: Request Interceptor with Android fix
 axiosInstance.interceptors.request.use(
   (config) => {
-    // ✅ STEP 1: Initialize headers FIRST
-    if (!config.headers) {
-      config.headers = {} as any;
-    }
-    
-    // ✅ STEP 2: Add cache-busting headers BEFORE anything else
-    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0';
-    config.headers['Pragma'] = 'no-cache';
-    config.headers['Expires'] = '0';
-    config.headers['If-None-Match'] = '*'; // ✅ Force revalidation
-    config.headers['If-Modified-Since'] = '0'; // ✅ Bypass 304
-    
-    // ✅ STEP 3: Add timestamp to params
-    if (!config.params) {
-      config.params = {};
-    }
-    config.params._nocache = Date.now();
-    config.params._android = 'true';
-    
-    // ✅ STEP 4: Add authentication token
-    if (typeof window !== 'undefined') {
-      const token = window.localStorage.getItem('token');
-      
-      if (token && token !== 'null' && token !== 'undefined') {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    
-    // ✅ STEP 5: Extended timeout for uploads
+    // ✅ Extended timeout for uploads
     if (config.url?.includes('/upload') || config.url?.includes('/video')) {
       config.timeout = 600000;
       console.log('⏱️ Extended timeout to 10 minutes for upload');
     }
     
-    console.log('📤 Request:', {
-      url: config.url,
-      headers: config.headers,
-      params: config.params
-    });
+    // ✅ CRITICAL: Always read fresh token
+    if (typeof window !== 'undefined') {
+      const token = window.localStorage.getItem('token');
+      
+      if (token && token !== 'null' && token !== 'undefined') {
+        if (!config.headers) {
+          config.headers = {} as any;
+        }
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    
+    // ✅ ANDROID FIX: Aggressive cache busting
+    if (!config.headers) {
+      config.headers = {} as any;
+    }
+    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    config.headers['Pragma'] = 'no-cache';
+    config.headers['Expires'] = '0';
+    
+    // ✅ ANDROID: Add timestamp to URL
+    if (!config.params) {
+      config.params = {};
+    }
+    config.params._t = Date.now();
     
     return config;
   },
   (error) => {
     console.error('❌ Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// ✅ Response Interceptor
+axiosInstance.interceptors.response.use(
+  (response) => {
+    console.log('✅ API Response:', {
+      url: response.config.url,
+      status: response.status,
+      dataSize: JSON.stringify(response.data).length
+    });
+    return response;
+  },
+  (error) => {
+    console.error('❌ API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      code: error.code
+    });
+
+    if (error.code === 'ERR_NETWORK') {
+      console.error('🌐 NETWORK ERROR - Backend unreachable');
+      console.error('   Backend URL:', BACKEND_URL);
+    }
+
+    if (error.message?.includes('CORS')) {
+      console.error('🚫 CORS ERROR - Origin not allowed');
+    }
+
+    if (error.response?.status === 401) {
+      console.log('🔒 Unauthorized - Token expired or invalid');
+      
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        
+        if (!currentPath.includes('/login')) {
+          console.log('   Redirecting to login');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );
