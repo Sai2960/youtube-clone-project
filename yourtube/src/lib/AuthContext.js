@@ -1,5 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-// lib/AuthContext.tsx - COMPLETE FIXED VERSION
+
+// lib/AuthContext.tsx - FIXED VERSION
 
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { 
@@ -29,6 +29,7 @@ const DEFAULT_OTP_METHOD = 'sms';
 // ============================================================================
 
 const UserContext = createContext();
+
 // ============================================================================
 // USER PROVIDER COMPONENT
 // ============================================================================
@@ -45,7 +46,7 @@ export const UserProvider = ({ children }) => {
   const logoutTimeoutRef = useRef(null);
 
   // ============================================================================
-  // LOGIN FUNCTION - INSIDE COMPONENT (ONLY ONE VERSION)
+  // LOGIN FUNCTION
   // ============================================================================
 
   const login = useCallback((userdata, token, theme = null, location = null, otpMethod = DEFAULT_OTP_METHOD) => {
@@ -70,14 +71,6 @@ export const UserProvider = ({ children }) => {
       setError('Authentication failed - invalid user data');
       return;
     }
-// ✅ Force complete page refresh on Android to clear all caches
-if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
-  console.log('📱 Android detected - forcing cache clear');
-  setTimeout(() => {
-    window.location.reload();
-  }, 100);
-}
-    
     
     // ✅ Build enriched user object with all necessary fields
     const enrichedUser = {
@@ -125,10 +118,13 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
     // ✅ Notify other tabs
     window.dispatchEvent(new Event('tokenUpdated'));
     
+    // ✅ Dispatch avatar update event for all components
+    window.dispatchEvent(new Event('avatarUpdated'));
+    
     // ✅ Clear any previous errors
     setError(null);
     
-  }, []); // ✅ Empty deps - stable function
+  }, []);
 
   // ============================================================================
   // UPDATE USER FUNCTION
@@ -172,6 +168,11 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
         newValue: JSON.stringify(updatedUser),
         url: window.location.href
       }));
+      
+      // ✅ Dispatch avatar update event
+      if (userData.image || userData.avatar) {
+        window.dispatchEvent(new Event('avatarUpdated'));
+      }
       
       console.log('✅ User updated');
       return updatedUser;
@@ -220,7 +221,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
         console.log('✅ Firebase sign out successful');
       } catch (firebaseError) {
         console.error("❌ Firebase sign out error:", firebaseError);
-        // Don't throw - continue logout even if Firebase fails
       }
       
       console.log('✅ Logout complete\n');
@@ -248,7 +248,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
       const firebaseuser = result.user;
       console.log('✅ Firebase user authenticated:', firebaseuser.email);
       
-      // ✅ Prepare payload
       const payload = {
         email: firebaseuser.email,
         name: firebaseuser.displayName || firebaseuser.email.split('@')[0],
@@ -257,12 +256,10 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
       
       console.log('📤 Sending auth payload to backend');
       
-      // ✅ Authenticate with backend
       const response = await axiosInstance.post("/auth/login", payload);
       
       console.log('📥 Backend response received');
       
-      // ✅ Extract user data with fallbacks
       const userData = response.data.result || response.data.user || response.data;
       const tokenFromResponse = response.data.token;
       const theme = response.data.theme || userData.theme || null;
@@ -275,7 +272,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
         return;
       }
       
-      // ✅ Call login function
       login(userData, tokenFromResponse, theme, location, otpMethod);
       
       console.log('✅ Google Sign-In complete\n');
@@ -285,7 +281,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
       
       let errorMessage = 'Login failed. Please try again.';
       
-      // ✅ Provide specific error messages
       if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in cancelled.';
       } else if (error.response) {
@@ -294,7 +289,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
         
         if (status === 500) {
           errorMessage = 'Server error. Please try again later.';
-          console.error('Server logs:', error.response.data);
         } else if (status === 401) {
           errorMessage = 'Invalid credentials. Please try again.';
         } else if (status === 429) {
@@ -308,20 +302,19 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
         errorMessage = error.message || errorMessage;
       }
       
-      console.error('🚨 Final error message:', errorMessage);
       setError(errorMessage);
       
     }
     
   }, [login]);
+
   // ============================================================================
-  // FIREBASE AUTH STATE OBSERVER - INIT
+  // FIREBASE AUTH STATE OBSERVER
   // ============================================================================
 
   useEffect(() => {
     console.log('🔍 ===== AUTH INITIALIZATION =====');
     
-    // ✅ Prevent double initialization
     if (hasInitializedRef.current) {
       console.log('✅ Auth already initialized, skipping');
       return;
@@ -330,10 +323,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
     console.log('🔍 Setting up Firebase auth observer');
     hasInitializedRef.current = true;
     
-    // ============================================================================
-    // MAIN FIREBASE AUTH LISTENER
-    // ============================================================================
-    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseuser) => {
       console.log('👤 Firebase auth state changed');
       
@@ -341,7 +330,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
         console.log('👤 Firebase user detected:', firebaseuser.email);
         
         try {
-          // ✅ Check for stored user data
           const storedUser = localStorage.getItem("user");
           const storedToken = localStorage.getItem("token");
           
@@ -350,15 +338,8 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
             
             try {
               const parsedUser = JSON.parse(storedUser);
-              
-              console.log('✅ Parsed stored user:', {
-                id: parsedUser._id || parsedUser.id,
-                email: parsedUser.email,
-              });
-              
               setUser(parsedUser);
               setIsInitializing(false);
-              console.log('✅ Init complete with cached user\n');
               return;
               
             } catch (parseError) {
@@ -368,7 +349,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
             }
           }
           
-          // ✅ No stored data - fetch from backend
           console.log('🔄 No cached data, fetching from backend...');
           
           const payload = {
@@ -377,11 +357,7 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
             image: firebaseuser.photoURL || DEFAULT_AVATAR,
           };
           
-          console.log('📤 Sending auto-login payload');
-          
           const response = await axiosInstance.post("/auth/login", payload);
-          
-          console.log('📥 Backend response received');
           
           const userData = response.data.result || response.data.user || response.data;
           const tokenFromResponse = response.data.token;
@@ -396,41 +372,28 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
             return;
           }
           
-          console.log('🔐 Calling login with backend data');
           login(userData, tokenFromResponse, theme, location, otpMethod);
           
-          console.log('✅ Init complete with backend user\n');
-          
         } catch (error) {
-          console.error('❌ Auto-login error:', error.message);
-          console.error('   Status:', error.response?.status);
-          console.error('   Data:', error.response?.data);
-          
+          console.error('❌ Auto-login error:', error);
           await logout();
         }
         
       } else {
-        // ✅ No Firebase user
         console.log('👤 No Firebase user');
         
         const storedUser = localStorage.getItem("user");
         const storedToken = localStorage.getItem("token");
         
         if (storedUser && storedToken) {
-          console.log('✅ Using stored local user');
-          
           try {
             const parsedUser = JSON.parse(storedUser);
             setUser(parsedUser);
-            window.dispatchEvent(new Event('tokenUpdated'));
-            console.log('✅ Restored local user\n');
-            
           } catch (parseError) {
             console.error('❌ Failed to parse stored user:', parseError);
             await logout();
           }
         } else {
-          console.log('📭 No stored user, clearing state');
           await logout();
         }
       }
@@ -439,74 +402,54 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
       
     });
     
-    // ✅ Store unsubscribe function
     authUnsubscribeRef.current = unsubscribe;
     
-    // ✅ Cleanup
     return () => {
-      console.log('🧹 Cleaning up Firebase auth observer');
       if (authUnsubscribeRef.current) {
         authUnsubscribeRef.current();
-        authUnsubscribeRef.current = null;
       }
     };
     
-  }, [login, logout]); // ✅ FIXED: Added dependencies
+  }, [login, logout]);
+
   // ============================================================================
-  // STORAGE EVENT LISTENER - SYNC ACROSS TABS
+  // STORAGE EVENT LISTENER
   // ============================================================================
 
   useEffect(() => {
-    console.log('📡 Setting up storage listener for tab sync');
-    
     const handleStorageChange = (event) => {
-      console.log('📡 Storage event received:', event.key);
-      
       if (event.key === 'user' && event.newValue) {
         try {
           const updatedUser = JSON.parse(event.newValue);
-          console.log('👤 Syncing user from other tab:', updatedUser.email);
           setUser(updatedUser);
-          
         } catch (error) {
           console.error('❌ Failed to parse synced user:', error);
         }
       } else if (event.key === 'user' && !event.newValue) {
-        console.log('🚪 User cleared in another tab, logging out');
         setUser(null);
       } else if (event.key === 'token') {
-        console.log('🔑 Token updated in another tab');
         window.dispatchEvent(new Event('tokenUpdated'));
       }
     };
     
     window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      console.log('🧹 Removing storage listener');
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => window.removeEventListener('storage', handleStorageChange);
     
   }, []);
+
   // ============================================================================
-  // TOKEN UPDATED LISTENER - GLOBAL SYNC
+  // TOKEN UPDATED LISTENER
   // ============================================================================
 
   useEffect(() => {
-    console.log('🔑 Setting up tokenUpdated listener');
-    
     const handleTokenUpdated = () => {
-      console.log('🔑 Token updated event received');
-      
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
       
       if (token && userStr) {
         try {
           const userData = JSON.parse(userStr);
-          console.log('✅ Restoring user after token update:', userData.email);
           setUser(userData);
-          
         } catch (error) {
           console.error('❌ Failed to parse user after token update:', error);
         }
@@ -514,48 +457,36 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
     };
     
     window.addEventListener('tokenUpdated', handleTokenUpdated);
-    
-    return () => {
-      console.log('🧹 Removing tokenUpdated listener');
-      window.removeEventListener('tokenUpdated', handleTokenUpdated);
-    };
+    return () => window.removeEventListener('tokenUpdated', handleTokenUpdated);
     
   }, []);
+
   // ============================================================================
-  // CONTEXT VALUE - MEMOIZED
+  // CONTEXT VALUE
   // ============================================================================
 
-  const contextValue = useMemo(() => {
-    console.log('📦 Creating context value with user:', user?.email || 'none');
-    
-    return {
-      user,
-      login,
-      logout,
-      handlegooglesignin,
-      updateUser,
-      error,
-      isInitializing,
-    };
-  }, [user, error, isInitializing, login, logout, updateUser]);
+  const contextValue = useMemo(() => ({
+    user,
+    login,
+    logout,
+    handlegooglesignin,
+    updateUser,
+    error,
+    isInitializing,
+  }), [user, error, isInitializing, login, logout, updateUser, handlegooglesignin]);
 
   // ============================================================================
   // LOADING STATE
   // ============================================================================
 
   if (isInitializing) {
-    console.log('⏳ App initializing...');
-    
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-black">
         <div className="flex flex-col items-center gap-4">
-          {/* Spinner */}
           <div className="relative w-12 h-12">
             <div className="absolute inset-0 rounded-full border-4 border-gray-700"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
           </div>
-          
-          {/* Text */}
           <div className="text-center">
             <div className="text-white text-lg font-semibold mb-2">
               Initializing...
@@ -564,8 +495,6 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
               Setting up your session
             </div>
           </div>
-          
-          {/* Animated dots */}
           <div className="flex gap-1 mt-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -576,18 +505,13 @@ if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
     );
   }
 
-  // ============================================================================
-  // PROVIDER RETURN
-  // ============================================================================
-
-  console.log('✅ Rendering UserProvider with user:', user?.email || 'anonymous');
-
   return (
     <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );
 };
+
 // ============================================================================
 // USE USER HOOK
 // ============================================================================
@@ -601,9 +525,5 @@ export const useUser = () => {
   
   return context;
 };
-
-// ============================================================================
-// EXPORT
-// ============================================================================
 
 export default UserProvider;

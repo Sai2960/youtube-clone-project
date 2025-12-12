@@ -238,20 +238,27 @@ useEffect(() => {
       setVideosLoading(true);
       console.log("📹 Fetching videos for channel:", id);
 
-      // ✅ CRITICAL: Force no-cache with multiple strategies
       const timestamp = Date.now();
+      
+      // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
       const response = await axiosInstance.get(`/video/channel/${id}`, {
         params: {
           _t: timestamp,
           nocache: "true",
-          mobile: "true" // ✅ Flag for mobile
+          mobile: "true"
         },
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
           "Pragma": "no-cache",
           "Expires": "0",
-          "If-None-Match": `"${timestamp}"` // ✅ Force unique request
+          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
         },
+        // ✅ CRITICAL: Disable Axios's automatic ETag handling
+        transformRequest: [(data, headers) => {
+          delete headers['If-None-Match'];
+          delete headers['If-Modified-Since'];
+          return data;
+        }],
       });
 
       console.log("📹 Videos API response:", {
@@ -263,7 +270,6 @@ useEffect(() => {
       if (response.data.success && Array.isArray(response.data.data)) {
         console.log("✅ Setting videos:", response.data.data.length);
         setVideos(response.data.data);
-        // ✅ Force re-render on mobile
         setTimeout(() => setRenderKey(prev => prev + 1), 100);
       } else if (response.data.videos && Array.isArray(response.data.videos)) {
         console.log("✅ Setting videos (alternate):", response.data.videos.length);
@@ -284,11 +290,9 @@ useEffect(() => {
     }
   };
 
-  // ✅ CRITICAL: Delay slightly for mobile render
   const timer = setTimeout(fetchVideos, 150);
   return () => clearTimeout(timer);
-}, [id, refreshKey]); // ✅ Add refreshKey dependency
-
+}, [id, refreshKey]);
     // ============================================================================
   // FETCH SHORTS
   // ============================================================================
@@ -305,8 +309,9 @@ useEffect(() => {
       setShortsError(null);
       console.log("🎬 Fetching shorts for channel:", id);
 
-      // ✅ CRITICAL: Force no-cache with multiple strategies
       const timestamp = Date.now();
+      
+      // ✅ CRITICAL FIX: Remove if-none-match header
       const response = await axiosInstance.get(`/shorts/channel/${id}`, {
         params: {
           page: 1,
@@ -319,8 +324,14 @@ useEffect(() => {
           "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
           "Pragma": "no-cache",
           "Expires": "0",
-          "If-None-Match": `"${timestamp}"`
+          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
         },
+        // ✅ CRITICAL: Disable Axios's automatic ETag handling
+        transformRequest: [(data, headers) => {
+          delete headers['If-None-Match'];
+          delete headers['If-Modified-Since'];
+          return data;
+        }],
       });
 
       console.log("🎬 Shorts API response:", {
@@ -340,7 +351,6 @@ useEffect(() => {
         }));
 
         setShorts(processedShorts);
-        // ✅ Force re-render on mobile
         setTimeout(() => setRenderKey(prev => prev + 1), 100);
       } else {
         console.log("⚠️ No shorts in response");
@@ -361,10 +371,9 @@ useEffect(() => {
     }
   };
 
-  // ✅ CRITICAL: Delay slightly for mobile render
   const timer = setTimeout(fetchShorts, 200);
   return () => clearTimeout(timer);
-}, [id, refreshKey]); // ✅ Add refreshKey dependency
+}, [id, refreshKey]);
     // ============================================================================
   // EVENT HANDLERS
   // ============================================================================

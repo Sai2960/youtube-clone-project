@@ -1,3 +1,4 @@
+// src/lib/axiosinstance.ts - FULLY FIXED VERSION
 import axios, { AxiosInstance } from 'axios';
 
 declare module 'axios' {
@@ -48,7 +49,7 @@ console.log('   Is HTTPS:', BACKEND_URL.startsWith('https'));
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: BACKEND_URL,
-  timeout: 30000, // ✅ INCREASED to 30 seconds for mobile
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -56,14 +57,19 @@ const axiosInstance: AxiosInstance = axios.create({
   validateStatus: (status) => status < 500,
 });
 
-// ✅ CRITICAL: Request Interceptor with better mobile handling
-// ✅ CRITICAL: Request Interceptor with Android fix
+// ✅ CRITICAL: Request Interceptor with ETag fix
 axiosInstance.interceptors.request.use(
   (config) => {
     // ✅ Extended timeout for uploads
     if (config.url?.includes('/upload') || config.url?.includes('/video')) {
       config.timeout = 600000;
       console.log('⏱️ Extended timeout to 10 minutes for upload');
+    }
+    
+    // ✅ CRITICAL: Remove problematic headers that cause CORS errors
+    if (config.headers) {
+      delete config.headers['If-None-Match'];
+      delete config.headers['If-Modified-Since'];
     }
     
     // ✅ CRITICAL: Always read fresh token
