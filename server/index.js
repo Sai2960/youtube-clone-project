@@ -276,14 +276,13 @@ app.use(
   })
 );
 
-// ✅ CRITICAL: Video streaming route with range support
+// ✅ CRITICAL: Video streaming with Range support for Shorts
 app.get('/uploads/shorts/videos/:filename', (req, res) => {
   const filename = req.params.filename;
   const videoPath = path.join(__dirname, 'uploads', 'shorts', 'videos', filename);
   
-  console.log('🎬 Video stream request:', filename);
+  console.log('🎬 Shorts video stream request:', filename);
   
-  // Check if file exists
   if (!fs.existsSync(videoPath)) {
     console.error('❌ Video file not found:', videoPath);
     return res.status(404).json({ success: false, message: 'Video not found' });
@@ -293,20 +292,15 @@ app.get('/uploads/shorts/videos/:filename', (req, res) => {
   const fileSize = stat.size;
   const range = req.headers.range;
   
-  console.log('📊 Video info:', {
-    size: fileSize,
-    range: range || 'no range',
-    path: videoPath.substring(0, 60)
-  });
-  
-  // Set CORS headers
+  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Content-Type', 'video/mp4');
   
   if (range) {
-    // Parse range header
     const parts = range.replace(/bytes=/, "").split("-");
     const start = parseInt(parts[0], 10);
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
@@ -319,26 +313,19 @@ app.get('/uploads/shorts/videos/:filename', (req, res) => {
     const chunksize = (end - start) + 1;
     const file = fs.createReadStream(videoPath, { start, end });
     
-    const head = {
-      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': chunksize,
-      'Content-Type': 'video/mp4',
-    };
+    console.log('✅ Streaming range:', { start, end, chunksize, fileSize });
     
-    console.log('✅ Streaming partial content:', { start, end, chunksize });
-    res.writeHead(206, head);
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Content-Length': chunksize,
+    });
+    
     file.pipe(res);
   } else {
-    // No range request, send entire file
-    const head = {
-      'Content-Length': fileSize,
-      'Content-Type': 'video/mp4',
-      'Accept-Ranges': 'bytes',
-    };
-    
     console.log('✅ Streaming full video');
-    res.writeHead(200, head);
+    res.writeHead(200, {
+      'Content-Length': fileSize,
+    });
     fs.createReadStream(videoPath).pipe(res);
   }
 });
@@ -384,13 +371,14 @@ app.get('/api/test-video/:shortId', async (req, res) => {
   }
 });
 
+
 // Same for regular videos
 app.get('/uploads/videos/:filename', (req, res) => {
   const filename = req.params.filename;
   const videoPath = path.join(__dirname, 'uploads', 'videos', filename);
   
   if (!fs.existsSync(videoPath)) {
-    console.error('❌ Video file not found:', videoPath);
+    console.error('❌ Video not found:', videoPath);
     return res.status(404).json({ success: false, message: 'Video not found' });
   }
   
@@ -398,11 +386,12 @@ app.get('/uploads/videos/:filename', (req, res) => {
   const fileSize = stat.size;
   const range = req.headers.range;
   
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Content-Type', 'video/mp4');
   
   if (range) {
     const parts = range.replace(/bytes=/, "").split("-");
@@ -417,23 +406,16 @@ app.get('/uploads/videos/:filename', (req, res) => {
     const chunksize = (end - start) + 1;
     const file = fs.createReadStream(videoPath, { start, end });
     
-    const head = {
+    res.writeHead(206, {
       'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-      'Accept-Ranges': 'bytes',
       'Content-Length': chunksize,
-      'Content-Type': 'video/mp4',
-    };
+    });
     
-    res.writeHead(206, head);
     file.pipe(res);
   } else {
-    const head = {
+    res.writeHead(200, {
       'Content-Length': fileSize,
-      'Content-Type': 'video/mp4',
-      'Accept-Ranges': 'bytes',
-    };
-    
-    res.writeHead(200, head);
+    });
     fs.createReadStream(videoPath).pipe(res);
   }
 });
