@@ -57,6 +57,7 @@ const axiosInstance: AxiosInstance = axios.create({
 });
 
 // ✅ CRITICAL: Request Interceptor with better mobile handling
+// ✅ CRITICAL: Request Interceptor with Android fix
 axiosInstance.interceptors.request.use(
   (config) => {
     // ✅ Extended timeout for uploads
@@ -65,7 +66,7 @@ axiosInstance.interceptors.request.use(
       console.log('⏱️ Extended timeout to 10 minutes for upload');
     }
     
-    // ✅ CRITICAL: Always read fresh token from localStorage
+    // ✅ CRITICAL: Always read fresh token
     if (typeof window !== 'undefined') {
       const token = window.localStorage.getItem('token');
       
@@ -74,34 +75,27 @@ axiosInstance.interceptors.request.use(
           config.headers = {} as any;
         }
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('🔑 Token attached');
-      } else {
-        console.warn('⚠️ No valid token found');
       }
     }
     
-    // ✅ MOBILE FIX: Add cache-busting headers for mobile browsers
-    if (typeof window !== 'undefined' && /android|iphone|ipad/i.test(navigator.userAgent)) {
-      if (!config.headers) {
-        config.headers = {} as any;
-      }
-      config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
-      config.headers['Pragma'] = 'no-cache';
-      config.headers['Expires'] = '0';
-      console.log('📱 Mobile detected - cache busting enabled');
+    // ✅ ANDROID FIX: Aggressive cache busting
+    if (!config.headers) {
+      config.headers = {} as any;
     }
+    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    config.headers['Pragma'] = 'no-cache';
+    config.headers['Expires'] = '0';
     
-    console.log('📤 API Request:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      hasAuth: !!(config.headers?.Authorization),
-      timeout: config.timeout
-    });
+    // ✅ ANDROID: Add timestamp to URL
+    if (!config.params) {
+      config.params = {};
+    }
+    config.params._t = Date.now();
     
     return config;
   },
   (error) => {
-    console.error('❌ Request interceptor error:', error);
+    console.error('❌ Request error:', error);
     return Promise.reject(error);
   }
 );

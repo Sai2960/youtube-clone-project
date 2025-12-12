@@ -102,6 +102,19 @@ const [refreshKey, setRefreshKey] = useState(0);
       setRenderKey(prev => prev + 1);
     }
   }, [channel, videos.length, shorts.length]);
+
+  // ✅ ANDROID FIX: Force re-render when data changes
+useEffect(() => {
+  if (channel && isMounted) {
+    // Force DOM update on Android
+    const timer = setTimeout(() => {
+      setRenderKey(prev => prev + 1);
+    }, 100);
+    return () => clearTimeout(timer);
+  }
+}, [channel?._id, videos.length, shorts.length, isMounted]);
+
+
   // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
@@ -420,243 +433,215 @@ const [refreshKey, setRefreshKey] = useState(0);
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-       {/* ✅ Channel Info Bar - FORCE RENDER FIX */}
-        {channel && (
-          <div 
-            key={`info-${channel._id}-${videos.length}-${shorts.length}`}
-            className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-            style={{ 
-              transform: 'translate3d(0, 0, 0)',
-              WebkitTransform: 'translate3d(0, 0, 0)',
-              display: 'block',
-              opacity: 1
-            }}
-          >
-            <div className="w-full max-w-7xl mx-auto">
-              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
-                {/* Channel Name */}
-                <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                  <User className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-base truncate">
-                    {channel.channelname || channel.name || "Unknown"}
-                  </span>
-                </div>
+     {/* ✅ Channel Info Bar - ANDROID FIX */}
+{channel && videos.length >= 0 && shorts.length >= 0 && isMounted && (
+  <div 
+    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+    className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+  >
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
+        {/* Channel Name */}
+        <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+          <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <span className="text-sm sm:text-base truncate">
+            {channel.channelname || channel.name || "Unknown"}
+          </span>
+        </div>
 
-                {/* Joined Date */}
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    Joined{" "}
-                    {channel.joinedon
-                      ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "Recently"}
-                  </span>
-                </div>
+        {/* Joined Date */}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            Joined{" "}
+            {channel.joinedon
+              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "Recently"}
+          </span>
+        </div>
 
-                {/* Video Count */}
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Video className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    {videos.length} video{videos.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+        {/* Video Count */}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+          <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {videos.length} video{videos.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
-                {/* Shorts Count */}
-                <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Film className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Shorts Count */}
+        <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+          <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
         {/* ============================================================================
             UPLOAD SECTION - COMPLETELY FIXED
             ============================================================================ */}
-        {isOwnChannel && (
-          <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6 max-w-7xl mx-auto">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-              {/* Upload Tabs - DESKTOP STYLE MATCH */}
-              <div className="flex items-center gap-0 mb-6 border-b border-gray-200 dark:border-gray-700">
-                {/* Videos Tab */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("videos")}
-                  className="flex items-center gap-2 px-6 py-3.5 transition-all relative"
+       {isOwnChannel && (
+  <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6 max-w-7xl mx-auto">
+    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+      {/* Upload Tabs - MOBILE RESPONSIVE */}
+      <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+        {/* Videos Tab */}
+        <button
+          type="button"
+          onClick={() => setActiveTab("videos")}
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-3.5 transition-all relative whitespace-nowrap flex-shrink-0"
+          style={{
+            fontWeight: 500,
+            fontSize: window.innerWidth < 640 ? "13px" : "15px",
+            color: activeTab === "videos" ? "#2563eb" : "#6b7280",
+            backgroundColor: "transparent",
+            border: "none",
+            cursor: "pointer",
+            borderBottom:
+              activeTab === "videos"
+                ? "2px solid #2563eb"
+                : "2px solid transparent",
+          }}
+        >
+          <Video className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <span className="text-xs sm:text-sm md:text-base">Upload Videos</span>
+        </button>
+
+        {/* Shorts Tab */}
+        <button
+          type="button"
+          onClick={() => setActiveTab("shorts")}
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-3.5 transition-all relative whitespace-nowrap flex-shrink-0"
+          style={{
+            fontWeight: 500,
+            fontSize: window.innerWidth < 640 ? "13px" : "15px",
+            color: activeTab === "shorts" ? "#dc2626" : "#6b7280",
+            backgroundColor: "transparent",
+            border: "none",
+            cursor: "pointer",
+            borderBottom:
+              activeTab === "shorts"
+                ? "2px solid #dc2626"
+                : "2px solid transparent",
+          }}
+        >
+          <Play className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <span className="text-xs sm:text-sm md:text-base">Upload Shorts</span>
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "videos" ? (
+        <div>
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <Upload
+              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
+              style={{ color: "#2563eb" }}
+            />
+            <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+              Upload Regular Videos
+            </h2>
+          </div>
+          <VideoUploader
+            channelId={id as string}
+            channelName={channel?.channelname || channel?.name}
+            onUploadSuccess={handleVideoUploadSuccess}
+          />
+        </div>
+      ) : (
+        <div>
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <Upload
+              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
+              style={{ color: "#dc2626" }}
+            />
+            <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+              Upload Shorts
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 sm:p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0"
+              style={{ border: "2px solid #dc2626" }}
+            >
+              <Avatar className="w-full h-full">
+                <AvatarImage
+                  src={getImageUrl(channel?.image, true)}
+                  alt={channel?.channelname || channel?.name}
+                  className="w-full h-full object-cover"
+                />
+                <AvatarFallback
                   style={{
-                    fontWeight: 500,
-                    fontSize: "15px",
-                    color: activeTab === "videos" ? "#2563eb" : "#6b7280",
-                    backgroundColor: "transparent",
-                    border: "none",
-                    textDecoration: "none",
-                    cursor: "pointer",
-                    borderBottom:
-                      activeTab === "videos"
-                        ? "3px solid #2563eb"
-                        : "3px solid transparent",
+                    background:
+                      "linear-gradient(to bottom right, #ef4444, #ec4899)",
                   }}
-                  onMouseEnter={(e) => {
-                    if (activeTab !== "videos") {
-                      e.currentTarget.style.color = "#374151";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTab !== "videos") {
-                      e.currentTarget.style.color = "#6b7280";
-                    }
-                  }}
+                  className="text-white font-semibold text-sm"
                 >
-                  <Video className="w-5 h-5 flex-shrink-0" />
-                  <span style={{ textDecoration: "none" }}>Upload Videos</span>
-                </button>
-
-                {/* Shorts Tab - MATCHING DESKTOP STYLE */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("shorts")}
-                  className="flex items-center gap-2 px-6 py-3.5 transition-all relative"
-                  style={{
-                    fontWeight: 500,
-                    fontSize: "15px",
-                    color: activeTab === "shorts" ? "#dc2626" : "#6b7280",
-                    backgroundColor: "transparent",
-                    border: "none",
-                    textDecoration: "none",
-                    cursor: "pointer",
-                    borderBottom:
-                      activeTab === "shorts"
-                        ? "3px solid #dc2626"
-                        : "3px solid transparent",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (activeTab !== "shorts") {
-                      e.currentTarget.style.color = "#374151";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTab !== "shorts") {
-                      e.currentTarget.style.color = "#6b7280";
-                    }
-                  }}
-                >
-                  <Play className="w-5 h-5 flex-shrink-0" />
-                  <span style={{ textDecoration: "none" }}>Upload Shorts</span>
-                </button>
-              </div>
-
-              {/* Tab Content */}
-              {activeTab === "videos" ? (
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <Upload
-                      className="w-6 h-6 flex-shrink-0"
-                      style={{ color: "#2563eb" }}
-                    />
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      Upload Regular Videos
-                    </h2>
-                  </div>
-                  <VideoUploader
-                    channelId={id as string}
-                    channelName={channel?.channelname || channel?.name}
-                    onUploadSuccess={handleVideoUploadSuccess}
-                  />
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <Upload
-                      className="w-6 h-6 flex-shrink-0"
-                      style={{ color: "#dc2626" }}
-                    />
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      Upload Shorts
-                    </h2>
-                  </div>
-
-                  <div className="flex items-center gap-3 mb-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div
-                      className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
-                      style={{ border: "2px solid #dc2626" }}
-                    >
-                      <Avatar className="w-full h-full">
-                        <AvatarImage
-                          src={getImageUrl(channel?.image, true)}
-                          alt={channel?.channelname || channel?.name}
-                          className="w-full h-full object-cover"
-                        />
-                        <AvatarFallback
-                          style={{
-                            background:
-                              "linear-gradient(to bottom right, #ef4444, #ec4899)",
-                          }}
-                          className="text-white font-semibold"
-                        >
-                          {(channel?.channelname ||
-                            channel?.name ||
-                            "C")[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">
-                        {channel?.channelname || channel?.name}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Uploading as this channel
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-center py-8">
-                    <div
-                      style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
-                      className="dark:bg-red-900/20 rounded-xl p-8 max-w-md mx-auto"
-                    >
-                      <div
-                        style={{ backgroundColor: "rgba(239, 68, 68, 0.2)" }}
-                        className="dark:bg-red-900/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                      >
-                        <Play
-                          className="w-8 h-8"
-                          style={{ color: "#dc2626" }}
-                          fill="currentColor"
-                        />
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                        Upload Shorts
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                        Go to the Shorts section to upload vertical videos (9:16
-                        aspect ratio)
-                      </p>
-                      <button
-                        onClick={() => router.push("/shorts/upload")}
-                        style={{ backgroundColor: "#dc2626" }}
-                        className="px-6 py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl"
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#b91c1c")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#dc2626")
-                        }
-                      >
-                        <Upload className="w-5 h-5" />
-                        Go to Shorts Upload
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  {(channel?.channelname ||
+                    channel?.name ||
+                    "C")[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <div>
+              <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
+                {channel?.channelname || channel?.name}
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Uploading as this channel
+              </p>
             </div>
           </div>
-        )}
+
+          <div className="text-center py-6 sm:py-8">
+            <div
+              style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+              className="dark:bg-red-900/20 rounded-xl p-6 sm:p-8 max-w-md mx-auto"
+            >
+              <div
+                style={{ backgroundColor: "rgba(239, 68, 68, 0.2)" }}
+                className="dark:bg-red-900/50 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+              >
+                <Play
+                  className="w-6 h-6 sm:w-8 sm:h-8"
+                  style={{ color: "#dc2626" }}
+                  fill="currentColor"
+                />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Upload Shorts
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
+                Go to the Shorts section to upload vertical videos (9:16
+                aspect ratio)
+              </p>
+              <button
+                onClick={() => router.push("/shorts/upload")}
+                style={{ backgroundColor: "#dc2626" }}
+                className="px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#b91c1c")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#dc2626")
+                }
+              >
+                <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
+                Go to Shorts Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
         {/* Content Tabs (Videos/Shorts viewing) */}
         <div className="px-4 sm:px-6 pb-6 sm:pb-8 max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700">
