@@ -521,7 +521,7 @@ const ChannelPage = () => {
             }}
           >
             <div className="w-full max-w-7xl mx-auto">
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center lg:gap-6">
                 {/* Channel Name */}
                 <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
