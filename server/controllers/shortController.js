@@ -163,10 +163,13 @@ export const upload = {
 
 export const getAllShorts = async (req, res) => {
   try {
-    // ✅ Disable caching
-    res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
+    // ✅ CRITICAL: Aggressive no-cache headers for mobile
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
     res.set("Pragma", "no-cache");
     res.set("Expires", "0");
+    res.set("Surrogate-Control", "no-store");
+    res.set("X-Accel-Expires", "0");
+    res.set("ETag", `"${Date.now()}"`);
 
     const { page = 1, limit = 20, sort = "recent" } = req.query;
 
@@ -193,7 +196,8 @@ export const getAllShorts = async (req, res) => {
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          const jwt = await import('jsonwebtoken');
+          const decoded = jwt.default.verify(token, process.env.JWT_SECRET);
           userId = decoded._id || decoded.id || decoded.userId;
         } catch (err) {
           console.log("⚠️ Could not verify token");
@@ -201,26 +205,27 @@ export const getAllShorts = async (req, res) => {
       }
     }
 
+    // ✅ CRITICAL: Force fresh query with hint
     const shorts = await Short.find({ isPublic: true, status: "active" })
       .sort(sortOption)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      // ✅ CRITICAL FIX: Populate with select to get ALL user fields
       .populate({
         path: "userId",
         select: "name avatar image channelName channelname subscribers",
         options: { lean: true }
       })
       .lean()
+      .hint({ createdAt: -1 }) // ✅ Use index
       .maxTimeMS(5000);
 
-    // ✅ CRITICAL FIX: Re-fetch user data to ensure it's fresh
+    // ✅ CRITICAL: Re-fetch user data to ensure it's fresh (mobile fix)
     const shortsWithFreshData = await Promise.all(
       shorts.map(async (short) => {
-        // Fetch fresh user data directly from User model
         const freshUser = await User.findById(short.userId._id)
           .select('name avatar image channelName channelname subscribers')
-          .lean();
+          .lean()
+          .maxTimeMS(2000);
 
         const hasLiked = userId
           ? short.likes?.some((like) => like.toString() === userId.toString())
@@ -230,11 +235,9 @@ export const getAllShorts = async (req, res) => {
           ? short.dislikes?.some((dislike) => dislike.toString() === userId.toString())
           : false;
 
-        // ✅ Use fresh user data
         let finalAvatar = freshUser?.image || freshUser?.avatar || short.channelAvatar;
         finalAvatar = processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
 
-        // ✅ Use fresh channel name
         const freshChannelName = freshUser?.channelname || 
                                  freshUser?.channelName || 
                                  freshUser?.name || 
@@ -267,13 +270,14 @@ export const getAllShorts = async (req, res) => {
 
     const total = await Short.countDocuments({ isPublic: true, status: "active" });
 
-    console.log(`✅ Returning ${shortsWithFreshData.length} shorts with FRESH user data`);
+    console.log(`✅ Returning ${shortsWithFreshData.length} shorts with FRESH data (timestamp: ${Date.now()})`);
 
     res.status(200).json({
       success: true,
       data: shortsWithFreshData,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
+      timestamp: Date.now() // ✅ Help debug
     });
   } catch (error) {
     console.error("❌ Error fetching shorts:", error);

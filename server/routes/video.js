@@ -52,13 +52,14 @@ router.post('/test-auth', verifyToken, (req, res) => {
 });
 
 // ✅ CRITICAL FIX: Add root GET route for /video
+// ✅ CRITICAL FIX: Add root GET route for /video with NO CACHING
 router.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    // ✅ CRITICAL FIX: No caching, always fresh data
+    // ✅ CRITICAL: Force fresh query - NO cache
     const videos = await videofiles
       .find({ visibility: { $ne: "private" } })
       .populate({
@@ -69,16 +70,20 @@ router.get("/", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean();
+      .lean()
+      .hint({ createdAt: -1 }); // ✅ Use index hint for speed
 
     const total = await videofiles.countDocuments({ visibility: { $ne: "private" } });
 
-    console.log(`📹 Retrieved ${videos.length} videos from root route (NO CACHE)`);
+    console.log(`📹 Retrieved ${videos.length} videos (NO CACHE, timestamp: ${Date.now()})`);
 
-    // ✅ Set headers to prevent caching
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    // ✅ CRITICAL: Aggressive no-cache headers for mobile
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    res.setHeader('X-Accel-Expires', '0'); // Nginx
+    res.setHeader('ETag', `"${Date.now()}"`); // ✅ Force unique response
 
     res.status(200).json({
       success: true,
@@ -87,7 +92,8 @@ router.get("/", async (req, res) => {
       currentPage: page,
       totalPages: Math.ceil(total / limit),
       total,
-      count: videos.length
+      count: videos.length,
+      timestamp: Date.now() // ✅ Help debug caching
     });
   } catch (error) {
     console.error("❌ Get all videos error:", error);
