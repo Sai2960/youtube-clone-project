@@ -11621,3 +11621,13 @@ button {
     contain: layout style paint;
   }
 }
+
+/* Hide scrollbar for upload tabs */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

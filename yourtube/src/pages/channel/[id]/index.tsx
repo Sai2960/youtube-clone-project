@@ -104,16 +104,62 @@ const [refreshKey, setRefreshKey] = useState(0);
   }, [channel, videos.length, shorts.length]);
 
   // ✅ ANDROID FIX: Force re-render when data changes
+// ✅ ANDROID FIX: Force re-render with visibility check
 useEffect(() => {
   if (channel && isMounted) {
-    // Force DOM update on Android
-    const timer = setTimeout(() => {
-      setRenderKey(prev => prev + 1);
-    }, 100);
+    // Check if element is actually visible
+    const checkVisibility = () => {
+      const infoBar = document.querySelector('[class*="bg-gray-50"]');
+      if (infoBar) {
+        console.log('✅ Info bar found in DOM');
+        const rect = infoBar.getBoundingClientRect();
+        console.log('📏 Info bar position:', {
+          top: rect.top,
+          height: rect.height,
+          visible: rect.height > 0
+        });
+        
+        if (rect.height === 0) {
+          console.warn('⚠️ Info bar has zero height! Forcing re-render...');
+          setRenderKey(prev => prev + 1);
+        }
+      } else {
+        console.error('❌ Info bar NOT found in DOM');
+      }
+    };
+
+    // Check immediately and after a delay
+    checkVisibility();
+    const timer = setTimeout(checkVisibility, 200);
+    
     return () => clearTimeout(timer);
   }
 }, [channel?._id, videos.length, shorts.length, isMounted]);
 
+// ✅ ANDROID DEBUG: Log channel data changes
+useEffect(() => {
+  if (typeof window !== 'undefined') {
+    console.log('🔍 ANDROID DEBUG:', {
+      channelLoaded: !!channel,
+      channelId: channel?._id,
+      channelName: channel?.channelname || channel?.name,
+      videosCount: videos.length,
+      shortsCount: shorts.length,
+      isMounted,
+      renderKey,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Store in window for console access
+    (window as any).__debugData = {
+      channel,
+      videos,
+      shorts,
+      isMounted,
+      renderKey
+    };
+  }
+}, [channel, videos.length, shorts.length, isMounted, renderKey]);
 
   // ============================================================================
   // FETCH CHANNEL DATA
@@ -485,53 +531,65 @@ useEffect(() => {
         {/* ============================================================================
             UPLOAD SECTION - COMPLETELY FIXED
             ============================================================================ */}
-       {isOwnChannel && (
+    
+
+{isOwnChannel && (
   <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6 max-w-7xl mx-auto">
     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700">
-      {/* Upload Tabs - MOBILE RESPONSIVE */}
-      <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+      {/* Upload Tabs - FIXED BLACK BACKGROUND */}
+      <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
         {/* Videos Tab */}
         <button
           type="button"
           onClick={() => setActiveTab("videos")}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-3.5 transition-all relative whitespace-nowrap flex-shrink-0"
+          className={`
+            flex items-center gap-1.5 sm:gap-2 
+            px-4 sm:px-5 md:px-6 
+            py-3 sm:py-3.5 
+            transition-all relative 
+            whitespace-nowrap flex-shrink-0
+            font-medium
+            ${activeTab === "videos" 
+              ? "text-blue-600 dark:text-blue-400" 
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+            }
+          `}
           style={{
-            fontWeight: 500,
-            fontSize: window.innerWidth < 640 ? "13px" : "15px",
-            color: activeTab === "videos" ? "#2563eb" : "#6b7280",
-            backgroundColor: "transparent",
-            border: "none",
-            cursor: "pointer",
-            borderBottom:
-              activeTab === "videos"
-                ? "2px solid #2563eb"
-                : "2px solid transparent",
+            borderBottom: activeTab === "videos" 
+              ? "3px solid #2563eb" 
+              : "3px solid transparent",
+            backgroundColor: "transparent"
           }}
         >
           <Video className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-          <span className="text-xs sm:text-sm md:text-base">Upload Videos</span>
+          <span className="text-sm sm:text-base">Upload Videos</span>
         </button>
 
         {/* Shorts Tab */}
         <button
           type="button"
           onClick={() => setActiveTab("shorts")}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-3.5 transition-all relative whitespace-nowrap flex-shrink-0"
+          className={`
+            flex items-center gap-1.5 sm:gap-2 
+            px-4 sm:px-5 md:px-6 
+            py-3 sm:py-3.5 
+            transition-all relative 
+            whitespace-nowrap flex-shrink-0
+            font-medium
+            ${activeTab === "shorts" 
+              ? "text-red-600 dark:text-red-400" 
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+            }
+          `}
           style={{
-            fontWeight: 500,
-            fontSize: window.innerWidth < 640 ? "13px" : "15px",
-            color: activeTab === "shorts" ? "#dc2626" : "#6b7280",
-            backgroundColor: "transparent",
-            border: "none",
-            cursor: "pointer",
-            borderBottom:
-              activeTab === "shorts"
-                ? "2px solid #dc2626"
-                : "2px solid transparent",
+            borderBottom: activeTab === "shorts" 
+              ? "3px solid #dc2626" 
+              : "3px solid transparent",
+            backgroundColor: "transparent"
           }}
         >
           <Play className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-          <span className="text-xs sm:text-sm md:text-base">Upload Shorts</span>
+          <span className="text-sm sm:text-base">Upload Shorts</span>
         </button>
       </div>
 
@@ -540,8 +598,7 @@ useEffect(() => {
         <div>
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
             <Upload
-              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
-              style={{ color: "#2563eb" }}
+              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 text-blue-600 dark:text-blue-400"
             />
             <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
               Upload Regular Videos
@@ -557,8 +614,7 @@ useEffect(() => {
         <div>
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
             <Upload
-              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
-              style={{ color: "#dc2626" }}
+              className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 text-red-600 dark:text-red-400"
             />
             <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
               Upload Shorts
@@ -567,8 +623,7 @@ useEffect(() => {
 
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 sm:p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
             <div
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0"
-              style={{ border: "2px solid #dc2626" }}
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-red-600"
             >
               <Avatar className="w-full h-full">
                 <AvatarImage
@@ -576,16 +631,8 @@ useEffect(() => {
                   alt={channel?.channelname || channel?.name}
                   className="w-full h-full object-cover"
                 />
-                <AvatarFallback
-                  style={{
-                    background:
-                      "linear-gradient(to bottom right, #ef4444, #ec4899)",
-                  }}
-                  className="text-white font-semibold text-sm"
-                >
-                  {(channel?.channelname ||
-                    channel?.name ||
-                    "C")[0]?.toUpperCase()}
+                <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white font-semibold text-sm">
+                  {(channel?.channelname || channel?.name || "C")[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </div>
@@ -600,37 +647,19 @@ useEffect(() => {
           </div>
 
           <div className="text-center py-6 sm:py-8">
-            <div
-              style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
-              className="dark:bg-red-900/20 rounded-xl p-6 sm:p-8 max-w-md mx-auto"
-            >
-              <div
-                style={{ backgroundColor: "rgba(239, 68, 68, 0.2)" }}
-                className="dark:bg-red-900/50 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
-              >
-                <Play
-                  className="w-6 h-6 sm:w-8 sm:h-8"
-                  style={{ color: "#dc2626" }}
-                  fill="currentColor"
-                />
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 sm:p-8 max-w-md mx-auto">
+              <div className="bg-red-100 dark:bg-red-900/50 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Play className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-400" fill="currentColor" />
               </div>
               <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2">
                 Upload Shorts
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
-                Go to the Shorts section to upload vertical videos (9:16
-                aspect ratio)
+                Go to the Shorts section to upload vertical videos (9:16 aspect ratio)
               </p>
               <button
                 onClick={() => router.push("/shorts/upload")}
-                style={{ backgroundColor: "#dc2626" }}
-                className="px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#b91c1c")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#dc2626")
-                }
+                className="bg-red-600 hover:bg-red-700 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
               >
                 <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                 Go to Shorts Upload
