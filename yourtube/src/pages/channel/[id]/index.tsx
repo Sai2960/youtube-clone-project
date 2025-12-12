@@ -175,189 +175,251 @@ const ChannelPage = () => {
   // FETCH CHANNEL DATA
   // ============================================================================
 
-  useEffect(() => {
-    const fetchChannel = async () => {
-      if (!id || typeof id !== "string") return;
+useEffect(() => {
+  const fetchChannel = async () => {
+    if (!id || typeof id !== "string") return;
 
-      try {
-        setLoading(true);
-        console.log("📡 Fetching channel:", id);
+    try {
+      setLoading(true);
+      console.log("📡 Fetching channel:", id);
 
-        const response = await axiosInstance.get(`/auth/channel/${id}`);
+      // ✅ ANDROID FIX: Force fresh fetch with aggressive cache busting
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(7);
+      
+      const response = await axiosInstance.get(`/auth/channel/${id}`, {
+        params: {
+          _t: timestamp,
+          _r: randomString,
+          nocache: 'true',
+          bust: Date.now()
+        },
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'If-Modified-Since': '0',
+          'If-None-Match': ''
+        },
+      });
 
-        if (response.data.success && response.data.user) {
-          const channelData = response.data.user;
+      console.log("📥 Channel response:", response.data);
 
-          // ✅ Ensure subscribers is a number
-          if (typeof channelData.subscribers !== "number") {
-            channelData.subscribers = 0;
-          }
+      if (response.data.success && response.data.user) {
+        const channelData = response.data.user;
 
-          setChannel(channelData);
-          console.log("✅ Channel loaded:", channelData.channelname);
-
-          // ✅ Update user context if viewing own channel
-          if (user && user._id === id) {
-            const updatedUser = {
-              ...user,
-              image: channelData.image || user.image,
-              bannerImage: channelData.bannerImage || user.bannerImage,
-              channelname: channelData.channelname || user.channelname,
-              description: channelData.description || user.description,
-              subscribers: channelData.subscribers,
-            };
-            localStorage.setItem("user", JSON.stringify(updatedUser));
-            updateUser(updatedUser);
-          }
-        } else {
-          setChannel(null);
+        // ✅ Ensure subscribers is a number
+        if (typeof channelData.subscribers !== "number") {
+          channelData.subscribers = 0;
         }
-      } catch (error: any) {
-        console.error("❌ Channel fetch error:", error);
-        setChannel(null);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchChannel();
-  }, [id, user?._id]);
+        // ✅ Force unique image URLs with cache busting
+        if (channelData.image) {
+          channelData.image = `${channelData.image}?t=${timestamp}`;
+        }
+        if (channelData.bannerImage) {
+          channelData.bannerImage = `${channelData.bannerImage}?t=${timestamp}`;
+        }
+
+        console.log("✅ Setting channel data:", {
+          id: channelData._id,
+          name: channelData.channelname,
+          hasImage: !!channelData.image,
+          hasBanner: !!channelData.bannerImage
+        });
+
+        setChannel(channelData);
+        
+        // ✅ Force multiple re-renders to combat Android caching
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+        setTimeout(() => setRenderKey(prev => prev + 1), 300);
+
+        // ✅ Update user context if viewing own channel
+        if (user && user._id === id) {
+          const updatedUser = {
+            ...user,
+            image: channelData.image || user.image,
+            bannerImage: channelData.bannerImage || user.bannerImage,
+            channelname: channelData.channelname || user.channelname,
+            description: channelData.description || user.description,
+            subscribers: channelData.subscribers,
+          };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          updateUser(updatedUser);
+        }
+      } else {
+        console.error("❌ Invalid channel response");
+        setChannel(null);
+      }
+    } catch (error: any) {
+      console.error("❌ Channel fetch error:", error);
+      console.error("   Status:", error.response?.status);
+      console.error("   Message:", error.response?.data?.message);
+      setChannel(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchChannel();
+}, [id, user?._id, refreshKey]); // ✅ Added refreshKey dependency
 
     // ============================================================================
   // FETCH VIDEOS
   // ============================================================================
 
-  useEffect(() => {
-    const fetchVideos = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for videos");
-        return;
-      }
+ useEffect(() => {
+  const fetchVideos = async () => {
+    if (!id || typeof id !== "string") {
+      console.log("⚠️ No channel ID for videos");
+      return;
+    }
 
-      try {
-        setVideosLoading(true);
-        console.log("📹 Fetching videos for channel:", id);
+    try {
+      setVideosLoading(true);
+      console.log("📹 Fetching videos for channel:", id);
 
-        // ✅ CRITICAL: Force no-cache on mobile
-        const response = await axiosInstance.get(`/video/channel/${id}`, {
-          params: {
-            _t: Date.now(),
-            nocache: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        });
+      // ✅ ANDROID FIX: Nuclear cache busting
+      const timestamp = Date.now();
+      const response = await axiosInstance.get(`/video/channel/${id}`, {
+        params: {
+          _t: timestamp,
+          _r: Math.random().toString(36).substring(7),
+          nocache: "true",
+          bust: timestamp,
+          force: 'refresh'
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+          "If-Modified-Since": "0",
+          "If-None-Match": ""
+        },
+      });
 
-        console.log("📹 Videos API response:", {
-          success: response.data.success,
-          count: response.data.data?.length || response.data.videos?.length || 0,
-        });
+      console.log("📹 Videos API response:", {
+        success: response.data.success,
+        count: response.data.data?.length || response.data.videos?.length || 0,
+        timestamp: new Date().toISOString()
+      });
 
-        if (response.data.success && Array.isArray(response.data.data)) {
-          console.log("✅ Setting videos:", response.data.data.length);
-          setVideos(response.data.data);
-        } else if (response.data.videos && Array.isArray(response.data.videos)) {
-          console.log("✅ Setting videos (alternate):", response.data.videos.length);
-          setVideos(response.data.videos);
-        } else if (response.data.data) {
-          const videoList = Array.isArray(response.data.data)
-            ? response.data.data
-            : [response.data.data];
-          console.log("✅ Setting videos (converted):", videoList.length);
-          setVideos(videoList);
-        } else {
-          console.log("⚠️ No videos in response");
-          setVideos([]);
-        }
-      } catch (error: any) {
-        console.error("❌ Error fetching videos:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
+      if (response.data.success && Array.isArray(response.data.data)) {
+        console.log("✅ Setting videos:", response.data.data.length);
+        setVideos(response.data.data);
+      } else if (response.data.videos && Array.isArray(response.data.videos)) {
+        console.log("✅ Setting videos (alternate):", response.data.videos.length);
+        setVideos(response.data.videos);
+      } else if (response.data.data) {
+        const videoList = Array.isArray(response.data.data)
+          ? response.data.data
+          : [response.data.data];
+        console.log("✅ Setting videos (converted):", videoList.length);
+        setVideos(videoList);
+      } else {
+        console.log("⚠️ No videos in response");
         setVideos([]);
-      } finally {
-        setVideosLoading(false);
       }
-    };
+      
+      // ✅ Force re-render
+      setTimeout(() => setRenderKey(prev => prev + 1), 100);
+      
+    } catch (error: any) {
+      console.error("❌ Error fetching videos:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      setVideos([]);
+    } finally {
+      setVideosLoading(false);
+    }
+  };
 
-    const timer = setTimeout(fetchVideos, 100);
-    return () => clearTimeout(timer);
-  }, [id]);
+  const timer = setTimeout(fetchVideos, 100);
+  return () => clearTimeout(timer);
+}, [id, refreshKey]); // ✅ Added refreshKey
 
     // ============================================================================
   // FETCH SHORTS
   // ============================================================================
 
-  useEffect(() => {
-    const fetchShorts = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for shorts");
-        return;
-      }
+useEffect(() => {
+  const fetchShorts = async () => {
+    if (!id || typeof id !== "string") {
+      console.log("⚠️ No channel ID for shorts");
+      return;
+    }
 
-      try {
-        setShortsLoading(true);
-        setShortsError(null);
-        console.log("🎬 Fetching shorts for channel:", id);
+    try {
+      setShortsLoading(true);
+      setShortsError(null);
+      console.log("🎬 Fetching shorts for channel:", id);
 
-        // ✅ CRITICAL: Force no-cache on mobile
-        const response = await axiosInstance.get(`/shorts/channel/${id}`, {
-          params: {
-            page: 1,
-            limit: 100,
-            _t: Date.now(),
-            nocache: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        });
+      // ✅ ANDROID FIX: Maximum cache busting
+      const timestamp = Date.now();
+      const response = await axiosInstance.get(`/shorts/channel/${id}`, {
+        params: {
+          page: 1,
+          limit: 100,
+          _t: timestamp,
+          _r: Math.random().toString(36).substring(7),
+          nocache: "true",
+          bust: timestamp,
+          force: 'refresh'
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+          "If-Modified-Since": "0",
+          "If-None-Match": ""
+        },
+      });
 
-        console.log("🎬 Shorts API response:", {
-          success: response.data.success,
-          count: response.data.data?.length || response.data.shorts?.length || 0,
-        });
+      console.log("🎬 Shorts API response:", {
+        success: response.data.success,
+        count: response.data.data?.length || response.data.shorts?.length || 0,
+        timestamp: new Date().toISOString()
+      });
 
-        if (response.data.success) {
-          const fetchedShorts = response.data.data || response.data.shorts || [];
-          console.log("✅ Setting shorts:", fetchedShorts.length);
+      if (response.data.success) {
+        const fetchedShorts = response.data.data || response.data.shorts || [];
+        console.log("✅ Setting shorts:", fetchedShorts.length);
 
-          const processedShorts = fetchedShorts.map((short: any) => ({
-            ...short,
-            thumbnailUrl: short.thumbnailUrl || short.thumbnail,
-            videoUrl: short.videoUrl || short.video,
-          }));
+        const processedShorts = fetchedShorts.map((short: any) => ({
+          ...short,
+          thumbnailUrl: short.thumbnailUrl || short.thumbnail,
+          videoUrl: short.videoUrl || short.video,
+        }));
 
-          setShorts(processedShorts);
-        } else {
-          console.log("⚠️ No shorts in response");
-          setShorts([]);
-        }
-      } catch (error: any) {
-        console.error("❌ Error fetching shorts:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
-
-        if (error.response?.status !== 404) {
-          setShortsError("Failed to load shorts");
-        }
+        setShorts(processedShorts);
+        
+        // ✅ Force re-render
+        setTimeout(() => setRenderKey(prev => prev + 1), 100);
+      } else {
+        console.log("⚠️ No shorts in response");
         setShorts([]);
-      } finally {
-        setShortsLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error("❌ Error fetching shorts:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
 
-    const timer = setTimeout(fetchShorts, 150);
-    return () => clearTimeout(timer);
-  }, [id, refreshKey]);
+      if (error.response?.status !== 404) {
+        setShortsError("Failed to load shorts");
+      }
+      setShorts([]);
+    } finally {
+      setShortsLoading(false);
+    }
+  };
+
+  const timer = setTimeout(fetchShorts, 150);
+  return () => clearTimeout(timer);
+}, [id, refreshKey]); // ✅ Keep refreshKey dependency
 
     // ============================================================================
   // EVENT HANDLERS

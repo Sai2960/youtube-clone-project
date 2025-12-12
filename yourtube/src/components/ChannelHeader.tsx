@@ -37,6 +37,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [localChannel, setLocalChannel] = useState(channel);
   const [imageKey, setImageKey] = useState(Date.now());
+  
 
   useEffect(() => {
     if (user?._id) {
@@ -121,8 +122,8 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   const isOwnChannel = user?._id === localChannel._id;
   const displayName = localChannel.channelname || localChannel.name || 'Unknown Channel';
-  const displayImage = getImageUrl(localChannel.image, true);
-  const displayBanner = getImageUrl(localChannel.bannerImage, true);
+ const displayImage = getImageUrl(localChannel.image, true) + `?t=${imageKey}`;
+const displayBanner = getImageUrl(localChannel.bannerImage, true) + `?t=${imageKey}`;
   const displayHandle = displayName.toLowerCase().replace(/\s+/g, "");
 
   return (
@@ -131,17 +132,18 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       {/* BANNER - Responsive with Edit Button */}
       {/* ============================================================ */}
       <div className="relative w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 overflow-hidden group">
-        {localChannel.bannerImage ? (
-          <img 
-            key={`banner-${imageKey}`}
-            src={displayBanner}
-            alt="Channel Banner" 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error('❌ Banner error');
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+       {localChannel.bannerImage ? (
+  <img 
+    key={`banner-${imageKey}-${Date.now()}`}
+    src={`${displayBanner}&bust=${Date.now()}`}
+    alt="Channel Banner" 
+    className="w-full h-full object-cover"
+    onError={(e) => {
+      console.error('❌ Banner error:', displayBanner);
+      e.currentTarget.style.display = 'none';
+    }}
+    onLoad={() => console.log('✅ Banner loaded')}
+  />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500">
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle,rgba(255,255,255,0.3),rgba(255,255,255,0))]"></div>
@@ -173,16 +175,17 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
         <div className="md:hidden">
           <div className="flex items-start gap-4 mb-4">
             <div className="relative flex-shrink-0">
-              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white dark:border-gray-900 shadow-xl ring-2 ring-gray-200 dark:ring-gray-700">
-                <AvatarImage 
-                  key={`mobile-avatar-${imageKey}`}
-                  src={displayImage}
-                  alt={displayName}
-                />
-                <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                  {displayName[0]?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
+             <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white dark:border-gray-900 shadow-xl ring-2 ring-gray-200 dark:ring-gray-700">
+  <AvatarImage 
+    key={`mobile-avatar-${imageKey}-${Date.now()}`}
+    src={`${displayImage}&bust=${Date.now()}`}
+    alt={displayName}
+    onLoad={() => console.log('✅ Mobile avatar loaded')}
+  />
+  <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+    {displayName[0]?.toUpperCase() || 'U'}
+  </AvatarFallback>
+</Avatar>
               
               {isOwnChannel && (
                 <button

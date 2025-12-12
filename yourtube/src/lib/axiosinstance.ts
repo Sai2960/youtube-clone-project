@@ -57,7 +57,6 @@ const axiosInstance: AxiosInstance = axios.create({
 });
 
 // ✅ CRITICAL: Request Interceptor with better mobile handling
-// ✅ CRITICAL: Request Interceptor with Android fix
 axiosInstance.interceptors.request.use(
   (config) => {
     // ✅ Extended timeout for uploads
@@ -66,7 +65,7 @@ axiosInstance.interceptors.request.use(
       console.log('⏱️ Extended timeout to 10 minutes for upload');
     }
     
-    // ✅ CRITICAL: Always read fresh token
+    // ✅ CRITICAL: Always read fresh token from localStorage
     if (typeof window !== 'undefined') {
       const token = window.localStorage.getItem('token');
       
@@ -75,73 +74,35 @@ axiosInstance.interceptors.request.use(
           config.headers = {} as any;
         }
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('🔑 Token attached to request');
+      } else {
+        console.warn('⚠️ No valid token found');
       }
     }
     
-    // ✅ ANDROID FIX: Aggressive cache busting
+    // ✅ ANDROID FIX: Nuclear cache busting
     if (!config.headers) {
       config.headers = {} as any;
     }
-    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0';
     config.headers['Pragma'] = 'no-cache';
     config.headers['Expires'] = '0';
+    config.headers['If-Modified-Since'] = '0';
+    config.headers['If-None-Match'] = '';
     
-    // ✅ ANDROID: Add timestamp to URL
+    // ✅ ANDROID: Aggressive timestamp cache busting
     if (!config.params) {
       config.params = {};
     }
     config.params._t = Date.now();
+    config.params._rand = Math.random().toString(36).substring(7);
+    
+    console.log('📤 Request:', config.method?.toUpperCase(), config.url, config.params);
     
     return config;
   },
   (error) => {
     console.error('❌ Request error:', error);
-    return Promise.reject(error);
-  }
-);
-
-// ✅ Response Interceptor
-axiosInstance.interceptors.response.use(
-  (response) => {
-    console.log('✅ API Response:', {
-      url: response.config.url,
-      status: response.status,
-      dataSize: JSON.stringify(response.data).length
-    });
-    return response;
-  },
-  (error) => {
-    console.error('❌ API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      message: error.response?.data?.message || error.message,
-      code: error.code
-    });
-
-    if (error.code === 'ERR_NETWORK') {
-      console.error('🌐 NETWORK ERROR - Backend unreachable');
-      console.error('   Backend URL:', BACKEND_URL);
-    }
-
-    if (error.message?.includes('CORS')) {
-      console.error('🚫 CORS ERROR - Origin not allowed');
-    }
-
-    if (error.response?.status === 401) {
-      console.log('🔒 Unauthorized - Token expired or invalid');
-      
-      if (typeof window !== 'undefined') {
-        const currentPath = window.location.pathname;
-        
-        if (!currentPath.includes('/login')) {
-          console.log('   Redirecting to login');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-        }
-      }
-    }
-
     return Promise.reject(error);
   }
 );
