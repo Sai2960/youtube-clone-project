@@ -67,7 +67,7 @@ const nextConfig: NextConfig = {
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
       ],
     },
-    // ✅ CRITICAL: Mobile hydration fix for ALL dynamic pages
+    // ✅ CRITICAL: Mobile hydration fix for channel pages
     {
       source: '/channel/:path*',
       headers: [
@@ -75,14 +75,17 @@ const nextConfig: NextConfig = {
         { key: 'Pragma', value: 'no-cache' },
         { key: 'Expires', value: '0' },
         { key: 'Surrogate-Control', value: 'no-store' },
+        { key: 'Vary', value: 'User-Agent' }, // Added
       ],
     },
+    // ✅ CRITICAL: Disable ALL caching for API responses
     {
       source: '/api/:path*',
       headers: [
         { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
         { key: 'Pragma', value: 'no-cache' },
         { key: 'Expires', value: '0' },
+        { key: 'Vary', value: '*' },
       ],
     },
   ];

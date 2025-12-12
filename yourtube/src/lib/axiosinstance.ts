@@ -57,7 +57,7 @@ const axiosInstance: AxiosInstance = axios.create({
   validateStatus: (status) => status < 500,
 });
 
-// ✅ CRITICAL: Request Interceptor with ETag fix
+// ✅ CRITICAL: Request Interceptor with aggressive cache busting
 axiosInstance.interceptors.request.use(
   (config) => {
     // ✅ Extended timeout for uploads
@@ -66,13 +66,15 @@ axiosInstance.interceptors.request.use(
       console.log('⏱️ Extended timeout to 10 minutes for upload');
     }
     
-    // ✅ CRITICAL: Remove problematic headers that cause CORS errors
+    // ✅ CRITICAL: Remove ALL cache-related headers that cause CORS issues
     if (config.headers) {
       delete config.headers['If-None-Match'];
       delete config.headers['If-Modified-Since'];
+      delete config.headers['ETag'];
+      delete config.headers['Last-Modified'];
     }
     
-    // ✅ CRITICAL: Always read fresh token
+    // ✅ Read fresh token
     if (typeof window !== 'undefined') {
       const token = window.localStorage.getItem('token');
       
@@ -84,19 +86,20 @@ axiosInstance.interceptors.request.use(
       }
     }
     
-    // ✅ ANDROID FIX: Aggressive cache busting
+    // ✅ ANDROID: Ultra-aggressive cache busting
     if (!config.headers) {
       config.headers = {} as any;
     }
-    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0';
     config.headers['Pragma'] = 'no-cache';
     config.headers['Expires'] = '0';
     
-    // ✅ ANDROID: Add timestamp to URL
+    // ✅ ANDROID: Force unique request with multiple cache busters
     if (!config.params) {
       config.params = {};
     }
     config.params._t = Date.now();
+    config.params._r = Math.random().toString(36).substring(7);
     
     return config;
   },

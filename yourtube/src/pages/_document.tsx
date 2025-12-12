@@ -1,33 +1,51 @@
 import { Html, Head, Main, NextScript, DocumentProps } from "next/document";
 import Document from "next/document";
-export default function CustomDocument() {  return (
+export default function CustomDocument() {
+  return (
     <Html lang="en" className="dark">
       <Head>
         {/* PWA Meta Tags */}
         <meta name="application-name" content="YourTube" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
         <meta name="apple-mobile-web-app-title" content="YourTube" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-        
+
         {/* Theme Color - Dynamic based on theme */}
         <meta name="theme-color" content="#0f0f0f" />
         <meta name="msapplication-TileColor" content="#0f0f0f" />
-        
+
+        <meta
+          httpEquiv="Cache-Control"
+          content="no-cache, no-store, must-revalidate, max-age=0"
+        />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+
         {/* NO VIEWPORT HERE - It's in _app.tsx */}
-        
+
         {/* Fonts - Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link 
-          href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" 
-          rel="stylesheet" 
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
         />
-        
+        <link
+          href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
+          rel="stylesheet"
+        />
+
         {/* External Scripts */}
-        <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
-        
+        <script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          async
+        ></script>
+
         {/* Enhanced Theme Initialization - Prevents flash and hydration issues */}
         <script
           dangerouslySetInnerHTML={{
@@ -76,10 +94,11 @@ export default function CustomDocument() {  return (
             `,
           }}
         />
-        
+
         {/* Critical CSS - Mobile Optimizations & Safe Area Support */}
-        <style dangerouslySetInnerHTML={{
-          __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
             /* Prevent zoom on input focus (iOS Safari) */
             @media (max-width: 768px) {
               input, select, textarea {
@@ -161,8 +180,9 @@ export default function CustomDocument() {  return (
             body {
               overscroll-behavior-y: contain;
             }
-          `
-        }} />
+          `,
+          }}
+        />
       </Head>
       <body className="antialiased">
         <Main />

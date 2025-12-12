@@ -522,19 +522,20 @@ useEffect(() => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-  {/* ✅ CHANNEL INFO BAR - FORCE VISIBLE ON ANDROID */}
+{/* ✅ CHANNEL INFO BAR - ANDROID FORCE VISIBLE - FIXED TYPESCRIPT */}
 {channel && isMounted && (
   <div
     ref={infoBarRef}
-    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}-${Date.now()}`}
+    key={`info-v2-${channel._id}-${videos.length}-${shorts.length}-${renderKey}-${Date.now()}`}
     className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
     style={{
       display: "block",
       minHeight: "80px",
       visibility: "visible",
       opacity: 1,
-      position: "relative" as const,
-      zIndex: 1
+      position: "relative",
+      zIndex: 10,
+      willChange: "auto",
     }}
   >
     <div className="w-full max-w-7xl mx-auto">
@@ -561,16 +562,22 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* Video Count */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+        {/* Video Count - DYNAMIC */}
+        <div 
+          key={`video-count-${videos.length}-${renderKey}`}
+          className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+        >
           <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
           <span className="text-xs sm:text-sm whitespace-nowrap">
             {videos.length} video{videos.length !== 1 ? "s" : ""}
           </span>
         </div>
 
-        {/* Shorts Count */}
-        <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+        {/* Shorts Count - DYNAMIC */}
+        <div 
+          key={`shorts-count-${shorts.length}-${renderKey}`}
+          className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+        >
           <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
           <span className="text-xs sm:text-sm whitespace-nowrap">
             {shorts.length} short{shorts.length !== 1 ? "s" : ""}
