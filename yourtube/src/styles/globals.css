@@ -11631,3 +11631,18 @@ button {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+/* Android Mobile Fix - Force Info Bar Visibility */
+.channel-info-bar-force-visible {
+  display: block !important;
+  min-height: 80px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Prevent Android WebView caching */
+* {
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}

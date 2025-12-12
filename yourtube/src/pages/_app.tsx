@@ -24,6 +24,7 @@ const initializationState = {
   hasCheckedLocation: false,
   currentUserTheme: null as string | null,
   hasSetOverflow: false,
+  hasClearedCache: false,
 };
 
 function AppContent({ Component, pageProps }: AppProps) {
@@ -36,6 +37,96 @@ function AppContent({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [isThemeReady, setIsThemeReady] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
+  // ============================================================================
+  // 🔴 CRITICAL: ANDROID CACHE CLEARING
+  // ============================================================================
+  useEffect(() => {
+    if (typeof window === 'undefined' || initializationState.hasClearedCache) {
+      return;
+    }
+    
+    initializationState.hasClearedCache = true;
+    
+    const clearAllCaches = async () => {
+      try {
+        console.log('🧹 Clearing all Android caches...');
+        
+        // 1. Clear Service Worker cache
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.unregister();
+            console.log('✅ Service Worker unregistered');
+          }
+        }
+        
+        // 2. Clear Cache Storage API
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames.map(cacheName => {
+              console.log('🗑️ Deleting cache:', cacheName);
+              return caches.delete(cacheName);
+            })
+          );
+          console.log('✅ All cache storage cleared');
+        }
+        
+        // 3. Force page reload on Android if from cache
+        const navigation = (performance as any).getEntriesByType?.('navigation')?.[0] as any;
+        if (navigation?.type === 'back_forward') {
+          console.log('⚠️ Page loaded from BF cache, forcing reload...');
+          window.location.reload();
+        }
+        
+      } catch (error) {
+        console.error('❌ Cache clearing error:', error);
+      }
+    };
+    
+    clearAllCaches();
+  }, []);
+
+  // ============================================================================
+  // 🔴 CRITICAL: FORCE PAGE REFRESH ON VISIBILITY CHANGE (Android Tab Switch)
+  // ============================================================================
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Page visible - dispatching refresh event');
+        
+        // Dispatch custom event to force channel page refresh
+        window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
+          detail: { timestamp: Date.now() }
+        }));
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // ============================================================================
+  // 🔴 CRITICAL: PAGE FOCUS REFRESH (Android)
+  // ============================================================================
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🎯 Window focused - triggering refresh');
+      window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
+        detail: { timestamp: Date.now() }
+      }));
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
 
   // Determine which pages should hide the standard layout
   const shouldHideLayout = useMemo(() => {

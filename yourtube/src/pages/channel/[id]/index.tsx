@@ -171,6 +171,25 @@ const ChannelPage = () => {
     }
   }, [channel, videos.length, shorts.length, isMounted, renderKey]);
 
+  // ============================================================================
+// 🔴 ANDROID: LISTEN FOR FORCE REFRESH EVENTS
+// ============================================================================
+useEffect(() => {
+  const handleForceRefresh = (event: CustomEvent) => {
+    console.log('🔄 Force refresh event received:', event.detail);
+    
+    // Increment both keys to force complete re-render
+    setRefreshKey(prev => prev + 1);
+    setRenderKey(prev => prev + 1);
+  };
+  
+  window.addEventListener('forceChannelRefresh', handleForceRefresh as EventListener);
+  
+  return () => {
+    window.removeEventListener('forceChannelRefresh', handleForceRefresh as EventListener);
+  };
+}, []);
+
     // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
@@ -522,20 +541,15 @@ useEffect(() => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-{/* ✅ CHANNEL INFO BAR - ANDROID FORCE VISIBLE - FIXED TYPESCRIPT */}
+{/* ✅ CHANNEL INFO BAR - ANDROID FORCE VISIBLE */}
 {channel && isMounted && (
   <div
     ref={infoBarRef}
-    key={`info-v2-${channel._id}-${videos.length}-${shorts.length}-${renderKey}-${Date.now()}`}
-    className="w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+    className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
     style={{
-      display: "block",
-      minHeight: "80px",
-      visibility: "visible",
-      opacity: 1,
       position: "relative",
       zIndex: 10,
-      willChange: "auto",
     }}
   >
     <div className="w-full max-w-7xl mx-auto">
@@ -562,9 +576,9 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* Video Count - DYNAMIC */}
+        {/* Video Count - FORCE UPDATE */}
         <div 
-          key={`video-count-${videos.length}-${renderKey}`}
+          key={`video-${videos.length}-${renderKey}`}
           className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
         >
           <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -573,9 +587,9 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* Shorts Count - DYNAMIC */}
+        {/* Shorts Count - FORCE UPDATE */}
         <div 
-          key={`shorts-count-${shorts.length}-${renderKey}`}
+          key={`shorts-${shorts.length}-${renderKey}`}
           className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
         >
           <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
