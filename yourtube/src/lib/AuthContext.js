@@ -70,7 +70,13 @@ export const UserProvider = ({ children }) => {
       setError('Authentication failed - invalid user data');
       return;
     }
-
+// ✅ Force complete page refresh on Android to clear all caches
+if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
+  console.log('📱 Android detected - forcing cache clear');
+  setTimeout(() => {
+    window.location.reload();
+  }, 100);
+}
     
     
     // ✅ Build enriched user object with all necessary fields
