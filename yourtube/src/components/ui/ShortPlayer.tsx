@@ -80,7 +80,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const lastNavigationTimeRef = useRef(0);
 
   const [isPlaying, setIsPlaying] = useState(false);
-const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [hasLiked, setHasLiked] = useState(Boolean(short.hasLiked));
@@ -420,48 +420,67 @@ useEffect(() => {
   });
 
   if (isActive && !isModalOpenRef.current) {
+    // Essential mobile video attributes
     video.setAttribute("playsinline", "true");
     video.setAttribute("webkit-playsinline", "true");
-    
-    // Force start muted for mobile autoplay
+    video.setAttribute("muted", "true"); // Must start muted
     video.muted = true;
     
     const attemptPlay = async () => {
       try {
-        // Wait if not ready
+        // Ensure video is loaded
         if (video.readyState < 2) {
-          console.log("⏳ Waiting for video...");
+          console.log("⏳ Waiting for video to load...");
           await new Promise((resolve) => {
-            video.addEventListener('loadeddata', resolve, { once: true });
+            const onLoad = () => {
+              video.removeEventListener('loadeddata', onLoad);
+              resolve(null);
+            };
+            video.addEventListener('loadeddata', onLoad, { once: true });
+            
+            // Force load if needed
+            if (!video.src) {
+              video.src = short.videoUrl;
+            }
             video.load();
+            
+            // Timeout fallback
+            setTimeout(resolve, 3000);
           });
         }
 
-        console.log("🎯 Attempting play");
+        console.log("🎯 Attempting play (muted)");
         await video.play();
         console.log("✅ Playing successfully");
         setIsPlaying(true);
         
-        // Unmute after playing
+        // Unmute after successful play (if user hasn't muted)
         if (!isMuted) {
           setTimeout(() => {
             video.muted = false;
             console.log("🔊 Unmuted");
-          }, 500);
+          }, 800);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("❌ Play failed:", err);
+        console.error("   Error name:", err.name);
+        console.error("   Error message:", err.message);
+        
+        // Last resort: try clicking to play
+        if (err.name === 'NotAllowedError') {
+          console.log("⚠️ User interaction required for play");
+        }
       }
     };
 
-    setTimeout(attemptPlay, 150);
+    // Small delay to ensure DOM is ready
+    setTimeout(attemptPlay, 200);
     
   } else {
     video.pause();
     setIsPlaying(false);
   }
-}, [isActive, short._id]);
-
+}, [isActive, short._id, short.videoUrl]);
 
   // ✅ ADD: Passive event listener fix
   useEffect(() => {
@@ -1237,32 +1256,32 @@ const handleLike = async (e: React.MouseEvent) => {
 
 return (
   <div
-    ref={containerRef}
-    className="relative w-full h-screen bg-black overflow-hidden"
-    data-component="short-player"
-    data-short-id={short._id}
-    data-is-active={isActive}
-    style={{
-      position: 'relative',
-      width: '100%',
-      height: '100vh',
-      minHeight: '100vh',
-      overflow: 'hidden',
-      isolation: 'isolate',
-      backgroundColor: '#000',
-      touchAction: 'pan-y', // ✅ Better touch handling
-    }}
-  >
-      {/* Video */}
+  ref={containerRef}
+  className="fixed inset-0 bg-black"
+  style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100vw',
+    height: '100vh',
+    minHeight: '100vh -webkit-fill-available',
+    overflow: 'hidden',
+    isolation: 'isolate',
+    contain: 'strict',
+    WebkitOverflowScrolling: 'touch',
+  }}
+  data-page="shorts"
+>
+   {/* Video */}
 <video
   ref={videoRef}
   src={short.videoUrl}
   data-component="short-player"
-  className="w-full h-full cursor-pointer bg-black"
+  className="w-full h-full object-cover bg-black"
   loop
   playsInline
-  muted={true}  // ✅ Start muted for autoplay to work
-  autoPlay={false}
   webkit-playsinline="true"
   x5-playsinline="true"
   x5-video-player-type="h5"
@@ -1271,6 +1290,18 @@ return (
   preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
+  style={{
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+    visibility: 'visible',
+    opacity: 1,
+    zIndex: 1,
+  }}
   onLoadedData={(e) => {
     console.log("✅ Video data loaded");
     const video = e.currentTarget;
@@ -1282,20 +1313,21 @@ return (
     
     // Try to play if active
     if (isActive && !isModalOpenRef.current) {
-      setTimeout(() => {
-        video.play().then(() => {
-          console.log("✅ Video playing");
-          setIsPlaying(true);
-          // Unmute after playing starts
-          if (!isMuted) {
-            setTimeout(() => {
-              video.muted = false;
-            }, 500);
-          }
-        }).catch(err => {
-          console.error("❌ Autoplay failed:", err);
-        });
-      }, 200);
+      video.muted = true; // Must start muted for autoplay
+      video.play().then(() => {
+        console.log("✅ Video playing");
+        setIsPlaying(true);
+        // Unmute after 500ms if not muted by user
+        if (!isMuted) {
+          setTimeout(() => {
+            video.muted = false;
+          }, 500);
+        }
+      }).catch(err => {
+        console.error("❌ Autoplay failed:", err);
+        // Fallback: ensure video is at least visible
+        video.load();
+      });
     }
   }}
   onError={(e) => {
