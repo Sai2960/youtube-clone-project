@@ -1257,21 +1257,26 @@ const handleLike = async (e: React.MouseEvent) => {
   ];
 
 return (
- <div
+<div
   ref={containerRef}
   className="relative w-full h-screen bg-black overflow-hidden"
   data-component="short-player"
   data-short-id={short._id}
   data-is-active={isActive}
   style={{
-    position: 'relative',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
-    height: '100vh',
-    minHeight: '-webkit-fill-available',
+    height: '100%',
+    minHeight: '100vh',
     overflow: 'hidden',
     backgroundColor: '#000',
     WebkitOverflowScrolling: 'touch',
-    // ✅ Remove isolation that breaks mobile rendering
+    // ✅ CRITICAL: Remove isolation, use absolute positioning
+    zIndex: isActive ? 30 : 20,
   }}
 >
    {/* Video */}
@@ -1284,6 +1289,7 @@ return (
   webkit-playsinline="true"
   x5-playsinline="true"
   x5-video-player-type="h5"
+  x-webkit-airplay="allow"
   preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
@@ -1292,12 +1298,18 @@ return (
     height: '100%',
     objectFit: 'cover',
     backgroundColor: '#000',
-    // ✅ CRITICAL: Force rendering on mobile
+    // ✅ CRITICAL: Force GPU rendering on mobile
     display: 'block',
     position: 'absolute',
     top: 0,
     left: 0,
     zIndex: 1,
+    WebkitTransform: 'translate3d(0,0,0)',
+    transform: 'translate3d(0,0,0)',
+    WebkitBackfaceVisibility: 'hidden',
+    backfaceVisibility: 'hidden',
+    // ✅ Force video layer
+    WebkitMaskImage: '-webkit-radial-gradient(white, black)',
   }}
   // ✅ Add poster image to show something while loading
   poster={short.thumbnailUrl || undefined}

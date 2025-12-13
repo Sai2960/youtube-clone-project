@@ -565,9 +565,11 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     maxHeight: '100vh',
     overflow: 'hidden',
     WebkitOverflowScrolling: 'touch',
-    // ✅ CRITICAL for mobile
-    display: 'flex',
-    flexDirection: 'column',
+    display: 'block', // ✅ Changed from flex
+    zIndex: 9999,
+    // ✅ Force rendering
+    WebkitTransform: 'translateZ(0)',
+    transform: 'translateZ(0)',
   }}
   data-page="shorts"
 >
@@ -602,15 +604,19 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
 
 
 {/* Shorts Container */}
+
 <div 
-  className="relative w-full h-full flex-1"
+  className="absolute inset-0 w-full h-full"
   style={{
-    position: 'relative',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
     height: '100%',
-    flex: '1 1 auto',
     overflow: 'hidden',
-    minHeight: 0, // ✅ CRITICAL: Allows flex child to shrink
+    // ✅ Remove flex, use absolute positioning
   }}
 >
   {shorts.map((short, index) => {

@@ -162,6 +162,7 @@ html[data-page="shorts"] {
     height: 100vh !important;
     height: -webkit-fill-available !important;
     background: #000 !important;
+    z-index: 9999 !important;
   }
   
   /* Force video container visibility */
