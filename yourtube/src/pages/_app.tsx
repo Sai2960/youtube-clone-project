@@ -308,15 +308,42 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   // ✅ CRITICAL: Force shorts page visibility on mobile
 // 🔍 DEBUG: Log HTML/Body state on shorts page
-  useEffect(() => {
-  // ✅ CRITICAL: Set data-page attribute immediately for shorts
+// Add RIGHT AFTER the data-page useEffect
+useEffect(() => {
   if (router.pathname.startsWith('/shorts')) {
-    document.documentElement.setAttribute('data-page', 'shorts');
-    document.body.setAttribute('data-page', 'shorts');
-    console.log('✅ Set data-page="shorts"');
+    // ✅ CRITICAL: Override body stacking
+    document.body.style.position = 'fixed';
+    document.body.style.inset = '0';
+    document.body.style.zIndex = '0';
+    document.body.style.pointerEvents = 'none';
+    document.body.style.background = 'transparent';
+    
+    const nextDiv = document.getElementById('__next');
+    if (nextDiv) {
+      nextDiv.style.position = 'fixed';
+      nextDiv.style.inset = '0';
+      nextDiv.style.zIndex = '0';
+      nextDiv.style.pointerEvents = 'none';
+      nextDiv.style.background = 'transparent';
+    }
+    
+    console.log('✅ Applied shorts body override');
   } else {
-    document.documentElement.removeAttribute('data-page');
-    document.body.removeAttribute('data-page');
+    // ✅ Reset when leaving shorts
+    document.body.style.position = '';
+    document.body.style.inset = '';
+    document.body.style.zIndex = '';
+    document.body.style.pointerEvents = '';
+    document.body.style.background = '';
+    
+    const nextDiv = document.getElementById('__next');
+    if (nextDiv) {
+      nextDiv.style.position = '';
+      nextDiv.style.inset = '';
+      nextDiv.style.zIndex = '';
+      nextDiv.style.pointerEvents = '';
+      nextDiv.style.background = '';
+    }
   }
 }, [router.pathname]);
   /**

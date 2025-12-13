@@ -161,101 +161,100 @@ export default function CustomDocument() {
                ============================================================================ */
             
             @media (max-width: 768px) {
-              /* ✅ Shorts page container - fixed fullscreen */
+              /* ✅ CRITICAL: Make HTML/Body transparent layers */
+              html[data-page="shorts"] {
+                background: transparent !important;
+                overflow: hidden !important;
+                position: fixed !important;
+                inset: 0 !important;
+              }
+              
+              html[data-page="shorts"] body {
+                background: transparent !important;
+                overflow: hidden !important;
+                position: fixed !important;
+                inset: 0 !important;
+                pointer-events: none !important;
+                z-index: 0 !important;
+              }
+              
+              /* ✅ Next.js wrapper - also transparent */
+              html[data-page="shorts"] #__next {
+                background: transparent !important;
+                position: fixed !important;
+                inset: 0 !important;
+                pointer-events: none !important;
+                z-index: 0 !important;
+              }
+              
+              /* ✅ Shorts page container - this is the actual content */
               [data-page="shorts"] {
                 position: fixed !important;
                 inset: 0 !important;
                 width: 100vw !important;
                 height: 100vh !important;
-                height: -webkit-fill-available !important;
                 background: #000 !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                display: block !important;
-                overflow: hidden !important;
-              }
-              
-              /* ✅ HTML element on shorts - enable interactions */
-              html[data-page="shorts"] {
-                background: #000 !important;
-                overflow: hidden !important;
-                position: relative !important;
-              }
-              
-              /* ✅ Body transparent to let video show through */
-              html[data-page="shorts"] body {
-                background: transparent !important;
-                position: relative !important;
-                overflow: hidden !important;
-              }
-              
-              /* ✅ Next.js container - enable interactions */
-              html[data-page="shorts"] #__next {
-                position: relative !important;
                 z-index: 1 !important;
+                pointer-events: auto !important;
                 overflow: hidden !important;
               }
               
-              /* ✅ Short player container */
+              /* ✅ Short player containers */
               [data-component="short-player"] {
                 position: fixed !important;
                 inset: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                display: block !important;
-                z-index: 30 !important;
+                width: 100% !important;
+                height: 100% !important;
+                pointer-events: auto !important;
               }
               
-              /* ✅ CRITICAL: Video element - must be visible */
+              /* ✅ Video element - HIGHEST priority */
               [data-component="short-player"] video {
                 display: block !important;
                 visibility: visible !important;
                 opacity: 1 !important;
+                z-index: 1 !important;
+                pointer-events: auto !important;
                 position: absolute !important;
                 top: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
                 height: 100% !important;
                 object-fit: cover !important;
-                z-index: 1 !important;
-                pointer-events: auto !important;
-                /* Force GPU acceleration */
-                -webkit-transform: translate3d(0, 0, 0) !important;
                 transform: translate3d(0, 0, 0) !important;
+                -webkit-transform: translate3d(0, 0, 0) !important;
                 -webkit-backface-visibility: hidden !important;
                 backface-visibility: hidden !important;
                 /* Prevent iOS black screen bug */
                 -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
               }
               
-              /* ✅ Force active short visibility */
+              /* ✅ Active short gets highest z-index */
               [data-is-active="true"] {
+                z-index: 100 !important;
                 visibility: visible !important;
                 opacity: 1 !important;
                 display: block !important;
-                z-index: 30 !important;
+              }
+              
+              /* ✅ Inactive shorts pushed down */
+              [data-is-active="false"] {
+                z-index: 1 !important;
+              }
+              
+              /* ✅ Force transforms to identity on active */
+              [data-is-active="true"],
+              [data-is-active="true"] [data-component="short-player"],
+              [data-is-active="true"] video {
                 transform: translate3d(0, 0, 0) !important;
                 -webkit-transform: translate3d(0, 0, 0) !important;
               }
               
-              [data-is-active="true"] [data-component="short-player"] {
-                transform: translate3d(0, 0, 0) !important;
-                -webkit-transform: translate3d(0, 0, 0) !important;
-              }
-              
+              /* ✅ Ensure active video is visible */
               [data-is-active="true"] video {
                 visibility: visible !important;
                 opacity: 1 !important;
                 display: block !important;
-                transform: translate3d(0, 0, 0) !important;
-                -webkit-transform: translate3d(0, 0, 0) !important;
-              }
-              
-              /* ✅ Remove any transforms that might hide video */
-              [data-is-active="false"] {
-                transform: translateY(100vh) !important;
               }
               
               /* Prevent iOS video native controls from showing */
