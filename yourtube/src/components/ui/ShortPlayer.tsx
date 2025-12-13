@@ -408,7 +408,6 @@ useEffect(() => {
   };
 
 // ✅ FIX: Proper video playback control with audio cleanup
-// ✅ FIX: Proper video playback control with audio cleanup
 useEffect(() => {
   const video = videoRef.current;
   if (!video) return;
@@ -425,7 +424,7 @@ useEffect(() => {
   if (!isActive) {
     console.log("⏸️ Pausing inactive video:", short._id);
     video.pause();
-    video.currentTime = 0;
+    video.currentTime = 0; // ✅ Reset to start
     setIsPlaying(false);
     return;
   }
@@ -437,22 +436,18 @@ useEffect(() => {
     
     const attemptPlay = async () => {
       try {
-        // ✅ Ensure video is loaded
+        // ✅ Start muted for autoplay compliance
+        video.muted = true;
+        
+        // Wait for video to be ready
         if (video.readyState < 2) {
           console.log("⏳ Waiting for video to load...");
           await new Promise((resolve) => {
             video.addEventListener('loadeddata', resolve, { once: true });
-            // ✅ Force reload
-            const currentSrc = video.src;
-            video.src = '';
-            video.src = currentSrc;
             video.load();
           });
         }
 
-        // ✅ Start muted for autoplay compliance
-        video.muted = true;
-        
         console.log("▶️ Playing video:", short._id);
         await video.play();
         setIsPlaying(true);
@@ -466,26 +461,26 @@ useEffect(() => {
         }
       } catch (err) {
         console.error("❌ Play failed:", err);
-        
-        // ✅ Retry with force reload
+        // Retry once
         setTimeout(() => {
-          const currentSrc = video.src;
-          video.src = '';
-          video.src = currentSrc;
           video.load();
           video.play().catch(e => console.error("❌ Retry failed:", e));
         }, 500);
       }
     };
 
-    // ✅ Immediate play attempt
-    attemptPlay();
+    // Small delay to ensure DOM is ready
+    const playTimeout = setTimeout(attemptPlay, 100);
+    
+    return () => clearTimeout(playTimeout);
   } else if (isModalOpenRef.current) {
+    // ✅ Pause when modal opens
     console.log("⏸️ Modal open, pausing video");
     video.pause();
     setIsPlaying(false);
   }
-}, [isActive, short._id, isMuted]); // ✅ Removed isModalOpenRef dependency
+}, [isActive, short._id, isModalOpenRef.current]);
+
 
   // ✅ ADD: Passive event listener fix
   useEffect(() => {
@@ -1262,34 +1257,27 @@ const handleLike = async (e: React.MouseEvent) => {
   ];
 
 return (
-  <div
-    ref={containerRef}
-    className="relative w-full h-screen bg-black overflow-hidden"
-    data-component="short-player"
-    data-short-id={short._id}  // ✅ Fixed: 'short' not 'shorts'
-    data-is-active={isActive}  // ✅ Fixed: correct variable
-    style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      width: '100%',
-      height: '100%',
-      minHeight: '100vh',
-      overflow: 'hidden',
-      backgroundColor: '#000',
-      WebkitOverflowScrolling: 'touch',
-      // ✅ CRITICAL: Force visibility
-      visibility: 'visible',
-      opacity: 1,
-      display: 'block',
-      zIndex: isActive ? 30 : 20,
-      // ✅ Force GPU layer
-      WebkitTransform: 'translateZ(0)',
-      transform: 'translateZ(0)',
-    }}
-  >
+<div
+  ref={containerRef}
+  className="relative w-full h-screen bg-black overflow-hidden"
+  data-component="short-player"
+data-short-id={short._id}  
+  style={{
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    minHeight: '100vh',
+    overflow: 'hidden',
+    backgroundColor: '#000',
+    WebkitOverflowScrolling: 'touch',
+    // ✅ CRITICAL: Remove isolation, use absolute positioning
+    zIndex: isActive ? 30 : 20,
+  }}
+>
    {/* Video */}
 <video
   ref={videoRef}
@@ -1309,11 +1297,13 @@ style={{
   height: '100%',
   objectFit: 'cover',
   backgroundColor: '#000',
-  display: 'block',
+  display: 'block !important' as any,
   position: 'absolute',
   top: 0,
   left: 0,
-  zIndex: 1, // ✅ Keep this
+  zIndex: 1,
+  visibility: 'visible !important' as any,
+  opacity: '1 !important' as any,
   WebkitTransform: 'translate3d(0,0,0)',
   transform: 'translate3d(0,0,0)',
   WebkitBackfaceVisibility: 'hidden',

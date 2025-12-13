@@ -307,6 +307,7 @@ function AppContent({ Component, pageProps }: AppProps) {
   }, [showMobileSidebar]);
 
   // ✅ CRITICAL: Force shorts page visibility on mobile
+// ✅ CRITICAL: Force shorts page visibility on mobile
 useEffect(() => {
   if (router.pathname.startsWith('/shorts')) {
     const html = document.documentElement;
@@ -317,12 +318,18 @@ useEffect(() => {
     html.setAttribute('data-page', 'shorts');
     html.style.visibility = 'visible';
     html.style.opacity = '1';
+    html.style.zIndex = 'auto';  // ✅ NEW
+    html.style.position = 'static';  // ✅ NEW
+    
     body.style.visibility = 'visible';
     body.style.opacity = '1';
+    body.style.zIndex = 'auto';  // ✅ NEW
+    
     if (next) {
       next.style.visibility = 'visible';
       next.style.opacity = '1';
       next.style.display = 'block';
+      next.style.zIndex = 'auto';  // ✅ NEW
     }
     
     console.log('🎬 Forced shorts page visibility');

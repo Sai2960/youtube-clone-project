@@ -616,15 +616,16 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     width: '100%',
     height: '100%',
     overflow: 'hidden',
+    // ✅ Remove flex, use absolute positioning
   }}
 >
-{shorts.map((short, index) => {
-  // Render current + adjacent
-  const shouldRender = Math.abs(index - currentIndex) <= 1;
-  if (!shouldRender) return null;
+  {shorts.map((short, index) => {
+    // Render current + adjacent
+    const shouldRender = Math.abs(index - currentIndex) <= 1;
+    if (!shouldRender) return null;
 
-  const isActive = index === currentIndex;  // ✅ This is correct
-  const position = index - currentIndex;
+    const isActive = index === currentIndex;
+    const position = index - currentIndex;
 
     console.log(`📱 Rendering short ${index}:`, {
       id: short._id,

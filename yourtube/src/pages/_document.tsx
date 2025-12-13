@@ -175,6 +175,18 @@ html[data-page="shorts"] #__next {
     position: relative !important;
   }
 }
+  /* ✅ CRITICAL: Prevent body/html from covering shorts */
+html[data-page="shorts"],
+html[data-page="shorts"] body {
+  z-index: auto !important;
+  position: relative !important;
+}
+
+/* Ensure shorts page container is visible */
+html[data-page="shorts"] #__next {
+  position: relative !important;
+  z-index: auto !important;
+}
   
 /* Force video element rendering on mobile */
 @media (max-width: 768px) {
@@ -191,16 +203,22 @@ html[data-page="shorts"] #__next {
     -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
   }
   
-  /* Shorts container optimization */
-  [data-page="shorts"] {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: -webkit-fill-available !important;
-    background: #000 !important;
-    z-index: 9999 !important;
-  }
+/* Shorts container optimization */
+[data-page="shorts"] {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: -webkit-fill-available !important;
+  background: #000 !important;
+  /* ❌ REMOVED z-index: 9999 - it blocks video! */
+}
+
+/* ✅ NEW: Ensure HTML doesn't cover content */
+html[data-page="shorts"] {
+  z-index: auto !important;
+  position: static !important;
+}
   
   /* Force video container visibility */
   [data-component="short-player"] {
