@@ -307,37 +307,61 @@ function AppContent({ Component, pageProps }: AppProps) {
   }, [showMobileSidebar]);
 
   // ✅ CRITICAL: Force shorts page visibility on mobile
-// ✅ CRITICAL: Force shorts page visibility on mobile
-// ✅ CRITICAL: Force mobile video rendering
+// 🔍 DEBUG: Log HTML/Body state on shorts page
 useEffect(() => {
   if (router.pathname.startsWith('/shorts')) {
-    const fixMobileVideo = () => {
-      const videos = document.querySelectorAll('video');
-      videos.forEach(video => {
-        video.style.display = 'block';
-        video.style.visibility = 'visible';
-        video.style.opacity = '1';
-        video.style.zIndex = '10';
-        console.log('🔧 Fixed video visibility');
+    const logDOMState = () => {
+      const html = document.documentElement;
+      const body = document.body;
+      const next = document.getElementById('__next');
+      
+      console.log('\n🔍 ===== DOM STATE CHECK =====');
+      console.log('📄 HTML:', {
+        dataPage: html.getAttribute('data-page'),
+        visibility: window.getComputedStyle(html).visibility,
+        opacity: window.getComputedStyle(html).opacity,
+        zIndex: window.getComputedStyle(html).zIndex,
+        position: window.getComputedStyle(html).position,
+        pointerEvents: window.getComputedStyle(html).pointerEvents,
       });
-    };
-
-    // Run immediately
-    fixMobileVideo();
-
-    // Run after page load
-    window.addEventListener('load', fixMobileVideo);
-    
-    // Run on visibility change (Android tab switch)
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        setTimeout(fixMobileVideo, 100);
+      
+      console.log('📄 BODY:', {
+        visibility: window.getComputedStyle(body).visibility,
+        opacity: window.getComputedStyle(body).opacity,
+        zIndex: window.getComputedStyle(body).zIndex,
+        position: window.getComputedStyle(body).position,
+        pointerEvents: window.getComputedStyle(body).pointerEvents,
+        backgroundColor: window.getComputedStyle(body).backgroundColor,
+      });
+      
+      if (next) {
+        console.log('📄 #__next:', {
+          visibility: window.getComputedStyle(next).visibility,
+          opacity: window.getComputedStyle(next).opacity,
+          zIndex: window.getComputedStyle(next).zIndex,
+          pointerEvents: window.getComputedStyle(next).pointerEvents,
+        });
       }
-    });
-
-    return () => {
-      window.removeEventListener('load', fixMobileVideo);
+      
+      // Check all videos
+      const videos = document.querySelectorAll('video');
+      console.log('🎬 Videos found:', videos.length);
+      videos.forEach((video, i) => {
+        const styles = window.getComputedStyle(video);
+        console.log(`Video ${i}:`, {
+          src: video.src?.substring(0, 50),
+          display: styles.display,
+          visibility: styles.visibility,
+          opacity: styles.opacity,
+          zIndex: styles.zIndex,
+        });
+      });
+      
+      console.log('===== END DOM STATE =====\n');
     };
+    
+    logDOMState();
+    setTimeout(logDOMState, 1000); // Log again after 1s
   }
 }, [router.pathname]);
 

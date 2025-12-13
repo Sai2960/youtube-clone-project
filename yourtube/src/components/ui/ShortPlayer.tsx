@@ -597,26 +597,147 @@ useEffect(() => {
     const dragDuration = Date.now() - dragStartTimeRef.current;
     const velocity = Math.abs(distance) / (dragDuration + 1);
 
-    useEffect(() => {
-  const debugVideo = () => {
+    // 🔍 COMPREHENSIVE VIDEO DEBUG
+useEffect(() => {
+  const runDiagnostics = () => {
     const video = videoRef.current;
-    if (!video) return;
+    const container = containerRef.current;
     
-    console.log('🔍 VIDEO DEBUG:', {
+    console.log('\n🔍 ===== VIDEO DIAGNOSTICS =====');
+    
+    if (!video) {
+      console.error('❌ Video ref is NULL');
+      return;
+    }
+    
+    // 1. Video Element State
+    console.log('📹 Video Element:', {
+      exists: !!video,
       src: video.src,
-      readyState: video.readyState,
-      networkState: video.networkState,
+      currentSrc: video.currentSrc,
+      readyState: video.readyState, // 0=nothing, 1=metadata, 2=currentData, 3=futureData, 4=enoughData
+      networkState: video.networkState, // 0=empty, 1=idle, 2=loading, 3=no_source
       paused: video.paused,
-      display: window.getComputedStyle(video).display,
-      visibility: window.getComputedStyle(video).visibility,
-      zIndex: window.getComputedStyle(video).zIndex,
+      muted: video.muted,
+      volume: video.volume,
+      duration: video.duration,
+      currentTime: video.currentTime,
+      error: video.error ? {
+        code: video.error.code,
+        message: video.error.message
+      } : null
     });
+    
+    // 2. Video Computed Styles
+    const videoStyles = window.getComputedStyle(video);
+    console.log('🎨 Video Computed Styles:', {
+      display: videoStyles.display,
+      visibility: videoStyles.visibility,
+      opacity: videoStyles.opacity,
+      position: videoStyles.position,
+      zIndex: videoStyles.zIndex,
+      width: videoStyles.width,
+      height: videoStyles.height,
+      top: videoStyles.top,
+      left: videoStyles.left,
+      transform: videoStyles.transform,
+    });
+    
+    // 3. Video Bounding Box
+    const videoRect = video.getBoundingClientRect();
+    console.log('📐 Video Bounding Box:', {
+      top: videoRect.top,
+      left: videoRect.left,
+      width: videoRect.width,
+      height: videoRect.height,
+      inViewport: videoRect.top < window.innerHeight && videoRect.bottom > 0
+    });
+    
+    // 4. Container State
+    if (container) {
+      const containerStyles = window.getComputedStyle(container);
+      const containerRect = container.getBoundingClientRect();
+      console.log('📦 Container:', {
+        display: containerStyles.display,
+        visibility: containerStyles.visibility,
+        opacity: containerStyles.opacity,
+        zIndex: containerStyles.zIndex,
+        position: containerStyles.position,
+        width: containerRect.width,
+        height: containerRect.height,
+      });
+    }
+    
+    // 5. Parent Elements Check
+    let parent = video.parentElement;
+    let depth = 0;
+    console.log('👪 Parent Chain:');
+    while (parent && depth < 5) {
+      const styles = window.getComputedStyle(parent);
+      console.log(`  Level ${depth}:`, {
+        tag: parent.tagName,
+        class: parent.className,
+        display: styles.display,
+        visibility: styles.visibility,
+        opacity: styles.opacity,
+        zIndex: styles.zIndex,
+        pointerEvents: styles.pointerEvents,
+      });
+      parent = parent.parentElement;
+      depth++;
+    }
+    
+    // 6. Check if video is covered by other elements
+    const videoCenter = {
+      x: videoRect.left + videoRect.width / 2,
+      y: videoRect.top + videoRect.height / 2
+    };
+    const elementAtCenter = document.elementFromPoint(videoCenter.x, videoCenter.y);
+    console.log('👆 Element at video center:', {
+      isVideo: elementAtCenter === video,
+      actualElement: elementAtCenter?.tagName,
+      classList: elementAtCenter?.className,
+    });
+    
+    // 7. Check video source accessibility
+    if (video.src) {
+      console.log('🌐 Testing video URL...');
+      fetch(video.src, { method: 'HEAD' })
+        .then(response => {
+          console.log('✅ Video URL accessible:', {
+            status: response.status,
+            contentType: response.headers.get('content-type'),
+            contentLength: response.headers.get('content-length'),
+          });
+        })
+        .catch(err => {
+          console.error('❌ Video URL not accessible:', err.message);
+        });
+    }
+    
+    // 8. Mobile-specific checks
+    const isMobile = window.innerWidth < 768;
+    console.log('📱 Mobile Info:', {
+      isMobile,
+      userAgent: navigator.userAgent,
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      },
+      htmlDataPage: document.documentElement.getAttribute('data-page'),
+      bodyPointerEvents: window.getComputedStyle(document.body).pointerEvents,
+    });
+    
+    console.log('===== END DIAGNOSTICS =====\n');
   };
 
   if (isActive) {
-    setTimeout(debugVideo, 1000);
+    // Run diagnostics after a delay to ensure everything is rendered
+    const timer = setTimeout(runDiagnostics, 500);
+    return () => clearTimeout(timer);
   }
-}, [isActive]);
+}, [isActive, short._id]);
+    
     // Throttle navigation (prevent rapid swipes)
     const timeSinceLastNav = Date.now() - lastNavigationTimeRef.current;
     if (timeSinceLastNav < 400) {
@@ -1323,7 +1444,7 @@ return (
     position: 'absolute',
     top: 0,
     left: 0,
-    zIndex: 10, // ✅ Must be higher than container (1)
+    zIndex: 10,
     WebkitTransform: 'translate3d(0,0,0)',
     transform: 'translate3d(0,0,0)',
     WebkitBackfaceVisibility: 'hidden',
@@ -1331,42 +1452,91 @@ return (
     WebkitMaskImage: '-webkit-radial-gradient(white, black)',
   }}
   poster={short.thumbnailUrl || undefined}
-  onLoadStart={() => {
-    console.log("🎬 Video load started:", short._id);
+  onLoadStart={(e) => {
+    console.log("🎬 onLoadStart:", {
+      shortId: short._id,
+      src: e.currentTarget.src,
+      readyState: e.currentTarget.readyState,
+    });
+  }}
+  onLoadedMetadata={(e) => {
+    const video = e.currentTarget;
+    console.log("📹 onLoadedMetadata:", {
+      shortId: short._id,
+      duration: video.duration,
+      width: video.videoWidth,
+      height: video.videoHeight,
+      readyState: video.readyState,
+    });
   }}
   onLoadedData={(e) => {
     const video = e.currentTarget;
-    console.log("✅ Video data loaded for:", short._id);
+    console.log("✅ onLoadedData:", {
+      shortId: short._id,
+      readyState: video.readyState,
+      paused: video.paused,
+      isActive,
+      modalOpen: isModalOpenRef.current,
+    });
     
     if (isActive && !isModalOpenRef.current) {
       console.log("🎯 Attempting autoplay...");
       video.muted = true;
       video.play()
         .then(() => {
-          console.log("✅ Playing successfully");
+          console.log("✅ Play() succeeded");
           setIsPlaying(true);
           if (!isMuted) {
             setTimeout(() => { 
-              video.muted = false; 
+              video.muted = false;
+              console.log("🔊 Unmuted after successful play");
             }, 500);
           }
         })
         .catch(err => {
-          console.error("❌ Autoplay failed:", err.message);
+          console.error("❌ Play() failed:", {
+            name: err.name,
+            message: err.message,
+            code: err.code,
+          });
         });
     }
+  }}
+  onCanPlay={() => {
+    console.log("✅ onCanPlay - Video ready to play:", short._id);
+  }}
+  onCanPlayThrough={() => {
+    console.log("✅ onCanPlayThrough - Video fully loaded:", short._id);
   }}
   onError={(e) => {
     const video = e.currentTarget;
     console.error("❌ VIDEO ERROR:", {
       shortId: short._id,
-      code: video.error?.code,
-      message: video.error?.message,
+      errorCode: video.error?.code,
+      errorMessage: video.error?.message,
       src: video.src,
+      currentSrc: video.currentSrc,
+      networkState: video.networkState,
+      readyState: video.readyState,
     });
   }}
-  onPlay={() => setIsPlaying(true)}
-  onPause={() => setIsPlaying(false)}
+  onPlay={() => {
+    console.log("▶️ onPlay event:", short._id);
+    setIsPlaying(true);
+  }}
+  onPause={() => {
+    console.log("⏸️ onPause event:", short._id);
+    setIsPlaying(false);
+  }}
+  onWaiting={() => {
+    console.log("⏳ onWaiting - Video buffering:", short._id);
+  }}
+  onStalled={() => {
+    console.log("⚠️ onStalled - Network issue:", short._id);
+  }}
+  onSuspend={() => {
+    console.log("⏸️ onSuspend - Loading suspended:", short._id);
+  }}
 />
 
       {/* Gradients */}
