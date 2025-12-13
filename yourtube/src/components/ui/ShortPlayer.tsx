@@ -1414,7 +1414,7 @@ return (
   data-component="short-player"
   data-short-id={short._id}
   style={{
-    position: 'fixed', // ✅ Changed from absolute
+    position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
@@ -1426,8 +1426,7 @@ return (
     backgroundColor: '#000',
     WebkitOverflowScrolling: 'touch',
     zIndex: isActive ? 30 : 20,
-    // ✅ CRITICAL: Remove isolation
-    isolation: 'auto',
+    isolation: 'auto', // ✅ CHANGED from 'isolate'
   }}
 >
    {/* Video */}
@@ -1438,12 +1437,6 @@ return (
   loop
   playsInline
   webkit-playsinline="true"
-  x5-playsinline="true"
-  x5-video-player-type="h5"
-  x-webkit-airplay="allow"
-  preload="auto"
-  crossOrigin="anonymous"
-  onClick={togglePlayPause}
   style={{
     width: '100%',
     height: '100%',
@@ -1453,7 +1446,7 @@ return (
     position: 'absolute',
     top: 0,
     left: 0,
-    zIndex: 10,
+    zIndex: 1, // ✅ CHANGED from 10 to 1
     WebkitTransform: 'translate3d(0,0,0)',
     transform: 'translate3d(0,0,0)',
     WebkitBackfaceVisibility: 'hidden',
@@ -1558,7 +1551,7 @@ return (
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 10, // ✅ Above video (z-index: 1) but below controls (z-index: 30+)
+     zIndex: 2, // ✅ Above video (z-index: 1) but below controls (z-index: 30+)
     pointerEvents: 'none',
   }}
 >
@@ -1579,7 +1572,7 @@ return (
     top: '1rem',
     left: '1rem',
     right: '1rem',
-    zIndex: 50, // ✅ Above everything
+    zIndex: 4, // ✅ Above everything
     pointerEvents: 'auto',
   }}
 
@@ -2134,7 +2127,7 @@ return (
     bottom: 0,
     left: 0,
     right: 0,
-    zIndex: 30, // ✅ Above gradient (10) and video (1)
+    zIndex: 3,// ✅ Above gradient (10) and video (1)
     pointerEvents: 'none', // ✅ Let touches pass through
   }}
 >
