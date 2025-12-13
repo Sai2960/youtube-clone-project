@@ -481,7 +481,7 @@ useEffect(() => {
   }
 }, [isActive, short._id, isModalOpenRef.current]);
 
-// 🔍 ENHANCED VIDEO DIAGNOSTIC - ALWAYS RUNS
+// 🔍 ENHANCED VIDEO DIAGNOSTIC - RUNS ON MOUNT + CHANGES
 useEffect(() => {
   const runDiagnostics = () => {
     const video = videoRef.current;
@@ -501,8 +501,8 @@ useEffect(() => {
       exists: !!video,
       src: video.src,
       currentSrc: video.currentSrc,
-      readyState: video.readyState, // 0=nothing, 1=metadata, 2=currentData, 3=futureData, 4=enoughData
-      networkState: video.networkState, // 0=empty, 1=idle, 2=loading, 3=no_source
+      readyState: video.readyState,
+      networkState: video.networkState,
       paused: video.paused,
       muted: video.muted,
       volume: video.volume,
@@ -617,23 +617,18 @@ useEffect(() => {
     console.log('===== END DIAGNOSTICS =====\n');
   };
 
-  // ✅ CRITICAL: Run diagnostics immediately AND after delay
+  // ✅ CRITICAL: Run diagnostics immediately, after 500ms, and after 2s
   console.log('🚀 Setting up diagnostics for short:', short._id, 'isActive:', isActive);
   
-  // Run immediately
-  runDiagnostics();
-  
-  // Also run after 500ms to catch delayed rendering
-  const timer = setTimeout(runDiagnostics, 500);
-  
-  // And run after 2 seconds for good measure
-  const timer2 = setTimeout(runDiagnostics, 2000);
+  runDiagnostics(); // Immediate
+  const timer1 = setTimeout(runDiagnostics, 500); // After 500ms
+  const timer2 = setTimeout(runDiagnostics, 2000); // After 2s
   
   return () => {
-    clearTimeout(timer);
+    clearTimeout(timer1);
     clearTimeout(timer2);
   };
-}, [isActive, short._id]); // Triggers on isActive change OR short._id change
+}, [short._id]); // ✅ CHANGED: Only depends on short._id, not isActive
 
 
   // ✅ ADD: Passive event listener fix
