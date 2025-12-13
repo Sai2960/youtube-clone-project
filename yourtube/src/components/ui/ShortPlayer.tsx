@@ -420,47 +420,44 @@ useEffect(() => {
   });
 
   if (isActive && !isModalOpenRef.current) {
+    // Essential mobile video attributes
     video.setAttribute("playsinline", "true");
     video.setAttribute("webkit-playsinline", "true");
     
-    // Force start muted for mobile autoplay
-    video.muted = true;
-    
     const attemptPlay = async () => {
       try {
-        // Wait if not ready
-        if (video.readyState < 2) {
-          console.log("⏳ Waiting for video...");
-          await new Promise((resolve) => {
-            video.addEventListener('loadeddata', resolve, { once: true });
-            video.load();
-          });
-        }
-
+        // Video starts muted (via HTML attribute), just play
         console.log("🎯 Attempting play");
         await video.play();
         console.log("✅ Playing successfully");
         setIsPlaying(true);
         
-        // Unmute after playing
+        // Unmute after successful play (if user hasn't muted)
         if (!isMuted) {
           setTimeout(() => {
             video.muted = false;
             console.log("🔊 Unmuted");
-          }, 500);
+          }, 800);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("❌ Play failed:", err);
+        console.error("   Error name:", err.name);
+        
+        // If play failed, ensure video is at least ready
+        if (video.readyState < 2) {
+          video.load();
+        }
       }
     };
 
-    setTimeout(attemptPlay, 150);
+    // Small delay to ensure DOM is ready
+    setTimeout(attemptPlay, 200);
     
   } else {
     video.pause();
     setIsPlaying(false);
   }
-}, [isActive, short._id]);
+}, [isActive, short._id, short.videoUrl, isMuted]);
 
 
   // ✅ ADD: Passive event listener fix
@@ -1253,7 +1250,7 @@ return (
       WebkitOverflowScrolling: 'touch',
     }}
   >
-   {/* Video */}
+  {/* Video */}
 <video
   ref={videoRef}
   src={short.videoUrl}
@@ -1261,6 +1258,7 @@ return (
   className="w-full h-full object-cover bg-black"
   loop
   playsInline
+  muted  // ✅ ADD THIS - Critical for mobile autoplay
   webkit-playsinline="true"
   x5-playsinline="true"
   x5-video-player-type="h5"
@@ -1292,7 +1290,7 @@ return (
     
     // Try to play if active
     if (isActive && !isModalOpenRef.current) {
-      video.muted = true; // Must start muted for autoplay
+      // Already muted via attribute, just play
       video.play().then(() => {
         console.log("✅ Video playing");
         setIsPlaying(true);
@@ -1304,7 +1302,6 @@ return (
         }
       }).catch(err => {
         console.error("❌ Autoplay failed:", err);
-        // Fallback: ensure video is at least visible
         video.load();
       });
     }
