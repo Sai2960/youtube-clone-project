@@ -1277,12 +1277,13 @@ return (
 <video
   ref={videoRef}
   src={short.videoUrl}
-  className="w-full h-full object-cover"
+  className="w-full h-full"
   loop
   playsInline
   webkit-playsinline="true"
   x5-playsinline="true"
-  preload="metadata"
+  x5-video-player-type="h5"
+  preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
   style={{
@@ -1293,25 +1294,55 @@ return (
     height: '100%',
     objectFit: 'cover',
     backgroundColor: '#000',
-    // ✅ FIX: Remove problematic visibility/opacity that hides video on mobile
+    display: 'block',
+    // ✅ CRITICAL for mobile visibility
+    transform: 'translateZ(0)', // Force GPU acceleration
+    WebkitTransform: 'translateZ(0)',
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
+  }}
+  onLoadedMetadata={(e) => {
+    const video = e.currentTarget;
+    console.log("📹 Video metadata loaded:", {
+      duration: video.duration,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+      src: short.videoUrl.substring(0, 50)
+    });
   }}
   onLoadedData={(e) => {
     const video = e.currentTarget;
-    console.log("✅ Video loaded:", short._id);
+    console.log("✅ Video data loaded:", short._id);
     
-    // ✅ Auto-play if this short is active
+    // ✅ Force render on mobile
+    video.style.display = 'block';
+    
+    // ✅ Auto-play if active
     if (isActive && !isModalOpenRef.current) {
       video.muted = true;
       video.play()
         .then(() => {
-          console.log("✅ Auto-playing");
+          console.log("✅ Playing on mobile");
           setIsPlaying(true);
           if (!isMuted) {
-            setTimeout(() => { video.muted = false; }, 500);
+            setTimeout(() => { 
+              video.muted = false; 
+              console.log("🔊 Unmuted");
+            }, 500);
           }
         })
-        .catch(err => console.error("❌ Auto-play failed:", err));
+        .catch(err => {
+          console.error("❌ Mobile play failed:", err);
+          // Try again with user interaction
+          video.load();
+        });
     }
+  }}
+  onCanPlay={() => {
+    console.log("✅ Video can play");
+  }}
+  onCanPlayThrough={() => {
+    console.log("✅ Video can play through");
   }}
   onError={(e) => {
     const video = e.currentTarget;
@@ -1319,12 +1350,28 @@ return (
       code: video.error?.code,
       message: video.error?.message,
       url: short.videoUrl,
+      networkState: video.networkState,
+      readyState: video.readyState,
     });
     
-    // Retry once
-    if (!video.hasAttribute('data-retry')) {
-      video.setAttribute('data-retry', 'true');
-      setTimeout(() => video.load(), 500);
+    // Retry logic
+    if (!video.hasAttribute('data-retry-count')) {
+      video.setAttribute('data-retry-count', '1');
+      console.log("🔄 Retrying video load...");
+      setTimeout(() => {
+        video.load();
+      }, 1000);
+    } else {
+      const retryCount = parseInt(video.getAttribute('data-retry-count') || '0');
+      if (retryCount < 3) {
+        video.setAttribute('data-retry-count', String(retryCount + 1));
+        console.log(`🔄 Retry attempt ${retryCount + 1}...`);
+        setTimeout(() => {
+          video.load();
+        }, 1000 * retryCount);
+      } else {
+        console.error("❌ Video failed after 3 retries");
+      }
     }
   }}
   onPlay={() => {
@@ -1336,8 +1383,14 @@ return (
     setIsPlaying(false);
   }}
   onEnded={() => {
-    console.log("⏭️ Video ended, moving to next");
+    console.log("⏭️ Video ended");
     if (!isModalOpenRef.current) onNext();
+  }}
+  onWaiting={() => {
+    console.log("⏳ Video buffering...");
+  }}
+  onStalled={() => {
+    console.log("⚠️ Video stalled");
   }}
 />
 
