@@ -417,23 +417,17 @@ useEffect(() => {
     modalOpen: isModalOpenRef.current,
     videoSrc: video.src,
     readyState: video.readyState,
+    // ✅ ADD: Check computed styles
+    computedDisplay: window.getComputedStyle(video).display,
+    computedVisibility: window.getComputedStyle(video).visibility,
+    computedOpacity: window.getComputedStyle(video).opacity,
   });
 
-  if (isActive && !isModalOpenRef.current) {
-    // ✅ Ensure video is visible
-    video.style.display = "block";
-    video.style.visibility = "visible";
-    video.style.opacity = "1";
-    
-    // Set attributes
+if (isActive && !isModalOpenRef.current) {
+    // Video visibility is handled by inline styles in JSX
+    // Just ensure attributes are set
     video.setAttribute("playsinline", "true");
-    video.setAttribute("webkit-playsinline", "true");
-    video.preload = "auto";
     
-    // Mute for autoplay
-    video.muted = isMuted;
-    
-    // ✅ SIMPLIFIED play logic
     const attemptPlay = async () => {
       if (video.readyState >= 2) {
         try {
@@ -441,7 +435,6 @@ useEffect(() => {
           console.log("✅ Video playing");
           setIsPlaying(true);
           
-          // Unmute after playback starts
           if (!isMuted) {
             setTimeout(() => {
               video.muted = false;
@@ -450,7 +443,6 @@ useEffect(() => {
         } catch (err) {
           console.error("❌ Play failed:", err);
           
-          // Try once with mute
           try {
             video.muted = true;
             await video.play();
@@ -466,7 +458,6 @@ useEffect(() => {
       }
     };
 
-    // Force load if needed
     if (video.readyState < 2) {
       video.load();
     }
@@ -1264,6 +1255,8 @@ const handleLike = async (e: React.MouseEvent) => {
   }}
 >
       {/* Video */}
+
+
 <video
   ref={videoRef}
   src={short.videoUrl}
@@ -1276,15 +1269,29 @@ const handleLike = async (e: React.MouseEvent) => {
   crossOrigin="anonymous"
   onClick={togglePlayPause}
   style={{
-    display: 'block',              // ✅ REMOVED !important
-    visibility: 'visible',         // ✅ REMOVED !important
-    opacity: 1,                    // ✅ REMOVED !important (changed from '1' to 1)
+    // ✅ CRITICAL: Force display with !important in React
+    display: 'block !important' as any,
+    visibility: 'visible !important' as any,
+    opacity: '1 !important' as any,
     position: 'absolute',
     inset: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
     height: '100%',
+    minWidth: '100%',
+    minHeight: '100%',
+    maxWidth: '100%',
+    maxHeight: '100%',
     zIndex: 1,
     backgroundColor: '#000',
+    objectFit: 'contain',
+    // ✅ Add these to ensure rendering
+    transform: 'translateZ(0)', // Force GPU acceleration
+    WebkitTransform: 'translateZ(0)',
+    willChange: 'transform',
   }}
   onError={(e) => {
     const video = e.currentTarget;
@@ -1299,7 +1306,16 @@ const handleLike = async (e: React.MouseEvent) => {
       setTimeout(() => video.load(), 500);
     }
   }}
-  onLoadedMetadata={() => console.log("✅ Metadata loaded")}
+  onLoadedMetadata={() => {
+    console.log("✅ Metadata loaded");
+    // ✅ Force display after metadata loads
+    const video = videoRef.current;
+    if (video) {
+      video.style.display = 'block';
+      video.style.visibility = 'visible';
+      video.style.opacity = '1';
+    }
+  }}
   onCanPlay={() => console.log("✅ Can play")}
   onPlaying={() => console.log("▶️ Playing")}
 />
