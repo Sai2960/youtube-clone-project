@@ -83,6 +83,25 @@ const getBackendUrl = () => {
   return process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.0.181:5000";
 };
 
+// Haptic Feedback Utility
+const hapticFeedback = {
+  light: () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+  },
+  selection: () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(5);
+    }
+  },
+  impact: () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(15);
+    }
+  },
+};
+
 const Home: NextPage = () => {
   const router = useRouter();
   const [videos, setVideos] = useState<Video[]>([]);
@@ -101,9 +120,16 @@ const Home: NextPage = () => {
   const touchEndX = useRef(0);
   const isDragging = useRef(false);
 
-  useEffect(() => {
+useEffect(() => {
     fetchVideos();
     fetchShorts();
+
+    // Mobile-specific: Log when component mounts
+    console.log("📱 Home page mounted, viewport:", {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      isMobile: window.innerWidth < 1024
+    });
 
     // ✅ CRITICAL FIX: Refresh on window focus
     const handleFocus = () => {
@@ -161,7 +187,7 @@ const Home: NextPage = () => {
     }
   };
 
-  const fetchShorts = async () => {
+const fetchShorts = async () => {
     try {
       setLoadingShorts(true);
       console.log("🎬 Fetching shorts...");
@@ -173,14 +199,17 @@ const Home: NextPage = () => {
       if (response.data.success && Array.isArray(response.data.data)) {
         setShorts(response.data.data);
         console.log("✅ Loaded", response.data.data.length, "shorts");
+        console.log("📱 First short:", response.data.data[0]);
       } else {
         setShorts([]);
+        console.warn("⚠️ No shorts data");
       }
     } catch (error: any) {
       console.error("❌ Error fetching shorts:", error);
       setShorts([]);
     } finally {
       setLoadingShorts(false);
+      console.log("🏁 Shorts loading finished");
     }
   };
 
@@ -448,7 +477,7 @@ const Home: NextPage = () => {
     isDragging.current = false;
   };
 
-  const handleShortClick = (
+const handleShortClick = (
     e: React.MouseEvent,
     shortId: string,
     index: number
@@ -459,6 +488,7 @@ const Home: NextPage = () => {
     }
 
     e.preventDefault();
+    hapticFeedback.light(); // Add haptic feedback
     router.push({
       pathname: "/shorts",
       query: { start: index.toString() },
@@ -474,7 +504,19 @@ const Home: NextPage = () => {
       <div
         ref={containerRef}
         className="w-full bg-white dark:bg-gray-900 min-h-screen pb-16 lg:pb-0"
+        style={{
+          position: "relative",
+          width: "100%",
+          overflow: "visible",
+        }}
       >
+         {/* Debug Info - Remove after testing */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="lg:hidden fixed top-2 right-2 z-50 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg">
+            Shorts: {shorts.length} | Loading: {loadingShorts ? 'Y' : 'N'}
+          </div>
+        )}
+        
         {/* Pull to Refresh Indicator */}
         {pullDistance > 0 && (
           <div
@@ -508,10 +550,17 @@ const Home: NextPage = () => {
         {/* Shorts Section - YouTube Style */}
         {/* Shorts Section - YouTube Style */}
         {shorts.length > 0 && (
-          <section className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6">
-            {/* Header */}
-            <div className="flex items-center gap-3 px-4 mb-4 lg:px-6">
-              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl">
+          <section 
+            className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
+            style={{
+              display: "block",
+              width: "100%",
+              minHeight: "200px",
+            }}
+          >
+         {/* Header */}
+            <div className="flex items-center gap-3 px-4 mb-4 lg:px-6 bg-white dark:bg-gray-900">
+              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl shadow-md">
                 <svg
                   viewBox="0 0 24 24"
                   className="w-4 h-4 fill-white lg:w-5 lg:h-5"
@@ -524,9 +573,9 @@ const Home: NextPage = () => {
               </h2>
             </div>
 
-            {loadingShorts ? (
+         {loadingShorts ? (
               <div
-                className="overflow-x-hidden px-4 lg:px-6"
+                className="overflow-x-hidden px-4 lg:px-6 bg-white dark:bg-gray-900"
                 style={{ display: "flex", gap: "12px" }}
               >
                 {[...Array(6)].map((_, i) => (
@@ -571,16 +620,17 @@ const Home: NextPage = () => {
                   />
                 </button>
 
-                {/* Shorts Container */}
+              {/* Shorts Container */}
                 <div
                   ref={shortsScrollRef}
-                  className="overflow-x-scroll scrollbar-hide"
+                  className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
                   style={{
                     display: "flex",
                     gap: "12px",
                     padding: "0 16px",
                     scrollBehavior: "smooth",
                     WebkitOverflowScrolling: "touch",
+                    touchAction: "pan-x",
                   }}
                   onTouchStart={handleShortsScrollTouchStart}
                   onTouchMove={handleShortsScrollTouchMove}
@@ -591,19 +641,21 @@ const Home: NextPage = () => {
                     const shortChannelName = getShortChannelName(short);
 
                     return (
-                      <div
+                     <div
                         key={short._id}
                         onClick={(e) => {
                           if (!(e.target as HTMLElement).closest(".no-click")) {
                             handleShortClick(e, short._id, index);
                           }
                         }}
-                        className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px]"
+                        className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] active:opacity-90 transition-opacity touch-manipulation"
                         style={{
                           minWidth: "160px",
+                          userSelect: "none",
+                          WebkitTapHighlightColor: "transparent",
                         }}
                       >
-                      {/* Thumbnail Card */}
+                  {/* Thumbnail Card */}
 <div
   className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail"
   style={{
