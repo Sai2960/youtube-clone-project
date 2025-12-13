@@ -565,11 +565,11 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     maxHeight: '100vh',
     overflow: 'hidden',
     WebkitOverflowScrolling: 'touch',
-    display: 'block', // ✅ Changed from flex
-    zIndex: 9999,
-    // ✅ Force rendering
+    display: 'block',
+    zIndex: 50, // ✅ High z-index for shorts page
     WebkitTransform: 'translateZ(0)',
     transform: 'translateZ(0)',
+    backgroundColor: '#000',
   }}
   data-page="shorts"
 >

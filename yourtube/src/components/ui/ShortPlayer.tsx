@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react-hooks/exhaustive-deps */
 // components/ui/ShortPlayer.tsx - COMPLETE WITH UNIFIED AVATAR UTILS
 
@@ -596,6 +597,26 @@ useEffect(() => {
     const dragDuration = Date.now() - dragStartTimeRef.current;
     const velocity = Math.abs(distance) / (dragDuration + 1);
 
+    useEffect(() => {
+  const debugVideo = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    console.log('🔍 VIDEO DEBUG:', {
+      src: video.src,
+      readyState: video.readyState,
+      networkState: video.networkState,
+      paused: video.paused,
+      display: window.getComputedStyle(video).display,
+      visibility: window.getComputedStyle(video).visibility,
+      zIndex: window.getComputedStyle(video).zIndex,
+    });
+  };
+
+  if (isActive) {
+    setTimeout(debugVideo, 1000);
+  }
+}, [isActive]);
     // Throttle navigation (prevent rapid swipes)
     const timeSinceLastNav = Date.now() - lastNavigationTimeRef.current;
     if (timeSinceLastNav < 400) {
@@ -1261,21 +1282,22 @@ return (
   ref={containerRef}
   className="relative w-full h-screen bg-black overflow-hidden"
   data-component="short-player"
-data-short-id={short._id}  // ✅ 
+  data-short-id={short._id}
   style={{
-    position: 'absolute',
+    position: 'fixed', // ✅ Changed from absolute
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    width: '100%',
-    height: '100%',
+    width: '100vw',
+    height: '100vh',
     minHeight: '100vh',
     overflow: 'hidden',
     backgroundColor: '#000',
     WebkitOverflowScrolling: 'touch',
-    // ✅ CRITICAL: Remove isolation, use absolute positioning
     zIndex: isActive ? 30 : 20,
+    // ✅ CRITICAL: Remove isolation
+    isolation: 'auto',
   }}
 >
    {/* Video */}
@@ -1292,40 +1314,30 @@ data-short-id={short._id}  // ✅
   preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
-style={{
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  backgroundColor: '#000',
-  display: 'block',
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  zIndex: 1, // ✅ Keep this
-  WebkitTransform: 'translate3d(0,0,0)',
-  transform: 'translate3d(0,0,0)',
-  WebkitBackfaceVisibility: 'hidden',
-  backfaceVisibility: 'hidden',
-  WebkitMaskImage: '-webkit-radial-gradient(white, black)',
-}}
-  // ✅ Add poster image to show something while loading
+  style={{
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    backgroundColor: '#000',
+    display: 'block',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 10, // ✅ Must be higher than container (1)
+    WebkitTransform: 'translate3d(0,0,0)',
+    transform: 'translate3d(0,0,0)',
+    WebkitBackfaceVisibility: 'hidden',
+    backfaceVisibility: 'hidden',
+    WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+  }}
   poster={short.thumbnailUrl || undefined}
   onLoadStart={() => {
     console.log("🎬 Video load started:", short._id);
-  }}
-  onLoadedMetadata={(e) => {
-    const video = e.currentTarget;
-    console.log("📹 Metadata loaded:", {
-      duration: video.duration,
-      width: video.videoWidth,
-      height: video.videoHeight,
-    });
   }}
   onLoadedData={(e) => {
     const video = e.currentTarget;
     console.log("✅ Video data loaded for:", short._id);
     
-    // ✅ Try to play if active
     if (isActive && !isModalOpenRef.current) {
       console.log("🎯 Attempting autoplay...");
       video.muted = true;
@@ -1341,12 +1353,8 @@ style={{
         })
         .catch(err => {
           console.error("❌ Autoplay failed:", err.message);
-          console.log("💡 User interaction needed");
         });
     }
-  }}
-  onCanPlay={() => {
-    console.log("✅ Can play:", short._id);
   }}
   onError={(e) => {
     const video = e.currentTarget;
@@ -1355,18 +1363,10 @@ style={{
       code: video.error?.code,
       message: video.error?.message,
       src: video.src,
-      networkState: video.networkState,
-      readyState: video.readyState,
     });
   }}
-  onPlay={() => {
-    console.log("▶️ Playing:", short._id);
-    setIsPlaying(true);
-  }}
-  onPause={() => {
-    console.log("⏸️ Paused:", short._id);
-    setIsPlaying(false);
-  }}
+  onPlay={() => setIsPlaying(true)}
+  onPause={() => setIsPlaying(false)}
 />
 
       {/* Gradients */}

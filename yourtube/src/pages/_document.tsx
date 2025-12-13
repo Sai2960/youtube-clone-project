@@ -1,5 +1,6 @@
 import { Html, Head, Main, NextScript, DocumentProps } from "next/document";
 import Document from "next/document";
+
 export default function CustomDocument() {
   return (
     <Html lang="en" className="dark">
@@ -99,6 +100,10 @@ export default function CustomDocument() {
         <style
           dangerouslySetInnerHTML={{
             __html: `
+            /* ============================================================================
+               BASE STYLES & MOBILE OPTIMIZATIONS
+               ============================================================================ */
+            
             /* Prevent zoom on input focus (iOS Safari) */
             @media (max-width: 768px) {
               input, select, textarea {
@@ -124,129 +129,25 @@ export default function CustomDocument() {
               }
             }
             
-/* Prevent flash of unstyled content - hide until theme is applied */
-html:not(.light):not(.dark):not([data-page="shorts"]) {
-  visibility: hidden;
-  opacity: 0;
-}
+            /* ============================================================================
+               FOUC PREVENTION - THEME LOADING
+               ============================================================================ */
+            
+            /* Hide content until theme is applied (except shorts) */
+            html:not(.light):not(.dark):not([data-page="shorts"]) {
+              visibility: hidden;
+              opacity: 0;
+            }
 
-* ✅ CRITICAL: Always show shorts page immediately */
-html[data-page="shorts"],
-html[data-page="shorts"] body,
-html[data-page="shorts"] #__next {
-  visibility: visible !important;
-  opacity: 1 !important;
-  display: block !important;
-}
+            /* ✅ CRITICAL: Always show shorts page immediately */
+            html[data-page="shorts"],
+            html[data-page="shorts"] body,
+            html[data-page="shorts"] #__next {
+              visibility: visible !important;
+              opacity: 1 !important;
+              display: block !important;
+            }
 
-  /* ============================================================================
-   🔴 MOBILE VIDEO RENDERING FIX
-   ============================================================================ */
-/* ============================================================================
-   🔴 FORCE VIDEO PARENT VISIBILITY ON MOBILE
-   ============================================================================ */
-@media (max-width: 768px) {
-  /* Force all parent containers visible */
-  [data-page="shorts"],
-  [data-page="shorts"] > *,
-  [data-component="short-player"],
-  [data-is-active="true"],
-  [data-is-active="true"] > * {
-    visibility: visible !important;
-    opacity: 1 !important;
-    display: block !important;
-  }
-  
-  /* Ensure video is on top of HTML element */
-  video {
-    position: absolute !important;
-    z-index: 1 !important;
-    /* Force rendering context */
-    -webkit-transform: translate3d(0, 0, 0) !important;
-    transform: translate3d(0, 0, 0) !important;
-  }
-  
-  /* Fix HTML element covering video */
-  html, body {
-    background: #000 !important;
-    overflow: hidden !important;
-  }
-  
-  body {
-    position: relative !important;
-  }
-}
-html[data-page="shorts"] body {
-  pointer-events: none !important;
-  background: transparent !important;
-  position: relative !important;
-  z-index: 0 !important;
-}
-
-html[data-page="shorts"] #__next {
-  pointer-events: auto !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-/* ✅ Force all shorts content to be interactive */
-html[data-page="shorts"] [data-page="shorts"],
-html[data-page="shorts"] [data-component="short-player"],
-html[data-page="shorts"] video {
-  pointer-events: auto !important;
-}
-
-  
-/* Force video element rendering on mobile */
-@media (max-width: 768px) {
-  video {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    /* Force GPU acceleration */
-    -webkit-transform: translate3d(0, 0, 0) !important;
-    transform: translate3d(0, 0, 0) !important;
-    -webkit-backface-visibility: hidden !important;
-    backface-visibility: hidden !important;
-    /* Prevent iOS black screen */
-    -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
-  }
-  
-/* Shorts container optimization */
-[data-page="shorts"] {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  height: -webkit-fill-available !important;
-  background: #000 !important;
-  /* ❌ REMOVED z-index: 9999 - it blocks video! */
-}
-
-html[data-page="shorts"] {
-  pointer-events: none !important;
-  background: transparent !important;
-  position: relative !important;
-  z-index: 0 !important;
-}
-  
-  /* Force video container visibility */
-  [data-component="short-player"] {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-  }
-  
-  /* Prevent iOS video black screen bug */
-  video::-webkit-media-controls-start-playback-button {
-    display: none !important;
-  }
-  
-  video::-webkit-media-controls-play-button {
-    display: none !important;
-  }
-}
             /* Show content once theme is applied */
             html.light,
             html.dark {
@@ -254,6 +155,105 @@ html[data-page="shorts"] {
               opacity: 1;
               transition: opacity 0.1s ease-in;
             }
+            
+            /* ============================================================================
+               🔴 MOBILE VIDEO RENDERING FIX FOR SHORTS
+               ============================================================================ */
+            
+            @media (max-width: 768px) {
+              /* ✅ Shorts page container - fixed fullscreen */
+              [data-page="shorts"] {
+                position: fixed !important;
+                inset: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                height: -webkit-fill-available !important;
+                background: #000 !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                display: block !important;
+              }
+              
+              /* ✅ HTML element on shorts - don't block interactions */
+              html[data-page="shorts"] {
+                background: #000 !important;
+                overflow: hidden !important;
+                position: relative !important;
+                pointer-events: none !important;
+              }
+              
+              /* ✅ Body transparent to let video show through */
+              html[data-page="shorts"] body {
+                pointer-events: none !important;
+                background: transparent !important;
+                position: relative !important;
+                z-index: 0 !important;
+              }
+              
+              /* ✅ Next.js container - enable interactions */
+              html[data-page="shorts"] #__next {
+                pointer-events: auto !important;
+                position: relative !important;
+                z-index: 1 !important;
+              }
+              
+              /* ✅ Short player container */
+              [data-component="short-player"] {
+                position: absolute !important;
+                inset: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                display: block !important;
+                pointer-events: auto !important;
+              }
+              
+              /* ✅ CRITICAL: Video element - must be visible and interactive */
+              video {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: absolute !important;
+                z-index: 10 !important;
+                pointer-events: auto !important;
+                /* Force GPU acceleration */
+                -webkit-transform: translate3d(0, 0, 0) !important;
+                transform: translate3d(0, 0, 0) !important;
+                -webkit-backface-visibility: hidden !important;
+                backface-visibility: hidden !important;
+                /* Prevent iOS black screen bug */
+                -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
+              }
+              
+              /* ✅ Ensure shorts content is interactive */
+              html[data-page="shorts"] [data-page="shorts"],
+              html[data-page="shorts"] [data-component="short-player"],
+              html[data-page="shorts"] video {
+                pointer-events: auto !important;
+              }
+              
+              /* ✅ Force active short visibility */
+              [data-is-active="true"],
+              [data-is-active="true"] > * {
+                visibility: visible !important;
+                opacity: 1 !important;
+                display: block !important;
+              }
+              
+              /* Prevent iOS video native controls from showing */
+              video::-webkit-media-controls-start-playback-button {
+                display: none !important;
+              }
+              
+              video::-webkit-media-controls-play-button {
+                display: none !important;
+              }
+            }
+            
+            /* ============================================================================
+               GENERAL UI ENHANCEMENTS
+               ============================================================================ */
             
             /* Smooth background transitions */
             html,
@@ -274,6 +274,7 @@ html[data-page="shorts"] {
               scroll-behavior: smooth;
             }
             
+            /* Respect user's motion preferences */
             @media (prefers-reduced-motion: reduce) {
               html {
                 scroll-behavior: auto;

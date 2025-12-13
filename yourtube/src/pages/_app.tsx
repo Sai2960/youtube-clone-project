@@ -308,34 +308,35 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   // ✅ CRITICAL: Force shorts page visibility on mobile
 // ✅ CRITICAL: Force shorts page visibility on mobile
+// ✅ CRITICAL: Force mobile video rendering
 useEffect(() => {
   if (router.pathname.startsWith('/shorts')) {
-    const html = document.documentElement;
-    const body = document.body;
-    const next = document.getElementById('__next');
+    const fixMobileVideo = () => {
+      const videos = document.querySelectorAll('video');
+      videos.forEach(video => {
+        video.style.display = 'block';
+        video.style.visibility = 'visible';
+        video.style.opacity = '1';
+        video.style.zIndex = '10';
+        console.log('🔧 Fixed video visibility');
+      });
+    };
+
+    // Run immediately
+    fixMobileVideo();
+
+    // Run after page load
+    window.addEventListener('load', fixMobileVideo);
     
-    // Force visibility
-    html.setAttribute('data-page', 'shorts');
-    html.style.visibility = 'visible';
-    html.style.opacity = '1';
-    html.style.zIndex = 'auto';  // ✅ NEW
-    html.style.position = 'static';  // ✅ NEW
-    
-    body.style.visibility = 'visible';
-    body.style.opacity = '1';
-    body.style.zIndex = 'auto';  // ✅ NEW
-    
-    if (next) {
-      next.style.visibility = 'visible';
-      next.style.opacity = '1';
-      next.style.display = 'block';
-      next.style.zIndex = 'auto';  // ✅ NEW
-    }
-    
-    console.log('🎬 Forced shorts page visibility');
-    
+    // Run on visibility change (Android tab switch)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        setTimeout(fixMobileVideo, 100);
+      }
+    });
+
     return () => {
-      html.removeAttribute('data-page');
+      window.removeEventListener('load', fixMobileVideo);
     };
   }
 }, [router.pathname]);
