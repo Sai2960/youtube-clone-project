@@ -423,11 +423,11 @@ useEffect(() => {
     // Essential mobile video attributes
     video.setAttribute("playsinline", "true");
     video.setAttribute("webkit-playsinline", "true");
+    video.muted = true;  // ✅ Start muted
     
     const attemptPlay = async () => {
       try {
-        // Video starts muted (via HTML attribute), just play
-        console.log("🎯 Attempting play");
+        console.log("🎯 Attempting play (muted)");
         await video.play();
         console.log("✅ Playing successfully");
         setIsPlaying(true);
@@ -435,30 +435,40 @@ useEffect(() => {
         // Unmute after successful play (if user hasn't muted)
         if (!isMuted) {
           setTimeout(() => {
-            video.muted = false;
-            console.log("🔊 Unmuted");
+            if (video && !video.paused) {
+              video.muted = false;
+              console.log("🔊 Unmuted");
+            }
           }, 800);
         }
       } catch (err: any) {
-        console.error("❌ Play failed:", err);
-        console.error("   Error name:", err.name);
+        console.error("❌ Play failed:", err.name, err.message);
         
-        // If play failed, ensure video is at least ready
-        if (video.readyState < 2) {
-          video.load();
-        }
+        // Retry once after a short delay
+        setTimeout(() => {
+          video.play().catch(e => console.error("❌ Retry failed:", e));
+        }, 300);
       }
     };
 
-    // Small delay to ensure DOM is ready
-    setTimeout(attemptPlay, 200);
+    // Wait for video to be ready
+    if (video.readyState >= 2) {
+      attemptPlay();
+    } else {
+      video.addEventListener('canplay', attemptPlay, { once: true });
+    }
     
   } else {
     video.pause();
     setIsPlaying(false);
   }
-}, [isActive, short._id, short.videoUrl, isMuted]);
-
+  
+  return () => {
+    if (video) {
+      video.removeEventListener('canplay', attemptPlay);
+    }
+  };
+}, [isActive, short._id]);
 
   // ✅ ADD: Passive event listener fix
   useEffect(() => {
@@ -1234,23 +1244,26 @@ const handleLike = async (e: React.MouseEvent) => {
 
 return (
   <div
-    ref={containerRef}
-    className="relative w-full h-screen bg-black overflow-hidden"
-    data-component="short-player"
-    data-short-id={short._id}
-    data-is-active={isActive}
-    style={{
-      position: 'relative',
-      width: '100%',
-      height: '100vh',
-      minHeight: '-webkit-fill-available', // iOS fix
-      overflow: 'hidden',
-      isolation: 'isolate',
-      backgroundColor: '#000',
-      WebkitOverflowScrolling: 'touch',
-    }}
-  >
-  {/* Video */}
+  ref={containerRef}
+  className="fixed inset-0 bg-black"
+  style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100vw',
+    height: '100vh',
+    minHeight: '100vh',
+    overflow: 'hidden',
+    isolation: 'isolate',
+    contain: 'strict',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',  // ✅ Allow vertical swipe only
+  }}
+  data-page="shorts"
+>
+{/* Video */}
 <video
   ref={videoRef}
   src={short.videoUrl}
@@ -1258,13 +1271,14 @@ return (
   className="w-full h-full object-cover bg-black"
   loop
   playsInline
-  muted  // ✅ ADD THIS - Critical for mobile autoplay
+  muted  // ✅ CRITICAL: Must be here for mobile autoplay
+  autoPlay={false}  // ✅ We control play manually
   webkit-playsinline="true"
   x5-playsinline="true"
   x5-video-player-type="h5"
   x5-video-player-fullscreen="true"
   x-webkit-airplay="allow"
-  preload="auto"
+  preload="metadata"  // ✅ Changed from "auto" to reduce load
   crossOrigin="anonymous"
   onClick={togglePlayPause}
   style={{
@@ -1279,18 +1293,21 @@ return (
     opacity: 1,
     zIndex: 1,
   }}
-  onLoadedData={(e) => {
-    console.log("✅ Video data loaded");
+  onLoadedMetadata={(e) => {  // ✅ Changed from onLoadedData
+    console.log("✅ Video metadata loaded");
     const video = e.currentTarget;
     
     // Force visibility
     video.style.display = 'block';
     video.style.visibility = 'visible';
     video.style.opacity = '1';
+  }}
+  onCanPlay={(e) => {
+    console.log("✅ Video can play");
+    const video = e.currentTarget;
     
     // Try to play if active
     if (isActive && !isModalOpenRef.current) {
-      // Already muted via attribute, just play
       video.play().then(() => {
         console.log("✅ Video playing");
         setIsPlaying(true);
@@ -1298,11 +1315,11 @@ return (
         if (!isMuted) {
           setTimeout(() => {
             video.muted = false;
+            console.log("🔊 Unmuted");
           }, 500);
         }
       }).catch(err => {
         console.error("❌ Autoplay failed:", err);
-        video.load();
       });
     }
   }}
@@ -1321,7 +1338,6 @@ return (
       }, 500);
     }
   }}
-  onCanPlay={() => console.log("✅ Can play")}
   onPlay={() => {
     console.log("▶️ Playing");
     setIsPlaying(true);
@@ -2231,3 +2247,7 @@ return (
 };
 
 export default ShortPlayer;
+function attemptPlay(this: HTMLVideoElement, ev: Event) {
+  throw new Error("Function not implemented.");
+}
+
