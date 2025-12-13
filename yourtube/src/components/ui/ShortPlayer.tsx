@@ -481,12 +481,15 @@ useEffect(() => {
   }
 }, [isActive, short._id, isModalOpenRef.current]);
 
+// 🔍 ENHANCED VIDEO DIAGNOSTIC - ALWAYS RUNS
 useEffect(() => {
   const runDiagnostics = () => {
     const video = videoRef.current;
     const container = containerRef.current;
     
     console.log('\n🔍 ===== VIDEO DIAGNOSTICS =====');
+    console.log('🎯 Diagnostic triggered for:', short._id);
+    console.log('📍 isActive:', isActive);
     
     if (!video) {
       console.error('❌ Video ref is NULL');
@@ -498,8 +501,8 @@ useEffect(() => {
       exists: !!video,
       src: video.src,
       currentSrc: video.currentSrc,
-      readyState: video.readyState,
-      networkState: video.networkState,
+      readyState: video.readyState, // 0=nothing, 1=metadata, 2=currentData, 3=futureData, 4=enoughData
+      networkState: video.networkState, // 0=empty, 1=idle, 2=loading, 3=no_source
       paused: video.paused,
       muted: video.muted,
       volume: video.volume,
@@ -614,12 +617,23 @@ useEffect(() => {
     console.log('===== END DIAGNOSTICS =====\n');
   };
 
-  if (isActive) {
-    // Run diagnostics after a delay to ensure everything is rendered
-    const timer = setTimeout(runDiagnostics, 500);
-    return () => clearTimeout(timer);
-  }
-}, [isActive, short._id]);
+  // ✅ CRITICAL: Run diagnostics immediately AND after delay
+  console.log('🚀 Setting up diagnostics for short:', short._id, 'isActive:', isActive);
+  
+  // Run immediately
+  runDiagnostics();
+  
+  // Also run after 500ms to catch delayed rendering
+  const timer = setTimeout(runDiagnostics, 500);
+  
+  // And run after 2 seconds for good measure
+  const timer2 = setTimeout(runDiagnostics, 2000);
+  
+  return () => {
+    clearTimeout(timer);
+    clearTimeout(timer2);
+  };
+}, [isActive, short._id]); // Triggers on isActive change OR short._id change
 
 
   // ✅ ADD: Passive event listener fix
