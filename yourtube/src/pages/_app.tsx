@@ -309,8 +309,18 @@ function AppContent({ Component, pageProps }: AppProps) {
   // ✅ CRITICAL: Force shorts page visibility on mobile
 // 🔍 DEBUG: Log HTML/Body state on shorts page
 // Add RIGHT AFTER the data-page useEffect
+// Replace the entire useEffect for shorts body override
 useEffect(() => {
   if (router.pathname.startsWith('/shorts')) {
+    console.log('🎬 Applying shorts overrides...');
+    
+    // ✅ CRITICAL: Override HTML element
+    document.documentElement.style.position = 'fixed';
+    document.documentElement.style.inset = '0';
+    document.documentElement.style.zIndex = '0';
+    document.documentElement.style.pointerEvents = 'none';
+    document.documentElement.style.background = 'transparent';
+    
     // ✅ CRITICAL: Override body stacking
     document.body.style.position = 'fixed';
     document.body.style.inset = '0';
@@ -318,6 +328,7 @@ useEffect(() => {
     document.body.style.pointerEvents = 'none';
     document.body.style.background = 'transparent';
     
+    // ✅ CRITICAL: Override #__next
     const nextDiv = document.getElementById('__next');
     if (nextDiv) {
       nextDiv.style.position = 'fixed';
@@ -327,9 +338,15 @@ useEffect(() => {
       nextDiv.style.background = 'transparent';
     }
     
-    console.log('✅ Applied shorts body override');
+    console.log('✅ Shorts overrides applied');
   } else {
     // ✅ Reset when leaving shorts
+    document.documentElement.style.position = '';
+    document.documentElement.style.inset = '';
+    document.documentElement.style.zIndex = '';
+    document.documentElement.style.pointerEvents = '';
+    document.documentElement.style.background = '';
+    
     document.body.style.position = '';
     document.body.style.inset = '';
     document.body.style.zIndex = '';

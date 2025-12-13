@@ -167,6 +167,8 @@ export default function CustomDocument() {
                 overflow: hidden !important;
                 position: fixed !important;
                 inset: 0 !important;
+                z-index: 0 !important;
+                pointer-events: none !important;
               }
               
               html[data-page="shorts"] body {
@@ -194,9 +196,18 @@ export default function CustomDocument() {
                 width: 100vw !important;
                 height: 100vh !important;
                 background: #000 !important;
-                z-index: 1 !important;
+                z-index: 10 !important;
                 pointer-events: auto !important;
                 overflow: hidden !important;
+              }
+              
+              /* ✅ Active short container */
+              [data-is-active="true"] {
+                z-index: 100 !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                display: block !important;
+                pointer-events: auto !important;
               }
               
               /* ✅ Short player containers */
@@ -206,9 +217,10 @@ export default function CustomDocument() {
                 width: 100% !important;
                 height: 100% !important;
                 pointer-events: auto !important;
+                z-index: inherit !important;
               }
               
-              /* ✅ Video element - HIGHEST priority */
+              /* ✅ Video element - MUST be visible */
               [data-component="short-player"] video {
                 display: block !important;
                 visibility: visible !important;
@@ -227,14 +239,6 @@ export default function CustomDocument() {
                 backface-visibility: hidden !important;
                 /* Prevent iOS black screen bug */
                 -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
-              }
-              
-              /* ✅ Active short gets highest z-index */
-              [data-is-active="true"] {
-                z-index: 100 !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                display: block !important;
               }
               
               /* ✅ Inactive shorts pushed down */
