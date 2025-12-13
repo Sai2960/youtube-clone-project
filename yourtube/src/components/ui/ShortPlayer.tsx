@@ -1261,22 +1261,21 @@ return (
   ref={containerRef}
   className="relative w-full h-screen bg-black overflow-hidden"
   data-component="short-player"
-  data-short-id={short._id}
+data-short-id={short._id}  // ✅ 
   style={{
-    position: 'fixed',  // ✅ Changed to fixed
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    width: '100vw',
-    height: '100vh',
+    width: '100%',
+    height: '100%',
     minHeight: '100vh',
     overflow: 'hidden',
     backgroundColor: '#000',
     WebkitOverflowScrolling: 'touch',
-    zIndex: isActive ? 999998 : -1,  // ✅ Active on top, inactive hidden
-    visibility: isActive ? 'visible' : 'hidden',  // ✅ Hide inactive
-    pointerEvents: isActive ? 'auto' : 'none',
+    // ✅ CRITICAL: Remove isolation, use absolute positioning
+    zIndex: isActive ? 30 : 20,
   }}
 >
    {/* Video */}
@@ -1293,21 +1292,16 @@ return (
   preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
-  style={{
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    backgroundColor: '#000',
-    display: 'block',
-    position: 'fixed',  // ✅ Changed from absolute to fixed
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 999999,  // ✅ Force to absolute top
-    pointerEvents: 'auto',
-  visibility: 'visible !important' as any,
-  opacity: '1 !important' as any,
+style={{
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  backgroundColor: '#000',
+  display: 'block',
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  zIndex: 1, // ✅ Keep this
   WebkitTransform: 'translate3d(0,0,0)',
   transform: 'translate3d(0,0,0)',
   WebkitBackfaceVisibility: 'hidden',

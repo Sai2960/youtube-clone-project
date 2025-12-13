@@ -565,8 +565,9 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     maxHeight: '100vh',
     overflow: 'hidden',
     WebkitOverflowScrolling: 'touch',
-    display: 'block',
-    // ❌ REMOVED zIndex: 9999
+    display: 'block', // ✅ Changed from flex
+    zIndex: 9999,
+    // ✅ Force rendering
     WebkitTransform: 'translateZ(0)',
     transform: 'translateZ(0)',
   }}
@@ -603,9 +604,36 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
 
 
 {/* Shorts Container */}
-
 <div 
-  className="absolute inset-0 w-full h-full"
+  className="relative w-full h-full flex-1"
+  style={{
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    flex: '1 1 auto',
+    overflow: 'hidden',
+    minHeight: 0, // ✅ CRITICAL: Allows flex child to shrink
+  }}
+>
+  {shorts.map((short, index) => {
+    // Render current + adjacent
+    const shouldRender = Math.abs(index - currentIndex) <= 1;
+    if (!shouldRender) return null;
+
+    const isActive = index === currentIndex;
+    const position = index - currentIndex;
+
+    console.log(`📱 Rendering short ${index}:`, {
+      id: short._id,
+      isActive,
+      position,
+      videoUrl: short.videoUrl?.substring(0, 50),
+    });
+
+    return (
+      <div
+  key={short._id}
+  className="absolute inset-0"
   style={{
     position: 'absolute',
     top: 0,
@@ -614,55 +642,19 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     bottom: 0,
     width: '100%',
     height: '100%',
-    overflow: 'hidden',
-    // ✅ Remove flex, use absolute positioning
+    minHeight: '100vh', // ✅ CRITICAL
+    transform: `translateY(${position * 100}%)`,
+    transition: 'transform 300ms ease-out',
+    zIndex: isActive ? 30 : 20,
+    pointerEvents: isActive ? 'auto' : 'none',
+    willChange: 'transform',
+    WebkitTransform: `translateY(${position * 100}%)`,
+    WebkitTransition: 'transform 300ms ease-out',
   }}
->
- {shorts.map((short, index) => {
-  // ✅ ONLY render the active short (no pre-loading)
-  const isActive = index === currentIndex;
-  if (!isActive) return null;  // ✅ Don't render inactive shorts
-
-  const position = 0;  // ✅ Always centered
-    console.log(`📱 Rendering short ${index}:`, {
-      id: short._id,
-      isActive,
-      position,
-      videoUrl: short.videoUrl?.substring(0, 50),
-    });
-
-    
-return (
-  <div
-    key={short._id}
-    className="absolute inset-0"
-    style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      width: '100%',
-      height: '100%',
-      minHeight: '100vh',
-      transform: `translateY(${position * 100}%)`,
-      transition: 'transform 300ms ease-out',
-      zIndex: isActive ? 30 : 20,
-      pointerEvents: isActive ? 'auto' : 'none',
-      willChange: 'transform',
-      WebkitTransform: `translateY(${position * 100}%)`,
-      WebkitTransition: 'transform 300ms ease-out',
-      // ✅ CRITICAL: Force rendering
-      visibility: 'visible',
-      opacity: 1,
-      display: 'block',
-      overflow: 'hidden',
-      backgroundColor: '#000',
-    }}
-    data-short-index={index}
-    data-is-active={isActive}
-    data-short-id={short._id}
-  >
+        data-short-index={index}
+        data-is-active={isActive}
+        data-short-id={short._id}
+      >
         <ShortPlayer
           short={short}
           isActive={isActive}
