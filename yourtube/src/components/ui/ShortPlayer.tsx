@@ -1253,32 +1253,18 @@ const handleLike = async (e: React.MouseEvent) => {
   ];
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-screen bg-black select-none"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={() => {
-        if (isDragging && !isModalOpenRef.current) {
-          handleMouseUp();
-        }
-      }}
-      style={{
-        WebkitOverflowScrolling: "touch",
-        overscrollBehavior: "contain",
-        touchAction: "pan-y",
-        WebkitTapHighlightColor: "transparent",
-        WebkitTouchCallout: "none",
-        WebkitUserSelect: "none",
-        userSelect: "none",
-      }}
-    >
+  <div
+  ref={containerRef}
+  className="relative w-full h-screen bg-black select-none"
+  style={{
+    position: 'relative',
+    width: '100%',
+    height: '100vh',
+    overflow: 'hidden',
+  }}
+>
       {/* Video */}
-  <video
+<video
   ref={videoRef}
   src={short.videoUrl}
   className="w-full h-full object-contain cursor-pointer bg-black"
@@ -1290,15 +1276,15 @@ const handleLike = async (e: React.MouseEvent) => {
   crossOrigin="anonymous"
   onClick={togglePlayPause}
   style={{
-    WebkitTapHighlightColor: "transparent",
-    touchAction: "pan-y",
-    userSelect: "none",
-    WebkitUserSelect: "none",
-    display: "block",           // ✅ ADD THIS
-    visibility: "visible",       // ✅ ADD THIS
-    opacity: 1,                  // ✅ ADD THIS
-    position: "relative",        // ✅ ADD THIS
-    zIndex: 1,                   // ✅ ADD THIS
+    display: 'block',              // ✅ REMOVED !important
+    visibility: 'visible',         // ✅ REMOVED !important
+    opacity: 1,                    // ✅ REMOVED !important (changed from '1' to 1)
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+    backgroundColor: '#000',
   }}
   onError={(e) => {
     const video = e.currentTarget;
@@ -1308,13 +1294,9 @@ const handleLike = async (e: React.MouseEvent) => {
       url: short.videoUrl,
     });
     
-    // ✅ SIMPLIFIED: Single retry only
     if (!video.hasAttribute('data-retry')) {
       video.setAttribute('data-retry', 'true');
-      console.log("🔄 Retrying video load...");
-      setTimeout(() => {
-        video.load();
-      }, 500);
+      setTimeout(() => video.load(), 500);
     }
   }}
   onLoadedMetadata={() => console.log("✅ Metadata loaded")}
