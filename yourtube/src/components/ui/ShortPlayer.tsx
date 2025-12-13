@@ -1293,24 +1293,22 @@ return (
   preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
-  style={{
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    backgroundColor: '#000',
-    // ✅ CRITICAL: Force GPU rendering on mobile
-    display: 'block',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: 1,
-    WebkitTransform: 'translate3d(0,0,0)',
-    transform: 'translate3d(0,0,0)',
-    WebkitBackfaceVisibility: 'hidden',
-    backfaceVisibility: 'hidden',
-    // ✅ Force video layer
-    WebkitMaskImage: '-webkit-radial-gradient(white, black)',
-  }}
+style={{
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  backgroundColor: '#000',
+  display: 'block',
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  zIndex: 1, // ✅ Keep this
+  WebkitTransform: 'translate3d(0,0,0)',
+  transform: 'translate3d(0,0,0)',
+  WebkitBackfaceVisibility: 'hidden',
+  backfaceVisibility: 'hidden',
+  WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+}}
   // ✅ Add poster image to show something while loading
   poster={short.thumbnailUrl || undefined}
   onLoadStart={() => {
@@ -1373,13 +1371,40 @@ return (
 />
 
       {/* Gradients */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
-      </div>
+   {/* Gradients */}
+<div 
+  className="absolute inset-0 pointer-events-none"
+  style={{
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10, // ✅ Above video (z-index: 1) but below controls (z-index: 30+)
+    pointerEvents: 'none',
+  }}
+>
+  <div 
+    className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent"
+    style={{ pointerEvents: 'none' }}
+  />
+  <div 
+    className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black/90 via-black/60 to-transparent"
+    style={{ pointerEvents: 'none' }}
+  />
+</div>
       {/* Header with Theme-Compatible Menu */}
-      <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[50] pointer-events-auto">
-        {/* Shorts button - HIDDEN on desktop (md and above) */}
+<div 
+  className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto"
+  style={{
+    position: 'absolute',
+    top: '1rem',
+    left: '1rem',
+    right: '1rem',
+    zIndex: 50, // ✅ Above everything
+    pointerEvents: 'auto',
+  }}
+>        {/* Shorts button - HIDDEN on desktop (md and above) */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -1922,8 +1947,22 @@ return (
       )}
 
       {/* MOBILE OPTIMIZED CONTENT SECTION */}
-      <div className="absolute bottom-0 left-0 right-0 z-[30]">
-        <div className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24">
+      
+<div 
+  className="absolute bottom-0 left-0 right-0"
+  style={{
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30, // ✅ Above gradient (10) and video (1)
+    pointerEvents: 'none', // ✅ Let touches pass through
+  }}
+>
+  <div 
+    className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24"
+    style={{ pointerEvents: 'auto' }} // ✅ But make buttons clickable
+  >
           <div className="flex items-end justify-between gap-3 md:gap-4 lg:gap-6">
             {/* Left Content */}
             <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-140px)] lg:max-w-[calc(100%-160px)]">
