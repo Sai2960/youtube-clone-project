@@ -1246,22 +1246,22 @@ const handleLike = async (e: React.MouseEvent) => {
 
 return (
   <div
-  ref={containerRef}
-  className="fixed inset-0 bg-black"
-  style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100vw',
-    height: '100vh',
-    overflow: 'hidden',
-    isolation: 'isolate',
-    contain: 'strict',
-  }}
-  data-page="shorts"
->
+    ref={containerRef}
+    className="relative w-full h-screen bg-black overflow-hidden"
+    data-component="short-player"
+    data-short-id={short._id}
+    data-is-active={isActive}
+    style={{
+      position: 'relative',
+      width: '100%',
+      height: '100vh',
+      minHeight: '100vh',
+      maxHeight: '100vh',
+      overflow: 'hidden',
+      isolation: 'isolate',
+      backgroundColor: '#000',
+    }}
+  >
       {/* Video */}
 <video
   ref={videoRef}
@@ -1271,22 +1271,61 @@ return (
   playsInline
   webkit-playsinline="true"
   x5-playsinline="true"
+  x-webkit-airplay="allow"
   preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
   style={{
     position: 'absolute',
-    inset: 0,
+    top: 0,
+    left: 0,
     width: '100%',
     height: '100%',
-    objectFit: 'contain', // ✅ Better for all aspect ratios
+    objectFit: 'contain',
     objectPosition: 'center',
     backgroundColor: '#000',
     display: 'block',
     visibility: 'visible',
     opacity: 1,
     zIndex: 1,
+    WebkitTransform: 'translate3d(0,0,0)',
+    transform: 'translate3d(0,0,0)',
   }}
+  onError={(e) => {
+    const video = e.currentTarget;
+    console.error("❌ VIDEO ERROR:", {
+      code: video.error?.code,
+      message: video.error?.message,
+      url: short.videoUrl,
+    });
+    
+    if (!video.hasAttribute('data-retry')) {
+      video.setAttribute('data-retry', 'true');
+      setTimeout(() => {
+        video.load();
+        video.play().catch(err => console.error("Retry failed:", err));
+      }, 500);
+    }
+  }}
+  onLoadedMetadata={(e) => {
+    console.log("✅ Metadata loaded");
+    const video = e.currentTarget;
+    // Force display
+    video.style.display = 'block';
+    video.style.visibility = 'visible';
+    video.style.opacity = '1';
+    
+    // Try to play
+    if (isActive) {
+      video.play().catch(err => {
+        console.log("Autoplay blocked, trying muted:", err);
+        video.muted = true;
+        video.play();
+      });
+    }
+  }}
+  onCanPlay={() => console.log("✅ Can play")}
+  onPlaying={() => console.log("▶️ Playing")}
 />
 
       {/* Gradients */}
