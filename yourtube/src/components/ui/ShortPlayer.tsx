@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/rules-of-hooks */
+
 /* eslint-disable react-hooks/exhaustive-deps */
 // components/ui/ShortPlayer.tsx - COMPLETE WITH UNIFIED AVATAR UTILS
 
@@ -420,7 +420,6 @@ useEffect(() => {
     currentTime: video.currentTime,
     paused: video.paused,
   });
-
   // ✅ CRITICAL: Always pause inactive videos to prevent audio mixing
   if (!isActive) {
     console.log("⏸️ Pausing inactive video:", short._id);
@@ -482,122 +481,6 @@ useEffect(() => {
   }
 }, [isActive, short._id, isModalOpenRef.current]);
 
-
-  // ✅ ADD: Passive event listener fix
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const preventDefaultTouch = (e: TouchEvent) => {
-      if (isModalOpenRef.current) return;
-
-      const target = e.target as HTMLElement;
-      // Don't prevent on buttons, inputs, or scrollable content
-      if (
-        target.tagName === "BUTTON" ||
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.closest(".volume-control") ||
-        target.closest('[class*="Modal"]')
-      ) {
-        return;
-      }
-
-      // Only prevent vertical scroll
-      const touch = e.touches[0];
-      const deltaY = Math.abs(touch.clientY - touchStartYRef.current);
-      const deltaX = Math.abs(touch.clientX - (touchStartYRef.current || 0));
-
-      if (deltaY > deltaX && deltaY > 10) {
-        e.preventDefault();
-      }
-    };
-
-    // Use non-passive listener to allow preventDefault
-    container.addEventListener("touchmove", preventDefaultTouch, {
-      passive: false,
-    });
-
-    return () => {
-      container.removeEventListener("touchmove", preventDefaultTouch);
-    };
-  }, []);
-
-  
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleVideoEnd = () => {
-      if (!isModalOpenRef.current) {
-        onNext();
-      }
-    };
-
-    video.addEventListener("ended", handleVideoEnd);
-    return () => video.removeEventListener("ended", handleVideoEnd);
-  }, [onNext]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showMenu && !(event.target as Element).closest(".menu-button")) {
-        setShowMenu(false);
-      }
-      if (
-        showVolumeSlider &&
-        !(event.target as Element).closest(".volume-control")
-      ) {
-        setShowVolumeSlider(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showMenu, showVolumeSlider]);
-
-  // Touch/Mouse handlers
-  // ✅ OPTIMIZED Touch/Mouse handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (isModalOpenRef.current) return;
-
-    const y = e.targetTouches[0].clientY;
-    touchStartYRef.current = y;
-    touchEndYRef.current = y;
-    setTouchStart(y);
-    setTouchEnd(y);
-    dragStartTimeRef.current = Date.now();
-    touchMoveCountRef.current = 0;
-    setIsDragging(false);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (isModalOpenRef.current) return;
-
-    // Throttle: only process every 3rd move event
-    touchMoveCountRef.current++;
-    if (touchMoveCountRef.current % 3 !== 0) return;
-
-    const y = e.targetTouches[0].clientY;
-    touchEndYRef.current = y;
-    setTouchEnd(y);
-
-    const distance = Math.abs(touchStartYRef.current - y);
-    if (distance > 15) {
-      // Increased threshold
-      setIsDragging(true);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (isModalOpenRef.current) return;
-
-    const distance = touchStartYRef.current - touchEndYRef.current;
-    const minSwipeDistance = 60; // Increased from 50
-    const dragDuration = Date.now() - dragStartTimeRef.current;
-    const velocity = Math.abs(distance) / (dragDuration + 1);
-
-    // 🔍 COMPREHENSIVE VIDEO DEBUG
 useEffect(() => {
   const runDiagnostics = () => {
     const video = videoRef.current;
@@ -615,8 +498,8 @@ useEffect(() => {
       exists: !!video,
       src: video.src,
       currentSrc: video.currentSrc,
-      readyState: video.readyState, // 0=nothing, 1=metadata, 2=currentData, 3=futureData, 4=enoughData
-      networkState: video.networkState, // 0=empty, 1=idle, 2=loading, 3=no_source
+      readyState: video.readyState,
+      networkState: video.networkState,
       paused: video.paused,
       muted: video.muted,
       volume: video.volume,
@@ -737,6 +620,123 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }
 }, [isActive, short._id]);
+
+
+  // ✅ ADD: Passive event listener fix
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const preventDefaultTouch = (e: TouchEvent) => {
+      if (isModalOpenRef.current) return;
+
+      const target = e.target as HTMLElement;
+      // Don't prevent on buttons, inputs, or scrollable content
+      if (
+        target.tagName === "BUTTON" ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.closest(".volume-control") ||
+        target.closest('[class*="Modal"]')
+      ) {
+        return;
+      }
+
+      // Only prevent vertical scroll
+      const touch = e.touches[0];
+      const deltaY = Math.abs(touch.clientY - touchStartYRef.current);
+      const deltaX = Math.abs(touch.clientX - (touchStartYRef.current || 0));
+
+      if (deltaY > deltaX && deltaY > 10) {
+        e.preventDefault();
+      }
+    };
+
+    // Use non-passive listener to allow preventDefault
+    container.addEventListener("touchmove", preventDefaultTouch, {
+      passive: false,
+    });
+
+    return () => {
+      container.removeEventListener("touchmove", preventDefaultTouch);
+    };
+  }, []);
+
+  
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleVideoEnd = () => {
+      if (!isModalOpenRef.current) {
+        onNext();
+      }
+    };
+
+    video.addEventListener("ended", handleVideoEnd);
+    return () => video.removeEventListener("ended", handleVideoEnd);
+  }, [onNext]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMenu && !(event.target as Element).closest(".menu-button")) {
+        setShowMenu(false);
+      }
+      if (
+        showVolumeSlider &&
+        !(event.target as Element).closest(".volume-control")
+      ) {
+        setShowVolumeSlider(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showMenu, showVolumeSlider]);
+
+  // Touch/Mouse handlers
+  // ✅ OPTIMIZED Touch/Mouse handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isModalOpenRef.current) return;
+
+    const y = e.targetTouches[0].clientY;
+    touchStartYRef.current = y;
+    touchEndYRef.current = y;
+    setTouchStart(y);
+    setTouchEnd(y);
+    dragStartTimeRef.current = Date.now();
+    touchMoveCountRef.current = 0;
+    setIsDragging(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isModalOpenRef.current) return;
+
+    // Throttle: only process every 3rd move event
+    touchMoveCountRef.current++;
+    if (touchMoveCountRef.current % 3 !== 0) return;
+
+    const y = e.targetTouches[0].clientY;
+    touchEndYRef.current = y;
+    setTouchEnd(y);
+
+    const distance = Math.abs(touchStartYRef.current - y);
+    if (distance > 15) {
+      // Increased threshold
+      setIsDragging(true);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isModalOpenRef.current) return;
+
+    const distance = touchStartYRef.current - touchEndYRef.current;
+    const minSwipeDistance = 60; // Increased from 50
+    const dragDuration = Date.now() - dragStartTimeRef.current;
+    const velocity = Math.abs(distance) / (dragDuration + 1);
+
+    // 🔍 COMPREHENSIVE VIDEO DEBUG
     
     // Throttle navigation (prevent rapid swipes)
     const timeSinceLastNav = Date.now() - lastNavigationTimeRef.current;

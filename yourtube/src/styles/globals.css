@@ -11646,20 +11646,3 @@ button {
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-/* Force shorts video visibility - Safety net */
-[data-component="short-player"] video {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Ensure shorts container is visible */
-[data-page="shorts"] {
-  display: block !important;
-  visibility: visible !important;
-}
-
-/* Shorts thumbnail hover effect */
-.group\/thumbnail:hover .play-icon-overlay {
-  opacity: 1;
-}
