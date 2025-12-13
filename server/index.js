@@ -277,11 +277,16 @@ app.use(
 );
 
 // ✅ CRITICAL: Video streaming with Range support for Shorts
+// ✅ ENHANCED: Better error handling and CORS
 app.get('/uploads/shorts/videos/:filename', (req, res) => {
   const filename = req.params.filename;
   const videoPath = path.join(__dirname, 'uploads', 'shorts', 'videos', filename);
   
-  console.log('🎬 Shorts video stream request:', filename);
+  console.log('🎬 Video request:', {
+    filename,
+    path: videoPath,
+    exists: fs.existsSync(videoPath)
+  });
   
   if (!fs.existsSync(videoPath)) {
     console.error('❌ Video file not found:', videoPath);
@@ -292,13 +297,14 @@ app.get('/uploads/shorts/videos/:filename', (req, res) => {
   const fileSize = stat.size;
   const range = req.headers.range;
   
-  // CORS headers
+  // ✅ CRITICAL: Set CORS headers FIRST
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
   res.setHeader('Accept-Ranges', 'bytes');
   res.setHeader('Content-Type', 'video/mp4');
+  res.setHeader('Cache-Control', 'public, max-age=31536000'); // ✅ ADD: Cache for 1 year
   
   if (range) {
     const parts = range.replace(/bytes=/, "").split("-");
