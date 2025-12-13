@@ -417,52 +417,50 @@ useEffect(() => {
     modalOpen: isModalOpenRef.current,
     videoSrc: video.src,
     readyState: video.readyState,
-    // ✅ ADD: Check computed styles
-    computedDisplay: window.getComputedStyle(video).display,
-    computedVisibility: window.getComputedStyle(video).visibility,
-    computedOpacity: window.getComputedStyle(video).opacity,
   });
 
-if (isActive && !isModalOpenRef.current) {
-    // Video visibility is handled by inline styles in JSX
-    // Just ensure attributes are set
+  if (isActive && !isModalOpenRef.current) {
     video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
     
     const attemptPlay = async () => {
-      if (video.readyState >= 2) {
-        try {
-          await video.play();
-          console.log("✅ Video playing");
-          setIsPlaying(true);
-          
-          if (!isMuted) {
-            setTimeout(() => {
-              video.muted = false;
-            }, 200);
-          }
-        } catch (err) {
-          console.error("❌ Play failed:", err);
-          
-          try {
-            video.muted = true;
-            await video.play();
-            console.log("✅ Playing muted");
-            setIsPlaying(true);
-          } catch (e) {
-            console.error("❌ Final play failed:", e);
-          }
+      try {
+        // Wait for video to be ready
+        if (video.readyState < 2) {
+          console.log("⏳ Waiting for video to load...");
+          await new Promise((resolve) => {
+            video.addEventListener('canplay', resolve, { once: true });
+            video.load();
+          });
         }
-      } else {
-        console.log("⏳ Waiting for video to load...");
-        video.addEventListener('canplay', attemptPlay, { once: true });
+
+        console.log("🎯 Attempting to play video");
+        await video.play();
+        console.log("✅ Video playing successfully");
+        setIsPlaying(true);
+        
+        if (!isMuted) {
+          setTimeout(() => {
+            video.muted = false;
+          }, 200);
+        }
+      } catch (err) {
+        console.error("❌ Play failed:", err);
+        
+        try {
+          console.log("🔄 Retrying with muted...");
+          video.muted = true;
+          await video.play();
+          console.log("✅ Playing muted");
+          setIsPlaying(true);
+        } catch (e) {
+          console.error("❌ Final play attempt failed:", e);
+        }
       }
     };
 
-    if (video.readyState < 2) {
-      video.load();
-    }
-    
-    requestAnimationFrame(attemptPlay);
+    // Small delay to ensure DOM is ready
+    setTimeout(attemptPlay, 100);
     
   } else {
     video.pause();
@@ -1255,41 +1253,41 @@ return (
       position: 'relative',
       width: '100%',
       height: '100vh',
-      minHeight: '100vh',
-      maxHeight: '100vh',
+      minHeight: '-webkit-fill-available', // iOS fix
       overflow: 'hidden',
       isolation: 'isolate',
       backgroundColor: '#000',
+      WebkitOverflowScrolling: 'touch',
     }}
   >
       {/* Video */}
 <video
   ref={videoRef}
   src={short.videoUrl}
+  data-component="short-player"
   className="w-full h-full cursor-pointer"
   loop
   playsInline
+  muted={false}
+  autoPlay={false}
   webkit-playsinline="true"
   x5-playsinline="true"
   x-webkit-airplay="allow"
-  preload="auto"
+  preload="metadata"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
   style={{
     position: 'absolute',
     top: 0,
     left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
     height: '100%',
     objectFit: 'contain',
     objectPosition: 'center',
     backgroundColor: '#000',
-    display: 'block',
-    visibility: 'visible',
-    opacity: 1,
     zIndex: 1,
-    WebkitTransform: 'translate3d(0,0,0)',
-    transform: 'translate3d(0,0,0)',
   }}
   onError={(e) => {
     const video = e.currentTarget;
@@ -1307,25 +1305,33 @@ return (
       }, 500);
     }
   }}
-  onLoadedMetadata={(e) => {
-    console.log("✅ Metadata loaded");
+  onLoadedData={(e) => {
+    console.log("✅ Data loaded, can start playing");
     const video = e.currentTarget;
-    // Force display
-    video.style.display = 'block';
-    video.style.visibility = 'visible';
-    video.style.opacity = '1';
     
-    // Try to play
-    if (isActive) {
-      video.play().catch(err => {
-        console.log("Autoplay blocked, trying muted:", err);
-        video.muted = true;
-        video.play();
-      });
+    if (isActive && !isModalOpenRef.current) {
+      setTimeout(() => {
+        video.play().catch(err => {
+          console.log("Autoplay blocked, trying muted:", err);
+          video.muted = true;
+          video.play().then(() => {
+            console.log("✅ Playing muted");
+            setIsPlaying(true);
+          });
+        });
+      }, 100);
     }
   }}
   onCanPlay={() => console.log("✅ Can play")}
+  onPlay={() => {
+    console.log("▶️ Video started playing");
+    setIsPlaying(true);
+  }}
   onPlaying={() => console.log("▶️ Playing")}
+  onPause={() => {
+    console.log("⏸️ Video paused");
+    setIsPlaying(false);
+  }}
 />
 
       {/* Gradients */}
