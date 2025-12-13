@@ -191,13 +191,14 @@ useEffect(() => {
 
         // ✅ Validate video URLs
       // ✅ Validate video URLs more thoroughly
+// Around line 155, update the validation:
 const validShorts = newShorts.filter(short => {
   if (!short.videoUrl) {
     console.error("❌ Short missing video URL:", short._id, short.title);
     return false;
   }
   
-  // Check if URL is accessible
+  // ✅ ENHANCED: Check if URL is accessible
   const url = short.videoUrl;
   const isValid = url.startsWith('http://') || 
                   url.startsWith('https://') || 
@@ -207,6 +208,17 @@ const validShorts = newShorts.filter(short => {
   if (!isValid) {
     console.error("❌ Invalid video URL format:", url);
     return false;
+  }
+  
+  // ✅ NEW: Check if Cloudinary URL is properly formatted
+  if (url.includes('cloudinary.com')) {
+    const hasProtocol = url.startsWith('https://');
+    const hasPath = url.includes('/upload/');
+    
+    if (!hasProtocol || !hasPath) {
+      console.error("❌ Malformed Cloudinary URL:", url);
+      return false;
+    }
   }
   
   console.log("✅ Valid short:", short._id, url.substring(0, 50));

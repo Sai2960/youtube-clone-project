@@ -410,165 +410,75 @@ useEffect(() => {
 
 useEffect(() => {
   const video = videoRef.current;
-  if (!video) {
-    console.log("❌ No video ref");
-    return;
-  }
+  if (!video) return;
 
-  console.log("\n🔵 ===== VIDEO PLAYBACK DEBUG =====");
-  console.log("Short ID:", short._id);
-  console.log("Is Active:", isActive);
-  console.log("Modal Open:", isModalOpenRef.current);
-  console.log("Video URL:", short.videoUrl);
-  console.log("Video Element:", video);
+  console.log("🎬 Video playback check:", {
+    isActive,
+    modalOpen: isModalOpenRef.current,
+    videoSrc: video.src,
+    readyState: video.readyState,
+  });
 
   if (isActive && !isModalOpenRef.current) {
-    console.log("\n🎬 Starting video playback...");
+    // ✅ Ensure video is visible
+    video.style.display = "block";
+    video.style.visibility = "visible";
+    video.style.opacity = "1";
     
     // Set attributes
     video.setAttribute("playsinline", "true");
     video.setAttribute("webkit-playsinline", "true");
-    video.setAttribute("x5-playsinline", "true");
     video.preload = "auto";
     
-    console.log("📋 Video attributes set:", {
-      playsinline: video.getAttribute("playsinline"),
-      preload: video.preload,
-      src: video.src,
-      currentSrc: video.currentSrc,
-    });
-
-    // Check initial state
-    console.log("📊 Initial video state:", {
-      readyState: video.readyState,
-      networkState: video.networkState,
-      paused: video.paused,
-      ended: video.ended,
-      seeking: video.seeking,
-      duration: video.duration,
-      currentTime: video.currentTime,
-      videoWidth: video.videoWidth,
-      videoHeight: video.videoHeight,
-    });
-
     // Mute for autoplay
-    const shouldMute = isMuted;
-    video.muted = shouldMute;
-    console.log("🔇 Muted:", video.muted);
-
-    // Add event listeners for debugging
-    const eventLogger = (eventName: string) => (e: Event) => {
-      console.log(`📺 Video Event: ${eventName}`, {
-        readyState: video.readyState,
-        networkState: video.networkState,
-        currentTime: video.currentTime,
-        duration: video.duration,
-        paused: video.paused,
-        videoWidth: video.videoWidth,
-        videoHeight: video.videoHeight,
-      });
-    };
-
-    video.addEventListener('loadstart', eventLogger('loadstart'));
-    video.addEventListener('durationchange', eventLogger('durationchange'));
-    video.addEventListener('loadedmetadata', eventLogger('loadedmetadata'));
-    video.addEventListener('loadeddata', eventLogger('loadeddata'));
-    video.addEventListener('canplay', eventLogger('canplay'));
-    video.addEventListener('canplaythrough', eventLogger('canplaythrough'));
-    video.addEventListener('playing', eventLogger('playing'));
-    video.addEventListener('waiting', eventLogger('waiting'));
-    video.addEventListener('seeking', eventLogger('seeking'));
-    video.addEventListener('seeked', eventLogger('seeked'));
-    video.addEventListener('stalled', eventLogger('stalled'));
-    video.addEventListener('suspend', eventLogger('suspend'));
-    video.addEventListener('abort', eventLogger('abort'));
-    video.addEventListener('error', (e) => {
-      console.error('❌ VIDEO ERROR EVENT:', {
-        error: video.error,
-        code: video.error?.code,
-        message: video.error?.message,
-        networkState: video.networkState,
-        readyState: video.readyState,
-      });
-    });
-
-    // Attempt play
-    const attemptPlay = () => {
-      console.log("\n▶️ Attempting to play...");
-      console.log("   Ready state:", video.readyState);
-      console.log("   Network state:", video.networkState);
-      console.log("   Video dimensions:", video.videoWidth, "x", video.videoHeight);
-      console.log("   Duration:", video.duration);
-      
+    video.muted = isMuted;
+    
+    // ✅ SIMPLIFIED play logic
+    const attemptPlay = async () => {
       if (video.readyState >= 2) {
-        console.log("✅ Video ready, calling play()...");
-        
-        const playPromise = video.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log("✅✅✅ PLAY SUCCESS!");
-              console.log("   Now playing:", {
-                paused: video.paused,
-                currentTime: video.currentTime,
-                duration: video.duration,
-                videoWidth: video.videoWidth,
-                videoHeight: video.videoHeight,
-              });
-              setIsPlaying(true);
-              
-              if (!shouldMute) {
-                setTimeout(() => {
-                  video.muted = false;
-                  console.log("🔊 Unmuted");
-                }, 200);
-              }
-            })
-            .catch((err) => {
-              console.error("❌ PLAY FAILED:", err);
-              console.error("   Error name:", err.name);
-              console.error("   Error message:", err.message);
-              
-              // Retry with mute
-              console.log("🔄 Retrying with mute...");
-              video.muted = true;
-              
-              setTimeout(() => {
-                video.play()
-                  .then(() => {
-                    console.log("✅ Playing muted");
-                    setIsPlaying(true);
-                  })
-                  .catch((e) => {
-                    console.error("❌❌ FINAL PLAY FAILED:", e);
-                    setIsPlaying(false);
-                  });
-              }, 300);
-            });
+        try {
+          await video.play();
+          console.log("✅ Video playing");
+          setIsPlaying(true);
+          
+          // Unmute after playback starts
+          if (!isMuted) {
+            setTimeout(() => {
+              video.muted = false;
+            }, 200);
+          }
+        } catch (err) {
+          console.error("❌ Play failed:", err);
+          
+          // Try once with mute
+          try {
+            video.muted = true;
+            await video.play();
+            console.log("✅ Playing muted");
+            setIsPlaying(true);
+          } catch (e) {
+            console.error("❌ Final play failed:", e);
+          }
         }
       } else {
-        console.log("⏳ Not ready yet, waiting for loadeddata...");
-        video.addEventListener('loadeddata', attemptPlay, { once: true });
+        console.log("⏳ Waiting for video to load...");
+        video.addEventListener('canplay', attemptPlay, { once: true });
       }
     };
 
     // Force load if needed
     if (video.readyState < 2) {
-      console.log("📥 Loading video...");
       video.load();
     }
     
     requestAnimationFrame(attemptPlay);
     
   } else {
-    console.log("⏸️ Pausing video (not active or modal open)");
     video.pause();
     setIsPlaying(false);
   }
-  
-  console.log("===== END VIDEO DEBUG =====\n");
 }, [isActive, isMuted, short._id]);
+
 
 
   // ✅ ADD: Passive event listener fix
@@ -611,24 +521,7 @@ useEffect(() => {
     };
   }, []);
 
-  // ✅ ADD: Prevent modal interference
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (isModalOpenRef.current && isPlaying) {
-      video.pause();
-      setIsPlaying(false);
-    } else if (!isModalOpenRef.current && isActive && !isPlaying) {
-      const timer = setTimeout(() => {
-        video
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch(() => {});
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isModalOpenRef.current, isActive]);
+  
 
   useEffect(() => {
     const video = videoRef.current;
@@ -1385,7 +1278,7 @@ const handleLike = async (e: React.MouseEvent) => {
       }}
     >
       {/* Video */}
-   <video
+  <video
   ref={videoRef}
   src={short.videoUrl}
   className="w-full h-full object-contain cursor-pointer bg-black"
@@ -1396,116 +1289,37 @@ const handleLike = async (e: React.MouseEvent) => {
   preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
-  onError={(e) => {
-    const video = e.currentTarget;
-    
-    console.error("\n🚨 ===== VIDEO ERROR =====");
-    console.error("URL:", short.videoUrl);
-    console.error("Error code:", video.error?.code);
-    console.error("Error message:", video.error?.message);
-    console.error("Network state:", video.networkState);
-    console.error("Ready state:", video.readyState);
-    console.error("Current src:", video.currentSrc);
-    
-    // Error code meanings
-    const errorCodes: Record<number, string> = {
-      1: "MEDIA_ERR_ABORTED - Video loading aborted",
-      2: "MEDIA_ERR_NETWORK - Network error",
-      3: "MEDIA_ERR_DECODE - Video decoding failed",
-      4: "MEDIA_ERR_SRC_NOT_SUPPORTED - Video format not supported",
-    };
-    
-    if (video.error?.code) {
-      console.error("Error explanation:", errorCodes[video.error.code]);
-    }
-    
-    // Network state meanings
-    const networkStates: Record<number, string> = {
-      0: "NETWORK_EMPTY - No data",
-      1: "NETWORK_IDLE - Not loading",
-      2: "NETWORK_LOADING - Loading data",
-      3: "NETWORK_NO_SOURCE - No source found",
-    };
-    
-    console.error("Network state:", networkStates[video.networkState]);
-    
-    // Check if URL is accessible
-    fetch(short.videoUrl, { method: 'HEAD' })
-      .then(response => {
-        console.log("📡 URL Check:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: {
-            contentType: response.headers.get('content-type'),
-            contentLength: response.headers.get('content-length'),
-            acceptRanges: response.headers.get('accept-ranges'),
-            cors: response.headers.get('access-control-allow-origin'),
-          }
-        });
-      })
-      .catch(err => {
-        console.error("❌ URL not accessible:", err);
-      });
-    
-    console.error("===== END ERROR =====\n");
-    
-    // Retry logic
-    if (!video.dataset.retried) {
-      video.dataset.retried = "true";
-      console.log("🔄 Retry attempt 1...");
-      setTimeout(() => {
-        video.src = "";
-        video.src = short.videoUrl;
-        video.load();
-      }, 500);
-    } else if (!video.dataset.secondRetry) {
-      video.dataset.secondRetry = "true";
-      console.log("🔄 Retry attempt 2 with cache bypass...");
-      setTimeout(() => {
-        const url = short.videoUrl;
-        video.src = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
-        video.load();
-      }, 1000);
-    }
-  }}
-  onLoadedMetadata={(e) => {
-    const video = e.currentTarget;
-    console.log("✅ Metadata loaded:", {
-      duration: video.duration,
-      videoWidth: video.videoWidth,
-      videoHeight: video.videoHeight,
-    });
-  }}
-  onLoadedData={() => {
-    console.log("✅ Data loaded - ready to play");
-  }}
-  onCanPlay={() => {
-    console.log("✅ Can play");
-  }}
-  onCanPlayThrough={() => {
-    console.log("✅ Can play through");
-  }}
-  onWaiting={() => {
-    console.log("⏳ Buffering...");
-  }}
-  onPlaying={() => {
-    console.log("▶️ Playing NOW");
-  }}
-  onPause={() => {
-    console.log("⏸️ Paused");
-  }}
-  onStalled={() => {
-    console.log("⚠️ Stalled");
-  }}
-  onSuspend={() => {
-    console.log("⚠️ Suspended");
-  }}
   style={{
     WebkitTapHighlightColor: "transparent",
     touchAction: "pan-y",
     userSelect: "none",
     WebkitUserSelect: "none",
+    display: "block",           // ✅ ADD THIS
+    visibility: "visible",       // ✅ ADD THIS
+    opacity: 1,                  // ✅ ADD THIS
+    position: "relative",        // ✅ ADD THIS
+    zIndex: 1,                   // ✅ ADD THIS
   }}
+  onError={(e) => {
+    const video = e.currentTarget;
+    console.error("❌ VIDEO ERROR:", {
+      code: video.error?.code,
+      message: video.error?.message,
+      url: short.videoUrl,
+    });
+    
+    // ✅ SIMPLIFIED: Single retry only
+    if (!video.hasAttribute('data-retry')) {
+      video.setAttribute('data-retry', 'true');
+      console.log("🔄 Retrying video load...");
+      setTimeout(() => {
+        video.load();
+      }, 500);
+    }
+  }}
+  onLoadedMetadata={() => console.log("✅ Metadata loaded")}
+  onCanPlay={() => console.log("✅ Can play")}
+  onPlaying={() => console.log("▶️ Playing")}
 />
 
       {/* Gradients */}
