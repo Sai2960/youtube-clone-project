@@ -1266,11 +1266,10 @@ return (
   >
       {/* Video */}
 
-
 <video
   ref={videoRef}
   src={short.videoUrl}
-  className="w-full h-full object-contain cursor-pointer bg-black"
+  className="w-full h-full cursor-pointer"
   loop
   playsInline
   webkit-playsinline="true"
@@ -1279,27 +1278,17 @@ return (
   crossOrigin="anonymous"
   onClick={togglePlayPause}
   style={{
-    // ✅ CRITICAL: Force display with !important in React
-    display: 'block !important' as any,
-    visibility: 'visible !important' as any,
-    opacity: '1 !important' as any,
     position: 'absolute',
     inset: 0,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     width: '100%',
     height: '100%',
-    minWidth: '100%',
-    minHeight: '100%',
-    maxWidth: '100%',
-    maxHeight: '100%',
-    zIndex: 1,
+    objectFit: 'cover', // ✅ Changed from 'contain' to 'cover' - fills screen like real YouTube
     backgroundColor: '#000',
-    objectFit: 'contain',
-    // ✅ Add these to ensure rendering
-    transform: 'translateZ(0)', // Force GPU acceleration
+    display: 'block',
+    visibility: 'visible',
+    opacity: 1,
+    zIndex: 1,
+    transform: 'translateZ(0)',
     WebkitTransform: 'translateZ(0)',
     willChange: 'transform',
   }}
@@ -1318,7 +1307,6 @@ return (
   }}
   onLoadedMetadata={() => {
     console.log("✅ Metadata loaded");
-    // ✅ Force display after metadata loads
     const video = videoRef.current;
     if (video) {
       video.style.display = 'block';
