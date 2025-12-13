@@ -1246,26 +1246,23 @@ const handleLike = async (e: React.MouseEvent) => {
 
 return (
   <div
-    ref={containerRef}
-    className="relative w-full h-screen bg-black select-none"
-    data-component="short-player"
-    data-short-id={short._id}
-    data-is-active={isActive}
-    style={{
-      position: 'relative',
-      width: '100%',
-      height: '100vh',
-      overflow: 'hidden',
-      display: 'block',
-      visibility: 'visible',
-      opacity: 1,
-      transform: 'translateZ(0)',
-      WebkitTransform: 'translateZ(0)',
-      willChange: 'transform',
-    }}
-  >
+  ref={containerRef}
+  className="fixed inset-0 bg-black"
+  style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100vw',
+    height: '100vh',
+    overflow: 'hidden',
+    isolation: 'isolate',
+    contain: 'strict',
+  }}
+  data-page="shorts"
+>
       {/* Video */}
-
 <video
   ref={videoRef}
   src={short.videoUrl}
@@ -1282,40 +1279,14 @@ return (
     inset: 0,
     width: '100%',
     height: '100%',
-    objectFit: 'cover', // ✅ Changed from 'contain' to 'cover' - fills screen like real YouTube
+    objectFit: 'contain', // ✅ Better for all aspect ratios
+    objectPosition: 'center',
     backgroundColor: '#000',
     display: 'block',
     visibility: 'visible',
     opacity: 1,
     zIndex: 1,
-    transform: 'translateZ(0)',
-    WebkitTransform: 'translateZ(0)',
-    willChange: 'transform',
   }}
-  onError={(e) => {
-    const video = e.currentTarget;
-    console.error("❌ VIDEO ERROR:", {
-      code: video.error?.code,
-      message: video.error?.message,
-      url: short.videoUrl,
-    });
-    
-    if (!video.hasAttribute('data-retry')) {
-      video.setAttribute('data-retry', 'true');
-      setTimeout(() => video.load(), 500);
-    }
-  }}
-  onLoadedMetadata={() => {
-    console.log("✅ Metadata loaded");
-    const video = videoRef.current;
-    if (video) {
-      video.style.display = 'block';
-      video.style.visibility = 'visible';
-      video.style.opacity = '1';
-    }
-  }}
-  onCanPlay={() => console.log("✅ Can play")}
-  onPlaying={() => console.log("▶️ Playing")}
 />
 
       {/* Gradients */}

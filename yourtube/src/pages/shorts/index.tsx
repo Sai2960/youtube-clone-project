@@ -553,7 +553,7 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
 
       <div
   ref={containerRef}
-  className="fixed inset-0 bg-black overflow-hidden"
+  className="fixed inset-0 bg-black"
   style={{
     position: 'fixed',
     top: 0,
@@ -563,13 +563,8 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     width: '100vw',
     height: '100vh',
     overflow: 'hidden',
-    WebkitOverflowScrolling: "touch",
-    overscrollBehavior: "contain",
-    touchAction: "pan-y",
-    zIndex: 50,
-    // ✅ Force visibility
-    display: 'block',
-    visibility: 'visible',
+    isolation: 'isolate', // ✅ Creates new stacking context
+    contain: 'strict', // ✅ CSS containment
   }}
   data-page="shorts"
 >
@@ -626,21 +621,24 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     });
 
     return (
-      <div
-        key={short._id}
-        className="absolute inset-0 transition-transform duration-300 ease-out"
-        style={{
-          transform: `translateY(${position * 100}%)`,
-          zIndex: isActive ? 20 : 10,
-          pointerEvents: isActive ? "auto" : "none",
-          // ✅ ADD: Force visibility
-          overflow: 'visible',
-          willChange: 'transform',
-        }}
-        data-short-index={index}
-        data-is-active={isActive}
-        data-position={position}
-      >
+     // ✅ CORRECT - properly isolated
+<div
+  key={short._id}
+  className="absolute inset-0 transition-transform duration-300 ease-out"
+  style={{
+    transform: `translateY(${position * 100}%)`,
+    zIndex: isActive ? 20 : 10,
+    pointerEvents: isActive ? "auto" : "none",
+    isolation: 'isolate',
+    visibility: isActive ? 'visible' : 'hidden',
+    opacity: isActive ? 1 : 0,
+    overflow: 'visible',
+    willChange: 'transform',
+  }}
+  data-short-index={index}
+  data-is-active={isActive}
+  data-position={position}
+>
         <ShortPlayer
           short={short}
           isActive={isActive}
