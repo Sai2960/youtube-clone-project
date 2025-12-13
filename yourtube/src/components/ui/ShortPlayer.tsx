@@ -408,6 +408,7 @@ useEffect(() => {
   };
 
 // ✅ FIX: Proper video playback control with audio cleanup
+// ✅ FIX: Proper video playback control with audio cleanup
 useEffect(() => {
   const video = videoRef.current;
   if (!video) return;
@@ -424,7 +425,7 @@ useEffect(() => {
   if (!isActive) {
     console.log("⏸️ Pausing inactive video:", short._id);
     video.pause();
-    video.currentTime = 0; // ✅ Reset to start
+    video.currentTime = 0;
     setIsPlaying(false);
     return;
   }
@@ -436,18 +437,22 @@ useEffect(() => {
     
     const attemptPlay = async () => {
       try {
-        // ✅ Start muted for autoplay compliance
-        video.muted = true;
-        
-        // Wait for video to be ready
+        // ✅ Ensure video is loaded
         if (video.readyState < 2) {
           console.log("⏳ Waiting for video to load...");
           await new Promise((resolve) => {
             video.addEventListener('loadeddata', resolve, { once: true });
+            // ✅ Force reload
+            const currentSrc = video.src;
+            video.src = '';
+            video.src = currentSrc;
             video.load();
           });
         }
 
+        // ✅ Start muted for autoplay compliance
+        video.muted = true;
+        
         console.log("▶️ Playing video:", short._id);
         await video.play();
         setIsPlaying(true);
@@ -461,26 +466,26 @@ useEffect(() => {
         }
       } catch (err) {
         console.error("❌ Play failed:", err);
-        // Retry once
+        
+        // ✅ Retry with force reload
         setTimeout(() => {
+          const currentSrc = video.src;
+          video.src = '';
+          video.src = currentSrc;
           video.load();
           video.play().catch(e => console.error("❌ Retry failed:", e));
         }, 500);
       }
     };
 
-    // Small delay to ensure DOM is ready
-    const playTimeout = setTimeout(attemptPlay, 100);
-    
-    return () => clearTimeout(playTimeout);
+    // ✅ Immediate play attempt
+    attemptPlay();
   } else if (isModalOpenRef.current) {
-    // ✅ Pause when modal opens
     console.log("⏸️ Modal open, pausing video");
     video.pause();
     setIsPlaying(false);
   }
-}, [isActive, short._id, isModalOpenRef.current]);
-
+}, [isActive, short._id, isMuted]); // ✅ Removed isModalOpenRef dependency
 
   // ✅ ADD: Passive event listener fix
   useEffect(() => {
