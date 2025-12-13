@@ -1257,28 +1257,34 @@ const handleLike = async (e: React.MouseEvent) => {
   ];
 
 return (
-<div
-  ref={containerRef}
-  className="relative w-full h-screen bg-black overflow-hidden"
-  data-component="short-player"
-  data-short-id={short._id}
-  data-is-active={isActive}
-  style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-    minHeight: '100vh',
-    overflow: 'hidden',
-    backgroundColor: '#000',
-    WebkitOverflowScrolling: 'touch',
-    // ✅ CRITICAL: Remove isolation, use absolute positioning
-    zIndex: isActive ? 30 : 20,
-  }}
->
+  <div
+    ref={containerRef}
+    className="relative w-full h-screen bg-black overflow-hidden"
+    data-component="short-player"
+    data-short-id={short._id}  // ✅ Fixed: 'short' not 'shorts'
+    data-is-active={isActive}  // ✅ Fixed: correct variable
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100%',
+      height: '100%',
+      minHeight: '100vh',
+      overflow: 'hidden',
+      backgroundColor: '#000',
+      WebkitOverflowScrolling: 'touch',
+      // ✅ CRITICAL: Force visibility
+      visibility: 'visible',
+      opacity: 1,
+      display: 'block',
+      zIndex: isActive ? 30 : 20,
+      // ✅ Force GPU layer
+      WebkitTransform: 'translateZ(0)',
+      transform: 'translateZ(0)',
+    }}
+  >
    {/* Video */}
 <video
   ref={videoRef}
@@ -1404,6 +1410,7 @@ style={{
     zIndex: 50, // ✅ Above everything
     pointerEvents: 'auto',
   }}
+
 >        {/* Shorts button - HIDDEN on desktop (md and above) */}
         <button
           onClick={(e) => {

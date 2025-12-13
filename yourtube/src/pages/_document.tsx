@@ -124,21 +124,58 @@ export default function CustomDocument() {
               }
             }
             
-        /* Prevent flash of unstyled content - hide until theme is applied */
+/* Prevent flash of unstyled content - hide until theme is applied */
 html:not(.light):not(.dark):not([data-page="shorts"]) {
   visibility: hidden;
   opacity: 0;
 }
 
 /* ✅ CRITICAL: Always show shorts page immediately */
-html[data-page="shorts"] {
+html[data-page="shorts"],
+html[data-page="shorts"] body,
+html[data-page="shorts"] #__next {
   visibility: visible !important;
   opacity: 1 !important;
+  display: block !important;
 }
   /* ============================================================================
    🔴 MOBILE VIDEO RENDERING FIX
    ============================================================================ */
-
+/* ============================================================================
+   🔴 FORCE VIDEO PARENT VISIBILITY ON MOBILE
+   ============================================================================ */
+@media (max-width: 768px) {
+  /* Force all parent containers visible */
+  [data-page="shorts"],
+  [data-page="shorts"] > *,
+  [data-component="short-player"],
+  [data-is-active="true"],
+  [data-is-active="true"] > * {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+  }
+  
+  /* Ensure video is on top of HTML element */
+  video {
+    position: absolute !important;
+    z-index: 1 !important;
+    /* Force rendering context */
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+  
+  /* Fix HTML element covering video */
+  html, body {
+    background: #000 !important;
+    overflow: hidden !important;
+  }
+  
+  body {
+    position: relative !important;
+  }
+}
+  
 /* Force video element rendering on mobile */
 @media (max-width: 768px) {
   video {

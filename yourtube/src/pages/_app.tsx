@@ -306,6 +306,33 @@ function AppContent({ Component, pageProps }: AppProps) {
     };
   }, [showMobileSidebar]);
 
+  // ✅ CRITICAL: Force shorts page visibility on mobile
+useEffect(() => {
+  if (router.pathname.startsWith('/shorts')) {
+    const html = document.documentElement;
+    const body = document.body;
+    const next = document.getElementById('__next');
+    
+    // Force visibility
+    html.setAttribute('data-page', 'shorts');
+    html.style.visibility = 'visible';
+    html.style.opacity = '1';
+    body.style.visibility = 'visible';
+    body.style.opacity = '1';
+    if (next) {
+      next.style.visibility = 'visible';
+      next.style.opacity = '1';
+      next.style.display = 'block';
+    }
+    
+    console.log('🎬 Forced shorts page visibility');
+    
+    return () => {
+      html.removeAttribute('data-page');
+    };
+  }
+}, [router.pathname]);
+
   /**
    * Loading spinner while theme initializes
    */

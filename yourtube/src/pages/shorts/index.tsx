@@ -634,31 +634,37 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
       videoUrl: short.videoUrl?.substring(0, 50),
     });
 
-    return (
-      <div
-  key={short._id}
-  className="absolute inset-0"
-  style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-    minHeight: '100vh', // ✅ CRITICAL
-    transform: `translateY(${position * 100}%)`,
-    transition: 'transform 300ms ease-out',
-    zIndex: isActive ? 30 : 20,
-    pointerEvents: isActive ? 'auto' : 'none',
-    willChange: 'transform',
-    WebkitTransform: `translateY(${position * 100}%)`,
-    WebkitTransition: 'transform 300ms ease-out',
-  }}
-        data-short-index={index}
-        data-is-active={isActive}
-        data-short-id={short._id}
-      >
+   return (
+  <div
+    key={short._id}
+    className="absolute inset-0"
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100%',
+      height: '100%',
+      minHeight: '100vh',
+      transform: `translateY(${position * 100}%)`,
+      transition: 'transform 300ms ease-out',
+      zIndex: isActive ? 30 : 20,
+      pointerEvents: isActive ? 'auto' : 'none',
+      willChange: 'transform',
+      WebkitTransform: `translateY(${position * 100}%)`,
+      WebkitTransition: 'transform 300ms ease-out',
+      // ✅ CRITICAL: Force rendering
+      visibility: 'visible',
+      opacity: 1,
+      display: 'block',
+      overflow: 'hidden',
+      backgroundColor: '#000',
+    }}
+    data-short-index={index}
+    data-is-active={isActive}
+    data-short-id={short._id}
+  >
         <ShortPlayer
           short={short}
           isActive={isActive}
