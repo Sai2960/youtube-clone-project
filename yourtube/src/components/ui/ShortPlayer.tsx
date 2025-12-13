@@ -1408,52 +1408,57 @@ const handleLike = async (e: React.MouseEvent) => {
   ];
 
 return (
-<div
-  ref={containerRef}
-  className="relative w-full h-screen bg-black overflow-hidden"
-  data-component="short-player"
-  data-short-id={short._id}
-  style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100vw',
-    height: '100vh',
-    minHeight: '100vh',
-    overflow: 'hidden',
-    backgroundColor: '#000',
-    WebkitOverflowScrolling: 'touch',
-    zIndex: isActive ? 30 : 20,
-    isolation: 'auto', // ✅ CHANGED from 'isolate'
-  }}
->
-   {/* Video */}
-<video
-  ref={videoRef}
-  src={short.videoUrl}
-  className="absolute inset-0 w-full h-full object-cover"
-  loop
-  playsInline
-  webkit-playsinline="true"
-  style={{
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    backgroundColor: '#000',
-    display: 'block',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: 1, // ✅ CHANGED from 10 to 1
-    WebkitTransform: 'translate3d(0,0,0)',
-    transform: 'translate3d(0,0,0)',
-    WebkitBackfaceVisibility: 'hidden',
-    backfaceVisibility: 'hidden',
-    WebkitMaskImage: '-webkit-radial-gradient(white, black)',
-  }}
-  poster={short.thumbnailUrl || undefined}
+  <div
+    ref={containerRef}
+    className="relative w-full h-screen bg-black overflow-hidden"
+    data-component="short-player"
+    data-short-id={short._id}
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100vh',
+      minHeight: '100vh',
+      overflow: 'hidden',
+      backgroundColor: '#000',
+      WebkitOverflowScrolling: 'touch',
+      zIndex: isActive ? 30 : 20,
+      isolation: 'auto',
+    }}
+  >
+    {/* ✅ Video Layer - Z-INDEX 1 */}
+    <video
+      ref={videoRef}
+      src={short.videoUrl}
+      className="absolute inset-0 w-full h-full object-cover"
+      loop
+      playsInline
+      webkit-playsinline="true"
+      x5-playsinline="true"
+      x5-video-player-type="h5"
+      x-webkit-airplay="allow"
+      preload="auto"
+      crossOrigin="anonymous"
+      onClick={togglePlayPause}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        backgroundColor: '#000',
+        display: 'block',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: 1,
+        WebkitTransform: 'translate3d(0,0,0)',
+        transform: 'translate3d(0,0,0)',
+        WebkitBackfaceVisibility: 'hidden',
+        backfaceVisibility: 'hidden',
+      }}
+      poster={short.thumbnailUrl || undefined}
   onLoadStart={(e) => {
     console.log("🎬 onLoadStart:", {
       shortId: short._id,
@@ -1543,40 +1548,41 @@ return (
 
       {/* Gradients */}
    {/* Gradients */}
-<div 
-  className="absolute inset-0 pointer-events-none"
-  style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-     zIndex: 2, // ✅ Above video (z-index: 1) but below controls (z-index: 30+)
-    pointerEvents: 'none',
-  }}
->
-  <div 
-    className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent"
-    style={{ pointerEvents: 'none' }}
-  />
-  <div 
-    className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black/90 via-black/60 to-transparent"
-    style={{ pointerEvents: 'none' }}
-  />
-</div>
+ <div 
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '8rem',
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)',
+        zIndex: 2,
+      }}
+    />
+    <div 
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '20rem',
+        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)',
+        zIndex: 2,
+      }}
+    />
       {/* Header with Theme-Compatible Menu */}
-<div 
-  className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto"
-  style={{
-    position: 'absolute',
-    top: '1rem',
-    left: '1rem',
-    right: '1rem',
-    zIndex: 4, // ✅ Above everything
-    pointerEvents: 'auto',
-  }}
-
->        {/* Shorts button - HIDDEN on desktop (md and above) */}
+ <div 
+      className="absolute top-4 left-4 right-4 flex items-center justify-between"
+      style={{
+        position: 'absolute',
+        top: '1rem',
+        left: '1rem',
+        right: '1rem',
+        zIndex: 50,
+      }}
+    >
+      
+         {/* Shorts button - HIDDEN on desktop (md and above) */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -2110,27 +2116,36 @@ return (
       )}
 
       {/* Play Icon Overlay */}
-      {!isPlaying && !isModalOpenRef.current && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <div className="bg-black/50 backdrop-blur-sm rounded-full p-8">
-            <Play size={48} className="text-white" fill="white" />
-          </div>
+     {!isPlaying && !isModalOpenRef.current && (
+      <div 
+        className="absolute inset-0 flex items-center justify-center"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 40,
+          pointerEvents: 'none',
+        }}
+      >
+        <div className="bg-black/50 backdrop-blur-sm rounded-full p-8">
+          <Play size={48} className="text-white" fill="white" />
         </div>
-      )}
-
+      </div>
+    )}
       {/* MOBILE OPTIMIZED CONTENT SECTION */}
       
-<div 
-  className="absolute bottom-0 left-0 right-0"
-  style={{
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 3,// ✅ Above gradient (10) and video (1)
-    pointerEvents: 'none', // ✅ Let touches pass through
-  }}
->
+  <div 
+      className="absolute bottom-0 left-0 right-0"
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 30,
+      }}
+    >
   <div 
     className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24"
     style={{ pointerEvents: 'auto' }} // ✅ But make buttons clickable
@@ -2460,27 +2475,26 @@ return (
 
       {/* Modals */}
       {showShareModal && (
-        <ShareModal
-          isOpen={showShareModal}
-          onClose={() => {
-            setShowShareModal(false);
-            handleShareComplete();
-          }}
-          videoId={short._id}
-          videoTitle={short.title}
-          currentTime={currentTime}
-          isShort={true}
-        />
-      )}
-
-      {showComments && (
-        <CommentsModal
-          shortId={short._id}
-          commentsCount={commentsCount}
-          onClose={() => setShowComments(false)}
-          onCommentAdded={() => setCommentsCount((prev) => prev + 1)}
-        />
-      )}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false);
+          handleShareComplete();
+        }}
+        videoId={short._id}
+        videoTitle={short.title}
+        currentTime={currentTime}
+        isShort={true}
+      />
+    )}
+       {showComments && (
+      <CommentsModal
+        shortId={short._id}
+        commentsCount={commentsCount}
+        onClose={() => setShowComments(false)}
+        onCommentAdded={() => setCommentsCount((prev) => prev + 1)}
+      />
+    )}
     </div>
   );
 };

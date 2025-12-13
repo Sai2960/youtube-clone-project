@@ -220,6 +220,7 @@ export default function CustomDocument() {
                 height: 100% !important;
                 object-fit: cover !important;
                 z-index: 1 !important;
+                pointer-events: auto !important;
                 /* Force GPU acceleration */
                 -webkit-transform: translate3d(0, 0, 0) !important;
                 transform: translate3d(0, 0, 0) !important;
@@ -241,6 +242,11 @@ export default function CustomDocument() {
                 visibility: visible !important;
                 opacity: 1 !important;
                 display: block !important;
+              }
+              
+              /* ✅ Remove any transforms that might hide video */
+              [data-is-active="false"] {
+                transform: translateY(100vh) !important;
               }
               
               /* Prevent iOS video native controls from showing */
