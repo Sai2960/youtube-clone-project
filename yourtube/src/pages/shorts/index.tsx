@@ -550,7 +550,6 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
       <Head>
         <title>Shorts - YouTube</title>
       </Head>
-
 <div
   ref={containerRef}
   className="fixed inset-0 bg-black"
@@ -562,12 +561,13 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     bottom: 0,
     width: '100vw',
     height: '100vh',
+    minHeight: '100vh',
     maxHeight: '100vh',
     overflow: 'hidden',
     WebkitOverflowScrolling: 'touch',
-    // ✅ CRITICAL: Remove these that break mobile
-    // isolation: 'isolate', // REMOVE
-    // contain: 'strict', // REMOVE
+    // ✅ CRITICAL for mobile
+    display: 'flex',
+    flexDirection: 'column',
   }}
   data-page="shorts"
 >
@@ -603,12 +603,14 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
 
 {/* Shorts Container */}
 <div 
-  className="relative w-full h-full"
+  className="relative w-full h-full flex-1"
   style={{
     position: 'relative',
     width: '100%',
     height: '100%',
+    flex: '1 1 auto',
     overflow: 'hidden',
+    minHeight: 0, // ✅ CRITICAL: Allows flex child to shrink
   }}
 >
   {shorts.map((short, index) => {
@@ -628,23 +630,25 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
 
     return (
       <div
-        key={short._id}
-        className="absolute inset-0"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          transform: `translateY(${position * 100}%)`,
-          transition: 'transform 300ms ease-out',
-          zIndex: isActive ? 30 : 20,
-          pointerEvents: isActive ? 'auto' : 'none',
-          // ✅ CRITICAL for mobile
-          willChange: 'transform',
-          WebkitTransform: `translateY(${position * 100}%)`,
-          WebkitTransition: 'transform 300ms ease-out',
-        }}
+  key={short._id}
+  className="absolute inset-0"
+  style={{
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    minHeight: '100vh', // ✅ CRITICAL
+    transform: `translateY(${position * 100}%)`,
+    transition: 'transform 300ms ease-out',
+    zIndex: isActive ? 30 : 20,
+    pointerEvents: isActive ? 'auto' : 'none',
+    willChange: 'transform',
+    WebkitTransform: `translateY(${position * 100}%)`,
+    WebkitTransition: 'transform 300ms ease-out',
+  }}
         data-short-index={index}
         data-is-active={isActive}
         data-short-id={short._id}
