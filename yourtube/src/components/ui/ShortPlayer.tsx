@@ -26,6 +26,7 @@ import { getImageUrl } from "@/lib/imageUtils";
 
 interface ShortPlayerProps {
   short: {
+    [x: string]: any;
     _id: string;
     title: string;
     description: string;
@@ -1256,28 +1257,28 @@ const handleLike = async (e: React.MouseEvent) => {
   ];
 
 return (
-  <div
-    ref={containerRef}
-    className="relative w-full h-screen bg-black overflow-hidden"
-    data-component="short-player"
-    data-short-id={short._id}
-    data-is-active={isActive}
-    style={{
-      position: 'relative',
-      width: '100%',
-      height: '100vh',
-      minHeight: '-webkit-fill-available', // iOS fix
-      overflow: 'hidden',
-      isolation: 'isolate',
-      backgroundColor: '#000',
-      WebkitOverflowScrolling: 'touch',
-    }}
-  >
+ <div
+  ref={containerRef}
+  className="relative w-full h-screen bg-black overflow-hidden"
+  data-component="short-player"
+  data-short-id={short._id}
+  data-is-active={isActive}
+  style={{
+    position: 'relative',
+    width: '100%',
+    height: '100vh',
+    minHeight: '-webkit-fill-available',
+    overflow: 'hidden',
+    backgroundColor: '#000',
+    WebkitOverflowScrolling: 'touch',
+    // ✅ Remove isolation that breaks mobile rendering
+  }}
+>
    {/* Video */}
 <video
   ref={videoRef}
   src={short.videoUrl}
-  className="w-full h-full"
+  className="absolute inset-0 w-full h-full object-cover"
   loop
   playsInline
   webkit-playsinline="true"
@@ -1287,110 +1288,75 @@ return (
   crossOrigin="anonymous"
   onClick={togglePlayPause}
   style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
     width: '100%',
     height: '100%',
     objectFit: 'cover',
     backgroundColor: '#000',
+    // ✅ CRITICAL: Force rendering on mobile
     display: 'block',
-    // ✅ CRITICAL for mobile visibility
-    transform: 'translateZ(0)', // Force GPU acceleration
-    WebkitTransform: 'translateZ(0)',
-    backfaceVisibility: 'hidden',
-    WebkitBackfaceVisibility: 'hidden',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 1,
+  }}
+  // ✅ Add poster image to show something while loading
+  poster={short.thumbnailUrl || undefined}
+  onLoadStart={() => {
+    console.log("🎬 Video load started:", short._id);
   }}
   onLoadedMetadata={(e) => {
     const video = e.currentTarget;
-    console.log("📹 Video metadata loaded:", {
+    console.log("📹 Metadata loaded:", {
       duration: video.duration,
-      videoWidth: video.videoWidth,
-      videoHeight: video.videoHeight,
-      src: short.videoUrl.substring(0, 50)
+      width: video.videoWidth,
+      height: video.videoHeight,
     });
   }}
   onLoadedData={(e) => {
     const video = e.currentTarget;
-    console.log("✅ Video data loaded:", short._id);
+    console.log("✅ Video data loaded for:", short._id);
     
-    // ✅ Force render on mobile
-    video.style.display = 'block';
-    
-    // ✅ Auto-play if active
+    // ✅ Try to play if active
     if (isActive && !isModalOpenRef.current) {
+      console.log("🎯 Attempting autoplay...");
       video.muted = true;
       video.play()
         .then(() => {
-          console.log("✅ Playing on mobile");
+          console.log("✅ Playing successfully");
           setIsPlaying(true);
           if (!isMuted) {
             setTimeout(() => { 
               video.muted = false; 
-              console.log("🔊 Unmuted");
             }, 500);
           }
         })
         .catch(err => {
-          console.error("❌ Mobile play failed:", err);
-          // Try again with user interaction
-          video.load();
+          console.error("❌ Autoplay failed:", err.message);
+          console.log("💡 User interaction needed");
         });
     }
   }}
   onCanPlay={() => {
-    console.log("✅ Video can play");
-  }}
-  onCanPlayThrough={() => {
-    console.log("✅ Video can play through");
+    console.log("✅ Can play:", short._id);
   }}
   onError={(e) => {
     const video = e.currentTarget;
     console.error("❌ VIDEO ERROR:", {
+      shortId: short._id,
       code: video.error?.code,
       message: video.error?.message,
-      url: short.videoUrl,
+      src: video.src,
       networkState: video.networkState,
       readyState: video.readyState,
     });
-    
-    // Retry logic
-    if (!video.hasAttribute('data-retry-count')) {
-      video.setAttribute('data-retry-count', '1');
-      console.log("🔄 Retrying video load...");
-      setTimeout(() => {
-        video.load();
-      }, 1000);
-    } else {
-      const retryCount = parseInt(video.getAttribute('data-retry-count') || '0');
-      if (retryCount < 3) {
-        video.setAttribute('data-retry-count', String(retryCount + 1));
-        console.log(`🔄 Retry attempt ${retryCount + 1}...`);
-        setTimeout(() => {
-          video.load();
-        }, 1000 * retryCount);
-      } else {
-        console.error("❌ Video failed after 3 retries");
-      }
-    }
   }}
   onPlay={() => {
-    console.log("▶️ Video playing:", short._id);
+    console.log("▶️ Playing:", short._id);
     setIsPlaying(true);
   }}
   onPause={() => {
-    console.log("⏸️ Video paused:", short._id);
+    console.log("⏸️ Paused:", short._id);
     setIsPlaying(false);
-  }}
-  onEnded={() => {
-    console.log("⏭️ Video ended");
-    if (!isModalOpenRef.current) onNext();
-  }}
-  onWaiting={() => {
-    console.log("⏳ Video buffering...");
-  }}
-  onStalled={() => {
-    console.log("⚠️ Video stalled");
   }}
 />
 

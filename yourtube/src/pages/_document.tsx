@@ -124,12 +124,63 @@ export default function CustomDocument() {
               }
             }
             
-            /* Prevent flash of unstyled content - hide until theme is applied */
-            html:not(.light):not(.dark) {
-              visibility: hidden;
-              opacity: 0;
-            }
-            
+        /* Prevent flash of unstyled content - hide until theme is applied */
+html:not(.light):not(.dark):not([data-page="shorts"]) {
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* ✅ CRITICAL: Always show shorts page immediately */
+html[data-page="shorts"] {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+  /* ============================================================================
+   🔴 MOBILE VIDEO RENDERING FIX
+   ============================================================================ */
+
+/* Force video element rendering on mobile */
+@media (max-width: 768px) {
+  video {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    /* Force GPU acceleration */
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    /* Prevent iOS black screen */
+    -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
+  }
+  
+  /* Shorts container optimization */
+  [data-page="shorts"] {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: -webkit-fill-available !important;
+    background: #000 !important;
+  }
+  
+  /* Force video container visibility */
+  [data-component="short-player"] {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* Prevent iOS video black screen bug */
+  video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+  }
+  
+  video::-webkit-media-controls-play-button {
+    display: none !important;
+  }
+}
             /* Show content once theme is applied */
             html.light,
             html.dark {
