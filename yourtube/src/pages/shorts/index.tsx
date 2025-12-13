@@ -605,52 +605,37 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
 
 {/* Shorts Container */}
 <div 
-  className="relative w-full h-full flex-1"
+  className="relative w-full h-full"
   style={{
     position: 'relative',
     width: '100%',
     height: '100%',
-    flex: '1 1 auto',
     overflow: 'hidden',
-    minHeight: 0, // ✅ CRITICAL: Allows flex child to shrink
   }}
 >
   {shorts.map((short, index) => {
-    // Render current + adjacent
     const shouldRender = Math.abs(index - currentIndex) <= 1;
     if (!shouldRender) return null;
 
     const isActive = index === currentIndex;
     const position = index - currentIndex;
 
-    console.log(`📱 Rendering short ${index}:`, {
-      id: short._id,
-      isActive,
-      position,
-      videoUrl: short.videoUrl?.substring(0, 50),
-    });
-
     return (
       <div
-  key={short._id}
-  className="absolute inset-0"
-  style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-    minHeight: '100vh', // ✅ CRITICAL
-    transform: `translateY(${position * 100}%)`,
-    transition: 'transform 300ms ease-out',
-    zIndex: isActive ? 30 : 20,
-    pointerEvents: isActive ? 'auto' : 'none',
-    willChange: 'transform',
-    WebkitTransform: `translateY(${position * 100}%)`,
-    WebkitTransition: 'transform 300ms ease-out',
-  }}
+        key={short._id}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          // ✅ CRITICAL FIX: Use visibility instead of transform
+          visibility: isActive ? 'visible' : 'hidden',
+          opacity: isActive ? 1 : 0,
+          transition: 'opacity 300ms ease-out',
+          zIndex: isActive ? 30 : 20,
+          pointerEvents: isActive ? 'auto' : 'none',
+        }}
         data-short-index={index}
         data-is-active={isActive}
         data-short-id={short._id}

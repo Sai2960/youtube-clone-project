@@ -236,12 +236,21 @@ export default function CustomDocument() {
                 opacity: 1 !important;
                 display: block !important;
                 z-index: 30 !important;
+                transform: translate3d(0, 0, 0) !important;
+                -webkit-transform: translate3d(0, 0, 0) !important;
+              }
+              
+              [data-is-active="true"] [data-component="short-player"] {
+                transform: translate3d(0, 0, 0) !important;
+                -webkit-transform: translate3d(0, 0, 0) !important;
               }
               
               [data-is-active="true"] video {
                 visibility: visible !important;
                 opacity: 1 !important;
                 display: block !important;
+                transform: translate3d(0, 0, 0) !important;
+                -webkit-transform: translate3d(0, 0, 0) !important;
               }
               
               /* ✅ Remove any transforms that might hide video */
