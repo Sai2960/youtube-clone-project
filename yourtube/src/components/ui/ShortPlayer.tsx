@@ -1121,15 +1121,6 @@ const handleLike = async (e: React.MouseEvent) => {
     }
   };
   
-  {/* ✅ DEBUG: Visual indicator when active */}
-{isActive && (
-  <div 
-    className="fixed top-4 left-4 bg-green-500 text-white px-4 py-2 rounded z-[9999]"
-    style={{ pointerEvents: 'none' }}
-  >
-    SHORT ACTIVE: {short._id.substring(0, 8)}
-  </div>
-)}
 
   const openDeleteConfirm = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1265,11 +1256,9 @@ return (
       width: '100%',
       height: '100vh',
       overflow: 'hidden',
-      // ✅ CRITICAL: Ensure container is visible
       display: 'block',
       visibility: 'visible',
       opacity: 1,
-      // ✅ Force layer composition
       transform: 'translateZ(0)',
       WebkitTransform: 'translateZ(0)',
       willChange: 'transform',
