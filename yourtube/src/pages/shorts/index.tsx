@@ -552,14 +552,27 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
       </Head>
 
       <div
-        ref={containerRef}
-        className="fixed inset-0 bg-black overflow-hidden"
-        style={{
-          WebkitOverflowScrolling: "touch",
-          overscrollBehavior: "contain",
-          touchAction: "pan-y",
-        }}
-      >
+  ref={containerRef}
+  className="fixed inset-0 bg-black overflow-hidden"
+  style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100vw',
+    height: '100vh',
+    overflow: 'hidden',
+    WebkitOverflowScrolling: "touch",
+    overscrollBehavior: "contain",
+    touchAction: "pan-y",
+    zIndex: 50,
+    // ✅ Force visibility
+    display: 'block',
+    visibility: 'visible',
+  }}
+  data-page="shorts"
+>
         {/* Back Button - Desktop Only */}
         <button
           onClick={() => router.push("/")}
@@ -589,39 +602,57 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
           </div>
         </div>
 
-        {/* Shorts Container with Virtual Rendering */}
-        <div className="relative w-full h-full">
-          {shorts.map((short, index) => {
-            // Only render current, previous, and next short for performance
-            const shouldRender = Math.abs(index - currentIndex) <= 1;
 
-            if (!shouldRender) return null;
 
-            const isActive = index === currentIndex;
-            const position = index - currentIndex;
+{/* Shorts Container with Virtual Rendering */}
+<div className="relative w-full h-full">
+  {shorts.map((short, index) => {
+    // Only render current, previous, and next short for performance
+    const shouldRender = Math.abs(index - currentIndex) <= 1;
 
-            return (
-              <div
-                key={short._id}
-                className="absolute inset-0 transition-transform duration-300 ease-out"
-                style={{
-                  transform: `translateY(${position * 100}%)`,
-                  zIndex: isActive ? 20 : 10,
-                  pointerEvents: isActive ? "auto" : "none",
-                }}
-              >
-               <ShortPlayer
-  short={short}
-  isActive={isActive}
-  onNext={handleNext}
-  onPrevious={handlePrevious}
-  onDelete={handleShortDeleted}
-  onLikeUpdate={handleShortLiked}  
-/>
-              </div>
-            );
-          })}
-        </div>
+    if (!shouldRender) return null;
+
+    const isActive = index === currentIndex;
+    const position = index - currentIndex;
+
+    // ✅ CRITICAL DEBUG: Log rendering state
+    console.log(`🎬 Rendering short ${index}:`, {
+      shortId: short._id,
+      isActive,
+      position,
+      currentIndex,
+      transform: `translateY(${position * 100}%)`,
+      zIndex: isActive ? 20 : 10,
+    });
+
+    return (
+      <div
+        key={short._id}
+        className="absolute inset-0 transition-transform duration-300 ease-out"
+        style={{
+          transform: `translateY(${position * 100}%)`,
+          zIndex: isActive ? 20 : 10,
+          pointerEvents: isActive ? "auto" : "none",
+          // ✅ ADD: Force visibility
+          overflow: 'visible',
+          willChange: 'transform',
+        }}
+        data-short-index={index}
+        data-is-active={isActive}
+        data-position={position}
+      >
+        <ShortPlayer
+          short={short}
+          isActive={isActive}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+          onDelete={handleShortDeleted}
+          onLikeUpdate={handleShortLiked}  
+        />
+      </div>
+    );
+  })}
+</div>
 
      
         {/* Loading indicator */}
