@@ -130,7 +130,7 @@ html:not(.light):not(.dark):not([data-page="shorts"]) {
   opacity: 0;
 }
 
-/* ✅ CRITICAL: Always show shorts page immediately */
+* ✅ CRITICAL: Always show shorts page immediately */
 html[data-page="shorts"],
 html[data-page="shorts"] body,
 html[data-page="shorts"] #__next {
@@ -138,6 +138,7 @@ html[data-page="shorts"] #__next {
   opacity: 1 !important;
   display: block !important;
 }
+
   /* ============================================================================
    🔴 MOBILE VIDEO RENDERING FIX
    ============================================================================ */
@@ -175,18 +176,26 @@ html[data-page="shorts"] #__next {
     position: relative !important;
   }
 }
-  /* ✅ CRITICAL: Prevent body/html from covering shorts */
-html[data-page="shorts"],
 html[data-page="shorts"] body {
-  z-index: auto !important;
+  pointer-events: none !important;
+  background: transparent !important;
   position: relative !important;
+  z-index: 0 !important;
 }
 
-/* Ensure shorts page container is visible */
 html[data-page="shorts"] #__next {
+  pointer-events: auto !important;
   position: relative !important;
-  z-index: auto !important;
+  z-index: 1 !important;
 }
+
+/* ✅ Force all shorts content to be interactive */
+html[data-page="shorts"] [data-page="shorts"],
+html[data-page="shorts"] [data-component="short-player"],
+html[data-page="shorts"] video {
+  pointer-events: auto !important;
+}
+
   
 /* Force video element rendering on mobile */
 @media (max-width: 768px) {
@@ -214,10 +223,11 @@ html[data-page="shorts"] #__next {
   /* ❌ REMOVED z-index: 9999 - it blocks video! */
 }
 
-/* ✅ NEW: Ensure HTML doesn't cover content */
 html[data-page="shorts"] {
-  z-index: auto !important;
-  position: static !important;
+  pointer-events: none !important;
+  background: transparent !important;
+  position: relative !important;
+  z-index: 0 !important;
 }
   
   /* Force video container visibility */

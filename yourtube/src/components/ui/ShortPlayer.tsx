@@ -1261,21 +1261,22 @@ return (
   ref={containerRef}
   className="relative w-full h-screen bg-black overflow-hidden"
   data-component="short-player"
-data-short-id={short._id}  
+  data-short-id={short._id}
   style={{
-    position: 'absolute',
+    position: 'fixed',  // ✅ Changed to fixed
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    width: '100%',
-    height: '100%',
+    width: '100vw',
+    height: '100vh',
     minHeight: '100vh',
     overflow: 'hidden',
     backgroundColor: '#000',
     WebkitOverflowScrolling: 'touch',
-    // ✅ CRITICAL: Remove isolation, use absolute positioning
-    zIndex: isActive ? 30 : 20,
+    zIndex: isActive ? 999998 : -1,  // ✅ Active on top, inactive hidden
+    visibility: isActive ? 'visible' : 'hidden',  // ✅ Hide inactive
+    pointerEvents: isActive ? 'auto' : 'none',
   }}
 >
    {/* Video */}
@@ -1292,16 +1293,19 @@ data-short-id={short._id}
   preload="auto"
   crossOrigin="anonymous"
   onClick={togglePlayPause}
-style={{
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  backgroundColor: '#000',
-  display: 'block !important' as any,
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  zIndex: 1,
+  style={{
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    backgroundColor: '#000',
+    display: 'block',
+    position: 'fixed',  // ✅ Changed from absolute to fixed
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999999,  // ✅ Force to absolute top
+    pointerEvents: 'auto',
   visibility: 'visible !important' as any,
   opacity: '1 !important' as any,
   WebkitTransform: 'translate3d(0,0,0)',

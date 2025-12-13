@@ -565,9 +565,8 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     maxHeight: '100vh',
     overflow: 'hidden',
     WebkitOverflowScrolling: 'touch',
-    display: 'block', // ✅ Changed from flex
-    zIndex: 9999,
-    // ✅ Force rendering
+    display: 'block',
+    // ❌ REMOVED zIndex: 9999
     WebkitTransform: 'translateZ(0)',
     transform: 'translateZ(0)',
   }}
@@ -619,14 +618,12 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     // ✅ Remove flex, use absolute positioning
   }}
 >
-  {shorts.map((short, index) => {
-    // Render current + adjacent
-    const shouldRender = Math.abs(index - currentIndex) <= 1;
-    if (!shouldRender) return null;
+ {shorts.map((short, index) => {
+  // ✅ ONLY render the active short (no pre-loading)
+  const isActive = index === currentIndex;
+  if (!isActive) return null;  // ✅ Don't render inactive shorts
 
-    const isActive = index === currentIndex;
-    const position = index - currentIndex;
-
+  const position = 0;  // ✅ Always centered
     console.log(`📱 Rendering short ${index}:`, {
       id: short._id,
       isActive,
@@ -634,7 +631,8 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
       videoUrl: short.videoUrl?.substring(0, 50),
     });
 
-   return (
+    
+return (
   <div
     key={short._id}
     className="absolute inset-0"
