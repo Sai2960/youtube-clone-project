@@ -566,12 +566,12 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
     overflow: 'hidden',
     WebkitOverflowScrolling: 'touch',
     display: 'block',
-    zIndex: 50, // ✅ High z-index for shorts page
+    zIndex: 50,
     WebkitTransform: 'translateZ(0)',
     transform: 'translateZ(0)',
     backgroundColor: '#000',
   }}
-  data-page="shorts"
+  data-page="shorts" // ✅ THIS IS CRITICAL
 >
         {/* Back Button - Desktop Only */}
         <button

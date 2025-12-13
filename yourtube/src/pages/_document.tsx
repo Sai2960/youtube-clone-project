@@ -133,7 +133,7 @@ export default function CustomDocument() {
                FOUC PREVENTION - THEME LOADING
                ============================================================================ */
             
-            /* Hide content until theme is applied (except shorts) */
+            /* ✅ CHANGED: Don't hide shorts page */
             html:not(.light):not(.dark):not([data-page="shorts"]) {
               visibility: hidden;
               opacity: 0;
@@ -172,51 +172,54 @@ export default function CustomDocument() {
                 visibility: visible !important;
                 opacity: 1 !important;
                 display: block !important;
+                overflow: hidden !important;
               }
               
-              /* ✅ HTML element on shorts - don't block interactions */
+              /* ✅ HTML element on shorts - enable interactions */
               html[data-page="shorts"] {
                 background: #000 !important;
                 overflow: hidden !important;
                 position: relative !important;
-                pointer-events: none !important;
               }
               
               /* ✅ Body transparent to let video show through */
               html[data-page="shorts"] body {
-                pointer-events: none !important;
                 background: transparent !important;
                 position: relative !important;
-                z-index: 0 !important;
+                overflow: hidden !important;
               }
               
               /* ✅ Next.js container - enable interactions */
               html[data-page="shorts"] #__next {
-                pointer-events: auto !important;
                 position: relative !important;
                 z-index: 1 !important;
+                overflow: hidden !important;
               }
               
               /* ✅ Short player container */
               [data-component="short-player"] {
-                position: absolute !important;
+                position: fixed !important;
                 inset: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
+                width: 100vw !important;
+                height: 100vh !important;
                 visibility: visible !important;
                 opacity: 1 !important;
                 display: block !important;
-                pointer-events: auto !important;
+                z-index: 30 !important;
               }
               
-              /* ✅ CRITICAL: Video element - must be visible and interactive */
-              video {
+              /* ✅ CRITICAL: Video element - must be visible */
+              [data-component="short-player"] video {
                 display: block !important;
                 visibility: visible !important;
                 opacity: 1 !important;
                 position: absolute !important;
-                z-index: 10 !important;
-                pointer-events: auto !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+                z-index: 1 !important;
                 /* Force GPU acceleration */
                 -webkit-transform: translate3d(0, 0, 0) !important;
                 transform: translate3d(0, 0, 0) !important;
@@ -226,16 +229,15 @@ export default function CustomDocument() {
                 -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
               }
               
-              /* ✅ Ensure shorts content is interactive */
-              html[data-page="shorts"] [data-page="shorts"],
-              html[data-page="shorts"] [data-component="short-player"],
-              html[data-page="shorts"] video {
-                pointer-events: auto !important;
+              /* ✅ Force active short visibility */
+              [data-is-active="true"] {
+                visibility: visible !important;
+                opacity: 1 !important;
+                display: block !important;
+                z-index: 30 !important;
               }
               
-              /* ✅ Force active short visibility */
-              [data-is-active="true"],
-              [data-is-active="true"] > * {
+              [data-is-active="true"] video {
                 visibility: visible !important;
                 opacity: 1 !important;
                 display: block !important;
