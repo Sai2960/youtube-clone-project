@@ -777,13 +777,13 @@ const ChannelPage = () => {
         {/* ============================================================================
             CONTENT TABS - VIEW VIDEOS & SHORTS
             ============================================================================ */}
-        <div className="px-4 sm:px-6 pb-6 sm:pb-8 max-w-7xl mx-auto">
+        <div className="px-4 sm:px-6 pb-6 sm:pb-8 w-full max-w-7xl mx-auto">
           {/* Tab Navigation */}
-          <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
             {/* Videos Tab */}
             <button
               onClick={() => setContentTab("videos")}
-              className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all relative ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-3 font-semibold transition-all relative whitespace-nowrap ${
                 contentTab === "videos"
                   ? "text-blue-600 dark:text-blue-400"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -802,7 +802,7 @@ const ChannelPage = () => {
             {/* Shorts Tab */}
             <button
               onClick={() => setContentTab("shorts")}
-              className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all relative ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-3 font-semibold transition-all relative whitespace-nowrap ${
                 contentTab === "shorts"
                   ? "text-red-600 dark:text-red-400"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -850,7 +850,7 @@ const ChannelPage = () => {
           )}
           {/* Shorts Content - COMPLETE WITH FIXED THUMBNAILS */}
           {contentTab === "shorts" && (
-            <div>
+            <div className="w-full overflow-x-hidden">
               {shortsLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
@@ -892,7 +892,7 @@ const ChannelPage = () => {
                   </div>
 
                   {/* Shorts Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 w-full">
                     {shorts.map((short) => {
                       const thumbnailUrl = getShortThumbnail(short);
                       console.log("📸 Rendering short:", {
