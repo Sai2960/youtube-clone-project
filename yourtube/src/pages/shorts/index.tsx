@@ -10,7 +10,7 @@ import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import Head from "next/head";
 
 // ✅ Force dynamic rendering & disable caching
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 interface Short {
@@ -44,7 +44,10 @@ interface Short {
 }
 
 const getApiUrl = () => {
-  return process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
+  return (
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://youtube-clone-project-q3pd.onrender.com"
+  );
 };
 
 const ShortsPage: React.FC = () => {
@@ -55,11 +58,11 @@ const ShortsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   // ✅ CRITICAL: Navigation throttling refs
   const lastNavigationTimeRef = useRef(0);
   const isNavigatingRef = useRef(false);
-  const navigationQueueRef = useRef<'next' | 'prev' | null>(null);
+  const navigationQueueRef = useRef<"next" | "prev" | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewedShorts = useRef<Set<string>>(new Set());
   const router = useRouter();
@@ -69,34 +72,43 @@ const ShortsPage: React.FC = () => {
     fetchShorts(1);
   }, []);
 
-
   // ✅ Listen for avatar updates
-useEffect(() => {
-  const handleAvatarUpdate = () => {
-    console.log('🔄 Avatar updated, refreshing shorts');
-    // Force re-render of current short
-    setShorts(prev => [...prev]);
-  };
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      console.log("🔄 Avatar updated, refreshing shorts");
+      // Force re-render of current short
+      setShorts((prev) => [...prev]);
+    };
 
-  window.addEventListener('avatarUpdated', handleAvatarUpdate);
-  return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
-}, []);
+    window.addEventListener("avatarUpdated", handleAvatarUpdate);
+    return () =>
+      window.removeEventListener("avatarUpdated", handleAvatarUpdate);
+  }, []);
   // ✅ Handle start query parameter
   useEffect(() => {
-    if (router.query.start && shorts.length > 0) {
-      const startIndex = parseInt(router.query.start as string, 10);
-      if (!isNaN(startIndex) && startIndex >= 0 && startIndex < shorts.length) {
-        console.log("🎯 Starting at short index:", startIndex);
-        setCurrentIndex(startIndex);
-        const { start, ...restQuery } = router.query;
+    if (router.query.id && shorts.length > 0) {
+      const shortId = router.query.id as string;
+      console.log("🎯 Looking for short with ID:", shortId);
+
+      const foundIndex = shorts.findIndex((s) => s._id === shortId);
+
+      if (foundIndex !== -1) {
+        console.log("✅ Found short at index:", foundIndex);
+        setCurrentIndex(foundIndex);
+
+        // Remove id from URL to clean it up
+        const { id, ...restQuery } = router.query;
         router.replace(
           { pathname: router.pathname, query: restQuery },
           undefined,
           { shallow: true }
         );
+      } else {
+        console.warn("⚠️ Short not found in current array, fetching by ID...");
+        fetchSingleShortAndInsert(shortId);
       }
     }
-  }, [router.query.start, shorts.length]);
+  }, [router.query.id, shorts.length]);
 
   // ✅ Prefetch more shorts when near the end
   useEffect(() => {
@@ -164,7 +176,10 @@ useEffect(() => {
       const token = localStorage.getItem("token");
       const apiUrl = getApiUrl();
 
-      console.log("📡 Fetching shorts from:", `${apiUrl}/api/shorts?page=${pageNum}`);
+      console.log(
+        "📡 Fetching shorts from:",
+        `${apiUrl}/api/shorts?page=${pageNum}`
+      );
 
       const response = await axios.get(`${apiUrl}/api/shorts`, {
         params: {
@@ -178,55 +193,67 @@ useEffect(() => {
       console.log("✅ Shorts response:", {
         success: response.data.success,
         count: response.data.data?.length,
-        firstShort: response.data.data?.[0] ? {
-          id: response.data.data[0]._id,
-          title: response.data.data[0].title,
-          videoUrl: response.data.data[0].videoUrl?.substring(0, 100),
-          hasCloudinary: response.data.data[0].videoUrl?.includes('cloudinary'),
-        } : null
+        firstShort: response.data.data?.[0]
+          ? {
+              id: response.data.data[0]._id,
+              title: response.data.data[0].title,
+              videoUrl: response.data.data[0].videoUrl?.substring(0, 100),
+              hasCloudinary:
+                response.data.data[0].videoUrl?.includes("cloudinary"),
+            }
+          : null,
       });
 
       if (response.data.success && Array.isArray(response.data.data)) {
         const newShorts = response.data.data;
 
         // ✅ Validate video URLs
-      // ✅ Validate video URLs more thoroughly
-// Around line 155, update the validation:
-const validShorts = newShorts.filter(short => {
-  if (!short.videoUrl) {
-    console.error("❌ Short missing video URL:", short._id, short.title);
-    return false;
-  }
-  
-  // ✅ ENHANCED: Check if URL is accessible
-  const url = short.videoUrl;
-  const isValid = url.startsWith('http://') || 
-                  url.startsWith('https://') || 
-                  url.includes('cloudinary.com') ||
-                  url.includes('res.cloudinary.com');
-  
-  if (!isValid) {
-    console.error("❌ Invalid video URL format:", url);
-    return false;
-  }
-  
-  // ✅ NEW: Check if Cloudinary URL is properly formatted
-  if (url.includes('cloudinary.com')) {
-    const hasProtocol = url.startsWith('https://');
-    const hasPath = url.includes('/upload/');
-    
-    if (!hasProtocol || !hasPath) {
-      console.error("❌ Malformed Cloudinary URL:", url);
-      return false;
-    }
-  }
-  
-  console.log("✅ Valid short:", short._id, url.substring(0, 50));
-  return true;
-});
+        // ✅ Validate video URLs more thoroughly
+        // Around line 155, update the validation:
+        const validShorts = newShorts.filter((short) => {
+          if (!short.videoUrl) {
+            console.error(
+              "❌ Short missing video URL:",
+              short._id,
+              short.title
+            );
+            return false;
+          }
+
+          // ✅ ENHANCED: Check if URL is accessible
+          const url = short.videoUrl;
+          const isValid =
+            url.startsWith("http://") ||
+            url.startsWith("https://") ||
+            url.includes("cloudinary.com") ||
+            url.includes("res.cloudinary.com");
+
+          if (!isValid) {
+            console.error("❌ Invalid video URL format:", url);
+            return false;
+          }
+
+          // ✅ NEW: Check if Cloudinary URL is properly formatted
+          if (url.includes("cloudinary.com")) {
+            const hasProtocol = url.startsWith("https://");
+            const hasPath = url.includes("/upload/");
+
+            if (!hasProtocol || !hasPath) {
+              console.error("❌ Malformed Cloudinary URL:", url);
+              return false;
+            }
+          }
+
+          console.log("✅ Valid short:", short._id, url.substring(0, 50));
+          return true;
+        });
 
         if (validShorts.length < newShorts.length) {
-          console.warn(`⚠️ Filtered out ${newShorts.length - validShorts.length} shorts without video URLs`);
+          console.warn(
+            `⚠️ Filtered out ${
+              newShorts.length - validShorts.length
+            } shorts without video URLs`
+          );
         }
 
         if (validShorts.length === 0) {
@@ -235,7 +262,9 @@ const validShorts = newShorts.filter(short => {
         } else {
           setShorts((prev) => {
             const existingIds = new Set(prev.map((s) => s._id));
-            const uniqueNewShorts = validShorts.filter((s) => !existingIds.has(s._id));
+            const uniqueNewShorts = validShorts.filter(
+              (s) => !existingIds.has(s._id)
+            );
             return pageNum === 1 ? validShorts : [...prev, ...uniqueNewShorts];
           });
           setPage(pageNum);
@@ -249,7 +278,8 @@ const validShorts = newShorts.filter(short => {
       console.error("   Status:", error.response?.status);
 
       setError(
-        error.response?.data?.message || "Failed to load shorts. Please try again."
+        error.response?.data?.message ||
+          "Failed to load shorts. Please try again."
       );
     } finally {
       setLoading(false);
@@ -257,40 +287,100 @@ const validShorts = newShorts.filter(short => {
     }
   };
 
-  // ✅ NEW: Callback to update short in array when liked/disliked
-// ✅ NEW: Callback to update short in array when liked/disliked
-const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCount: number, disliked?: boolean, dislikesCount?: number) => {
-  console.log("\n🔵 ===== handleShortLiked CALLED IN PARENT =====");
-  console.log("📥 Received:", { shortId, liked, likesCount, disliked, dislikesCount });
-  
-  setShorts(prevShorts => {
-    console.log("📊 Current shorts array length:", prevShorts.length);
-    
-    const updatedShorts = prevShorts.map(s => {
-      if (s._id === shortId) {
-        console.log("✅ Found matching short, updating:");
-        console.log("   Before:", { hasLiked: s.hasLiked, likesCount: s.likesCount });
-        
-        const updated = { 
-          ...s, 
-          hasLiked: liked, 
-          likesCount: likesCount,
-          ...(disliked !== undefined && { hasDisliked: disliked }),
-          ...(dislikesCount !== undefined && { dislikesCount: dislikesCount })
-        };
-        
-        console.log("   After:", { hasLiked: updated.hasLiked, likesCount: updated.likesCount });
-        return updated;
+  const fetchSingleShortAndInsert = async (shortId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = getApiUrl();
+
+      console.log("📡 Fetching single short:", shortId);
+
+      const response = await axios.get(`${apiUrl}/api/shorts/${shortId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (response.data.success && response.data.data) {
+        const fetchedShort = response.data.data;
+        console.log("✅ Fetched short:", fetchedShort.title);
+
+        // Insert at beginning and set as current
+        setShorts((prev) => [fetchedShort, ...prev]);
+        setCurrentIndex(0);
+
+        // Clean up URL
+        const { id, ...restQuery } = router.query;
+        router.replace(
+          { pathname: router.pathname, query: restQuery },
+          undefined,
+          { shallow: true }
+        );
+      } else {
+        console.error("❌ Short not found");
+        // Fall back to normal shorts feed
+        router.replace("/shorts", undefined, { shallow: true });
       }
-      return s;
-    });
-    
-    console.log("✅ Shorts array updated");
-    return updatedShorts;
-  });
-  
-  console.log("===== handleShortLiked COMPLETE =====\n");
-}, []);
+    } catch (error: any) {
+      console.error("❌ Error fetching single short:", error);
+      router.replace("/shorts", undefined, { shallow: true });
+    }
+  };
+
+  // ✅ NEW: Callback to update short in array when liked/disliked
+  // ✅ NEW: Callback to update short in array when liked/disliked
+  const handleShortLiked = useCallback(
+    (
+      shortId: string,
+      liked: boolean,
+      likesCount: number,
+      disliked?: boolean,
+      dislikesCount?: number
+    ) => {
+      console.log("\n🔵 ===== handleShortLiked CALLED IN PARENT =====");
+      console.log("📥 Received:", {
+        shortId,
+        liked,
+        likesCount,
+        disliked,
+        dislikesCount,
+      });
+
+      setShorts((prevShorts) => {
+        console.log("📊 Current shorts array length:", prevShorts.length);
+
+        const updatedShorts = prevShorts.map((s) => {
+          if (s._id === shortId) {
+            console.log("✅ Found matching short, updating:");
+            console.log("   Before:", {
+              hasLiked: s.hasLiked,
+              likesCount: s.likesCount,
+            });
+
+            const updated = {
+              ...s,
+              hasLiked: liked,
+              likesCount: likesCount,
+              ...(disliked !== undefined && { hasDisliked: disliked }),
+              ...(dislikesCount !== undefined && {
+                dislikesCount: dislikesCount,
+              }),
+            };
+
+            console.log("   After:", {
+              hasLiked: updated.hasLiked,
+              likesCount: updated.likesCount,
+            });
+            return updated;
+          }
+          return s;
+        });
+
+        console.log("✅ Shorts array updated");
+        return updatedShorts;
+      });
+
+      console.log("===== handleShortLiked COMPLETE =====\n");
+    },
+    []
+  );
   // ✅ Handle short deletion
   const handleShortDeleted = useCallback(
     (deletedShortId: string) => {
@@ -476,7 +566,9 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
         <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent" />
-            <p className="text-white text-xl font-semibold">Loading Shorts...</p>
+            <p className="text-white text-xl font-semibold">
+              Loading Shorts...
+            </p>
             <p className="text-gray-400 text-sm">Please wait</p>
           </div>
         </div>
@@ -505,7 +597,10 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
               disabled={isRefreshing}
               className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg transition transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <RefreshCw size={20} className={isRefreshing ? "animate-spin" : ""} />
+              <RefreshCw
+                size={20}
+                className={isRefreshing ? "animate-spin" : ""}
+              />
               {isRefreshing ? "Refreshing..." : "Try Again"}
             </button>
             <button
@@ -530,8 +625,12 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
         <div className="fixed inset-0 bg-black flex flex-col items-center justify-center gap-6 p-4 z-50">
           <div className="text-center">
             <div className="text-6xl mb-4">📹</div>
-            <h2 className="text-white text-2xl font-bold mb-2">No Shorts Yet</h2>
-            <p className="text-gray-400 mb-6">Check back later for new content!</p>
+            <h2 className="text-white text-2xl font-bold mb-2">
+              No Shorts Yet
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Check back later for new content!
+            </p>
           </div>
           <button
             onClick={() => router.push("/")}
@@ -550,29 +649,29 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
       <Head>
         <title>Shorts - YouTube</title>
       </Head>
-<div
-  ref={containerRef}
-  className="fixed inset-0 bg-black"
-  style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100vw',
-    height: '100vh',
-    minHeight: '100vh',
-    maxHeight: '100vh',
-    overflow: 'hidden',
-    WebkitOverflowScrolling: 'touch',
-    display: 'block',
-    zIndex: 50,
-    WebkitTransform: 'translateZ(0)',
-    transform: 'translateZ(0)',
-    backgroundColor: '#000',
-  }}
-  data-page="shorts" // ✅ THIS IS CRITICAL
->
+      <div
+        ref={containerRef}
+        className="fixed inset-0 bg-black"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100vw",
+          height: "100vh",
+          minHeight: "100vh",
+          maxHeight: "100vh",
+          overflow: "hidden",
+          WebkitOverflowScrolling: "touch",
+          display: "block",
+          zIndex: 50,
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)",
+          backgroundColor: "#000",
+        }}
+        data-page="shorts" // ✅ THIS IS CRITICAL
+      >
         {/* Back Button - Desktop Only */}
         <button
           onClick={() => router.push("/")}
@@ -602,58 +701,56 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
           </div>
         </div>
 
+        {/* Shorts Container */}
+        <div
+          className="relative w-full h-full"
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "100%",
+            overflow: "hidden",
+          }}
+        >
+          {shorts.map((short, index) => {
+            const shouldRender = Math.abs(index - currentIndex) <= 1;
+            if (!shouldRender) return null;
 
-{/* Shorts Container */}
-<div 
-  className="relative w-full h-full"
-  style={{
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-    overflow: 'hidden',
-  }}
->
-  {shorts.map((short, index) => {
-    const shouldRender = Math.abs(index - currentIndex) <= 1;
-    if (!shouldRender) return null;
+            const isActive = index === currentIndex;
+            const position = index - currentIndex;
 
-    const isActive = index === currentIndex;
-    const position = index - currentIndex;
+            return (
+              <div
+                key={short._id}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  // ✅ CRITICAL FIX: Use visibility instead of transform
+                  visibility: isActive ? "visible" : "hidden",
+                  opacity: isActive ? 1 : 0,
+                  transition: "opacity 300ms ease-out",
+                  zIndex: isActive ? 30 : 20,
+                  pointerEvents: isActive ? "auto" : "none",
+                }}
+                data-short-index={index}
+                data-is-active={isActive}
+                data-short-id={short._id}
+              >
+                <ShortPlayer
+                  short={short}
+                  isActive={isActive}
+                  onNext={handleNext}
+                  onPrevious={handlePrevious}
+                  onDelete={handleShortDeleted}
+                  onLikeUpdate={handleShortLiked}
+                />
+              </div>
+            );
+          })}
+        </div>
 
-    return (
-      <div
-        key={short._id}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          // ✅ CRITICAL FIX: Use visibility instead of transform
-          visibility: isActive ? 'visible' : 'hidden',
-          opacity: isActive ? 1 : 0,
-          transition: 'opacity 300ms ease-out',
-          zIndex: isActive ? 30 : 20,
-          pointerEvents: isActive ? 'auto' : 'none',
-        }}
-        data-short-index={index}
-        data-is-active={isActive}
-        data-short-id={short._id}
-      >
-        <ShortPlayer
-          short={short}
-          isActive={isActive}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-          onDelete={handleShortDeleted}
-          onLikeUpdate={handleShortLiked}
-        />
-      </div>
-    );
-  })}
-</div>
-
-     
         {/* Loading indicator */}
         {loading && shorts.length > 0 && (
           <div className="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-[80] lg:bottom-8">
@@ -665,13 +762,15 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
         )}
 
         {/* End indicator */}
-        {!hasMore && shorts.length > 0 && currentIndex === shorts.length - 1 && (
-          <div className="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-[80] lg:bottom-8">
-            <div className="bg-black/60 backdrop-blur-md rounded-full px-4 py-2 text-white text-sm">
-              You've reached the end! 🎉
+        {!hasMore &&
+          shorts.length > 0 &&
+          currentIndex === shorts.length - 1 && (
+            <div className="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-[80] lg:bottom-8">
+              <div className="bg-black/60 backdrop-blur-md rounded-full px-4 py-2 text-white text-sm">
+                You've reached the end! 🎉
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Mobile Navigation Hints - Show on first load */}
         {currentIndex === 0 && shorts.length > 1 && (
@@ -693,3 +792,7 @@ const handleShortLiked = useCallback((shortId: string, liked: boolean, likesCoun
 };
 
 export default ShortsPage;
+
+function fetchSingleShortAndInsert(shortId: string) {
+  throw new Error("Function not implemented.");
+}

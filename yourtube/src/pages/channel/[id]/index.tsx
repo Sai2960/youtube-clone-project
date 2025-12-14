@@ -921,6 +921,7 @@ const ChannelPage = () => {
                                   fullShort: short,
                                 });
                                 if (shortId) {
+                                  // ✅ CRITICAL: Use 'id' parameter, not navigate to /shorts?id=
                                   router.push(`/shorts?id=${shortId}`);
                                 } else {
                                   console.error(
