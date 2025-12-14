@@ -11752,28 +11752,37 @@ button {
 .channel-info-item {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
-/* Better text visibility for shorts and videos */
+/* ============================================
+   SHORTS & VIDEOS GRID - COMPLETE FIX
+   Add this to your globals.css file
+   ============================================ */
+
+/* Ensure proper box-sizing for shorts grid items */
 .shorts-grid-item,
 .shorts-grid-item * {
   box-sizing: border-box;
 }
 
+/* Prevent horizontal overflow on mobile */
 .shorts-grid-item {
   max-width: 100%;
   overflow: hidden;
 }
 
+/* Ensure images don't exceed container */
 .shorts-grid-item img {
   max-width: 100%;
   height: auto;
 }
 
+/* Better text visibility for shorts */
 .shorts-grid-item h3 {
   word-break: break-word;
   overflow-wrap: break-word;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  hyphens: auto;
 }
 
 .shorts-grid-item p {
@@ -11789,7 +11798,7 @@ button {
     margin-bottom: 1.5rem;
   }
   
-  /* Minimum height for text container */
+  /* Minimum height for text container to prevent cutoff */
   .shorts-grid-item > div:last-child {
     min-height: 70px;
     padding-bottom: 8px;
@@ -11801,8 +11810,15 @@ button {
     margin-right: 0;
   }
   
-  /* Safe area for bottom navigation */
+  /* Safe area for bottom navigation bar */
   body {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Desktop view - cleaner spacing */
+@media (min-width: 641px) {
+  .shorts-grid-item {
+    margin-bottom: 0;
   }
 }
