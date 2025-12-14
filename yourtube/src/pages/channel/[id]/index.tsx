@@ -928,10 +928,10 @@ const ChannelPage = () => {
                                   );
                                 }
                               }}
-                              className="group cursor-pointer w-full transform transition-all duration-300 hover:scale-[1.02]"
+                              className="group cursor-pointer w-full transform transition-all duration-300 md:hover:scale-[1.02]"
                             >
                               {/* Thumbnail Container */}
-                              <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-black shadow-sm sm:shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-500 hover:ring-2 hover:ring-red-500/50">
+                              <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-black shadow-sm sm:shadow-md md:hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 md:hover:border-red-500 dark:md:hover:border-red-500 md:hover:ring-2 md:hover:ring-red-500/50">
                                 <div
                                   className="relative w-full"
                                   style={{ paddingBottom: "177.78%" }}
@@ -940,7 +940,7 @@ const ChannelPage = () => {
                                   <img
                                     src={thumbnailUrl}
                                     alt={short.title}
-                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                                    className="absolute inset-0 w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700 ease-out"
                                     loading="lazy"
                                     onError={(e) => {
                                       console.error(
@@ -992,13 +992,13 @@ const ChannelPage = () => {
                                   />
 
                                   {/* Gradient Overlay - Enhanced */}
-                                  <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-hover:from-black/95 transition-all duration-300" />
+                                  <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none md:group-hover:from-black/95 transition-all duration-300" />
 
                                   {/* Red Overlay on Hover - Desktop Only */}
                                   <div className="hidden sm:block absolute inset-0 bg-red-600/0 group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none" />
 
                                   {/* Views Badge - Enhanced */}
-                                  <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300">
+                                  <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
                                     <Play
                                       className="w-2.5 h-2.5 sm:w-3 sm:h-3"
                                       fill="white"
@@ -1010,13 +1010,13 @@ const ChannelPage = () => {
 
                                   {/* Duration Badge - Enhanced */}
                                   {short.duration && (
-                                    <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300">
+                                    <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
                                       {short.duration}s
                                     </div>
                                   )}
 
                                   {/* Play Button Overlay - Enhanced */}
-                                  <div className="hidden sm:flex absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-500 items-center justify-center">
+                                  <div className="hidden md:flex absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-500 items-center justify-center">
                                     <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
                                       <div className="relative">
                                         {/* Pulsing Ring Animation */}
@@ -1039,7 +1039,7 @@ const ChannelPage = () => {
                                   </div>
 
                                   {/* Index Number Badge - Top Right (Optional) */}
-                                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md">
+                                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 md:group-hover:opacity-100 transition-all duration-300 bg-black/70 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md">
                                     #{index + 1}
                                   </div>
                                 </div>
@@ -1047,14 +1047,14 @@ const ChannelPage = () => {
 
                               {/* Title & Channel Info */}
                               <div className="mt-2 sm:mt-3 px-1">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1.5 sm:mb-1 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors duration-300">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1.5 sm:mb-1 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300">
                                   {short.title}
                                 </h3>
 
                                 {/* Channel Avatar & Name */}
                                 <div className="flex items-center gap-2">
                                   <div
-                                    className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700 group-hover:ring-2 group-hover:ring-red-500 transition-all duration-300 transform group-hover:scale-110"
+                                    className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700 md:group-hover:ring-2 md:group-hover:ring-red-500 transition-all duration-300 transform md:group-hover:scale-110"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
