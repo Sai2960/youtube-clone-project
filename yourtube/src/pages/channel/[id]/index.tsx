@@ -172,25 +172,31 @@ const ChannelPage = () => {
   }, [channel, videos.length, shorts.length, isMounted, renderKey]);
 
   // ============================================================================
-// 🔴 ANDROID: LISTEN FOR FORCE REFRESH EVENTS
-// ============================================================================
-useEffect(() => {
-  const handleForceRefresh = (event: CustomEvent) => {
-    console.log('🔄 Force refresh event received:', event.detail);
-    
-    // Increment both keys to force complete re-render
-    setRefreshKey(prev => prev + 1);
-    setRenderKey(prev => prev + 1);
-  };
-  
-  window.addEventListener('forceChannelRefresh', handleForceRefresh as EventListener);
-  
-  return () => {
-    window.removeEventListener('forceChannelRefresh', handleForceRefresh as EventListener);
-  };
-}, []);
+  // 🔴 ANDROID: LISTEN FOR FORCE REFRESH EVENTS
+  // ============================================================================
+  useEffect(() => {
+    const handleForceRefresh = (event: CustomEvent) => {
+      console.log("🔄 Force refresh event received:", event.detail);
 
-    // ============================================================================
+      // Increment both keys to force complete re-render
+      setRefreshKey((prev) => prev + 1);
+      setRenderKey((prev) => prev + 1);
+    };
+
+    window.addEventListener(
+      "forceChannelRefresh",
+      handleForceRefresh as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "forceChannelRefresh",
+        handleForceRefresh as EventListener
+      );
+    };
+  }, []);
+
+  // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
 
@@ -242,158 +248,171 @@ useEffect(() => {
     fetchChannel();
   }, [id, user?._id]);
 
-    // ============================================================================
+  // ============================================================================
   // FETCH VIDEOS
   // ============================================================================
 
-useEffect(() => {
-  const fetchVideos = async () => {
-    if (!id || typeof id !== "string") {
-      console.log("⚠️ No channel ID for videos");
-      return;
-    }
-
-    try {
-      setVideosLoading(true);
-      console.log("📹 Fetching videos for channel:", id);
-
-      const timestamp = Date.now();
-      
-      // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
-      const response = await axiosInstance.get(`/video/channel/${id}`, {
-        params: {
-          _t: timestamp,
-          nocache: "true",
-          mobile: "true"
-        },
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-          "Pragma": "no-cache",
-          "Expires": "0",
-          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
-        },
-        // ✅ CRITICAL: Disable Axios's automatic ETag handling
-        transformRequest: [(data, headers) => {
-          delete headers['If-None-Match'];
-          delete headers['If-Modified-Since'];
-          return data;
-        }],
-      });
-
-      console.log("📹 Videos API response:", {
-        success: response.data.success,
-        count: response.data.data?.length || response.data.videos?.length || 0,
-        timestamp: response.data.timestamp
-      });
-
-      if (response.data.success && Array.isArray(response.data.data)) {
-        console.log("✅ Setting videos:", response.data.data.length);
-        setVideos(response.data.data);
-        setTimeout(() => setRenderKey(prev => prev + 1), 100);
-      } else if (response.data.videos && Array.isArray(response.data.videos)) {
-        console.log("✅ Setting videos (alternate):", response.data.videos.length);
-        setVideos(response.data.videos);
-        setTimeout(() => setRenderKey(prev => prev + 1), 100);
-      } else {
-        console.log("⚠️ No videos in response");
-        setVideos([]);
+  useEffect(() => {
+    const fetchVideos = async () => {
+      if (!id || typeof id !== "string") {
+        console.log("⚠️ No channel ID for videos");
+        return;
       }
-    } catch (error: any) {
-      console.error("❌ Error fetching videos:", {
-        message: error.message,
-        status: error.response?.status,
-      });
-      setVideos([]);
-    } finally {
-      setVideosLoading(false);
-    }
-  };
 
-  const timer = setTimeout(fetchVideos, 150);
-  return () => clearTimeout(timer);
-}, [id, refreshKey]);
-    // ============================================================================
+      try {
+        setVideosLoading(true);
+        console.log("📹 Fetching videos for channel:", id);
+
+        const timestamp = Date.now();
+
+        // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
+        const response = await axiosInstance.get(`/video/channel/${id}`, {
+          params: {
+            _t: timestamp,
+            nocache: "true",
+            mobile: "true",
+          },
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            Pragma: "no-cache",
+            Expires: "0",
+            // ✅ REMOVED: "If-None-Match" - this was causing CORS error
+          },
+          // ✅ CRITICAL: Disable Axios's automatic ETag handling
+          transformRequest: [
+            (data, headers) => {
+              delete headers["If-None-Match"];
+              delete headers["If-Modified-Since"];
+              return data;
+            },
+          ],
+        });
+
+        console.log("📹 Videos API response:", {
+          success: response.data.success,
+          count:
+            response.data.data?.length || response.data.videos?.length || 0,
+          timestamp: response.data.timestamp,
+        });
+
+        if (response.data.success && Array.isArray(response.data.data)) {
+          console.log("✅ Setting videos:", response.data.data.length);
+          setVideos(response.data.data);
+          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
+        } else if (
+          response.data.videos &&
+          Array.isArray(response.data.videos)
+        ) {
+          console.log(
+            "✅ Setting videos (alternate):",
+            response.data.videos.length
+          );
+          setVideos(response.data.videos);
+          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
+        } else {
+          console.log("⚠️ No videos in response");
+          setVideos([]);
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching videos:", {
+          message: error.message,
+          status: error.response?.status,
+        });
+        setVideos([]);
+      } finally {
+        setVideosLoading(false);
+      }
+    };
+
+    const timer = setTimeout(fetchVideos, 150);
+    return () => clearTimeout(timer);
+  }, [id, refreshKey]);
+  // ============================================================================
   // FETCH SHORTS
   // ============================================================================
 
-useEffect(() => {
-  const fetchShorts = async () => {
-    if (!id || typeof id !== "string") {
-      console.log("⚠️ No channel ID for shorts");
-      return;
-    }
+  useEffect(() => {
+    const fetchShorts = async () => {
+      if (!id || typeof id !== "string") {
+        console.log("⚠️ No channel ID for shorts");
+        return;
+      }
 
-    try {
-      setShortsLoading(true);
-      setShortsError(null);
-      console.log("🎬 Fetching shorts for channel:", id);
+      try {
+        setShortsLoading(true);
+        setShortsError(null);
+        console.log("🎬 Fetching shorts for channel:", id);
 
-      const timestamp = Date.now();
-      
-      // ✅ CRITICAL FIX: Remove if-none-match header
-      const response = await axiosInstance.get(`/shorts/channel/${id}`, {
-        params: {
-          page: 1,
-          limit: 100,
-          _t: timestamp,
-          nocache: "true",
-          mobile: "true"
-        },
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-          "Pragma": "no-cache",
-          "Expires": "0",
-          // ✅ REMOVED: "If-None-Match" - this was causing CORS error
-        },
-        // ✅ CRITICAL: Disable Axios's automatic ETag handling
-        transformRequest: [(data, headers) => {
-          delete headers['If-None-Match'];
-          delete headers['If-Modified-Since'];
-          return data;
-        }],
-      });
+        const timestamp = Date.now();
 
-      console.log("🎬 Shorts API response:", {
-        success: response.data.success,
-        count: response.data.data?.length || response.data.shorts?.length || 0,
-        timestamp: response.data.timestamp
-      });
+        // ✅ CRITICAL FIX: Remove if-none-match header
+        const response = await axiosInstance.get(`/shorts/channel/${id}`, {
+          params: {
+            page: 1,
+            limit: 100,
+            _t: timestamp,
+            nocache: "true",
+            mobile: "true",
+          },
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            Pragma: "no-cache",
+            Expires: "0",
+            // ✅ REMOVED: "If-None-Match" - this was causing CORS error
+          },
+          // ✅ CRITICAL: Disable Axios's automatic ETag handling
+          transformRequest: [
+            (data, headers) => {
+              delete headers["If-None-Match"];
+              delete headers["If-Modified-Since"];
+              return data;
+            },
+          ],
+        });
 
-      if (response.data.success) {
-        const fetchedShorts = response.data.data || response.data.shorts || [];
-        console.log("✅ Setting shorts:", fetchedShorts.length);
+        console.log("🎬 Shorts API response:", {
+          success: response.data.success,
+          count:
+            response.data.data?.length || response.data.shorts?.length || 0,
+          timestamp: response.data.timestamp,
+        });
 
-        const processedShorts = fetchedShorts.map((short: any) => ({
-          ...short,
-          thumbnailUrl: short.thumbnailUrl || short.thumbnail,
-          videoUrl: short.videoUrl || short.video,
-        }));
+        if (response.data.success) {
+          const fetchedShorts =
+            response.data.data || response.data.shorts || [];
+          console.log("✅ Setting shorts:", fetchedShorts.length);
 
-        setShorts(processedShorts);
-        setTimeout(() => setRenderKey(prev => prev + 1), 100);
-      } else {
-        console.log("⚠️ No shorts in response");
+          const processedShorts = fetchedShorts.map((short: any) => ({
+            ...short,
+            thumbnailUrl: short.thumbnailUrl || short.thumbnail,
+            videoUrl: short.videoUrl || short.video,
+          }));
+
+          setShorts(processedShorts);
+          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
+        } else {
+          console.log("⚠️ No shorts in response");
+          setShorts([]);
+        }
+      } catch (error: any) {
+        console.error("❌ Error fetching shorts:", {
+          message: error.message,
+          status: error.response?.status,
+        });
+
+        if (error.response?.status !== 404) {
+          setShortsError("Failed to load shorts");
+        }
         setShorts([]);
+      } finally {
+        setShortsLoading(false);
       }
-    } catch (error: any) {
-      console.error("❌ Error fetching shorts:", {
-        message: error.message,
-        status: error.response?.status,
-      });
+    };
 
-      if (error.response?.status !== 404) {
-        setShortsError("Failed to load shorts");
-      }
-      setShorts([]);
-    } finally {
-      setShortsLoading(false);
-    }
-  };
-
-  const timer = setTimeout(fetchShorts, 200);
-  return () => clearTimeout(timer);
-}, [id, refreshKey]);
-    // ============================================================================
+    const timer = setTimeout(fetchShorts, 200);
+    return () => clearTimeout(timer);
+  }, [id, refreshKey]);
+  // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
 
@@ -486,7 +505,7 @@ useEffect(() => {
     }
   };
 
-    // ============================================================================
+  // ============================================================================
   // LOADING & ERROR STATES
   // ============================================================================
 
@@ -524,7 +543,7 @@ useEffect(() => {
 
   const isOwnChannel = user?._id === id;
 
-    // ============================================================================
+  // ============================================================================
   // RENDER - MAIN JSX
   // ============================================================================
 
@@ -541,95 +560,95 @@ useEffect(() => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-{/* ✅ CHANNEL INFO BAR - ANDROID FORCE VISIBLE */}
-{channel && isMounted && (
-  <div
-    ref={infoBarRef}
-    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-    className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-    style={{
-      position: "relative",
-      zIndex: 10,
-    }}
-  >
-    <div className="w-full max-w-7xl mx-auto">
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
-        {/* Channel Name */}
-        <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-          <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-          <span className="text-sm sm:text-base truncate">
-            {channel.channelname || channel.name || "Unknown"}
-          </span>
-        </div>
+        {/* ✅ CHANNEL INFO BAR - ANDROID FORCE VISIBLE */}
+        {channel && isMounted && (
+          <div
+            ref={infoBarRef}
+            key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+            className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+            style={{
+              position: "relative",
+              zIndex: 10,
+            }}
+          >
+            <div className="w-full max-w-7xl mx-auto">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
+                {/* Channel Name */}
+                <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span className="text-sm sm:text-base truncate">
+                    {channel.channelname || channel.name || "Unknown"}
+                  </span>
+                </div>
 
-        {/* Joined Date */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="text-xs sm:text-sm whitespace-nowrap">
-            Joined{" "}
-            {channel.joinedon
-              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                  month: "short",
-                  year: "numeric",
-                })
-              : "Recently"}
-          </span>
-        </div>
+                {/* Joined Date */}
+                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                    Joined{" "}
+                    {channel.joinedon
+                      ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "Recently"}
+                  </span>
+                </div>
 
-        {/* Video Count - FORCE UPDATE */}
-        <div 
-          key={`video-${videos.length}-${renderKey}`}
-          className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
-        >
-          <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="text-xs sm:text-sm whitespace-nowrap">
-            {videos.length} video{videos.length !== 1 ? "s" : ""}
-          </span>
-        </div>
+                {/* Video Count - FORCE UPDATE */}
+                <div
+                  key={`video-${videos.length}-${renderKey}`}
+                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+                >
+                  <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                    {videos.length} video{videos.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
 
-        {/* Shorts Count - FORCE UPDATE */}
-        <div 
-          key={`shorts-${shorts.length}-${renderKey}`}
-          className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
-        >
-          <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="text-xs sm:text-sm whitespace-nowrap">
-            {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                {/* Shorts Count - FORCE UPDATE */}
+                <div
+                  key={`shorts-${shorts.length}-${renderKey}`}
+                  className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+                >
+                  <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                    {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-{/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
-{process.env.NODE_ENV === 'development' && (
-  <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
-    <button
-      onClick={() => {
-        console.log('🔄 Force refresh triggered');
-        setRefreshKey(prev => prev + 1);
-        setRenderKey(prev => prev + 1);
-      }}
-      className="px-4 py-2 bg-blue-600 text-white rounded"
-    >
-      Force Refresh (Debug)
-    </button>
-    <span className="ml-4 text-xs">
-      Videos: {videos.length} | Shorts: {shorts.length} | Render: {renderKey}
-    </span>
-  </div>
-)}
+        {/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
+            <button
+              onClick={() => {
+                console.log("🔄 Force refresh triggered");
+                setRefreshKey((prev) => prev + 1);
+                setRenderKey((prev) => prev + 1);
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              Force Refresh (Debug)
+            </button>
+            <span className="ml-4 text-xs">
+              Videos: {videos.length} | Shorts: {shorts.length} | Render:{" "}
+              {renderKey}
+            </span>
+          </div>
+        )}
 
-
-       {/* ============================================================================
+        {/* ============================================================================
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}
         {isOwnChannel && (
           <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6 max-w-7xl mx-auto">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
               {/* Upload Tabs */}
-              <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide bg-transparent">
+              <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide bg-white dark:bg-gray-800">
                 {/* Videos Upload Tab */}
                 <button
                   type="button"
@@ -700,7 +719,7 @@ useEffect(() => {
                 </div>
               ) : (
                 <div>
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 sm:p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-red-600">
                       <Avatar className="w-full h-full">
                         <AvatarImage
@@ -709,7 +728,9 @@ useEffect(() => {
                           className="w-full h-full object-cover"
                         />
                         <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white font-semibold text-sm">
-                          {(channel?.channelname || channel?.name || "C")[0]?.toUpperCase()}
+                          {(channel?.channelname ||
+                            channel?.name ||
+                            "C")[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </div>
@@ -726,13 +747,17 @@ useEffect(() => {
                   <div className="text-center py-6 sm:py-8">
                     <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 sm:p-8 max-w-md mx-auto">
                       <div className="bg-red-100 dark:bg-red-900/50 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                        <Play className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-400" fill="currentColor" />
+                        <Play
+                          className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-400"
+                          fill="currentColor"
+                        />
                       </div>
                       <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2">
                         Upload Shorts
                       </h3>
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
-                        Go to the Shorts section to upload vertical videos (9:16 aspect ratio)
+                        Go to the Shorts section to upload vertical videos (9:16
+                        aspect ratio)
                       </p>
                       <button
                         onClick={() => router.push("/shorts/upload")}
