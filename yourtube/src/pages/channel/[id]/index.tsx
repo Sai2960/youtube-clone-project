@@ -777,7 +777,7 @@ const ChannelPage = () => {
         {/* ============================================================================
             CONTENT TABS - VIEW VIDEOS & SHORTS
             ============================================================================ */}
-        <div className="w-full pb-20 sm:pb-8 overflow-hidden">
+        <div className="w-full pb-32 sm:pb-8 overflow-hidden">
           <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
             {/* Tab Navigation */}
             <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide px-4 sm:px-0">

@@ -11822,3 +11822,67 @@ button {
     margin-bottom: 0;
   }
 }
+/* ============================================
+   SHORTS GRID - FINAL FIX
+   Replace EVERYTHING in globals.css
+   ============================================ */
+
+/* Box sizing */
+.shorts-grid-item,
+.shorts-grid-item * {
+  box-sizing: border-box;
+}
+
+/* Container setup */
+.shorts-grid-item {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Images */
+.shorts-grid-item img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Text wrapping */
+.shorts-grid-item h3 {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  hyphens: auto;
+}
+
+.shorts-grid-item p {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* MOBILE FIXES */
+@media (max-width: 640px) {
+  /* Remove CSS margin-bottom - let Tailwind handle it */
+  .shorts-grid-item {
+    padding: 0;
+  }
+  
+  /* Compact text area */
+  .shorts-grid-item > div:last-child {
+    min-height: 55px;
+    padding-bottom: 0;
+  }
+  
+  /* No margin override */
+  .shorts-grid-item > * {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* DESKTOP */
+@media (min-width: 641px) {
+  .shorts-grid-item {
+    margin-bottom: 0;
+  }
+}
