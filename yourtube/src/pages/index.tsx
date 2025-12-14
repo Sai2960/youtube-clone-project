@@ -637,164 +637,124 @@ const handleShortClick = (
                   onTouchEnd={handleShortsScrollTouchEnd}
                 >
                   {shorts.slice(0, 12).map((short, index) => {
-                    const shortAvatar = getShortAvatar(short);
-                    const shortChannelName = getShortChannelName(short);
+  const shortAvatar = getShortAvatar(short);
+  const shortChannelName = getShortChannelName(short);
 
-                    return (
-                   <div
-  key={short._id}
-  onClick={(e) => {
-    if (!(e.target as HTMLElement).closest(".no-click")) {
-      handleShortClick(e, short._id, index);
-    }
-  }}
-  className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] 
-    active:scale-95 active:opacity-90 
-    transition-all duration-150 ease-out
-    touch-manipulation"
-  style={{
-    minWidth: "160px",
-    userSelect: "none",
-    WebkitTapHighlightColor: "transparent",
-  }}
->
-                  {/* Thumbnail Card with Mobile Touch Effects */}
-  <div
-    className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full 
-      group/thumbnail
-      active:shadow-xl active:ring-2 active:ring-red-500/50
-      transition-all duration-200"
-    style={{
-      paddingBottom: "177.5%",
-    }}
-  >
-    <img
-      src={short.thumbnailUrl}
-      alt={short.title}
-      className="absolute inset-0 w-full h-full object-cover 
-        transition-transform duration-300 
-        active:scale-105
-        lg:group-hover/thumbnail:scale-105"
-      loading="lazy"
-    />
-
-    {/* Play Icon Overlay - Enhanced for Mobile */}
-    <div className="absolute inset-0 flex items-center justify-center 
-      opacity-0 
-      active:opacity-100
-      lg:group-hover/thumbnail:opacity-100 
-      transition-all duration-200 
-      bg-black/40 dark:bg-black/50 
-      pointer-events-none">
-      <div className="bg-white dark:bg-white/95 backdrop-blur-sm 
-        rounded-full p-3 lg:p-4 shadow-xl 
-        transform scale-90 
-        active:scale-110
-        lg:group-hover/thumbnail:scale-100 
-        transition-transform duration-200">
-        <Play 
-          size={24} 
-          className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8" 
-          fill="currentColor" 
+  return (
+    <div
+      key={short._id}
+      onClick={(e) => {
+        if (!(e.target as HTMLElement).closest(".no-click")) {
+          handleShortClick(e, short._id, index);
+        }
+      }}
+      className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] active:scale-95 active:opacity-90 transition-all duration-150 ease-out touch-manipulation"
+      style={{
+        minWidth: "160px",
+        userSelect: "none",
+        WebkitTapHighlightColor: "transparent",
+      }}
+    >
+      {/* Thumbnail Card with Mobile Touch Effects */}
+      <div
+        className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail active:shadow-xl active:ring-2 active:ring-red-500/50 transition-all duration-200"
+        style={{
+          paddingBottom: "177.5%",
+        }}
+      >
+        <img
+          src={short.thumbnailUrl}
+          alt={short.title}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 active:scale-105 lg:group-hover/thumbnail:scale-105"
+          loading="lazy"
         />
+
+        {/* Play Icon Overlay - Enhanced for Mobile */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 bg-black/40 dark:bg-black/50 pointer-events-none">
+          <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-200">
+            <Play 
+              size={24} 
+              className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8" 
+              fill="currentColor" 
+            />
+          </div>
+        </div>
+
+        {/* Bottom Gradient Overlay */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+
+        {/* Views Badge - Enhanced Visibility */}
+        <div className="absolute bottom-3 left-3 bg-black/80 dark:bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg active:scale-105 transition-transform duration-150">
+          <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+          </svg>
+          <span className="text-xs font-bold text-white whitespace-nowrap drop-shadow-md">
+            {formatViewsShort(short.views)} views
+          </span>
+        </div>
+      </div>
+
+      {/* Title with Touch Effect */}
+      <h3
+        className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+        style={{
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          wordBreak: "break-word",
+          minHeight: "2.5rem",
+          textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+        }}
+      >
+        {short.title}
+      </h3>
+
+      {/* Channel Info with Touch Effect */}
+      <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
+        {/* Avatar with Touch Feedback */}
+        <div
+          className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
+          onClick={(e) => {
+            e.stopPropagation();
+            hapticFeedback.selection();
+            router.push(`/channel/${short.userId?._id}`);
+          }}
+        >
+          <img
+            src={getImageUrl(
+              short.userId?.image || short.userId?.avatar,
+              true
+            )}
+            alt={shortChannelName}
+            className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+            onError={(e) => {
+              e.currentTarget.src =
+                'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+            }}
+          />
+        </div>
+
+        {/* Channel Name with Touch Effect */}
+        <span
+          className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
+          style={{
+            textShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            hapticFeedback.selection();
+            router.push(`/channel/${short.userId?._id}`);
+          }}
+          title={shortChannelName}
+        >
+          {shortChannelName}
+        </span>
       </div>
     </div>
-
-{/* Bottom Gradient Overlay */}
-    <div className="absolute inset-x-0 bottom-0 h-32 
-      bg-gradient-to-t from-black/80 via-black/40 to-transparent 
-      pointer-events-none" />
-
-    {/* Views Badge - Enhanced Visibility */}
-    <div className="absolute bottom-3 left-3 
-      bg-black/80 dark:bg-black/85 backdrop-blur-sm 
-      rounded-md px-2 py-1 
-      flex items-center gap-1.5 shadow-lg
-      active:scale-105 transition-transform duration-150">
-      <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-      </svg>
-      <span className="text-xs font-bold text-white whitespace-nowrap drop-shadow-md">
-        {formatViewsShort(short.views)} views
-      </span>
-    </div>
-  </div>
-                      {/* Title with Touch Effect */}
-  <h3
-    className="text-sm font-semibold text-gray-900 dark:text-white 
-      leading-tight mb-2 w-full px-0.5 
-      lg:text-base lg:font-bold lg:mb-3
-      active:text-blue-600 dark:active:text-blue-400
-      transition-colors duration-150"
-    style={{
-      display: "-webkit-box",
-      WebkitLineClamp: 2,
-      WebkitBoxOrient: "vertical",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      wordBreak: "break-word",
-      minHeight: "2.5rem",
-      textShadow: "0 1px 2px rgba(0,0,0,0.1)",
-    }}
-  >
-    {short.title}
-  </h3>
-
-  {/* Channel Info with Touch Effect */}
-  <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
-    {/* Avatar with Touch Feedback */}
-    <div
-      className="cursor-pointer flex-shrink-0 
-        active:scale-95 transition-transform duration-150"
-      onClick={(e) => {
-        e.stopPropagation();
-        hapticFeedback.selection(); // Add haptic feedback
-        router.push(`/channel/${short.userId?._id}`);
-      }}
-    >
-      <img
-        src={getImageUrl(
-          short.userId?.image || short.userId?.avatar,
-          true
-        )}
-        alt={shortChannelName}
-        className="w-6 h-6 rounded-full object-cover 
-          border border-gray-200 dark:border-gray-700 
-          lg:w-7 lg:h-7 lg:border-2
-          active:ring-2 active:ring-blue-500/50
-          transition-all duration-150"
-        onError={(e) => {
-          e.currentTarget.src =
-            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-        }}
-      />
-    </div>
-
-    {/* Channel Name with Touch Effect */}
-    <span
-      className="text-xs text-gray-700 dark:text-gray-300 
-        font-semibold cursor-pointer 
-        hover:text-gray-900 dark:hover:text-white 
-        active:text-blue-600 dark:active:text-blue-400
-        transition-colors duration-150
-        truncate flex-1 min-w-0 
-        lg:text-sm lg:font-bold"
-      style={{
-        textShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        hapticFeedback.selection(); // Add haptic feedback
-        router.push(`/channel/${short.userId?._id}`);
-      }}
-      title={shortChannelName}
-    >
-      {shortChannelName}
-    </span>
-  </div>
-</div>
-                    );
-                  })}
+  );
+})}
                 </div>
               </div>
             )}
