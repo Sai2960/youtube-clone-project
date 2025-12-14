@@ -914,7 +914,7 @@ const ChannelPage = () => {
                               onClick={() =>
                                 router.push(`/shorts?id=${short._id}`)
                               }
-                              className="group cursor-pointer w-full min-w-0 shorts-grid-item mb-4 sm:mb-0"
+                              className="group cursor-pointer w-full min-w-0 shorts-grid-item mb-2 sm:mb-0"
                               style={{ maxWidth: "100%" }}
                             >
                               {/* Thumbnail Container */}
@@ -1021,13 +1021,13 @@ const ChannelPage = () => {
                               </div>
 
                               {/* Title & Channel Info */}
-                              <div className="mt-2 sm:mt-3 px-0.5">
-                                <h3 className="text-[13px] sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-relaxed mb-2 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
+                              <div className="mt-1.5 sm:mt-3 px-0.5">
+                                <h3 className="text-[13px] sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-1 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
                                   {short.title}
                                 </h3>
 
                                 {/* Channel Avatar & Name */}
-                                <div className="flex items-center gap-1.5 sm:gap-2 pb-1">
+                                <div className="flex items-center gap-1.5 sm:gap-2">
                                   <div
                                     className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
                                     onClick={(e) => {
