@@ -898,10 +898,9 @@ const ChannelPage = () => {
                       {/* Shorts Grid */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 w-full pb-4 px-1 sm:px-0">
                         {" "}
-                        {shorts.map((short) => {
+                        {shorts.map((short, index) => {
                           const thumbnailUrl = getShortThumbnail(short);
 
-                          // ✅ ADD THIS LOGGING
                           console.log("📸 Rendering short:", {
                             id: short._id,
                             title: short.title,
@@ -921,7 +920,6 @@ const ChannelPage = () => {
                                   fullShort: short,
                                 });
                                 if (shortId) {
-                                  // ✅ CRITICAL: Use 'id' parameter, not navigate to /shorts?id=
                                   router.push(`/shorts?id=${shortId}`);
                                 } else {
                                   console.error(
@@ -930,11 +928,10 @@ const ChannelPage = () => {
                                   );
                                 }
                               }}
-                              className="group cursor-pointer w-full"
+                              className="group cursor-pointer w-full transform transition-all duration-300 hover:scale-[1.02]"
                             >
                               {/* Thumbnail Container */}
-                              <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-black shadow-sm sm:shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-500">
-                                {" "}
+                              <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-black shadow-sm sm:shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-500 hover:ring-2 hover:ring-red-500/50">
                                 <div
                                   className="relative w-full"
                                   style={{ paddingBottom: "177.78%" }}
@@ -943,7 +940,7 @@ const ChannelPage = () => {
                                   <img
                                     src={thumbnailUrl}
                                     alt={short.title}
-                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                     loading="lazy"
                                     onError={(e) => {
                                       console.error(
@@ -953,14 +950,12 @@ const ChannelPage = () => {
                                       const target =
                                         e.currentTarget as HTMLImageElement;
 
-                                      // Prevent infinite loops
                                       if (
                                         target.src.includes("data:image/svg")
                                       ) {
                                         return;
                                       }
 
-                                      // Try one more time with fresh generation
                                       if (
                                         short.videoUrl &&
                                         short.videoUrl.includes(
@@ -985,7 +980,6 @@ const ChannelPage = () => {
                                         }
                                       }
 
-                                      // Final fallback
                                       target.src =
                                         'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
                                     }}
@@ -997,11 +991,14 @@ const ChannelPage = () => {
                                     }}
                                   />
 
-                                  {/* Gradient Overlay */}
-                                  <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none" />
+                                  {/* Gradient Overlay - Enhanced */}
+                                  <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-hover:from-black/95 transition-all duration-300" />
 
-                                  {/* Views Badge */}
-                                  <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1">
+                                  {/* Red Overlay on Hover - Desktop Only */}
+                                  <div className="hidden sm:block absolute inset-0 bg-red-600/0 group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none" />
+
+                                  {/* Views Badge - Enhanced */}
+                                  <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300">
                                     <Play
                                       className="w-2.5 h-2.5 sm:w-3 sm:h-3"
                                       fill="white"
@@ -1011,37 +1008,53 @@ const ChannelPage = () => {
                                     </span>
                                   </div>
 
-                                  {/* Duration Badge */}
+                                  {/* Duration Badge - Enhanced */}
                                   {short.duration && (
-                                    <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md">
+                                    <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300">
                                       {short.duration}s
                                     </div>
                                   )}
 
-                                  {/* Play Button Overlay */}
-                                  <div className="hidden sm:flex absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 items-center justify-center">
-                                    <div className="opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300">
-                                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-red-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
-                                        <Play
-                                          className="w-5 h-5 sm:w-7 sm:h-7 text-white ml-0.5 sm:ml-1"
-                                          fill="white"
-                                        />
+                                  {/* Play Button Overlay - Enhanced */}
+                                  <div className="hidden sm:flex absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-500 items-center justify-center">
+                                    <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
+                                      <div className="relative">
+                                        {/* Pulsing Ring Animation */}
+                                        <div className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-75"></div>
+
+                                        {/* Main Play Button */}
+                                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-2xl ring-4 ring-white/40 group-hover:ring-8 transition-all duration-300">
+                                          <Play
+                                            className="w-7 h-7 sm:w-9 sm:h-9 text-white ml-1"
+                                            fill="white"
+                                          />
+                                        </div>
                                       </div>
                                     </div>
+                                  </div>
+
+                                  {/* Shine Effect on Hover */}
+                                  <div className="hidden sm:block absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                  </div>
+
+                                  {/* Index Number Badge - Top Right (Optional) */}
+                                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md">
+                                    #{index + 1}
                                   </div>
                                 </div>
                               </div>
 
                               {/* Title & Channel Info */}
                               <div className="mt-2 sm:mt-3 px-1">
-                                <h3 className="text-sm sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1.5 sm:mb-1 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1.5 sm:mb-1 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors duration-300">
                                   {short.title}
                                 </h3>
 
                                 {/* Channel Avatar & Name */}
                                 <div className="flex items-center gap-2">
                                   <div
-                                    className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
+                                    className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700 group-hover:ring-2 group-hover:ring-red-500 transition-all duration-300 transform group-hover:scale-110"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
@@ -1084,7 +1097,7 @@ const ChannelPage = () => {
                                   </div>
 
                                   <p
-                                    className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
+                                    className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
