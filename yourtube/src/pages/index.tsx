@@ -655,28 +655,51 @@ const handleShortClick = (
                           WebkitTapHighlightColor: "transparent",
                         }}
                       >
-                  {/* Thumbnail Card */}
+               {/* Thumbnail Card */}
 <div
   className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail"
   style={{
     paddingBottom: "177.5%",
   }}
+  onTouchStart={(e) => {
+    // ✅ Show play overlay on mobile touch
+    const overlay = e.currentTarget.querySelector('.play-overlay') as HTMLElement;
+    if (overlay) {
+      overlay.style.opacity = '1';
+    }
+    hapticFeedback.light();
+  }}
+  onTouchEnd={(e) => {
+    // ✅ Hide play overlay after touch (brief delay)
+    const overlay = e.currentTarget.querySelector('.play-overlay') as HTMLElement;
+    if (overlay) {
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+      }, 200);
+    }
+  }}
 >
   <img
     src={short.thumbnailUrl}
     alt={short.title}
-    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 lg:group-hover/thumbnail:scale-105"
+    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 lg:group-hover/thumbnail:scale-105 active:scale-[0.98]"
     loading="lazy"
   />
 
-{/* Play Icon Overlay - Always visible on mobile, hover on desktop */}
-  <div className="absolute inset-0 flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 bg-black/30 dark:bg-black/40 pointer-events-none">
-    <div className="bg-white/95 dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl">
-      <Play size={24} className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8" fill="currentColor" />
+
+{/* Play Icon Overlay - MOBILE TOUCH + DESKTOP HOVER + THEME AWARE */}
+  <div 
+    className="play-overlay absolute inset-0 flex items-center justify-center opacity-0 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 pointer-events-none"
+    style={{
+      background: 'rgba(0, 0, 0, 0.4)',
+    }}
+  >
+    <div className="bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-2xl transform scale-90 lg:group-hover/thumbnail:scale-100 transition-transform duration-200">
+      <Play size={24} className="text-gray-900 lg:w-8 lg:h-8" fill="currentColor" />
     </div>
   </div>
 
-  {/* Bottom Gradient Overlay */}
+{/* Bottom Gradient Overlay */}
   <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
   {/* Views Badge - ENHANCED VISIBILITY */}
