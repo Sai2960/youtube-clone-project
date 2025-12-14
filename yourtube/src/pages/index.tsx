@@ -655,42 +655,23 @@ const handleShortClick = (
                           WebkitTapHighlightColor: "transparent",
                         }}
                       >
-                 {/* Thumbnail Card */}
+                  {/* Thumbnail Card */}
 <div
   className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail"
   style={{
     paddingBottom: "177.5%",
   }}
-  onTouchStart={(e) => {
-    // ✅ Show play button on touch
-    const overlay = e.currentTarget.querySelector('.play-overlay');
-    if (overlay) {
-      overlay.classList.add('opacity-100');
-      overlay.classList.remove('opacity-0');
-    }
-    hapticFeedback.light();
-  }}
-  onTouchEnd={(e) => {
-    // ✅ Hide play button after touch
-    const overlay = e.currentTarget.querySelector('.play-overlay');
-    if (overlay) {
-      setTimeout(() => {
-        overlay.classList.remove('opacity-100');
-        overlay.classList.add('opacity-0');
-      }, 150);
-    }
-  }}
 >
   <img
     src={short.thumbnailUrl}
     alt={short.title}
-    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 lg:group-hover/thumbnail:scale-105 active:scale-95"
+    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 lg:group-hover/thumbnail:scale-105"
     loading="lazy"
   />
 
-  {/* Play Icon Overlay - MOBILE + DESKTOP + BOTH THEMES */}
-  <div className="play-overlay absolute inset-0 flex items-center justify-center opacity-0 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 bg-black/40 dark:bg-black/50 pointer-events-none">
-    <div className="bg-white/95 dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 lg:group-hover/thumbnail:scale-100 active:scale-95 transition-transform duration-200">
+{/* Play Icon Overlay - Always visible on mobile, hover on desktop */}
+  <div className="absolute inset-0 flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 bg-black/30 dark:bg-black/40 pointer-events-none">
+    <div className="bg-white/95 dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl">
       <Play size={24} className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8" fill="currentColor" />
     </div>
   </div>
