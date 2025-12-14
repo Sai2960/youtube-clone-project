@@ -11646,3 +11646,109 @@ button {
   backface-visibility: hidden;
   transform: translateZ(0);
 }
+/* ============================================
+   PROFESSIONAL CHANNEL INFO BAR STYLING
+   ============================================ */
+
+/* Channel Info Bar - Always Visible */
+.channel-info-bar {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 16px;
+  margin: 0;
+  width: 100%;
+}
+
+/* Light theme */
+.light .channel-info-bar {
+  background-color: #f9f9f9;
+  border-color: #e5e5e5;
+}
+
+/* Dark theme */
+.dark .channel-info-bar {
+  background-color: #212121;
+  border-color: #3f3f3f;
+}
+
+/* Info items layout */
+.channel-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.light .channel-info-item {
+  color: #606060;
+}
+
+.dark .channel-info-item {
+  color: #aaaaaa;
+}
+
+/* Icon styling */
+.channel-info-item svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .channel-info-bar {
+    padding: 10px 12px;
+    gap: 12px;
+  }
+  
+  .channel-info-item {
+    font-size: 12px;
+  }
+  
+  .channel-info-item svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .channel-info-bar {
+    padding: 12px 16px;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1024px) {
+  .channel-info-bar {
+    padding: 16px 24px;
+  }
+  
+  .channel-info-item {
+    font-size: 15px;
+  }
+}
+
+/* Force visibility - Critical for Android */
+.channel-info-bar-force-visible {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-height: 60px !important;
+}
+
+/* Prevent layout shift */
+.channel-info-bar {
+  contain: layout style;
+}
+
+/* Smooth transitions */
+.channel-info-bar,
+.channel-info-item {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}

@@ -655,7 +655,7 @@ const handleShortClick = (
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      {/* Thumbnail Card with Mobile Touch Effects */}
+      {/* Thumbnail Card */}
       <div
         className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail active:shadow-xl active:ring-2 active:ring-red-500/50 transition-all duration-200"
         style={{
@@ -669,7 +669,7 @@ const handleShortClick = (
           loading="lazy"
         />
 
-        {/* Play Icon Overlay - Enhanced for Mobile */}
+        {/* Play Icon Overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 bg-black/40 dark:bg-black/50 pointer-events-none">
           <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-200">
             <Play 
@@ -680,10 +680,10 @@ const handleShortClick = (
           </div>
         </div>
 
-        {/* Bottom Gradient Overlay */}
+        {/* Bottom Gradient */}
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-        {/* Views Badge - Enhanced Visibility */}
+        {/* Views Badge */}
         <div className="absolute bottom-3 left-3 bg-black/80 dark:bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg active:scale-105 transition-transform duration-150">
           <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
             <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
@@ -694,7 +694,7 @@ const handleShortClick = (
         </div>
       </div>
 
-      {/* Title with Touch Effect */}
+      {/* Title */}
       <h3
         className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
         style={{
@@ -711,9 +711,9 @@ const handleShortClick = (
         {short.title}
       </h3>
 
-      {/* Channel Info with Touch Effect */}
+      {/* Channel Info */}
       <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
-        {/* Avatar with Touch Feedback */}
+        {/* Avatar */}
         <div
           className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
           onClick={(e) => {
@@ -736,7 +736,7 @@ const handleShortClick = (
           />
         </div>
 
-        {/* Channel Name with Touch Effect */}
+        {/* Channel Name */}
         <span
           className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
           style={{
