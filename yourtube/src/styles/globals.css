@@ -11752,3 +11752,7 @@ button {
 .channel-info-item {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+/* Add to globals.css or component styles */
+.shorts-grid-item * {
+  box-sizing: border-box;
+}
