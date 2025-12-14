@@ -669,9 +669,9 @@ const handleShortClick = (
     loading="lazy"
   />
 
-{/* Play Icon Overlay - ALWAYS VISIBLE ON MOBILE, HOVER ON DESKTOP */}
-  <div className="absolute inset-0 flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 bg-black/30 lg:bg-black/40 pointer-events-none">
-    <div className="bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl">
+{/* Play Icon Overlay - TAP ON MOBILE, HOVER ON DESKTOP */}
+  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 bg-black/40 pointer-events-none">
+    <div className="bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 group-hover/short:scale-100 lg:group-hover/thumbnail:scale-100 transition-transform duration-200">
       <Play size={24} className="text-gray-900 lg:w-8 lg:h-8" fill="currentColor" />
     </div>
   </div>
