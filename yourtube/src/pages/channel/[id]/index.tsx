@@ -778,9 +778,9 @@ return (
             CONTENT TABS - VIEW VIDEOS & SHORTS
             ============================================================================ */}
 <div className="w-full pb-6 sm:pb-8">
-  <div className="w-full px-4 sm:px-6 sm:max-w-7xl sm:mx-auto">
+  <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
           {/* Tab Navigation */}
-          <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+<div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide px-4 sm:px-0">
             {/* Videos Tab */}
             <button
               onClick={() => setContentTab("videos")}
@@ -821,8 +821,8 @@ return (
           </div>
 
           {/* Videos Content */}
-         {contentTab === "videos" && (
-  <div className="w-full">
+   {contentTab === "videos" && (
+  <div className="w-full px-4 sm:px-0">
     {videosLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -852,8 +852,8 @@ return (
             </div>
           )}
           {/* Shorts Content - COMPLETE WITH FIXED THUMBNAILS */}
-          {contentTab === "shorts" && (
-            <div className="w-full overflow-x-hidden">
+      {contentTab === "shorts" && (
+  <div className="w-full overflow-x-hidden px-4 sm:px-0">
               {shortsLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
