@@ -636,7 +636,7 @@ const handleShortClick = (
                   onTouchMove={handleShortsScrollTouchMove}
                   onTouchEnd={handleShortsScrollTouchEnd}
                 >
-                  {shorts.slice(0, 12).map((short, index) => {
+                 {shorts.slice(0, 12).map((short, index) => {
   const shortAvatar = getShortAvatar(short);
   const shortChannelName = getShortChannelName(short);
 
@@ -648,7 +648,7 @@ const handleShortClick = (
           handleShortClick(e, short._id, index);
         }
       }}
-      className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] active:scale-95 active:opacity-90 transition-all duration-150 ease-out touch-manipulation"
+      className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
       style={{
         minWidth: "160px",
         userSelect: "none",
@@ -657,7 +657,7 @@ const handleShortClick = (
     >
       {/* Thumbnail Card */}
       <div
-        className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail active:shadow-xl active:ring-2 active:ring-red-500/50 transition-all duration-200"
+        className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
         style={{
           paddingBottom: "177.5%",
         }}
@@ -665,13 +665,13 @@ const handleShortClick = (
         <img
           src={short.thumbnailUrl}
           alt={short.title}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 active:scale-105 lg:group-hover/thumbnail:scale-105"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105"
           loading="lazy"
         />
 
         {/* Play Icon Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 bg-black/40 dark:bg-black/50 pointer-events-none">
-          <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-200">
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-300 bg-black/40 dark:bg-black/50 pointer-events-none">
+          <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 group-hover/short:scale-100 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-300">
             <Play 
               size={24} 
               className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8" 
