@@ -777,7 +777,7 @@ const ChannelPage = () => {
         {/* ============================================================================
             CONTENT TABS - VIEW VIDEOS & SHORTS
             ============================================================================ */}
-        <div className="w-full pb-24 sm:pb-8 overflow-hidden">
+        <div className="w-full pb-20 sm:pb-8 overflow-hidden">
           <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
             {/* Tab Navigation */}
             <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide px-4 sm:px-0">
@@ -914,7 +914,7 @@ const ChannelPage = () => {
                               onClick={() =>
                                 router.push(`/shorts?id=${short._id}`)
                               }
-                              className="group cursor-pointer w-full min-w-0 shorts-grid-item mb-6 sm:mb-0"
+                              className="group cursor-pointer w-full min-w-0 shorts-grid-item mb-4 sm:mb-0"
                               style={{ maxWidth: "100%" }}
                             >
                               {/* Thumbnail Container */}
