@@ -897,7 +897,7 @@ const ChannelPage = () => {
 
                       {/* Shorts Grid */}
                       <div
-                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-1 sm:gap-3 w-full"
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-1 sm:gap-3 w-full pb-4"
                         style={{ maxWidth: "100%", overflow: "hidden" }}
                       >
                         {" "}
@@ -914,7 +914,7 @@ const ChannelPage = () => {
                               onClick={() =>
                                 router.push(`/shorts?id=${short._id}`)
                               }
-                              className="group cursor-pointer w-full min-w-0 shorts-grid-item"
+                              className="group cursor-pointer w-full min-w-0 shorts-grid-item mb-3 sm:mb-0"
                               style={{ maxWidth: "100%" }}
                             >
                               {/* Thumbnail Container */}
@@ -1065,7 +1065,7 @@ const ChannelPage = () => {
                                   </div>
 
                                   <p
-                                    className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
+                                    className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors leading-normal"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       router.push(

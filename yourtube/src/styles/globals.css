@@ -11752,7 +11752,23 @@ button {
 .channel-info-item {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
-/* Add to globals.css or component styles */
-.shorts-grid-item * {
-  box-sizing: border-box;
+/* Better text visibility for shorts */
+.shorts-grid-item h3 {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shorts-grid-item p {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Ensure minimum height for text container */
+@media (max-width: 640px) {
+  .shorts-grid-item > div:last-child {
+    min-height: 60px;
+  }
 }
