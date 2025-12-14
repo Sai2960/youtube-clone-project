@@ -900,17 +900,35 @@ const ChannelPage = () => {
                         {" "}
                         {shorts.map((short) => {
                           const thumbnailUrl = getShortThumbnail(short);
+
+                          // ✅ ADD THIS LOGGING
                           console.log("📸 Rendering short:", {
                             id: short._id,
+                            title: short.title,
                             url: thumbnailUrl?.substring(0, 80),
+                            fullShort: short,
                           });
 
                           return (
                             <div
-                              key={short._id}
-                              onClick={() =>
-                                router.push(`/shorts?id=${short._id}`)
-                              }
+                              key={short._id || short.id}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                const shortId = short._id || short.id;
+                                console.log("🎯 Clicking short:", {
+                                  shortId,
+                                  title: short.title,
+                                  fullShort: short,
+                                });
+                                if (shortId) {
+                                  router.push(`/shorts?id=${shortId}`);
+                                } else {
+                                  console.error(
+                                    "❌ No valid short ID found:",
+                                    short
+                                  );
+                                }
+                              }}
                               className="group cursor-pointer w-full"
                             >
                               {/* Thumbnail Container */}
@@ -1024,12 +1042,19 @@ const ChannelPage = () => {
                                   <div
                                     className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
                                     onClick={(e) => {
+                                      e.preventDefault();
                                       e.stopPropagation();
-                                      router.push(
-                                        `/channel/${
-                                          short.userId?._id || channel?._id
-                                        }`
+                                      const channelId =
+                                        short.userId?._id ||
+                                        short.userId ||
+                                        channel?._id;
+                                      console.log(
+                                        "👤 Navigating to channel:",
+                                        channelId
                                       );
+                                      if (channelId) {
+                                        router.push(`/channel/${channelId}`);
+                                      }
                                     }}
                                   >
                                     <Avatar className="w-full h-full">
@@ -1060,12 +1085,19 @@ const ChannelPage = () => {
                                   <p
                                     className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
                                     onClick={(e) => {
+                                      e.preventDefault();
                                       e.stopPropagation();
-                                      router.push(
-                                        `/channel/${
-                                          short.userId?._id || channel?._id
-                                        }`
+                                      const channelId =
+                                        short.userId?._id ||
+                                        short.userId ||
+                                        channel?._id;
+                                      console.log(
+                                        "👤 Navigating to channel:",
+                                        channelId
                                       );
+                                      if (channelId) {
+                                        router.push(`/channel/${channelId}`);
+                                      }
                                     }}
                                   >
                                     {short.userId?.channelName ||
