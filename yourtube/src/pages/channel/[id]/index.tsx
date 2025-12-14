@@ -896,10 +896,7 @@ const ChannelPage = () => {
                       </div>
 
                       {/* Shorts Grid */}
-                      <div
-                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-1 sm:gap-3 w-full pb-4"
-                        style={{ maxWidth: "100%", overflow: "hidden" }}
-                      >
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 w-full pb-4 px-1 sm:px-0">
                         {" "}
                         {shorts.map((short) => {
                           const thumbnailUrl = getShortThumbnail(short);
@@ -914,14 +911,10 @@ const ChannelPage = () => {
                               onClick={() =>
                                 router.push(`/shorts?id=${short._id}`)
                               }
-                              className="group cursor-pointer w-full min-w-0 shorts-grid-item mb-2 sm:mb-0"
-                              style={{ maxWidth: "100%" }}
+                              className="group cursor-pointer w-full"
                             >
                               {/* Thumbnail Container */}
-                              <div
-                                className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-black shadow-sm sm:shadow-md hover:shadow-xl transition-all duration-300 border-[0.5px] sm:border border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-500"
-                                style={{ maxWidth: "100%" }}
-                              >
+                              <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-black shadow-sm sm:shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-red-500 dark:hover:border-red-500">
                                 {" "}
                                 <div
                                   className="relative w-full"
@@ -1021,15 +1014,15 @@ const ChannelPage = () => {
                               </div>
 
                               {/* Title & Channel Info */}
-                              <div className="mt-1.5 sm:mt-3 px-0.5">
-                                <h3 className="text-[13px] sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-1 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
+                              <div className="mt-2 sm:mt-3 px-1">
+                                <h3 className="text-sm sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1.5 sm:mb-1 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
                                   {short.title}
                                 </h3>
 
                                 {/* Channel Avatar & Name */}
-                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                <div className="flex items-center gap-2">
                                   <div
-                                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
+                                    className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       router.push(
@@ -1065,7 +1058,7 @@ const ChannelPage = () => {
                                   </div>
 
                                   <p
-                                    className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors leading-normal"
+                                    className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       router.push(
