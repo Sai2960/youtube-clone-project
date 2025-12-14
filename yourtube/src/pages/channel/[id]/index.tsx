@@ -901,31 +901,14 @@ const ChannelPage = () => {
                         {shorts.map((short, index) => {
                           const thumbnailUrl = getShortThumbnail(short);
 
-                          console.log("📸 Rendering short:", {
-                            id: short._id,
-                            title: short.title,
-                            url: thumbnailUrl?.substring(0, 80),
-                            fullShort: short,
-                          });
-
                           return (
                             <div
                               key={short._id || short.id}
                               onClick={(e) => {
                                 e.preventDefault();
                                 const shortId = short._id || short.id;
-                                console.log("🎯 Clicking short:", {
-                                  shortId,
-                                  title: short.title,
-                                  fullShort: short,
-                                });
                                 if (shortId) {
                                   router.push(`/shorts?id=${shortId}`);
-                                } else {
-                                  console.error(
-                                    "❌ No valid short ID found:",
-                                    short
-                                  );
                                 }
                               }}
                               className="group cursor-pointer w-full transform transition-all duration-300 md:hover:scale-[1.02]"
@@ -943,22 +926,13 @@ const ChannelPage = () => {
                                     className="absolute inset-0 w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700 ease-out"
                                     loading="lazy"
                                     onError={(e) => {
-                                      console.error(
-                                        "❌ Thumbnail failed for:",
-                                        short._id
-                                      );
                                       const target =
                                         e.currentTarget as HTMLImageElement;
-
-                                      if (
-                                        target.src.includes("data:image/svg")
-                                      ) {
+                                      if (target.src.includes("data:image/svg"))
                                         return;
-                                      }
 
                                       if (
-                                        short.videoUrl &&
-                                        short.videoUrl.includes(
+                                        short.videoUrl?.includes(
                                           "cloudinary.com"
                                         )
                                       ) {
@@ -970,12 +944,7 @@ const ChannelPage = () => {
                                           /youtube-clone\/shorts\/videos\/([^.\/]+)/
                                         );
                                         if (match) {
-                                          const retry = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/shorts/videos/${match[1]}.jpg`;
-                                          console.log(
-                                            "🔄 Retrying thumbnail with:",
-                                            retry.substring(0, 80)
-                                          );
-                                          target.src = retry;
+                                          target.src = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/shorts/videos/${match[1]}.jpg`;
                                           return;
                                         }
                                       }
@@ -983,21 +952,15 @@ const ChannelPage = () => {
                                       target.src =
                                         'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
                                     }}
-                                    onLoad={() => {
-                                      console.log(
-                                        "✅ Thumbnail loaded for:",
-                                        short._id
-                                      );
-                                    }}
                                   />
 
-                                  {/* Gradient Overlay - Enhanced */}
+                                  {/* Gradient Overlay */}
                                   <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none md:group-hover:from-black/95 transition-all duration-300" />
 
-                                  {/* Red Overlay on Hover - Desktop Only */}
-                                  <div className="hidden sm:block absolute inset-0 bg-red-600/0 group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none" />
+                                  {/* Red Overlay - Desktop Only */}
+                                  <div className="hidden md:block absolute inset-0 bg-red-600/0 md:group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none" />
 
-                                  {/* Views Badge - Enhanced */}
+                                  {/* Views Badge */}
                                   <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
                                     <Play
                                       className="w-2.5 h-2.5 sm:w-3 sm:h-3"
@@ -1008,22 +971,19 @@ const ChannelPage = () => {
                                     </span>
                                   </div>
 
-                                  {/* Duration Badge - Enhanced */}
+                                  {/* Duration Badge */}
                                   {short.duration && (
                                     <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
                                       {short.duration}s
                                     </div>
                                   )}
 
-                                  {/* Play Button Overlay - Enhanced */}
-                                  <div className="hidden md:flex absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-500 items-center justify-center">
-                                    <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
+                                  {/* Play Button Overlay - Desktop Only */}
+                                  <div className="hidden md:flex absolute inset-0 bg-black/0 md:group-hover:bg-black/50 transition-all duration-500 items-center justify-center">
+                                    <div className="opacity-0 md:group-hover:opacity-100 transform scale-50 md:group-hover:scale-100 transition-all duration-500 ease-out">
                                       <div className="relative">
-                                        {/* Pulsing Ring Animation */}
                                         <div className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-75"></div>
-
-                                        {/* Main Play Button */}
-                                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-2xl ring-4 ring-white/40 group-hover:ring-8 transition-all duration-300">
+                                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-2xl ring-4 ring-white/40 md:group-hover:ring-8 transition-all duration-300">
                                           <Play
                                             className="w-7 h-7 sm:w-9 sm:h-9 text-white ml-1"
                                             fill="white"
@@ -1033,12 +993,12 @@ const ChannelPage = () => {
                                     </div>
                                   </div>
 
-                                  {/* Shine Effect on Hover */}
-                                  <div className="hidden sm:block absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                  {/* Shine Effect - Desktop Only */}
+                                  <div className="hidden md:block absolute inset-0 opacity-0 md:group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full md:group-hover:translate-x-full transition-transform duration-1000"></div>
                                   </div>
 
-                                  {/* Index Number Badge - Top Right (Optional) */}
+                                  {/* Index Badge - Desktop Only */}
                                   <div className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 md:group-hover:opacity-100 transition-all duration-300 bg-black/70 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md">
                                     #{index + 1}
                                   </div>
@@ -1051,7 +1011,6 @@ const ChannelPage = () => {
                                   {short.title}
                                 </h3>
 
-                                {/* Channel Avatar & Name */}
                                 <div className="flex items-center gap-2">
                                   <div
                                     className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700 md:group-hover:ring-2 md:group-hover:ring-red-500 transition-all duration-300 transform md:group-hover:scale-110"
@@ -1062,13 +1021,8 @@ const ChannelPage = () => {
                                         short.userId?._id ||
                                         short.userId ||
                                         channel?._id;
-                                      console.log(
-                                        "👤 Navigating to channel:",
-                                        channelId
-                                      );
-                                      if (channelId) {
+                                      if (channelId)
                                         router.push(`/channel/${channelId}`);
-                                      }
                                     }}
                                   >
                                     <Avatar className="w-full h-full">
@@ -1097,7 +1051,7 @@ const ChannelPage = () => {
                                   </div>
 
                                   <p
-                                    className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
+                                    className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer md:hover:text-gray-900 dark:md:hover:text-white transition-colors duration-300"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
@@ -1105,13 +1059,8 @@ const ChannelPage = () => {
                                         short.userId?._id ||
                                         short.userId ||
                                         channel?._id;
-                                      console.log(
-                                        "👤 Navigating to channel:",
-                                        channelId
-                                      );
-                                      if (channelId) {
+                                      if (channelId)
                                         router.push(`/channel/${channelId}`);
-                                      }
                                     }}
                                   >
                                     {short.userId?.channelName ||
