@@ -622,13 +622,13 @@ useEffect(() => {
 )}
 
 
-        {/* ============================================================================
+       {/* ============================================================================
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}
         {isOwnChannel && (
           <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6 max-w-7xl mx-auto">
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700">
-                           {/* Upload Tabs */}
+              {/* Upload Tabs */}
               <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide bg-transparent">
                 {/* Videos Upload Tab */}
                 <button
@@ -688,7 +688,6 @@ useEffect(() => {
                   <span className="text-sm sm:text-base">Upload Shorts</span>
                 </button>
               </div>
-
 
               {/* Tab Content */}
               {activeTab === "videos" ? (
