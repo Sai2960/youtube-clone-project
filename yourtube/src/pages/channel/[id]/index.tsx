@@ -628,8 +628,8 @@ useEffect(() => {
         {isOwnChannel && (
           <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6 max-w-7xl mx-auto">
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700">
-              {/* Upload Tabs */}
-              <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+                           {/* Upload Tabs */}
+              <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide bg-transparent">
                 {/* Videos Upload Tab */}
                 <button
                   type="button"
@@ -640,11 +640,12 @@ useEffect(() => {
                     py-3 sm:py-3.5 
                     transition-all relative 
                     whitespace-nowrap flex-shrink-0
-                    font-medium
+                    font-semibold
+                    bg-transparent
                     ${
                       activeTab === "videos"
                         ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }
                   `}
                   style={{
@@ -652,7 +653,6 @@ useEffect(() => {
                       activeTab === "videos"
                         ? "3px solid #2563eb"
                         : "3px solid transparent",
-                    backgroundColor: "transparent",
                   }}
                 >
                   <Video className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
@@ -669,11 +669,12 @@ useEffect(() => {
                     py-3 sm:py-3.5 
                     transition-all relative 
                     whitespace-nowrap flex-shrink-0
-                    font-medium
+                    font-semibold
+                    bg-transparent
                     ${
                       activeTab === "shorts"
                         ? "text-red-600 dark:text-red-400"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }
                   `}
                   style={{
@@ -681,13 +682,13 @@ useEffect(() => {
                       activeTab === "shorts"
                         ? "3px solid #dc2626"
                         : "3px solid transparent",
-                    backgroundColor: "transparent",
                   }}
                 >
                   <Play className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                   <span className="text-sm sm:text-base">Upload Shorts</span>
                 </button>
               </div>
+
 
               {/* Tab Content */}
               {activeTab === "videos" ? (
