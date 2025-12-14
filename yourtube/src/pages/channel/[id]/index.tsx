@@ -692,12 +692,6 @@ useEffect(() => {
               {/* Tab Content */}
               {activeTab === "videos" ? (
                 <div>
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                    <Upload className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-                    <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
-                      Upload Regular Videos
-                    </h2>
-                  </div>
                   <VideoUploader
                     channelId={id as string}
                     channelName={channel?.channelname || channel?.name}
@@ -706,13 +700,6 @@ useEffect(() => {
                 </div>
               ) : (
                 <div>
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                    <Upload className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 text-red-600 dark:text-red-400" />
-                    <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
-                      Upload Shorts
-                    </h2>
-                  </div>
-
                   <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 sm:p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-red-600">
                       <Avatar className="w-full h-full">
