@@ -547,9 +547,9 @@ const ChannelPage = () => {
   // RENDER - MAIN JSX
   // ============================================================================
 
-  return (
-    <div className="flex-1 min-h-screen bg-white dark:bg-gray-900">
-      <div className="max-w-full mx-auto">
+return (
+  <div className="flex-1 min-h-screen bg-white dark:bg-gray-900">
+    <div className="w-full">
         {/* Channel Header */}
         <ChannelHeader
           channel={channel}
@@ -777,7 +777,8 @@ const ChannelPage = () => {
         {/* ============================================================================
             CONTENT TABS - VIEW VIDEOS & SHORTS
             ============================================================================ */}
-        <div className="px-4 sm:px-6 pb-6 sm:pb-8 w-full max-w-7xl mx-auto">
+<div className="w-full pb-6 sm:pb-8">
+  <div className="w-full px-4 sm:px-6 sm:max-w-7xl sm:mx-auto">
           {/* Tab Navigation */}
           <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
             {/* Videos Tab */}
@@ -820,18 +821,20 @@ const ChannelPage = () => {
           </div>
 
           {/* Videos Content */}
-          {contentTab === "videos" && (
-            <div>
-              {videosLoading ? (
+         {contentTab === "videos" && (
+  <div className="w-full">
+    {videosLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                   <p className="text-gray-600 dark:text-gray-400">
                     Loading videos...
                   </p>
                 </div>
-              ) : videos.length > 0 ? (
-                <ChannelVideos videos={videos} />
-              ) : (
+             ) : videos.length > 0 ? (
+  <div className="w-full overflow-visible">
+    <ChannelVideos videos={videos} />
+  </div>
+) : (
                 <div className="text-center py-12">
                   <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4">
                     <Video className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
@@ -1096,6 +1099,7 @@ const ChannelPage = () => {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 };
