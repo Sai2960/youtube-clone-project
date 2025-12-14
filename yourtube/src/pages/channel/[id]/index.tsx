@@ -777,7 +777,7 @@ const ChannelPage = () => {
         {/* ============================================================================
             CONTENT TABS - VIEW VIDEOS & SHORTS
             ============================================================================ */}
-        <div className="w-full pb-6 sm:pb-8 overflow-hidden">
+        <div className="w-full pb-24 sm:pb-8 overflow-hidden">
           <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
             {/* Tab Navigation */}
             <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide px-4 sm:px-0">
@@ -914,7 +914,7 @@ const ChannelPage = () => {
                               onClick={() =>
                                 router.push(`/shorts?id=${short._id}`)
                               }
-                              className="group cursor-pointer w-full min-w-0 shorts-grid-item mb-3 sm:mb-0"
+                              className="group cursor-pointer w-full min-w-0 shorts-grid-item mb-6 sm:mb-0"
                               style={{ maxWidth: "100%" }}
                             >
                               {/* Thumbnail Container */}
@@ -1021,13 +1021,13 @@ const ChannelPage = () => {
                               </div>
 
                               {/* Title & Channel Info */}
-                              <div className="mt-1.5 sm:mt-3 px-0">
-                                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight sm:leading-snug mb-1.5 sm:mb-2 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
+                              <div className="mt-2 sm:mt-3 px-0.5">
+                                <h3 className="text-[13px] sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-relaxed mb-2 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
                                   {short.title}
                                 </h3>
 
                                 {/* Channel Avatar & Name */}
-                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                <div className="flex items-center gap-1.5 sm:gap-2 pb-1">
                                   <div
                                     className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
                                     onClick={(e) => {
@@ -1065,7 +1065,7 @@ const ChannelPage = () => {
                                   </div>
 
                                   <p
-                                    className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors leading-normal"
+                                    className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors leading-normal"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       router.push(

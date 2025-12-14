@@ -11752,7 +11752,22 @@ button {
 .channel-info-item {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
-/* Better text visibility for shorts */
+/* Better text visibility for shorts and videos */
+.shorts-grid-item,
+.shorts-grid-item * {
+  box-sizing: border-box;
+}
+
+.shorts-grid-item {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.shorts-grid-item img {
+  max-width: 100%;
+  height: auto;
+}
+
 .shorts-grid-item h3 {
   word-break: break-word;
   overflow-wrap: break-word;
@@ -11766,9 +11781,28 @@ button {
   overflow-wrap: break-word;
 }
 
-/* Ensure minimum height for text container */
+/* Mobile-specific fixes */
 @media (max-width: 640px) {
+  /* Ensure enough space for text and bottom navigation */
+  .shorts-grid-item {
+    padding: 0;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Minimum height for text container */
   .shorts-grid-item > div:last-child {
-    min-height: 60px;
+    min-height: 70px;
+    padding-bottom: 8px;
+  }
+  
+  /* No margin causing overflow */
+  .shorts-grid-item > * {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  /* Safe area for bottom navigation */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
