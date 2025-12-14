@@ -655,59 +655,76 @@ const handleShortClick = (
                           WebkitTapHighlightColor: "transparent",
                         }}
                       >
-               {/* Thumbnail Card */}
+             {/* Thumbnail Card */}
 <div
   className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail"
   style={{
     paddingBottom: "177.5%",
   }}
   onTouchStart={(e) => {
-    // ✅ Show play overlay on mobile touch
-    const overlay = e.currentTarget.querySelector('.play-overlay') as HTMLElement;
+    // ✅ Direct DOM manipulation - guaranteed to work
+    const thumbnail = e.currentTarget;
+    const overlay = thumbnail.children[1] as HTMLElement; // Play overlay is 2nd child
     if (overlay) {
       overlay.style.opacity = '1';
     }
-    hapticFeedback.light();
   }}
   onTouchEnd={(e) => {
-    // ✅ Hide play overlay after touch (brief delay)
-    const overlay = e.currentTarget.querySelector('.play-overlay') as HTMLElement;
+    const thumbnail = e.currentTarget;
+    const overlay = thumbnail.children[1] as HTMLElement;
     if (overlay) {
       setTimeout(() => {
         overlay.style.opacity = '0';
       }, 200);
     }
   }}
+  onMouseEnter={(e) => {
+    // Desktop hover backup
+    const thumbnail = e.currentTarget;
+    const overlay = thumbnail.children[1] as HTMLElement;
+    if (overlay && window.innerWidth >= 1024) {
+      overlay.style.opacity = '1';
+    }
+  }}
+  onMouseLeave={(e) => {
+    const thumbnail = e.currentTarget;
+    const overlay = thumbnail.children[1] as HTMLElement;
+    if (overlay && window.innerWidth >= 1024) {
+      overlay.style.opacity = '0';
+    }
+  }}
 >
+  {/* Image */}
   <img
     src={short.thumbnailUrl}
     alt={short.title}
-    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 lg:group-hover/thumbnail:scale-105 active:scale-[0.98]"
+    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 active:scale-[0.98]"
     loading="lazy"
   />
 
-
-{/* Play Icon Overlay - MOBILE TOUCH + DESKTOP HOVER + THEME AWARE */}
+  {/* Play Icon Overlay - GUARANTEED TO WORK */}
   <div 
-    className="play-overlay absolute inset-0 flex items-center justify-center opacity-0 lg:group-hover/thumbnail:opacity-100 transition-all duration-200 pointer-events-none"
+    className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 pointer-events-none"
     style={{
-      background: 'rgba(0, 0, 0, 0.4)',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
     }}
   >
-    <div className="bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-2xl transform scale-90 lg:group-hover/thumbnail:scale-100 transition-transform duration-200">
-      <Play size={24} className="text-gray-900 lg:w-8 lg:h-8" fill="currentColor" />
+    <div 
+      className="bg-white/95 backdrop-blur-sm rounded-full p-3 shadow-2xl"
+      style={{
+        transform: 'scale(0.9)',
+      }}
+    >
+      <Play size={24} className="text-gray-900" fill="currentColor" />
     </div>
   </div>
 
-{/* Bottom Gradient Overlay */}
+  {/* Bottom Gradient */}
   <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-  {/* Views Badge - ENHANCED VISIBILITY */}
-  <div className="absolute bottom-3 left-3 bg-black/80 dark:bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg">
-    <svg
-      className="w-3.5 h-3.5 fill-white"
-      viewBox="0 0 24 24"
-    >
+  {/* Views Badge */}
+  <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg">
+    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
       <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
     </svg>
     <span className="text-xs font-bold text-white whitespace-nowrap drop-shadow-md">
