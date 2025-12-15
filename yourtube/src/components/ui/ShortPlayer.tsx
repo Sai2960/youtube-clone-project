@@ -1555,20 +1555,20 @@ return (
     }}
   >
     {/* ✅ DESKTOP: Centered Video Container */}
-    <div className="relative w-full h-full flex items-center justify-center">
-      {/* ✅ Video Wrapper - Desktop centered, Mobile full */}
+    <div className="relative w-full h-full flex items-center justify-center bg-black">
+      {/* ✅ Video Wrapper - Desktop centered with max-width, Mobile full */}
       <div 
-        className="relative w-full h-full md:w-auto md:h-full md:max-w-[450px] md:aspect-[9/16]"
+        className="relative w-full h-full md:w-auto md:h-full md:max-w-[450px] md:aspect-[9/16] bg-black"
         style={{
           position: "relative",
         }}
       >
-        {/* ✅ VIDEO ELEMENT */}
+          {/* ✅ VIDEO ELEMENT */}
         <video
           ref={videoRef}
           key={`video-${short._id}-${isActive}`}
           src={short.videoUrl}
-          className="w-full h-full object-cover md:object-contain"
+          className="w-full h-full object-cover md:object-contain bg-black"
           loop
           playsInline
           webkit-playsinline="true"
@@ -1633,7 +1633,6 @@ return (
                   console.log("✅ Play() succeeded for:", short._id);
                   setIsPlaying(true);
 
-                  // Unmute after successful play
                   if (!isMuted) {
                     setTimeout(() => {
                       if (
@@ -1655,12 +1654,6 @@ return (
                     shortId: short._id,
                   });
                 });
-            } else {
-              console.log("⏸️ Not autoplaying:", {
-                isActive,
-                modalOpen: isModalOpenRef.current,
-                srcMatch: video.currentSrc === short.videoUrl,
-              });
             }
           }}
           onCanPlay={() => {
@@ -1699,7 +1692,7 @@ return (
             console.log("⏸️ onSuspend - Loading suspended:", short._id);
           }}
         />
-        {/* ✅ GRADIENTS - Mobile only */}
+      {/* ✅ GRADIENTS - Mobile only */}
         <div
           className="md:hidden absolute top-0 left-0 right-0 h-32 pointer-events-none"
           style={{
@@ -1724,7 +1717,7 @@ return (
           }}
         />
 
-        {/* ✅ THREE-DOT MENU - HEADER */}
+        {/* ✅ THREE-DOT MENU - NOW VISIBLE ON BOTH MOBILE AND DESKTOP */}
         <div className="absolute top-0 left-0 right-0 z-50">
           <div className="flex items-center justify-between p-4">
             {/* Shorts button - Mobile only */}
@@ -1741,14 +1734,15 @@ return (
             {/* Empty spacer for desktop */}
             <div className="hidden md:block" />
 
-            {/* Three-dot menu */}
+            {/* ✅ FIXED: Three-dot menu NOW VISIBLE on desktop (removed md:hidden) */}
             <div className="relative menu-button ml-auto">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowMenu(!showMenu);
                 }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition"
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-all active:scale-95"
+                aria-label="More options"
               >
                 <MoreVertical size={24} />
               </button>
@@ -1764,7 +1758,7 @@ return (
                     }}
                   />
 
-                  {/* Menu dropdown */}
+                  {/* Menu dropdown - NOW PROPERLY STYLED FOR BOTH MOBILE AND DESKTOP */}
                   <div
                     className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
                     style={{
@@ -1810,18 +1804,14 @@ return (
             </div>
           </div>
         </div>
-        {/* ✅ PLAY ICON OVERLAY */}
+
+
+       {/* ✅ PLAY ICON OVERLAY */}
         {!isPlaying && !isModalOpenRef.current && (
           <div
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
               zIndex: 40,
-              pointerEvents: "none",
             }}
           >
             <div className="bg-black/50 backdrop-blur-sm rounded-full p-8">
@@ -1830,7 +1820,7 @@ return (
           </div>
         )}
 
-        {/* ✅ CONTENT SECTION - BOTTOM */}
+        {/* ✅ CONTENT SECTION - BOTTOM - Continues with rest of your code... */}
         <div
           className="absolute bottom-0 left-0 right-0"
           style={{
