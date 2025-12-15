@@ -130,8 +130,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       {/* ============================================================ */}
       {/* BANNER - Responsive with Edit Button */}
       {/* ============================================================ */}
-      <div className="relative w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 overflow-hidden group">
-        {localChannel.bannerImage ? (
+<div className="relative w-full h-32 sm:h-40 md:h-56 lg:h-72 xl:h-80 2xl:h-96 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 overflow-hidden group">        {localChannel.bannerImage ? (
           <img 
             key={`banner-${imageKey}`}
             src={displayBanner}
