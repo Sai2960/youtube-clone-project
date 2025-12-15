@@ -41,16 +41,18 @@ function AppContent({ Component, pageProps }: AppProps) {
   // ============================================================================
   // 🔴 CRITICAL: ANDROID CACHE CLEARING
   // ============================================================================
-  useEffect(() => {
+ useEffect(() => {
     if (typeof window === 'undefined' || initializationState.hasClearedCache) {
       return;
     }
     
     initializationState.hasClearedCache = true;
     
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    
     const clearAllCaches = async () => {
       try {
-        console.log('🧹 Clearing all Android caches...');
+        console.log('🧹 Starting comprehensive cache clear...');
         
         // 1. Clear Service Worker cache
         if ('serviceWorker' in navigator) {
@@ -73,11 +75,32 @@ function AppContent({ Component, pageProps }: AppProps) {
           console.log('✅ All cache storage cleared');
         }
         
-        // 3. Force page reload on Android if from cache
+        // 3. 🔴 ANDROID: Clear sessionStorage (aggressive)
+        if (isAndroid) {
+          try {
+            sessionStorage.clear();
+            console.log('✅ Android: sessionStorage cleared');
+          } catch (e) {
+            console.warn('⚠️ Could not clear sessionStorage:', e);
+          }
+        }
+        
+        // 4. 🔴 ANDROID: Force reload if from BF cache
         const navigation = (performance as any).getEntriesByType?.('navigation')?.[0] as any;
         if (navigation?.type === 'back_forward') {
           console.log('⚠️ Page loaded from BF cache, forcing reload...');
           window.location.reload();
+        }
+        
+        // 5. 🔴 ANDROID: Clear any stale channel data from localStorage
+        if (isAndroid) {
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            if (key.startsWith('channel_') || key.startsWith('video_') || key.startsWith('short_')) {
+              localStorage.removeItem(key);
+              console.log('🗑️ Removed stale data:', key);
+            }
+          });
         }
         
       } catch (error) {
@@ -91,14 +114,34 @@ function AppContent({ Component, pageProps }: AppProps) {
   // ============================================================================
   // 🔴 CRITICAL: FORCE PAGE REFRESH ON VISIBILITY CHANGE (Android Tab Switch)
   // ============================================================================
-  useEffect(() => {
+    useEffect(() => {
+    const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+    
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('👁️ Page visible - dispatching refresh event');
+        console.log('👁️ Page visible - dispatching refresh');
         
-        // Dispatch custom event to force channel page refresh
+        // 🔴 ANDROID: More aggressive refresh
+        if (isAndroid) {
+          // Clear any cached API responses
+          if ('caches' in window) {
+            caches.keys().then(names => {
+              names.forEach(name => {
+                if (name.includes('api') || name.includes('channel')) {
+                  caches.delete(name);
+                }
+              });
+            });
+          }
+        }
+        
+        // Dispatch refresh event
         window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
-          detail: { timestamp: Date.now() }
+          detail: { 
+            timestamp: Date.now(),
+            source: 'visibility',
+            isAndroid 
+          }
         }));
       }
     };
@@ -110,15 +153,64 @@ function AppContent({ Component, pageProps }: AppProps) {
     };
   }, []);
 
+
+   // ============================================================================
+  // 🔴 NEW: ANDROID ORIENTATION CHANGE REFRESH
+  // ============================================================================
+  useEffect(() => {
+    const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+    
+    if (!isAndroid) return;
+    
+    const handleOrientationChange = () => {
+      console.log('🔄 Orientation changed - refreshing');
+      
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
+          detail: { 
+            timestamp: Date.now(),
+            source: 'orientation' 
+          }
+        }));
+      }, 300);
+    };
+    
+    window.addEventListener('orientationchange', handleOrientationChange);
+    
+    return () => {
+      window.removeEventListener('orientationchange', handleOrientationChange);
+    };
+  }, []);
+
+  
   // ============================================================================
   // 🔴 CRITICAL: PAGE FOCUS REFRESH (Android)
   // ============================================================================
   useEffect(() => {
+    const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+    
     const handleFocus = () => {
       console.log('🎯 Window focused - triggering refresh');
-      window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
-        detail: { timestamp: Date.now() }
-      }));
+      
+      // 🔴 ANDROID: Add delay for stability
+      if (isAndroid) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
+            detail: { 
+              timestamp: Date.now(),
+              source: 'focus',
+              isAndroid 
+            }
+          }));
+        }, 100);
+      } else {
+        window.dispatchEvent(new CustomEvent('forceChannelRefresh', {
+          detail: { 
+            timestamp: Date.now(),
+            source: 'focus' 
+          }
+        }));
+      }
     };
     
     window.addEventListener('focus', handleFocus);

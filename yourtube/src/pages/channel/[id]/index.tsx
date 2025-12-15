@@ -197,6 +197,206 @@ const ChannelPage = () => {
   }, []);
 
   // ============================================================================
+  // 🔴 MOBILE FIX: Force refresh on route change and page visibility
+  // ============================================================================
+  useEffect(() => {
+    // Force refresh when route changes (back/forward navigation)
+    const handleRouteChange = () => {
+      console.log("🔄 Route changed, forcing refresh...");
+      setRefreshKey((prev) => prev + 1);
+      setRenderKey((prev) => prev + 1);
+    };
+
+    // Listen to Next.js route changes
+    router.events.on("routeChangeComplete", handleRouteChange);
+
+    // Force refresh when page becomes visible (tab switch, app resume)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        console.log("👀 Page visible, forcing refresh...");
+        setRefreshKey((prev) => prev + 1);
+        setRenderKey((prev) => prev + 1);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Force refresh on focus (Android app resume)
+    const handleFocus = () => {
+      console.log("🎯 Page focused, forcing refresh...");
+      setRefreshKey((prev) => prev + 1);
+      setRenderKey((prev) => prev + 1);
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    // Cleanup
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [router.events]);
+
+  // ADD THIS AFTER THE EXISTING "MOBILE FIX" useEffect (around line 196)
+
+  // ============================================================================
+  // 🔴 ANDROID: ROUTE NAVIGATION REFRESH (Enhanced)
+  // ============================================================================
+  useEffect(() => {
+    const isAndroid =
+      typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+
+    const handleRouteChangeStart = (url: string) => {
+      // If navigating away from channel page, clear state
+      if (!url.includes("/channel/")) {
+        console.log("🚪 Leaving channel page");
+        setVideos([]);
+        setShorts([]);
+      }
+    };
+
+    const handleRouteChangeComplete = (url: string) => {
+      // If arriving at channel page, force refresh
+      if (url.includes("/channel/")) {
+        console.log("🔄 Arrived at channel page, forcing refresh");
+
+        // 🔴 ANDROID: Clear any cached data
+        if (isAndroid && "caches" in window) {
+          caches.keys().then((names) => {
+            names.forEach((name) => {
+              if (
+                name.includes("channel") ||
+                name.includes("video") ||
+                name.includes("short")
+              ) {
+                caches.delete(name);
+              }
+            });
+          });
+        }
+
+        // Delay refresh for stability
+        setTimeout(
+          () => {
+            setRefreshKey((prev) => prev + 1);
+            setRenderKey((prev) => prev + 1);
+          },
+          isAndroid ? 200 : 100
+        );
+      }
+    };
+
+    router.events.on("routeChangeStart", handleRouteChangeStart);
+    router.events.on("routeChangeComplete", handleRouteChangeComplete);
+
+    return () => {
+      router.events.off("routeChangeStart", handleRouteChangeStart);
+      router.events.off("routeChangeComplete", handleRouteChangeComplete);
+    };
+  }, [router.events]);
+
+  // ============================================================================
+  // 🔴 ANDROID: PAGE RESUME FROM BACKGROUND
+  // ============================================================================
+  useEffect(() => {
+    const isAndroid =
+      typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+
+    if (!isAndroid) return;
+
+    let wasHidden = false;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        wasHidden = true;
+        console.log("📵 Page hidden");
+      } else if (document.visibilityState === "visible" && wasHidden) {
+        wasHidden = false;
+        console.log("📱 Page resumed from background - FORCE REFRESH");
+
+        // 🔴 CRITICAL: Clear ALL cached data
+        if ("caches" in window) {
+          caches.keys().then((names) => {
+            names.forEach((name) => caches.delete(name));
+          });
+        }
+
+        // Force complete refresh
+        setTimeout(() => {
+          setRefreshKey((prev) => prev + 1);
+          setRenderKey((prev) => prev + 1);
+        }, 300);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  // ============================================================================
+  // 🔴 ANDROID: NETWORK STATUS CHANGE
+  // ============================================================================
+  useEffect(() => {
+    const isAndroid =
+      typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+
+    if (!isAndroid) return;
+
+    const handleOnline = () => {
+      console.log("🌐 Network online - refreshing data");
+      setTimeout(() => {
+        setRefreshKey((prev) => prev + 1);
+        setRenderKey((prev) => prev + 1);
+      }, 500);
+    };
+
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
+
+  // ============================================================================
+  // 🔴 ANDROID: PERIODIC REFRESH CHECK (Every 30 seconds when visible)
+  // ============================================================================
+  useEffect(() => {
+    const isAndroid =
+      typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+
+    if (!isAndroid || !channel) return;
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        console.log("⏰ Periodic refresh check");
+
+        // Check if data is stale (older than 5 minutes)
+        const lastRefresh = parseInt(
+          sessionStorage.getItem("lastChannelRefresh") || "0"
+        );
+        const now = Date.now();
+
+        if (now - lastRefresh > 5 * 60 * 1000) {
+          console.log("📊 Data is stale, refreshing...");
+          sessionStorage.setItem("lastChannelRefresh", now.toString());
+          setRefreshKey((prev) => prev + 1);
+        }
+      }
+    }, 30000); // Check every 30 seconds
+
+    // Set initial timestamp
+    sessionStorage.setItem("lastChannelRefresh", Date.now().toString());
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [channel]);
+
+  // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
 
@@ -208,7 +408,32 @@ const ChannelPage = () => {
         setLoading(true);
         console.log("📡 Fetching channel:", id);
 
-        const response = await axiosInstance.get(`/auth/channel/${id}`);
+        // 🔴 CRITICAL: Generate unique timestamp for cache busting
+        const timestamp = Date.now();
+        const randomString = Math.random().toString(36).substring(7);
+
+        const response = await axiosInstance.get(`/auth/channel/${id}`, {
+          params: {
+            _t: timestamp,
+            _r: randomString,
+            nocache: "true",
+            mobile: "true",
+            force: "true",
+          },
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+          // 🔴 Disable all caching mechanisms
+          transformRequest: [
+            (data, headers) => {
+              delete headers["If-None-Match"];
+              delete headers["If-Modified-Since"];
+              return data;
+            },
+          ],
+        });
 
         if (response.data.success && response.data.user) {
           const channelData = response.data.user;
@@ -218,8 +443,14 @@ const ChannelPage = () => {
             channelData.subscribers = 0;
           }
 
-          setChannel(channelData);
-          console.log("✅ Channel loaded:", channelData.channelname);
+          // 🔴 FORCE STATE UPDATE
+          setChannel({ ...channelData });
+          console.log("✅ Channel loaded:", {
+            name: channelData.channelname,
+            image: channelData.image ? "Has image" : "No image",
+            banner: channelData.bannerImage ? "Has banner" : "No banner",
+            subscribers: channelData.subscribers,
+          });
 
           // ✅ Update user context if viewing own channel
           if (user && user._id === id) {
@@ -234,6 +465,11 @@ const ChannelPage = () => {
             localStorage.setItem("user", JSON.stringify(updatedUser));
             updateUser(updatedUser);
           }
+
+          // 🔴 Force re-render after state update
+          setTimeout(() => {
+            setRenderKey((prev) => prev + 1);
+          }, 100);
         } else {
           setChannel(null);
         }
@@ -246,7 +482,7 @@ const ChannelPage = () => {
     };
 
     fetchChannel();
-  }, [id, user?._id]);
+  }, [id, user?._id, refreshKey]); // 🔴 Added refreshKey dependency
 
   // ============================================================================
   // FETCH VIDEOS
@@ -925,19 +1161,31 @@ const ChannelPage = () => {
                                     className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
                                     loading="lazy"
                                     onError={(e) => {
-                                      const target = e.currentTarget as HTMLImageElement;
-                                      if (target.src.includes("data:image/svg")) return;
+                                      const target =
+                                        e.currentTarget as HTMLImageElement;
+                                      if (target.src.includes("data:image/svg"))
+                                        return;
 
-                                      if (short.videoUrl?.includes("cloudinary.com")) {
-                                        const cleanUrl = short.videoUrl.replace(/\/v\d+\//g, "/");
-                                        const match = cleanUrl.match(/youtube-clone\/shorts\/videos\/([^.\/]+)/);
+                                      if (
+                                        short.videoUrl?.includes(
+                                          "cloudinary.com"
+                                        )
+                                      ) {
+                                        const cleanUrl = short.videoUrl.replace(
+                                          /\/v\d+\//g,
+                                          "/"
+                                        );
+                                        const match = cleanUrl.match(
+                                          /youtube-clone\/shorts\/videos\/([^.\/]+)/
+                                        );
                                         if (match) {
                                           target.src = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/shorts/videos/${match[1]}.jpg`;
                                           return;
                                         }
                                       }
 
-                                      target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
+                                      target.src =
+                                        'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
                                     }}
                                   />
 
@@ -949,8 +1197,13 @@ const ChannelPage = () => {
 
                                   {/* Views Badge - MOBILE & DESKTOP */}
                                   <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
-                                    <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="white" />
-                                    <span>{(short.views || 0).toLocaleString()}</span>
+                                    <Play
+                                      className="w-2.5 h-2.5 sm:w-3 sm:h-3"
+                                      fill="white"
+                                    />
+                                    <span>
+                                      {(short.views || 0).toLocaleString()}
+                                    </span>
                                   </div>
 
                                   {/* Duration Badge - MOBILE & DESKTOP */}
@@ -966,7 +1219,10 @@ const ChannelPage = () => {
                                       <div className="relative">
                                         <div className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-75"></div>
                                         <div className="relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-2xl ring-2 ring-white/40 group-active:ring-4 md:group-hover:ring-8 transition-all duration-300">
-                                          <Play className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 text-white ml-1" fill="white" />
+                                          <Play
+                                            className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 text-white ml-1"
+                                            fill="white"
+                                          />
                                         </div>
                                       </div>
                                     </div>
@@ -996,14 +1252,20 @@ const ChannelPage = () => {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      const channelId = short.userId?._id || short.userId || channel?._id;
-                                      if (channelId) router.push(`/channel/${channelId}`);
+                                      const channelId =
+                                        short.userId?._id ||
+                                        short.userId ||
+                                        channel?._id;
+                                      if (channelId)
+                                        router.push(`/channel/${channelId}`);
                                     }}
                                   >
                                     <Avatar className="w-full h-full">
                                       <AvatarImage
                                         src={getImageUrl(
-                                          short.userId?.image || short.userId?.avatar || channel?.image,
+                                          short.userId?.image ||
+                                            short.userId?.avatar ||
+                                            channel?.image,
                                           true
                                         )}
                                         alt={
@@ -1028,8 +1290,12 @@ const ChannelPage = () => {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      const channelId = short.userId?._id || short.userId || channel?._id;
-                                      if (channelId) router.push(`/channel/${channelId}`);
+                                      const channelId =
+                                        short.userId?._id ||
+                                        short.userId ||
+                                        channel?._id;
+                                      if (channelId)
+                                        router.push(`/channel/${channelId}`);
                                     }}
                                   >
                                     {short.userId?.channelName ||
