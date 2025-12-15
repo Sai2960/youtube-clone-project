@@ -1554,10 +1554,11 @@ return (
       isolation: "auto",
     }}
   >
-   <div className="relative w-full h-full flex items-center justify-center bg-black">
-      {/* ✅ Video Wrapper - Desktop centered, Mobile full */}
+    {/* ✅ DESKTOP: Centered Video Container */}
+    <div className="relative w-full h-full flex items-center justify-center bg-black">
+      {/* ✅ Video Wrapper - Desktop centered with max-width, Mobile full */}
       <div 
-        className="relative w-full h-full md:w-auto md:h-full md:max-w-[460px] md:aspect-[9/16] bg-black md:rounded-2xl md:overflow-hidden md:shadow-2xl"
+        className="relative w-full h-full md:w-auto md:h-full md:max-w-[450px] md:aspect-[9/16] bg-black"
         style={{
           position: "relative",
         }}
@@ -1819,26 +1820,24 @@ return (
           </div>
         )}
 
-       {/* ✅ CONTENT SECTION - YOUTUBE SHORTS STYLE */}
+        {/* ✅ CONTENT SECTION - REDESIGNED FOR PROFESSIONAL DESKTOP */}
 <div
-  className="absolute inset-0 pointer-events-none"
+  className="absolute bottom-0 left-0 right-0"
   style={{
     position: "absolute",
-    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
     zIndex: 30,
   }}
 >
-  {/* MOBILE: Bottom content */}
-  <div className="md:hidden absolute bottom-0 left-0 right-0 p-3 pb-24 pointer-events-auto">
-    <div className="flex items-end justify-between gap-4">
-      {/* LEFT CONTENT - MOBILE */}
-      <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)]">
-       {/* Channel info */}
-        <div className="flex items-center mb-3 pointer-events-auto">
-          {/* Avatar */}
+           <div className="p-3 pb-24 md:p-6 md:pb-10 lg:p-8 lg:pb-12">
+    <div className="flex items-end justify-between gap-4 md:gap-6 lg:gap-8">
+      {/* ✅ LEFT CONTENT - IMPROVED DESKTOP SPACING & TYPOGRAPHY */}
+      <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[400px] lg:max-w-[480px]">
+        {/* Channel info - ENHANCED FOR DESKTOP */}
+        <div className="flex items-center mb-3 md:mb-5 lg:mb-6 pointer-events-auto">
+          {/* Avatar - Larger on desktop */}
           <img
             key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
             src={getImageUrl(
@@ -1846,7 +1845,7 @@ return (
               true
             )}
             alt={channelName}
-            className="w-9 h-9 rounded-full mr-3 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800 shadow-xl"
+            className="w-9 h-9 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full mr-3 md:mr-5 lg:mr-6 cursor-pointer object-cover border-2 md:border-[3px] border-white/20 flex-shrink-0 bg-gray-800 shadow-xl"
             onClick={handleChannelClick}
             crossOrigin="anonymous"
             loading="eager"
@@ -1865,25 +1864,19 @@ return (
               e.currentTarget.style.display = "block";
             }}
           />
-       {/* Channel Info */}
-          <div className="flex-1 min-w-0 mr-3">
+                  {/* Channel Info - IMPROVED TYPOGRAPHY */}
+          <div className="flex-1 min-w-0 mr-3 md:mr-4">
             <p
-              className="font-bold text-sm cursor-pointer hover:underline leading-tight mb-1 transition-colors"
+              className="font-bold text-sm md:text-xl lg:text-2xl cursor-pointer hover:underline truncate leading-tight mb-1 md:mb-1.5 transition-colors"
               onClick={handleChannelClick}
-              title={`@${channelName}`}
               style={{
                 textShadow: "0 2px 8px rgba(0,0,0,0.8)",
-                display: "-webkit-box",
-                WebkitLineClamp: "1",
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                wordBreak: "break-all",
               }}
             >
               @{channelName}
             </p>
             <p 
-              className="text-xs text-gray-300 leading-tight truncate font-medium"
+              className="text-xs md:text-base lg:text-lg text-gray-300 leading-tight truncate font-medium"
               style={{
                 textShadow: "0 1px 4px rgba(0,0,0,0.8)",
               }}
@@ -1893,12 +1886,11 @@ return (
           </div>
 
           {/* Subscribe Button - ENHANCED */}
-         {/* Subscribe Button */}
           {!isOwnShort && (
             <button
               onClick={handleSubscribe}
-              className={`ml-2 px-4 py-1.5 rounded-full font-bold text-sm transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 shadow-lg ${
-                 isSubscribed
+              className={`ml-2 px-4 md:px-8 lg:px-10 py-1.5 md:py-3 lg:py-3.5 rounded-full font-bold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 shadow-lg ${
+                isSubscribed
                   ? "bg-gray-700 text-white hover:bg-gray-600"
                   : "bg-white text-black hover:bg-gray-100"
               }`}
@@ -1912,31 +1904,23 @@ return (
           )}
         </div>
 
-        {/* Title & Description */}
-        <div className="mb-2 space-y-2">
+        {/* Title & Description - ENHANCED READABILITY */}
+        <div className="mb-2 md:mb-4 lg:mb-5 space-y-2 md:space-y-3">
           <h3 
-            className="font-bold text-base mb-1 leading-tight"
+            className="font-bold text-base md:text-2xl lg:text-3xl mb-1 md:mb-2 line-clamp-2 leading-tight md:leading-snug"
             style={{
               textShadow: "0 2px 12px rgba(0,0,0,0.9)",
               wordBreak: "break-word",
-              display: "-webkit-box",
-              WebkitLineClamp: "2",
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
             }}
           >
-           {translatedTitle}
+            {translatedTitle}
           </h3>
           {translatedDescription && (
             <p 
-              className="text-sm text-gray-200 leading-relaxed font-medium"
+              className="text-sm md:text-base lg:text-xl text-gray-200 line-clamp-2 md:line-clamp-3 leading-relaxed font-medium"
               style={{
                 textShadow: "0 1px 8px rgba(0,0,0,0.9)",
                 wordBreak: "break-word",
-                display: "-webkit-box",
-                WebkitLineClamp: "3",
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
               }}
             >
               {translatedDescription}
@@ -1946,7 +1930,7 @@ return (
 
                 {/* ✅ Views Count - ENHANCED VISIBILITY */}
         <p 
-          className="text-xs text-gray-300 font-bold"
+          className="text-xs md:text-lg lg:text-xl text-gray-300 font-bold"
           style={{
             textShadow: "0 1px 6px rgba(0,0,0,0.9)",
           }}
@@ -1956,7 +1940,7 @@ return (
       </div>
 
       {/* ✅ RIGHT ACTION BUTTONS - PROFESSIONAL DESKTOP SIZING */}
-      <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto">
+      <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-5 lg:gap-6 md:pb-0">
         {/* Like Button - ENHANCED */}
         <button
           onClick={handleLike}
@@ -1968,16 +1952,16 @@ return (
               hasLiked
                 ? "bg-blue-600 border-blue-400 shadow-blue-500/60"
                 : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
-            } p-2.5 w-12 h-12`}
+            } p-2.5 w-12 h-12 md:w-16 md:h-16 lg:w-[72px] lg:h-[72px]`}
           >
             <ThumbsUp
-              className={`${hasLiked ? "text-white" : "text-white"} w-5 h-5`}
+              className={`${hasLiked ? "text-white" : "text-white"} w-5 h-5 md:w-8 md:h-8 lg:w-9 lg:h-9`}
               fill={hasLiked ? "white" : "none"}
               strokeWidth={2.5}
             />
           </div>
           <span
-            className="text-[11px] font-bold"
+            className="text-[11px] md:text-base lg:text-lg font-bold"
             style={{ 
               color: hasLiked ? "#60a5fa" : "white",
               textShadow: "0 1px 4px rgba(0,0,0,0.8)",
