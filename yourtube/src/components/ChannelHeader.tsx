@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 // src/components/ChannelHeader.tsx - COMPLETE FIXED VERSION
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Video, Camera, Edit2 } from "lucide-react";
@@ -9,8 +9,9 @@ import SubscribeButton from "./SubscribeButton";
 import EditChannelModal from "./EditChannelModal";
 import { getImageUrl } from "@/lib/imageUtils";
 
-const DEFAULT_AVATAR =
-  process.env.NEXT_PUBLIC_DEFAULT_AVATAR || "/images/default-avatar.png";
+
+const DEFAULT_AVATAR = process.env.NEXT_PUBLIC_DEFAULT_AVATAR || '/images/default-avatar.png';
+
 
 interface ChannelHeaderProps {
   channel: any;
@@ -21,20 +22,18 @@ interface ChannelHeaderProps {
   onAvatarUpdate?: () => void;
 }
 
-const ChannelHeader: React.FC<ChannelHeaderProps> = ({
-  channel,
-  user,
+const ChannelHeader: React.FC<ChannelHeaderProps> = ({ 
+  channel, 
+  user, 
   onStartCall,
   isInitiatingCall = false,
-  callError = null,
+  callError = null, 
   onAvatarUpdate,
 }) => {
-  const [localSubscriberCount, setLocalSubscriberCount] = useState<number>(
-    () => {
-      const count = channel?.subscribers;
-      return typeof count === "number" ? count : 0;
-    }
-  );
+  const [localSubscriberCount, setLocalSubscriberCount] = useState<number>(() => {
+    const count = channel?.subscribers;
+    return typeof count === 'number' ? count : 0;
+  });
   const [showEditModal, setShowEditModal] = useState(false);
   const [localChannel, setLocalChannel] = useState(channel);
   const [imageKey, setImageKey] = useState(Date.now());
@@ -44,15 +43,14 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       try {
         initializeSocket(user._id);
       } catch (error) {
-        console.error("❌ Socket error:", error);
+        console.error('❌ Socket error:', error);
       }
     }
   }, [user?._id]);
 
   useEffect(() => {
     if (channel?.subscribers !== undefined) {
-      const count =
-        typeof channel.subscribers === "number" ? channel.subscribers : 0;
+      const count = typeof channel.subscribers === 'number' ? channel.subscribers : 0;
       setLocalSubscriberCount(count);
     }
   }, [channel?.subscribers]);
@@ -68,94 +66,61 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   // ✅ CONSOLIDATED AVATAR UPDATE HANDLER
   const handleAvatarUpdateEvent = () => {
-    console.log("🔄 Avatar update event received");
+    console.log('🔄 Avatar update event received');
     setImageKey(Date.now());
     // Trigger parent refresh for shorts/other components
     if (onAvatarUpdate) {
-      console.log("📢 Calling onAvatarUpdate callback");
+      console.log('📢 Calling onAvatarUpdate callback');
       onAvatarUpdate();
     }
   };
 
   // ✅ LISTEN FOR AVATAR UPDATE EVENTS
   useEffect(() => {
-    window.addEventListener("avatarUpdated", handleAvatarUpdateEvent);
-    return () =>
-      window.removeEventListener("avatarUpdated", handleAvatarUpdateEvent);
+    window.addEventListener('avatarUpdated', handleAvatarUpdateEvent);
+    return () => window.removeEventListener('avatarUpdated', handleAvatarUpdateEvent);
   }, [onAvatarUpdate]); // Include dependency to keep callback fresh
 
-  // ✅ DEBOUNCED: Image Update Handler
-  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleImageUpdate = (type: "avatar" | "banner" | "info", data: any) => {
-    console.log("🔄 Channel update:", type);
-
-    // Clear any pending update
-    if (updateTimerRef.current) {
-      clearTimeout(updateTimerRef.current);
+  // ✅ HANDLE IMAGE UPDATES FROM MODAL
+  const handleImageUpdate = (type: 'avatar' | 'banner' | 'info', data: any) => {
+  console.log('🔄 Channel update:', type, data);
+  
+  setLocalChannel((prev: any) => {
+    let updated = { ...prev };
+    
+    if (type === 'avatar') {
+      updated.image = data;
+    } else if (type === 'banner') {
+      updated.bannerImage = data;
+    } else if (type === 'info') {
+      // Update channel name and description
+      updated.channelname = data.channelname;
+      updated.description = data.description;
     }
-
-    setLocalChannel((prev: any) => {
-      let updated = { ...prev };
-
-      if (type === "avatar") {
-        updated.image = data;
-      } else if (type === "banner") {
-        updated.bannerImage = data;
-      } else if (type === "info") {
-        updated.channelname = data.channelname;
-        updated.description = data.description;
+    
+    // Update localStorage if it's the current user's channel
+    if (user && user._id === prev._id) {
+      const updatedUser = { ...user, ...updated };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new Event('avatarUpdated'));
+      
+      // Trigger callback for avatar changes
+      if (type === 'avatar' && onAvatarUpdate) {
+        setTimeout(() => onAvatarUpdate(), 100);
       }
-
-      if (user && user._id === prev._id) {
-        const updatedUser = { ...user, ...updated };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-
-        // Debounce: Only dispatch after 800ms
-        updateTimerRef.current = setTimeout(() => {
-          console.log("📢 Dispatching channel refresh (debounced)");
-
-          window.dispatchEvent(new Event("avatarUpdated"));
-          window.dispatchEvent(
-            new CustomEvent("forceChannelRefresh", {
-              detail: {
-                timestamp: Date.now(),
-                source: "channelUpdate",
-                updateType: type,
-              },
-            })
-          );
-
-          if (onAvatarUpdate) {
-            onAvatarUpdate();
-          }
-        }, 800);
-      }
-
-      return updated;
-    });
-
-    // Force image refresh with delay
-    setTimeout(
-      () => {
-        setImageKey(Date.now());
-      },
-      type === "info" ? 0 : 1000
-    );
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (updateTimerRef.current) {
-        clearTimeout(updateTimerRef.current);
-      }
-    };
-  }, []);
+    }
+    
+    return updated;
+  });
+  
+  // Force image refresh
+  setImageKey(Date.now());
+};
 
   const isOwnChannel = user?._id === localChannel._id;
-  const displayName =
-    localChannel.channelname || localChannel.name || "Unknown Channel";
+  const displayName = localChannel.channelname || localChannel.name || 'Unknown Channel';
   const displayImage = getImageUrl(localChannel.image, true);
   const displayBanner = getImageUrl(localChannel.bannerImage, true);
   const displayHandle = displayName.toLowerCase().replace(/\s+/g, "");
@@ -167,14 +132,14 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       {/* ============================================================ */}
       <div className="relative w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 overflow-hidden group">
         {localChannel.bannerImage ? (
-          <img
+          <img 
             key={`banner-${imageKey}`}
             src={displayBanner}
-            alt="Channel Banner"
+            alt="Channel Banner" 
             className="w-full h-full object-cover"
             onError={(e) => {
-              console.error("❌ Banner error");
-              e.currentTarget.style.display = "none";
+              console.error('❌ Banner error');
+              e.currentTarget.style.display = 'none';
             }}
           />
         ) : (
@@ -182,7 +147,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle,rgba(255,255,255,0.3),rgba(255,255,255,0))]"></div>
           </div>
         )}
-
+        
         {isOwnChannel && (
           <button
             onClick={() => setShowEditModal(true)}
@@ -193,7 +158,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
             <span className="sm:hidden">Edit</span>
           </button>
         )}
-
+        
         <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-20 bg-gradient-to-t from-white dark:from-gray-900 to-transparent"></div>
       </div>
 
@@ -201,6 +166,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       {/* CHANNEL INFO CONTAINER */}
       {/* ============================================================ */}
       <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6">
+        
         {/* ========================================== */}
         {/* MOBILE LAYOUT (< md breakpoint) */}
         {/* ========================================== */}
@@ -208,16 +174,16 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
           <div className="flex items-start gap-4 mb-4">
             <div className="relative flex-shrink-0">
               <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white dark:border-gray-900 shadow-xl ring-2 ring-gray-200 dark:ring-gray-700">
-                <AvatarImage
+                <AvatarImage 
                   key={`mobile-avatar-${imageKey}`}
                   src={displayImage}
                   alt={displayName}
                 />
                 <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                  {displayName[0]?.toUpperCase() || "U"}
+                  {displayName[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-
+              
               {isOwnChannel && (
                 <button
                   onClick={() => setShowEditModal(true)}
@@ -233,15 +199,14 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate mb-1.5 leading-tight">
                 {displayName}
               </h1>
-
+              
               <div className="flex flex-col gap-1">
                 <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
                   @{displayHandle}
                 </span>
                 {localSubscriberCount > 0 && (
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    {localSubscriberCount.toLocaleString()} subscriber
-                    {localSubscriberCount !== 1 ? "s" : ""}
+                    {localSubscriberCount.toLocaleString()} subscriber{localSubscriberCount !== 1 ? 's' : ''}
                   </span>
                 )}
               </div>
@@ -258,7 +223,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
             <div className="flex flex-col gap-3">
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <SubscribeButton
+                  <SubscribeButton 
                     channelId={localChannel._id}
                     initialSubscriberCount={localSubscriberCount}
                     onSubscriptionChange={handleSubscriptionChange}
@@ -272,7 +237,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
                     className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white disabled:bg-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-600 rounded-full shadow-md h-10 text-sm font-semibold transition-all"
                   >
                     <Video className="w-4 h-4" />
-                    <span>{isInitiatingCall ? "Calling..." : "Call"}</span>
+                    <span>{isInitiatingCall ? 'Calling...' : 'Call'}</span>
                   </Button>
                 )}
               </div>
@@ -293,16 +258,16 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
           <div className="flex gap-6 items-start flex-1">
             <div className="relative flex-shrink-0">
               <Avatar className="w-32 h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40 border-4 border-white dark:border-gray-900 shadow-2xl ring-4 ring-gray-200 dark:ring-gray-700">
-                <AvatarImage
+                <AvatarImage 
                   key={`desktop-avatar-${imageKey}`}
                   src={displayImage}
                   alt={displayName}
                 />
                 <AvatarFallback className="text-4xl lg:text-5xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                  {displayName[0]?.toUpperCase() || "U"}
+                  {displayName[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-
+              
               {isOwnChannel && (
                 <button
                   onClick={() => setShowEditModal(true)}
@@ -318,7 +283,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
               <h1 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 dark:text-white leading-tight">
                 {displayName}
               </h1>
-
+              
               <div className="flex flex-wrap items-center gap-4 text-base text-gray-600 dark:text-gray-400">
                 <span className="font-medium">@{displayHandle}</span>
                 {localSubscriberCount > 0 && (
@@ -330,7 +295,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
                   </>
                 )}
               </div>
-
+              
               {localChannel.description && (
                 <p className="text-base text-gray-700 dark:text-gray-300 max-w-3xl leading-relaxed">
                   {localChannel.description}
@@ -342,7 +307,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
           {user && !isOwnChannel && (
             <div className="flex flex-col gap-3 items-end pt-2">
               <div className="flex gap-3">
-                <SubscribeButton
+                <SubscribeButton 
                   channelId={localChannel._id}
                   initialSubscriberCount={localSubscriberCount}
                   onSubscriptionChange={handleSubscriptionChange}
@@ -355,7 +320,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
                     className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white disabled:bg-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-600 rounded-full flex items-center gap-2 font-semibold shadow-md px-6 h-10 transition-all"
                   >
                     <Video className="w-5 h-5" />
-                    {isInitiatingCall ? "Calling..." : "Call"}
+                    {isInitiatingCall ? 'Calling...' : 'Call'}
                   </Button>
                 )}
               </div>

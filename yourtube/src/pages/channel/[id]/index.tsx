@@ -176,220 +176,25 @@ const ChannelPage = () => {
   // ============================================================================
   useEffect(() => {
     const handleForceRefresh = (event: CustomEvent) => {
-      console.log("📢 Force refresh event:", event.detail);
-      triggerRefresh("forceChannelRefresh", 300);
+      console.log("🔄 Force refresh event received:", event.detail);
+
+      // Increment both keys to force complete re-render
+      setRefreshKey((prev) => prev + 1);
+      setRenderKey((prev) => prev + 1);
     };
 
     window.addEventListener(
       "forceChannelRefresh",
       handleForceRefresh as EventListener
     );
+
     return () => {
       window.removeEventListener(
         "forceChannelRefresh",
         handleForceRefresh as EventListener
       );
     };
-  }, [triggerRefresh]);
-
-  // ============================================================================
-  // 🔴 MOBILE FIX: Force refresh on route change and page visibility
-  // ============================================================================
-  useEffect(() => {
-    // Force refresh when route changes (back/forward navigation)
-    const handleRouteChange = () => {
-      console.log("🔄 Route changed, forcing refresh...");
-      setRefreshKey((prev) => prev + 1);
-      setRenderKey((prev) => prev + 1);
-    };
-
-    // Listen to Next.js route changes
-    router.events.on("routeChangeComplete", handleRouteChange);
-
-    // Force refresh when page becomes visible (tab switch, app resume)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        console.log("👀 Page visible, forcing refresh...");
-        setRefreshKey((prev) => prev + 1);
-        setRenderKey((prev) => prev + 1);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    // Force refresh on focus (Android app resume)
-    const handleFocus = () => {
-      console.log("🎯 Page focused, forcing refresh...");
-      setRefreshKey((prev) => prev + 1);
-      setRenderKey((prev) => prev + 1);
-    };
-
-    window.addEventListener("focus", handleFocus);
-
-    // Cleanup
-    return () => {
-      router.events.off("routeChangeComplete", handleRouteChange);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [router.events]);
-
-  // ADD THIS AFTER THE EXISTING "MOBILE FIX" useEffect (around line 196)
-
-  // ============================================================================
-  // 🔴 ANDROID: ROUTE NAVIGATION REFRESH (Enhanced)
-  // ============================================================================
-  useEffect(() => {
-    const isAndroid =
-      typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
-
-    const handleRouteChangeStart = (url: string) => {
-      // If navigating away from channel page, clear state
-      if (!url.includes("/channel/")) {
-        console.log("🚪 Leaving channel page");
-        setVideos([]);
-        setShorts([]);
-      }
-    };
-
-    const handleRouteChangeComplete = (url: string) => {
-      // If arriving at channel page, force refresh
-      if (url.includes("/channel/")) {
-        console.log("🔄 Arrived at channel page, forcing refresh");
-
-        // 🔴 ANDROID: Clear any cached data
-        if (isAndroid && "caches" in window) {
-          caches.keys().then((names) => {
-            names.forEach((name) => {
-              if (
-                name.includes("channel") ||
-                name.includes("video") ||
-                name.includes("short")
-              ) {
-                caches.delete(name);
-              }
-            });
-          });
-        }
-
-        // Delay refresh for stability
-        setTimeout(
-          () => {
-            setRefreshKey((prev) => prev + 1);
-            setRenderKey((prev) => prev + 1);
-          },
-          isAndroid ? 200 : 100
-        );
-      }
-    };
-
-    router.events.on("routeChangeStart", handleRouteChangeStart);
-    router.events.on("routeChangeComplete", handleRouteChangeComplete);
-
-    return () => {
-      router.events.off("routeChangeStart", handleRouteChangeStart);
-      router.events.off("routeChangeComplete", handleRouteChangeComplete);
-    };
-  }, [router.events]);
-
-  // ============================================================================
-  // 🔴 ANDROID: PAGE RESUME FROM BACKGROUND
-  // ============================================================================
-  // ============================================================================
-  // 🔴 NETWORK ONLINE (Android only)
-  // ============================================================================
-  useEffect(() => {
-    const isAndroid =
-      typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
-
-    if (!isAndroid) return;
-
-    const handleOnline = () => {
-      console.log("🌐 Network back online");
-      triggerRefresh("network", 1000);
-    };
-
-    window.addEventListener("online", handleOnline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-    };
-  }, [triggerRefresh]);
-
-  // ============================================================================
-  // 🔴 ROUTE CHANGES (Debounced)
-  // ============================================================================
-  useEffect(() => {
-    const handleRouteComplete = (url: string) => {
-      if (url.includes("/channel/")) {
-        console.log("🚀 Route changed to channel page");
-        triggerRefresh("route", 500);
-      }
-    };
-
-    router.events.on("routeChangeComplete", handleRouteComplete);
-    return () => {
-      router.events.off("routeChangeComplete", handleRouteComplete);
-    };
-  }, [router.events, triggerRefresh]);
-
-  // ============================================================================
-  // 🔴 ANDROID: NETWORK STATUS CHANGE
-  // ============================================================================
-  useEffect(() => {
-    const isAndroid =
-      typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
-
-    if (!isAndroid) return;
-
-    const handleOnline = () => {
-      console.log("🌐 Network online - refreshing data");
-      setTimeout(() => {
-        setRefreshKey((prev) => prev + 1);
-        setRenderKey((prev) => prev + 1);
-      }, 500);
-    };
-
-    window.addEventListener("online", handleOnline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-    };
   }, []);
-
-  // ============================================================================
-  // 🔴 ANDROID: PERIODIC REFRESH CHECK (Every 30 seconds when visible)
-  // ============================================================================
-  useEffect(() => {
-    const isAndroid =
-      typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
-
-    if (!isAndroid || !channel) return;
-
-    const intervalId = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        console.log("⏰ Periodic refresh check");
-
-        // Check if data is stale (older than 5 minutes)
-        const lastRefresh = parseInt(
-          sessionStorage.getItem("lastChannelRefresh") || "0"
-        );
-        const now = Date.now();
-
-        if (now - lastRefresh > 5 * 60 * 1000) {
-          console.log("📊 Data is stale, refreshing...");
-          sessionStorage.setItem("lastChannelRefresh", now.toString());
-          setRefreshKey((prev) => prev + 1);
-        }
-      }
-    }, 30000); // Check every 30 seconds
-
-    // Set initial timestamp
-    sessionStorage.setItem("lastChannelRefresh", Date.now().toString());
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [channel]);
 
   // ============================================================================
   // FETCH CHANNEL DATA
@@ -403,41 +208,20 @@ const ChannelPage = () => {
         setLoading(true);
         console.log("📡 Fetching channel:", id);
 
-        const timestamp = Date.now();
-        const randomString = Math.random().toString(36).substring(7);
-
-        const response = await axiosInstance.get(`/auth/channel/${id}`, {
-          params: {
-            _t: timestamp,
-            _r: randomString,
-            nocache: "true",
-            mobile: "true",
-            force: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-          transformRequest: [
-            (data, headers) => {
-              delete headers["If-None-Match"];
-              delete headers["If-Modified-Since"];
-              return data;
-            },
-          ],
-        });
+        const response = await axiosInstance.get(`/auth/channel/${id}`);
 
         if (response.data.success && response.data.user) {
           const channelData = response.data.user;
 
+          // ✅ Ensure subscribers is a number
           if (typeof channelData.subscribers !== "number") {
             channelData.subscribers = 0;
           }
 
-          setChannel({ ...channelData });
+          setChannel(channelData);
           console.log("✅ Channel loaded:", channelData.channelname);
 
+          // ✅ Update user context if viewing own channel
           if (user && user._id === id) {
             const updatedUser = {
               ...user,
@@ -450,8 +234,6 @@ const ChannelPage = () => {
             localStorage.setItem("user", JSON.stringify(updatedUser));
             updateUser(updatedUser);
           }
-
-          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
         } else {
           setChannel(null);
         }
@@ -464,7 +246,7 @@ const ChannelPage = () => {
     };
 
     fetchChannel();
-  }, [id, user?._id, refreshKey]);
+  }, [id, user?._id]);
 
   // ============================================================================
   // FETCH VIDEOS
@@ -1327,6 +1109,3 @@ const ChannelPage = () => {
 };
 
 export default ChannelPage;
-function triggerRefresh(arg0: string, arg1: number) {
-  throw new Error("Function not implemented.");
-}
