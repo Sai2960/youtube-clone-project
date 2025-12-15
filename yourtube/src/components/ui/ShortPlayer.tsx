@@ -1820,7 +1820,7 @@ return (
           </div>
         )}
 
-       {/* ✅ CONTENT SECTION - YOUTUBE-STYLE DESKTOP LAYOUT */}
+     {/* ✅ CONTENT SECTION - YOUTUBE-STYLE DESKTOP LAYOUT */}
 <div
   className="absolute bottom-0 left-0 right-0"
   style={{
@@ -1831,10 +1831,10 @@ return (
     zIndex: 30,
   }}
 >
-          <div className="p-3 pb-24 md:p-8 md:pb-8 lg:p-10 lg:pb-10">
+        <div className="p-3 pb-24 md:p-8 md:pb-8 lg:p-10 lg:pb-10">
     <div className="flex items-end justify-between gap-4 md:gap-8 lg:gap-10">
-       {/* ✅ LEFT CONTENT - FULL WIDTH ON DESKTOP */}
-      <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-none md:pr-24 lg:pr-28">
+      {/* ✅ LEFT CONTENT - FIXED MAX WIDTH FOR DESKTOP */}
+      <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[65%] lg:max-w-[70%]">
         {/* Channel info */}
         <div className="flex items-center mb-3 md:mb-6 lg:mb-7 pointer-events-auto">
           {/* Avatar */}
@@ -1865,10 +1865,10 @@ return (
             }}
           />
           
-          {/* Channel Info - NO TRUNCATION ON DESKTOP */}
-          <div className="flex-1 min-w-0 mr-3 md:mr-4">
+          {/* Channel Info - VISIBLE ON DESKTOP */}
+          <div className="flex-1 min-w-0 mr-3 md:mr-4 md:max-w-[280px] lg:max-w-[320px]">
             <p
-              className="font-bold text-sm md:text-lg lg:text-xl cursor-pointer hover:underline leading-tight mb-1 md:mb-1.5 transition-colors truncate md:whitespace-normal md:break-words"
+              className="font-bold text-sm md:text-lg lg:text-xl cursor-pointer hover:underline leading-tight mb-1 md:mb-1.5 transition-colors truncate md:overflow-visible md:whitespace-normal md:break-words"
               onClick={handleChannelClick}
               style={{
                 textShadow: "0 2px 8px rgba(0,0,0,0.8)",
@@ -1877,7 +1877,7 @@ return (
               @{channelName}
             </p>
             <p 
-              className="text-xs md:text-sm lg:text-base text-gray-300 leading-tight font-medium truncate md:whitespace-normal"
+              className="text-xs md:text-sm lg:text-base text-gray-300 leading-tight font-medium truncate md:overflow-visible md:whitespace-normal"
               style={{
                 textShadow: "0 1px 4px rgba(0,0,0,0.8)",
               }}
@@ -1886,8 +1886,7 @@ return (
             </p>
           </div>
 
-
-        {/* Subscribe Button */}
+          {/* Subscribe Button */}
           {!isOwnShort && (
             <button
               onClick={handleSubscribe}
@@ -1906,23 +1905,25 @@ return (
           )}
         </div>
 
-        {/* Title & Description - FULL VISIBILITY ON DESKTOP */}
+        {/* Title & Description - FULLY VISIBLE ON DESKTOP */}
         <div className="mb-2 md:mb-5 lg:mb-6 space-y-2 md:space-y-3">
           <h3 
-            className="font-bold text-base md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight md:leading-snug line-clamp-2 md:line-clamp-none"
+            className="font-bold text-base md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight md:leading-snug line-clamp-2 md:line-clamp-3 lg:line-clamp-4"
             style={{
               textShadow: "0 2px 12px rgba(0,0,0,0.9)",
               wordBreak: "break-word",
+              maxHeight: "none",
             }}
           >
             {translatedTitle}
           </h3>
           {translatedDescription && (
             <p 
-              className="text-sm md:text-base lg:text-lg text-gray-200 leading-relaxed font-medium line-clamp-2 md:line-clamp-none md:max-h-none"
+              className="text-sm md:text-base lg:text-lg text-gray-200 leading-relaxed font-medium line-clamp-2 md:line-clamp-4 lg:line-clamp-5"
               style={{
                 textShadow: "0 1px 8px rgba(0,0,0,0.9)",
                 wordBreak: "break-word",
+                maxHeight: "none",
               }}
             >
               {translatedDescription}
@@ -1930,8 +1931,7 @@ return (
           )}
         </div>
 
-
-              {/* Views Count */}
+        {/* Views Count */}
         <p 
           className="text-xs md:text-base lg:text-lg text-gray-300 font-bold"
           style={{
@@ -1942,10 +1942,8 @@ return (
         </p>
       </div>
 
-
-
-       {/* ✅ RIGHT ACTION BUTTONS - FIXED POSITIONING */}
-      <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-4 lg:gap-5 md:pb-0 md:absolute md:right-8 md:bottom-8 lg:right-10 lg:bottom-10">
+      {/* ✅ RIGHT ACTION BUTTONS - RELATIVE POSITIONING ON DESKTOP */}
+      <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-4 lg:gap-5 md:pb-0 md:flex-shrink-0">
         {/* Like Button */}
         <button
           onClick={handleLike}
@@ -1976,7 +1974,7 @@ return (
           </span>
         </button>
 
-          {/* Dislike Button */}
+        {/* Dislike Button */}
         <button
           onClick={handleDislike}
           className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
@@ -2006,7 +2004,7 @@ return (
           </span>
         </button>
 
-           {/* Comments Button */}
+        {/* Comments Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -2054,7 +2052,7 @@ return (
           </span>
         </button>
 
-                 {/* Volume Control */}
+        {/* Volume Control */}
         <div className="relative flex flex-col items-center w-full volume-control">
           <button
             onClick={toggleVolumeSlider}
@@ -2084,7 +2082,7 @@ return (
             </span>
           </button>
 
-   {/* Volume Slider Popup */}
+          {/* Volume Slider Popup */}
           {showVolumeSlider && (
             <div
               className="absolute bottom-full mb-3 md:mb-4 rounded-2xl shadow-2xl border-2 right-0 p-4 md:p-5 lg:p-6"
@@ -2152,6 +2150,7 @@ return (
               </div>
             </div>
           )}
+      
               </div>
             </div>
           </div>
