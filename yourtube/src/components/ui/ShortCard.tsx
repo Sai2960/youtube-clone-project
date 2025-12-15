@@ -48,7 +48,7 @@ const ShortCard: React.FC<ShortCardProps> = ({ short }) => {
   };
 
   return (
-    <Link href={`/shorts?id=${short._id}`}>
+    <Link href={`/shorts?id=${short._id}`} prefetch={false}>
       {" "}
       {/* ✅ CHANGED: Use query param instead */}
       <div className="group/short cursor-pointer short-card-wrapper">

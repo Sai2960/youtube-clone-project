@@ -85,6 +85,7 @@ const ShortsPage: React.FC = () => {
       window.removeEventListener("avatarUpdated", handleAvatarUpdate);
   }, []);
   // ✅ Handle start query parameter
+  // ✅ Handle id query parameter
   useEffect(() => {
     if (router.query.id && shorts.length > 0) {
       const shortId = router.query.id as string;
@@ -95,10 +96,8 @@ const ShortsPage: React.FC = () => {
       if (foundIndex !== -1) {
         console.log("✅ Found short at index:", foundIndex);
 
-        // ✅ CRITICAL FIX: Use setTimeout to ensure state updates properly
-        setTimeout(() => {
-          setCurrentIndex(foundIndex);
-        }, 0);
+        // ✅ CRITICAL FIX: Set index immediately, no setTimeout
+        setCurrentIndex(foundIndex);
 
         // Remove id from URL to clean it up
         const { id, ...restQuery } = router.query;
@@ -112,7 +111,7 @@ const ShortsPage: React.FC = () => {
         fetchSingleShortAndInsert(shortId);
       }
     }
-  }, [router.query.id, shorts.length, router]);
+  }, [router.query.id, shorts.length]);
 
   // ✅ Prefetch more shorts when near the end
   useEffect(() => {
@@ -300,29 +299,26 @@ const ShortsPage: React.FC = () => {
 
       const response = await axios.get(`${apiUrl}/api/shorts/${shortId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-        params: { _t: Date.now() }, // ✅ ADD: Cache busting
+        params: { _t: Date.now() },
       });
 
       if (response.data.success && response.data.data) {
         const fetchedShort = response.data.data;
         console.log("✅ Fetched short:", fetchedShort.title);
 
-        // ✅ CRITICAL FIX: Check if short already exists in array
-        setShorts((prev) => {
-          const existingIndex = prev.findIndex((s) => s._id === shortId);
+        // ✅ Check if short exists first
+        const existingIndex = shorts.findIndex((s) => s._id === shortId);
 
-          if (existingIndex !== -1) {
-            // Short already exists, just navigate to it
-            console.log("✅ Short already in array at index:", existingIndex);
-            setCurrentIndex(existingIndex);
-            return prev;
-          } else {
-            // Insert at beginning
-            console.log("➕ Inserting short at beginning");
-            setCurrentIndex(0);
-            return [fetchedShort, ...prev];
-          }
-        });
+        if (existingIndex !== -1) {
+          // Short exists, just set the index
+          console.log("✅ Short already in array at index:", existingIndex);
+          setCurrentIndex(existingIndex);
+        } else {
+          // Insert at beginning and set index to 0
+          console.log("➕ Inserting short at beginning");
+          setShorts((prev) => [fetchedShort, ...prev]);
+          setCurrentIndex(0);
+        }
 
         // Clean up URL
         const { id, ...restQuery } = router.query;
@@ -333,7 +329,6 @@ const ShortsPage: React.FC = () => {
         );
       } else {
         console.error("❌ Short not found");
-        // Fall back to normal shorts feed
         router.replace("/shorts", undefined, { shallow: true });
       }
     } catch (error: any) {
@@ -809,5 +804,3 @@ const ShortsPage: React.FC = () => {
 };
 
 export default ShortsPage;
-
-

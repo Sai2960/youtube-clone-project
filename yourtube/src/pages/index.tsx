@@ -488,10 +488,10 @@ const handleShortClick = (
     }
 
     e.preventDefault();
-    hapticFeedback.light(); // Add haptic feedback
+    hapticFeedback.light();
     router.push({
       pathname: "/shorts",
-      query: { start: index.toString() },
+      query: { id: shortId }, // Use ID instead of index
     });
   };
 
