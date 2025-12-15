@@ -1546,32 +1546,33 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         WebkitOverflowScrolling: "touch",
         zIndex: isActive ? 30 : 20,
         isolation: "auto",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
+      {/* Desktop: Center video with max-width, Mobile: Full width */}
+      <div
+        className="relative w-full h-full md:max-w-[450px] md:h-auto md:aspect-[9/16] md:mx-auto"
+        style={{
+          position: "relative",
+          zIndex: 1,
+        }}
+      ></div>
       {/* ✅ Video Layer - Z-INDEX 1 */}
       <video
         ref={videoRef}
-        key={`video-${short._id}-${isActive}`} // ✅ Forces remount when short OR active state changes
+        key={`video-${short._id}-${isActive}`}
         src={short.videoUrl}
-        className="absolute inset-0 w-full h-full object-cover"
-        loop
-        playsInline
-        webkit-playsinline="true"
-        x5-playsinline="true"
-        x5-video-player-type="h5"
-        x-webkit-airplay="allow"
-        preload="auto"
-        crossOrigin="anonymous"
-        onClick={togglePlayPause}
+        className="w-full h-full object-contain md:object-contain" // Changed from object-cover
+        // ... rest of props
         style={{
           width: "100%",
           height: "100%",
-          objectFit: "cover",
+          objectFit: "contain", // ✅ Changed: contain instead of cover on desktop
           backgroundColor: "#000",
           display: "block",
-          position: "absolute",
-          top: 0,
-          left: 0,
+          position: "relative", // ✅ Changed: relative instead of absolute
           zIndex: 1,
           WebkitTransform: "translate3d(0,0,0)",
           transform: "translate3d(0,0,0)",
@@ -1694,6 +1695,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       {/* Gradients */}
       {/* Gradients */}
       <div
+        className="md:hidden"
         style={{
           position: "absolute",
           top: 0,
@@ -1706,6 +1708,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         }}
       />
       <div
+        className="md:hidden"
         style={{
           position: "absolute",
           bottom: 0,
@@ -1719,13 +1722,17 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       />
       {/* Header with Theme-Compatible Menu */}
       <div
-        className="absolute top-4 left-4 right-4 flex items-center justify-between"
+        className="hidden md:block"
         style={{
           position: "absolute",
-          top: "1rem",
-          left: "1rem",
-          right: "1rem",
-          zIndex: 50,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "180px",
+          background:
+            "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 70%, transparent 100%)",
+          zIndex: 2,
+          pointerEvents: "none",
         }}
       >
         {/* Shorts button - HIDDEN on desktop (md and above) */}
@@ -2292,15 +2299,16 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           zIndex: 30,
         }}
       >
+        {" "}
         <div
-          className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24"
-          style={{ pointerEvents: "auto" }} // ✅ But make buttons clickable
+          className="p-3 pb-24 md:px-8 md:pb-8 lg:px-10 lg:pb-10"
+          style={{ pointerEvents: "auto" }}
         >
-          <div className="flex items-end justify-between gap-3 md:gap-4 lg:gap-6">
+          <div className="flex items-end justify-between gap-3 md:gap-8 lg:gap-12">
             {/* Left Content */}
             <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-140px)] lg:max-w-[calc(100%-160px)]">
               {/* Channel info */}
-              <div className="flex items-center mb-2.5 md:mb-3 lg:mb-4 pointer-events-auto">
+              <div className="flex items-center mb-2.5 md:mb-4 lg:mb-5 pointer-events-auto">
                 <img
                   key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
                   src={getImageUrl(
@@ -2308,7 +2316,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                     true
                   )}
                   alt={channelName}
-                  className="w-9 h-9 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full mr-2.5 md:mr-3 lg:mr-4 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
+                  className="w-9 h-9 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full mr-2.5 md:mr-4 lg:mr-5 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
                   onClick={handleChannelClick}
                   crossOrigin="anonymous"
                   loading="eager"
@@ -2345,7 +2353,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                 {!isOwnShort && (
                   <button
                     onClick={handleSubscribe}
-                    className={`ml-1 px-4 md:px-8 lg:px-10 py-1.5 md:py-2.5 lg:py-3 rounded-full font-semibold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 flex-shrink-0 ${
+                    className={`ml-1 px-4 md:px-10 lg:px-12 py-1.5 md:py-3 lg:py-3.5 rounded-full font-semibold text-sm md:text-lg lg:text-xl transition-all transform hover:scale-105 flex-shrink-0
                       isSubscribed
                         ? "bg-youtube-hover text-youtube-primary"
                         : "bg-white text-black hover:bg-gray-100"
@@ -2358,8 +2366,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
               </div>
 
               {/* Title & Description */}
-              <div className="mb-2 md:mb-3 lg:mb-4">
-                <h3 className="font-bold text-base md:text-xl lg:text-2xl mb-1 md:mb-2 line-clamp-2 leading-snug">
+              {/* Title & Description */}
+              <div className="mb-2 md:mb-4 lg:mb-5">
+                <h3 className="font-bold text-base md:text-2xl lg:text-3xl mb-1 md:mb-2 line-clamp-2 leading-snug">
                   {translatedTitle}
                 </h3>
                 {translatedDescription && (
@@ -2376,7 +2385,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             </div>
 
             {/* Right Action Buttons - FULLY RESPONSIVE */}
-            <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-5 md:pb-0 lg:gap-6">
+            {/* Right Action Buttons - FULLY RESPONSIVE */}
+            <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-6 md:pb-0 lg:gap-7">
+              {" "}
               {/* Like Button */}
               <button
                 onClick={handleLike}
@@ -2388,24 +2399,23 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                     hasLiked
                       ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
                       : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
-                  } p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]`}
+                  } p-2.5 w-[48px] h-[48px] md:p-4 md:w-[72px] md:h-[72px] lg:p-5 lg:w-[80px] lg:h-[80px]`}
                 >
                   <ThumbsUp
                     className={`${
                       hasLiked ? "text-white" : "text-white"
-                    } w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
+                    }w-5 h-5 md:w-8 md:h-8 lg:w-9 lg:h-9`}
                     fill={hasLiked ? "white" : "none"}
                     strokeWidth={2.5}
                   />
                 </div>
                 <span
-                  className="text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none"
+                  className="text-[11px] md:text-base lg:text-lg"
                   style={{ color: hasLiked ? "#60a5fa" : "white" }}
                 >
                   {formatCount(likesCount)}
                 </span>
               </button>
-
               {/* Dislike Button */}
               <button
                 onClick={handleDislike}
@@ -2434,7 +2444,6 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   Dislike
                 </span>
               </button>
-
               {/* Comments Button */}
               <button
                 onClick={(e) => {
@@ -2455,7 +2464,6 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   {formatCount(commentsCount)}
                 </span>
               </button>
-
               {/* Share Button */}
               <button
                 onClick={handleShareClick}
@@ -2472,7 +2480,6 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   Share
                 </span>
               </button>
-
               {/* Volume Control - FIXED FOR DESKTOP */}
               <div className="relative flex flex-col items-center w-full volume-control">
                 <button
