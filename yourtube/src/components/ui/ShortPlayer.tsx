@@ -437,6 +437,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   };
 
   // ✅ FIXED: Proper video playback control with cleanup
+  // ✅ FIXED: Proper video playback control with cleanup
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -458,6 +459,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       setIsPlaying(false);
       return;
     }
+
     // ✅ CRITICAL: ALWAYS set src when short changes - force reload
     console.log("🔄 Setting video source:", short.videoUrl);
     video.src = short.videoUrl;
@@ -471,6 +473,12 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
       const attemptPlay = async () => {
         try {
+          // ✅ CRITICAL: Double-check we're still active BEFORE doing anything
+          if (!isActive) {
+            console.log("❌ No longer active before play attempt, aborting");
+            return;
+          }
+
           // ✅ CRITICAL: Ensure video is loaded with this specific short
           if (video.currentSrc !== short.videoUrl) {
             console.log("⚠️ Video src mismatch, reloading...");
@@ -512,16 +520,10 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
               video.addEventListener("error", onError, { once: true });
             });
           }
-          // Start muted for autoplay compliance
-          video.muted = true;
 
-          console.log("▶️ Playing video:", short._id);
-          await video.play();
-          setIsPlaying(true);
-
-          // Unmute after successful play (if not muted by user)
+          // ✅ CRITICAL: Check AGAIN if still active after waiting
           if (!isActive) {
-            console.log("❌ No longer active, aborting play");
+            console.log("❌ No longer active after load wait, aborting");
             return;
           }
 
@@ -572,8 +574,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           }, 500);
         }
       };
+
       // Small delay to ensure DOM is ready
-      const playTimeout = setTimeout(attemptPlay, 100); // Reduced from 150ms
+      const playTimeout = setTimeout(attemptPlay, 100);
 
       return () => {
         clearTimeout(playTimeout);
@@ -1548,7 +1551,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       {/* ✅ Video Layer - Z-INDEX 1 */}
       <video
         ref={videoRef}
-        key={`video-${short._id}-${isActive}`} // ✅ Add isActive to force remount
+        key={`video-${short._id}-${isActive}`} // ✅ Forces remount when short OR active state changes
         src={short.videoUrl}
         className="absolute inset-0 w-full h-full object-cover"
         loop
