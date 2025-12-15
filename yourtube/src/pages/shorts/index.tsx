@@ -86,33 +86,32 @@ const ShortsPage: React.FC = () => {
   }, []);
   // ✅ Handle start query parameter
   // ✅ Handle id query parameter
-useEffect(() => {
-  if (router.query.id && shorts.length > 0) {
-    const shortId = router.query.id as string;
-    console.log("🎯 Looking for short with ID:", shortId);
+  useEffect(() => {
+    if (router.query.id && shorts.length > 0) {
+      const shortId = router.query.id as string;
+      console.log("🎯 Looking for short with ID:", shortId);
 
-    const foundIndex = shorts.findIndex((s) => s._id === shortId);
+      const foundIndex = shorts.findIndex((s) => s._id === shortId);
 
-    if (foundIndex !== -1) {
-      console.log("✅ Found short at index:", foundIndex);
+      if (foundIndex !== -1) {
+        console.log("✅ Found short at index:", foundIndex);
 
-      // ✅ CRITICAL FIX: Set index immediately, no setTimeout
-      setCurrentIndex(foundIndex);
+        // ✅ CRITICAL FIX: Set index immediately, no setTimeout
+        setCurrentIndex(foundIndex);
 
-      // Remove id from URL to clean it up
-      const { id, ...restQuery } = router.query;
-      router.replace(
-        { pathname: router.pathname, query: restQuery },
-        undefined,
-        { shallow: true }
-      );
-    } else {
-      console.warn("⚠️ Short not found in current array, fetching by ID...");
-      fetchSingleShortAndInsert(shortId);
+        // Remove id from URL to clean it up
+        const { id, ...restQuery } = router.query;
+        router.replace(
+          { pathname: router.pathname, query: restQuery },
+          undefined,
+          { shallow: true }
+        );
+      } else {
+        console.warn("⚠️ Short not found in current array, fetching by ID...");
+        fetchSingleShortAndInsert(shortId);
+      }
     }
-  }
-}, [router.query.id, shorts.length]);
-
+  }, [router.query.id, shorts.length]);
 
   // ✅ Prefetch more shorts when near the end
   useEffect(() => {
@@ -292,51 +291,51 @@ useEffect(() => {
   };
 
   const fetchSingleShortAndInsert = async (shortId: string) => {
-  try {
-    const token = localStorage.getItem("token");
-    const apiUrl = getApiUrl();
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = getApiUrl();
 
-    console.log("📡 Fetching single short:", shortId);
+      console.log("📡 Fetching single short:", shortId);
 
-    const response = await axios.get(`${apiUrl}/api/shorts/${shortId}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      params: { _t: Date.now() },
-    });
+      const response = await axios.get(`${apiUrl}/api/shorts/${shortId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        params: { _t: Date.now() },
+      });
 
-    if (response.data.success && response.data.data) {
-      const fetchedShort = response.data.data;
-      console.log("✅ Fetched short:", fetchedShort.title);
+      if (response.data.success && response.data.data) {
+        const fetchedShort = response.data.data;
+        console.log("✅ Fetched short:", fetchedShort.title);
 
-      // ✅ Check if short exists first
-      const existingIndex = shorts.findIndex((s) => s._id === shortId);
+        // ✅ Check if short exists first
+        const existingIndex = shorts.findIndex((s) => s._id === shortId);
 
-      if (existingIndex !== -1) {
-        // Short exists, just set the index
-        console.log("✅ Short already in array at index:", existingIndex);
-        setCurrentIndex(existingIndex);
+        if (existingIndex !== -1) {
+          // Short exists, just set the index
+          console.log("✅ Short already in array at index:", existingIndex);
+          setCurrentIndex(existingIndex);
+        } else {
+          // Insert at beginning and set index to 0
+          console.log("➕ Inserting short at beginning");
+          setShorts((prev) => [fetchedShort, ...prev]);
+          setCurrentIndex(0);
+        }
+
+        // Clean up URL
+        const { id, ...restQuery } = router.query;
+        router.replace(
+          { pathname: router.pathname, query: restQuery },
+          undefined,
+          { shallow: true }
+        );
       } else {
-        // Insert at beginning and set index to 0
-        console.log("➕ Inserting short at beginning");
-        setShorts((prev) => [fetchedShort, ...prev]);
-        setCurrentIndex(0);
+        console.error("❌ Short not found");
+        router.replace("/shorts", undefined, { shallow: true });
       }
-
-      // Clean up URL
-      const { id, ...restQuery } = router.query;
-      router.replace(
-        { pathname: router.pathname, query: restQuery },
-        undefined,
-        { shallow: true }
-      );
-    } else {
-      console.error("❌ Short not found");
+    } catch (error: any) {
+      console.error("❌ Error fetching single short:", error);
       router.replace("/shorts", undefined, { shallow: true });
     }
-  } catch (error: any) {
-    console.error("❌ Error fetching single short:", error);
-    router.replace("/shorts", undefined, { shallow: true });
-  }
-};
+  };
 
   // ✅ NEW: Callback to update short in array when liked/disliked
   // ✅ NEW: Callback to update short in array when liked/disliked
@@ -805,5 +804,3 @@ useEffect(() => {
 };
 
 export default ShortsPage;
-
-
