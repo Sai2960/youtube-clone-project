@@ -1558,7 +1558,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       <div className="relative w-full h-full flex items-center justify-center bg-black">
         {/* ✅ Video Wrapper - Desktop centered with max-width, Mobile full */}
         <div
-          className="relative w-full h-full md:w-auto md:h-full md:max-w-[580px] lg:max-w-[680px] md:aspect-[9/16] bg-black"
+          className="relative w-full h-full md:w-auto md:h-full md:max-w-[650px] lg:max-w-[750px] xl:max-w-[800px] md:aspect-[9/16] bg-black"
           style={{
             position: "relative",
           }}
