@@ -1820,7 +1820,7 @@ return (
           </div>
         )}
 
-        {/* ✅ CONTENT SECTION - REDESIGNED FOR PROFESSIONAL DESKTOP */}
+       {/* ✅ CONTENT SECTION - YOUTUBE-STYLE DESKTOP LAYOUT */}
 <div
   className="absolute bottom-0 left-0 right-0"
   style={{
@@ -1831,13 +1831,13 @@ return (
     zIndex: 30,
   }}
 >
-           <div className="p-3 pb-24 md:p-6 md:pb-10 lg:p-8 lg:pb-12">
-    <div className="flex items-end justify-between gap-4 md:gap-6 lg:gap-8">
-      {/* ✅ LEFT CONTENT - IMPROVED DESKTOP SPACING & TYPOGRAPHY */}
-      <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[400px] lg:max-w-[480px]">
-        {/* Channel info - ENHANCED FOR DESKTOP */}
-        <div className="flex items-center mb-3 md:mb-5 lg:mb-6 pointer-events-auto">
-          {/* Avatar - Larger on desktop */}
+          <div className="p-3 pb-24 md:p-8 md:pb-8 lg:p-10 lg:pb-10">
+    <div className="flex items-end justify-between gap-4 md:gap-8 lg:gap-10">
+       {/* ✅ LEFT CONTENT - FULL WIDTH ON DESKTOP */}
+      <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-none md:pr-24 lg:pr-28">
+        {/* Channel info */}
+        <div className="flex items-center mb-3 md:mb-6 lg:mb-7 pointer-events-auto">
+          {/* Avatar */}
           <img
             key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
             src={getImageUrl(
@@ -1845,7 +1845,7 @@ return (
               true
             )}
             alt={channelName}
-            className="w-9 h-9 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full mr-3 md:mr-5 lg:mr-6 cursor-pointer object-cover border-2 md:border-[3px] border-white/20 flex-shrink-0 bg-gray-800 shadow-xl"
+            className="w-9 h-9 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full mr-3 md:mr-4 lg:mr-5 cursor-pointer object-cover border-2 md:border-[3px] border-white/20 flex-shrink-0 bg-gray-800 shadow-xl"
             onClick={handleChannelClick}
             crossOrigin="anonymous"
             loading="eager"
@@ -1864,10 +1864,11 @@ return (
               e.currentTarget.style.display = "block";
             }}
           />
-                  {/* Channel Info - IMPROVED TYPOGRAPHY */}
+          
+          {/* Channel Info - NO TRUNCATION ON DESKTOP */}
           <div className="flex-1 min-w-0 mr-3 md:mr-4">
             <p
-              className="font-bold text-sm md:text-xl lg:text-2xl cursor-pointer hover:underline truncate leading-tight mb-1 md:mb-1.5 transition-colors"
+              className="font-bold text-sm md:text-lg lg:text-xl cursor-pointer hover:underline leading-tight mb-1 md:mb-1.5 transition-colors truncate md:whitespace-normal md:break-words"
               onClick={handleChannelClick}
               style={{
                 textShadow: "0 2px 8px rgba(0,0,0,0.8)",
@@ -1876,7 +1877,7 @@ return (
               @{channelName}
             </p>
             <p 
-              className="text-xs md:text-base lg:text-lg text-gray-300 leading-tight truncate font-medium"
+              className="text-xs md:text-sm lg:text-base text-gray-300 leading-tight font-medium truncate md:whitespace-normal"
               style={{
                 textShadow: "0 1px 4px rgba(0,0,0,0.8)",
               }}
@@ -1885,11 +1886,12 @@ return (
             </p>
           </div>
 
-          {/* Subscribe Button - ENHANCED */}
+
+        {/* Subscribe Button */}
           {!isOwnShort && (
             <button
               onClick={handleSubscribe}
-              className={`ml-2 px-4 md:px-8 lg:px-10 py-1.5 md:py-3 lg:py-3.5 rounded-full font-bold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 shadow-lg ${
+              className={`ml-2 px-4 md:px-6 lg:px-8 py-1.5 md:py-2.5 lg:py-3 rounded-full font-bold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 shadow-lg ${
                 isSubscribed
                   ? "bg-gray-700 text-white hover:bg-gray-600"
                   : "bg-white text-black hover:bg-gray-100"
@@ -1904,10 +1906,10 @@ return (
           )}
         </div>
 
-        {/* Title & Description - ENHANCED READABILITY */}
-        <div className="mb-2 md:mb-4 lg:mb-5 space-y-2 md:space-y-3">
+        {/* Title & Description - FULL VISIBILITY ON DESKTOP */}
+        <div className="mb-2 md:mb-5 lg:mb-6 space-y-2 md:space-y-3">
           <h3 
-            className="font-bold text-base md:text-2xl lg:text-3xl mb-1 md:mb-2 line-clamp-2 leading-tight md:leading-snug"
+            className="font-bold text-base md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight md:leading-snug line-clamp-2 md:line-clamp-none"
             style={{
               textShadow: "0 2px 12px rgba(0,0,0,0.9)",
               wordBreak: "break-word",
@@ -1917,7 +1919,7 @@ return (
           </h3>
           {translatedDescription && (
             <p 
-              className="text-sm md:text-base lg:text-xl text-gray-200 line-clamp-2 md:line-clamp-3 leading-relaxed font-medium"
+              className="text-sm md:text-base lg:text-lg text-gray-200 leading-relaxed font-medium line-clamp-2 md:line-clamp-none md:max-h-none"
               style={{
                 textShadow: "0 1px 8px rgba(0,0,0,0.9)",
                 wordBreak: "break-word",
@@ -1928,9 +1930,10 @@ return (
           )}
         </div>
 
-                {/* ✅ Views Count - ENHANCED VISIBILITY */}
+
+              {/* Views Count */}
         <p 
-          className="text-xs md:text-lg lg:text-xl text-gray-300 font-bold"
+          className="text-xs md:text-base lg:text-lg text-gray-300 font-bold"
           style={{
             textShadow: "0 1px 6px rgba(0,0,0,0.9)",
           }}
@@ -1939,12 +1942,14 @@ return (
         </p>
       </div>
 
-      {/* ✅ RIGHT ACTION BUTTONS - PROFESSIONAL DESKTOP SIZING */}
-      <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-5 lg:gap-6 md:pb-0">
-        {/* Like Button - ENHANCED */}
+
+
+       {/* ✅ RIGHT ACTION BUTTONS - FIXED POSITIONING */}
+      <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-4 lg:gap-5 md:pb-0 md:absolute md:right-8 md:bottom-8 lg:right-10 lg:bottom-10">
+        {/* Like Button */}
         <button
           onClick={handleLike}
-          className="flex flex-col items-center gap-1 md:gap-2 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+          className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
           <div
@@ -1952,16 +1957,16 @@ return (
               hasLiked
                 ? "bg-blue-600 border-blue-400 shadow-blue-500/60"
                 : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
-            } p-2.5 w-12 h-12 md:w-16 md:h-16 lg:w-[72px] lg:h-[72px]`}
+            } p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16`}
           >
             <ThumbsUp
-              className={`${hasLiked ? "text-white" : "text-white"} w-5 h-5 md:w-8 md:h-8 lg:w-9 lg:h-9`}
+              className={`${hasLiked ? "text-white" : "text-white"} w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
               fill={hasLiked ? "white" : "none"}
               strokeWidth={2.5}
             />
           </div>
           <span
-            className="text-[11px] md:text-base lg:text-lg font-bold"
+            className="text-[11px] md:text-sm lg:text-base font-bold"
             style={{ 
               color: hasLiked ? "#60a5fa" : "white",
               textShadow: "0 1px 4px rgba(0,0,0,0.8)",
@@ -1971,27 +1976,27 @@ return (
           </span>
         </button>
 
-             {/* Dislike Button - ENHANCED */}
+          {/* Dislike Button */}
         <button
           onClick={handleDislike}
-          className="flex flex-col items-center gap-1 md:gap-2 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+          className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
-                <div
+          <div
             className={`rounded-full transition-all shadow-2xl border-2 flex items-center justify-center ${
               hasDisliked
                 ? "bg-red-600 border-red-400 shadow-red-500/60"
                 : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
-            } p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16`}
+            } p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14`}
           >
-                  <ThumbsDown
-              className={`${hasDisliked ? "text-white" : "text-white"} w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
+            <ThumbsDown
+              className={`${hasDisliked ? "text-white" : "text-white"} w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7`}
               fill={hasDisliked ? "white" : "none"}
               strokeWidth={2.5}
             />
           </div>
           <span
-            className="text-[11px] md:text-sm lg:text-base font-bold transition-colors"
+            className="text-[11px] md:text-xs lg:text-sm font-bold transition-colors"
             style={{ 
               color: hasDisliked ? "#f87171" : "white",
               textShadow: "0 1px 4px rgba(0,0,0,0.8)",
@@ -2001,24 +2006,24 @@ return (
           </span>
         </button>
 
-             {/* Comments Button - ENHANCED */}
+           {/* Comments Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             setShowComments(true);
             isModalOpenRef.current = true;
           }}
-          className="flex flex-col items-center gap-1 md:gap-2 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+          className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
-          <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+          <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
             <MessageCircle
-              className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+              className="text-white w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
               strokeWidth={2.5}
             />
           </div>
           <span 
-            className="text-white text-[11px] md:text-sm lg:text-base font-bold"
+            className="text-white text-[11px] md:text-xs lg:text-sm font-bold"
             style={{
               textShadow: "0 1px 4px rgba(0,0,0,0.8)",
             }}
@@ -2027,20 +2032,20 @@ return (
           </span>
         </button>
 
-        {/* Share Button - ENHANCED */}
+        {/* Share Button */}
         <button
           onClick={handleShareClick}
-          className="flex flex-col items-center gap-1 md:gap-2 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+          className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
-          <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+          <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
             <Share2
-              className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+              className="text-white w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
               strokeWidth={2.5}
             />
           </div>
           <span 
-            className="text-white text-[11px] md:text-sm lg:text-base font-bold"
+            className="text-white text-[11px] md:text-xs lg:text-sm font-bold"
             style={{
               textShadow: "0 1px 4px rgba(0,0,0,0.8)",
             }}
@@ -2049,28 +2054,28 @@ return (
           </span>
         </button>
 
-                  {/* ✅ Volume Control - PROFESSIONAL DESKTOP */}
+                 {/* Volume Control */}
         <div className="relative flex flex-col items-center w-full volume-control">
           <button
             onClick={toggleVolumeSlider}
-            className="flex flex-col items-center gap-1 md:gap-2 transition-all transform hover:scale-110 active:scale-90 group touch-manipulation w-full"
+            className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform hover:scale-110 active:scale-90 group touch-manipulation w-full"
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
-            <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+            <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
               {isMuted || volume === 0 ? (
                 <VolumeX
-                  className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                  className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
                   strokeWidth={2.5}
                 />
               ) : (
                 <Volume2
-                  className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                  className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
                   strokeWidth={2.5}
                 />
               )}
             </div>
             <span 
-              className="text-white text-[11px] md:text-sm lg:text-base font-bold whitespace-nowrap"
+              className="text-white text-[11px] md:text-xs lg:text-sm font-bold whitespace-nowrap"
               style={{
                 textShadow: "0 1px 4px rgba(0,0,0,0.8)",
               }}
@@ -2079,7 +2084,7 @@ return (
             </span>
           </button>
 
-                {/* Volume Slider Popup - ENHANCED */}
+   {/* Volume Slider Popup */}
           {showVolumeSlider && (
             <div
               className="absolute bottom-full mb-3 md:mb-4 rounded-2xl shadow-2xl border-2 right-0 p-4 md:p-5 lg:p-6"
@@ -2143,10 +2148,10 @@ return (
                   >
                     Mute
                   </button>
-                     </div>
-                    </div>
-                  </div>
-                )}
+                </div>
+              </div>
+            </div>
+          )}
               </div>
             </div>
           </div>
