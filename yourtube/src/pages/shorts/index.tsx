@@ -94,7 +94,11 @@ const ShortsPage: React.FC = () => {
 
       if (foundIndex !== -1) {
         console.log("✅ Found short at index:", foundIndex);
-        setCurrentIndex(foundIndex);
+
+        // ✅ CRITICAL FIX: Use setTimeout to ensure state updates properly
+        setTimeout(() => {
+          setCurrentIndex(foundIndex);
+        }, 0);
 
         // Remove id from URL to clean it up
         const { id, ...restQuery } = router.query;
@@ -108,7 +112,7 @@ const ShortsPage: React.FC = () => {
         fetchSingleShortAndInsert(shortId);
       }
     }
-  }, [router.query.id, shorts.length]);
+  }, [router.query.id, shorts.length, router]);
 
   // ✅ Prefetch more shorts when near the end
   useEffect(() => {
@@ -296,15 +300,29 @@ const ShortsPage: React.FC = () => {
 
       const response = await axios.get(`${apiUrl}/api/shorts/${shortId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        params: { _t: Date.now() }, // ✅ ADD: Cache busting
       });
 
       if (response.data.success && response.data.data) {
         const fetchedShort = response.data.data;
         console.log("✅ Fetched short:", fetchedShort.title);
 
-        // Insert at beginning and set as current
-        setShorts((prev) => [fetchedShort, ...prev]);
-        setCurrentIndex(0);
+        // ✅ CRITICAL FIX: Check if short already exists in array
+        setShorts((prev) => {
+          const existingIndex = prev.findIndex((s) => s._id === shortId);
+
+          if (existingIndex !== -1) {
+            // Short already exists, just navigate to it
+            console.log("✅ Short already in array at index:", existingIndex);
+            setCurrentIndex(existingIndex);
+            return prev;
+          } else {
+            // Insert at beginning
+            console.log("➕ Inserting short at beginning");
+            setCurrentIndex(0);
+            return [fetchedShort, ...prev];
+          }
+        });
 
         // Clean up URL
         const { id, ...restQuery } = router.query;
