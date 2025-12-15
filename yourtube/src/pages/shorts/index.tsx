@@ -662,31 +662,29 @@ const ShortsPage: React.FC = () => {
       <Head>
         <title>Shorts - YouTube</title>
       </Head>
-     <div
-  ref={containerRef}
-  className="fixed inset-0 bg-black flex items-center justify-center"
-  style={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: "100vw",
-    height: "100vh",
-    minHeight: "100vh",
-    maxHeight: "100vh",
-    overflow: "hidden",
-    WebkitOverflowScrolling: "touch",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 50,
-    WebkitTransform: "translateZ(0)",
-    transform: "translateZ(0)",
-    backgroundColor: "#000",
-  }}
-  data-page="shorts"
->
+      <div
+        ref={containerRef}
+        className="fixed inset-0 bg-black"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100vw",
+          height: "100vh",
+          minHeight: "100vh",
+          maxHeight: "100vh",
+          overflow: "hidden",
+          WebkitOverflowScrolling: "touch",
+          display: "block",
+          zIndex: 50,
+          WebkitTransform: "translateZ(0)",
+          transform: "translateZ(0)",
+          backgroundColor: "#000",
+        }}
+        data-page="shorts" // ✅ THIS IS CRITICAL
+      >
         {/* Back Button - Desktop Only */}
         <button
           onClick={() => router.push("/")}
