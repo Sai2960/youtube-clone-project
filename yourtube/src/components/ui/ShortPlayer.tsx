@@ -1533,25 +1533,24 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       data-component="short-player"
       data-short-id={short._id}
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
+        position: "relative",
+        width: "100%",
+        maxWidth: "500px",
         height: "100vh",
         minHeight: "100vh",
+        aspectRatio: "9 / 16",
         overflow: "hidden",
         backgroundColor: "#000",
         WebkitOverflowScrolling: "touch",
         zIndex: isActive ? 30 : 20,
         isolation: "auto",
+        margin: "0 auto",
       }}
     >
       {/* ✅ Video Layer - Z-INDEX 1 */}
       <video
         ref={videoRef}
-        key={`video-${short._id}-${isActive}`} // ✅ Forces remount when short OR active state changes
+        key={`video-${short._id}-${isActive}`}
         src={short.videoUrl}
         className="absolute inset-0 w-full h-full object-cover"
         loop
@@ -1566,7 +1565,8 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         style={{
           width: "100%",
           height: "100%",
-          objectFit: "cover",
+          objectFit: "contain", // Changed from "cover" to "contain"
+          objectPosition: "center",
           backgroundColor: "#000",
           display: "block",
           position: "absolute",
