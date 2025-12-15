@@ -664,7 +664,7 @@ const ShortsPage: React.FC = () => {
       </Head>
       <div
         ref={containerRef}
-        className="fixed inset-0 bg-black flex items-center justify-center"
+        className="fixed inset-0 bg-black"
         style={{
           position: "fixed",
           top: 0,
@@ -677,15 +677,13 @@ const ShortsPage: React.FC = () => {
           maxHeight: "100vh",
           overflow: "hidden",
           WebkitOverflowScrolling: "touch",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          display: "block",
           zIndex: 50,
           WebkitTransform: "translateZ(0)",
           transform: "translateZ(0)",
           backgroundColor: "#000",
         }}
-        data-page="shorts"
+        data-page="shorts" // ✅ THIS IS CRITICAL
       >
         {/* Back Button - Desktop Only */}
         <button
@@ -718,14 +716,12 @@ const ShortsPage: React.FC = () => {
 
         {/* Shorts Container */}
         <div
-          className="relative w-full h-full max-w-[500px] mx-auto"
+          className="relative w-full h-full"
           style={{
             position: "relative",
             width: "100%",
-            maxWidth: "500px",
             height: "100%",
             overflow: "hidden",
-            margin: "0 auto",
           }}
         >
           {shorts.map((short, index) => {
@@ -737,14 +733,12 @@ const ShortsPage: React.FC = () => {
 
             return (
               <div
-                key={`short-container-${short._id}`}
+                key={`short-container-${short._id}`} // ✅ Added unique key
                 style={{
                   position: "absolute",
                   top: 0,
-                  left: "50%",
-                  transform: "translateX(-50%)",
+                  left: 0,
                   width: "100%",
-                  maxWidth: "500px",
                   height: "100%",
                   visibility: isActive ? "visible" : "hidden",
                   opacity: isActive ? 1 : 0,

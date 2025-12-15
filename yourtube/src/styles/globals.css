@@ -11886,35 +11886,3 @@ button {
     margin-bottom: 0;
   }
 }
-@media (min-width: 768px) {
-  /* Desktop: Center shorts with proper 9:16 ratio */
-  [data-page="shorts"] {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  [data-component="short-player"] {
-    max-width: 500px !important;
-    aspect-ratio: 9 / 16 !important;
-    height: auto !important;
-    max-height: 100vh !important;
-  }
-}
-
-@media (max-width: 767px) {
-  /* Mobile: Full width, proper height based on 9:16 */
-  [data-component="short-player"] {
-    width: 100% !important;
-    max-width: 100vw !important;
-    height: 100vh !important;
-    aspect-ratio: 9 / 16 !important;
-  }
-}
-
-/* Ensure video maintains aspect ratio */
-video[data-short-video] {
-  object-fit: contain !important;
-  max-width: 100%;
-  max-height: 100%;
-}
