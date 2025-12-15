@@ -1820,498 +1820,407 @@ return (
           </div>
         )}
 
-        {/* ✅ CONTENT SECTION - BOTTOM - Continues with rest of your code... */}
-        <div
-          className="absolute bottom-0 left-0 right-0"
+        {/* ✅ CONTENT SECTION - REDESIGNED FOR PROFESSIONAL DESKTOP */}
+<div
+  className="absolute bottom-0 left-0 right-0"
+  style={{
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30,
+  }}
+>
+           <div className="p-3 pb-24 md:p-6 md:pb-10 lg:p-8 lg:pb-12">
+    <div className="flex items-end justify-between gap-4 md:gap-6 lg:gap-8">
+      {/* ✅ LEFT CONTENT - IMPROVED DESKTOP SPACING & TYPOGRAPHY */}
+      <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[400px] lg:max-w-[480px]">
+        {/* Channel info - ENHANCED FOR DESKTOP */}
+        <div className="flex items-center mb-3 md:mb-5 lg:mb-6 pointer-events-auto">
+          {/* Avatar - Larger on desktop */}
+          <img
+            key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
+            src={getImageUrl(
+              short.userId?.image || short.channelAvatar,
+              true
+            )}
+            alt={channelName}
+            className="w-9 h-9 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full mr-3 md:mr-5 lg:mr-6 cursor-pointer object-cover border-2 md:border-[3px] border-white/20 flex-shrink-0 bg-gray-800 shadow-xl"
+            onClick={handleChannelClick}
+            crossOrigin="anonymous"
+            loading="eager"
+            style={{
+              display: "block",
+              minWidth: "36px",
+              minHeight: "36px",
+            }}
+            onError={(e) => {
+              console.error("❌ ShortPlayer avatar failed:", channelAvatar);
+              e.currentTarget.src = DEFAULT_AVATAR_SVG;
+              e.currentTarget.style.display = "block";
+            }}
+            onLoad={(e) => {
+              console.log("✅ ShortPlayer avatar loaded:", channelAvatar);
+              e.currentTarget.style.display = "block";
+            }}
+          />
+                  {/* Channel Info - IMPROVED TYPOGRAPHY */}
+          <div className="flex-1 min-w-0 mr-3 md:mr-4">
+            <p
+              className="font-bold text-sm md:text-xl lg:text-2xl cursor-pointer hover:underline truncate leading-tight mb-1 md:mb-1.5 transition-colors"
+              onClick={handleChannelClick}
+              style={{
+                textShadow: "0 2px 8px rgba(0,0,0,0.8)",
+              }}
+            >
+              @{channelName}
+            </p>
+            <p 
+              className="text-xs md:text-base lg:text-lg text-gray-300 leading-tight truncate font-medium"
+              style={{
+                textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+              }}
+            >
+              {formatCount(subscribersCount)} subscribers
+            </p>
+          </div>
+
+          {/* Subscribe Button - ENHANCED */}
+          {!isOwnShort && (
+            <button
+              onClick={handleSubscribe}
+              className={`ml-2 px-4 md:px-8 lg:px-10 py-1.5 md:py-3 lg:py-3.5 rounded-full font-bold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 shadow-lg ${
+                isSubscribed
+                  ? "bg-gray-700 text-white hover:bg-gray-600"
+                  : "bg-white text-black hover:bg-gray-100"
+              }`}
+              style={{ 
+                WebkitTapHighlightColor: "transparent",
+                letterSpacing: "0.3px",
+              }}
+            >
+              {isSubscribed ? "Subscribed" : "Subscribe"}
+            </button>
+          )}
+        </div>
+
+        {/* Title & Description - ENHANCED READABILITY */}
+        <div className="mb-2 md:mb-4 lg:mb-5 space-y-2 md:space-y-3">
+          <h3 
+            className="font-bold text-base md:text-2xl lg:text-3xl mb-1 md:mb-2 line-clamp-2 leading-tight md:leading-snug"
+            style={{
+              textShadow: "0 2px 12px rgba(0,0,0,0.9)",
+              wordBreak: "break-word",
+            }}
+          >
+            {translatedTitle}
+          </h3>
+          {translatedDescription && (
+            <p 
+              className="text-sm md:text-base lg:text-xl text-gray-200 line-clamp-2 md:line-clamp-3 leading-relaxed font-medium"
+              style={{
+                textShadow: "0 1px 8px rgba(0,0,0,0.9)",
+                wordBreak: "break-word",
+              }}
+            >
+              {translatedDescription}
+            </p>
+          )}
+        </div>
+
+                {/* ✅ Views Count - ENHANCED VISIBILITY */}
+        <p 
+          className="text-xs md:text-lg lg:text-xl text-gray-300 font-bold"
           style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 30,
+            textShadow: "0 1px 6px rgba(0,0,0,0.9)",
           }}
         >
+          {formatCount(viewsCount)} views
+        </p>
+      </div>
+
+      {/* ✅ RIGHT ACTION BUTTONS - PROFESSIONAL DESKTOP SIZING */}
+      <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-5 lg:gap-6 md:pb-0">
+        {/* Like Button - ENHANCED */}
+        <button
+          onClick={handleLike}
+          className="flex flex-col items-center gap-1 md:gap-2 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
           <div
-            className="p-3 pb-24 md:px-8 md:pb-8 lg:px-10 lg:pb-10"
-            style={{ pointerEvents: "auto" }}
+            className={`rounded-full transition-all shadow-2xl border-2 flex items-center justify-center ${
+              hasLiked
+                ? "bg-blue-600 border-blue-400 shadow-blue-500/60"
+                : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
+            } p-2.5 w-12 h-12 md:w-16 md:h-16 lg:w-[72px] lg:h-[72px]`}
           >
-            <div className="flex items-end justify-between gap-3 md:gap-8 lg:gap-12">
-              {/* ✅ LEFT CONTENT - Channel & Info */}
-              <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-140px)] lg:max-w-[calc(100%-160px)]">
-                {/* Channel info */}
-                <div className="flex items-center mb-2.5 md:mb-4 lg:mb-5 pointer-events-auto">
-                  <img
-                    key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
-                    src={getImageUrl(
-                      short.userId?.image || short.channelAvatar,
-                      true
-                    )}
-                    alt={channelName}
-                    className="w-9 h-9 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full mr-2.5 md:mr-4 lg:mr-5 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
-                    onClick={handleChannelClick}
-                    crossOrigin="anonymous"
-                    loading="eager"
-                    style={{
-                      display: "block",
-                      minWidth: "36px",
-                      minHeight: "36px",
-                    }}
-                    onError={(e) => {
-                      console.error(
-                        "❌ ShortPlayer avatar failed:",
-                        channelAvatar
-                      );
-                      e.currentTarget.src = DEFAULT_AVATAR_SVG;
-                      e.currentTarget.style.display = "block";
-                    }}
-                    onLoad={(e) => {
-                      console.log("✅ ShortPlayer avatar loaded:", channelAvatar);
-                      e.currentTarget.style.display = "block";
+            <ThumbsUp
+              className={`${hasLiked ? "text-white" : "text-white"} w-5 h-5 md:w-8 md:h-8 lg:w-9 lg:h-9`}
+              fill={hasLiked ? "white" : "none"}
+              strokeWidth={2.5}
+            />
+          </div>
+          <span
+            className="text-[11px] md:text-base lg:text-lg font-bold"
+            style={{ 
+              color: hasLiked ? "#60a5fa" : "white",
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+            }}
+          >
+            {formatCount(likesCount)}
+          </span>
+        </button>
+
+             {/* Dislike Button - ENHANCED */}
+        <button
+          onClick={handleDislike}
+          className="flex flex-col items-center gap-1 md:gap-2 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+                <div
+            className={`rounded-full transition-all shadow-2xl border-2 flex items-center justify-center ${
+              hasDisliked
+                ? "bg-red-600 border-red-400 shadow-red-500/60"
+                : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
+            } p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16`}
+          >
+                  <ThumbsDown
+              className={`${hasDisliked ? "text-white" : "text-white"} w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
+              fill={hasDisliked ? "white" : "none"}
+              strokeWidth={2.5}
+            />
+          </div>
+          <span
+            className="text-[11px] md:text-sm lg:text-base font-bold transition-colors"
+            style={{ 
+              color: hasDisliked ? "#f87171" : "white",
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+            }}
+          >
+            Dislike
+          </span>
+        </button>
+
+             {/* Comments Button - ENHANCED */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowComments(true);
+            isModalOpenRef.current = true;
+          }}
+          className="flex flex-col items-center gap-1 md:gap-2 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+            <MessageCircle
+              className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+              strokeWidth={2.5}
+            />
+          </div>
+          <span 
+            className="text-white text-[11px] md:text-sm lg:text-base font-bold"
+            style={{
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+            }}
+          >
+            {formatCount(commentsCount)}
+          </span>
+        </button>
+
+        {/* Share Button - ENHANCED */}
+        <button
+          onClick={handleShareClick}
+          className="flex flex-col items-center gap-1 md:gap-2 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+            <Share2
+              className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+              strokeWidth={2.5}
+            />
+          </div>
+          <span 
+            className="text-white text-[11px] md:text-sm lg:text-base font-bold"
+            style={{
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+            }}
+          >
+            Share
+          </span>
+        </button>
+
+                  {/* ✅ Volume Control - PROFESSIONAL DESKTOP */}
+        <div className="relative flex flex-col items-center w-full volume-control">
+          <button
+            onClick={toggleVolumeSlider}
+            className="flex flex-col items-center gap-1 md:gap-2 transition-all transform hover:scale-110 active:scale-90 group touch-manipulation w-full"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+              {isMuted || volume === 0 ? (
+                <VolumeX
+                  className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                  strokeWidth={2.5}
+                />
+              ) : (
+                <Volume2
+                  className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                  strokeWidth={2.5}
+                />
+              )}
+            </div>
+            <span 
+              className="text-white text-[11px] md:text-sm lg:text-base font-bold whitespace-nowrap"
+              style={{
+                textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+              }}
+            >
+              {Math.round(volume * 100)}%
+            </span>
+          </button>
+
+                {/* Volume Slider Popup - ENHANCED */}
+          {showVolumeSlider && (
+            <div
+              className="absolute bottom-full mb-3 md:mb-4 rounded-2xl shadow-2xl border-2 right-0 p-4 md:p-5 lg:p-6"
+              style={{
+                backgroundColor: "rgba(31, 41, 55, 0.98)",
+                backdropFilter: "blur(20px)",
+                borderColor: "rgba(255, 255, 255, 0.15)",
+                minWidth: "110px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col items-center gap-4 md:gap-5">
+                <span className="text-lg md:text-xl lg:text-2xl font-bold text-white">
+                  {Math.round(volume * 100)}%
+                </span>
+
+                <div
+                  className="relative h-36 md:h-40 lg:h-44 w-3 md:w-4 rounded-full overflow-hidden"
+                  style={{ backgroundColor: "rgba(75, 85, 99, 0.8)" }}
+                >
+                  <div
+                    className="absolute bottom-0 w-full rounded-full transition-all bg-gradient-to-t from-blue-600 via-blue-500 to-blue-400"
+                    style={{ 
+                      height: `${volume * 100}%`,
+                      boxShadow: "0 0 20px rgba(59, 130, 246, 0.6)",
                     }}
                   />
-                  <div className="flex-1 min-w-0 mr-2 md:mr-3">
-                    <p
-                      className="font-semibold text-sm md:text-lg lg:text-xl cursor-pointer hover:underline truncate leading-tight mb-0.5 md:mb-1"
-                      onClick={handleChannelClick}
-                    >
-                      @{channelName}
-                    </p>
-                    <p className="text-xs md:text-sm lg:text-base text-gray-300 leading-tight truncate">
-                      {formatCount(subscribersCount)} subscribers
-                    </p>
-                  </div>
-
-                  {!isOwnShort && (
-                    <button
-                      onClick={handleSubscribe}
-                      className={`ml-1 px-4 md:px-10 lg:px-12 py-1.5 md:py-3 lg:py-3.5 rounded-full font-semibold text-sm md:text-lg lg:text-xl transition-all transform hover:scale-105 flex-shrink-0 ${
-                        isSubscribed
-                          ? "bg-youtube-hover text-youtube-primary"
-                          : "bg-white text-black hover:bg-gray-100"
-                      }`}
-                      style={{ WebkitTapHighlightColor: "transparent" }}
-                    >
-                      {isSubscribed ? "Subscribed" : "Subscribe"}
-                    </button>
-                  )}
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={(e) =>
+                      handleVolumeChange(parseFloat(e.target.value))
+                    }
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    style={{
+                      WebkitAppearance: "slider-vertical",
+                    } as React.CSSProperties}
+                  />
                 </div>
 
-                {/* Title & Description */}
-                <div className="mb-2 md:mb-4 lg:mb-5">
-                  <h3 className="font-bold text-base md:text-2xl lg:text-3xl mb-1 md:mb-2 line-clamp-2 leading-snug">
-                    {translatedTitle}
-                  </h3>
-                  {translatedDescription && (
-                    <p className="text-sm md:text-base lg:text-lg text-gray-300 line-clamp-2 leading-snug">
-                      {translatedDescription}
-                    </p>
-                  )}
-                </div>
-
-                {/* ✅ Views Count - ALWAYS VISIBLE */}
-                <p className="text-xs md:text-base lg:text-lg text-gray-400 font-medium md:font-bold">
-                  {formatCount(viewsCount)} views
-                </p>
-              </div>
-
-              {/* ✅ RIGHT ACTION BUTTONS - FULLY RESPONSIVE */}
-              <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-6 md:pb-0 lg:gap-7">
-                {/* Like Button */}
-                <button
-                  onClick={handleLike}
-                  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  <div
-                    className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
-                      hasLiked
-                        ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
-                        : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
-                    } p-2.5 w-[48px] h-[48px] md:p-4 md:w-[72px] md:h-[72px] lg:p-5 lg:w-[80px] lg:h-[80px]`}
-                  >
-                    <ThumbsUp
-                      className={`${
-                        hasLiked ? "text-white" : "text-white"
-                      } w-5 h-5 md:w-8 md:h-8 lg:w-9 lg:h-9`}
-                      fill={hasLiked ? "white" : "none"}
-                      strokeWidth={2.5}
-                    />
-                  </div>
-                  <span
-                    className="text-[11px] md:text-base lg:text-lg"
-                    style={{ color: hasLiked ? "#60a5fa" : "white" }}
-                  >
-                    {formatCount(likesCount)}
-                  </span>
-                </button>
-
-                {/* Dislike Button */}
-                <button
-                  onClick={handleDislike}
-                  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  <div
-                    className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
-                      hasDisliked
-                        ? "bg-red-600 border-red-500 shadow-red-500/50"
-                        : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
-                    } p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]`}
-                  >
-                    <ThumbsDown
-                      className={`${
-                        hasDisliked ? "text-white" : "text-white"
-                      } w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
-                      fill={hasDisliked ? "white" : "none"}
-                      strokeWidth={2.5}
-                    />
-                  </div>
-                  <span
-                    className="text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none"
-                    style={{ color: hasDisliked ? "#f87171" : "white" }}
-                  >
-                    Dislike
-                  </span>
-                </button>
-
-                {/* Comments Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowComments(true);
-                    isModalOpenRef.current = true;
-                  }}
-                  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
-                    <MessageCircle
-                      className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
-                      strokeWidth={2.5}
-                    />
-                  </div>
-                  <span className="text-white text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none">
-                    {formatCount(commentsCount)}
-                  </span>
-                </button>
-
-                {/* Share Button */}
-                <button
-                  onClick={handleShareClick}
-                  className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
-                    <Share2
-                      className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
-                      strokeWidth={2.5}
-                    />
-                  </div>
-                  <span className="text-white text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none">
-                    Share
-                  </span>
-                </button>
-
-                {/* ✅ Volume Control - FIXED FOR DESKTOP */}
-                <div className="relative flex flex-col items-center w-full volume-control">
+                <div className="flex flex-col gap-2 w-full">
                   <button
-                    onClick={toggleVolumeSlider}
-                    className="flex flex-col items-center gap-1 transition-all transform hover:scale-105 active:scale-95 group touch-manipulation w-full"
-                    style={{ WebkitTapHighlightColor: "transparent" }}
+                    onClick={() => handleVolumeChange(1)}
+                    className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
                   >
-                    <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
-                      {isMuted || volume === 0 ? (
-                        <VolumeX
-                          className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
-                          strokeWidth={2.5}
-                        />
-                      ) : (
-                        <Volume2
-                          className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
-                          strokeWidth={2.5}
-                        />
-                      )}
-                    </div>
-                    {/* VOLUME PERCENTAGE - NOW ALWAYS VISIBLE */}
-                    <span className="text-white text-[11px] md:text-sm lg:text-base font-bold leading-none whitespace-nowrap">
-                      {Math.round(volume * 100)}%
-                    </span>
+                    100%
                   </button>
-
-                  {/* Volume Slider Popup */}
-                  {showVolumeSlider && (
-                    <div
-                      className="absolute bottom-full mb-3 rounded-xl shadow-2xl border right-0 p-3 md:p-4 lg:p-5"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        backdropFilter: "blur(16px)",
-                        borderColor: "var(--border-color)",
-                        minWidth: "95px",
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex flex-col items-center gap-3 md:gap-4">
-                        <span
-                          className="text-base md:text-lg lg:text-xl font-bold"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          {Math.round(volume * 100)}%
-                        </span>
-
-                        <div
-                          className="relative h-32 md:h-36 lg:h-40 w-2.5 md:w-3 rounded-full overflow-hidden"
-                          style={{ backgroundColor: "var(--bg-hover)" }}
-                        >
-                          <div
-                            className="absolute bottom-0 w-full rounded-full transition-all bg-gradient-to-t from-blue-600 to-blue-400"
-                            style={{ height: `${volume * 100}%` }}
-                          />
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={volume}
-                            onChange={(e) =>
-                              handleVolumeChange(parseFloat(e.target.value))
-                            }
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            style={
-                              {
-                                WebkitAppearance: "slider-vertical",
-                              } as React.CSSProperties
-                            }
-                          />
-                        </div>
-
-                        <div className="flex flex-col gap-1.5 w-full">
-                          <button
-                            onClick={() => handleVolumeChange(1)}
-                            className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
-                            style={{
-                              color: "var(--text-secondary)",
-                              backgroundColor: "transparent",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = "var(--text-primary)";
-                              e.currentTarget.style.backgroundColor =
-                                "var(--bg-hover)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color =
-                                "var(--text-secondary)";
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }}
-                          >
-                            100%
-                          </button>
-                          <button
-                            onClick={() => handleVolumeChange(0.5)}
-                            className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
-                            style={{
-                              color: "var(--text-secondary)",
-                              backgroundColor: "transparent",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = "var(--text-primary)";
-                              e.currentTarget.style.backgroundColor =
-                                "var(--bg-hover)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color =
-                                "var(--text-secondary)";
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }}
-                          >
-                            50%
-                          </button>
-                          <button
-                            onClick={() => handleVolumeChange(0)}
-                            className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
-                            style={{
-                              color: "var(--text-secondary)",
-                              backgroundColor: "transparent",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = "var(--text-primary)";
-                              e.currentTarget.style.backgroundColor =
-                                "var(--bg-hover)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color =
-                                "var(--text-secondary)";
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }}
-                          >
-                            Mute
-                          </button>
-                        </div>
-                      </div>
+                  <button
+                    onClick={() => handleVolumeChange(0.5)}
+                    className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
+                  >
+                    50%
+                  </button>
+                  <button
+                    onClick={() => handleVolumeChange(0)}
+                    className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
+                  >
+                    Mute
+                  </button>
+                     </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    {/* ✅ DELETE CONFIRMATION MODAL */}
-    {showDeleteConfirm && (
+  </div>
+  {/* ✅ DELETE CONFIRMATION MODAL */}
+  {showDeleteConfirm && (
+    <div
+      className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
+      onClick={closeDeleteConfirm}
+    >
+      {/* MOBILE MODAL */}
       <div
-        className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
-        onClick={closeDeleteConfirm}
+        className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: "var(--bg-secondary, #ffffff)",
+        }}
       >
-        {/* MOBILE MODAL */}
-        <div
-          className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: "var(--bg-secondary, #ffffff)",
-          }}
-        >
-          <div className="p-6">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
-                <AlertTriangle size={22} className="text-red-500" />
-              </div>
-              <h3
-                className="text-lg font-bold"
-                style={{ color: "var(--text-primary, #000)" }}
-              >
-                Delete Short?
-              </h3>
-            </div>
-
-            {/* Content */}
-            <div className="mb-4">
-              <p
-                className="text-sm leading-relaxed mb-3"
-                style={{ color: "var(--text-secondary, #666)" }}
-              >
-                Are you sure you want to delete this short?
-              </p>
-              <p
-                className="font-semibold text-sm break-words p-3 rounded-lg"
-                style={{
-                  color: "var(--text-primary, #000)",
-                  backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-                }}
-              >
-                "{short.title}"
-              </p>
-            </div>
-
-            {/* Warning */}
-            <div className="flex items-center gap-2 mb-6 bg-red-500/10 p-3 rounded-lg">
-              <AlertTriangle
-                size={16}
-                className="text-red-400 flex-shrink-0"
-              />
-              <p className="text-red-400 font-semibold text-xs">
-                This action cannot be undone
-              </p>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={closeDeleteConfirm}
-                disabled={isDeleting}
-                className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95"
-                style={{
-                  backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-                  color: "var(--text-primary, #000)",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteShort}
-                disabled={isDeleting}
-                className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-              >
-                {isDeleting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    <span>Deleting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={18} />
-                    <span>Delete</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* DESKTOP MODAL */}
-        <div
-          className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: "var(--bg-secondary, #1f2937)",
-            borderColor: "var(--border-color, #374151)",
-          }}
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-red-500/20 p-3 rounded-full">
-              <AlertTriangle size={28} className="text-red-500" />
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
+              <AlertTriangle size={22} className="text-red-500" />
             </div>
             <h3
-              className="text-xl font-bold"
-              style={{ color: "var(--text-primary, #fff)" }}
+              className="text-lg font-bold"
+              style={{ color: "var(--text-primary, #000)" }}
             >
               Delete Short?
             </h3>
           </div>
 
-          <p
-            className="mb-3 text-base leading-relaxed"
-            style={{ color: "var(--text-secondary, #d1d5db)" }}
-          >
-            Are you sure you want to delete this short?
-          </p>
+          {/* Content */}
+          <div className="mb-4">
+            <p
+              className="text-sm leading-relaxed mb-3"
+              style={{ color: "var(--text-secondary, #666)" }}
+            >
+              Are you sure you want to delete this short?
+            </p>
+            <p
+              className="font-semibold text-sm break-words p-3 rounded-lg"
+              style={{
+                color: "var(--text-primary, #000)",
+                backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+              }}
+            >
+              "{short.title}"
+            </p>
+          </div>
 
-          <p
-            className="mb-2 text-base font-bold break-words"
-            style={{
-              color: "var(--text-primary, #fff)",
-              backgroundColor: "var(--bg-tertiary, #374151)",
-              padding: "12px",
-              borderRadius: "8px",
-            }}
-          >
-            "{short.title}"
-          </p>
+          {/* Warning */}
+          <div className="flex items-center gap-2 mb-6 bg-red-500/10 p-3 rounded-lg">
+            <AlertTriangle
+              size={16}
+              className="text-red-400 flex-shrink-0"
+            />
+            <p className="text-red-400 font-semibold text-xs">
+              This action cannot be undone
+            </p>
+          </div>
 
-          <p className="text-red-400 font-semibold mb-8 text-sm">
-            ⚠️ This action cannot be undone
-          </p>
-
-          <div className="flex gap-4">
+          {/* Buttons */}
+          <div className="flex gap-3">
             <button
               onClick={closeDeleteConfirm}
               disabled={isDeleting}
-              className="flex-1 px-6 py-3 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
+              className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95"
               style={{
-                backgroundColor: "var(--bg-tertiary, #374151)",
-                color: "var(--text-primary, #fff)",
-                borderColor: "var(--border-color, #4b5563)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "var(--bg-hover, #4b5563)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "var(--bg-tertiary, #374151)";
+                backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                color: "var(--text-primary, #000)",
               }}
             >
               Cancel
@@ -2319,238 +2228,324 @@ return (
             <button
               onClick={handleDeleteShort}
               disabled={isDeleting}
-              className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+              className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
             >
               {isDeleting ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  Deleting...
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  <span>Deleting...</span>
                 </>
               ) : (
                 <>
-                  <Trash2 size={20} />
-                  Delete
+                  <Trash2 size={18} />
+                  <span>Delete</span>
                 </>
               )}
             </button>
           </div>
         </div>
       </div>
-    )}
-    {/* ✅ REPORT MODAL */}
-    {showReportModal && (
+
+      {/* DESKTOP MODAL */}
       <div
-        className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
-        onClick={closeReportModal}
+        className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: "var(--bg-secondary, #1f2937)",
+          borderColor: "var(--border-color, #374151)",
+        }}
       >
-        {/* MOBILE MODAL */}
-        <div
-          className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp max-h-[85vh] overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="bg-red-500/20 p-3 rounded-full">
+            <AlertTriangle size={28} className="text-red-500" />
+          </div>
+          <h3
+            className="text-xl font-bold"
+            style={{ color: "var(--text-primary, #fff)" }}
+          >
+            Delete Short?
+          </h3>
+        </div>
+
+        <p
+          className="mb-3 text-base leading-relaxed"
+          style={{ color: "var(--text-secondary, #d1d5db)" }}
+        >
+          Are you sure you want to delete this short?
+        </p>
+
+        <p
+          className="mb-2 text-base font-bold break-words"
           style={{
-            backgroundColor: "var(--bg-secondary, #ffffff)",
+            color: "var(--text-primary, #fff)",
+            backgroundColor: "var(--bg-tertiary, #374151)",
+            padding: "12px",
+            borderRadius: "8px",
           }}
         >
-          <div className="overflow-y-auto max-h-[85vh]">
-            <div className="p-5 pb-6">
-              {/* Header */}
-              <div
-                className="flex items-center justify-between mb-4 sticky top-0 pb-3 z-10"
-                style={{
-                  backgroundColor: "var(--bg-secondary, #ffffff)",
-                }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="bg-blue-500/20 p-2 rounded-full">
-                    <Flag size={18} className="text-blue-400" />
-                  </div>
-                  <h3
-                    className="text-base font-bold"
-                    style={{ color: "var(--text-primary, #000)" }}
-                  >
-                    Report Short
-                  </h3>
-                </div>
-                <button
-                  onClick={closeReportModal}
-                  className="transition"
-                  style={{ color: "var(--text-secondary, #666)" }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
+          "{short.title}"
+        </p>
 
-              <p
-                className="mb-4 text-xs"
+        <p className="text-red-400 font-semibold mb-8 text-sm">
+          ⚠️ This action cannot be undone
+        </p>
+
+        <div className="flex gap-4">
+          <button
+            onClick={closeDeleteConfirm}
+            disabled={isDeleting}
+            className="flex-1 px-6 py-3 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
+            style={{
+              backgroundColor: "var(--bg-tertiary, #374151)",
+              color: "var(--text-primary, #fff)",
+              borderColor: "var(--border-color, #4b5563)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor =
+                "var(--bg-hover, #4b5563)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor =
+                "var(--bg-tertiary, #374151)";
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteShort}
+            disabled={isDeleting}
+            className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+          >
+            {isDeleting ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                Deleting...
+              </>
+            ) : (
+              <>
+                <Trash2 size={20} />
+                Delete
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+  {/* ✅ REPORT MODAL */}
+  {showReportModal && (
+    <div
+      className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
+      onClick={closeReportModal}
+    >
+      {/* MOBILE MODAL */}
+      <div
+        className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp max-h-[85vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: "var(--bg-secondary, #ffffff)",
+        }}
+      >
+        <div className="overflow-y-auto max-h-[85vh]">
+          <div className="p-5 pb-6">
+            {/* Header */}
+            <div
+              className="flex items-center justify-between mb-4 sticky top-0 pb-3 z-10"
+              style={{
+                backgroundColor: "var(--bg-secondary, #ffffff)",
+              }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="bg-blue-500/20 p-2 rounded-full">
+                  <Flag size={18} className="text-blue-400" />
+                </div>
+                <h3
+                  className="text-base font-bold"
+                  style={{ color: "var(--text-primary, #000)" }}
+                >
+                  Report Short
+                </h3>
+              </div>
+              <button
+                onClick={closeReportModal}
+                className="transition"
                 style={{ color: "var(--text-secondary, #666)" }}
               >
-                Help us understand what's wrong with this short
-              </p>
+                <X size={20} />
+              </button>
+            </div>
 
-              {/* Report Reasons */}
-              <div className="space-y-2 mb-4">
-                {reportReasons.map((reason) => (
-                  <button
-                    key={reason}
-                    onClick={() => setReportReason(reason)}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
-                      reportReason === reason
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-800 text-gray-200 hover:bg-gray-700 active:bg-gray-600"
-                    }`}
-                  >
-                    {reason}
-                  </button>
-                ))}
-              </div>
+            <p
+              className="mb-4 text-xs"
+              style={{ color: "var(--text-secondary, #666)" }}
+            >
+              Help us understand what's wrong with this short
+            </p>
 
-              {/* Additional Details */}
-              <textarea
-                value={reportDetails}
-                onChange={(e) => setReportDetails(e.target.value)}
-                placeholder="Additional details (optional)"
-                rows={3}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 text-sm"
-              />
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
+            {/* Report Reasons */}
+            <div className="space-y-2 mb-4">
+              {reportReasons.map((reason) => (
                 <button
-                  onClick={closeReportModal}
-                  disabled={isReporting}
-                  className="flex-1 px-5 py-3 bg-gray-800 text-white border-2 border-gray-700 rounded-xl font-semibold text-sm disabled:opacity-50 transition hover:bg-gray-700 active:scale-95"
+                  key={reason}
+                  onClick={() => setReportReason(reason)}
+                  className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
+                    reportReason === reason
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-200 hover:bg-gray-700 active:bg-gray-600"
+                  }`}
                 >
-                  Cancel
+                  {reason}
                 </button>
-                <button
-                  onClick={handleSubmitReport}
-                  disabled={isReporting || !reportReason}
-                  className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-                >
-                  {isReporting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    "Submit Report"
-                  )}
-                </button>
-              </div>
+              ))}
+            </div>
+
+            {/* Additional Details */}
+            <textarea
+              value={reportDetails}
+              onChange={(e) => setReportDetails(e.target.value)}
+              placeholder="Additional details (optional)"
+              rows={3}
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 text-sm"
+            />
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={closeReportModal}
+                disabled={isReporting}
+                className="flex-1 px-5 py-3 bg-gray-800 text-white border-2 border-gray-700 rounded-xl font-semibold text-sm disabled:opacity-50 transition hover:bg-gray-700 active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReport}
+                disabled={isReporting || !reportReason}
+                className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+              >
+                {isReporting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  "Submit Report"
+                )}
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* DESKTOP MODAL */}
-        <div
-          className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: "var(--bg-secondary, #1f2937)",
-            borderColor: "var(--border-color, #374151)",
-          }}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-500/20 p-2 rounded-full">
-                <Flag size={22} className="text-blue-400" />
-              </div>
-              <h3
-                className="text-xl font-bold"
-                style={{ color: "var(--text-primary, #fff)" }}
-              >
-                Report Short
-              </h3>
+      {/* DESKTOP MODAL */}
+      <div
+        className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: "var(--bg-secondary, #1f2937)",
+          borderColor: "var(--border-color, #374151)",
+        }}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-500/20 p-2 rounded-full">
+              <Flag size={22} className="text-blue-400" />
             </div>
-            <button
-              onClick={closeReportModal}
-              className="transition"
-              style={{ color: "var(--text-secondary, #666)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--text-primary, #fff)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color =
-                  "var(--text-secondary, #9ca3af)";
-              }}
+            <h3
+              className="text-xl font-bold"
+              style={{ color: "var(--text-primary, #fff)" }}
             >
-              <X size={20} />
-            </button>
+              Report Short
+            </h3>
           </div>
+          <button
+            onClick={closeReportModal}
+            className="transition"
+            style={{ color: "var(--text-secondary, #666)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-primary, #fff)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color =
+                "var(--text-secondary, #9ca3af)";
+            }}
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-          <p
-            className="mb-4 text-xs"
-            style={{ color:"var(--text-secondary, #666)" }}
+        <p
+          className="mb-4 text-xs"
+          style={{ color:"var(--text-secondary, #666)" }}
 >
 Help us understand what's wrong with this short
 </p>
-      <div className="space-y-2 mb-4">
-        {reportReasons.map((reason) => (
-          <button
-            key={reason}
-            onClick={() => setReportReason(reason)}
-            className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
-              reportReason === reason ? "bg-blue-600 text-white" : ""
-            }`}
-            style={
-              reportReason !== reason
-                ? {
-                    backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-                    color: "var(--text-primary, #000)",
-                  }
-                : undefined
-            }
-            onMouseEnter={(e) => {
-              if (reportReason !== reason) {
-                e.currentTarget.style.backgroundColor =
-                  "var(--bg-hover, #4b5563)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (reportReason !== reason) {
-                e.currentTarget.style.backgroundColor =
-                  "var(--bg-tertiary, #374151)";
-              }
-            }}
-          >
-            {reason}
-          </button>
-        ))}
-      </div>
-
-      <textarea
-        value={reportDetails}
-        onChange={(e) => setReportDetails(e.target.value)}
-        placeholder="Additional details (optional)"
-        rows={3}
-        className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
-        style={{
-          backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-          borderColor: "var(--border-color, #e5e7eb)",
-          color: "var(--text-primary, #000)",
-        }}
-      />
-
-      <div className="flex gap-3">
+    <div className="space-y-2 mb-4">
+      {reportReasons.map((reason) => (
         <button
-          onClick={closeReportModal}
-          disabled={isReporting}
-          className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95 border-2"
-          style={{
-            backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-            color: "var(--text-primary, #000)",
-            borderColor: "var(--border-color, #e5e7eb)",
-          }}
+          key={reason}
+          onClick={() => setReportReason(reason)}
+          className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
+            reportReason === reason ? "bg-blue-600 text-white" : ""
+          }`}
+          style={
+            reportReason !== reason
+              ? {
+                  backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                  color: "var(--text-primary, #000)",
+                }
+              : undefined
+          }
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor =
-              "var(--bg-hover, #4b5563)";
+            if (reportReason !== reason) {
+              e.currentTarget.style.backgroundColor =
+                "var(--bg-hover, #4b5563)";
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor =
-              "var(--bg-tertiary, #374151)";
+            if (reportReason !== reason) {
+              e.currentTarget.style.backgroundColor =
+                "var(--bg-tertiary, #374151)";
+            }
           }}
         >
-          Cancel
+          {reason}
+        </button>
+      ))}
+    </div>
+
+    <textarea
+      value={reportDetails}
+      onChange={(e) => setReportDetails(e.target.value)}
+      placeholder="Additional details (optional)"
+      rows={3}
+      className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
+      style={{
+        backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+        borderColor: "var(--border-color, #e5e7eb)",
+        color: "var(--text-primary, #000)",
+      }}
+    />
+
+    <div className="flex gap-3">
+      <button
+        onClick={closeReportModal}
+        disabled={isReporting}
+        className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95 border-2"
+        style={{
+          backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+          color: "var(--text-primary, #000)",
+          borderColor: "var(--border-color, #e5e7eb)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor =
+            "var(--bg-hover, #4b5563)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor =
+            "var(--bg-tertiary, #374151)";
+        }}
+      >
+        Cancel
         </button>
         <button
           onClick={handleSubmitReport}
