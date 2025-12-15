@@ -446,32 +446,22 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       isActive,
       modalOpen: isModalOpenRef.current,
       videoSrc: short.videoUrl,
-      currentSrc: video.currentSrc,
     });
 
-    // ✅ CRITICAL: Always pause inactive videos but DON'T clear src
+    // ✅ CRITICAL: Always pause inactive videos
     if (!isActive) {
       console.log("⏸️ Pausing inactive video:", short._id);
-
-      // Pause and reset playback
       video.pause();
       video.currentTime = 0;
       setIsPlaying(false);
-
-      // ✅ FIX: Stop loading without clearing src
-      try {
-        video.load(); // This stops network activity without clearing src
-      } catch (e) {
-        console.log("Load() called on inactive video");
-      }
-
       return;
     }
 
-    // ✅ Ensure correct video source is set
+    // ✅ CRITICAL: Set src FIRST before any other operations
     if (video.src !== short.videoUrl && video.currentSrc !== short.videoUrl) {
       console.log("🔄 Setting new video source:", short.videoUrl);
       video.src = short.videoUrl;
+      video.load(); // Force reload
     }
 
     // ✅ Only play if active AND no modals open
@@ -484,28 +474,31 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           // Reset to start
           video.currentTime = 0;
 
-          // Wait for video to be ready if needed
-          if (video.readyState < 2) {
+          // Wait for video to be ready
+          if (video.readyState < 3) {
+            // Changed from 2 to 3 (HAVE_FUTURE_DATA)
             console.log("⏳ Waiting for video to load...");
 
-            await new Promise<void>((resolve) => {
-              const onLoadedData = () => {
-                video.removeEventListener("loadeddata", onLoadedData);
+            await new Promise<void>((resolve, reject) => {
+              const onCanPlay = () => {
+                video.removeEventListener("canplay", onCanPlay);
+                video.removeEventListener("error", onError);
                 resolve();
               };
 
-              video.addEventListener("loadeddata", onLoadedData);
+              const onError = () => {
+                video.removeEventListener("canplay", onCanPlay);
+                video.removeEventListener("error", onError);
+                reject(new Error("Video load failed"));
+              };
 
-              // Ensure src is set
-              if (video.src !== short.videoUrl) {
-                video.src = short.videoUrl;
-              }
-
-              video.load();
+              video.addEventListener("canplay", onCanPlay);
+              video.addEventListener("error", onError);
 
               // Timeout fallback
               setTimeout(() => {
-                video.removeEventListener("loadeddata", onLoadedData);
+                video.removeEventListener("canplay", onCanPlay);
+                video.removeEventListener("error", onError);
                 resolve();
               }, 3000);
             });
@@ -547,7 +540,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       };
 
       // Small delay to ensure DOM is ready
-      const playTimeout = setTimeout(attemptPlay, 150);
+      const playTimeout = setTimeout(attemptPlay, 100); // Reduced from 150ms
 
       return () => {
         clearTimeout(playTimeout);
@@ -1575,15 +1568,18 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             paused: video.paused,
             isActive,
             modalOpen: isModalOpenRef.current,
+            currentSrc: video.currentSrc,
           });
 
+          // ✅ CRITICAL: Only autoplay if this is the active short
           if (isActive && !isModalOpenRef.current) {
-            console.log("🎯 Attempting autoplay...");
+            console.log("🎯 Attempting autoplay for active short...");
             video.muted = true;
+            video.currentTime = 0; // Reset to start
             video
               .play()
               .then(() => {
-                console.log("✅ Play() succeeded");
+                console.log("✅ Play() succeeded for:", short._id);
                 setIsPlaying(true);
                 if (!isMuted) {
                   setTimeout(() => {
@@ -1596,7 +1592,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                 console.error("❌ Play() failed:", {
                   name: err.name,
                   message: err.message,
-                  code: err.code,
+                  shortId: short._id,
                 });
               });
           }

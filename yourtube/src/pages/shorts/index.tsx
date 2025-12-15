@@ -712,22 +712,21 @@ const ShortsPage: React.FC = () => {
           }}
         >
           {shorts.map((short, index) => {
+            // ✅ CRITICAL: Render current AND adjacent shorts for smooth transitions
             const shouldRender = Math.abs(index - currentIndex) <= 1;
             if (!shouldRender) return null;
 
             const isActive = index === currentIndex;
-            const position = index - currentIndex;
 
             return (
               <div
-                key={short._id}
+                key={`short-container-${short._id}`} // ✅ Added unique key
                 style={{
                   position: "absolute",
                   top: 0,
                   left: 0,
                   width: "100%",
                   height: "100%",
-                  // ✅ CRITICAL FIX: Use visibility instead of transform
                   visibility: isActive ? "visible" : "hidden",
                   opacity: isActive ? 1 : 0,
                   transition: "opacity 300ms ease-out",
