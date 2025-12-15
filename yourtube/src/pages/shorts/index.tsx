@@ -810,6 +810,4 @@ const ShortsPage: React.FC = () => {
 
 export default ShortsPage;
 
-function fetchSingleShortAndInsert(shortId: string) {
-  throw new Error("Function not implemented.");
-}
+
