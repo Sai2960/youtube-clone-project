@@ -1,4 +1,3 @@
-
 /* eslint-disable react-hooks/exhaustive-deps */
 // components/ui/ShortPlayer.tsx - COMPLETE WITH UNIFIED AVATAR UTILS
 
@@ -53,11 +52,17 @@ interface ShortPlayerProps {
     hasDisliked?: boolean;
     isSubscribed?: boolean;
   };
- isActive: boolean;
+  isActive: boolean;
   onNext: () => void;
   onPrevious: () => void;
   onDelete?: (shortId: string) => void;
-  onLikeUpdate?: (shortId: string, liked: boolean, likesCount: number, disliked?: boolean, dislikesCount?: number) => void; // ✅ ADD THIS
+  onLikeUpdate?: (
+    shortId: string,
+    liked: boolean,
+    likesCount: number,
+    disliked?: boolean,
+    dislikesCount?: number
+  ) => void; // ✅ ADD THIS
 }
 
 const DEFAULT_AVATAR_SVG =
@@ -86,9 +91,9 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [hasLiked, setHasLiked] = useState(Boolean(short.hasLiked));
-const [hasDisliked, setHasDisliked] = useState(Boolean(short.hasDisliked));
-const [likesCount, setLikesCount] = useState(short.likesCount || 0);
-const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
+  const [hasDisliked, setHasDisliked] = useState(Boolean(short.hasDisliked));
+  const [likesCount, setLikesCount] = useState(short.likesCount || 0);
+  const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
   const [sharesCount, setSharesCount] = useState(short.shares || 0);
   const [commentsCount, setCommentsCount] = useState(short.commentsCount || 0);
   const [viewsCount, setViewsCount] = useState(short.views || 0);
@@ -129,8 +134,8 @@ const [dislikesCount, setDislikesCount] = useState(short.dislikesCount || 0);
   const [isReporting, setIsReporting] = useState(false);
 
   // ✅ USE UTILITY FUNCTIONS FOR AVATAR & CHANNEL NAME
-const [channelName, setChannelName] = useState(getShortChannelName(short));
-const channelAvatar = getShortAvatar(short);
+  const [channelName, setChannelName] = useState(getShortChannelName(short));
+  const channelAvatar = getShortAvatar(short);
 
   const getApiUrl = () =>
     // ✅ CORRECT - Simple fallback chain
@@ -170,56 +175,75 @@ const channelAvatar = getShortAvatar(short);
   }, []);
 
   useEffect(() => {
-  const handleChannelUpdate = () => {
-    console.log("🔄 ShortPlayer: Channel update event detected!");
-    
-    // Get updated user from localStorage
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const updatedUser = JSON.parse(userStr);
-        console.log("📝 Updated channel name from localStorage:", updatedUser.channelname);
-        
-        // Update channel name if this short belongs to the current user
-        if (short.userId._id === updatedUser._id) {
-          const newChannelName = updatedUser.channelname || updatedUser.name || 'Unknown';
-          setChannelName(newChannelName);
-          console.log("✅ Channel name updated in ShortPlayer to:", newChannelName);
+    const handleChannelUpdate = () => {
+      console.log("🔄 ShortPlayer: Channel update event detected!");
+
+      // Get updated user from localStorage
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const updatedUser = JSON.parse(userStr);
+          console.log(
+            "📝 Updated channel name from localStorage:",
+            updatedUser.channelname
+          );
+
+          // Update channel name if this short belongs to the current user
+          if (short.userId._id === updatedUser._id) {
+            const newChannelName =
+              updatedUser.channelname || updatedUser.name || "Unknown";
+            setChannelName(newChannelName);
+            console.log(
+              "✅ Channel name updated in ShortPlayer to:",
+              newChannelName
+            );
+          }
+        } catch (error) {
+          console.error("❌ Error parsing user data:", error);
         }
-      } catch (error) {
-        console.error("❌ Error parsing user data:", error);
       }
-    }
-  };
+    };
 
-  // Listen for both custom events and storage events
-  window.addEventListener("channelUpdated", handleChannelUpdate);
-  window.addEventListener("avatarUpdated", handleChannelUpdate);
-  window.addEventListener("storage", handleChannelUpdate);
+    // Listen for both custom events and storage events
+    window.addEventListener("channelUpdated", handleChannelUpdate);
+    window.addEventListener("avatarUpdated", handleChannelUpdate);
+    window.addEventListener("storage", handleChannelUpdate);
 
-  return () => {
-    window.removeEventListener("channelUpdated", handleChannelUpdate);
-    window.removeEventListener("avatarUpdated", handleChannelUpdate);
-    window.removeEventListener("storage", handleChannelUpdate);
-  };
-}, [short.userId._id]);
-
+    return () => {
+      window.removeEventListener("channelUpdated", handleChannelUpdate);
+      window.removeEventListener("avatarUpdated", handleChannelUpdate);
+      window.removeEventListener("storage", handleChannelUpdate);
+    };
+  }, [short.userId._id]);
 
   // Update modal ref
   // ✅ FIX: Update modal state immediately, not in useEffect
-const updateModalState = () => {
-  const wasOpen = isModalOpenRef.current;
-  const isOpen = showDeleteConfirm || showComments || showShareModal || showMenu || showReportModal || showVolumeSlider;
-  isModalOpenRef.current = isOpen;
-  
-  if (wasOpen !== isOpen) {
-    console.log('🔄 Modal state changed:', isOpen ? 'OPEN' : 'CLOSED');
-  }
-};
+  const updateModalState = () => {
+    const wasOpen = isModalOpenRef.current;
+    const isOpen =
+      showDeleteConfirm ||
+      showComments ||
+      showShareModal ||
+      showMenu ||
+      showReportModal ||
+      showVolumeSlider;
+    isModalOpenRef.current = isOpen;
 
-useEffect(() => {
-  updateModalState();
-}, [showDeleteConfirm, showComments, showShareModal, showMenu, showReportModal, showVolumeSlider]);
+    if (wasOpen !== isOpen) {
+      console.log("🔄 Modal state changed:", isOpen ? "OPEN" : "CLOSED");
+    }
+  };
+
+  useEffect(() => {
+    updateModalState();
+  }, [
+    showDeleteConfirm,
+    showComments,
+    showShareModal,
+    showMenu,
+    showReportModal,
+    showVolumeSlider,
+  ]);
 
   useEffect(() => {
     // Track short view in history
@@ -267,111 +291,115 @@ useEffect(() => {
       }
     };
   }, []);
-useEffect(() => {
-  console.log("\n🔵 ===== SHORT PROP CHANGED (useEffect) =====");
-  console.log("📥 New short prop:", {
-    shortId: short._id,
-    hasLiked: short.hasLiked,
-    likesCount: short.likesCount,
-    hasDisliked: short.hasDisliked,
-    dislikesCount: short.dislikesCount
-  });
-  
-  console.log("🔄 Syncing local state with prop...");
-  
-  setHasLiked(Boolean(short.hasLiked));
-  setHasDisliked(Boolean(short.hasDisliked));
-  setLikesCount(short.likesCount || 0);
-  setDislikesCount(short.dislikesCount || 0);
-  
-  console.log("✅ Local state synced to:", {
-    hasLiked: Boolean(short.hasLiked),
-    likesCount: short.likesCount || 0
-  });
-  console.log("===== SYNC COMPLETE =====\n");
-}, [short._id, short.hasLiked, short.hasDisliked, short.likesCount, short.dislikesCount]);
+  useEffect(() => {
+    console.log("\n🔵 ===== SHORT PROP CHANGED (useEffect) =====");
+    console.log("📥 New short prop:", {
+      shortId: short._id,
+      hasLiked: short.hasLiked,
+      likesCount: short.likesCount,
+      hasDisliked: short.hasDisliked,
+      dislikesCount: short.dislikesCount,
+    });
 
+    console.log("🔄 Syncing local state with prop...");
 
-useEffect(() => {
-  console.log("🔄 Short changed, syncing channel name...");
-  const newChannelName = getShortChannelName(short);
-  setChannelName(newChannelName);
-  console.log("✅ Channel name synced to:", newChannelName);
-}, [short._id, short.userId?.channelname, short.channelName]);
+    setHasLiked(Boolean(short.hasLiked));
+    setHasDisliked(Boolean(short.hasDisliked));
+    setLikesCount(short.likesCount || 0);
+    setDislikesCount(short.dislikesCount || 0);
 
+    console.log("✅ Local state synced to:", {
+      hasLiked: Boolean(short.hasLiked),
+      likesCount: short.likesCount || 0,
+    });
+    console.log("===== SYNC COMPLETE =====\n");
+  }, [
+    short._id,
+    short.hasLiked,
+    short.hasDisliked,
+    short.likesCount,
+    short.dislikesCount,
+  ]);
 
+  useEffect(() => {
+    console.log("🔄 Short changed, syncing channel name...");
+    const newChannelName = getShortChannelName(short);
+    setChannelName(newChannelName);
+    console.log("✅ Channel name synced to:", newChannelName);
+  }, [short._id, short.userId?.channelname, short.channelName]);
 
-useEffect(() => {
-  const fetchLikeStatus = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token || !short._id) {
-        setHasLiked(false);
-        setHasDisliked(false);
-        return;
-      }
+  useEffect(() => {
+    const fetchLikeStatus = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token || !short._id) {
+          setHasLiked(false);
+          setHasDisliked(false);
+          return;
+        }
 
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const userId = payload.userId || payload.id;
-      if (!userId) {
-        setHasLiked(false);
-        setHasDisliked(false);
-        return;
-      }
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const userId = payload.userId || payload.id;
+        if (!userId) {
+          setHasLiked(false);
+          setHasDisliked(false);
+          return;
+        }
 
-      const apiUrl = getApiUrl();
+        const apiUrl = getApiUrl();
 
-      console.log("🔍 Fetching like status for:", short._id);
+        console.log("🔍 Fetching like status for:", short._id);
 
-      const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache",
-          "Pragma": "no-cache",  // ✅ ADDED
-          "Expires": "0"         // ✅ ADDED
-        },
-      });
-
-      if (response.data.success && response.data.data) {
-        const shortData = response.data.data;
-        
-        console.log("✅ Fetched like status:", {
-          hasLiked: shortData.hasLiked,
-          likesCount: shortData.likesCount
+        const response = await axios.get(`${apiUrl}/api/shorts/${short._id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache", // ✅ ADDED
+            Expires: "0", // ✅ ADDED
+          },
         });
-        
-        // ✅ CRITICAL FIX: Force boolean conversion and update state
-        const isLiked = Boolean(shortData.hasLiked);
-        const isDisliked = Boolean(shortData.hasDisliked);
-        
-        setHasLiked(isLiked);
-        setHasDisliked(isDisliked);
-        setLikesCount(shortData.likesCount || 0);
-        setDislikesCount(shortData.dislikesCount || 0);
-        
-        // ✅ CRITICAL: Force re-render by logging
-        console.log("🔄 State updated:", { isLiked, likesCount: shortData.likesCount });
+
+        if (response.data.success && response.data.data) {
+          const shortData = response.data.data;
+
+          console.log("✅ Fetched like status:", {
+            hasLiked: shortData.hasLiked,
+            likesCount: shortData.likesCount,
+          });
+
+          // ✅ CRITICAL FIX: Force boolean conversion and update state
+          const isLiked = Boolean(shortData.hasLiked);
+          const isDisliked = Boolean(shortData.hasDisliked);
+
+          setHasLiked(isLiked);
+          setHasDisliked(isDisliked);
+          setLikesCount(shortData.likesCount || 0);
+          setDislikesCount(shortData.dislikesCount || 0);
+
+          // ✅ CRITICAL: Force re-render by logging
+          console.log("🔄 State updated:", {
+            isLiked,
+            likesCount: shortData.likesCount,
+          });
+        }
+      } catch (error) {
+        console.error("❌ Error fetching like status:", error);
+        // ✅ On error, keep current state instead of resetting
       }
-    } catch (error) {
-      console.error("❌ Error fetching like status:", error);
-      // ✅ On error, keep current state instead of resetting
+    };
+
+    // ✅ CRITICAL: Fetch when short changes OR becomes active
+    if (short._id && isActive) {
+      // ✅ Add small delay to ensure video is loaded
+      const timer = setTimeout(() => {
+        fetchLikeStatus();
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
-  };
+  }, [short._id, isActive]);
 
-  // ✅ CRITICAL: Fetch when short changes OR becomes active
-  if (short._id && isActive) {
-    // ✅ Add small delay to ensure video is loaded
-    const timer = setTimeout(() => {
-      fetchLikeStatus();
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }
-}, [short._id, isActive]);
-
-
-
-useEffect(() => {
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
@@ -408,228 +436,237 @@ useEffect(() => {
     }
   };
 
-// ✅ FIX: Proper video playback control with audio cleanup
-useEffect(() => {
-  const video = videoRef.current;
-  if (!video) return;
-
-  console.log("🎬 Video playback check:", {
-    shortId: short._id,
-    isActive,
-    modalOpen: isModalOpenRef.current,
-    currentTime: video.currentTime,
-    paused: video.paused,
-  });
-  // ✅ CRITICAL: Always pause inactive videos to prevent audio mixing
-  if (!isActive) {
-    console.log("⏸️ Pausing inactive video:", short._id);
-    video.pause();
-    video.currentTime = 0; // ✅ Reset to start
-    setIsPlaying(false);
-    return;
-  }
-
-  // ✅ Only play if active AND no modals open
-  if (isActive && !isModalOpenRef.current) {
-    video.setAttribute("playsinline", "true");
-    video.setAttribute("webkit-playsinline", "true");
-    
-    const attemptPlay = async () => {
-      try {
-        // ✅ Start muted for autoplay compliance
-        video.muted = true;
-        
-        // Wait for video to be ready
-        if (video.readyState < 2) {
-          console.log("⏳ Waiting for video to load...");
-          await new Promise((resolve) => {
-            video.addEventListener('loadeddata', resolve, { once: true });
-            video.load();
-          });
-        }
-
-        console.log("▶️ Playing video:", short._id);
-        await video.play();
-        setIsPlaying(true);
-        
-        // ✅ Unmute after successful play (if not muted by user)
-        if (!isMuted) {
-          setTimeout(() => {
-            video.muted = false;
-            console.log("🔊 Unmuted");
-          }, 500);
-        }
-      } catch (err) {
-        console.error("❌ Play failed:", err);
-        // Retry once
-        setTimeout(() => {
-          video.load();
-          video.play().catch(e => console.error("❌ Retry failed:", e));
-        }, 500);
-      }
-    };
-
-    // Small delay to ensure DOM is ready
-    const playTimeout = setTimeout(attemptPlay, 100);
-    
-    return () => clearTimeout(playTimeout);
-  } else if (isModalOpenRef.current) {
-    // ✅ Pause when modal opens
-    console.log("⏸️ Modal open, pausing video");
-    video.pause();
-    setIsPlaying(false);
-  }
-}, [isActive, short._id, isModalOpenRef.current]);
-
-// 🔍 ENHANCED VIDEO DIAGNOSTIC - RUNS ON MOUNT + CHANGES
-useEffect(() => {
-  const runDiagnostics = () => {
+  // ✅ FIX: Proper video playback control with audio cleanup
+  useEffect(() => {
     const video = videoRef.current;
-    const container = containerRef.current;
-    
-    console.log('\n🔍 ===== VIDEO DIAGNOSTICS =====');
-    console.log('🎯 Diagnostic triggered for:', short._id);
-    console.log('📍 isActive:', isActive);
-    
-    if (!video) {
-      console.error('❌ Video ref is NULL');
+    if (!video) return;
+
+    console.log("🎬 Video playback check:", {
+      shortId: short._id,
+      isActive,
+      modalOpen: isModalOpenRef.current,
+      currentTime: video.currentTime,
+      paused: video.paused,
+    });
+    // ✅ CRITICAL: Always pause inactive videos to prevent audio mixing
+    if (!isActive) {
+      console.log("⏸️ Pausing inactive video:", short._id);
+      video.pause();
+      video.currentTime = 0; // ✅ Reset to start
+      setIsPlaying(false);
       return;
     }
-    
-    // 1. Video Element State
-    console.log('📹 Video Element:', {
-      exists: !!video,
-      src: video.src,
-      currentSrc: video.currentSrc,
-      readyState: video.readyState,
-      networkState: video.networkState,
-      paused: video.paused,
-      muted: video.muted,
-      volume: video.volume,
-      duration: video.duration,
-      currentTime: video.currentTime,
-      error: video.error ? {
-        code: video.error.code,
-        message: video.error.message
-      } : null
-    });
-    
-    // 2. Video Computed Styles
-    const videoStyles = window.getComputedStyle(video);
-    console.log('🎨 Video Computed Styles:', {
-      display: videoStyles.display,
-      visibility: videoStyles.visibility,
-      opacity: videoStyles.opacity,
-      position: videoStyles.position,
-      zIndex: videoStyles.zIndex,
-      width: videoStyles.width,
-      height: videoStyles.height,
-      top: videoStyles.top,
-      left: videoStyles.left,
-      transform: videoStyles.transform,
-    });
-    
-    // 3. Video Bounding Box
-    const videoRect = video.getBoundingClientRect();
-    console.log('📐 Video Bounding Box:', {
-      top: videoRect.top,
-      left: videoRect.left,
-      width: videoRect.width,
-      height: videoRect.height,
-      inViewport: videoRect.top < window.innerHeight && videoRect.bottom > 0
-    });
-    
-    // 4. Container State
-    if (container) {
-      const containerStyles = window.getComputedStyle(container);
-      const containerRect = container.getBoundingClientRect();
-      console.log('📦 Container:', {
-        display: containerStyles.display,
-        visibility: containerStyles.visibility,
-        opacity: containerStyles.opacity,
-        zIndex: containerStyles.zIndex,
-        position: containerStyles.position,
-        width: containerRect.width,
-        height: containerRect.height,
-      });
+
+    // ✅ Only play if active AND no modals open
+    if (isActive && !isModalOpenRef.current) {
+      video.setAttribute("playsinline", "true");
+      video.setAttribute("webkit-playsinline", "true");
+
+      const attemptPlay = async () => {
+        try {
+          // ✅ Start muted for autoplay compliance
+          video.muted = true;
+
+          // Wait for video to be ready
+          if (video.readyState < 2) {
+            console.log("⏳ Waiting for video to load...");
+            await new Promise((resolve) => {
+              video.addEventListener("loadeddata", resolve, { once: true });
+              video.load();
+            });
+          }
+
+          console.log("▶️ Playing video:", short._id);
+          await video.play();
+          setIsPlaying(true);
+
+          // ✅ Unmute after successful play (if not muted by user)
+          if (!isMuted) {
+            setTimeout(() => {
+              video.muted = false;
+              console.log("🔊 Unmuted");
+            }, 500);
+          }
+        } catch (err) {
+          console.error("❌ Play failed:", err);
+          // Retry once
+          setTimeout(() => {
+            video.load();
+            video.play().catch((e) => console.error("❌ Retry failed:", e));
+          }, 500);
+        }
+      };
+
+      // Small delay to ensure DOM is ready
+      const playTimeout = setTimeout(attemptPlay, 100);
+
+      return () => clearTimeout(playTimeout);
+    } else if (isModalOpenRef.current) {
+      // ✅ Pause when modal opens
+      console.log("⏸️ Modal open, pausing video");
+      video.pause();
+      setIsPlaying(false);
     }
-    
-    // 5. Parent Elements Check
-    let parent = video.parentElement;
-    let depth = 0;
-    console.log('👪 Parent Chain:');
-    while (parent && depth < 5) {
-      const styles = window.getComputedStyle(parent);
-      console.log(`  Level ${depth}:`, {
-        tag: parent.tagName,
-        class: parent.className,
-        display: styles.display,
-        visibility: styles.visibility,
-        opacity: styles.opacity,
-        zIndex: styles.zIndex,
-        pointerEvents: styles.pointerEvents,
+  }, [isActive, short._id, isModalOpenRef.current]);
+
+  // 🔍 ENHANCED VIDEO DIAGNOSTIC - RUNS ON MOUNT + CHANGES
+  useEffect(() => {
+    const runDiagnostics = () => {
+      const video = videoRef.current;
+      const container = containerRef.current;
+
+      console.log("\n🔍 ===== VIDEO DIAGNOSTICS =====");
+      console.log("🎯 Diagnostic triggered for:", short._id);
+      console.log("📍 isActive:", isActive);
+
+      if (!video) {
+        console.error("❌ Video ref is NULL");
+        return;
+      }
+
+      // 1. Video Element State
+      console.log("📹 Video Element:", {
+        exists: !!video,
+        src: video.src,
+        currentSrc: video.currentSrc,
+        readyState: video.readyState,
+        networkState: video.networkState,
+        paused: video.paused,
+        muted: video.muted,
+        volume: video.volume,
+        duration: video.duration,
+        currentTime: video.currentTime,
+        error: video.error
+          ? {
+              code: video.error.code,
+              message: video.error.message,
+            }
+          : null,
       });
-      parent = parent.parentElement;
-      depth++;
-    }
-    
-    // 6. Check if video is covered by other elements
-    const videoCenter = {
-      x: videoRect.left + videoRect.width / 2,
-      y: videoRect.top + videoRect.height / 2
-    };
-    const elementAtCenter = document.elementFromPoint(videoCenter.x, videoCenter.y);
-    console.log('👆 Element at video center:', {
-      isVideo: elementAtCenter === video,
-      actualElement: elementAtCenter?.tagName,
-      classList: elementAtCenter?.className,
-    });
-    
-    // 7. Check video source accessibility
-    if (video.src) {
-      console.log('🌐 Testing video URL...');
-      fetch(video.src, { method: 'HEAD' })
-        .then(response => {
-          console.log('✅ Video URL accessible:', {
-            status: response.status,
-            contentType: response.headers.get('content-type'),
-            contentLength: response.headers.get('content-length'),
-          });
-        })
-        .catch(err => {
-          console.error('❌ Video URL not accessible:', err.message);
+
+      // 2. Video Computed Styles
+      const videoStyles = window.getComputedStyle(video);
+      console.log("🎨 Video Computed Styles:", {
+        display: videoStyles.display,
+        visibility: videoStyles.visibility,
+        opacity: videoStyles.opacity,
+        position: videoStyles.position,
+        zIndex: videoStyles.zIndex,
+        width: videoStyles.width,
+        height: videoStyles.height,
+        top: videoStyles.top,
+        left: videoStyles.left,
+        transform: videoStyles.transform,
+      });
+
+      // 3. Video Bounding Box
+      const videoRect = video.getBoundingClientRect();
+      console.log("📐 Video Bounding Box:", {
+        top: videoRect.top,
+        left: videoRect.left,
+        width: videoRect.width,
+        height: videoRect.height,
+        inViewport: videoRect.top < window.innerHeight && videoRect.bottom > 0,
+      });
+
+      // 4. Container State
+      if (container) {
+        const containerStyles = window.getComputedStyle(container);
+        const containerRect = container.getBoundingClientRect();
+        console.log("📦 Container:", {
+          display: containerStyles.display,
+          visibility: containerStyles.visibility,
+          opacity: containerStyles.opacity,
+          zIndex: containerStyles.zIndex,
+          position: containerStyles.position,
+          width: containerRect.width,
+          height: containerRect.height,
         });
-    }
-    
-    // 8. Mobile-specific checks
-    const isMobile = window.innerWidth < 768;
-    console.log('📱 Mobile Info:', {
-      isMobile,
-      userAgent: navigator.userAgent,
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-      },
-      htmlDataPage: document.documentElement.getAttribute('data-page'),
-      bodyPointerEvents: window.getComputedStyle(document.body).pointerEvents,
-    });
-    
-    console.log('===== END DIAGNOSTICS =====\n');
-  };
+      }
 
-  // ✅ CRITICAL: Run diagnostics immediately, after 500ms, and after 2s
-  console.log('🚀 Setting up diagnostics for short:', short._id, 'isActive:', isActive);
-  
-  runDiagnostics(); // Immediate
-  const timer1 = setTimeout(runDiagnostics, 500); // After 500ms
-  const timer2 = setTimeout(runDiagnostics, 2000); // After 2s
-  
-  return () => {
-    clearTimeout(timer1);
-    clearTimeout(timer2);
-  };
-}, [short._id]); // ✅ CHANGED: Only depends on short._id, not isActive
+      // 5. Parent Elements Check
+      let parent = video.parentElement;
+      let depth = 0;
+      console.log("👪 Parent Chain:");
+      while (parent && depth < 5) {
+        const styles = window.getComputedStyle(parent);
+        console.log(`  Level ${depth}:`, {
+          tag: parent.tagName,
+          class: parent.className,
+          display: styles.display,
+          visibility: styles.visibility,
+          opacity: styles.opacity,
+          zIndex: styles.zIndex,
+          pointerEvents: styles.pointerEvents,
+        });
+        parent = parent.parentElement;
+        depth++;
+      }
 
+      // 6. Check if video is covered by other elements
+      const videoCenter = {
+        x: videoRect.left + videoRect.width / 2,
+        y: videoRect.top + videoRect.height / 2,
+      };
+      const elementAtCenter = document.elementFromPoint(
+        videoCenter.x,
+        videoCenter.y
+      );
+      console.log("👆 Element at video center:", {
+        isVideo: elementAtCenter === video,
+        actualElement: elementAtCenter?.tagName,
+        classList: elementAtCenter?.className,
+      });
+
+      // 7. Check video source accessibility
+      if (video.src) {
+        console.log("🌐 Testing video URL...");
+        fetch(video.src, { method: "HEAD" })
+          .then((response) => {
+            console.log("✅ Video URL accessible:", {
+              status: response.status,
+              contentType: response.headers.get("content-type"),
+              contentLength: response.headers.get("content-length"),
+            });
+          })
+          .catch((err) => {
+            console.error("❌ Video URL not accessible:", err.message);
+          });
+      }
+
+      // 8. Mobile-specific checks
+      const isMobile = window.innerWidth < 768;
+      console.log("📱 Mobile Info:", {
+        isMobile,
+        userAgent: navigator.userAgent,
+        viewport: {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        },
+        htmlDataPage: document.documentElement.getAttribute("data-page"),
+        bodyPointerEvents: window.getComputedStyle(document.body).pointerEvents,
+      });
+
+      console.log("===== END DIAGNOSTICS =====\n");
+    };
+
+    // ✅ CRITICAL: Run diagnostics immediately, after 500ms, and after 2s
+    console.log(
+      "🚀 Setting up diagnostics for short:",
+      short._id,
+      "isActive:",
+      isActive
+    );
+
+    runDiagnostics(); // Immediate
+    const timer1 = setTimeout(runDiagnostics, 500); // After 500ms
+    const timer2 = setTimeout(runDiagnostics, 2000); // After 2s
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [short._id]); // ✅ CHANGED: Only depends on short._id, not isActive
 
   // ✅ ADD: Passive event listener fix
   useEffect(() => {
@@ -670,8 +707,6 @@ useEffect(() => {
       container.removeEventListener("touchmove", preventDefaultTouch);
     };
   }, []);
-
-  
 
   useEffect(() => {
     const video = videoRef.current;
@@ -746,7 +781,7 @@ useEffect(() => {
     const velocity = Math.abs(distance) / (dragDuration + 1);
 
     // 🔍 COMPREHENSIVE VIDEO DEBUG
-    
+
     // Throttle navigation (prevent rapid swipes)
     const timeSinceLastNav = Date.now() - lastNavigationTimeRef.current;
     if (timeSinceLastNav < 400) {
@@ -905,177 +940,182 @@ useEffect(() => {
     setShowVolumeSlider(!showVolumeSlider);
   };
 
-const handleLike = async (e: React.MouseEvent) => {
-  e.stopPropagation();
-  
-  console.log("\n🔵 ===== LIKE BUTTON CLICKED =====");
-  console.log("📍 Current State BEFORE API call:");
-  console.log("   Short ID:", short._id);
-  console.log("   hasLiked:", hasLiked);
-  console.log("   likesCount:", likesCount);
-  console.log("   hasDisliked:", hasDisliked);
-  console.log("   dislikesCount:", dislikesCount);
-  
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.log("❌ No token found, redirecting to login");
-      router.push("/login?redirect=/shorts");
-      return;
-    }
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
 
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const userId = payload.userId || payload.id;
+    console.log("\n🔵 ===== LIKE BUTTON CLICKED =====");
+    console.log("📍 Current State BEFORE API call:");
+    console.log("   Short ID:", short._id);
+    console.log("   hasLiked:", hasLiked);
+    console.log("   likesCount:", likesCount);
+    console.log("   hasDisliked:", hasDisliked);
+    console.log("   dislikesCount:", dislikesCount);
 
-    if (!userId) {
-      console.log("❌ No userId in token, redirecting to login");
-      router.push("/login?redirect=/shorts");
-      return;
-    }
-
-    console.log("✅ User authenticated:", userId);
-
-    // ✅ Store previous state for rollback
-    const previousLiked = hasLiked;
-    const previousCount = likesCount;
-    const previousDisliked = hasDisliked;
-    const previousDislikeCount = dislikesCount;
-
-    console.log("\n🔄 OPTIMISTIC UPDATE:");
-    // ✅ Optimistic update
-    if (previousLiked) {
-      console.log("   Action: UNLIKE (remove like)");
-      setHasLiked(false);
-      setLikesCount((prev) => Math.max(0, prev - 1));
-    } else {
-      console.log("   Action: LIKE (add like)");
-      setHasLiked(true);
-      setLikesCount((prev) => prev + 1);
-      if (previousDisliked) {
-        console.log("   Also removing dislike");
-        setHasDisliked(false);
-        setDislikesCount((prev) => Math.max(0, prev - 1));
-      }
-    }
-
-    console.log("\n📡 MAKING API CALL...");
-    console.log("   URL:", `${getApiUrl()}/like/short/${short._id}`);
-    
-    // ✅ Make API call
-    const response = await axios.post(
-      `${getApiUrl()}/like/short/${short._id}`,
-      { userId },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache",
-          "Pragma": "no-cache",
-          "Expires": "0"
-        },
-      }
-    );
-
-    console.log("\n✅ API RESPONSE RECEIVED:");
-    console.log("   Full response:", JSON.stringify(response.data, null, 2));
-    console.log("   response.data.success:", response.data.success);
-    console.log("   response.data.liked:", response.data.liked);
-    console.log("   response.data.likesCount:", response.data.likesCount);
-    console.log("   response.data.action:", response.data.action);
-    console.log("   response.data.data:", response.data.data);
-
-    // ✅ CRITICAL FIX: Read from TOP-LEVEL fields
-    if (response.data.success) {
-      const serverLiked = response.data.liked;
-      const serverCount = response.data.likesCount;
-      const serverDislikeCount = response.data.dislikesCount;
-
-      console.log("\n🔄 SYNCING WITH SERVER STATE:");
-      console.log("   serverLiked:", serverLiked);
-      console.log("   serverCount:", serverCount);
-      console.log("   serverDislikeCount:", serverDislikeCount);
-
-      // ✅ Update local state to match server
-      setHasLiked(serverLiked);
-      setHasDisliked(false);
-      setLikesCount(serverCount);
-      setDislikesCount(serverDislikeCount);
-
-      console.log("\n📤 CALLING onLikeUpdate callback:");
-      console.log("   onLikeUpdate exists?", !!onLikeUpdate);
-      
-      // ✅ CRITICAL: Update parent component's shorts array
-      if (onLikeUpdate) {
-        console.log("   Calling with:", {
-          shortId: short._id,
-          liked: serverLiked,
-          likesCount: serverCount,
-          disliked: false,
-          dislikesCount: serverDislikeCount
-        });
-        onLikeUpdate(short._id, serverLiked, serverCount, false, serverDislikeCount);
-      } else {
-        console.warn("⚠️ onLikeUpdate callback is NOT defined!");
-      }
-
-      console.log("\n✅ LIKE STATE SYNCED SUCCESSFULLY");
-      console.log("📍 Final State AFTER sync:");
-      console.log("   hasLiked:", serverLiked);
-      console.log("   likesCount:", serverCount);
-    } else {
-      console.error("❌ API returned success: false");
-    }
-  } catch (error: any) {
-    console.error("\n❌ ERROR IN handleLike:");
-    console.error("   Error:", error);
-    console.error("   Response data:", error.response?.data);
-    console.error("   Status:", error.response?.status);
-
-    // ✅ Rollback optimistic update on error
-    console.log("\n🔄 ROLLING BACK OPTIMISTIC UPDATE...");
-    
     try {
       const token = localStorage.getItem("token");
-      const freshResponse = await axios.get(
-        `${getApiUrl()}/api/shorts/${short._id}`,
+      if (!token) {
+        console.log("❌ No token found, redirecting to login");
+        router.push("/login?redirect=/shorts");
+        return;
+      }
+
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const userId = payload.userId || payload.id;
+
+      if (!userId) {
+        console.log("❌ No userId in token, redirecting to login");
+        router.push("/login?redirect=/shorts");
+        return;
+      }
+
+      console.log("✅ User authenticated:", userId);
+
+      // ✅ Store previous state for rollback
+      const previousLiked = hasLiked;
+      const previousCount = likesCount;
+      const previousDisliked = hasDisliked;
+      const previousDislikeCount = dislikesCount;
+
+      console.log("\n🔄 OPTIMISTIC UPDATE:");
+      // ✅ Optimistic update
+      if (previousLiked) {
+        console.log("   Action: UNLIKE (remove like)");
+        setHasLiked(false);
+        setLikesCount((prev) => Math.max(0, prev - 1));
+      } else {
+        console.log("   Action: LIKE (add like)");
+        setHasLiked(true);
+        setLikesCount((prev) => prev + 1);
+        if (previousDisliked) {
+          console.log("   Also removing dislike");
+          setHasDisliked(false);
+          setDislikesCount((prev) => Math.max(0, prev - 1));
+        }
+      }
+
+      console.log("\n📡 MAKING API CALL...");
+      console.log("   URL:", `${getApiUrl()}/like/short/${short._id}`);
+
+      // ✅ Make API call
+      const response = await axios.post(
+        `${getApiUrl()}/like/short/${short._id}`,
+        { userId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
             "Cache-Control": "no-cache",
-            "Pragma": "no-cache",
-            "Expires": "0"
+            Pragma: "no-cache",
+            Expires: "0",
           },
         }
       );
-      
-      console.log("📡 Fresh data fetched:", freshResponse.data);
-      
-      if (freshResponse.data.success) {
-        const freshData = freshResponse.data.data;
-        console.log("🔄 Rolling back to:", {
-          hasLiked: freshData.hasLiked,
-          likesCount: freshData.likesCount
-        });
-        
-        setHasLiked(Boolean(freshData.hasLiked));
-        setHasDisliked(Boolean(freshData.hasDisliked));
-        setLikesCount(freshData.likesCount);
-        setDislikesCount(freshData.dislikesCount);
-        
-        console.log("✅ State rolled back to server state");
+
+      console.log("\n✅ API RESPONSE RECEIVED:");
+      console.log("   Full response:", JSON.stringify(response.data, null, 2));
+      console.log("   response.data.success:", response.data.success);
+      console.log("   response.data.liked:", response.data.liked);
+      console.log("   response.data.likesCount:", response.data.likesCount);
+      console.log("   response.data.action:", response.data.action);
+      console.log("   response.data.data:", response.data.data);
+
+      // ✅ CRITICAL FIX: Read from TOP-LEVEL fields
+      if (response.data.success) {
+        const serverLiked = response.data.liked;
+        const serverCount = response.data.likesCount;
+        const serverDislikeCount = response.data.dislikesCount;
+
+        console.log("\n🔄 SYNCING WITH SERVER STATE:");
+        console.log("   serverLiked:", serverLiked);
+        console.log("   serverCount:", serverCount);
+        console.log("   serverDislikeCount:", serverDislikeCount);
+
+        // ✅ Update local state to match server
+        setHasLiked(serverLiked);
+        setHasDisliked(false);
+        setLikesCount(serverCount);
+        setDislikesCount(serverDislikeCount);
+
+        console.log("\n📤 CALLING onLikeUpdate callback:");
+        console.log("   onLikeUpdate exists?", !!onLikeUpdate);
+
+        // ✅ CRITICAL: Update parent component's shorts array
+        if (onLikeUpdate) {
+          console.log("   Calling with:", {
+            shortId: short._id,
+            liked: serverLiked,
+            likesCount: serverCount,
+            disliked: false,
+            dislikesCount: serverDislikeCount,
+          });
+          onLikeUpdate(
+            short._id,
+            serverLiked,
+            serverCount,
+            false,
+            serverDislikeCount
+          );
+        } else {
+          console.warn("⚠️ onLikeUpdate callback is NOT defined!");
+        }
+
+        console.log("\n✅ LIKE STATE SYNCED SUCCESSFULLY");
+        console.log("📍 Final State AFTER sync:");
+        console.log("   hasLiked:", serverLiked);
+        console.log("   likesCount:", serverCount);
+      } else {
+        console.error("❌ API returned success: false");
       }
-    } catch (revertError) {
-      console.error("❌ Failed to revert state:", revertError);
+    } catch (error: any) {
+      console.error("\n❌ ERROR IN handleLike:");
+      console.error("   Error:", error);
+      console.error("   Response data:", error.response?.data);
+      console.error("   Status:", error.response?.status);
+
+      // ✅ Rollback optimistic update on error
+      console.log("\n🔄 ROLLING BACK OPTIMISTIC UPDATE...");
+
+      try {
+        const token = localStorage.getItem("token");
+        const freshResponse = await axios.get(
+          `${getApiUrl()}/api/shorts/${short._id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
+          }
+        );
+
+        console.log("📡 Fresh data fetched:", freshResponse.data);
+
+        if (freshResponse.data.success) {
+          const freshData = freshResponse.data.data;
+          console.log("🔄 Rolling back to:", {
+            hasLiked: freshData.hasLiked,
+            likesCount: freshData.likesCount,
+          });
+
+          setHasLiked(Boolean(freshData.hasLiked));
+          setHasDisliked(Boolean(freshData.hasDisliked));
+          setLikesCount(freshData.likesCount);
+          setDislikesCount(freshData.dislikesCount);
+
+          console.log("✅ State rolled back to server state");
+        }
+      } catch (revertError) {
+        console.error("❌ Failed to revert state:", revertError);
+      }
+
+      if (error.response?.status === 401) {
+        console.log("❌ 401 Unauthorized, redirecting to login");
+        router.push("/login?redirect=/shorts");
+      }
     }
 
-    if (error.response?.status === 401) {
-      console.log("❌ 401 Unauthorized, redirecting to login");
-      router.push("/login?redirect=/shorts");
-    }
-
-  }
-  
-  console.log("===== LIKE HANDLER COMPLETE =====\n");
-};
+    console.log("===== LIKE HANDLER COMPLETE =====\n");
+  };
 
   const handleDislike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1281,7 +1321,6 @@ const handleLike = async (e: React.MouseEvent) => {
       setTimeout(() => setIsDeleting(false), 500);
     }
   };
-  
 
   const openDeleteConfirm = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1291,7 +1330,7 @@ const handleLike = async (e: React.MouseEvent) => {
     // Small delay to ensure menu closes first
     setTimeout(() => {
       setShowDeleteConfirm(true);
-     isModalOpenRef.current = true;
+      isModalOpenRef.current = true;
     }, 50);
   };
   const closeDeleteConfirm = (e: React.MouseEvent) => {
@@ -1407,182 +1446,184 @@ const handleLike = async (e: React.MouseEvent) => {
     "Other",
   ];
 
-return (
-  <div
-    ref={containerRef}
-    className="relative w-full h-screen bg-black overflow-hidden"
-    data-component="short-player"
-    data-short-id={short._id}
-    style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      width: '100vw',
-      height: '100vh',
-      minHeight: '100vh',
-      overflow: 'hidden',
-      backgroundColor: '#000',
-      WebkitOverflowScrolling: 'touch',
-      zIndex: isActive ? 30 : 20,
-      isolation: 'auto',
-    }}
-  >
-    {/* ✅ Video Layer - Z-INDEX 1 */}
-    <video
-      ref={videoRef}
-      src={short.videoUrl}
-      className="absolute inset-0 w-full h-full object-cover"
-      loop
-      playsInline
-      webkit-playsinline="true"
-      x5-playsinline="true"
-      x5-video-player-type="h5"
-      x-webkit-airplay="allow"
-      preload="auto"
-      crossOrigin="anonymous"
-      onClick={togglePlayPause}
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full h-screen bg-black overflow-hidden"
+      data-component="short-player"
+      data-short-id={short._id}
       style={{
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        backgroundColor: '#000',
-        display: 'block',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        zIndex: 1,
-        WebkitTransform: 'translate3d(0,0,0)',
-        transform: 'translate3d(0,0,0)',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-      }}
-      poster={short.thumbnailUrl || undefined}
-  onLoadStart={(e) => {
-    console.log("🎬 onLoadStart:", {
-      shortId: short._id,
-      src: e.currentTarget.src,
-      readyState: e.currentTarget.readyState,
-    });
-  }}
-  onLoadedMetadata={(e) => {
-    const video = e.currentTarget;
-    console.log("📹 onLoadedMetadata:", {
-      shortId: short._id,
-      duration: video.duration,
-      width: video.videoWidth,
-      height: video.videoHeight,
-      readyState: video.readyState,
-    });
-  }}
-  onLoadedData={(e) => {
-    const video = e.currentTarget;
-    console.log("✅ onLoadedData:", {
-      shortId: short._id,
-      readyState: video.readyState,
-      paused: video.paused,
-      isActive,
-      modalOpen: isModalOpenRef.current,
-    });
-    
-    if (isActive && !isModalOpenRef.current) {
-      console.log("🎯 Attempting autoplay...");
-      video.muted = true;
-      video.play()
-        .then(() => {
-          console.log("✅ Play() succeeded");
-          setIsPlaying(true);
-          if (!isMuted) {
-            setTimeout(() => { 
-              video.muted = false;
-              console.log("🔊 Unmuted after successful play");
-            }, 500);
-          }
-        })
-        .catch(err => {
-          console.error("❌ Play() failed:", {
-            name: err.name,
-            message: err.message,
-            code: err.code,
-          });
-        });
-    }
-  }}
-  onCanPlay={() => {
-    console.log("✅ onCanPlay - Video ready to play:", short._id);
-  }}
-  onCanPlayThrough={() => {
-    console.log("✅ onCanPlayThrough - Video fully loaded:", short._id);
-  }}
-  onError={(e) => {
-    const video = e.currentTarget;
-    console.error("❌ VIDEO ERROR:", {
-      shortId: short._id,
-      errorCode: video.error?.code,
-      errorMessage: video.error?.message,
-      src: video.src,
-      currentSrc: video.currentSrc,
-      networkState: video.networkState,
-      readyState: video.readyState,
-    });
-  }}
-  onPlay={() => {
-    console.log("▶️ onPlay event:", short._id);
-    setIsPlaying(true);
-  }}
-  onPause={() => {
-    console.log("⏸️ onPause event:", short._id);
-    setIsPlaying(false);
-  }}
-  onWaiting={() => {
-    console.log("⏳ onWaiting - Video buffering:", short._id);
-  }}
-  onStalled={() => {
-    console.log("⚠️ onStalled - Network issue:", short._id);
-  }}
-  onSuspend={() => {
-    console.log("⏸️ onSuspend - Loading suspended:", short._id);
-  }}
-/>
-
-      {/* Gradients */}
-   {/* Gradients */}
- <div 
-      style={{
-        position: 'absolute',
+        position: "fixed",
         top: 0,
         left: 0,
         right: 0,
-        height: '8rem',
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)',
-        zIndex: 2,
-      }}
-    />
-    <div 
-      style={{
-        position: 'absolute',
         bottom: 0,
-        left: 0,
-        right: 0,
-        height: '20rem',
-        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)',
-        zIndex: 2,
-      }}
-    />
-      {/* Header with Theme-Compatible Menu */}
- <div 
-      className="absolute top-4 left-4 right-4 flex items-center justify-between"
-      style={{
-        position: 'absolute',
-        top: '1rem',
-        left: '1rem',
-        right: '1rem',
-        zIndex: 50,
+        width: "100vw",
+        height: "100vh",
+        minHeight: "100vh",
+        overflow: "hidden",
+        backgroundColor: "#000",
+        WebkitOverflowScrolling: "touch",
+        zIndex: isActive ? 30 : 20,
+        isolation: "auto",
       }}
     >
-      
-         {/* Shorts button - HIDDEN on desktop (md and above) */}
+      {/* ✅ Video Layer - Z-INDEX 1 */}
+      <video
+        ref={videoRef}
+        src={short.videoUrl}
+        className="absolute inset-0 w-full h-full object-cover"
+        loop
+        playsInline
+        webkit-playsinline="true"
+        x5-playsinline="true"
+        x5-video-player-type="h5"
+        x-webkit-airplay="allow"
+        preload="auto"
+        crossOrigin="anonymous"
+        onClick={togglePlayPause}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          backgroundColor: "#000",
+          display: "block",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 1,
+          WebkitTransform: "translate3d(0,0,0)",
+          transform: "translate3d(0,0,0)",
+          WebkitBackfaceVisibility: "hidden",
+          backfaceVisibility: "hidden",
+        }}
+        poster={short.thumbnailUrl || undefined}
+        onLoadStart={(e) => {
+          console.log("🎬 onLoadStart:", {
+            shortId: short._id,
+            src: e.currentTarget.src,
+            readyState: e.currentTarget.readyState,
+          });
+        }}
+        onLoadedMetadata={(e) => {
+          const video = e.currentTarget;
+          console.log("📹 onLoadedMetadata:", {
+            shortId: short._id,
+            duration: video.duration,
+            width: video.videoWidth,
+            height: video.videoHeight,
+            readyState: video.readyState,
+          });
+        }}
+        onLoadedData={(e) => {
+          const video = e.currentTarget;
+          console.log("✅ onLoadedData:", {
+            shortId: short._id,
+            readyState: video.readyState,
+            paused: video.paused,
+            isActive,
+            modalOpen: isModalOpenRef.current,
+          });
+
+          if (isActive && !isModalOpenRef.current) {
+            console.log("🎯 Attempting autoplay...");
+            video.muted = true;
+            video
+              .play()
+              .then(() => {
+                console.log("✅ Play() succeeded");
+                setIsPlaying(true);
+                if (!isMuted) {
+                  setTimeout(() => {
+                    video.muted = false;
+                    console.log("🔊 Unmuted after successful play");
+                  }, 500);
+                }
+              })
+              .catch((err) => {
+                console.error("❌ Play() failed:", {
+                  name: err.name,
+                  message: err.message,
+                  code: err.code,
+                });
+              });
+          }
+        }}
+        onCanPlay={() => {
+          console.log("✅ onCanPlay - Video ready to play:", short._id);
+        }}
+        onCanPlayThrough={() => {
+          console.log("✅ onCanPlayThrough - Video fully loaded:", short._id);
+        }}
+        onError={(e) => {
+          const video = e.currentTarget;
+          console.error("❌ VIDEO ERROR:", {
+            shortId: short._id,
+            errorCode: video.error?.code,
+            errorMessage: video.error?.message,
+            src: video.src,
+            currentSrc: video.currentSrc,
+            networkState: video.networkState,
+            readyState: video.readyState,
+          });
+        }}
+        onPlay={() => {
+          console.log("▶️ onPlay event:", short._id);
+          setIsPlaying(true);
+        }}
+        onPause={() => {
+          console.log("⏸️ onPause event:", short._id);
+          setIsPlaying(false);
+        }}
+        onWaiting={() => {
+          console.log("⏳ onWaiting - Video buffering:", short._id);
+        }}
+        onStalled={() => {
+          console.log("⚠️ onStalled - Network issue:", short._id);
+        }}
+        onSuspend={() => {
+          console.log("⏸️ onSuspend - Loading suspended:", short._id);
+        }}
+      />
+
+      {/* Gradients */}
+      {/* Gradients */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "8rem",
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)",
+          zIndex: 2,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "20rem",
+          background:
+            "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)",
+          zIndex: 2,
+        }}
+      />
+      {/* Header with Theme-Compatible Menu */}
+      <div
+        className="absolute top-4 left-4 right-4 flex items-center justify-between"
+        style={{
+          position: "absolute",
+          top: "1rem",
+          left: "1rem",
+          right: "1rem",
+          zIndex: 50,
+        }}
+      >
+        {/* Shorts button - HIDDEN on desktop (md and above) */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -2116,40 +2157,37 @@ return (
       )}
 
       {/* Play Icon Overlay */}
-     {!isPlaying && !isModalOpenRef.current && (
-      <div 
-        className="absolute inset-0 flex items-center justify-center"
+      {!isPlaying && !isModalOpenRef.current && (
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 40,
+            pointerEvents: "none",
+          }}
+        >
+          <div className="bg-black/50 backdrop-blur-sm rounded-full p-8">
+            <Play size={48} className="text-white" fill="white" />
+          </div>
+        </div>
+      )}
+      {/* MOBILE OPTIMIZED CONTENT SECTION */}
+
+      <div
+        className="absolute bottom-0 left-0 right-0"
         style={{
-          position: 'absolute',
-          top: 0,
+          position: "absolute",
+          bottom: 0,
           left: 0,
           right: 0,
-          bottom: 0,
-          zIndex: 40,
-          pointerEvents: 'none',
+          zIndex: 30,
         }}
       >
-        <div className="bg-black/50 backdrop-blur-sm rounded-full p-8">
-          <Play size={48} className="text-white" fill="white" />
-        </div>
-      </div>
-    )}
-      {/* MOBILE OPTIMIZED CONTENT SECTION */}
-      
-  <div 
-      className="absolute bottom-0 left-0 right-0"
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 30,
-      }}
-    >
-  <div 
-    className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24"
-    style={{ pointerEvents: 'auto' }} // ✅ But make buttons clickable
-  >
+        <div className="p-4 pb-20 md:pb-24" style={{ pointerEvents: "auto" }}>
           <div className="flex items-end justify-between gap-3 md:gap-4 lg:gap-6">
             {/* Left Content */}
             <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-140px)] lg:max-w-[calc(100%-160px)]">
@@ -2162,7 +2200,7 @@ return (
                     true
                   )}
                   alt={channelName}
-                  className="w-9 h-9 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full mr-2.5 md:mr-3 lg:mr-4 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full mr-3 cursor-pointer object-cover border-2 border-white/30 flex-shrink-0 bg-gray-800"
                   onClick={handleChannelClick}
                   crossOrigin="anonymous"
                   loading="eager"
@@ -2230,7 +2268,8 @@ return (
             </div>
 
             {/* Right Action Buttons - FULLY RESPONSIVE */}
-            <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-5 md:pb-0 lg:gap-6">
+            <div className="flex flex-col items-center justify-end gap-2 pointer-events-auto md:gap-3 lg:gap-4">
+              {" "}
               {/* Like Button */}
               <button
                 onClick={handleLike}
@@ -2238,28 +2277,24 @@ return (
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <div
-                  className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
+                  className={`rounded-full transition-all flex items-center justify-center ${
                     hasLiked
-                      ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
-                      : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
-                  } p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]`}
+                      ? "bg-white"
+                      : "bg-gray-800/70 hover:bg-gray-700/90"
+                  } w-12 h-12 md:w-14 md:h-14`}
                 >
                   <ThumbsUp
                     className={`${
-                      hasLiked ? "text-white" : "text-white"
-                    } w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
-                    fill={hasLiked ? "white" : "none"}
-                    strokeWidth={2.5}
+                      hasLiked ? "text-red-600" : "text-white"
+                    } w-6 h-6 md:w-7 md:h-7`}
+                    fill={hasLiked ? "currentColor" : "none"}
+                    strokeWidth={2}
                   />
                 </div>
-                <span
-                  className="text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none"
-                  style={{ color: hasLiked ? "#60a5fa" : "white" }}
-                >
+                <span className="text-white text-xs md:text-sm font-semibold">
                   {formatCount(likesCount)}
                 </span>
               </button>
-
               {/* Dislike Button */}
               <button
                 onClick={handleDislike}
@@ -2267,11 +2302,11 @@ return (
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <div
-                  className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
+                  className={`rounded-full transition-all flex items-center justify-center ${
                     hasDisliked
-                      ? "bg-red-600 border-red-500 shadow-red-500/50"
-                      : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
-                  } p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]`}
+                      ? "bg-white"
+                      : "bg-gray-800/70 hover:bg-gray-700/90"
+                  } w-12 h-12 md:w-14 md:h-14`}
                 >
                   <ThumbsDown
                     className={`${
@@ -2288,18 +2323,18 @@ return (
                   Dislike
                 </span>
               </button>
-
               {/* Comments Button */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowComments(true);
-                    isModalOpenRef.current = true; // ✅ ADD THIS LINE
+                  isModalOpenRef.current = true; // ✅ ADD THIS LINE
                 }}
                 className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
+                <div className="bg-gray-800/70 hover:bg-gray-700/90 rounded-full transition-all flex items-center justify-center w-12 h-12 md:w-14 md:h-14">
+                  {" "}
                   <MessageCircle
                     className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
                     strokeWidth={2.5}
@@ -2309,14 +2344,14 @@ return (
                   {formatCount(commentsCount)}
                 </span>
               </button>
-
               {/* Share Button */}
               <button
                 onClick={handleShareClick}
                 className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
-                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
+                <div className="bg-gray-800/70 hover:bg-gray-700/90 rounded-full transition-all flex items-center justify-center w-12 h-12 md:w-14 md:h-14">
+                  {" "}
                   <Share2
                     className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
                     strokeWidth={2.5}
@@ -2326,7 +2361,6 @@ return (
                   Share
                 </span>
               </button>
-
               {/* Volume Control - FIXED FOR DESKTOP */}
               <div className="relative flex flex-col items-center w-full volume-control">
                 <button
@@ -2334,7 +2368,8 @@ return (
                   className="flex flex-col items-center gap-1 transition-all transform hover:scale-105 active:scale-95 group touch-manipulation w-full"
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
-                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
+                  <div className="bg-gray-800/70 hover:bg-gray-700/90 rounded-full transition-all flex items-center justify-center w-12 h-12 md:w-14 md:h-14">
+                    {" "}
                     {isMuted || volume === 0 ? (
                       <VolumeX
                         className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
@@ -2475,26 +2510,26 @@ return (
 
       {/* Modals */}
       {showShareModal && (
-      <ShareModal
-        isOpen={showShareModal}
-        onClose={() => {
-          setShowShareModal(false);
-          handleShareComplete();
-        }}
-        videoId={short._id}
-        videoTitle={short.title}
-        currentTime={currentTime}
-        isShort={true}
-      />
-    )}
-       {showComments && (
-      <CommentsModal
-        shortId={short._id}
-        commentsCount={commentsCount}
-        onClose={() => setShowComments(false)}
-        onCommentAdded={() => setCommentsCount((prev) => prev + 1)}
-      />
-    )}
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            handleShareComplete();
+          }}
+          videoId={short._id}
+          videoTitle={short.title}
+          currentTime={currentTime}
+          isShort={true}
+        />
+      )}
+      {showComments && (
+        <CommentsModal
+          shortId={short._id}
+          commentsCount={commentsCount}
+          onClose={() => setShowComments(false)}
+          onCommentAdded={() => setCommentsCount((prev) => prev + 1)}
+        />
+      )}
     </div>
   );
 };
