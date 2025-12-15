@@ -1527,27 +1527,26 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   ];
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-screen bg-black overflow-hidden flex items-center justify-center"
-      data-component="short-player"
-      data-short-id={short._id}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
-        height: "100vh",
-        minHeight: "100vh",
-        overflow: "hidden",
-        backgroundColor: "#000",
-        WebkitOverflowScrolling: "touch",
-        zIndex: isActive ? 30 : 20,
-        isolation: "auto",
-      }}
-    >
+<div
+  ref={containerRef}
+  className="relative w-full h-screen bg-black overflow-hidden"
+  data-component="short-player"
+  data-short-id={short._id}
+  style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: "100vw",
+    height: "100vh",
+    minHeight: "100vh",
+    overflow: "hidden",
+    backgroundColor: "#000",
+    WebkitOverflowScrolling: "touch",
+    zIndex: isActive ? 30 : 20,
+  }}
+>
       {/* 9:16 Aspect Ratio Container */}
       <div
         className="relative bg-black"
@@ -1561,38 +1560,34 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           position: "relative",
         }}
       >
-        
+
       </div>
       {/* ✅ Video Layer - Z-INDEX 1 */}
       <video
-        ref={videoRef}
-        key={`video-${short._id}-${isActive}`}
-        src={short.videoUrl}
-        className="absolute inset-0 w-full h-full"
-        loop
-        playsInline
-        webkit-playsinline="true"
-        x5-playsinline="true"
-        x5-video-player-type="h5"
-        x-webkit-airplay="allow"
-        preload="auto"
-        crossOrigin="anonymous"
-        onClick={togglePlayPause}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          backgroundColor: "#000",
-          display: "block",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          zIndex: 1,
-          WebkitTransform: "translate3d(0,0,0)",
-          transform: "translate3d(0,0,0)",
-          WebkitBackfaceVisibility: "hidden",
-          backfaceVisibility: "hidden",
-        }}
+  ref={videoRef}
+  key={`video-${short._id}-${isActive}`}
+  src={short.videoUrl}
+  className="absolute inset-0 w-full h-full object-cover"
+  loop
+  playsInline
+  webkit-playsinline="true"
+  x5-playsinline="true"
+  x5-video-player-type="h5"
+  x-webkit-airplay="allow"
+  preload="auto"
+  crossOrigin="anonymous"
+  onClick={togglePlayPause}
+  style={{
+    width: "100%",
+    height: "100%",
+    objectFit: "contain", // Changed from "cover" to "contain"
+    backgroundColor: "#000",
+    display: "block",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 1,
+  }}
         poster={short.thumbnailUrl || undefined}
         onLoadStart={(e) => {
           console.log("🎬 onLoadStart:", {
