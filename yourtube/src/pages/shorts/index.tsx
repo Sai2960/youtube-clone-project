@@ -664,7 +664,7 @@ const ShortsPage: React.FC = () => {
       </Head>
       <div
         ref={containerRef}
-        className="fixed inset-0 bg-black"
+        className="fixed inset-0 bg-black flex items-center justify-center"
         style={{
           position: "fixed",
           top: 0,
@@ -677,13 +677,15 @@ const ShortsPage: React.FC = () => {
           maxHeight: "100vh",
           overflow: "hidden",
           WebkitOverflowScrolling: "touch",
-          display: "block",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           zIndex: 50,
           WebkitTransform: "translateZ(0)",
           transform: "translateZ(0)",
           backgroundColor: "#000",
         }}
-        data-page="shorts" // ✅ THIS IS CRITICAL
+        data-page="shorts"
       >
         {/* Back Button - Desktop Only */}
         <button
@@ -714,18 +716,20 @@ const ShortsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Shorts Container */}
+        {/* Shorts Container with 9:16 Aspect Ratio */}
         <div
-          className="relative w-full h-full"
+          className="relative bg-black"
           style={{
-            position: "relative",
             width: "100%",
             height: "100%",
+            maxWidth: "min(100vw, calc(100vh * 9 / 16))",
+            maxHeight: "min(100vh, calc(100vw * 16 / 9))",
+            aspectRatio: "9 / 16",
+            position: "relative",
             overflow: "hidden",
           }}
         >
           {shorts.map((short, index) => {
-            // ✅ CRITICAL: Render current AND adjacent shorts for smooth transitions
             const shouldRender = Math.abs(index - currentIndex) <= 1;
             if (!shouldRender) return null;
 
@@ -733,7 +737,7 @@ const ShortsPage: React.FC = () => {
 
             return (
               <div
-                key={`short-container-${short._id}`} // ✅ Added unique key
+                key={`short-container-${short._id}`}
                 style={{
                   position: "absolute",
                   top: 0,

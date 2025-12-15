@@ -1529,7 +1529,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen bg-black overflow-hidden"
+      className="relative w-full h-screen bg-black overflow-hidden flex items-center justify-center"
       data-component="short-player"
       data-short-id={short._id}
       style={{
@@ -1548,12 +1548,27 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         isolation: "auto",
       }}
     >
+      {/* 9:16 Aspect Ratio Container */}
+      <div
+        className="relative bg-black"
+        style={{
+          width: "100%",
+          height: "100%",
+          maxWidth: "min(100vw, calc(100vh * 9 / 16))",
+          maxHeight: "min(100vh, calc(100vw * 16 / 9))",
+          aspectRatio: "9 / 16",
+          margin: "0 auto",
+          position: "relative",
+        }}
+      >
+        
+      </div>
       {/* ✅ Video Layer - Z-INDEX 1 */}
       <video
         ref={videoRef}
         key={`video-${short._id}-${isActive}`}
         src={short.videoUrl}
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full"
         loop
         playsInline
         webkit-playsinline="true"
@@ -1761,7 +1776,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                 }}
               />
 
-              {/* UNIFIED MENU */}
+              {/* UNIFIED MENU - Works for both mobile and desktop */}
               <div
                 className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
                 style={{
@@ -1843,6 +1858,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           )}
         </div>
       </div>
+
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div
@@ -1854,7 +1870,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp"
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: "var(--bg-secondary, #ffffff)",
+              backgroundColor: "var(--bg-secondary, #ffffff)", // Changed from #2d2d2d
             }}
           >
             <div className="p-6">
@@ -2021,6 +2037,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           </div>
         </div>
       )}
+
       {/* Report Modal */}
       {showReportModal && (
         <div
@@ -2032,16 +2049,16 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: "var(--bg-secondary, #ffffff)",
+              backgroundColor: "var(--bg-secondary, #ffffff)", // Changed from #2d2d2d
             }}
           >
             <div className="overflow-y-auto max-h-[85vh]">
               <div className="p-5 pb-6">
-                {/* Header */}
+                {/* Header - Line ~1285 - FIXED FOR LIGHT THEME */}
                 <div
                   className="flex items-center justify-between mb-4 sticky top-0 pb-3 z-10"
                   style={{
-                    backgroundColor: "var(--bg-secondary, #ffffff)",
+                    backgroundColor: "var(--bg-secondary, #ffffff)", // Changed from bg-[#2d2d2d]
                   }}
                 >
                   <div className="flex items-center gap-2.5">
@@ -2050,7 +2067,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                     </div>
                     <h3
                       className="text-base font-bold"
-                      style={{ color: "var(--text-primary, #000)" }}
+                      style={{ color: "var(--text-primary, #000)" }} // Changed from text-white
                     >
                       Report Short
                     </h3>
@@ -2058,7 +2075,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   <button
                     onClick={closeReportModal}
                     className="transition"
-                    style={{ color: "var(--text-secondary, #666)" }}
+                    style={{ color: "var(--text-secondary, #666)" }} // Changed from text-gray-400
                   >
                     <X size={20} />
                   </button>
@@ -2066,7 +2083,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
                 <p
                   className="mb-4 text-xs"
-                  style={{ color: "var(--text-secondary, #666)" }}
+                  style={{ color: "var(--text-secondary, #666)" }} // Changed from text-gray-400
                 >
                   Help us understand what's wrong with this short
                 </p>
@@ -2255,6 +2272,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           </div>
         </div>
       )}
+
       {/* Play Icon Overlay */}
       {!isPlaying && !isModalOpenRef.current && (
         <div
@@ -2274,7 +2292,8 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           </div>
         </div>
       )}
-      {/* CONTENT SECTION - YOUTUBE EXACT LAYOUT */}
+      {/* MOBILE OPTIMIZED CONTENT SECTION */}
+
       <div
         className="absolute bottom-0 left-0 right-0"
         style={{
@@ -2285,166 +2304,15 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           zIndex: 30,
         }}
       >
-        {/* DESKTOP LAYOUT - Side Actions */}
-        <div className="hidden lg:flex absolute right-4 bottom-24 flex-col items-center gap-4 pointer-events-auto">
-          {/* Like Button */}
-          <button
-            onClick={handleLike}
-            className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            <div
-              className={`rounded-full p-3 transition-all ${
-                hasLiked ? "bg-white" : "bg-white/10 hover:bg-white/20"
-              }`}
-            >
-              <ThumbsUp
-                size={28}
-                className={hasLiked ? "text-black" : "text-white"}
-                fill={hasLiked ? "black" : "none"}
-                strokeWidth={2}
-              />
-            </div>
-            <span className="text-white text-xs font-semibold">
-              {formatCount(likesCount)}
-            </span>
-          </button>
-
-          {/* Dislike Button */}
-          <button
-            onClick={handleDislike}
-            className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            <div
-              className={`rounded-full p-3 transition-all ${
-                hasDisliked ? "bg-white" : "bg-white/10 hover:bg-white/20"
-              }`}
-            >
-              <ThumbsDown
-                size={28}
-                className={hasDisliked ? "text-black" : "text-white"}
-                fill={hasDisliked ? "black" : "none"}
-                strokeWidth={2}
-              />
-            </div>
-            <span className="text-white text-xs font-semibold">Dislike</span>
-          </button>
-
-          {/* Comments Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowComments(true);
-              isModalOpenRef.current = true;
-            }}
-            className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            <div className="rounded-full p-3 bg-white/10 hover:bg-white/20 transition-all">
-              <MessageCircle size={28} className="text-white" strokeWidth={2} />
-            </div>
-            <span className="text-white text-xs font-semibold">
-              {formatCount(commentsCount)}
-            </span>
-          </button>
-
-          {/* Share Button */}
-          <button
-            onClick={handleShareClick}
-            className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            <div className="rounded-full p-3 bg-white/10 hover:bg-white/20 transition-all">
-              <Share2 size={28} className="text-white" strokeWidth={2} />
-            </div>
-            <span className="text-white text-xs font-semibold">Share</span>
-          </button>
-
-          {/* Volume Control */}
-          <div className="relative flex flex-col items-center volume-control">
-            <button
-              onClick={toggleVolumeSlider}
-              className="flex flex-col items-center gap-1 transition-all transform hover:scale-105 active:scale-95"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              <div className="rounded-full p-3 bg-white/10 hover:bg-white/20 transition-all">
-                {isMuted || volume === 0 ? (
-                  <VolumeX size={28} className="text-white" strokeWidth={2} />
-                ) : (
-                  <Volume2 size={28} className="text-white" strokeWidth={2} />
-                )}
-              </div>
-              <span className="text-white text-xs font-semibold">
-                {Math.round(volume * 100)}%
-              </span>
-            </button>
-
-            {/* Volume Slider Popup */}
-            {showVolumeSlider && (
-              <div
-                className="absolute bottom-full right-0 mb-3 bg-black/90 backdrop-blur-md rounded-xl shadow-2xl p-4 border border-white/10"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <span className="text-white text-lg font-bold">
-                    {Math.round(volume * 100)}%
-                  </span>
-
-                  <div className="relative h-36 w-2 bg-white/20 rounded-full overflow-hidden">
-                    <div
-                      className="absolute bottom-0 w-full rounded-full bg-white transition-all"
-                      style={{ height: `${volume * 100}%` }}
-                    />
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={volume}
-                      onChange={(e) =>
-                        handleVolumeChange(parseFloat(e.target.value))
-                      }
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      style={
-                        {
-                          WebkitAppearance: "slider-vertical",
-                        } as React.CSSProperties
-                      }
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1 w-full">
-                    <button
-                      onClick={() => handleVolumeChange(1)}
-                      className="text-white text-sm hover:bg-white/10 px-3 py-2 rounded transition"
-                    >
-                      100%
-                    </button>
-                    <button
-                      onClick={() => handleVolumeChange(0.5)}
-                      className="text-white text-sm hover:bg-white/10 px-3 py-2 rounded transition"
-                    >
-                      50%
-                    </button>
-                    <button
-                      onClick={() => handleVolumeChange(0)}
-                      className="text-white text-sm hover:bg-white/10 px-3 py-2 rounded transition"
-                    >
-                      Mute
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* MOBILE LAYOUT - Bottom Actions */}
-        <div className="lg:hidden p-4 pb-24 pointer-events-auto">
-          <div className="flex items-end justify-between gap-3">
-            {/* Left Content - Channel Info */}
-            <div className="flex-1 min-w-0 max-w-[calc(100%-80px)]">
-              <div className="flex items-center mb-3">
+        <div
+          className="p-3 pb-24 md:p-5 md:pb-20 lg:p-6 lg:pb-24"
+          style={{ pointerEvents: "auto" }} // ✅ But make buttons clickable
+        >
+          <div className="flex items-end justify-between gap-3 md:gap-4 lg:gap-6">
+            {/* Left Content */}
+            <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[calc(100%-140px)] lg:max-w-[calc(100%-160px)]">
+              {/* Channel info */}
+              <div className="flex items-center mb-2.5 md:mb-3 lg:mb-4 pointer-events-auto">
                 <img
                   key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
                   src={getImageUrl(
@@ -2452,22 +2320,36 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                     true
                   )}
                   alt={channelName}
-                  className="w-10 h-10 rounded-full mr-3 cursor-pointer object-cover border-2 border-white/20 bg-gray-800"
+                  className="w-9 h-9 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full mr-2.5 md:mr-3 lg:mr-4 cursor-pointer object-cover border-2 border-white/20 flex-shrink-0 bg-gray-800"
                   onClick={handleChannelClick}
                   crossOrigin="anonymous"
                   loading="eager"
+                  style={{
+                    display: "block",
+                    minWidth: "36px",
+                    minHeight: "36px",
+                  }}
                   onError={(e) => {
+                    console.error(
+                      "❌ ShortPlayer avatar failed:",
+                      channelAvatar
+                    );
                     e.currentTarget.src = DEFAULT_AVATAR_SVG;
+                    e.currentTarget.style.display = "block";
+                  }}
+                  onLoad={(e) => {
+                    console.log("✅ ShortPlayer avatar loaded:", channelAvatar);
+                    e.currentTarget.style.display = "block";
                   }}
                 />
-                <div className="flex-1 min-w-0 mr-2">
+                <div className="flex-1 min-w-0 mr-2 md:mr-3">
                   <p
-                    className="font-semibold text-sm cursor-pointer hover:underline truncate"
+                    className="font-semibold text-sm md:text-lg lg:text-xl cursor-pointer hover:underline truncate leading-tight mb-0.5 md:mb-1"
                     onClick={handleChannelClick}
                   >
                     @{channelName}
                   </p>
-                  <p className="text-xs text-gray-300 truncate">
+                  <p className="text-xs md:text-sm lg:text-base text-gray-300 leading-tight truncate">
                     {formatCount(subscribersCount)} subscribers
                   </p>
                 </div>
@@ -2475,11 +2357,12 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                 {!isOwnShort && (
                   <button
                     onClick={handleSubscribe}
-                    className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
+                    className={`ml-1 px-4 md:px-8 lg:px-10 py-1.5 md:py-2.5 lg:py-3 rounded-full font-semibold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 flex-shrink-0 ${
                       isSubscribed
-                        ? "bg-white/20 text-white"
-                        : "bg-white text-black"
+                        ? "bg-youtube-hover text-youtube-primary"
+                        : "bg-white text-black hover:bg-gray-100"
                     }`}
+                    style={{ WebkitTapHighlightColor: "transparent" }}
                   >
                     {isSubscribed ? "Subscribed" : "Subscribe"}
                   </button>
@@ -2487,174 +2370,264 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
               </div>
 
               {/* Title & Description */}
-              <h3 className="font-bold text-sm mb-1 line-clamp-2">
-                {translatedTitle}
-              </h3>
-              {translatedDescription && (
-                <p className="text-xs text-gray-300 line-clamp-2 mb-2">
-                  {translatedDescription}
-                </p>
-              )}
-              <p className="text-xs text-gray-400">
+              <div className="mb-2 md:mb-3 lg:mb-4">
+                <h3 className="font-bold text-base md:text-xl lg:text-2xl mb-1 md:mb-2 line-clamp-2 leading-snug">
+                  {translatedTitle}
+                </h3>
+                {translatedDescription && (
+                  <p className="text-sm md:text-base lg:text-lg text-gray-300 line-clamp-2 leading-snug">
+                    {translatedDescription}
+                  </p>
+                )}
+              </div>
+
+              {/* Views Count - ALWAYS VISIBLE */}
+              <p className="text-xs md:text-base lg:text-lg text-gray-400 font-medium md:font-bold">
                 {formatCount(viewsCount)} views
               </p>
             </div>
 
-            {/* Right Actions - Vertical Stack */}
-            <div className="flex flex-col items-center gap-4">
-              {/* Like */}
+            {/* Right Action Buttons - FULLY RESPONSIVE */}
+            <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-5 md:pb-0 lg:gap-6">
+              {/* Like Button */}
               <button
                 onClick={handleLike}
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <div
-                  className={`rounded-full p-2.5 ${
-                    hasLiked ? "bg-white" : "bg-white/10"
-                  }`}
+                  className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
+                    hasLiked
+                      ? "bg-blue-600 border-blue-500 shadow-blue-500/50"
+                      : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
+                  } p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]`}
                 >
                   <ThumbsUp
-                    size={24}
-                    className={hasLiked ? "text-black" : "text-white"}
-                    fill={hasLiked ? "black" : "none"}
-                    strokeWidth={2}
+                    className={`${
+                      hasLiked ? "text-white" : "text-white"
+                    } w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
+                    fill={hasLiked ? "white" : "none"}
+                    strokeWidth={2.5}
                   />
                 </div>
                 <span
-                  className={`text-xs font-bold ${
-                    hasLiked ? "text-white" : "text-white"
-                  }`}
+                  className="text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none"
+                  style={{ color: hasLiked ? "#60a5fa" : "white" }}
                 >
                   {formatCount(likesCount)}
                 </span>
               </button>
 
-              {/* Dislike */}
+              {/* Dislike Button */}
               <button
                 onClick={handleDislike}
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <div
-                  className={`rounded-full p-2.5 ${
-                    hasDisliked ? "bg-white" : "bg-white/10"
-                  }`}
+                  className={`rounded-full transition-all shadow-lg border flex items-center justify-center ${
+                    hasDisliked
+                      ? "bg-red-600 border-red-500 shadow-red-500/50"
+                      : "bg-youtube-tertiary/90 border-youtube/50 shadow-black/50 hover:bg-youtube-tertiary hover:border-youtube/70"
+                  } p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]`}
                 >
                   <ThumbsDown
-                    size={24}
-                    className={hasDisliked ? "text-black" : "text-white"}
-                    fill={hasDisliked ? "black" : "none"}
-                    strokeWidth={2}
+                    className={`${
+                      hasDisliked ? "text-white" : "text-white"
+                    } w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
+                    fill={hasDisliked ? "white" : "none"}
+                    strokeWidth={2.5}
                   />
                 </div>
-                <span className="text-xs font-bold text-white">Dislike</span>
+                <span
+                  className="text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none"
+                  style={{ color: hasDisliked ? "#f87171" : "white" }}
+                >
+                  Dislike
+                </span>
               </button>
 
-              {/* Comments */}
+              {/* Comments Button */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowComments(true);
-                  isModalOpenRef.current = true;
+                  isModalOpenRef.current = true; // ✅ ADD THIS LINE
                 }}
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
-                <div className="rounded-full p-2.5 bg-white/10">
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
                   <MessageCircle
-                    size={24}
-                    className="text-white"
-                    strokeWidth={2}
+                    className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                    strokeWidth={2.5}
                   />
                 </div>
-                <span className="text-xs font-bold text-white">
+                <span className="text-white text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none">
                   {formatCount(commentsCount)}
                 </span>
               </button>
 
-              {/* Share */}
+              {/* Share Button */}
               <button
                 onClick={handleShareClick}
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center gap-1 transition-all transform active:scale-95 hover:scale-105 group touch-manipulation w-full"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
-                <div className="rounded-full p-2.5 bg-white/10">
-                  <Share2 size={24} className="text-white" strokeWidth={2} />
+                <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
+                  <Share2
+                    className="text-white w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                    strokeWidth={2.5}
+                  />
                 </div>
-                <span className="text-xs font-bold text-white">Share</span>
-              </button>
-
-              {/* Volume */}
-              <button
-                onClick={toggleMute}
-                className="flex flex-col items-center gap-1"
-              >
-                <div className="rounded-full p-2.5 bg-white/10">
-                  {isMuted || volume === 0 ? (
-                    <VolumeX size={24} className="text-white" strokeWidth={2} />
-                  ) : (
-                    <Volume2 size={24} className="text-white" strokeWidth={2} />
-                  )}
-                </div>
-                <span className="text-xs font-bold text-white">
-                  {Math.round(volume * 100)}%
+                <span className="text-white text-[11px] md:text-sm lg:text-base font-bold transition-colors leading-none">
+                  Share
                 </span>
               </button>
+
+              {/* Volume Control - FIXED FOR DESKTOP */}
+              <div className="relative flex flex-col items-center w-full volume-control">
+                <button
+                  onClick={toggleVolumeSlider}
+                  className="flex flex-col items-center gap-1 transition-all transform hover:scale-105 active:scale-95 group touch-manipulation w-full"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
+                >
+                  <div className="bg-youtube-tertiary/90 border border-youtube/50 rounded-full transition-all shadow-lg hover:bg-youtube-tertiary hover:border-youtube/70 flex items-center justify-center p-2.5 w-[48px] h-[48px] md:p-3.5 md:w-[62px] md:h-[62px] lg:p-4 lg:w-[68px] lg:h-[68px]">
+                    {isMuted || volume === 0 ? (
+                      <VolumeX
+                        className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                        strokeWidth={2.5}
+                      />
+                    ) : (
+                      <Volume2
+                        className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                        strokeWidth={2.5}
+                      />
+                    )}
+                  </div>
+                  {/* VOLUME PERCENTAGE - NOW ALWAYS VISIBLE */}
+                  <span className="text-white text-[11px] md:text-sm lg:text-base font-bold leading-none whitespace-nowrap">
+                    {Math.round(volume * 100)}%
+                  </span>
+                </button>
+
+                {/* Volume Slider Popup */}
+                {showVolumeSlider && (
+                  <div
+                    className="absolute bottom-full mb-3 rounded-xl shadow-2xl border right-0 p-3 md:p-4 lg:p-5"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      backdropFilter: "blur(16px)",
+                      borderColor: "var(--border-color)",
+                      minWidth: "95px",
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex flex-col items-center gap-3 md:gap-4">
+                      <span
+                        className="text-base md:text-lg lg:text-xl font-bold"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {Math.round(volume * 100)}%
+                      </span>
+
+                      <div
+                        className="relative h-32 md:h-36 lg:h-40 w-2.5 md:w-3 rounded-full overflow-hidden"
+                        style={{ backgroundColor: "var(--bg-hover)" }}
+                      >
+                        <div
+                          className="absolute bottom-0 w-full rounded-full transition-all bg-gradient-to-t from-blue-600 to-blue-400"
+                          style={{ height: `${volume * 100}%` }}
+                        />
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={volume}
+                          onChange={(e) =>
+                            handleVolumeChange(parseFloat(e.target.value))
+                          }
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          style={
+                            {
+                              WebkitAppearance: "slider-vertical",
+                            } as React.CSSProperties
+                          }
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 w-full">
+                        <button
+                          onClick={() => handleVolumeChange(1)}
+                          className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
+                          style={{
+                            color: "var(--text-secondary)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--text-primary)";
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-hover)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
+                        >
+                          100%
+                        </button>
+                        <button
+                          onClick={() => handleVolumeChange(0.5)}
+                          className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
+                          style={{
+                            color: "var(--text-secondary)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--text-primary)";
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-hover)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
+                        >
+                          50%
+                        </button>
+                        <button
+                          onClick={() => handleVolumeChange(0)}
+                          className="text-sm md:text-base transition px-3 py-2 rounded text-center font-medium"
+                          style={{
+                            color: "var(--text-secondary)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--text-primary)";
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-hover)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
+                        >
+                          Mute
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        {/* DESKTOP ONLY - Bottom Info */}
-        <div className="hidden lg:block absolute bottom-8 left-6 right-24 pointer-events-auto">
-          <div className="flex items-center mb-3">
-            <img
-              key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
-              src={getImageUrl(
-                short.userId?.image || short.channelAvatar,
-                true
-              )}
-              alt={channelName}
-              className="w-12 h-12 rounded-full mr-3 cursor-pointer object-cover border-2 border-white/20 bg-gray-800"
-              onClick={handleChannelClick}
-              crossOrigin="anonymous"
-              loading="eager"
-              onError={(e) => {
-                e.currentTarget.src = DEFAULT_AVATAR_SVG;
-              }}
-            />
-            <div className="flex-1 min-w-0 mr-3">
-              <p
-                className="font-bold text-base cursor-pointer hover:underline truncate text-white"
-                onClick={handleChannelClick}
-              >
-                @{channelName}
-              </p>
-              <p className="text-sm text-gray-300 truncate">
-                {formatCount(subscribersCount)} subscribers
-              </p>
-            </div>
-
-            {!isOwnShort && (
-              <button
-                onClick={handleSubscribe}
-                className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${
-                  isSubscribed
-                    ? "bg-white/20 text-white"
-                    : "bg-white text-black"
-                }`}
-              >
-                {isSubscribed ? "Subscribed" : "Subscribe"}
-              </button>
-            )}
-          </div>
-
-          {/* Title & Description */}
-          <h3 className="font-bold text-lg mb-2 line-clamp-2 text-white">
-            {translatedTitle}
-          </h3>
-          {translatedDescription && (
-            <p className="text-sm text-gray-300 line-clamp-2 mb-2">
-              {translatedDescription}
-            </p>
-          )}
-          <p className="text-sm text-gray-400 font-medium">
-            {formatCount(viewsCount)} views
-          </p>
         </div>
       </div>
 
@@ -2672,7 +2645,6 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           isShort={true}
         />
       )}
-
       {showComments && (
         <CommentsModal
           shortId={short._id}
