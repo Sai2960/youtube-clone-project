@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 // src/components/ChannelHeader.tsx - COMPLETE FIXED VERSION
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Video, Camera, Edit2 } from "lucide-react";
@@ -84,11 +84,16 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       window.removeEventListener("avatarUpdated", handleAvatarUpdateEvent);
   }, [onAvatarUpdate]); // Include dependency to keep callback fresh
 
-  // REPLACE handleImageUpdate function (lines 73-103) with this:
+  // ✅ DEBOUNCED: Image Update Handler
+  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ ENHANCED: HANDLE IMAGE UPDATES WITH CHANNEL PAGE REFRESH
   const handleImageUpdate = (type: "avatar" | "banner" | "info", data: any) => {
-    console.log("🔄 Channel update:", type, data);
+    console.log("🔄 Channel update:", type);
+
+    // Clear any pending update
+    if (updateTimerRef.current) {
+      clearTimeout(updateTimerRef.current);
+    }
 
     setLocalChannel((prev: any) => {
       let updated = { ...prev };
@@ -102,58 +107,51 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
         updated.description = data.description;
       }
 
-      // Update localStorage if it's the current user's channel
       if (user && user._id === prev._id) {
         const updatedUser = { ...user, ...updated };
         localStorage.setItem("user", JSON.stringify(updatedUser));
 
-        // 🔴 CRITICAL: Dispatch multiple events for comprehensive refresh
-        window.dispatchEvent(new Event("avatarUpdated"));
-        window.dispatchEvent(
-          new CustomEvent("forceChannelRefresh", {
-            detail: {
-              timestamp: Date.now(),
-              source: "channelUpdate",
-              updateType: type,
-            },
-          })
-        );
+        // Debounce: Only dispatch after 800ms
+        updateTimerRef.current = setTimeout(() => {
+          console.log("📢 Dispatching channel refresh (debounced)");
 
-        // 🔴 ANDROID: Clear cache on image update
-        const isAndroid =
-          typeof navigator !== "undefined" &&
-          /Android/i.test(navigator.userAgent);
-        if (isAndroid && "caches" in window) {
-          caches.keys().then((names) => {
-            names.forEach((name) => {
-              if (name.includes("channel") || name.includes("image")) {
-                caches.delete(name);
-                console.log("🗑️ Cleared cache:", name);
-              }
-            });
-          });
-        }
+          window.dispatchEvent(new Event("avatarUpdated"));
+          window.dispatchEvent(
+            new CustomEvent("forceChannelRefresh", {
+              detail: {
+                timestamp: Date.now(),
+                source: "channelUpdate",
+                updateType: type,
+              },
+            })
+          );
 
-        // Trigger parent callback
-        if (onAvatarUpdate) {
-          setTimeout(() => {
-            console.log("📢 Triggering onAvatarUpdate callback");
+          if (onAvatarUpdate) {
             onAvatarUpdate();
-          }, 100);
-        }
+          }
+        }, 800);
       }
 
       return updated;
     });
 
-    // Force image refresh with delay for upload completion
+    // Force image refresh with delay
     setTimeout(
       () => {
         setImageKey(Date.now());
       },
-      type === "info" ? 0 : 500
-    ); // Info updates are instant, images need delay
+      type === "info" ? 0 : 1000
+    );
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+      }
+    };
+  }, []);
 
   const isOwnChannel = user?._id === localChannel._id;
   const displayName =

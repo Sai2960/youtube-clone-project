@@ -176,25 +176,21 @@ const ChannelPage = () => {
   // ============================================================================
   useEffect(() => {
     const handleForceRefresh = (event: CustomEvent) => {
-      console.log("🔄 Force refresh event received:", event.detail);
-
-      // Increment both keys to force complete re-render
-      setRefreshKey((prev) => prev + 1);
-      setRenderKey((prev) => prev + 1);
+      console.log("📢 Force refresh event:", event.detail);
+      triggerRefresh("forceChannelRefresh", 300);
     };
 
     window.addEventListener(
       "forceChannelRefresh",
       handleForceRefresh as EventListener
     );
-
     return () => {
       window.removeEventListener(
         "forceChannelRefresh",
         handleForceRefresh as EventListener
       );
     };
-  }, []);
+  }, [triggerRefresh]);
 
   // ============================================================================
   // 🔴 MOBILE FIX: Force refresh on route change and page visibility
@@ -299,43 +295,42 @@ const ChannelPage = () => {
   // ============================================================================
   // 🔴 ANDROID: PAGE RESUME FROM BACKGROUND
   // ============================================================================
+  // ============================================================================
+  // 🔴 NETWORK ONLINE (Android only)
+  // ============================================================================
   useEffect(() => {
     const isAndroid =
       typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 
     if (!isAndroid) return;
 
-    let wasHidden = false;
+    const handleOnline = () => {
+      console.log("🌐 Network back online");
+      triggerRefresh("network", 1000);
+    };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        wasHidden = true;
-        console.log("📵 Page hidden");
-      } else if (document.visibilityState === "visible" && wasHidden) {
-        wasHidden = false;
-        console.log("📱 Page resumed from background - FORCE REFRESH");
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [triggerRefresh]);
 
-        // 🔴 CRITICAL: Clear ALL cached data
-        if ("caches" in window) {
-          caches.keys().then((names) => {
-            names.forEach((name) => caches.delete(name));
-          });
-        }
-
-        // Force complete refresh
-        setTimeout(() => {
-          setRefreshKey((prev) => prev + 1);
-          setRenderKey((prev) => prev + 1);
-        }, 300);
+  // ============================================================================
+  // 🔴 ROUTE CHANGES (Debounced)
+  // ============================================================================
+  useEffect(() => {
+    const handleRouteComplete = (url: string) => {
+      if (url.includes("/channel/")) {
+        console.log("🚀 Route changed to channel page");
+        triggerRefresh("route", 500);
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
+    router.events.on("routeChangeComplete", handleRouteComplete);
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      router.events.off("routeChangeComplete", handleRouteComplete);
     };
-  }, []);
+  }, [router.events, triggerRefresh]);
 
   // ============================================================================
   // 🔴 ANDROID: NETWORK STATUS CHANGE
@@ -408,7 +403,6 @@ const ChannelPage = () => {
         setLoading(true);
         console.log("📡 Fetching channel:", id);
 
-        // 🔴 CRITICAL: Generate unique timestamp for cache busting
         const timestamp = Date.now();
         const randomString = Math.random().toString(36).substring(7);
 
@@ -425,7 +419,6 @@ const ChannelPage = () => {
             Pragma: "no-cache",
             Expires: "0",
           },
-          // 🔴 Disable all caching mechanisms
           transformRequest: [
             (data, headers) => {
               delete headers["If-None-Match"];
@@ -438,21 +431,13 @@ const ChannelPage = () => {
         if (response.data.success && response.data.user) {
           const channelData = response.data.user;
 
-          // ✅ Ensure subscribers is a number
           if (typeof channelData.subscribers !== "number") {
             channelData.subscribers = 0;
           }
 
-          // 🔴 FORCE STATE UPDATE
           setChannel({ ...channelData });
-          console.log("✅ Channel loaded:", {
-            name: channelData.channelname,
-            image: channelData.image ? "Has image" : "No image",
-            banner: channelData.bannerImage ? "Has banner" : "No banner",
-            subscribers: channelData.subscribers,
-          });
+          console.log("✅ Channel loaded:", channelData.channelname);
 
-          // ✅ Update user context if viewing own channel
           if (user && user._id === id) {
             const updatedUser = {
               ...user,
@@ -466,10 +451,7 @@ const ChannelPage = () => {
             updateUser(updatedUser);
           }
 
-          // 🔴 Force re-render after state update
-          setTimeout(() => {
-            setRenderKey((prev) => prev + 1);
-          }, 100);
+          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
         } else {
           setChannel(null);
         }
@@ -482,7 +464,7 @@ const ChannelPage = () => {
     };
 
     fetchChannel();
-  }, [id, user?._id, refreshKey]); // 🔴 Added refreshKey dependency
+  }, [id, user?._id, refreshKey]);
 
   // ============================================================================
   // FETCH VIDEOS
@@ -1345,3 +1327,6 @@ const ChannelPage = () => {
 };
 
 export default ChannelPage;
+function triggerRefresh(arg0: string, arg1: number) {
+  throw new Error("Function not implemented.");
+}
