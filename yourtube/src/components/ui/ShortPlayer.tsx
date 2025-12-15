@@ -448,21 +448,21 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       videoSrc: short.videoUrl,
     });
 
-    // ✅ CRITICAL: Always pause inactive videos
+    // ✅ CRITICAL: Always pause inactive videos and clear src
     if (!isActive) {
       console.log("⏸️ Pausing inactive video:", short._id);
       video.pause();
       video.currentTime = 0;
+      video.removeAttribute("src"); // ✅ Clear source to stop loading
+      video.load(); // ✅ Reset video element
       setIsPlaying(false);
       return;
     }
-
-    // ✅ CRITICAL: Set src FIRST before any other operations
-    if (video.src !== short.videoUrl && video.currentSrc !== short.videoUrl) {
-      console.log("🔄 Setting new video source:", short.videoUrl);
-      video.src = short.videoUrl;
-      video.load(); // Force reload
-    }
+    // ✅ CRITICAL: ALWAYS set src when short changes - force reload
+    console.log("🔄 Setting video source:", short.videoUrl);
+    video.src = short.videoUrl;
+    video.load(); // Force reload
+    video.currentTime = 0; // Reset to start
 
     // ✅ Only play if active AND no modals open
     if (isActive && !isModalOpenRef.current) {
@@ -471,37 +471,58 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
       const attemptPlay = async () => {
         try {
+          // ✅ CRITICAL: Ensure video is loaded with this specific short
+          if (video.currentSrc !== short.videoUrl) {
+            console.log("⚠️ Video src mismatch, reloading...");
+            video.src = short.videoUrl;
+            video.load();
+          }
+
           // Reset to start
           video.currentTime = 0;
 
           // Wait for video to be ready
           if (video.readyState < 3) {
-            // Changed from 2 to 3 (HAVE_FUTURE_DATA)
             console.log("⏳ Waiting for video to load...");
 
             await new Promise<void>((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                cleanup();
+                resolve(); // Don't reject, just resolve
+              }, 3000);
+
               const onCanPlay = () => {
-                video.removeEventListener("canplay", onCanPlay);
-                video.removeEventListener("error", onError);
+                cleanup();
+                clearTimeout(timeout);
                 resolve();
               };
 
               const onError = () => {
-                video.removeEventListener("canplay", onCanPlay);
-                video.removeEventListener("error", onError);
+                cleanup();
+                clearTimeout(timeout);
                 reject(new Error("Video load failed"));
               };
 
-              video.addEventListener("canplay", onCanPlay);
-              video.addEventListener("error", onError);
-
-              // Timeout fallback
-              setTimeout(() => {
+              const cleanup = () => {
                 video.removeEventListener("canplay", onCanPlay);
                 video.removeEventListener("error", onError);
-                resolve();
-              }, 3000);
+              };
+
+              video.addEventListener("canplay", onCanPlay, { once: true });
+              video.addEventListener("error", onError, { once: true });
             });
+          }
+          // Start muted for autoplay compliance
+          video.muted = true;
+
+          console.log("▶️ Playing video:", short._id);
+          await video.play();
+          setIsPlaying(true);
+
+          // Unmute after successful play (if not muted by user)
+          if (!isActive) {
+            console.log("❌ No longer active, aborting play");
+            return;
           }
 
           // Start muted for autoplay compliance
@@ -514,7 +535,12 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           // Unmute after successful play (if not muted by user)
           if (!isMuted) {
             setTimeout(() => {
-              if (video && !video.paused && isActive) {
+              if (
+                video &&
+                !video.paused &&
+                isActive &&
+                video.currentSrc === short.videoUrl
+              ) {
                 video.muted = false;
                 console.log("🔊 Unmuted");
               }
@@ -525,11 +551,19 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             error: err.message,
             name: err.name,
             shortId: short._id,
+            currentSrc: video.currentSrc,
+            expectedSrc: short.videoUrl,
           });
 
-          // Retry once after delay
+          // Retry once after delay if still active
           setTimeout(() => {
-            if (video && isActive && !isModalOpenRef.current) {
+            if (
+              video &&
+              isActive &&
+              !isModalOpenRef.current &&
+              video.currentSrc === short.videoUrl
+            ) {
+              console.log("🔄 Retrying play...");
               video.load();
               video.play().catch((e) => {
                 console.error("❌ Retry also failed:", e.message);
@@ -538,7 +572,6 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
           }, 500);
         }
       };
-
       // Small delay to ensure DOM is ready
       const playTimeout = setTimeout(attemptPlay, 100); // Reduced from 150ms
 
@@ -1515,7 +1548,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       {/* ✅ Video Layer - Z-INDEX 1 */}
       <video
         ref={videoRef}
-        key={`video-${short._id}`} // ✅ Forces remount on short change
+        key={`video-${short._id}-${isActive}`} // ✅ Add isActive to force remount
         src={short.videoUrl}
         className="absolute inset-0 w-full h-full object-cover"
         loop
@@ -1569,22 +1602,37 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             isActive,
             modalOpen: isModalOpenRef.current,
             currentSrc: video.currentSrc,
+            expectedSrc: short.videoUrl,
           });
 
-          // ✅ CRITICAL: Only autoplay if this is the active short
-          if (isActive && !isModalOpenRef.current) {
-            console.log("🎯 Attempting autoplay for active short...");
+          // ✅ CRITICAL: Only autoplay if this is the CORRECT and ACTIVE short
+          if (
+            isActive &&
+            !isModalOpenRef.current &&
+            video.currentSrc === short.videoUrl // ✅ Verify we're playing the right video
+          ) {
+            console.log("🎯 Attempting autoplay for correct active short...");
             video.muted = true;
-            video.currentTime = 0; // Reset to start
+            video.currentTime = 0;
+
             video
               .play()
               .then(() => {
                 console.log("✅ Play() succeeded for:", short._id);
                 setIsPlaying(true);
+
+                // Unmute after successful play
                 if (!isMuted) {
                   setTimeout(() => {
-                    video.muted = false;
-                    console.log("🔊 Unmuted after successful play");
+                    if (
+                      video &&
+                      !video.paused &&
+                      isActive &&
+                      video.currentSrc === short.videoUrl
+                    ) {
+                      video.muted = false;
+                      console.log("🔊 Unmuted");
+                    }
                   }, 500);
                 }
               })
@@ -1595,6 +1643,12 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                   shortId: short._id,
                 });
               });
+          } else {
+            console.log("⏸️ Not autoplaying:", {
+              isActive,
+              modalOpen: isModalOpenRef.current,
+              srcMatch: video.currentSrc === short.videoUrl,
+            });
           }
         }}
         onCanPlay={() => {
