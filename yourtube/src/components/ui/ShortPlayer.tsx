@@ -445,25 +445,33 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       shortId: short._id,
       isActive,
       modalOpen: isModalOpenRef.current,
-      src: video.src,
+      videoSrc: short.videoUrl,
       currentSrc: video.currentSrc,
     });
 
-    // ✅ CRITICAL: Always pause and reset inactive videos immediately
+    // ✅ CRITICAL: Always pause inactive videos but DON'T clear src
     if (!isActive) {
       console.log("⏸️ Pausing inactive video:", short._id);
+
+      // Pause and reset playback
       video.pause();
       video.currentTime = 0;
-      video.src = ""; // ✅ CRITICAL: Clear src to stop loading
       setIsPlaying(false);
+
+      // ✅ FIX: Stop loading without clearing src
+      try {
+        video.load(); // This stops network activity without clearing src
+      } catch (e) {
+        console.log("Load() called on inactive video");
+      }
+
       return;
     }
 
-    // ✅ Reset video source if it changed
-    if (video.currentSrc !== short.videoUrl) {
-      console.log("🔄 Video source changed, resetting...");
+    // ✅ Ensure correct video source is set
+    if (video.src !== short.videoUrl && video.currentSrc !== short.videoUrl) {
+      console.log("🔄 Setting new video source:", short.videoUrl);
       video.src = short.videoUrl;
-      video.load();
     }
 
     // ✅ Only play if active AND no modals open
@@ -473,46 +481,66 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
       const attemptPlay = async () => {
         try {
-          // ✅ Ensure video is loaded
+          // Reset to start
+          video.currentTime = 0;
+
+          // Wait for video to be ready if needed
           if (video.readyState < 2) {
             console.log("⏳ Waiting for video to load...");
-            await new Promise((resolve) => {
-              const handler = () => {
-                video.removeEventListener("loadeddata", handler);
-                resolve(true);
+
+            await new Promise<void>((resolve) => {
+              const onLoadedData = () => {
+                video.removeEventListener("loadeddata", onLoadedData);
+                resolve();
               };
-              video.addEventListener("loadeddata", handler);
+
+              video.addEventListener("loadeddata", onLoadedData);
+
+              // Ensure src is set
               if (video.src !== short.videoUrl) {
                 video.src = short.videoUrl;
               }
+
               video.load();
+
+              // Timeout fallback
+              setTimeout(() => {
+                video.removeEventListener("loadeddata", onLoadedData);
+                resolve();
+              }, 3000);
             });
           }
 
-          // ✅ Start muted for autoplay compliance
+          // Start muted for autoplay compliance
           video.muted = true;
-          video.currentTime = 0; // ✅ Always start from beginning
 
           console.log("▶️ Playing video:", short._id);
           await video.play();
           setIsPlaying(true);
 
-          // ✅ Unmute after successful play (if not muted by user)
+          // Unmute after successful play (if not muted by user)
           if (!isMuted) {
             setTimeout(() => {
-              if (video && !video.paused) {
+              if (video && !video.paused && isActive) {
                 video.muted = false;
                 console.log("🔊 Unmuted");
               }
             }, 300);
           }
-        } catch (err) {
-          console.error("❌ Play failed:", err);
-          // Retry once after small delay
+        } catch (err: any) {
+          console.error("❌ Play failed:", {
+            error: err.message,
+            name: err.name,
+            shortId: short._id,
+          });
+
+          // Retry once after delay
           setTimeout(() => {
             if (video && isActive && !isModalOpenRef.current) {
               video.load();
-              video.play().catch((e) => console.error("❌ Retry failed:", e));
+              video.play().catch((e) => {
+                console.error("❌ Retry also failed:", e.message);
+              });
             }
           }, 500);
         }
@@ -523,19 +551,14 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
 
       return () => {
         clearTimeout(playTimeout);
-        // ✅ Cleanup: pause and clear when switching away
-        if (video && !isActive) {
-          video.pause();
-          video.currentTime = 0;
-        }
       };
     } else if (isModalOpenRef.current) {
-      // ✅ Pause when modal opens
+      // Pause when modal opens
       console.log("⏸️ Modal open, pausing video");
       video.pause();
       setIsPlaying(false);
     }
-  }, [isActive, short._id, short.videoUrl, isMuted]); // ✅ Added short.videoUrl dependency
+  }, [isActive, short._id, short.videoUrl, isMuted]);
 
   // 🔍 ENHANCED VIDEO DIAGNOSTIC - RUNS ON MOUNT + CHANGES
   useEffect(() => {
@@ -1499,7 +1522,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
       {/* ✅ Video Layer - Z-INDEX 1 */}
       <video
         ref={videoRef}
-        key={short._id} // ✅ ADD THIS - Forces React to create new video element
+        key={`video-${short._id}`} // ✅ Forces remount on short change
         src={short.videoUrl}
         className="absolute inset-0 w-full h-full object-cover"
         loop
