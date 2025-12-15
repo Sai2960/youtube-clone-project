@@ -1527,67 +1527,57 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
   ];
 
   return (
-<div
-  ref={containerRef}
-  className="relative w-full h-screen bg-black overflow-hidden"
-  data-component="short-player"
-  data-short-id={short._id}
-  style={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: "100vw",
-    height: "100vh",
-    minHeight: "100vh",
-    overflow: "hidden",
-    backgroundColor: "#000",
-    WebkitOverflowScrolling: "touch",
-    zIndex: isActive ? 30 : 20,
-  }}
->
-      {/* 9:16 Aspect Ratio Container */}
-      <div
-        className="relative bg-black"
+    <div
+      ref={containerRef}
+      className="relative w-full h-screen bg-black overflow-hidden"
+      data-component="short-player"
+      data-short-id={short._id}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100vw",
+        height: "100vh",
+        minHeight: "100vh",
+        overflow: "hidden",
+        backgroundColor: "#000",
+        WebkitOverflowScrolling: "touch",
+        zIndex: isActive ? 30 : 20,
+        isolation: "auto",
+      }}
+    >
+      {/* ✅ Video Layer - Z-INDEX 1 */}
+      <video
+        ref={videoRef}
+        key={`video-${short._id}-${isActive}`} // ✅ Forces remount when short OR active state changes
+        src={short.videoUrl}
+        className="absolute inset-0 w-full h-full object-cover"
+        loop
+        playsInline
+        webkit-playsinline="true"
+        x5-playsinline="true"
+        x5-video-player-type="h5"
+        x-webkit-airplay="allow"
+        preload="auto"
+        crossOrigin="anonymous"
+        onClick={togglePlayPause}
         style={{
           width: "100%",
           height: "100%",
-          maxWidth: "min(100vw, calc(100vh * 9 / 16))",
-          maxHeight: "min(100vh, calc(100vw * 16 / 9))",
-          aspectRatio: "9 / 16",
-          margin: "0 auto",
-          position: "relative",
+          objectFit: "cover",
+          backgroundColor: "#000",
+          display: "block",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 1,
+          WebkitTransform: "translate3d(0,0,0)",
+          transform: "translate3d(0,0,0)",
+          WebkitBackfaceVisibility: "hidden",
+          backfaceVisibility: "hidden",
         }}
-      >
-
-      </div>
-      {/* ✅ Video Layer - Z-INDEX 1 */}
-      <video
-  ref={videoRef}
-  key={`video-${short._id}-${isActive}`}
-  src={short.videoUrl}
-  className="absolute inset-0 w-full h-full object-cover"
-  loop
-  playsInline
-  webkit-playsinline="true"
-  x5-playsinline="true"
-  x5-video-player-type="h5"
-  x-webkit-airplay="allow"
-  preload="auto"
-  crossOrigin="anonymous"
-  onClick={togglePlayPause}
-  style={{
-    width: "100%",
-    height: "100%",
-    objectFit: "contain", // Changed from "cover" to "contain"
-    backgroundColor: "#000",
-    display: "block",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    zIndex: 1,
-  }}
         poster={short.thumbnailUrl || undefined}
         onLoadStart={(e) => {
           console.log("🎬 onLoadStart:", {
@@ -1618,10 +1608,11 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
             expectedSrc: short.videoUrl,
           });
 
+          // ✅ CRITICAL: Only autoplay if this is the CORRECT and ACTIVE short
           if (
             isActive &&
             !isModalOpenRef.current &&
-            video.currentSrc === short.videoUrl
+            video.currentSrc === short.videoUrl // ✅ Verify we're playing the right video
           ) {
             console.log("🎯 Attempting autoplay for correct active short...");
             video.muted = true;
@@ -1633,6 +1624,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                 console.log("✅ Play() succeeded for:", short._id);
                 setIsPlaying(true);
 
+                // Unmute after successful play
                 if (!isMuted) {
                   setTimeout(() => {
                     if (
@@ -1699,6 +1691,7 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
         }}
       />
 
+      {/* Gradients */}
       {/* Gradients */}
       <div
         style={{

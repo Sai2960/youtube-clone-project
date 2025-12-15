@@ -662,31 +662,31 @@ const ShortsPage: React.FC = () => {
       <Head>
         <title>Shorts - YouTube</title>
       </Head>
-      <div
-        ref={containerRef}
-        className="fixed inset-0 bg-black flex items-center justify-center"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100vw",
-          height: "100vh",
-          minHeight: "100vh",
-          maxHeight: "100vh",
-          overflow: "hidden",
-          WebkitOverflowScrolling: "touch",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 50,
-          WebkitTransform: "translateZ(0)",
-          transform: "translateZ(0)",
-          backgroundColor: "#000",
-        }}
-        data-page="shorts"
-      >
+     <div
+  ref={containerRef}
+  className="fixed inset-0 bg-black flex items-center justify-center"
+  style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: "100vw",
+    height: "100vh",
+    minHeight: "100vh",
+    maxHeight: "100vh",
+    overflow: "hidden",
+    WebkitOverflowScrolling: "touch",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 50,
+    WebkitTransform: "translateZ(0)",
+    transform: "translateZ(0)",
+    backgroundColor: "#000",
+  }}
+  data-page="shorts"
+>
         {/* Back Button - Desktop Only */}
         <button
           onClick={() => router.push("/")}
@@ -716,20 +716,18 @@ const ShortsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Shorts Container with 9:16 Aspect Ratio */}
+        {/* Shorts Container */}
         <div
-          className="relative bg-black"
+          className="relative w-full h-full"
           style={{
+            position: "relative",
             width: "100%",
             height: "100%",
-            maxWidth: "min(100vw, calc(100vh * 9 / 16))",
-            maxHeight: "min(100vh, calc(100vw * 16 / 9))",
-            aspectRatio: "9 / 16",
-            position: "relative",
             overflow: "hidden",
           }}
         >
           {shorts.map((short, index) => {
+            // ✅ CRITICAL: Render current AND adjacent shorts for smooth transitions
             const shouldRender = Math.abs(index - currentIndex) <= 1;
             if (!shouldRender) return null;
 
@@ -737,7 +735,7 @@ const ShortsPage: React.FC = () => {
 
             return (
               <div
-                key={`short-container-${short._id}`}
+                key={`short-container-${short._id}`} // ✅ Added unique key
                 style={{
                   position: "absolute",
                   top: 0,
