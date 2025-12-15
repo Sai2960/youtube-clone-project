@@ -1526,846 +1526,959 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
     "Other",
   ];
 
-return (
-  <div
-    ref={containerRef}
-    className="relative w-full h-screen bg-black overflow-hidden"
-    data-component="short-player"
-    data-short-id={short._id}
-    onTouchStart={handleTouchStart}
-    onTouchMove={handleTouchMove}
-    onTouchEnd={handleTouchEnd}
-    onMouseDown={handleMouseDown}
-    onMouseMove={handleMouseMove}
-    onMouseUp={handleMouseUp}
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      width: "100vw",
-      height: "100vh",
-      minHeight: "100vh",
-      overflow: "hidden",
-      backgroundColor: "#000",
-      WebkitOverflowScrolling: "touch",
-      zIndex: isActive ? 30 : 20,
-      isolation: "auto",
-    }}
-  >
-    {/* ✅ DESKTOP: Centered Video Container */}
-    <div className="relative w-full h-full flex items-center justify-center bg-black">
-      {/* ✅ Video Wrapper - Desktop centered with max-width, Mobile full */}
-      <div 
-        className="relative w-full h-full md:w-auto md:h-full md:max-w-[450px] md:aspect-[9/16] bg-black"
-        style={{
-          position: "relative",
-        }}
-      >
-          {/* ✅ VIDEO ELEMENT */}
-        <video
-          ref={videoRef}
-          key={`video-${short._id}-${isActive}`}
-          src={short.videoUrl}
-          className="w-full h-full object-cover md:object-contain bg-black"
-          loop
-          playsInline
-          webkit-playsinline="true"
-          x5-playsinline="true"
-          x5-video-player-type="h5"
-          x-webkit-airplay="allow"
-          preload="auto"
-          crossOrigin="anonymous"
-          onClick={togglePlayPause}
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full h-screen bg-black overflow-hidden"
+      data-component="short-player"
+      data-short-id={short._id}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100vw",
+        height: "100vh",
+        minHeight: "100vh",
+        overflow: "hidden",
+        backgroundColor: "#000",
+        WebkitOverflowScrolling: "touch",
+        zIndex: isActive ? 30 : 20,
+        isolation: "auto",
+      }}
+    >
+      {/* ✅ DESKTOP: Centered Video Container */}
+      <div className="relative w-full h-full flex items-center justify-center bg-black">
+        {/* ✅ Video Wrapper - Desktop centered with max-width, Mobile full */}
+        <div
+          className="relative w-full h-full md:w-auto md:h-full md:max-w-[580px] lg:max-w-[680px] md:aspect-[9/16] bg-black"
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: window.innerWidth >= 768 ? "contain" : "cover",
-            backgroundColor: "#000",
-            display: "block",
             position: "relative",
-            zIndex: 1,
           }}
-          poster={short.thumbnailUrl || undefined}
-          onLoadStart={(e) => {
-            console.log("🎬 onLoadStart:", {
-              shortId: short._id,
-              src: e.currentTarget.src,
-              readyState: e.currentTarget.readyState,
-            });
-          }}
-          onLoadedMetadata={(e) => {
-            const video = e.currentTarget;
-            console.log("📹 onLoadedMetadata:", {
-              shortId: short._id,
-              duration: video.duration,
-              width: video.videoWidth,
-              height: video.videoHeight,
-              readyState: video.readyState,
-            });
-          }}
-          onLoadedData={(e) => {
-            const video = e.currentTarget;
-            console.log("✅ onLoadedData:", {
-              shortId: short._id,
-              readyState: video.readyState,
-              paused: video.paused,
-              isActive,
-              modalOpen: isModalOpenRef.current,
-              currentSrc: video.currentSrc,
-              expectedSrc: short.videoUrl,
-            });
+        >
+          {/* ✅ VIDEO ELEMENT */}
+          <video
+            ref={videoRef}
+            key={`video-${short._id}-${isActive}`}
+            src={short.videoUrl}
+            className="w-full h-full object-cover md:object-contain bg-black"
+            loop
+            playsInline
+            webkit-playsinline="true"
+            x5-playsinline="true"
+            x5-video-player-type="h5"
+            x-webkit-airplay="allow"
+            preload="auto"
+            crossOrigin="anonymous"
+            onClick={togglePlayPause}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: window.innerWidth >= 768 ? "contain" : "cover",
+              backgroundColor: "#000",
+              display: "block",
+              position: "relative",
+              zIndex: 1,
+            }}
+            poster={short.thumbnailUrl || undefined}
+            onLoadStart={(e) => {
+              console.log("🎬 onLoadStart:", {
+                shortId: short._id,
+                src: e.currentTarget.src,
+                readyState: e.currentTarget.readyState,
+              });
+            }}
+            onLoadedMetadata={(e) => {
+              const video = e.currentTarget;
+              console.log("📹 onLoadedMetadata:", {
+                shortId: short._id,
+                duration: video.duration,
+                width: video.videoWidth,
+                height: video.videoHeight,
+                readyState: video.readyState,
+              });
+            }}
+            onLoadedData={(e) => {
+              const video = e.currentTarget;
+              console.log("✅ onLoadedData:", {
+                shortId: short._id,
+                readyState: video.readyState,
+                paused: video.paused,
+                isActive,
+                modalOpen: isModalOpenRef.current,
+                currentSrc: video.currentSrc,
+                expectedSrc: short.videoUrl,
+              });
 
-            // ✅ CRITICAL: Only autoplay if this is the CORRECT and ACTIVE short
-            if (
-              isActive &&
-              !isModalOpenRef.current &&
-              video.currentSrc === short.videoUrl
-            ) {
-              console.log("🎯 Attempting autoplay for correct active short...");
-              video.muted = true;
-              video.currentTime = 0;
+              // ✅ CRITICAL: Only autoplay if this is the CORRECT and ACTIVE short
+              if (
+                isActive &&
+                !isModalOpenRef.current &&
+                video.currentSrc === short.videoUrl
+              ) {
+                console.log(
+                  "🎯 Attempting autoplay for correct active short..."
+                );
+                video.muted = true;
+                video.currentTime = 0;
 
-              video
-                .play()
-                .then(() => {
-                  console.log("✅ Play() succeeded for:", short._id);
-                  setIsPlaying(true);
+                video
+                  .play()
+                  .then(() => {
+                    console.log("✅ Play() succeeded for:", short._id);
+                    setIsPlaying(true);
 
-                  if (!isMuted) {
-                    setTimeout(() => {
-                      if (
-                        video &&
-                        !video.paused &&
-                        isActive &&
-                        video.currentSrc === short.videoUrl
-                      ) {
-                        video.muted = false;
-                        console.log("🔊 Unmuted");
-                      }
-                    }, 500);
-                  }
-                })
-                .catch((err) => {
-                  console.error("❌ Play() failed:", {
-                    name: err.name,
-                    message: err.message,
-                    shortId: short._id,
+                    if (!isMuted) {
+                      setTimeout(() => {
+                        if (
+                          video &&
+                          !video.paused &&
+                          isActive &&
+                          video.currentSrc === short.videoUrl
+                        ) {
+                          video.muted = false;
+                          console.log("🔊 Unmuted");
+                        }
+                      }, 500);
+                    }
+                  })
+                  .catch((err) => {
+                    console.error("❌ Play() failed:", {
+                      name: err.name,
+                      message: err.message,
+                      shortId: short._id,
+                    });
                   });
-                });
-            }
-          }}
-          onCanPlay={() => {
-            console.log("✅ onCanPlay - Video ready to play:", short._id);
-          }}
-          onCanPlayThrough={() => {
-            console.log("✅ onCanPlayThrough - Video fully loaded:", short._id);
-          }}
-          onError={(e) => {
-            const video = e.currentTarget;
-            console.error("❌ VIDEO ERROR:", {
-              shortId: short._id,
-              errorCode: video.error?.code,
-              errorMessage: video.error?.message,
-              src: video.src,
-              currentSrc: video.currentSrc,
-              networkState: video.networkState,
-              readyState: video.readyState,
-            });
-          }}
-          onPlay={() => {
-            console.log("▶️ onPlay event:", short._id);
-            setIsPlaying(true);
-          }}
-          onPause={() => {
-            console.log("⏸️ onPause event:", short._id);
-            setIsPlaying(false);
-          }}
-          onWaiting={() => {
-            console.log("⏳ onWaiting - Video buffering:", short._id);
-          }}
-          onStalled={() => {
-            console.log("⚠️ onStalled - Network issue:", short._id);
-          }}
-          onSuspend={() => {
-            console.log("⏸️ onSuspend - Loading suspended:", short._id);
-          }}
-        />
-      {/* ✅ GRADIENTS - Mobile only */}
-        <div
-          className="md:hidden absolute top-0 left-0 right-0 h-32 pointer-events-none"
-          style={{
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)",
-            zIndex: 2,
-          }}
-        />
-        <div
-          className="md:hidden absolute bottom-0 left-0 right-0 h-80 pointer-events-none"
-          style={{
-            background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)",
-            zIndex: 2,
-          }}
-        />
+              }
+            }}
+            onCanPlay={() => {
+              console.log("✅ onCanPlay - Video ready to play:", short._id);
+            }}
+            onCanPlayThrough={() => {
+              console.log(
+                "✅ onCanPlayThrough - Video fully loaded:",
+                short._id
+              );
+            }}
+            onError={(e) => {
+              const video = e.currentTarget;
+              console.error("❌ VIDEO ERROR:", {
+                shortId: short._id,
+                errorCode: video.error?.code,
+                errorMessage: video.error?.message,
+                src: video.src,
+                currentSrc: video.currentSrc,
+                networkState: video.networkState,
+                readyState: video.readyState,
+              });
+            }}
+            onPlay={() => {
+              console.log("▶️ onPlay event:", short._id);
+              setIsPlaying(true);
+            }}
+            onPause={() => {
+              console.log("⏸️ onPause event:", short._id);
+              setIsPlaying(false);
+            }}
+            onWaiting={() => {
+              console.log("⏳ onWaiting - Video buffering:", short._id);
+            }}
+            onStalled={() => {
+              console.log("⚠️ onStalled - Network issue:", short._id);
+            }}
+            onSuspend={() => {
+              console.log("⏸️ onSuspend - Loading suspended:", short._id);
+            }}
+          />
+          {/* ✅ GRADIENTS - Mobile only */}
+          <div
+            className="md:hidden absolute top-0 left-0 right-0 h-32 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)",
+              zIndex: 2,
+            }}
+          />
+          <div
+            className="md:hidden absolute bottom-0 left-0 right-0 h-80 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)",
+              zIndex: 2,
+            }}
+          />
 
-        {/* ✅ DESKTOP: Bottom gradient */}
-        <div
-          className="hidden md:block absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
-          style={{
-            background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 60%, transparent 100%)",
-            zIndex: 2,
-          }}
-        />
+          {/* ✅ DESKTOP: Bottom gradient */}
+          <div
+            className="hidden md:block absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 60%, transparent 100%)",
+              zIndex: 2,
+            }}
+          />
 
-        {/* ✅ THREE-DOT MENU - NOW VISIBLE ON BOTH MOBILE AND DESKTOP */}
-        <div className="absolute top-0 left-0 right-0 z-50">
-          <div className="flex items-center justify-between p-4">
-            {/* Shorts button - Mobile only */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push("/shorts");
-              }}
-              className="md:hidden text-white text-2xl font-bold hover:text-gray-300 transition"
-            >
-              Shorts
-            </button>
-
-            {/* Empty spacer for desktop */}
-            <div className="hidden md:block" />
-
-            {/* ✅ FIXED: Three-dot menu NOW VISIBLE on desktop (removed md:hidden) */}
-            <div className="relative menu-button ml-auto">
+          {/* ✅ THREE-DOT MENU - NOW VISIBLE ON BOTH MOBILE AND DESKTOP */}
+          <div className="absolute top-0 left-0 right-0 z-50">
+            <div className="flex items-center justify-between p-4">
+              {/* Shorts button - Mobile only */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowMenu(!showMenu);
+                  router.push("/shorts");
                 }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-all active:scale-95"
-                aria-label="More options"
+                className="md:hidden text-white text-2xl font-bold hover:text-gray-300 transition"
               >
-                <MoreVertical size={24} />
+                Shorts
               </button>
 
-              {showMenu && (
-                <>
-                  {/* Backdrop */}
-                  <div
-                    className="fixed inset-0 z-[98]"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowMenu(false);
-                    }}
-                  />
+              {/* Empty spacer for desktop */}
+              <div className="hidden md:block" />
 
-                  {/* Menu dropdown - NOW PROPERLY STYLED FOR BOTH MOBILE AND DESKTOP */}
-                  <div
-                    className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
-                    style={{
-                      backgroundColor: "var(--bg-secondary, #272727)",
-                      borderColor: "var(--border-color, #3f3f3f)",
-                      minWidth: "220px",
-                    }}
-                  >
-                    {/* Delete option */}
-                    {isOwnShort ? (
+              {/* ✅ FIXED: Three-dot menu NOW VISIBLE on desktop (removed md:hidden) */}
+              <div className="relative menu-button ml-auto">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(!showMenu);
+                  }}
+                  className="text-white hover:bg-white/20 rounded-full p-2 transition-all active:scale-95"
+                  aria-label="More options"
+                >
+                  <MoreVertical size={24} />
+                </button>
+
+                {showMenu && (
+                  <>
+                    {/* Backdrop */}
+                    <div
+                      className="fixed inset-0 z-[98]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                      }}
+                    />
+
+                    {/* Menu dropdown - NOW PROPERLY STYLED FOR BOTH MOBILE AND DESKTOP */}
+                    <div
+                      className="absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-[99] border"
+                      style={{
+                        backgroundColor: "var(--bg-secondary, #272727)",
+                        borderColor: "var(--border-color, #3f3f3f)",
+                        minWidth: "220px",
+                      }}
+                    >
+                      {/* Delete option */}
+                      {isOwnShort ? (
+                        <button
+                          onClick={openDeleteConfirm}
+                          className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors hover:bg-[var(--bg-hover,#3f3f3f)]"
+                          style={{ color: "var(--text-primary, #fff)" }}
+                        >
+                          <Trash2 size={20} className="text-red-500" />
+                          <span className="font-medium text-sm">
+                            Delete Short
+                          </span>
+                        </button>
+                      ) : (
+                        <div
+                          className="w-full px-4 py-3.5 flex items-center gap-3 opacity-50 cursor-not-allowed"
+                          style={{ color: "var(--text-disabled, #717171)" }}
+                        >
+                          <Trash2 size={20} />
+                          <span className="font-medium text-sm">
+                            Only Owner Can Delete
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="h-px mx-3 bg-[var(--border-color,#3f3f3f)]" />
+
+                      {/* Report option */}
                       <button
-                        onClick={openDeleteConfirm}
+                        onClick={openReportModal}
                         className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors hover:bg-[var(--bg-hover,#3f3f3f)]"
                         style={{ color: "var(--text-primary, #fff)" }}
                       >
-                        <Trash2 size={20} className="text-red-500" />
-                        <span className="font-medium text-sm">Delete Short</span>
+                        <Flag size={20} />
+                        <span className="font-medium text-sm">Report</span>
                       </button>
-                    ) : (
-                      <div
-                        className="w-full px-4 py-3.5 flex items-center gap-3 opacity-50 cursor-not-allowed"
-                        style={{ color: "var(--text-disabled, #717171)" }}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ✅ PLAY ICON OVERLAY */}
+          {!isPlaying && !isModalOpenRef.current && (
+            <div
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              style={{
+                zIndex: 40,
+              }}
+            >
+              <div className="bg-black/50 backdrop-blur-sm rounded-full p-8">
+                <Play size={48} className="text-white" fill="white" />
+              </div>
+            </div>
+          )}
+
+          {/* ✅ CONTENT SECTION - YOUTUBE-STYLE DESKTOP LAYOUT */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 30,
+            }}
+          >
+            <div className="p-3 pb-24 md:p-8 md:pb-8 lg:p-10 lg:pb-10">
+              <div className="flex items-end justify-between gap-4 md:gap-8 lg:gap-10">
+                {/* ✅ LEFT CONTENT - FIXED MAX WIDTH FOR DESKTOP */}
+                <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[65%] lg:max-w-[70%]">
+                  {/* Channel info */}
+                  <div className="flex items-center mb-3 md:mb-6 lg:mb-7 pointer-events-auto">
+                    {/* Avatar */}
+                    <img
+                      key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
+                      src={getImageUrl(
+                        short.userId?.image || short.channelAvatar,
+                        true
+                      )}
+                      alt={channelName}
+                      className="w-9 h-9 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full mr-3 md:mr-4 lg:mr-5 cursor-pointer object-cover border-2 md:border-[3px] border-white/20 flex-shrink-0 bg-gray-800 shadow-xl"
+                      onClick={handleChannelClick}
+                      crossOrigin="anonymous"
+                      loading="eager"
+                      style={{
+                        display: "block",
+                        minWidth: "36px",
+                        minHeight: "36px",
+                      }}
+                      onError={(e) => {
+                        console.error(
+                          "❌ ShortPlayer avatar failed:",
+                          channelAvatar
+                        );
+                        e.currentTarget.src = DEFAULT_AVATAR_SVG;
+                        e.currentTarget.style.display = "block";
+                      }}
+                      onLoad={(e) => {
+                        console.log(
+                          "✅ ShortPlayer avatar loaded:",
+                          channelAvatar
+                        );
+                        e.currentTarget.style.display = "block";
+                      }}
+                    />
+
+                    {/* Channel Info - VISIBLE ON DESKTOP */}
+                    <div className="flex-1 min-w-0 mr-3 md:mr-4 md:max-w-[280px] lg:max-w-[320px]">
+                      <p
+                        className="font-bold text-sm md:text-lg lg:text-xl cursor-pointer hover:underline leading-tight mb-1 md:mb-1.5 transition-colors truncate md:overflow-visible md:whitespace-normal md:break-words"
+                        onClick={handleChannelClick}
+                        style={{
+                          textShadow: "0 2px 8px rgba(0,0,0,0.8)",
+                        }}
                       >
-                        <Trash2 size={20} />
-                        <span className="font-medium text-sm">Only Owner Can Delete</span>
+                        @{channelName}
+                      </p>
+                      <p
+                        className="text-xs md:text-sm lg:text-base text-gray-300 leading-tight font-medium truncate md:overflow-visible md:whitespace-normal"
+                        style={{
+                          textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        {formatCount(subscribersCount)} subscribers
+                      </p>
+                    </div>
+
+                    {/* Subscribe Button */}
+                    {!isOwnShort && (
+                      <button
+                        onClick={handleSubscribe}
+                        className={`ml-2 px-4 md:px-6 lg:px-8 py-1.5 md:py-2.5 lg:py-3 rounded-full font-bold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 shadow-lg ${
+                          isSubscribed
+                            ? "bg-gray-700 text-white hover:bg-gray-600"
+                            : "bg-white text-black hover:bg-gray-100"
+                        }`}
+                        style={{
+                          WebkitTapHighlightColor: "transparent",
+                          letterSpacing: "0.3px",
+                        }}
+                      >
+                        {isSubscribed ? "Subscribed" : "Subscribe"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Title & Description - FULLY VISIBLE ON DESKTOP */}
+                  <div className="mb-2 md:mb-5 lg:mb-6 space-y-2 md:space-y-3">
+                    <h3
+                      className="font-bold text-base md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight md:leading-snug line-clamp-2 md:line-clamp-3 lg:line-clamp-4"
+                      style={{
+                        textShadow: "0 2px 12px rgba(0,0,0,0.9)",
+                        wordBreak: "break-word",
+                        maxHeight: "none",
+                      }}
+                    >
+                      {translatedTitle}
+                    </h3>
+                    {translatedDescription && (
+                      <p
+                        className="text-sm md:text-base lg:text-lg text-gray-200 leading-relaxed font-medium line-clamp-2 md:line-clamp-4 lg:line-clamp-5"
+                        style={{
+                          textShadow: "0 1px 8px rgba(0,0,0,0.9)",
+                          wordBreak: "break-word",
+                          maxHeight: "none",
+                        }}
+                      >
+                        {translatedDescription}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Views Count */}
+                  <p
+                    className="text-xs md:text-base lg:text-lg text-gray-300 font-bold"
+                    style={{
+                      textShadow: "0 1px 6px rgba(0,0,0,0.9)",
+                    }}
+                  >
+                    {formatCount(viewsCount)} views
+                  </p>
+                </div>
+
+                {/* ✅ RIGHT ACTION BUTTONS - RELATIVE POSITIONING ON DESKTOP */}
+                <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-4 lg:gap-5 md:pb-0 md:flex-shrink-0">
+                  {/* Like Button */}
+                  <button
+                    onClick={handleLike}
+                    className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+                    style={{ WebkitTapHighlightColor: "transparent" }}
+                  >
+                    <div
+                      className={`rounded-full transition-all shadow-2xl border-2 flex items-center justify-center ${
+                        hasLiked
+                          ? "bg-blue-600 border-blue-400 shadow-blue-500/60"
+                          : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
+                      } p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16`}
+                    >
+                      <ThumbsUp
+                        className={`${
+                          hasLiked ? "text-white" : "text-white"
+                        } w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
+                        fill={hasLiked ? "white" : "none"}
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                    <span
+                      className="text-[11px] md:text-sm lg:text-base font-bold"
+                      style={{
+                        color: hasLiked ? "#60a5fa" : "white",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                      }}
+                    >
+                      {formatCount(likesCount)}
+                    </span>
+                  </button>
+
+                  {/* Dislike Button */}
+                  <button
+                    onClick={handleDislike}
+                    className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+                    style={{ WebkitTapHighlightColor: "transparent" }}
+                  >
+                    <div
+                      className={`rounded-full transition-all shadow-2xl border-2 flex items-center justify-center ${
+                        hasDisliked
+                          ? "bg-red-600 border-red-400 shadow-red-500/60"
+                          : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
+                      } p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14`}
+                    >
+                      <ThumbsDown
+                        className={`${
+                          hasDisliked ? "text-white" : "text-white"
+                        } w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7`}
+                        fill={hasDisliked ? "white" : "none"}
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                    <span
+                      className="text-[11px] md:text-xs lg:text-sm font-bold transition-colors"
+                      style={{
+                        color: hasDisliked ? "#f87171" : "white",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                      }}
+                    >
+                      Dislike
+                    </span>
+                  </button>
+
+                  {/* Comments Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowComments(true);
+                      isModalOpenRef.current = true;
+                    }}
+                    className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+                    style={{ WebkitTapHighlightColor: "transparent" }}
+                  >
+                    <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
+                      <MessageCircle
+                        className="text-white w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                    <span
+                      className="text-white text-[11px] md:text-xs lg:text-sm font-bold"
+                      style={{
+                        textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                      }}
+                    >
+                      {formatCount(commentsCount)}
+                    </span>
+                  </button>
+
+                  {/* Share Button */}
+                  <button
+                    onClick={handleShareClick}
+                    className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
+                    style={{ WebkitTapHighlightColor: "transparent" }}
+                  >
+                    <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
+                      <Share2
+                        className="text-white w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                    <span
+                      className="text-white text-[11px] md:text-xs lg:text-sm font-bold"
+                      style={{
+                        textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                      }}
+                    >
+                      Share
+                    </span>
+                  </button>
+
+                  {/* Volume Control */}
+                  <div className="relative flex flex-col items-center w-full volume-control">
+                    <button
+                      onClick={toggleVolumeSlider}
+                      className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform hover:scale-110 active:scale-90 group touch-manipulation w-full"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
+                        {isMuted || volume === 0 ? (
+                          <VolumeX
+                            className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
+                            strokeWidth={2.5}
+                          />
+                        ) : (
+                          <Volume2
+                            className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
+                            strokeWidth={2.5}
+                          />
+                        )}
+                      </div>
+                      <span
+                        className="text-white text-[11px] md:text-xs lg:text-sm font-bold whitespace-nowrap"
+                        style={{
+                          textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        {Math.round(volume * 100)}%
+                      </span>
+                    </button>
+
+                    {/* Volume Slider Popup */}
+                    {showVolumeSlider && (
+                      <div
+                        className="absolute bottom-full mb-3 md:mb-4 rounded-2xl shadow-2xl border-2 right-0 p-4 md:p-5 lg:p-6"
+                        style={{
+                          backgroundColor: "rgba(31, 41, 55, 0.98)",
+                          backdropFilter: "blur(20px)",
+                          borderColor: "rgba(255, 255, 255, 0.15)",
+                          minWidth: "110px",
+                          boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex flex-col items-center gap-4 md:gap-5">
+                          <span className="text-lg md:text-xl lg:text-2xl font-bold text-white">
+                            {Math.round(volume * 100)}%
+                          </span>
+
+                          <div
+                            className="relative h-36 md:h-40 lg:h-44 w-3 md:w-4 rounded-full overflow-hidden"
+                            style={{ backgroundColor: "rgba(75, 85, 99, 0.8)" }}
+                          >
+                            <div
+                              className="absolute bottom-0 w-full rounded-full transition-all bg-gradient-to-t from-blue-600 via-blue-500 to-blue-400"
+                              style={{
+                                height: `${volume * 100}%`,
+                                boxShadow: "0 0 20px rgba(59, 130, 246, 0.6)",
+                              }}
+                            />
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.01"
+                              value={volume}
+                              onChange={(e) =>
+                                handleVolumeChange(parseFloat(e.target.value))
+                              }
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              style={
+                                {
+                                  WebkitAppearance: "slider-vertical",
+                                } as React.CSSProperties
+                              }
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-2 w-full">
+                            <button
+                              onClick={() => handleVolumeChange(1)}
+                              className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
+                            >
+                              100%
+                            </button>
+                            <button
+                              onClick={() => handleVolumeChange(0.5)}
+                              className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
+                            >
+                              50%
+                            </button>
+                            <button
+                              onClick={() => handleVolumeChange(0)}
+                              className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
+                            >
+                              Mute
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )}
-
-                    <div className="h-px mx-3 bg-[var(--border-color,#3f3f3f)]" />
-
-                    {/* Report option */}
-                    <button
-                      onClick={openReportModal}
-                      className="w-full px-4 py-3.5 text-left flex items-center gap-3 transition-colors hover:bg-[var(--bg-hover,#3f3f3f)]"
-                      style={{ color: "var(--text-primary, #fff)" }}
-                    >
-                      <Flag size={20} />
-                      <span className="font-medium text-sm">Report</span>
-                    </button>
                   </div>
-                </>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-
-       {/* ✅ PLAY ICON OVERLAY */}
-        {!isPlaying && !isModalOpenRef.current && (
-          <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{
-              zIndex: 40,
-            }}
-          >
-            <div className="bg-black/50 backdrop-blur-sm rounded-full p-8">
-              <Play size={48} className="text-white" fill="white" />
-            </div>
-          </div>
-        )}
-
-     {/* ✅ CONTENT SECTION - YOUTUBE-STYLE DESKTOP LAYOUT */}
-<div
-  className="absolute bottom-0 left-0 right-0"
-  style={{
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 30,
-  }}
->
-        <div className="p-3 pb-24 md:p-8 md:pb-8 lg:p-10 lg:pb-10">
-    <div className="flex items-end justify-between gap-4 md:gap-8 lg:gap-10">
-      {/* ✅ LEFT CONTENT - FIXED MAX WIDTH FOR DESKTOP */}
-      <div className="flex-1 pr-2 text-white min-w-0 max-w-[calc(100%-88px)] md:max-w-[65%] lg:max-w-[70%]">
-        {/* Channel info */}
-        <div className="flex items-center mb-3 md:mb-6 lg:mb-7 pointer-events-auto">
-          {/* Avatar */}
-          <img
-            key={`avatar-${short._id}-${channelAvatar}-${avatarRefreshKey}`}
-            src={getImageUrl(
-              short.userId?.image || short.channelAvatar,
-              true
-            )}
-            alt={channelName}
-            className="w-9 h-9 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full mr-3 md:mr-4 lg:mr-5 cursor-pointer object-cover border-2 md:border-[3px] border-white/20 flex-shrink-0 bg-gray-800 shadow-xl"
-            onClick={handleChannelClick}
-            crossOrigin="anonymous"
-            loading="eager"
-            style={{
-              display: "block",
-              minWidth: "36px",
-              minHeight: "36px",
-            }}
-            onError={(e) => {
-              console.error("❌ ShortPlayer avatar failed:", channelAvatar);
-              e.currentTarget.src = DEFAULT_AVATAR_SVG;
-              e.currentTarget.style.display = "block";
-            }}
-            onLoad={(e) => {
-              console.log("✅ ShortPlayer avatar loaded:", channelAvatar);
-              e.currentTarget.style.display = "block";
-            }}
-          />
-          
-          {/* Channel Info - VISIBLE ON DESKTOP */}
-          <div className="flex-1 min-w-0 mr-3 md:mr-4 md:max-w-[280px] lg:max-w-[320px]">
-            <p
-              className="font-bold text-sm md:text-lg lg:text-xl cursor-pointer hover:underline leading-tight mb-1 md:mb-1.5 transition-colors truncate md:overflow-visible md:whitespace-normal md:break-words"
-              onClick={handleChannelClick}
-              style={{
-                textShadow: "0 2px 8px rgba(0,0,0,0.8)",
-              }}
-            >
-              @{channelName}
-            </p>
-            <p 
-              className="text-xs md:text-sm lg:text-base text-gray-300 leading-tight font-medium truncate md:overflow-visible md:whitespace-normal"
-              style={{
-                textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-              }}
-            >
-              {formatCount(subscribersCount)} subscribers
-            </p>
-          </div>
-
-          {/* Subscribe Button */}
-          {!isOwnShort && (
-            <button
-              onClick={handleSubscribe}
-              className={`ml-2 px-4 md:px-6 lg:px-8 py-1.5 md:py-2.5 lg:py-3 rounded-full font-bold text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 shadow-lg ${
-                isSubscribed
-                  ? "bg-gray-700 text-white hover:bg-gray-600"
-                  : "bg-white text-black hover:bg-gray-100"
-              }`}
-              style={{ 
-                WebkitTapHighlightColor: "transparent",
-                letterSpacing: "0.3px",
-              }}
-            >
-              {isSubscribed ? "Subscribed" : "Subscribe"}
-            </button>
-          )}
-        </div>
-
-        {/* Title & Description - FULLY VISIBLE ON DESKTOP */}
-        <div className="mb-2 md:mb-5 lg:mb-6 space-y-2 md:space-y-3">
-          <h3 
-            className="font-bold text-base md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight md:leading-snug line-clamp-2 md:line-clamp-3 lg:line-clamp-4"
-            style={{
-              textShadow: "0 2px 12px rgba(0,0,0,0.9)",
-              wordBreak: "break-word",
-              maxHeight: "none",
-            }}
-          >
-            {translatedTitle}
-          </h3>
-          {translatedDescription && (
-            <p 
-              className="text-sm md:text-base lg:text-lg text-gray-200 leading-relaxed font-medium line-clamp-2 md:line-clamp-4 lg:line-clamp-5"
-              style={{
-                textShadow: "0 1px 8px rgba(0,0,0,0.9)",
-                wordBreak: "break-word",
-                maxHeight: "none",
-              }}
-            >
-              {translatedDescription}
-            </p>
-          )}
-        </div>
-
-        {/* Views Count */}
-        <p 
-          className="text-xs md:text-base lg:text-lg text-gray-300 font-bold"
-          style={{
-            textShadow: "0 1px 6px rgba(0,0,0,0.9)",
-          }}
-        >
-          {formatCount(viewsCount)} views
-        </p>
       </div>
-
-      {/* ✅ RIGHT ACTION BUTTONS - RELATIVE POSITIONING ON DESKTOP */}
-      <div className="flex flex-col items-center justify-end gap-3 pb-2 pointer-events-auto md:gap-4 lg:gap-5 md:pb-0 md:flex-shrink-0">
-        {/* Like Button */}
-        <button
-          onClick={handleLike}
-          className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
-          style={{ WebkitTapHighlightColor: "transparent" }}
+      {/* ✅ DELETE CONFIRMATION MODAL */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
+          onClick={closeDeleteConfirm}
         >
+          {/* MOBILE MODAL */}
           <div
-            className={`rounded-full transition-all shadow-2xl border-2 flex items-center justify-center ${
-              hasLiked
-                ? "bg-blue-600 border-blue-400 shadow-blue-500/60"
-                : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
-            } p-2.5 w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16`}
-          >
-            <ThumbsUp
-              className={`${hasLiked ? "text-white" : "text-white"} w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8`}
-              fill={hasLiked ? "white" : "none"}
-              strokeWidth={2.5}
-            />
-          </div>
-          <span
-            className="text-[11px] md:text-sm lg:text-base font-bold"
-            style={{ 
-              color: hasLiked ? "#60a5fa" : "white",
-              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-            }}
-          >
-            {formatCount(likesCount)}
-          </span>
-        </button>
-
-        {/* Dislike Button */}
-        <button
-          onClick={handleDislike}
-          className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-        >
-          <div
-            className={`rounded-full transition-all shadow-2xl border-2 flex items-center justify-center ${
-              hasDisliked
-                ? "bg-red-600 border-red-400 shadow-red-500/60"
-                : "bg-gray-900/80 border-white/30 shadow-black/70 hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm"
-            } p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14`}
-          >
-            <ThumbsDown
-              className={`${hasDisliked ? "text-white" : "text-white"} w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7`}
-              fill={hasDisliked ? "white" : "none"}
-              strokeWidth={2.5}
-            />
-          </div>
-          <span
-            className="text-[11px] md:text-xs lg:text-sm font-bold transition-colors"
-            style={{ 
-              color: hasDisliked ? "#f87171" : "white",
-              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-            }}
-          >
-            Dislike
-          </span>
-        </button>
-
-        {/* Comments Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowComments(true);
-            isModalOpenRef.current = true;
-          }}
-          className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-        >
-          <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
-            <MessageCircle
-              className="text-white w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
-              strokeWidth={2.5}
-            />
-          </div>
-          <span 
-            className="text-white text-[11px] md:text-xs lg:text-sm font-bold"
+            className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
             style={{
-              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+              backgroundColor: "var(--bg-secondary, #ffffff)",
             }}
           >
-            {formatCount(commentsCount)}
-          </span>
-        </button>
-
-        {/* Share Button */}
-        <button
-          onClick={handleShareClick}
-          className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform active:scale-90 hover:scale-110 group touch-manipulation w-full"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-        >
-          <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
-            <Share2
-              className="text-white w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
-              strokeWidth={2.5}
-            />
-          </div>
-          <span 
-            className="text-white text-[11px] md:text-xs lg:text-sm font-bold"
-            style={{
-              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-            }}
-          >
-            Share
-          </span>
-        </button>
-
-        {/* Volume Control */}
-        <div className="relative flex flex-col items-center w-full volume-control">
-          <button
-            onClick={toggleVolumeSlider}
-            className="flex flex-col items-center gap-1 md:gap-1.5 transition-all transform hover:scale-110 active:scale-90 group touch-manipulation w-full"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            <div className="bg-gray-900/80 border-2 border-white/30 rounded-full transition-all shadow-2xl hover:bg-gray-800/90 hover:border-white/50 backdrop-blur-sm flex items-center justify-center p-2.5 w-12 h-12 md:w-13 md:h-13 lg:w-14 lg:h-14">
-              {isMuted || volume === 0 ? (
-                <VolumeX
-                  className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
-                  strokeWidth={2.5}
-                />
-              ) : (
-                <Volume2
-                  className="text-white group-hover:text-yellow-400 transition-colors w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7"
-                  strokeWidth={2.5}
-                />
-              )}
-            </div>
-            <span 
-              className="text-white text-[11px] md:text-xs lg:text-sm font-bold whitespace-nowrap"
-              style={{
-                textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-              }}
-            >
-              {Math.round(volume * 100)}%
-            </span>
-          </button>
-
-          {/* Volume Slider Popup */}
-          {showVolumeSlider && (
-            <div
-              className="absolute bottom-full mb-3 md:mb-4 rounded-2xl shadow-2xl border-2 right-0 p-4 md:p-5 lg:p-6"
-              style={{
-                backgroundColor: "rgba(31, 41, 55, 0.98)",
-                backdropFilter: "blur(20px)",
-                borderColor: "rgba(255, 255, 255, 0.15)",
-                minWidth: "110px",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex flex-col items-center gap-4 md:gap-5">
-                <span className="text-lg md:text-xl lg:text-2xl font-bold text-white">
-                  {Math.round(volume * 100)}%
-                </span>
-
-                <div
-                  className="relative h-36 md:h-40 lg:h-44 w-3 md:w-4 rounded-full overflow-hidden"
-                  style={{ backgroundColor: "rgba(75, 85, 99, 0.8)" }}
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
+                  <AlertTriangle size={22} className="text-red-500" />
+                </div>
+                <h3
+                  className="text-lg font-bold"
+                  style={{ color: "var(--text-primary, #000)" }}
                 >
-                  <div
-                    className="absolute bottom-0 w-full rounded-full transition-all bg-gradient-to-t from-blue-600 via-blue-500 to-blue-400"
-                    style={{ 
-                      height: `${volume * 100}%`,
-                      boxShadow: "0 0 20px rgba(59, 130, 246, 0.6)",
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={volume}
-                    onChange={(e) =>
-                      handleVolumeChange(parseFloat(e.target.value))
-                    }
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    style={{
-                      WebkitAppearance: "slider-vertical",
-                    } as React.CSSProperties}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 w-full">
-                  <button
-                    onClick={() => handleVolumeChange(1)}
-                    className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
-                  >
-                    100%
-                  </button>
-                  <button
-                    onClick={() => handleVolumeChange(0.5)}
-                    className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
-                  >
-                    50%
-                  </button>
-                  <button
-                    onClick={() => handleVolumeChange(0)}
-                    className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
-                  >
-                    Mute
-                  </button>
-                </div>
+                  Delete Short?
+                </h3>
               </div>
-            </div>
-          )}
-      
+
+              {/* Content */}
+              <div className="mb-4">
+                <p
+                  className="text-sm leading-relaxed mb-3"
+                  style={{ color: "var(--text-secondary, #666)" }}
+                >
+                  Are you sure you want to delete this short?
+                </p>
+                <p
+                  className="font-semibold text-sm break-words p-3 rounded-lg"
+                  style={{
+                    color: "var(--text-primary, #000)",
+                    backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                  }}
+                >
+                  "{short.title}"
+                </p>
+              </div>
+
+              {/* Warning */}
+              <div className="flex items-center gap-2 mb-6 bg-red-500/10 p-3 rounded-lg">
+                <AlertTriangle
+                  size={16}
+                  className="text-red-400 flex-shrink-0"
+                />
+                <p className="text-red-400 font-semibold text-xs">
+                  This action cannot be undone
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={closeDeleteConfirm}
+                  disabled={isDeleting}
+                  className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95"
+                  style={{
+                    backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                    color: "var(--text-primary, #000)",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteShort}
+                  disabled={isDeleting}
+                  className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={18} />
+                      <span>Delete</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  {/* ✅ DELETE CONFIRMATION MODAL */}
-  {showDeleteConfirm && (
-    <div
-      className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
-      onClick={closeDeleteConfirm}
-    >
-      {/* MOBILE MODAL */}
-      <div
-        className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: "var(--bg-secondary, #ffffff)",
-        }}
-      >
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-red-500/20 p-2.5 rounded-full flex-shrink-0">
-              <AlertTriangle size={22} className="text-red-500" />
-            </div>
-            <h3
-              className="text-lg font-bold"
-              style={{ color: "var(--text-primary, #000)" }}
-            >
-              Delete Short?
-            </h3>
-          </div>
 
-          {/* Content */}
-          <div className="mb-4">
+          {/* DESKTOP MODAL */}
+          <div
+            className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "var(--bg-secondary, #1f2937)",
+              borderColor: "var(--border-color, #374151)",
+            }}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-red-500/20 p-3 rounded-full">
+                <AlertTriangle size={28} className="text-red-500" />
+              </div>
+              <h3
+                className="text-xl font-bold"
+                style={{ color: "var(--text-primary, #fff)" }}
+              >
+                Delete Short?
+              </h3>
+            </div>
+
             <p
-              className="text-sm leading-relaxed mb-3"
-              style={{ color: "var(--text-secondary, #666)" }}
+              className="mb-3 text-base leading-relaxed"
+              style={{ color: "var(--text-secondary, #d1d5db)" }}
             >
               Are you sure you want to delete this short?
             </p>
+
             <p
-              className="font-semibold text-sm break-words p-3 rounded-lg"
+              className="mb-2 text-base font-bold break-words"
               style={{
-                color: "var(--text-primary, #000)",
-                backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                color: "var(--text-primary, #fff)",
+                backgroundColor: "var(--bg-tertiary, #374151)",
+                padding: "12px",
+                borderRadius: "8px",
               }}
             >
               "{short.title}"
             </p>
-          </div>
 
-          {/* Warning */}
-          <div className="flex items-center gap-2 mb-6 bg-red-500/10 p-3 rounded-lg">
-            <AlertTriangle
-              size={16}
-              className="text-red-400 flex-shrink-0"
-            />
-            <p className="text-red-400 font-semibold text-xs">
-              This action cannot be undone
+            <p className="text-red-400 font-semibold mb-8 text-sm">
+              ⚠️ This action cannot be undone
             </p>
-          </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={closeDeleteConfirm}
-              disabled={isDeleting}
-              className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95"
-              style={{
-                backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-                color: "var(--text-primary, #000)",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDeleteShort}
-              disabled={isDeleting}
-              className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-            >
-              {isDeleting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                  <span>Deleting...</span>
-                </>
-              ) : (
-                <>
-                  <Trash2 size={18} />
-                  <span>Delete</span>
-                </>
-              )}
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={closeDeleteConfirm}
+                disabled={isDeleting}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
+                style={{
+                  backgroundColor: "var(--bg-tertiary, #374151)",
+                  color: "var(--text-primary, #fff)",
+                  borderColor: "var(--border-color, #4b5563)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-hover, #4b5563)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-tertiary, #374151)";
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteShort}
+                disabled={isDeleting}
+                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={20} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* DESKTOP MODAL */}
-      <div
-        className="hidden md:block rounded-2xl p-6 max-w-md w-full shadow-2xl border"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: "var(--bg-secondary, #1f2937)",
-          borderColor: "var(--border-color, #374151)",
-        }}
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-red-500/20 p-3 rounded-full">
-            <AlertTriangle size={28} className="text-red-500" />
-          </div>
-          <h3
-            className="text-xl font-bold"
-            style={{ color: "var(--text-primary, #fff)" }}
-          >
-            Delete Short?
-          </h3>
-        </div>
-
-        <p
-          className="mb-3 text-base leading-relaxed"
-          style={{ color: "var(--text-secondary, #d1d5db)" }}
+      )}
+      {/* ✅ REPORT MODAL */}
+      {showReportModal && (
+        <div
+          className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
+          onClick={closeReportModal}
         >
-          Are you sure you want to delete this short?
-        </p>
-
-        <p
-          className="mb-2 text-base font-bold break-words"
-          style={{
-            color: "var(--text-primary, #fff)",
-            backgroundColor: "var(--bg-tertiary, #374151)",
-            padding: "12px",
-            borderRadius: "8px",
-          }}
-        >
-          "{short.title}"
-        </p>
-
-        <p className="text-red-400 font-semibold mb-8 text-sm">
-          ⚠️ This action cannot be undone
-        </p>
-
-        <div className="flex gap-4">
-          <button
-            onClick={closeDeleteConfirm}
-            disabled={isDeleting}
-            className="flex-1 px-6 py-3 rounded-xl font-semibold disabled:opacity-50 transition active:scale-95 border-2"
+          {/* MOBILE MODAL */}
+          <div
+            className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp max-h-[85vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: "var(--bg-tertiary, #374151)",
-              color: "var(--text-primary, #fff)",
-              borderColor: "var(--border-color, #4b5563)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor =
-                "var(--bg-hover, #4b5563)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor =
-                "var(--bg-tertiary, #374151)";
+              backgroundColor: "var(--bg-secondary, #ffffff)",
             }}
           >
-            Cancel
-          </button>
-          <button
-            onClick={handleDeleteShort}
-            disabled={isDeleting}
-            className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+            <div className="overflow-y-auto max-h-[85vh]">
+              <div className="p-5 pb-6">
+                {/* Header */}
+                <div
+                  className="flex items-center justify-between mb-4 sticky top-0 pb-3 z-10"
+                  style={{
+                    backgroundColor: "var(--bg-secondary, #ffffff)",
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="bg-blue-500/20 p-2 rounded-full">
+                      <Flag size={18} className="text-blue-400" />
+                    </div>
+                    <h3
+                      className="text-base font-bold"
+                      style={{ color: "var(--text-primary, #000)" }}
+                    >
+                      Report Short
+                    </h3>
+                  </div>
+                  <button
+                    onClick={closeReportModal}
+                    className="transition"
+                    style={{ color: "var(--text-secondary, #666)" }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <p
+                  className="mb-4 text-xs"
+                  style={{ color: "var(--text-secondary, #666)" }}
+                >
+                  Help us understand what's wrong with this short
+                </p>
+
+                {/* Report Reasons */}
+                <div className="space-y-2 mb-4">
+                  {reportReasons.map((reason) => (
+                    <button
+                      key={reason}
+                      onClick={() => setReportReason(reason)}
+                      className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
+                        reportReason === reason
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-800 text-gray-200 hover:bg-gray-700 active:bg-gray-600"
+                      }`}
+                    >
+                      {reason}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Additional Details */}
+                <textarea
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder="Additional details (optional)"
+                  rows={3}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 text-sm"
+                />
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeReportModal}
+                    disabled={isReporting}
+                    className="flex-1 px-5 py-3 bg-gray-800 text-white border-2 border-gray-700 rounded-xl font-semibold text-sm disabled:opacity-50 transition hover:bg-gray-700 active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitReport}
+                    disabled={isReporting || !reportReason}
+                    className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    {isReporting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      "Submit Report"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* DESKTOP MODAL */}
+          <div
+            className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "var(--bg-secondary, #1f2937)",
+              borderColor: "var(--border-color, #374151)",
+            }}
           >
-            {isDeleting ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                Deleting...
-              </>
-            ) : (
-              <>
-                <Trash2 size={20} />
-                Delete
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-  {/* ✅ REPORT MODAL */}
-  {showReportModal && (
-    <div
-      className="fixed inset-0 bg-black/80 z-[999] pointer-events-auto flex items-center justify-center p-4"
-      onClick={closeReportModal}
-    >
-      {/* MOBILE MODAL */}
-      <div
-        className="md:hidden rounded-3xl w-full max-w-sm shadow-2xl animate-slideUp max-h-[85vh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: "var(--bg-secondary, #ffffff)",
-        }}
-      >
-        <div className="overflow-y-auto max-h-[85vh]">
-          <div className="p-5 pb-6">
-            {/* Header */}
-            <div
-              className="flex items-center justify-between mb-4 sticky top-0 pb-3 z-10"
-              style={{
-                backgroundColor: "var(--bg-secondary, #ffffff)",
-              }}
-            >
-              <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
                 <div className="bg-blue-500/20 p-2 rounded-full">
-                  <Flag size={18} className="text-blue-400" />
+                  <Flag size={22} className="text-blue-400" />
                 </div>
                 <h3
-                  className="text-base font-bold"
-                  style={{ color: "var(--text-primary, #000)" }}
+                  className="text-xl font-bold"
+                  style={{ color: "var(--text-primary, #fff)" }}
                 >
                   Report Short
                 </h3>
@@ -2374,6 +2487,13 @@ return (
                 onClick={closeReportModal}
                 className="transition"
                 style={{ color: "var(--text-secondary, #666)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--text-primary, #fff)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color =
+                    "var(--text-secondary, #9ca3af)";
+                }}
               >
                 <X size={20} />
               </button>
@@ -2385,51 +2505,83 @@ return (
             >
               Help us understand what's wrong with this short
             </p>
-
-            {/* Report Reasons */}
             <div className="space-y-2 mb-4">
               {reportReasons.map((reason) => (
                 <button
                   key={reason}
                   onClick={() => setReportReason(reason)}
                   className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
-                    reportReason === reason
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-200 hover:bg-gray-700 active:bg-gray-600"
+                    reportReason === reason ? "bg-blue-600 text-white" : ""
                   }`}
+                  style={
+                    reportReason !== reason
+                      ? {
+                          backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                          color: "var(--text-primary, #000)",
+                        }
+                      : undefined
+                  }
+                  onMouseEnter={(e) => {
+                    if (reportReason !== reason) {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-hover, #4b5563)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (reportReason !== reason) {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-tertiary, #374151)";
+                    }
+                  }}
                 >
                   {reason}
                 </button>
               ))}
             </div>
 
-            {/* Additional Details */}
             <textarea
               value={reportDetails}
               onChange={(e) => setReportDetails(e.target.value)}
               placeholder="Additional details (optional)"
               rows={3}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 text-sm"
+              className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
+              style={{
+                backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                borderColor: "var(--border-color, #e5e7eb)",
+                color: "var(--text-primary, #000)",
+              }}
             />
 
-            {/* Action Buttons */}
             <div className="flex gap-3">
               <button
                 onClick={closeReportModal}
                 disabled={isReporting}
-                className="flex-1 px-5 py-3 bg-gray-800 text-white border-2 border-gray-700 rounded-xl font-semibold text-sm disabled:opacity-50 transition hover:bg-gray-700 active:scale-95"
+                className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95 border-2"
+                style={{
+                  backgroundColor: "var(--bg-tertiary, #f3f4f6)",
+                  color: "var(--text-primary, #000)",
+                  borderColor: "var(--border-color, #e5e7eb)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-hover, #4b5563)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-tertiary, #374151)";
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitReport}
                 disabled={isReporting || !reportReason}
-                className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
               >
                 {isReporting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    <span>Submitting...</span>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    Submitting...
                   </>
                 ) : (
                   "Submit Report"
@@ -2438,137 +2590,7 @@ return (
             </div>
           </div>
         </div>
-      </div>
-
-      {/* DESKTOP MODAL */}
-      <div
-        className="hidden md:block rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: "var(--bg-secondary, #1f2937)",
-          borderColor: "var(--border-color, #374151)",
-        }}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-500/20 p-2 rounded-full">
-              <Flag size={22} className="text-blue-400" />
-            </div>
-            <h3
-              className="text-xl font-bold"
-              style={{ color: "var(--text-primary, #fff)" }}
-            >
-              Report Short
-            </h3>
-          </div>
-          <button
-            onClick={closeReportModal}
-            className="transition"
-            style={{ color: "var(--text-secondary, #666)" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text-primary, #fff)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color =
-                "var(--text-secondary, #9ca3af)";
-            }}
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <p
-          className="mb-4 text-xs"
-          style={{ color:"var(--text-secondary, #666)" }}
->
-Help us understand what's wrong with this short
-</p>
-    <div className="space-y-2 mb-4">
-      {reportReasons.map((reason) => (
-        <button
-          key={reason}
-          onClick={() => setReportReason(reason)}
-          className={`w-full text-left px-4 py-3 rounded-xl transition text-sm font-medium ${
-            reportReason === reason ? "bg-blue-600 text-white" : ""
-          }`}
-          style={
-            reportReason !== reason
-              ? {
-                  backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-                  color: "var(--text-primary, #000)",
-                }
-              : undefined
-          }
-          onMouseEnter={(e) => {
-            if (reportReason !== reason) {
-              e.currentTarget.style.backgroundColor =
-                "var(--bg-hover, #4b5563)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (reportReason !== reason) {
-              e.currentTarget.style.backgroundColor =
-                "var(--bg-tertiary, #374151)";
-            }
-          }}
-        >
-          {reason}
-        </button>
-      ))}
-    </div>
-
-    <textarea
-      value={reportDetails}
-      onChange={(e) => setReportDetails(e.target.value)}
-      placeholder="Additional details (optional)"
-      rows={3}
-      className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none mb-4 border"
-      style={{
-        backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-        borderColor: "var(--border-color, #e5e7eb)",
-        color: "var(--text-primary, #000)",
-      }}
-    />
-
-    <div className="flex gap-3">
-      <button
-        onClick={closeReportModal}
-        disabled={isReporting}
-        className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition active:scale-95 border-2"
-        style={{
-          backgroundColor: "var(--bg-tertiary, #f3f4f6)",
-          color: "var(--text-primary, #000)",
-          borderColor: "var(--border-color, #e5e7eb)",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor =
-            "var(--bg-hover, #4b5563)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor =
-            "var(--bg-tertiary, #374151)";
-        }}
-      >
-        Cancel
-        </button>
-        <button
-          onClick={handleSubmitReport}
-          disabled={isReporting || !reportReason}
-          className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
-        >
-          {isReporting ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Report"
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Modals */}
       {showShareModal && (
