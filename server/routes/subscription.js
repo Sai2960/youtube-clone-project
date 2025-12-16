@@ -8,7 +8,8 @@ import {
   getAvailablePlans,
   getUserSubscription,
   cancelSubscription,
-  getSubscriptionAnalytics
+  getSubscriptionAnalytics,
+  enforceWatchTimeLimit
 } from '../controllers/subscription.js';
 import { verifyToken } from '../middleware/auth.js';
 
