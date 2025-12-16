@@ -21,43 +21,37 @@ export const getVideoURL = (filepath) => {
 
   const fileStr = String(filepath).trim();
 
-  // ✅ Already valid Cloudinary URL with full path
+  // ✅ Already valid Cloudinary URL
   if (
     fileStr.includes("res.cloudinary.com") &&
     fileStr.includes("/video/upload/")
   ) {
-    // ✅ CRITICAL: Remove version numbers (v1234567890)
+    // Remove version and ensure HTTPS
     let cleanUrl = fileStr
       .replace(/^http:\/\//, "https://")
-      .replace(/:\d+/, "") // Remove port
-      .replace(/\/v\d+\//g, "/"); // ✅ Remove /v1234567890/
+      .replace(/:\d+/, "")
+      .replace(/\/v\d+\//g, "/");
 
-    console.log("✅ Cleaned URL (removed version):", cleanUrl.substring(0, 80));
+    console.log("✅ Cleaned URL:", cleanUrl.substring(0, 80));
     return cleanUrl;
   }
 
-  // ✅ Extract public_id (handles both "file_xxx" and full paths)
+  // ✅ Extract public_id
   let publicId = null;
 
-  // Try to extract from various formats
   if (fileStr.includes("youtube-clone/videos/")) {
-    // Full path like "youtube-clone/videos/file_v8xfa6" or "v1234/youtube-clone/videos/file_v8xfa6"
     const match = fileStr.match(/youtube-clone\/videos\/([^.\/]+)/);
     if (match) publicId = `youtube-clone/videos/${match[1]}`;
   } else {
-    // Just filename like "file_v8xfa6"
     const fileIdMatch = fileStr.match(/file_[a-z0-9]+/i);
     if (fileIdMatch) publicId = `youtube-clone/videos/${fileIdMatch[0]}`;
   }
 
   if (publicId) {
-    // ✅ Build clean URL WITHOUT version
-    const transforms = "f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good";
-    const reconstructed = `${CLOUDINARY_BASE}/${transforms}/${publicId}.mp4`;
-    console.log(
-      `🔧 Reconstructed video URL: ${reconstructed.substring(0, 80)}`
-    );
-    return reconstructed;
+    // ✅ Build URL without transformation to preserve audio
+    const cleanUrl = `${CLOUDINARY_BASE}/${publicId}.mp4`;
+    console.log(`🔧 Reconstructed video URL: ${cleanUrl.substring(0, 80)}`);
+    return cleanUrl;
   }
 
   // ✅ Reject invalid URLs
