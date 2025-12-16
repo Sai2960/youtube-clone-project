@@ -560,31 +560,32 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-     {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE, NO OVERLAPPING */}
+   {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE, NO OVERLAPPING */}
         {channel && isMounted && (
           <div
             ref={infoBarRef}
             key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="w-full bg-gray-50 dark:bg-gray-900/50 border-y-2 border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-hide"
+            className="w-full bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-hide"
             style={{
               position: "relative",
               zIndex: 10,
-              minHeight: "72px",
-              marginBottom: "16px"
+              minHeight: "80px",
+              marginTop: "0",
+              marginBottom: "24px",
             }}
           >
-
-            <div className="px-4 sm:px-6 py-4">
-<div className="flex items-center gap-4 sm:gap-6 min-w-max">                {/* Channel Name */}
-                <div className="w-full sm:w-auto flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+            <div className="px-4 sm:px-6 py-4 max-w-7xl mx-auto">
+              <div className="flex items-center gap-4 sm:gap-6 min-w-max">
+                {/* Channel Name */}
+                <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold min-w-fit">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">
+                  <span className="text-sm sm:text-base whitespace-nowrap">
                     {channel.channelname || channel.name || "Unknown"}
                   </span>
                 </div>
 
                 {/* Joined Date */}
-                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400 min-w-fit">
                   <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="text-xs sm:text-sm whitespace-nowrap">
                     Joined{" "}
@@ -600,7 +601,7 @@ const ChannelPage = () => {
                 {/* Video Count */}
                 <div
                   key={`video-${videos.length}-${renderKey}`}
-                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400 min-w-fit"
                 >
                   <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="text-xs sm:text-sm whitespace-nowrap">
@@ -611,7 +612,7 @@ const ChannelPage = () => {
                 {/* Shorts Count */}
                 <div
                   key={`shorts-${shorts.length}-${renderKey}`}
-                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400 min-w-fit"
                 >
                   <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="text-xs sm:text-sm whitespace-nowrap">
