@@ -131,7 +131,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   return (
     <div className="w-full bg-white dark:bg-gray-900">
-      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 bg-gray-100 dark:bg-gray-950 overflow-hidden group">
+      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-black overflow-hidden group">
         {localChannel.bannerImage ? (
           <>
             <img
@@ -145,19 +145,33 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
               }}
             />
             {/* ✅ Theme-aware overlay for banner images */}
-            <div className="absolute inset-0 bg-black/5 dark:bg-black/20 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-white/20 dark:bg-black/30 pointer-events-none"></div>
           </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-600 dark:via-purple-700 dark:to-pink-700">
+          /* Default gradient banner when no image */
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-700 dark:via-purple-800 dark:to-pink-800">
             <div className="absolute inset-0 opacity-30 dark:opacity-20 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.4)_0%,transparent_70%)]"></div>
             <div className="absolute inset-0 opacity-10 dark:opacity-15 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.15)_75%)] bg-[length:40px_40px]"></div>
           </div>
         )}
 
+        {/* ✅ CRITICAL FIX: Edit Banner Button - Always Visible on Hover */}
         {isOwnChannel && (
           <button
             onClick={() => setShowEditModal(true)}
-            className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white/95 hover:bg-white dark:bg-gray-900/95 dark:hover:bg-gray-900 text-gray-900 dark:text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs sm:text-sm backdrop-blur-md shadow-xl font-semibold border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 
+            bg-white/90 hover:bg-white 
+            dark:bg-gray-900/90 dark:hover:bg-gray-900 
+            text-gray-900 dark:text-white 
+            px-2 py-1.5 sm:px-3 sm:py-2 
+            rounded-lg transition-all 
+            opacity-0 group-hover:opacity-100 
+            flex items-center gap-1.5 
+            text-xs sm:text-sm 
+            backdrop-blur-md shadow-xl font-semibold 
+            border-2 border-gray-300/50 dark:border-gray-700/50 
+            hover:border-blue-500 dark:hover:border-blue-400
+            hover:scale-105 active:scale-95"
           >
             <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Edit Banner</span>
@@ -165,13 +179,17 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
           </button>
         )}
 
-        {/* ✅ Theme-aware gradient overlay */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 dark:to-transparent pointer-events-none"></div>
+        {/* ✅ CRITICAL FIX: Bottom gradient - Smooth transition to page background */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-28 sm:h-36 md:h-40 
+        bg-gradient-to-t 
+        from-white via-white/95 to-transparent 
+        dark:from-gray-900 dark:via-gray-900/95 dark:to-transparent 
+        pointer-events-none"
+        ></div>
       </div>
 
-      {/* ============================================================ */}
-      {/* CHANNEL INFO CONTAINER */}
-      {/* ============================================================ */}
+      {/* ✅ Channel info section explicitly matches page background */}
       <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 bg-white dark:bg-gray-900">
         {/* ========================================== */}
         {/* MOBILE LAYOUT (< md breakpoint) */}

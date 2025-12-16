@@ -560,12 +560,14 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-        {/* ✅ CHANNEL INFO BAR - ANDROID FORCE VISIBLE */}
+        {/* ✅ CHANNEL INFO BAR - THEME OPTIMIZED */}
         {channel && isMounted && (
           <div
             ref={infoBarRef}
             key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+            className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 
+      bg-gray-50 dark:bg-gray-900/50 
+      border-b border-gray-200 dark:border-gray-800"
             style={{
               position: "relative",
               zIndex: 10,
@@ -595,7 +597,7 @@ const ChannelPage = () => {
                   </span>
                 </div>
 
-                {/* Video Count - FORCE UPDATE */}
+                {/* Video Count */}
                 <div
                   key={`video-${videos.length}-${renderKey}`}
                   className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
@@ -606,7 +608,7 @@ const ChannelPage = () => {
                   </span>
                 </div>
 
-                {/* Shorts Count - FORCE UPDATE */}
+                {/* Shorts Count */}
                 <div
                   key={`shorts-${shorts.length}-${renderKey}`}
                   className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
