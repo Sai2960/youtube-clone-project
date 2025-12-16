@@ -560,33 +560,35 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-        {/* ✅ CHANNEL INFO BAR - THEME OPTIMIZED */}
+        {/* ✅ CHANNEL INFO BAR - FIXED LAYOUT */}
         {channel && isMounted && (
           <div
             ref={infoBarRef}
             key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 
-      bg-gray-50 dark:bg-gray-900/50 
-      border-b border-gray-200 dark:border-gray-800"
+            className="w-full px-4 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm"
             style={{
-              position: "relative",
-              zIndex: 10,
+              minHeight: "80px",
+              display: "block",
+              visibility: "visible",
+              opacity: 1,
             }}
           >
             <div className="w-full max-w-7xl mx-auto">
-              <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6">
+              <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-4 md:gap-6">
                 {/* Channel Name */}
-                <div className="w-full sm:w-auto flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">
+                <div className="col-span-2 md:col-span-1 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                    <User className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-base truncate">
                     {channel.channelname || channel.name || "Unknown"}
                   </span>
                 </div>
 
                 {/* Joined Date */}
-                <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <Calendar className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm whitespace-nowrap">
                     Joined{" "}
                     {channel.joinedon
                       ? new Date(channel.joinedon).toLocaleDateString("en-US", {
@@ -600,10 +602,10 @@ const ChannelPage = () => {
                 {/* Video Count */}
                 <div
                   key={`video-${videos.length}-${renderKey}`}
-                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+                  className="flex items-center gap-2 text-gray-600 dark:text-gray-400"
                 >
-                  <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                  <Video className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm whitespace-nowrap">
                     {videos.length} video{videos.length !== 1 ? "s" : ""}
                   </span>
                 </div>
@@ -611,10 +613,10 @@ const ChannelPage = () => {
                 {/* Shorts Count */}
                 <div
                   key={`shorts-${shorts.length}-${renderKey}`}
-                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+                  className="flex items-center gap-2 text-gray-600 dark:text-gray-400"
                 >
-                  <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                  <Film className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm whitespace-nowrap">
                     {shorts.length} short{shorts.length !== 1 ? "s" : ""}
                   </span>
                 </div>

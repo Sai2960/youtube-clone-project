@@ -140,24 +140,26 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
           <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" />
         )}
 
-        {/* Edit button - only visible on hover (desktop) */}
+        {/* Edit button - visible on mobile tap, desktop hover */}
         {isOwnChannel && (
           <button
             onClick={() => setShowEditModal(true)}
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 
-            bg-black/70 hover:bg-black/90 
+            className="absolute top-4 right-4 
+            bg-black/80 hover:bg-black 
             text-white 
-            px-3 py-1.5 sm:px-4 sm:py-2 
+            px-4 py-2 
             rounded-lg 
-            opacity-0 group-hover:opacity-100 
-            transition-opacity duration-200
+            md:opacity-0 md:group-hover:opacity-100 
+            transition-all duration-200
             flex items-center gap-2 
-            text-xs sm:text-sm font-medium
-            backdrop-blur-sm
-            z-10"
+            text-sm font-medium
+            backdrop-blur-md
+            shadow-lg
+            z-10
+            active:scale-95"
           >
             <Camera className="w-4 h-4" />
-            <span className="hidden sm:inline">Edit banner</span>
+            <span>Edit banner</span>
           </button>
         )}
       </div>
