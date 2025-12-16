@@ -132,24 +132,21 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
   return (
     <div className="w-full bg-white dark:bg-gray-900">
       {/* Banner Container */}
-      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 overflow-hidden group">
+      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 overflow-hidden group bg-white dark:bg-gray-900">
         {localChannel.bannerImage ? (
-          <>
-            {/* ✅ JUST THE BANNER IMAGE - NO OVERLAYS */}
-            <img
-              key={`banner-${imageKey}`}
-              src={displayBanner}
-              alt="Channel Banner"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error("❌ Banner error");
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          </>
+          <img
+            key={`banner-${imageKey}`}
+            src={displayBanner}
+            alt="Channel Banner"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error("❌ Banner error");
+              e.currentTarget.style.display = "none";
+            }}
+          />
         ) : (
           /* Default gradient when no banner */
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-600 dark:via-purple-700 dark:to-pink-800" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" />
         )}
 
         {/* ✅ YOUTUBE-STYLE: Edit button (only visible on hover) */}
