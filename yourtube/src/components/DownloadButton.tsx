@@ -86,6 +86,12 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
 
     const data = await recordResponse.json();
 
+    // ✅ CRITICAL: Validate response
+if (!recordResponse.ok) {
+  const errorData = await recordResponse.json().catch(() => ({}));
+  throw new Error(errorData.message || `Server returned ${recordResponse.status}`);
+}
+
     if (!data.success) {
       throw new Error(data.message || 'Download authorization failed');
     }
