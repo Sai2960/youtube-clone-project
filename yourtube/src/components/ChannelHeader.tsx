@@ -131,49 +131,55 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   return (
     <div className="w-full bg-white dark:bg-gray-900">
-      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 bg-gray-200 dark:bg-gray-800 overflow-hidden group">
-        {" "}
+      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 bg-gray-100 dark:bg-gray-950 overflow-hidden group">
         {localChannel.bannerImage ? (
-          <img
-            key={`banner-${imageKey}`}
-            src={displayBanner}
-            alt="Channel Banner"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error("❌ Banner error");
-              e.currentTarget.style.display = "none";
-            }}
-          />
+          <>
+            <img
+              key={`banner-${imageKey}`}
+              src={displayBanner}
+              alt="Channel Banner"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error("❌ Banner error");
+                e.currentTarget.style.display = "none";
+              }}
+            />
+            {/* ✅ Theme-aware overlay for banner images */}
+            <div className="absolute inset-0 bg-black/5 dark:bg-black/20 pointer-events-none"></div>
+          </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 dark:from-blue-700 dark:via-purple-800 dark:to-pink-800">
-            <div className="absolute inset-0 opacity-20 dark:opacity-15 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.3)_0%,transparent_70%)]"></div>
-            <div className="absolute inset-0 opacity-5 dark:opacity-10 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.1)_75%)] bg-[length:40px_40px]"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-600 dark:via-purple-700 dark:to-pink-700">
+            <div className="absolute inset-0 opacity-30 dark:opacity-20 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.4)_0%,transparent_70%)]"></div>
+            <div className="absolute inset-0 opacity-10 dark:opacity-15 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.15)_75%)] bg-[length:40px_40px]"></div>
           </div>
         )}
+
         {isOwnChannel && (
           <button
             onClick={() => setShowEditModal(true)}
-            className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/80 hover:bg-black/95 dark:bg-white/90 dark:hover:bg-white text-white dark:text-black px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs sm:text-sm backdrop-blur-md shadow-xl font-medium border border-white/20 dark:border-black/20"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white/95 hover:bg-white dark:bg-gray-900/95 dark:hover:bg-gray-900 text-gray-900 dark:text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs sm:text-sm backdrop-blur-md shadow-xl font-semibold border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400"
           >
             <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Edit Banner</span>
             <span className="sm:hidden">Edit</span>
           </button>
         )}
-        <div className="absolute bottom-0 left-0 right-0 h-20 sm:h-24 bg-gradient-to-t from-white dark:from-gray-900 via-white/80 dark:via-gray-900/80 to-transparent"></div>{" "}
+
+        {/* ✅ Theme-aware gradient overlay */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 dark:to-transparent pointer-events-none"></div>
       </div>
 
       {/* ============================================================ */}
       {/* CHANNEL INFO CONTAINER */}
       {/* ============================================================ */}
-      <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6">
+      <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 bg-white dark:bg-gray-900">
         {/* ========================================== */}
         {/* MOBILE LAYOUT (< md breakpoint) */}
         {/* ========================================== */}
         <div className="md:hidden">
           <div className="flex items-start gap-4 mb-4">
             <div className="relative flex-shrink-0">
-              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white dark:border-gray-900 shadow-xl ring-2 ring-gray-200 dark:ring-gray-700">
+              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white dark:border-gray-900 shadow-2xl ring-4 ring-gray-200/80 dark:ring-gray-700/80 bg-white dark:bg-gray-800">
                 <AvatarImage
                   key={`mobile-avatar-${imageKey}`}
                   src={displayImage}
@@ -258,7 +264,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
         <div className="hidden md:flex gap-6 items-start justify-between">
           <div className="flex gap-6 items-start flex-1">
             <div className="relative flex-shrink-0">
-              <Avatar className="w-32 h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40 border-4 border-white dark:border-gray-900 shadow-2xl ring-4 ring-gray-200 dark:ring-gray-700">
+              <Avatar className="w-32 h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40 border-4 border-white dark:border-gray-900 shadow-2xl ring-4 ring-gray-200/80 dark:ring-gray-700/80 bg-white dark:bg-gray-800">
                 <AvatarImage
                   key={`desktop-avatar-${imageKey}`}
                   src={displayImage}
