@@ -1,4 +1,4 @@
-// src/components/EditChannelModal.tsx - FIXED ALIGNMENT VERSION
+// src/components/EditChannelModal.tsx - ENHANCED VISIBILITY & PROFESSIONAL DESIGN
 
 import React, { useState, useRef } from "react";
 import {
@@ -250,116 +250,123 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-3 sm:p-4">
+      <div className="bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col border border-gray-200 dark:border-gray-800">
+        
         {/* ============================================================================
-            HEADER - FIXED AT TOP
+            HEADER - FIXED AT TOP WITH BETTER CONTRAST
             ============================================================================ */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#181818] flex-shrink-0">
+          <div className="flex-1 min-w-0 pr-4">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
               Edit Channel
             </h2>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Customize your channel appearance and information
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">
+              Customize your channel appearance
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition flex-shrink-0"
+            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition flex-shrink-0"
             disabled={uploading || isSubmitting}
+            aria-label="Close"
           >
-            <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400" />
+            <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
         </div>
 
         {/* ============================================================================
-            TABS - FIXED BELOW HEADER
+            TABS - ENHANCED VISIBILITY
             ============================================================================ */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0 overflow-x-auto">
+        <div className="flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] flex-shrink-0">
           <button
             onClick={() => handleTabChange("avatar")}
-            className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap min-w-0 flex-1 ${
+            className={`flex items-center justify-center gap-2 px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold transition-all relative flex-1 ${
               activeTab === "avatar"
-                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#181818]"
             }`}
           >
             <ImageIcon className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Profile Picture</span>
+            <span className="hidden sm:inline">Profile Picture</span>
+            <span className="sm:hidden">Profile</span>
             {activeTab === "avatar" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
             )}
           </button>
 
           <button
             onClick={() => handleTabChange("banner")}
-            className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap min-w-0 flex-1 ${
+            className={`flex items-center justify-center gap-2 px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold transition-all relative flex-1 ${
               activeTab === "banner"
-                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#181818]"
             }`}
           >
             <Camera className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Banner Image</span>
+            <span className="hidden sm:inline">Banner Image</span>
+            <span className="sm:hidden">Banner</span>
             {activeTab === "banner" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
             )}
           </button>
 
           <button
             onClick={() => handleTabChange("info")}
-            className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap min-w-0 flex-1 ${
+            className={`flex items-center justify-center gap-2 px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold transition-all relative flex-1 ${
               activeTab === "info"
-                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#181818]"
             }`}
           >
             <Edit2 className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Channel Info</span>
+            <span className="hidden sm:inline">Channel Info</span>
+            <span className="sm:hidden">Info</span>
             {activeTab === "info" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
             )}
           </button>
         </div>
 
         {/* ============================================================================
-            CONTENT - SCROLLABLE AREA
+            CONTENT - SCROLLABLE WITH ENHANCED CONTRAST
             ============================================================================ */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0f0f0f]">
+          <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
+            
             {/* IMAGE UPLOAD TABS */}
             {(activeTab === "avatar" || activeTab === "banner") && (
               <>
-                {/* Guidelines Box */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 sm:p-4">
+                {/* Guidelines Box - ENHANCED VISIBILITY */}
+                <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg flex-shrink-0">
-                      <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+                    <div className="bg-blue-100 dark:bg-blue-900 p-2.5 rounded-lg flex-shrink-0">
+                      <ImageIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm sm:text-base font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-base font-bold text-blue-900 dark:text-blue-100 mb-1.5">
                         {activeTab === "avatar" ? "Profile Picture Guidelines" : "Banner Guidelines"}
                       </h3>
-                      <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-                        <span className="font-semibold">Recommended size: {getRecommendedSize()}</span>
-                        <br />
+                      <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
+                        <span className="font-semibold block mb-1">
+                          Recommended size: {getRecommendedSize()}
+                        </span>
                         Format: JPG, PNG, or WebP • Max size: 5MB
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Current Image */}
+                {/* Current Image - ENHANCED CONTAINER */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">
                     Current {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                   </label>
-                  <div className="w-full flex justify-center">
+                  <div className="w-full flex justify-center bg-gray-100 dark:bg-[#181818] rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700">
                     <div
-                      className={`rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-md ${
+                      className={`rounded-xl overflow-hidden border-2 border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-800 shadow-lg ${
                         activeTab === "avatar"
-                          ? "w-32 h-32 sm:w-40 sm:h-40"
+                          ? "w-36 h-36 sm:w-44 sm:h-44"
                           : "w-full max-w-2xl aspect-[16/9]"
                       }`}
                     >
@@ -375,34 +382,34 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   </div>
                 </div>
 
-                {/* Upload New Image */}
+                {/* Upload New Image - ENHANCED VISIBILITY */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">
                     Upload New {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                   </label>
 
                   {!previewUrl ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 sm:p-12 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
+                      className="border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-xl p-10 sm:p-14 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-[#181818] hover:bg-blue-50 dark:hover:bg-blue-950/30 group"
                     >
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
+                      <div className="w-14 h-14 sm:w-18 sm:h-18 mx-auto mb-4 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                        <Upload className="w-7 h-7 sm:w-9 sm:h-9 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <p className="text-sm sm:text-base text-gray-900 dark:text-white font-semibold mb-1 sm:mb-2">
+                      <p className="text-base sm:text-lg text-gray-900 dark:text-white font-bold mb-2">
                         Click to upload or drag and drop
                       </p>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {activeTab === "avatar" ? "Square images work best" : "Wide images (16:9) recommended"}
                       </p>
                     </div>
                   ) : (
-                    <div className="w-full flex justify-center">
+                    <div className="w-full flex justify-center bg-gray-100 dark:bg-[#181818] rounded-xl p-4 border-2 border-blue-500 dark:border-blue-400">
                       <div className="relative">
                         <div
-                          className={`rounded-xl overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 shadow-lg ${
+                          className={`rounded-xl overflow-hidden border-2 border-blue-600 dark:border-blue-400 bg-gray-200 dark:bg-gray-800 shadow-xl ${
                             activeTab === "avatar"
-                              ? "w-32 h-32 sm:w-40 sm:h-40"
+                              ? "w-36 h-36 sm:w-44 sm:h-44"
                               : "w-full max-w-2xl aspect-[16/9]"
                           }`}
                         >
@@ -414,9 +421,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                         </div>
                         <button
                           onClick={handleRemove}
-                          className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 bg-red-600 hover:bg-red-700 text-white p-1.5 sm:p-2.5 rounded-full shadow-lg transition-all ring-2 ring-white dark:ring-gray-900"
+                          className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full shadow-xl transition-all ring-4 ring-white dark:ring-gray-900"
+                          aria-label="Remove image"
                         >
-                          <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -433,17 +441,17 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
               </>
             )}
 
-            {/* CHANNEL INFO TAB */}
+            {/* CHANNEL INFO TAB - ENHANCED VISIBILITY */}
             {activeTab === "info" && (
-              <form onSubmit={handleInfoSubmit} className="space-y-4 sm:space-y-6">
+              <form onSubmit={handleInfoSubmit} className="space-y-5 sm:space-y-6">
                 {error && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                  <div className="bg-red-50 dark:bg-red-950/50 border-2 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm font-semibold">
                     {error}
                   </div>
                 )}
 
                 <div>
-                  <Label htmlFor="channelName" className="text-sm sm:text-base font-semibold mb-2 block">
+                  <Label htmlFor="channelName" className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 mb-2 block">
                     Channel Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -452,16 +460,16 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     onChange={(e) => setChannelName(e.target.value)}
                     placeholder="Enter channel name"
                     disabled={isSubmitting}
-                    className="text-sm sm:text-base h-10 sm:h-12"
+                    className="text-sm sm:text-base h-11 sm:h-12 bg-white dark:bg-[#181818] border-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium"
                     maxLength={50}
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">
                     {channelName.length}/50 characters
                   </p>
                 </div>
 
                 <div>
-                  <Label htmlFor="description" className="text-sm sm:text-base font-semibold mb-2 block">
+                  <Label htmlFor="description" className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 mb-2 block">
                     Description
                   </Label>
                   <Textarea
@@ -470,11 +478,11 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Tell viewers about your channel..."
                     disabled={isSubmitting}
-                    rows={4}
+                    rows={5}
                     maxLength={1000}
-                    className="text-sm sm:text-base resize-none"
+                    className="text-sm sm:text-base resize-none bg-white dark:bg-[#181818] border-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">
                     {description.length}/1000 characters
                   </p>
                 </div>
@@ -484,15 +492,14 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         </div>
 
         {/* ============================================================================
-            FOOTER BUTTONS - FIXED AT BOTTOM
+            FOOTER BUTTONS - ENHANCED VISIBILITY
             ============================================================================ */}
-        <div className="flex gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
+        <div className="flex gap-3 px-4 sm:px-6 py-4 border-t-2 border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#181818] flex-shrink-0">
           <Button
             type="button"
-            variant="outline"
             onClick={onClose}
             disabled={uploading || isSubmitting}
-            className="flex-1 h-10 sm:h-12 text-sm sm:text-base font-semibold"
+            className="flex-1 h-11 sm:h-12 text-sm sm:text-base font-bold bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-600"
           >
             Cancel
           </Button>
@@ -502,16 +509,16 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
               type="button"
               onClick={handleInfoSubmit}
               disabled={isSubmitting || !channelName.trim()}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 h-10 sm:h-12 text-sm sm:text-base font-semibold"
+              className="flex-1 h-11 sm:h-12 text-sm sm:text-base font-bold bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 text-white"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-2" />
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Save Changes
                 </>
               )}
@@ -521,16 +528,16 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
               type="button"
               onClick={handleUpload}
               disabled={!selectedFile || uploading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 h-10 sm:h-12 text-sm sm:text-base font-semibold"
+              className="flex-1 h-11 sm:h-12 text-sm sm:text-base font-bold bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 text-white"
             >
               {uploading ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
                   Uploading...
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-2" />
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Save Changes
                 </>
               )}
