@@ -1,4 +1,4 @@
-// src/components/EditChannelModal.tsx - ENHANCED VISIBILITY & PROFESSIONAL DESIGN
+// src/components/EditChannelModal.tsx - FIXED VERSION WITH channelUpdated EVENT
 
 import React, { useState, useRef } from "react";
 import {
@@ -31,7 +31,9 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   onUpdate,
 }) => {
   const { user, updateUser } = useUser();
-  const [activeTab, setActiveTab] = useState<"avatar" | "banner" | "info">("avatar");
+  const [activeTab, setActiveTab] = useState<"avatar" | "banner" | "info">(
+    "avatar"
+  );
 
   // Image upload states
   const [uploading, setUploading] = useState(false);
@@ -80,7 +82,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
       const formData = new FormData();
       formData.append("image", selectedFile);
-      formData.append("imageType", activeTab === "avatar" ? "profile" : "banner");
+      formData.append(
+        "imageType",
+        activeTab === "avatar" ? "profile" : "banner"
+      );
 
       console.log("📤 Uploading:", {
         type: activeTab,
@@ -114,7 +119,10 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
           const updatedUser = { ...user, image: newImageUrl };
           updateUser(updatedUser);
           localStorage.setItem("user", JSON.stringify(updatedUser));
-          console.log("👤 User context and localStorage updated with:", newImageUrl);
+          console.log(
+            "👤 User context and localStorage updated with:",
+            newImageUrl
+          );
         }
 
         if (activeTab === "banner" && user) {
@@ -124,12 +132,14 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
           console.log("🖼️ Banner updated in localStorage:", newImageUrl);
         }
 
-        // Dispatch avatarUpdated event
+        // ✅ CRITICAL FIX: Dispatch avatarUpdated event
         window.dispatchEvent(new Event("avatarUpdated"));
         console.log("🔔 Dispatched avatarUpdated event");
 
         toast.success(
-          `${activeTab === "avatar" ? "Profile picture" : "Banner"} updated successfully!`
+          `${
+            activeTab === "avatar" ? "Profile picture" : "Banner"
+          } updated successfully!`
         );
 
         // Reset upload state
@@ -157,7 +167,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   };
 
   // ============================================================================
-  // INFO UPDATE HANDLER
+  // INFO UPDATE HANDLER - WITH channelUpdated EVENT
   // ============================================================================
   const handleInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,7 +197,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
       });
 
       if (response.data.success) {
-        const updatedData = response.data.result || response.data.user || response.data;
+        const updatedData =
+          response.data.result || response.data.user || response.data;
 
         console.log("✅ Channel info updated:", updatedData);
 
@@ -206,19 +217,23 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         updateUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
 
-        // Dispatch events
+        // ✅ CRITICAL FIX: Dispatch BOTH events for channel updates
         window.dispatchEvent(new Event("channelUpdated"));
         window.dispatchEvent(new Event("avatarUpdated"));
         window.dispatchEvent(new Event("storage"));
 
-        console.log("🔔 Dispatched channelUpdated, avatarUpdated, and storage events");
+        console.log(
+          "🔔 Dispatched channelUpdated, avatarUpdated, and storage events"
+        );
 
         toast.success("Channel information updated successfully!");
         onClose();
       }
     } catch (error: any) {
       console.error("Update error:", error);
-      setError(error.response?.data?.message || "Failed to update channel information");
+      setError(
+        error.response?.data?.message || "Failed to update channel information"
+      );
       toast.error("Failed to update channel information");
     } finally {
       setIsSubmitting(false);
@@ -229,7 +244,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   // HELPER FUNCTIONS
   // ============================================================================
   const getCurrentImage = () => {
-    const imageUrl = activeTab === "avatar" ? channel.image : channel.bannerImage;
+    const imageUrl =
+      activeTab === "avatar" ? channel.image : channel.bannerImage;
     return getImageUrl(imageUrl, true);
   };
 
@@ -250,188 +266,180 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-3 sm:p-4">
-      <div className="bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col border border-gray-200 dark:border-gray-800">
-        
-        {/* ============================================================================
-            HEADER - FIXED AT TOP WITH BETTER CONTRAST
-            ============================================================================ */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#181818] flex-shrink-0">
-          <div className="flex-1 min-w-0 pr-4">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col"
+        style={{ maxHeight: "90vh" }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               Edit Channel
             </h2>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">
-              Customize your channel appearance
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Customize your channel appearance and information
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition flex-shrink-0"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition"
             disabled={uploading || isSubmitting}
-            aria-label="Close"
           >
-            <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <X className="w-6 h-6 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
-        {/* ============================================================================
-            TABS - ENHANCED VISIBILITY
-            ============================================================================ */}
-        <div className="flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] flex-shrink-0">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 sticky top-[73px] z-10">
           <button
             onClick={() => handleTabChange("avatar")}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold transition-all relative flex-1 ${
+            className={`flex-1 py-4 px-4 text-sm font-semibold transition-all relative ${
               activeTab === "avatar"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#181818]"
+                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
-            <ImageIcon className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Profile Picture</span>
-            <span className="sm:hidden">Profile</span>
+            <div className="flex items-center justify-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              <span>Profile Picture</span>
+            </div>
             {activeTab === "avatar" && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
             )}
           </button>
 
           <button
             onClick={() => handleTabChange("banner")}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold transition-all relative flex-1 ${
+            className={`flex-1 py-4 px-4 text-sm font-semibold transition-all relative ${
               activeTab === "banner"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#181818]"
+                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
-            <Camera className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Banner Image</span>
-            <span className="sm:hidden">Banner</span>
+            <div className="flex items-center justify-center gap-2">
+              <Camera className="w-4 h-4" />
+              <span>Banner Image</span>
+            </div>
             {activeTab === "banner" && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
             )}
           </button>
 
           <button
             onClick={() => handleTabChange("info")}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold transition-all relative flex-1 ${
+            className={`flex-1 py-4 px-4 text-sm font-semibold transition-all relative ${
               activeTab === "info"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#181818]"
+                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
-            <Edit2 className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Channel Info</span>
-            <span className="sm:hidden">Info</span>
+            <div className="flex items-center justify-center gap-2">
+              <Edit2 className="w-4 h-4" />
+              <span>Channel Info</span>
+            </div>
             {activeTab === "info" && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
             )}
           </button>
         </div>
 
-        {/* ============================================================================
-            CONTENT - SCROLLABLE WITH ENHANCED CONTRAST
-            ============================================================================ */}
-        <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0f0f0f]">
-          <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
-            
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6 space-y-6">
             {/* IMAGE UPLOAD TABS */}
             {(activeTab === "avatar" || activeTab === "banner") && (
               <>
-                {/* Guidelines Box - ENHANCED VISIBILITY */}
-                <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <div className="bg-blue-100 dark:bg-blue-900 p-2.5 rounded-lg flex-shrink-0">
+                    <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg flex-shrink-0">
                       <ImageIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm sm:text-base font-bold text-blue-900 dark:text-blue-100 mb-1.5">
-                        {activeTab === "avatar" ? "Profile Picture Guidelines" : "Banner Guidelines"}
+                    <div>
+                      <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                        {activeTab === "avatar"
+                          ? "Profile Picture Guidelines"
+                          : "Banner Guidelines"}
                       </h3>
-                      <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
-                        <span className="font-semibold block mb-1">
-                          Recommended size: {getRecommendedSize()}
+                      <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+                        Recommended size:{" "}
+                        <span className="font-semibold">
+                          {getRecommendedSize()}
                         </span>
+                        <br />
                         Format: JPG, PNG, or WebP • Max size: 5MB
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Current Image - ENHANCED CONTAINER */}
-                {/* Current Image - ENHANCED CONTAINER */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">
-                    Current {activeTab === "avatar" ? "Profile Picture" : "Banner"}
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Current{" "}
+                    {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                   </label>
-                  <div className="w-full bg-gray-100 dark:bg-[#181818] rounded-xl p-4 sm:p-6 border-2 border-gray-200 dark:border-gray-700">
-                    <div className="w-full flex justify-center">
-                      <div
-                        className={`rounded-xl overflow-hidden border-2 border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-800 shadow-lg ${
-                          activeTab === "avatar"
-                            ? "w-40 h-40 sm:w-48 sm:h-48"
-                            : "w-full aspect-[16/9]"
-                        }`}
-                      >
-                        <img
-                          src={getCurrentImage()}
-                          alt={activeTab}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = "https://github.com/shadcn.png";
-                          }}
-                        />
-                      </div>
-                    </div>
+                  <div
+                    className={`rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-md ${
+                      activeTab === "avatar"
+                        ? "w-32 h-32 mx-auto"
+                        : "w-full aspect-[16/9]"
+                    }`}
+                  >
+                    <img
+                      src={getCurrentImage()}
+                      alt={activeTab}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://github.com/shadcn.png";
+                      }}
+                    />
                   </div>
                 </div>
 
-                {/* Upload New Image - ENHANCED VISIBILITY */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">
-                    Upload New {activeTab === "avatar" ? "Profile Picture" : "Banner"}
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Upload New{" "}
+                    {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                   </label>
 
                   {!previewUrl ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-xl p-10 sm:p-12 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-[#181818] hover:bg-blue-50 dark:hover:bg-blue-950/30 group"
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
                     >
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-                        <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 dark:text-blue-400" />
+                      <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <p className="text-base sm:text-lg text-gray-900 dark:text-white font-bold mb-2">
+                      <p className="text-gray-900 dark:text-white font-semibold text-lg mb-2">
                         Click to upload or drag and drop
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {activeTab === "avatar" ? "Square images work best" : "Wide images (16:9) recommended"}
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {activeTab === "avatar"
+                          ? "Square images work best"
+                          : "Wide images (16:9) recommended"}
                       </p>
                     </div>
                   ) : (
-                    <div className="w-full bg-gray-100 dark:bg-[#181818] rounded-xl p-4 sm:p-6 border-2 border-blue-500 dark:border-blue-400">
-                      <div className="w-full flex justify-center">
-                        <div className="relative">
-                          <div
-                            className={`rounded-xl overflow-hidden border-2 border-blue-600 dark:border-blue-400 bg-gray-200 dark:bg-gray-800 shadow-xl ${
-                              activeTab === "avatar"
-                                ? "w-40 h-40 sm:w-48 sm:h-48"
-                                : "w-full aspect-[16/9]"
-                            }`}
-                          >
-                            <img
-                              src={previewUrl}
-                              alt="Preview"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <button
-                            onClick={handleRemove}
-                            className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full shadow-xl transition-all ring-4 ring-white dark:ring-gray-900"
-                            aria-label="Remove image"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
+                    <div className="relative">
+                      <div
+                        className={`rounded-xl overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 shadow-lg ${
+                          activeTab === "avatar"
+                            ? "w-32 h-32 mx-auto"
+                            : "w-full aspect-[16/9]"
+                        }`}
+                      >
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
+                      <button
+                        onClick={handleRemove}
+                        className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full shadow-lg transition-all ring-2 ring-white dark:ring-gray-900"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   )}
 
@@ -443,20 +451,51 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     className="hidden"
                   />
                 </div>
+
+                {/* Image Upload Footer */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4">
+                  <button
+                    onClick={onClose}
+                    disabled={uploading}
+                    className="flex-1 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-base font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpload}
+                    disabled={!selectedFile || uploading}
+                    className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-base font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none disabled:cursor-not-allowed"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-5 h-5" />
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
               </>
             )}
 
-            {/* CHANNEL INFO TAB - ENHANCED VISIBILITY */}
+            {/* CHANNEL INFO TAB */}
             {activeTab === "info" && (
-              <form onSubmit={handleInfoSubmit} className="space-y-5 sm:space-y-6">
+              <form onSubmit={handleInfoSubmit} className="space-y-6">
                 {error && (
-                  <div className="bg-red-50 dark:bg-red-950/50 border-2 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm font-semibold">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
                     {error}
                   </div>
                 )}
 
                 <div>
-                  <Label htmlFor="channelName" className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 mb-2 block">
+                  <Label
+                    htmlFor="channelName"
+                    className="text-base font-semibold mb-2 block"
+                  >
                     Channel Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -465,16 +504,19 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     onChange={(e) => setChannelName(e.target.value)}
                     placeholder="Enter channel name"
                     disabled={isSubmitting}
-                    className="text-sm sm:text-base h-11 sm:h-12 bg-white dark:bg-[#181818] border-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium"
+                    className="text-base h-12"
                     maxLength={50}
                   />
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
                     {channelName.length}/50 characters
                   </p>
                 </div>
 
                 <div>
-                  <Label htmlFor="description" className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 mb-2 block">
+                  <Label
+                    htmlFor="description"
+                    className="text-base font-semibold mb-2 block"
+                  >
                     Description
                   </Label>
                   <Textarea
@@ -483,75 +525,57 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Tell viewers about your channel..."
                     disabled={isSubmitting}
-                    rows={5}
+                    rows={4}
                     maxLength={1000}
-                    className="text-sm sm:text-base resize-none bg-white dark:bg-[#181818] border-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium"
+                    className="text-base resize-none"
                   />
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-medium">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
                     {description.length}/1000 characters
                   </p>
+                </div>
+
+                {/* Channel Info Footer */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={isSubmitting}
+                    className="h-12 px-6"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !channelName.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 h-12 px-6"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
                 </div>
               </form>
             )}
           </div>
         </div>
-
-        {/* ============================================================================
-            FOOTER BUTTONS - ENHANCED VISIBILITY
-            ============================================================================ */}
-        <div className="flex gap-3 px-4 sm:px-6 py-4 border-t-2 border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#181818] flex-shrink-0">
-          <Button
-            type="button"
-            onClick={onClose}
-            disabled={uploading || isSubmitting}
-            className="flex-1 h-11 sm:h-12 text-sm sm:text-base font-bold bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-600"
-          >
-            Cancel
-          </Button>
-
-          {activeTab === "info" ? (
-            <Button
-              type="button"
-              onClick={handleInfoSubmit}
-              disabled={isSubmitting || !channelName.trim()}
-              className="flex-1 h-11 sm:h-12 text-sm sm:text-base font-bold bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 text-white"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleUpload}
-              disabled={!selectedFile || uploading}
-              className="flex-1 h-11 sm:h-12 text-sm sm:text-base font-bold bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 text-white"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          )}
-        </div>
       </div>
     </div>
   );
 };
+<style jsx global>{`
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`}</style>;
 
 export default EditChannelModal;
