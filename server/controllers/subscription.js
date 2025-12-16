@@ -154,8 +154,12 @@ export const createSubscriptionOrder = async (req, res) => {
 
     console.log("Creating order for plan:", plan, "User:", userId);
 
+    // ✅ CRITICAL: Prevent purchasing FREE plan
     if (!PLAN_DETAILS[plan] || plan === "FREE") {
-      return res.status(400).json({ message: "Invalid plan selected" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid plan selected. FREE plan cannot be purchased.",
+      });
     }
 
     // Get user
@@ -164,29 +168,24 @@ export const createSubscriptionOrder = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check plan hierarchy - ALLOW DOWNGRADE NOW
-    const planHierarchy = {
-      FREE: 0,
-      BRONZE: 1,
-      SILVER: 2,
-      GOLD: 3,
-      MONTHLY: 4,
-      YEARLY: 5,
-    };
-    const currentLevel = planHierarchy[user.currentPlan] || 0;
-    const newLevel = planHierarchy[plan];
-
-    // Only block if same plan
-    if (newLevel === currentLevel && currentLevel !== 0) {
+    // ✅ FIXED: Only block if subscribing to SAME plan
+    const currentPlan = user.currentPlan || "FREE";
+    if (plan === currentPlan && currentPlan !== "FREE") {
       return res.status(400).json({
+        success: false,
         message: "You are already subscribed to this plan.",
       });
     }
 
+    // ✅ REMOVED: Downgrade prevention - allow all plan changes
+
     // Get Razorpay instance
     const razorpayInstance = getRazorpayInstance();
     if (!razorpayInstance) {
-      return res.status(500).json({ message: "Payment gateway not available" });
+      return res.status(500).json({
+        success: false,
+        message: "Payment gateway not available",
+      });
     }
 
     // Create Razorpay order
@@ -212,6 +211,7 @@ export const createSubscriptionOrder = async (req, res) => {
     await transaction.save();
 
     res.json({
+      success: true,
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
@@ -220,8 +220,60 @@ export const createSubscriptionOrder = async (req, res) => {
   } catch (error) {
     console.error("Create order error:", error);
     res.status(500).json({
+      success: false,
       message: "Failed to create order",
       error: error.message,
+    });
+  }
+};
+
+export const enforceWatchTimeLimit = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { videoId, watchedTime } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const currentPlan = user.currentPlan || "FREE";
+    const watchLimit = PLAN_DETAILS[currentPlan]?.watchTime || 5;
+
+    // -1 means unlimited
+    if (watchLimit === -1) {
+      return res.json({
+        success: true,
+        canContinue: true,
+        message: "Unlimited watch time",
+      });
+    }
+
+    // Check if user has exceeded watch time
+    if (watchedTime >= watchLimit) {
+      return res.json({
+        success: true,
+        canContinue: false,
+        watchLimit,
+        message: `Watch time limit reached. Upgrade to continue watching.`,
+        upgradeUrl: "/subscription",
+      });
+    }
+
+    return res.json({
+      success: true,
+      canContinue: true,
+      remainingTime: watchLimit - watchedTime,
+      watchLimit,
+    });
+  } catch (error) {
+    console.error("Enforce watch time error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to check watch time limit",
     });
   }
 };
@@ -342,13 +394,14 @@ export const cancelSubscription = async (req, res) => {
       }
     );
 
+    // ✅ CRITICAL: Update user to FREE plan with 5 min limit
     const user = await User.findById(userId);
     if (user) {
       user.currentPlan = "FREE";
-      user.watchTimeLimit = PLAN_DETAILS.FREE.watchTime;
+      user.watchTimeLimit = 5; // ✅ HARDCODED: FREE = 5 minutes
       user.subscriptionExpiry = null;
       await user.save();
-      console.log("User updated to FREE plan");
+      console.log("✅ User updated to FREE plan with 5 min limit");
     }
 
     // Get the latest subscription to return
@@ -359,7 +412,7 @@ export const cancelSubscription = async (req, res) => {
     return res.status(200).json({
       success: true,
       message:
-        "Subscription cancelled successfully. You have been moved to the FREE plan.",
+        "Subscription cancelled successfully. You have been moved to the FREE plan with 5 minutes watch time.",
       subscription,
     });
   } catch (error) {

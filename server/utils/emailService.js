@@ -11,10 +11,11 @@ function initializeTransporter() {
   }
 
   // Safe debug logging - no actual credentials exposed
-  console.log('=== EMAIL CONFIGURATION ===');
-  console.log('EMAIL_USER configured:', !!process.env.EMAIL_USER);
-  console.log('EMAIL_PASSWORD configured:', !!process.env.EMAIL_PASSWORD);
-  console.log('===========================');
+ console.log('=== EMAIL CONFIGURATION ===');
+console.log('EMAIL_USER configured:', !!process.env.EMAIL_USER);
+console.log('EMAIL_PASS configured:', !!process.env.EMAIL_PASSWORD);
+console.log('Email user domain:', process.env.EMAIL_USER?.split('@')[1] || 'not set');
+console.log('===========================');
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
     console.error('❌ Email credentials missing in environment variables');

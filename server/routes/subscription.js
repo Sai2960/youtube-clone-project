@@ -26,5 +26,8 @@ router.get('/transactions', verifyToken, getTransactionHistory);
 router.get('/user/:userId', verifyToken, getUserSubscription);
 router.post('/cancel', verifyToken, cancelSubscription); // ✅ Removed /:userId
 router.get('/analytics', verifyToken, getSubscriptionAnalytics);
+router.post('/enforce-watch-limit', verifyToken, enforceWatchTimeLimit);
+
+
 
 export default router;
