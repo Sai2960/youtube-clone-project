@@ -121,48 +121,48 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   return (
     <div className="w-full bg-white dark:bg-gray-900">
-      {/* ========================================== */}
-      {/* BANNER - PURE IMAGE ONLY (NO OVERLAYS)    */}
-      {/* ========================================== */}
-      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 overflow-hidden group">
-        {localChannel.bannerImage ? (
-          <img
-            key={`banner-${imageKey}`}
-            src={displayBanner}
-            alt="Channel Banner"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error("❌ Banner error");
-              e.currentTarget.style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" />
-        )}
+     {/* BANNER - PURE IMAGE WITH BETTER EDIT BUTTON */}
+<div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 overflow-hidden group">
+  {localChannel.bannerImage ? (
+    <img
+      key={`banner-${imageKey}`}
+      src={displayBanner}
+      alt="Channel Banner"
+      className="w-full h-full object-cover"
+      onError={(e) => {
+        console.error("❌ Banner error");
+        e.currentTarget.style.display = "none";
+      }}
+    />
+  ) : (
+    <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" />
+  )}
 
-        {/* Edit button - visible on mobile tap, desktop hover */}
-        {isOwnChannel && (
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="absolute top-4 right-4 
-            bg-black/80 hover:bg-black 
-            text-white 
-            px-4 py-2 
-            rounded-lg 
-            md:opacity-0 md:group-hover:opacity-100 
-            transition-all duration-200
-            flex items-center gap-2 
-            text-sm font-medium
-            backdrop-blur-md
-            shadow-lg
-            z-10
-            active:scale-95"
-          >
-            <Camera className="w-4 h-4" />
-            <span>Edit banner</span>
-          </button>
-        )}
-      </div>
+       {/* FIXED: Better edit button positioning */}
+  {isOwnChannel && (
+    <button
+      onClick={() => setShowEditModal(true)}
+      className="absolute top-3 right-3 sm:top-4 sm:right-4 
+      bg-black/90 hover:bg-black 
+      text-white 
+      px-3 py-2 sm:px-4 sm:py-2.5
+      rounded-lg 
+      opacity-100 sm:opacity-0 sm:group-hover:opacity-100 
+      transition-all duration-200
+      flex items-center gap-1.5 sm:gap-2 
+      text-xs sm:text-sm font-medium
+      backdrop-blur-md
+      shadow-lg hover:shadow-xl
+      z-10
+      active:scale-95
+      ring-1 ring-white/20"
+    >
+      <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+      <span className="hidden sm:inline">Edit banner</span>
+      <span className="sm:hidden">Edit</span>
+    </button>
+  )}
+</div>
 
       {/* Channel Info */}
       <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 bg-white dark:bg-gray-900">

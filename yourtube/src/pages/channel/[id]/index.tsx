@@ -560,70 +560,107 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-        {/* ✅ CHANNEL INFO BAR - FIXED LAYOUT */}
-        {channel && isMounted && (
-          <div
-            ref={infoBarRef}
-            key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="w-full px-4 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm"
-            style={{
-              minHeight: "80px",
-              display: "block",
-              visibility: "visible",
-              opacity: 1,
-            }}
-          >
-            <div className="w-full max-w-7xl mx-auto">
-              <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-4 md:gap-6">
-                {/* Channel Name */}
-                <div className="col-span-2 md:col-span-1 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                  <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
-                    <User className="w-3 h-3 text-white" />
-                  </div>
-                  <span className="text-base truncate">
-                    {channel.channelname || channel.name || "Unknown"}
-                  </span>
-                </div>
-
-                {/* Joined Date */}
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    Joined{" "}
-                    {channel.joinedon
-                      ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "Recently"}
-                  </span>
-                </div>
-
-                {/* Video Count */}
-                <div
-                  key={`video-${videos.length}-${renderKey}`}
-                  className="flex items-center gap-2 text-gray-600 dark:text-gray-400"
-                >
-                  <Video className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    {videos.length} video{videos.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-
-                {/* Shorts Count */}
-                <div
-                  key={`shorts-${shorts.length}-${renderKey}`}
-                  className="flex items-center gap-2 text-gray-600 dark:text-gray-400"
-                >
-                  <Film className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm whitespace-nowrap">
-                    {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              </div>
-            </div>
+       {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE FIXED LAYOUT */}
+{channel && isMounted && (
+  <div
+    ref={infoBarRef}
+    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+    className="w-full px-4 py-4 sm:py-5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm"
+    style={{
+      minHeight: "auto",
+      display: "flex",
+      visibility: "visible",
+      opacity: 1,
+    }}
+  >
+    <div className="w-full max-w-7xl mx-auto">
+      {/* Mobile Layout */}
+      <div className="flex md:hidden flex-col gap-3">
+        <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+          <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+            <User className="w-3 h-3 text-white" />
           </div>
-        )}
+          <span className="text-base truncate flex-1">
+            {channel.channelname || channel.name || "Unknown"}
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-3">
+          <div className="flex flex-col items-center gap-1 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <span className="text-xs text-gray-600 dark:text-gray-400 text-center">
+              {channel.joinedon
+                ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "Recently"}
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center gap-1 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <Video className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <span className="text-xs font-semibold text-gray-900 dark:text-white">
+              {videos.length}
+            </span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              video{videos.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center gap-1 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <Film className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <span className="text-xs font-semibold text-gray-900 dark:text-white">
+              {shorts.length}
+            </span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              short{shorts.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:grid md:grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 lg:gap-6">
+        <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold lg:flex-shrink-0">
+          <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+            <User className="w-3 h-3 text-white" />
+          </div>
+          <span className="text-base truncate">
+            {channel.channelname || channel.name || "Unknown"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+          <Calendar className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm whitespace-nowrap">
+            Joined{" "}
+            {channel.joinedon
+              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "Recently"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+          <Video className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm whitespace-nowrap">
+            {videos.length} video{videos.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+          <Film className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm whitespace-nowrap">
+            {shorts.length} short{shorts.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
         {process.env.NODE_ENV === "development" && (
