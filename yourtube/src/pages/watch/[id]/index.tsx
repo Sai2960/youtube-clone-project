@@ -3,12 +3,10 @@ import RelatedVideos from "@/components/RelatedVideos";
 import VideoInfo from "@/components/VideoInfo";
 import GestureVideoPlayer from "@/components/GestureVideoPlayer";
 import ShareModal from "@/components/ui/ShareModal";
-import DownloadButton from "@/components/DownloadButton";
 import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import React, { useEffect, useState, useRef } from "react";
 import { fixMediaURL, getVideoUrl, getThumbnailUrl } from "@/lib/urlHelper";
-
 const WatchPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -19,191 +17,179 @@ const WatchPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState(0);
-  const [user, setUser] = useState<any>(null);
   const commentsRef = useRef<HTMLDivElement>(null);
 
   // ✅ Track last fetched video ID to prevent duplicates
   const lastFetchedIdRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
 
-  // ✅ Get user from localStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch (err) {
-          console.error("Error parsing user data:", err);
-        }
-      }
-    }
-  }, []);
-
   // ✅ Optimized video fetch with duplicate prevention
-  useEffect(() => {
-    const fetchVideo = async () => {
-      // ✅ Validate ID first
-      if (!id || typeof id !== "string" || id === 'undefined') {
-        console.log("⏭️ Invalid ID, skipping fetch");
+useEffect(() => {
+  const fetchVideo = async () => {
+    // ✅ Validate ID first
+    if (!id || typeof id !== "string" || id === 'undefined') {
+      console.log("⏭️ Invalid ID, skipping fetch");
+      setLoading(false);
+      setError("Invalid video ID");
+      return;
+    }
+
+    // ✅ Prevent duplicate fetches
+    if (lastFetchedIdRef.current === id || isFetchingRef.current) {
+      console.log("⏭️ Skipping duplicate fetch for:", id);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      isFetchingRef.current = true;
+      lastFetchedIdRef.current = id;
+
+      console.log("\n🔄 ===== FETCHING VIDEO =====");
+      console.log("   Video ID:", id);
+      console.log("   API URL:", `${process.env.NEXT_PUBLIC_API_URL}/video/${id}`);
+
+      // ✅ Fetch video with explicit error handling
+      const videoRes = await axiosInstance.get(`/video/${id}`);
+
+      console.log("📦 API Response:", {
+        success: videoRes.data.success,
+        hasVideo: !!videoRes.data.video,
+        hasData: !!videoRes.data.data,
+        status: videoRes.status
+      });
+
+      // ✅ Check response structure (handle both .video and .data)
+    // ✅ Check response structure (handle both .video and .data)
+      const videoData = videoRes.data.video || videoRes.data.data;
+
+      if (!videoData) {
+        console.error("❌ No video data in response");
+        setError("Video not found or has been removed");
         setLoading(false);
-        setError("Invalid video ID");
         return;
       }
 
-      // ✅ Prevent duplicate fetches
-      if (lastFetchedIdRef.current === id || isFetchingRef.current) {
-        console.log("⏭️ Skipping duplicate fetch for:", id);
-        return;
-      }
+      // ✅ DEBUG: Log the raw video data
+      console.log("📦 Raw Video Data from API:", {
+        id: videoData._id,
+        title: videoData.videotitle,
+        filepath: videoData.filepath,
+        videofile: videoData.videofile,
+        videoLink: videoData.videoLink,
+        allKeys: Object.keys(videoData)
+      });
 
-      try {
-        setLoading(true);
-        setError(null);
-        isFetchingRef.current = true;
-        lastFetchedIdRef.current = id;
-
-        console.log("\n🔄 ===== FETCHING VIDEO =====");
-        console.log("   Video ID:", id);
-        console.log("   API URL:", `${process.env.NEXT_PUBLIC_API_URL}/video/${id}`);
-
-        // ✅ Fetch video with explicit error handling
-        const videoRes = await axiosInstance.get(`/video/${id}`);
-
-        console.log("📦 API Response:", {
-          success: videoRes.data.success,
-          hasVideo: !!videoRes.data.video,
-          hasData: !!videoRes.data.data,
-          status: videoRes.status
-        });
-
-        // ✅ Check response structure (handle both .video and .data)
-        const videoData = videoRes.data.video || videoRes.data.data;
-
-        if (!videoData) {
-          console.error("❌ No video data in response");
-          setError("Video not found or has been removed");
-          setLoading(false);
-          return;
-        }
-
-        // ✅ DEBUG: Log the raw video data
-        console.log("📦 Raw Video Data from API:", {
-          id: videoData._id,
-          title: videoData.videotitle,
-          filepath: videoData.filepath,
-          videofile: videoData.videofile,
-          videoLink: videoData.videoLink,
-          allKeys: Object.keys(videoData)
-        });
-
-        // ✅ Transform URLs - IMPROVED VERSION
-        const transformedVideo = {
-          ...videoData,
-          // Use the proper getVideoUrl function for video files
-          filepath: getVideoUrl(videoData) || fixMediaURL(
-            videoData.filepath || 
-            videoData.videofile || 
-            videoData.videoLink || 
-            videoData.video ||
-            videoData.videoUrl
-          ),
-          // Use getThumbnailUrl for thumbnails
-          videothumbnail: getThumbnailUrl(videoData) || fixMediaURL(
-            videoData.videothumbnail || 
-            videoData.thumbnail ||
-            videoData.thumbnailUrl
-          ),
-          uploadedBy: videoData.uploadedBy
-            ? {
-                ...videoData.uploadedBy,
-                image: fixMediaURL(videoData.uploadedBy.image || videoData.uploadedBy.avatar),
-                bannerImage: fixMediaURL(videoData.uploadedBy.bannerImage),
-              }
-            : null,
-        };
-
-        // ✅ CRITICAL: Validate video URL exists
-        if (!transformedVideo.filepath) {
-          console.error("❌ No valid video URL found in:", {
-            videoId: videoData._id,
-            title: videoData.videotitle,
-            rawData: {
-              filepath: videoData.filepath,
-              videofile: videoData.videofile,
-              videoLink: videoData.videoLink
+      // ✅ Transform URLs
+  // ✅ Transform URLs - IMPROVED VERSION
+      const transformedVideo = {
+        ...videoData,
+        // Use the proper getVideoUrl function for video files
+        filepath: getVideoUrl(videoData) || fixMediaURL(
+          videoData.filepath || 
+          videoData.videofile || 
+          videoData.videoLink || 
+          videoData.video ||
+          videoData.videoUrl
+        ),
+        // Use getThumbnailUrl for thumbnails
+        videothumbnail: getThumbnailUrl(videoData) || fixMediaURL(
+          videoData.videothumbnail || 
+          videoData.thumbnail ||
+          videoData.thumbnailUrl
+        ),
+        uploadedBy: videoData.uploadedBy
+          ? {
+              ...videoData.uploadedBy,
+              image: fixMediaURL(videoData.uploadedBy.image || videoData.uploadedBy.avatar),
+              bannerImage: fixMediaURL(videoData.uploadedBy.bannerImage),
             }
-          });
-          setError("Video file not available");
-          setLoading(false);
-          return;
-        }
+          : null,
+      };
 
-        console.log("✅ Video transformed:", {
-          id: transformedVideo._id,
-          title: transformedVideo.videotitle,
-          hasFilepath: !!transformedVideo.filepath,
-          filepath: transformedVideo.filepath?.substring(0, 60) + '...',
-          hasThumbnail: !!transformedVideo.videothumbnail
-        });
-
-        setCurrentVideo(transformedVideo);
-
-        // ✅ Fetch all videos for related videos
-        try {
-          const allVideosRes = await axiosInstance.get("/video/getall");
-          if (allVideosRes.data.success && Array.isArray(allVideosRes.data.videos)) {
-            setAllVideos(allVideosRes.data.videos);
-            console.log("📚 Loaded", allVideosRes.data.videos.length, "total videos");
+      // ✅ CRITICAL: Validate video URL exists
+      if (!transformedVideo.filepath) {
+        console.error("❌ No valid video URL found in:", {
+          videoId: videoData._id,
+          title: videoData.videotitle,
+          rawData: {
+            filepath: videoData.filepath,
+            videofile: videoData.videofile,
+            videoLink: videoData.videoLink
           }
-        } catch (allVideosError) {
-          console.error("⚠️ Failed to load all videos:", allVideosError);
-          // Non-critical error - continue
-        }
-
-      } catch (error: any) {
-        console.error("❌ Error fetching video:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          url: error.config?.url
         });
-        
-        // ✅ User-friendly error messages
-        if (error.response?.status === 404) {
-          setError("Video not found");
-        } else if (error.response?.status === 400) {
-          setError("Invalid video ID");
-        } else if (error.code === 'ERR_NETWORK') {
-          setError("Cannot connect to server. Please check your connection.");
-        } else {
-          setError(error.response?.data?.message || "Failed to load video");
-        }
-        
-        lastFetchedIdRef.current = null; // Reset on error to allow retry
-      } finally {
+        setError("Video file not available");
         setLoading(false);
-        isFetchingRef.current = false;
-        console.log("===== FETCH COMPLETE =====\n");
+        return;
       }
-    };
 
-    fetchVideo();
-  }, [id]);
 
-  // ✅ Refresh on avatar update
-  useEffect(() => {
-    const handleAvatarUpdate = () => {
-      console.log('🔄 Avatar updated on watch page');
-      // Force refresh of current video data
-      if (currentVideo) {
-        setCurrentVideo({...currentVideo});
+      console.log("✅ Video transformed:", {
+        id: transformedVideo._id,
+        title: transformedVideo.videotitle,
+        hasFilepath: !!transformedVideo.filepath,
+        filepath: transformedVideo.filepath?.substring(0, 60) + '...',
+        hasThumbnail: !!transformedVideo.videothumbnail
+      });
+
+      setCurrentVideo(transformedVideo);
+
+      // ✅ Fetch all videos for related videos
+      try {
+        const allVideosRes = await axiosInstance.get("/video/getall");
+        if (allVideosRes.data.success && Array.isArray(allVideosRes.data.videos)) {
+          setAllVideos(allVideosRes.data.videos);
+          console.log("📚 Loaded", allVideosRes.data.videos.length, "total videos");
+        }
+      } catch (allVideosError) {
+        console.error("⚠️ Failed to load all videos:", allVideosError);
+        // Non-critical error - continue
       }
-    };
 
-    window.addEventListener('avatarUpdated', handleAvatarUpdate);
-    return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
-  }, [currentVideo]);
+    } catch (error: any) {
+      console.error("❌ Error fetching video:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
+      // ✅ User-friendly error messages
+      if (error.response?.status === 404) {
+        setError("Video not found");
+      } else if (error.response?.status === 400) {
+        setError("Invalid video ID");
+      } else if (error.code === 'ERR_NETWORK') {
+        setError("Cannot connect to server. Please check your connection.");
+      } else {
+        setError(error.response?.data?.message || "Failed to load video");
+      }
+      
+      lastFetchedIdRef.current = null; // Reset on error to allow retry
+    } finally {
+      setLoading(false);
+      isFetchingRef.current = false;
+      console.log("===== FETCH COMPLETE =====\n");
+    }
+  };
+
+  fetchVideo();
+}, [id]);
+
+// ✅ Refresh on avatar update
+useEffect(() => {
+  const handleAvatarUpdate = () => {
+    console.log('🔄 Avatar updated on watch page');
+    // Force refresh of current video data
+    if (currentVideo) {
+      setCurrentVideo({...currentVideo});
+    }
+  };
+
+  window.addEventListener('avatarUpdated', handleAvatarUpdate);
+  return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+}, [currentVideo]);
 
   // ✅ Debug related videos data
   useEffect(() => {
@@ -277,24 +263,24 @@ const WatchPage = () => {
   };
 
   const getBackendUrl = () => {
-    // ✅ Always use HTTPS in production
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      
-      // If on Vercel (production), use HTTPS Render backend
-      if (hostname.includes('vercel.app') || hostname.includes('your-domain.com')) {
-        return 'https://youtube-clone-project-q3pd.onrender.com';
-      }
-      
-      // Local development
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return 'http://localhost:5000';
-      }
+  // ✅ Always use HTTPS in production
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // If on Vercel (production), use HTTPS Render backend
+    if (hostname.includes('vercel.app') || hostname.includes('your-domain.com')) {
+      return 'https://youtube-clone-project-q3pd.onrender.com';
     }
     
-    // Default to HTTPS backend
-    return 'https://youtube-clone-project-q3pd.onrender.com';
-  };
+    // Local development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
+  }
+  
+  // Default to HTTPS backend
+  return 'https://youtube-clone-project-q3pd.onrender.com';
+};
 
   // ✅ Share modal handlers
   const handleOpenShareModal = (currentTime?: number) => {
@@ -427,26 +413,13 @@ const WatchPage = () => {
               />
             </div>
 
-            {/* Video Info with Download Button */}
+            {/* Video Info - Add padding only here for mobile */}
             <div className="w-full mt-0 md:mt-3">
               <VideoInfo
                 key={`video-info-${currentVideo._id}`}
                 video={currentVideo}
                 onShare={handleOpenShareModal}
               />
-              
-              {/* ✅ Download Button Integration - Only show if user is logged in */}
-              {user && currentVideo && (
-                <div className="px-4 lg:px-0 mt-3">
-                  <DownloadButton
-                    videoId={currentVideo._id}
-                    videoTitle={currentVideo.videotitle}
-                    videoUrl={currentVideo.filepath}
-                    quality="480p"
-                    variant="default"
-                  />
-                </div>
-              )}
             </div>
 
             {/* Comments */}
