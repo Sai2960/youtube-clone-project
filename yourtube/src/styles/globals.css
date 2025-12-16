@@ -11886,19 +11886,3 @@ button {
     margin-bottom: 0;
   }
 }
-.dark img[alt="Channel Banner"] {
-  opacity: 0.95;
-}
-
-.light img[alt="Channel Banner"] {
-  opacity: 1;
-}
-
-/* Avatar ring enhancement for theme support */
-.dark .ring-gray-200\/80 {
-  --tw-ring-color: rgb(55 65 81 / 0.8);
-}
-
-.dark .ring-gray-700\/80 {
-  --tw-ring-color: rgb(75 85 99 / 0.8);
-}

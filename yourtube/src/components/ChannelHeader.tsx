@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/components/ChannelHeader.tsx - COMPLETE FIXED VERSION
+// src/components/ChannelHeader.tsx - YOUTUBE PURE BANNER VERSION
 import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -66,25 +66,21 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
     setLocalSubscriberCount(count);
   };
 
-  // ✅ CONSOLIDATED AVATAR UPDATE HANDLER
   const handleAvatarUpdateEvent = () => {
     console.log("🔄 Avatar update event received");
     setImageKey(Date.now());
-    // Trigger parent refresh for shorts/other components
     if (onAvatarUpdate) {
       console.log("📢 Calling onAvatarUpdate callback");
       onAvatarUpdate();
     }
   };
 
-  // ✅ LISTEN FOR AVATAR UPDATE EVENTS
   useEffect(() => {
     window.addEventListener("avatarUpdated", handleAvatarUpdateEvent);
     return () =>
       window.removeEventListener("avatarUpdated", handleAvatarUpdateEvent);
-  }, [onAvatarUpdate]); // Include dependency to keep callback fresh
+  }, [onAvatarUpdate]);
 
-  // ✅ HANDLE IMAGE UPDATES FROM MODAL
   const handleImageUpdate = (type: "avatar" | "banner" | "info", data: any) => {
     console.log("🔄 Channel update:", type, data);
 
@@ -96,20 +92,15 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       } else if (type === "banner") {
         updated.bannerImage = data;
       } else if (type === "info") {
-        // Update channel name and description
         updated.channelname = data.channelname;
         updated.description = data.description;
       }
 
-      // Update localStorage if it's the current user's channel
       if (user && user._id === prev._id) {
         const updatedUser = { ...user, ...updated };
         localStorage.setItem("user", JSON.stringify(updatedUser));
-
-        // Dispatch event for other components
         window.dispatchEvent(new Event("avatarUpdated"));
 
-        // Trigger callback for avatar changes
         if (type === "avatar" && onAvatarUpdate) {
           setTimeout(() => onAvatarUpdate(), 100);
         }
@@ -118,7 +109,6 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       return updated;
     });
 
-    // Force image refresh
     setImageKey(Date.now());
   };
 
@@ -131,8 +121,10 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   return (
     <div className="w-full bg-white dark:bg-gray-900">
-      {/* Banner Container */}
-      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 overflow-hidden group bg-white dark:bg-gray-900">
+      {/* ========================================== */}
+      {/* BANNER - PURE IMAGE ONLY (NO OVERLAYS)    */}
+      {/* ========================================== */}
+      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 overflow-hidden group">
         {localChannel.bannerImage ? (
           <img
             key={`banner-${imageKey}`}
@@ -145,11 +137,10 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
             }}
           />
         ) : (
-          /* Default gradient when no banner */
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" />
+          <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" />
         )}
 
-        {/* ✅ YOUTUBE-STYLE: Edit button (only visible on hover) */}
+        {/* Edit button - only visible on hover (desktop) */}
         {isOwnChannel && (
           <button
             onClick={() => setShowEditModal(true)}
@@ -159,30 +150,21 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
             px-3 py-1.5 sm:px-4 sm:py-2 
             rounded-lg 
             opacity-0 group-hover:opacity-100 
-            transition-all duration-200
+            transition-opacity duration-200
             flex items-center gap-2 
             text-xs sm:text-sm font-medium
-            backdrop-blur-sm"
+            backdrop-blur-sm
+            z-10"
           >
             <Camera className="w-4 h-4" />
             <span className="hidden sm:inline">Edit banner</span>
           </button>
         )}
-
-        <div
-          className="absolute bottom-0 left-0 right-0 h-32 sm:h-40 md:h-48 
-        bg-gradient-to-t 
-        from-white dark:from-gray-900 
-        to-transparent 
-        pointer-events-none"
-        />
       </div>
 
-      {/* Channel Info - matches background */}
+      {/* Channel Info */}
       <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 bg-white dark:bg-gray-900">
-        {/* ========================================== */}
-        {/* MOBILE LAYOUT (< md breakpoint) */}
-        {/* ========================================== */}
+        {/* MOBILE LAYOUT */}
         <div className="md:hidden">
           <div className="flex items-start gap-4 mb-4">
             <div className="relative flex-shrink-0">
@@ -265,9 +247,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
           )}
         </div>
 
-        {/* ========================================== */}
-        {/* DESKTOP LAYOUT (>= md breakpoint) */}
-        {/* ========================================== */}
+        {/* DESKTOP LAYOUT */}
         <div className="hidden md:flex gap-6 items-start justify-between">
           <div className="flex gap-6 items-start flex-1">
             <div className="relative flex-shrink-0">
@@ -349,9 +329,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
         </div>
       </div>
 
-      {/* ============================================================ */}
       {/* EDIT MODAL */}
-      {/* ============================================================ */}
       {showEditModal && isOwnChannel && (
         <EditChannelModal
           channel={localChannel}
