@@ -131,9 +131,11 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   return (
     <div className="w-full bg-white dark:bg-gray-900">
-      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-black overflow-hidden group">
+      {/* Banner Container */}
+      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 overflow-hidden group">
         {localChannel.bannerImage ? (
           <>
+            {/* ✅ JUST THE BANNER IMAGE - NO OVERLAYS */}
             <img
               key={`banner-${imageKey}`}
               src={displayBanner}
@@ -144,52 +146,42 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
                 e.currentTarget.style.display = "none";
               }}
             />
-            {/* ✅ Theme-aware overlay for banner images */}
-            <div className="absolute inset-0 bg-white/20 dark:bg-black/30 pointer-events-none"></div>
           </>
         ) : (
-          /* Default gradient banner when no image */
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-700 dark:via-purple-800 dark:to-pink-800">
-            <div className="absolute inset-0 opacity-30 dark:opacity-20 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.4)_0%,transparent_70%)]"></div>
-            <div className="absolute inset-0 opacity-10 dark:opacity-15 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.15)_75%)] bg-[length:40px_40px]"></div>
-          </div>
+          /* Default gradient when no banner */
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 dark:from-blue-600 dark:via-purple-700 dark:to-pink-800" />
         )}
 
-        {/* ✅ CRITICAL FIX: Edit Banner Button - Always Visible on Hover */}
+        {/* ✅ YOUTUBE-STYLE: Edit button (only visible on hover) */}
         {isOwnChannel && (
           <button
             onClick={() => setShowEditModal(true)}
-            className="absolute top-2 right-2 sm:top-4 sm:right-4 
-            bg-white/90 hover:bg-white 
-            dark:bg-gray-900/90 dark:hover:bg-gray-900 
-            text-gray-900 dark:text-white 
-            px-2 py-1.5 sm:px-3 sm:py-2 
-            rounded-lg transition-all 
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 
+            bg-black/70 hover:bg-black/90 
+            text-white 
+            px-3 py-1.5 sm:px-4 sm:py-2 
+            rounded-lg 
             opacity-0 group-hover:opacity-100 
-            flex items-center gap-1.5 
-            text-xs sm:text-sm 
-            backdrop-blur-md shadow-xl font-semibold 
-            border-2 border-gray-300/50 dark:border-gray-700/50 
-            hover:border-blue-500 dark:hover:border-blue-400
-            hover:scale-105 active:scale-95"
+            transition-all duration-200
+            flex items-center gap-2 
+            text-xs sm:text-sm font-medium
+            backdrop-blur-sm"
           >
-            <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Edit Banner</span>
-            <span className="sm:hidden">Edit</span>
+            <Camera className="w-4 h-4" />
+            <span className="hidden sm:inline">Edit banner</span>
           </button>
         )}
 
-        {/* ✅ CRITICAL FIX: Bottom gradient - Smooth transition to page background */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-28 sm:h-36 md:h-40 
+          className="absolute bottom-0 left-0 right-0 h-32 sm:h-40 md:h-48 
         bg-gradient-to-t 
-        from-white via-white/95 to-transparent 
-        dark:from-gray-900 dark:via-gray-900/95 dark:to-transparent 
+        from-white dark:from-gray-900 
+        to-transparent 
         pointer-events-none"
-        ></div>
+        />
       </div>
 
-      {/* ✅ Channel info section explicitly matches page background */}
+      {/* Channel Info - matches background */}
       <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 bg-white dark:bg-gray-900">
         {/* ========================================== */}
         {/* MOBILE LAYOUT (< md breakpoint) */}
