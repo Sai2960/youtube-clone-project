@@ -572,11 +572,11 @@ const ChannelPage = () => {
             }}
           >
             <div className="w-full max-w-7xl mx-auto">
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4 lg:gap-6">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6">
                 {/* Channel Name */}
-                <div className="col-span-2 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                <div className="w-full sm:w-auto flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-sm sm:text-base truncate">
+                  <span className="text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">
                     {channel.channelname || channel.name || "Unknown"}
                   </span>
                 </div>
@@ -609,7 +609,7 @@ const ChannelPage = () => {
                 {/* Shorts Count - FORCE UPDATE */}
                 <div
                   key={`shorts-${shorts.length}-${renderKey}`}
-                  className="col-span-2 sm:col-span-1 flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
+                  className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400"
                 >
                   <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="text-xs sm:text-sm whitespace-nowrap">

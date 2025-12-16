@@ -131,7 +131,8 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
 
   return (
     <div className="w-full bg-white dark:bg-gray-900">
-      <div className="relative w-full h-32 sm:h-40 md:h-56 lg:h-72 xl:h-80 2xl:h-96 bg-gray-800 dark:bg-gray-950 overflow-hidden group">
+      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 bg-gray-200 dark:bg-gray-800 overflow-hidden group">
+        {" "}
         {localChannel.bannerImage ? (
           <img
             key={`banner-${imageKey}`}
@@ -144,12 +145,11 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
             }}
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600 dark:from-blue-600 dark:via-purple-700 dark:to-pink-700">
-            <div className="absolute inset-0 opacity-30 dark:opacity-20 bg-[radial-gradient(circle,rgba(255,255,255,0.4),rgba(255,255,255,0))]"></div>
-            <div className="absolute inset-0 opacity-10 dark:opacity-5 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:60px_60px]"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 dark:from-blue-700 dark:via-purple-800 dark:to-pink-800">
+            <div className="absolute inset-0 opacity-20 dark:opacity-15 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.3)_0%,transparent_70%)]"></div>
+            <div className="absolute inset-0 opacity-5 dark:opacity-10 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.1)_75%)] bg-[length:40px_40px]"></div>
           </div>
         )}
-
         {isOwnChannel && (
           <button
             onClick={() => setShowEditModal(true)}
@@ -160,8 +160,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
             <span className="sm:hidden">Edit</span>
           </button>
         )}
-
-        <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-20 bg-gradient-to-t from-white/95 dark:from-gray-900/95 via-white/50 dark:via-gray-900/50 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-20 sm:h-24 bg-gradient-to-t from-white dark:from-gray-900 via-white/80 dark:via-gray-900/80 to-transparent"></div>{" "}
       </div>
 
       {/* ============================================================ */}
@@ -180,7 +179,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
                   src={displayImage}
                   alt={displayName}
                 />
-                <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 text-white">
                   {displayName[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -196,7 +195,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
               )}
             </div>
 
-            <div className="flex-1 min-w-0 pt-1">
+            <div className="flex-1 min-w-0 pt-0.5">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate mb-1.5 leading-tight">
                 {displayName}
               </h1>
@@ -265,7 +264,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
                   src={displayImage}
                   alt={displayName}
                 />
-                <AvatarFallback className="text-4xl lg:text-5xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                <AvatarFallback className="text-4xl lg:text-5xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 text-white">
                   {displayName[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
