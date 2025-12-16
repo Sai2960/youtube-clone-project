@@ -265,11 +265,14 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col"
-        style={{ maxHeight: "90vh" }}
-      >
+   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+  <div
+    className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col"
+    style={{ 
+      maxHeight: "95vh",
+      height: "auto"
+    }}
+  >
         {/* ========================================== */}
         {/* HEADER - FIXED AT TOP */}
         {/* ========================================== */}
@@ -350,8 +353,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
        {/* ========================================== */}
         {/* SCROLLABLE CONTENT AREA */}
         {/* ========================================== */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-6 pb-2 space-y-6">
+       <div className="flex-1 overflow-y-auto overscroll-contain">
+  <div className="p-4 sm:p-6 pb-2 space-y-4 sm:space-y-6">
             {/* ============================================ */}
             {/* IMAGE UPLOAD TABS (AVATAR & BANNER) */}
             {/* ============================================ */}
@@ -525,8 +528,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         {/* ========================================== */}
         {/* FOOTER - FIXED AT BOTTOM (OUTSIDE SCROLL) */}
         {/* ========================================== */}
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 flex-shrink-0">
-          {(activeTab === "avatar" || activeTab === "banner") ? (
+<div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-6 flex-shrink-0">
+            {(activeTab === "avatar" || activeTab === "banner") ? (
             // IMAGE UPLOAD FOOTER
             <div className="flex gap-3">
               <button
