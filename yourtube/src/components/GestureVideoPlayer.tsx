@@ -23,6 +23,7 @@ import {
 import { useRouter } from "next/router";
 import { Button } from "./ui/button";
 import { getVideoUrl } from "@/lib/urlHelper";
+import { useSubscription } from "@/lib/SubscriptionContext";
 
 interface GestureVideoPlayerProps {
   video: {
@@ -97,6 +98,12 @@ export default function GestureVideoPlayer({
   const [seeking, setSeeking] = useState(false);
   const [showVolumeIndicator, setShowVolumeIndicator] = useState(false);
   const [showGestureHint, setShowGestureHint] = useState(true);
+  const [watchTimeExceeded, setWatchTimeExceeded] = useState(false);
+const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+const [watchedMinutes, setWatchedMinutes] = useState(0);
+const watchTimeCheckInterval = useRef<NodeJS.Timeout | null>(null);
+const { watchTimeLimit, currentPlan } = useSubscription();
+
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -135,6 +142,26 @@ export default function GestureVideoPlayer({
     }
     return filename;
   };
+
+useEffect(() => {
+  const videoElement = videoRef.current;
+  if (!videoElement || watchTimeLimit === -1 || !isPlaying) return;
+
+  const interval = setInterval(() => {
+    const minutesWatched = Math.floor(videoElement.currentTime / 60);
+    
+    if (minutesWatched >= watchTimeLimit) {
+      console.log('⏱️ Watch limit reached:', watchTimeLimit, 'minutes');
+      videoElement.pause();
+      setIsPlaying(false);
+      setWatchTimeExceeded(true);
+      setShowWatchLimitModal(true);
+      clearInterval(interval);
+    }
+  }, 5000); // Check every 5 seconds
+
+  return () => clearInterval(interval);
+}, [watchTimeLimit, isPlaying]);
 
   // 🔥 CRITICAL FIX: Optimized video loading with duplicate prevention
   useEffect(() => {
@@ -362,16 +389,22 @@ export default function GestureVideoPlayer({
   };
 
   const togglePlayPause = () => {
-    if (!videoRef.current) return;
+  if (!videoRef.current) return;
 
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPlaying(true);
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    }
-  };
+  // ✅ Block play if watch time exceeded
+  if (watchTimeExceeded) {
+    setShowUpgradePrompt(true);
+    return;
+  }
+
+  if (videoRef.current.paused) {
+    videoRef.current.play();
+    setIsPlaying(true);
+  } else {
+    videoRef.current.pause();
+    setIsPlaying(false);
+  }
+};
 
   const handleVolumeChange = (newVolume: number) => {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
@@ -684,6 +717,10 @@ export default function GestureVideoPlayer({
   const VolumeIcon = getVolumeIcon();
 
   const videoUrl = getVideoUrl(video);
+
+  function setShowWatchLimitModal(arg0: boolean) {
+    throw new Error("Function not implemented.");
+  }
 
   return (
     <div className="w-full space-y-0">
@@ -1153,6 +1190,59 @@ export default function GestureVideoPlayer({
                 </div>
               </div>
             )}
+
+            {/* Watch Time Limit Modal */}
+            {setShowWatchLimitModal && (
+              <div className="absolute inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="w-8 h-8 text-red-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Watch Time Limit Reached
+                    </h3>
+
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                      Your {currentPlan} plan allows {watchTimeLimit} minutes per video.
+                      Upgrade to continue watching!
+                    </p>
+
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => (window.location.href = "/subscription")}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                      >
+                        View Plans
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowWatchLimitModal(false);
+                          window.location.href = "/";
+                        }}
+                        className="w-full bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-900 dark:text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                      >
+                        Go Home
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -1180,3 +1270,5 @@ export default function GestureVideoPlayer({
     </div>
   );
 }
+
+

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/SubscriptionPage.tsx
 import React, { useState, useEffect } from "react";
 import { Crown, Check, Loader2, X, AlertCircle } from "lucide-react";
@@ -43,7 +42,9 @@ const SubscriptionPage = () => {
     try {
       const response = await axiosInstance.get("/subscription/plans");
       if (response.data.success && response.data.plans) {
-        const paidPlans = response.data.plans.filter((p: any) => p.id !== "FREE");
+        const paidPlans = response.data.plans.filter(
+          (p: any) => p.id !== "FREE"
+        );
         setPlans(paidPlans);
       }
     } catch (error) {
@@ -54,33 +55,30 @@ const SubscriptionPage = () => {
   };
 
   const handleSubscribe = async (plan: any) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!user || !token) {
       alert("Please login to subscribe");
-      router.push('/');
+      router.push("/");
       return;
     }
 
     const planHierarchy: any = { FREE: 0, BRONZE: 1, SILVER: 2, GOLD: 3 };
-    const currentLevel = planHierarchy[subscription?.planType?.toUpperCase() || 'FREE'];
+    const currentLevel = planHierarchy[subscription?.planType?.toUpperCase() || "FREE"];
     const newLevel = planHierarchy[plan.id];
 
-    if (newLevel < currentLevel) {
-      alert("You cannot downgrade to a lower plan. Please cancel your current subscription first.");
-      return;
-    }
-
-    if (newLevel === currentLevel) {
+    // ✅ FIXED: Only block if subscribing to SAME plan
+    if (newLevel === currentLevel && currentLevel !== 0) {
       alert("You are already subscribed to this plan.");
       return;
     }
 
+    // ✅ Allow users to change plans freely (upgrade or downgrade)
     setSelectedPlan(plan.id);
     setProcessing(true);
 
     try {
       const orderResponse = await axiosInstance.post("/subscription/create-order", {
-        plan: plan.id
+        plan: plan.id,
       });
 
       if (!orderResponse.data.orderId) {
@@ -98,34 +96,49 @@ const SubscriptionPage = () => {
         order_id: orderId,
         handler: async function (response: any) {
           try {
-            const verifyResponse = await axiosInstance.post("/subscription/verify-payment", {
-              orderId: response.razorpay_order_id,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
-              plan: plan.id
-            });
+            const verifyResponse = await axiosInstance.post(
+              "/subscription/verify-payment",
+              {
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+                plan: plan.id,
+              }
+            );
 
             if (verifyResponse.data.message) {
-              alert("Payment successful! Your subscription is now active. Check your email for the invoice.");
+              alert(
+                "Payment successful! Your subscription is now active. Check your email for the invoice."
+              );
               await refreshSubscription();
-              router.push('/');
+              router.push("/");
             }
           } catch (error: any) {
             console.error("Payment verification error:", error);
+
             if (error.response?.status === 401) {
               alert("Session expired. Please login again.");
-              router.push('/');
+              router.push("/");
             } else {
-              alert("Payment verification failed. Please contact support.");
+              alert(`Payment verification failed: ${error.response?.data?.message || "Please try again"}`);
             }
+          } finally {
+            setProcessing(false);
+            setSelectedPlan(null);
           }
         },
+        modal: {
+          ondismiss: function () {
+            setProcessing(false);
+            setSelectedPlan(null);
+          },
+        },
         prefill: {
-          name: user?.name || "",
-          email: user?.email || "",
+          name: user.name,
+          email: user.email,
         },
         theme: {
-          color: "#EF4444",
+          color: "#FF0000",
         },
       };
 
@@ -133,47 +146,52 @@ const SubscriptionPage = () => {
       razorpay.open();
     } catch (error: any) {
       console.error("Payment error:", error);
-      
+
       if (error.response?.status === 401) {
         alert("Session expired. Please login again.");
-        router.push('/');
+        router.push("/");
       } else {
-        alert(`Payment failed: ${error.response?.data?.message || 'Please try again'}`);
+        alert(
+          `Payment failed: ${
+            error.response?.data?.message || "Please try again"
+          }`
+        );
       }
-    } finally {
       setProcessing(false);
       setSelectedPlan(null);
     }
   };
 
   const handleCancelSubscription = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!user || !token) {
       alert("Please login to cancel subscription");
-      router.push('/');
+      router.push("/");
       return;
     }
 
     setCancelling(true);
     try {
-      const response = await axiosInstance.post('/subscription/cancel');
-      
+      const response = await axiosInstance.post("/subscription/cancel");
+
       if (response.data.success) {
-        alert('Subscription cancelled successfully. You have been moved to the Free plan.');
+        alert(
+          "Subscription cancelled successfully. You have been moved to the Free plan."
+        );
         await refreshSubscription();
         setShowCancelModal(false);
         window.location.reload();
       } else {
-        throw new Error('Failed to cancel subscription');
+        throw new Error("Failed to cancel subscription");
       }
     } catch (error: any) {
-      console.error('Cancel subscription error:', error);
-      
+      console.error("Cancel subscription error:", error);
+
       if (error.response?.status === 401) {
         alert("Session expired. Please login again.");
-        router.push('/');
+        router.push("/");
       } else {
-        alert('Failed to cancel subscription. Please try again.');
+        alert("Failed to cancel subscription. Please try again.");
       }
     } finally {
       setCancelling(false);
@@ -255,9 +273,11 @@ const SubscriptionPage = () => {
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => {
-            const isCurrentPlan = subscription?.planType?.toUpperCase() === plan.id;
-            const planHierarchy: any = { BRONZE: 1, SILVER: 2, GOLD: 3 };
-            const currentLevel = planHierarchy[subscription?.planType?.toUpperCase() || 'FREE'] || 0;
+            const isCurrentPlan =
+              subscription?.planType?.toUpperCase() === plan.id;
+            const planHierarchy: any = { FREE: 0, BRONZE: 1, SILVER: 2, GOLD: 3 };
+            const currentLevel =
+              planHierarchy[subscription?.planType?.toUpperCase() || "FREE"] || 0;
             const planLevel = planHierarchy[plan.id];
             const isUpgrade = planLevel > currentLevel;
             const isDowngrade = planLevel < currentLevel;
@@ -285,26 +305,29 @@ const SubscriptionPage = () => {
                         ₹{plan.price}
                       </span>
                     </div>
-                    <p className="text-youtube-secondary mt-1">{plan.duration} days validity</p>
+                    <p className="text-youtube-secondary mt-1">
+                      {plan.duration} days validity
+                    </p>
                   </div>
 
                   <ul className="space-y-3 mb-8">
                     {plan.features?.map((feature: string, index: number) => (
                       <li key={index} className="flex items-start gap-3">
                         <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-youtube-secondary">{feature}</span>
+                        <span className="text-youtube-secondary">
+                          {feature}
+                        </span>
                       </li>
                     ))}
                   </ul>
 
+                  {/* ✅ FIXED: Button with proper plan change logic */}
                   <button
                     onClick={() => handleSubscribe(plan)}
-                    disabled={processing || isCurrentPlan || isDowngrade}
+                    disabled={processing || isCurrentPlan}
                     className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${
                       isCurrentPlan
                         ? "bg-green-500 text-white cursor-not-allowed opacity-70"
-                        : isDowngrade
-                        ? "bg-youtube-hover text-youtube-disabled cursor-not-allowed"
                         : plan.id === "GOLD"
                         ? "bg-yellow-600 hover:bg-yellow-700 text-black shadow-lg hover:shadow-xl"
                         : "bg-youtube-hover hover:bg-primary text-youtube-primary hover:text-white"
@@ -317,10 +340,9 @@ const SubscriptionPage = () => {
                       </div>
                     ) : isCurrentPlan ? (
                       "Current Plan"
-                    ) : isDowngrade ? (
-                      "Cannot Downgrade"
-                    ) : isUpgrade ? (
-                      "Upgrade Now"
+                    ) : currentLevel > 0 && planLevel !== currentLevel ? (
+                      // ✅ FIXED: Show "Change Plan" for any different plan (upgrade or downgrade)
+                      isUpgrade ? "Upgrade Plan" : "Change Plan"
                     ) : (
                       "Subscribe Now"
                     )}
@@ -342,7 +364,8 @@ const SubscriptionPage = () => {
                 What are the watch time limits?
               </h3>
               <p className="text-youtube-secondary">
-                FREE: 5 minutes | BRONZE: 7 minutes | SILVER: 10 minutes | GOLD: Unlimited
+                FREE: 5 minutes | BRONZE: 7 minutes | SILVER: 10 minutes | GOLD:
+                Unlimited
               </p>
             </div>
             <div>
@@ -350,15 +373,26 @@ const SubscriptionPage = () => {
                 Can I cancel my subscription anytime?
               </h3>
               <p className="text-youtube-secondary">
-                Yes, you can cancel your subscription at any time. You'll be moved back to the FREE plan immediately.
+                Yes, you can cancel your subscription at any time. You'll be
+                moved back to the FREE plan immediately.
               </p>
             </div>
             <div>
               <h3 className="font-semibold text-lg mb-2 text-youtube-primary">
-                Can I upgrade my plan?
+                Can I change my plan?
               </h3>
               <p className="text-youtube-secondary">
-                Yes! You can upgrade from BRONZE to SILVER or GOLD, or from SILVER to GOLD at any time.
+                Yes! You can upgrade or change to any plan at any time. Simply
+                select your desired plan and complete the payment.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2 text-youtube-primary">
+                What happens when I change plans?
+              </h3>
+              <p className="text-youtube-secondary">
+                Your new plan becomes active immediately after successful payment.
+                The new plan's watch time limit will apply right away.
               </p>
             </div>
             <div>
@@ -366,7 +400,8 @@ const SubscriptionPage = () => {
                 Is this a test payment?
               </h3>
               <p className="text-youtube-secondary">
-                Yes, we are using Razorpay test mode. Use card 4111 1111 1111 1111 to test. No real money will be charged.
+                Yes, we are using Razorpay test mode. Use card 4111 1111 1111
+                1111 to test. No real money will be charged.
               </p>
             </div>
           </div>
@@ -386,7 +421,8 @@ const SubscriptionPage = () => {
                   Cancel Subscription?
                 </h3>
                 <p className="text-youtube-secondary mb-4">
-                  Are you sure you want to cancel your {subscription?.planType} subscription? You will lose:
+                  Are you sure you want to cancel your {subscription?.planType}{" "}
+                  subscription? You will lose:
                 </p>
                 <ul className="space-y-2 text-sm text-youtube-secondary mb-4">
                   <li className="flex items-center gap-2">
@@ -403,7 +439,8 @@ const SubscriptionPage = () => {
                   </li>
                 </ul>
                 <p className="text-sm text-youtube-secondary bg-yellow-500 bg-opacity-10 p-3 rounded-lg border border-yellow-500 border-opacity-30">
-                  <strong>Note:</strong> You will be moved to the FREE plan (5 min watch limit) immediately.
+                  <strong>Note:</strong> You will be moved to the FREE plan (5
+                  min watch limit) immediately.
                 </p>
               </div>
             </div>
