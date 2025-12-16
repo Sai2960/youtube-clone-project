@@ -62,12 +62,16 @@ const SubscriptionPage = () => {
       return;
     }
 
-    const planHierarchy: any = { FREE: 0, BRONZE: 1, SILVER: 2, GOLD: 3 };
-    const currentLevel = planHierarchy[subscription?.planType?.toUpperCase() || "FREE"];
-    const newLevel = planHierarchy[plan.id];
+    // ✅ FIXED: Block all plan changes if user has active subscription
+    const currentPlanType = subscription?.planType?.toUpperCase() || "FREE";
+    const isPremiumActive = currentPlanType !== "FREE";
 
-    // ✅ FIXED: Only block if subscribing to SAME plan
-    if (newLevel === currentLevel && currentLevel !== 0) {
+    if (isPremiumActive && plan.id !== currentPlanType) {
+      alert("Please cancel your current subscription before changing plans.");
+      return;
+    }
+
+    if (plan.id === currentPlanType) {
       alert("You are already subscribed to this plan.");
       return;
     }
@@ -77,9 +81,12 @@ const SubscriptionPage = () => {
     setProcessing(true);
 
     try {
-      const orderResponse = await axiosInstance.post("/subscription/create-order", {
-        plan: plan.id,
-      });
+      const orderResponse = await axiosInstance.post(
+        "/subscription/create-order",
+        {
+          plan: plan.id,
+        }
+      );
 
       if (!orderResponse.data.orderId) {
         throw new Error("Failed to create order");
@@ -120,7 +127,11 @@ const SubscriptionPage = () => {
               alert("Session expired. Please login again.");
               router.push("/");
             } else {
-              alert(`Payment verification failed: ${error.response?.data?.message || "Please try again"}`);
+              alert(
+                `Payment verification failed: ${
+                  error.response?.data?.message || "Please try again"
+                }`
+              );
             }
           } finally {
             setProcessing(false);
@@ -275,9 +286,15 @@ const SubscriptionPage = () => {
           {plans.map((plan) => {
             const isCurrentPlan =
               subscription?.planType?.toUpperCase() === plan.id;
-            const planHierarchy: any = { FREE: 0, BRONZE: 1, SILVER: 2, GOLD: 3 };
+            const planHierarchy: any = {
+              FREE: 0,
+              BRONZE: 1,
+              SILVER: 2,
+              GOLD: 3,
+            };
             const currentLevel =
-              planHierarchy[subscription?.planType?.toUpperCase() || "FREE"] || 0;
+              planHierarchy[subscription?.planType?.toUpperCase() || "FREE"] ||
+              0;
             const planLevel = planHierarchy[plan.id];
             const isUpgrade = planLevel > currentLevel;
             const isDowngrade = planLevel < currentLevel;
@@ -324,10 +341,12 @@ const SubscriptionPage = () => {
                   {/* ✅ FIXED: Button with proper plan change logic */}
                   <button
                     onClick={() => handleSubscribe(plan)}
-                    disabled={processing || isCurrentPlan}
+                    disabled={processing || isCurrentPlan || isPremium}
                     className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${
                       isCurrentPlan
                         ? "bg-green-500 text-white cursor-not-allowed opacity-70"
+                        : isPremium && !isCurrentPlan
+                        ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
                         : plan.id === "GOLD"
                         ? "bg-yellow-600 hover:bg-yellow-700 text-black shadow-lg hover:shadow-xl"
                         : "bg-youtube-hover hover:bg-primary text-youtube-primary hover:text-white"
@@ -340,9 +359,8 @@ const SubscriptionPage = () => {
                       </div>
                     ) : isCurrentPlan ? (
                       "Current Plan"
-                    ) : currentLevel > 0 && planLevel !== currentLevel ? (
-                      // ✅ FIXED: Show "Change Plan" for any different plan (upgrade or downgrade)
-                      isUpgrade ? "Upgrade Plan" : "Change Plan"
+                    ) : isPremium && !isCurrentPlan ? (
+                      "Cancel Current Plan First"
                     ) : (
                       "Subscribe Now"
                     )}
@@ -391,8 +409,8 @@ const SubscriptionPage = () => {
                 What happens when I change plans?
               </h3>
               <p className="text-youtube-secondary">
-                Your new plan becomes active immediately after successful payment.
-                The new plan's watch time limit will apply right away.
+                Your new plan becomes active immediately after successful
+                payment. The new plan's watch time limit will apply right away.
               </p>
             </div>
             <div>
