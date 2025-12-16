@@ -560,22 +560,22 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-        {/* ✅ CHANNEL INFO BAR - THEME OPTIMIZED */}
+      {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE WITH HORIZONTAL SCROLL */}
         {channel && isMounted && (
           <div
             ref={infoBarRef}
             key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="channel-info-bar-force-visible w-full px-4 sm:px-6 py-4 
-      bg-gray-50 dark:bg-gray-900/50 
-      border-b border-gray-200 dark:border-gray-800"
+            className="w-full bg-gray-50 dark:bg-gray-900/50 border-b-2 border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-hide channel-info-bar-force-visible"
             style={{
-              position: "relative",
-              zIndex: 10,
+              position: "sticky" as const,
+              top: 0,
+              zIndex: 20,
+              minHeight: "64px"
             }}
           >
-            <div className="w-full max-w-7xl mx-auto">
-              <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6">
-                {/* Channel Name */}
+
+            <div className="px-4 sm:px-6 py-4">
+<div className="flex items-center gap-4 sm:gap-6 min-w-max">                {/* Channel Name */}
                 <div className="w-full sm:w-auto flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                   <span className="text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">

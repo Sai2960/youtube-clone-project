@@ -11886,3 +11886,19 @@ button {
     margin-bottom: 0;
   }
 }
+/* Force visibility for channel info bar - CRITICAL FOR ANDROID */
+.channel-info-bar-force-visible {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
