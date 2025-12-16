@@ -560,17 +560,17 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-      {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE WITH HORIZONTAL SCROLL */}
+     {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE, NO OVERLAPPING */}
         {channel && isMounted && (
           <div
             ref={infoBarRef}
             key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-            className="w-full bg-gray-50 dark:bg-gray-900/50 border-b-2 border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-hide channel-info-bar-force-visible"
+            className="w-full bg-gray-50 dark:bg-gray-900/50 border-y-2 border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-hide"
             style={{
-              position: "sticky" as const,
-              top: 0,
-              zIndex: 20,
-              minHeight: "64px"
+              position: "relative",
+              zIndex: 10,
+              minHeight: "72px",
+              marginBottom: "16px"
             }}
           >
 
@@ -647,7 +647,7 @@ const ChannelPage = () => {
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}
         {isOwnChannel && (
-          <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6 max-w-7xl mx-auto">
+          <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-0 max-w-7xl mx-auto" style={{ position: "relative", zIndex: 5 }}>
             <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
               {/* Upload Tabs */}
               <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide bg-white dark:bg-gray-800">

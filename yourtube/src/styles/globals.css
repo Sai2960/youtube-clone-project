@@ -11886,14 +11886,27 @@ button {
     margin-bottom: 0;
   }
 }
-/* Force visibility for channel info bar - CRITICAL FOR ANDROID */
+/* ===================================================================
+   CHANNEL INFO BAR - FORCE VISIBILITY & PREVENT OVERLAP
+   =================================================================== */
+
+/* Info bar must always be visible */
 .channel-info-bar-force-visible {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  position: relative !important;
+  z-index: 10 !important;
 }
 
-/* Hide scrollbar but keep functionality */
+/* Prevent upload section from overlapping */
+.channel-upload-section {
+  position: relative;
+  z-index: 5;
+  margin-top: 0;
+}
+
+/* Hide scrollbar but keep scroll functionality */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -11901,4 +11914,12 @@ button {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Force info bar items to stay in one line on mobile */
+@media (max-width: 640px) {
+  .channel-info-bar-force-visible > div > div {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+  }
 }
