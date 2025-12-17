@@ -143,40 +143,46 @@ export default function GestureVideoPlayer({
   };
 
   useEffect(() => {
-    const videoElement = videoRef.current;
+  const videoElement = videoRef.current;
 
-    // ✅ Skip check if unlimited or not playing
-    if (!videoElement || watchTimeLimit === -1 || !isPlaying) return;
+  // ✅ Skip check if unlimited or not playing
+  if (!videoElement || watchTimeLimit === -1 || !isPlaying) {
+    console.log("⏭️ Skipping watch limit check:", {
+      hasVideo: !!videoElement,
+      watchTimeLimit,
+      isPlaying,
+      isUnlimited: watchTimeLimit === -1
+    });
+    return;
+  }
 
-    const interval = setInterval(() => {
-      // ✅ Get current watch time in MINUTES
-      const minutesWatched = Math.floor(videoElement.currentTime / 60);
+  const interval = setInterval(() => {
+    const minutesWatched = Math.floor(videoElement.currentTime / 60);
 
-      // ✅ CRITICAL FIX: Convert watchTimeLimit to proper comparison
-      // watchTimeLimit is already in minutes, so compare directly
-      if (minutesWatched >= watchTimeLimit) {
-        console.log("⏱️ Watch limit reached:", {
-          minutesWatched,
-          watchTimeLimit,
-          currentPlan,
-        });
+    console.log("⏰ Watch time check:", {
+      minutesWatched,
+      watchTimeLimit,
+      currentPlan,
+      willBlock: minutesWatched >= watchTimeLimit
+    });
 
-        videoElement.pause();
-        setIsPlaying(false);
-        setWatchTimeExceeded(true);
-        setShowUpgradePrompt(true);
-        clearInterval(interval);
-      } else {
-        // ✅ Log remaining time for debugging
-        const remainingMinutes = watchTimeLimit - minutesWatched;
-        console.log(
-          `⏰ ${remainingMinutes} minutes remaining (${currentPlan} plan)`
-        );
-      }
-    }, 10000); // Check every 10 seconds
+    if (minutesWatched >= watchTimeLimit) {
+      console.log("🛑 Watch limit reached:", {
+        minutesWatched,
+        watchTimeLimit,
+        currentPlan,
+      });
 
-    return () => clearInterval(interval);
-  }, [watchTimeLimit, isPlaying, currentPlan]);
+      videoElement.pause();
+      setIsPlaying(false);
+      setWatchTimeExceeded(true);
+      setShowUpgradePrompt(true);
+      clearInterval(interval);
+    }
+  }, 10000); // Check every 10 seconds
+
+  return () => clearInterval(interval);
+}, [watchTimeLimit, isPlaying, currentPlan]);
 
   // 🔥 CRITICAL FIX: Optimized video loading with duplicate prevention
   useEffect(() => {
