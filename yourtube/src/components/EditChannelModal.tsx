@@ -269,19 +269,19 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
       <div
         className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col"
         style={{
-          maxHeight: "90vh",
+          maxHeight: "95vh",
           height: "auto",
         }}
       >
         {/* ========================================== */}
         {/* HEADER - FIXED AT TOP */}
         {/* ========================================== */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
               Edit Channel
             </h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+            <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-0.5">
               Customize your channel appearance and information
             </p>
           </div>
@@ -300,7 +300,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
           <button
             onClick={() => handleTabChange("avatar")}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-all relative ${
+            className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all relative ${
               activeTab === "avatar"
                 ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -317,7 +317,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
           <button
             onClick={() => handleTabChange("banner")}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-all relative ${
+            className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all relative ${
               activeTab === "banner"
                 ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -334,7 +334,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
           <button
             onClick={() => handleTabChange("info")}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-all relative ${
+            className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all relative ${
               activeTab === "info"
                 ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -354,7 +354,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         {/* SCROLLABLE CONTENT AREA */}
         {/* ========================================== */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
-          <div className="p-4 space-y-4">
+          <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
             {/* ============================================ */}
             {/* IMAGE UPLOAD TABS (AVATAR & BANNER) */}
             {/* ============================================ */}
@@ -386,8 +386,9 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
                 {/* Upload Image */}
                 <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Upload {activeTab === "avatar" ? "Profile Picture" : "Banner"}
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Upload{" "}
+                    {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                   </label>
 
                   {previewUrl ? (
@@ -395,9 +396,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                       <div className="relative inline-block">
                         <div
                           className={`rounded-lg overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 ${
-                            activeTab === "avatar"
-                              ? "w-24 h-24"
-                              : "w-48 h-27"
+                            activeTab === "avatar" ? "w-24 h-24" : "w-48 h-27"
                           }`}
                         >
                           <img
@@ -420,7 +419,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   ) : (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 sm:p-8 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
                     >
                       <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -436,7 +435,6 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     </div>
                   )}
 
-                  
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -509,7 +507,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         {/* ========================================== */}
         {/* FOOTER - FIXED AT BOTTOM (OUTSIDE SCROLL) */}
         {/* ========================================== */}
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 flex-shrink-0">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2.5 sm:p-3 flex-shrink-0 sticky bottom-0">
           {activeTab === "avatar" || activeTab === "banner" ? (
             // IMAGE UPLOAD FOOTER
             <div className="flex gap-3">
