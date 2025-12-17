@@ -143,46 +143,53 @@ export default function GestureVideoPlayer({
   };
 
   useEffect(() => {
-  const videoElement = videoRef.current;
+    const videoElement = videoRef.current;
 
-  // ✅ Skip check if unlimited or not playing
-  if (!videoElement || watchTimeLimit === -1 || !isPlaying) {
-    console.log("⏭️ Skipping watch limit check:", {
-      hasVideo: !!videoElement,
-      watchTimeLimit,
-      isPlaying,
-      isUnlimited: watchTimeLimit === -1
-    });
-    return;
-  }
+    // ✅ CRITICAL FIX: Skip check if unlimited (-1) or not playing
+    if (!videoElement || !isPlaying || watchTimeLimit === -1) {
+      console.log("⏭️ Skipping watch limit check:", {
+        hasVideo: !!videoElement,
+        watchTimeLimit,
+        isPlaying,
+        isUnlimited: watchTimeLimit === -1,
+      });
+      return;
+    }
 
-  const interval = setInterval(() => {
-    const minutesWatched = Math.floor(videoElement.currentTime / 60);
+    // ✅ CRITICAL FIX: Also skip if watchTimeLimit is invalid
+    if (watchTimeLimit <= 0) {
+      console.log("⏭️ Invalid watch limit, skipping:", watchTimeLimit);
+      return;
+    }
 
-    console.log("⏰ Watch time check:", {
-      minutesWatched,
-      watchTimeLimit,
-      currentPlan,
-      willBlock: minutesWatched >= watchTimeLimit
-    });
+    const interval = setInterval(() => {
+      const minutesWatched = Math.floor(videoElement.currentTime / 60);
 
-    if (minutesWatched >= watchTimeLimit) {
-      console.log("🛑 Watch limit reached:", {
+      console.log("⏰ Watch time check:", {
         minutesWatched,
         watchTimeLimit,
         currentPlan,
+        willBlock: minutesWatched >= watchTimeLimit,
       });
 
-      videoElement.pause();
-      setIsPlaying(false);
-      setWatchTimeExceeded(true);
-      setShowUpgradePrompt(true);
-      clearInterval(interval);
-    }
-  }, 10000); // Check every 10 seconds
+      // ✅ Only check if watchTimeLimit is a positive number
+      if (watchTimeLimit > 0 && minutesWatched >= watchTimeLimit) {
+        console.log("🛑 Watch limit reached:", {
+          minutesWatched,
+          watchTimeLimit,
+          currentPlan,
+        });
 
-  return () => clearInterval(interval);
-}, [watchTimeLimit, isPlaying, currentPlan]);
+        videoElement.pause();
+        setIsPlaying(false);
+        setWatchTimeExceeded(true);
+        setShowUpgradePrompt(true);
+        clearInterval(interval);
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [watchTimeLimit, isPlaying, currentPlan]);
 
   // 🔥 CRITICAL FIX: Optimized video loading with duplicate prevention
   useEffect(() => {
@@ -1245,10 +1252,12 @@ export default function GestureVideoPlayer({
                     </h3>
 
                     <p className="text-gray-600 dark:text-gray-400 mb-6">
-                      Your {currentPlan} plan allows {watchTimeLimit} minutes
+                      Your {currentPlan} plan allows{" "}
+                      {watchTimeLimit === -1
+                        ? "unlimited"
+                        : `${watchTimeLimit} minutes`}{" "}
                       per video. Upgrade to continue watching!
                     </p>
-
                     <div className="space-y-3">
                       <button
                         onClick={() => (window.location.href = "/subscription")}
