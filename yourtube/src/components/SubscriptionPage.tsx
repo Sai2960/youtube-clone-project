@@ -61,20 +61,16 @@ const SubscriptionPage = () => {
       router.push("/");
       return;
     }
-
     // ✅ FIXED: Block all plan changes if user has active subscription
+    // ✅ FIXED: Only block if trying to subscribe to SAME plan
     const currentPlanType = subscription?.planType?.toUpperCase() || "FREE";
-    const isPremiumActive = currentPlanType !== "FREE";
-
-    if (isPremiumActive && plan.id !== currentPlanType) {
-      alert("Please cancel your current subscription before changing plans.");
-      return;
-    }
 
     if (plan.id === currentPlanType) {
       alert("You are already subscribed to this plan.");
       return;
     }
+
+    // ✅ REMOVED: All blocking for plan changes - users can upgrade/downgrade freely
 
     setSelectedPlan(plan.id);
     setProcessing(true);
@@ -337,7 +333,7 @@ const SubscriptionPage = () => {
                     ))}
                   </ul>
 
-                  {/* ✅ FIXED: Button with proper plan change logic */}
+                  {/* ✅ FIXED: Allow all plan changes */}
                   <button
                     onClick={() => handleSubscribe(plan)}
                     disabled={processing || isCurrentPlan}
