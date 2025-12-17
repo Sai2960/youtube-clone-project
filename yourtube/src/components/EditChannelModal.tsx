@@ -391,10 +391,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                   </label>
                   <div
-                    className={`rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 ${
-                      activeTab === "avatar"
-                        ? "w-24 h-24 mx-auto"
-                        : "w-full aspect-[16/9]"
+                    className={`rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 mx-auto ${
+                      activeTab === "avatar" ? "w-32 h-32" : "w-64 h-36"
                     }`}
                   >
                     <img
@@ -433,12 +431,15 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                       </p>
                     </div>
                   ) : (
-                    <div className="relative">
+                    <div
+                      className="relative mx-auto"
+                      style={{
+                        width: activeTab === "avatar" ? "8rem" : "16rem",
+                      }}
+                    >
                       <div
                         className={`rounded-lg overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 ${
-                          activeTab === "avatar"
-                            ? "w-24 h-24 mx-auto"
-                            : "w-full aspect-[16/9]"
+                          activeTab === "avatar" ? "w-32 h-32" : "w-64 h-36"
                         }`}
                       >
                         <img
