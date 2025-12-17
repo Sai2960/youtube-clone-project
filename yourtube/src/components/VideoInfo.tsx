@@ -297,23 +297,71 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   }, [showSubscribeMenu]);
 
   // Fetch subscription status
+  // Fetch subscription status
   useEffect(() => {
     const fetchSubscriptionStatus = async () => {
-      if (!user || !videoUploaderId || isOwner) return;
+      if (!videoUploaderId) return; // ✅ Allow fetching even if not logged in
+
       try {
         const response = await axiosInstance.get(
           `/user/subscription-status/${videoUploaderId}`
         );
+
+        console.log("📊 Subscription status response:", response.data);
+
         if (response.data.success) {
-          setIsSubscribed(response.data.isSubscribed);
+          setIsSubscribed(response.data.isSubscribed || false);
           setSubscriberCount(response.data.subscriberCount || 0);
+
+          console.log("✅ Subscriber count updated:", {
+            subscriberCount: response.data.subscriberCount,
+            isSubscribed: response.data.isSubscribed,
+          });
         }
       } catch (error: any) {
         console.error("Error fetching subscription status:", error);
+        // ✅ Set to 0 on error instead of leaving undefined
+        setSubscriberCount(0);
       }
     };
+
     fetchSubscriptionStatus();
-  }, [user, videoUploaderId, isOwner]);
+
+    // ✅ Refetch when user state changes
+    const handleUserChange = () => {
+      fetchSubscriptionStatus();
+    };
+
+    window.addEventListener("userUpdated", handleUserChange);
+
+    return () => {
+      window.removeEventListener("userUpdated", handleUserChange);
+    };
+  }, [videoUploaderId, user?._id]); // ✅ Add user._id to deps
+
+  // ✅ Refresh subscriber count when route changes
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (videoUploaderId) {
+        axiosInstance
+          .get(`/user/subscription-status/${videoUploaderId}`)
+          .then((response) => {
+            if (response.data.success) {
+              setSubscriberCount(response.data.subscriberCount || 0);
+            }
+          })
+          .catch((error) => {
+            console.error("Error refreshing subscriber count:", error);
+          });
+      }
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChange);
+
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router.events, videoUploaderId]);
   // Fetch reaction status (likes/dislikes)
   useEffect(() => {
     const fetchReactionStatus = async () => {
