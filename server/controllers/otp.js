@@ -225,9 +225,11 @@ const sendEmailOTP = async (req, res) => {
     return res.json({
       success: true,
       message: "OTP generated successfully",
-      debug: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "production"
-        ? { otp, email } // ✅ CRITICAL: Include OTP for testing
-        : undefined,
+      debug:
+        process.env.NODE_ENV === "development" ||
+        process.env.NODE_ENV === "production"
+          ? { otp, email } // ✅ CRITICAL: Include OTP for testing
+          : undefined,
     });
   } catch (error) {
     console.error("❌ Email OTP error:", error);
@@ -298,19 +300,32 @@ const sendSMSOTP = async (req, res) => {
     }
 
     // ✅ Try SMS in background (don't wait)
+    // ✅ Try to send email in background (don't wait for it)
     setImmediate(async () => {
       try {
-        await client.messages.create({
-          body: `Your YouTube Clone OTP is: ${otp}. Valid for 5 minutes.`,
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: formattedPhone,
-        });
+        const { sendOTPEmail } = await import("../utils/emailService.js");
 
-        console.log("✅ SMS sent successfully to:", formattedPhone);
-      } catch (smsError) {
+        const result = await sendOTPEmail(email, otp, 5);
+
+        if (result.success) {
+          console.log("✅ OTP email sent successfully to:", email);
+        } else if (result.skipped) {
+          console.log(
+            "⚠️ Email service not configured - OTP logged to console"
+          );
+        } else {
+          console.error(
+            "⚠️ Email send failed (OTP still valid):",
+            result.error
+          );
+          if (result.hint) {
+            console.log("💡", result.hint);
+          }
+        }
+      } catch (emailError) {
         console.error(
-          "⚠️ SMS send failed (OTP still valid):",
-          smsError.message
+          "⚠️ Email send error (OTP still valid):",
+          emailError.message
         );
       }
     });
@@ -319,9 +334,11 @@ const sendSMSOTP = async (req, res) => {
     return res.json({
       success: true,
       message: "OTP generated successfully",
-      debug: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "production"
-        ? { otp, phoneNumber, formattedPhone } // ✅ CRITICAL: Include OTP for testing
-        : undefined,
+      debug:
+        process.env.NODE_ENV === "development" ||
+        process.env.NODE_ENV === "production"
+          ? { otp, phoneNumber, formattedPhone } // ✅ CRITICAL: Include OTP for testing
+          : undefined,
     });
   } catch (error) {
     console.error("❌ SMS OTP error:", error);

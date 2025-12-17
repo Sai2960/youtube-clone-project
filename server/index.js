@@ -1231,6 +1231,14 @@ const handleShutdown = async (signal) => {
     }
   }
 
+  // ✅ ADD: Close email connections
+  try {
+    const { closeEmailConnections } = await import("./utils/emailService.js");
+    closeEmailConnections();
+  } catch (error) {
+    console.error("❌ Error closing email connections:", error.message);
+  }
+
   // Close Socket.IO connections
   console.log("🔌 Closing Socket.IO connections...");
   io.close(() => {
