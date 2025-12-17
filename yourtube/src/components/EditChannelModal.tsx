@@ -317,7 +317,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
           <button
             onClick={() => handleTabChange("banner")}
-            className={`flex-1 py-4 px-4 text-sm font-semibold transition-all relative ${
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-all relative ${
               activeTab === "banner"
                 ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -334,7 +334,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
           <button
             onClick={() => handleTabChange("info")}
-            className={`flex-1 py-4 px-4 text-sm font-semibold transition-all relative ${
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-all relative ${
               activeTab === "info"
                 ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -424,6 +424,9 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                         <Upload className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                       </div>
                       <p className="text-gray-900 dark:text-white font-medium text-xs mb-1">
+                        Click to upload or drag and drop
+                      </p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">
                         {activeTab === "avatar"
                           ? "Square images work best"
                           : "Wide images (16:9) recommended"}
@@ -491,15 +494,15 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     className="h-9 text-sm"
                     maxLength={50}
                   />
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
                     {channelName.length}/50 characters
                   </p>
                 </div>
 
-                <div className="pb-4">
+                <div>
                   <Label
                     htmlFor="description"
-                    className="text-sm font-medium mb-2 block"
+                    className="text-xs font-medium mb-1.5 block"
                   >
                     Description
                   </Label>
@@ -509,11 +512,11 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Tell viewers about your channel..."
                     disabled={isSubmitting}
-                    rows={4}
+                    rows={3}
                     maxLength={1000}
                     className="resize-none"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
                     {description.length}/1000 characters
                   </p>
                 </div>
@@ -562,7 +565,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 variant="outline"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="h-12 px-6"
+                className="h-9 px-4 text-sm"
               >
                 Cancel
               </Button>
@@ -570,7 +573,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 type="button"
                 onClick={handleInfoSubmit}
                 disabled={isSubmitting || !channelName.trim()}
-                className="bg-blue-600 hover:bg-blue-700 h-12 px-6"
+                className="bg-blue-600 hover:bg-blue-700 h-9 px-4 text-sm"
               >
                 {isSubmitting ? (
                   <>
