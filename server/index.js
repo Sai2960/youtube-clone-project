@@ -20,11 +20,11 @@ dotenv.config({ path: envPath });
 // Set BASE_URL if not provided
 if (!process.env.BASE_URL) {
   if (process.env.RENDER) {
-    process.env.BASE_URL = 'https://youtube-clone-project-q3pd.onrender.com';
+    process.env.BASE_URL = "https://youtube-clone-project-q3pd.onrender.com";
   } else {
-    process.env.BASE_URL = 'http://localhost:5000';
+    process.env.BASE_URL = "http://localhost:5000";
   }
-  console.log('🌐 BASE_URL set to:', process.env.BASE_URL);
+  console.log("🌐 BASE_URL set to:", process.env.BASE_URL);
 }
 
 // Verify critical environment variables
@@ -39,7 +39,10 @@ if (!process.env.JWT_SECRET) {
 console.log("🔐 Environment Check:");
 console.log("   JWT_SECRET exists:", !!process.env.JWT_SECRET);
 console.log("   JWT_SECRET length:", process.env.JWT_SECRET?.length || 0);
-console.log("   JWT_SECRET preview:", process.env.JWT_SECRET?.substring(0, 15) + "...");
+console.log(
+  "   JWT_SECRET preview:",
+  process.env.JWT_SECRET?.substring(0, 15) + "..."
+);
 console.log("   DB_URL exists:", !!process.env.DB_URL);
 console.log("   NODE_ENV:", process.env.NODE_ENV || "development");
 
@@ -51,7 +54,7 @@ import mongoose from "mongoose";
 import fs from "fs";
 import http from "http";
 import { Server } from "socket.io";
-import compression from 'compression';
+import compression from "compression";
 
 // Route imports - organized by feature
 import translationroutes from "./routes/translation.js";
@@ -71,7 +74,7 @@ import shortTranslationRoutes from "./routes/shortTranslation.js";
 import otpRoutes from "./routes/otp.js";
 import imageProxyRouter from "./routes/imageProxy.js";
 import adminRoutes from "./routes/admin.js";
-import healthRoutes from './routes/health.js';
+import healthRoutes from "./routes/health.js";
 
 // Cron job services for scheduled tasks
 import { startAllCronJobs, stopAllCronJobs } from "./services/cronJobs.js";
@@ -87,44 +90,49 @@ const server = http.createServer(app);
 // =================== MIDDLEWARE ===================
 
 // ✅ Compression middleware
-app.use(compression({
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  },
-  level: 6 // Good balance between speed and compression
-}));
+app.use(
+  compression({
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+    level: 6, // Good balance between speed and compression
+  })
+);
 
 // ✅ CRITICAL: Smart timeout - LONGER for uploads
+// ✅ CRITICAL: Smart timeout - LONGER for OTP operations
 app.use((req, res, next) => {
-  // Upload routes: 15 minute timeout
+  // OTP and upload routes: 2 minute timeout
   if (
-    req.path.includes('/upload') || 
-    req.method === 'POST' && req.headers['content-type']?.includes('multipart/form-data')
+    req.path.includes("/otp") ||
+    req.path.includes("/upload") ||
+    (req.method === "POST" &&
+      req.headers["content-type"]?.includes("multipart/form-data"))
   ) {
-    req.setTimeout(900000); // 15 minutes
-    res.setTimeout(900000);
-    console.log('⏱️ Extended timeout for upload:', req.path);
+    req.setTimeout(120000); // 2 minutes for OTP/uploads
+    res.setTimeout(120000);
+    console.log("⏱️ Extended timeout (2min) for:", req.path);
     return next();
   }
-  
+
   // Regular routes: 25 second timeout
   req.setTimeout(25000);
   res.setTimeout(25000);
-  
+
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
-      console.error('⏱️ Request timeout:', req.method, req.path);
+      console.error("⏱️ Request timeout:", req.method, req.path);
       res.status(504).json({
         success: false,
-        message: 'Request timeout'
+        message: "Request timeout",
       });
     }
   }, 25000);
-  
-  res.on('finish', () => clearTimeout(timeout));
+
+  res.on("finish", () => clearTimeout(timeout));
   next();
 });
 
@@ -133,7 +141,7 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   // Local development
   "http://localhost:3000",
-  "http://localhost:3001", 
+  "http://localhost:3001",
   "http://192.168.0.181:3000",
 
   // ✅ ALL Vercel domains
@@ -144,40 +152,40 @@ const allowedOrigins = [
 // ✅ CRITICAL: Also allow ANY Vercel preview domain
 const isOriginAllowed = (origin) => {
   if (!origin) return true; // Allow no origin (mobile apps, Postman)
-  
+
   // Exact match
   if (allowedOrigins.includes(origin)) return true;
-  
+
   // ✅ Allow ANY Vercel domain (production or preview)
   if (/^https:\/\/youtube-clone-project.*\.vercel\.app$/.test(origin)) {
     console.log("   ✅ Vercel domain allowed:", origin);
     return true;
   }
-  
+
   return false;
 };
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
       console.log("🔍 Socket.IO CORS check:", origin || "no origin");
-      
+
       // Allow no origin (mobile, Postman)
       if (!origin) {
         return callback(null, true);
       }
-      
+
       // Check if allowed
       if (isOriginAllowed(origin)) {
         console.log("   ✅ Socket origin allowed");
         return callback(null, true);
       }
-      
+
       // Production: permissive
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === "production") {
         console.log("   ⚠️  Production: allowing socket origin");
         return callback(null, true);
       }
-      
+
       console.log("   ❌ Socket origin blocked");
       callback(null, true); // ✅ ALLOW ANYWAY to prevent connection issues
     },
@@ -188,24 +196,24 @@ const io = new Server(server, {
       "Authorization",
       "X-Requested-With",
       "Accept",
-      "Origin"
+      "Origin",
     ],
   },
-  
+
   // ✅ Transport configuration
   transports: ["polling", "websocket"],
   allowEIO3: true,
-  
+
   // ✅ Timeouts
-  pingTimeout: 20000,      // 20 seconds
-  pingInterval: 10000,     // 10 seconds
+  pingTimeout: 20000, // 20 seconds
+  pingInterval: 10000, // 10 seconds
   upgradeTimeout: 10000,
   connectTimeout: 15000,
   maxHttpBufferSize: 1e8,
-  
+
   // Path
-  path: '/socket.io/',
-  
+  path: "/socket.io/",
+
   // Server options
   serveClient: false,
   perMessageDeflate: false,
@@ -236,23 +244,17 @@ app.use(
   cors({
     origin: function (origin, callback) {
       console.log("🔍 CORS origin check:", origin || "no origin");
-      
-      if (!origin) {
+
+      // ✅ Always allow in production
+      if (process.env.NODE_ENV === "production") {
         return callback(null, true);
       }
 
-      if (isOriginAllowed(origin)) {
-        console.log("   ✅ Origin allowed");
+      if (!origin || isOriginAllowed(origin)) {
         return callback(null, true);
       }
 
-      if (process.env.NODE_ENV === 'production') {
-        console.log("   ⚠️  Unknown origin in production, allowing:", origin);
-        return callback(null, true);
-      }
-
-      console.log("   ❌ Origin blocked");
-      callback(new Error("Not allowed by CORS"));
+      callback(null, true); // ✅ Permissive fallback
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -262,12 +264,6 @@ app.use(
       "X-Requested-With",
       "Accept",
       "Origin",
-      "Cache-Control",
-      "Pragma",
-      "Expires",
-      "If-None-Match",      // ✅ CRITICAL FIX
-      "If-Modified-Since",  // ✅ CRITICAL FIX
-      "X-Auth-Token"
     ],
     exposedHeaders: ["Content-Range", "X-Content-Range", "ETag"],
     preflightContinue: false,
@@ -278,149 +274,162 @@ app.use(
 
 // ✅ CRITICAL: Video streaming with Range support for Shorts
 // ✅ ENHANCED: Better error handling and CORS
-app.get('/uploads/shorts/videos/:filename', (req, res) => {
+app.get("/uploads/shorts/videos/:filename", (req, res) => {
   const filename = req.params.filename;
-  const videoPath = path.join(__dirname, 'uploads', 'shorts', 'videos', filename);
-  
-  console.log('🎬 Video request:', {
+  const videoPath = path.join(
+    __dirname,
+    "uploads",
+    "shorts",
+    "videos",
+    filename
+  );
+
+  console.log("🎬 Video request:", {
     filename,
     path: videoPath,
-    exists: fs.existsSync(videoPath)
+    exists: fs.existsSync(videoPath),
   });
-  
+
   if (!fs.existsSync(videoPath)) {
-    console.error('❌ Video file not found:', videoPath);
-    return res.status(404).json({ success: false, message: 'Video not found' });
+    console.error("❌ Video file not found:", videoPath);
+    return res.status(404).json({ success: false, message: "Video not found" });
   }
-  
+
   const stat = fs.statSync(videoPath);
   const fileSize = stat.size;
   const range = req.headers.range;
-  
+
   // ✅ CRITICAL: Set CORS headers FIRST
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
-  res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Content-Type', 'video/mp4');
-  res.setHeader('Cache-Control', 'public, max-age=31536000'); // ✅ ADD: Cache for 1 year
-  
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
+  res.setHeader(
+    "Access-Control-Expose-Headers",
+    "Content-Length, Content-Range, Accept-Ranges"
+  );
+  res.setHeader("Accept-Ranges", "bytes");
+  res.setHeader("Content-Type", "video/mp4");
+  res.setHeader("Cache-Control", "public, max-age=31536000"); // ✅ ADD: Cache for 1 year
+
   if (range) {
     const parts = range.replace(/bytes=/, "").split("-");
     const start = parseInt(parts[0], 10);
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-    
+
     if (start >= fileSize) {
-      res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+      res.status(416).setHeader("Content-Range", `bytes */${fileSize}`);
       return res.end();
     }
-    
-    const chunksize = (end - start) + 1;
+
+    const chunksize = end - start + 1;
     const file = fs.createReadStream(videoPath, { start, end });
-    
-    console.log('✅ Streaming range:', { start, end, chunksize, fileSize });
-    
+
+    console.log("✅ Streaming range:", { start, end, chunksize, fileSize });
+
     res.writeHead(206, {
-      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-      'Content-Length': chunksize,
+      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+      "Content-Length": chunksize,
     });
-    
+
     file.pipe(res);
   } else {
-    console.log('✅ Streaming full video');
+    console.log("✅ Streaming full video");
     res.writeHead(200, {
-      'Content-Length': fileSize,
+      "Content-Length": fileSize,
     });
     fs.createReadStream(videoPath).pipe(res);
   }
 });
 
 // Debug endpoint to test video URL
-app.get('/api/test-video/:shortId', async (req, res) => {
+app.get("/api/test-video/:shortId", async (req, res) => {
   try {
     const { shortId } = req.params;
-    console.log('🔍 Testing video access for short:', shortId);
-    
-    const mongoose = await import('mongoose');
-    const Short = mongoose.connection.model('Short');
-    
+    console.log("🔍 Testing video access for short:", shortId);
+
+    const mongoose = await import("mongoose");
+    const Short = mongoose.connection.model("Short");
+
     const short = await Short.findById(shortId);
-    
+
     if (!short) {
-      return res.status(404).json({ success: false, message: 'Short not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Short not found" });
     }
-    
+
     const videoUrl = short.videoUrl;
-    console.log('📹 Video URL:', videoUrl);
-    
+    console.log("📹 Video URL:", videoUrl);
+
     // Check if file exists
     let fileExists = false;
-    let filePath = '';
-    
-    if (videoUrl.includes('/uploads/')) {
-      filePath = path.join(__dirname, videoUrl.replace(/^\//, ''));
+    let filePath = "";
+
+    if (videoUrl.includes("/uploads/")) {
+      filePath = path.join(__dirname, videoUrl.replace(/^\//, ""));
       fileExists = fs.existsSync(filePath);
     }
-    
+
     res.json({
       success: true,
       videoUrl,
       fileExists,
-      filePath: fileExists ? filePath : 'N/A',
-      isCloudinary: videoUrl.includes('cloudinary.com'),
-      isLocal: videoUrl.includes('/uploads/'),
+      filePath: fileExists ? filePath : "N/A",
+      isCloudinary: videoUrl.includes("cloudinary.com"),
+      isLocal: videoUrl.includes("/uploads/"),
     });
   } catch (error) {
-    console.error('❌ Test video error:', error);
+    console.error("❌ Test video error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-
 // Same for regular videos
-app.get('/uploads/videos/:filename', (req, res) => {
+app.get("/uploads/videos/:filename", (req, res) => {
   const filename = req.params.filename;
-  const videoPath = path.join(__dirname, 'uploads', 'videos', filename);
-  
+  const videoPath = path.join(__dirname, "uploads", "videos", filename);
+
   if (!fs.existsSync(videoPath)) {
-    console.error('❌ Video not found:', videoPath);
-    return res.status(404).json({ success: false, message: 'Video not found' });
+    console.error("❌ Video not found:", videoPath);
+    return res.status(404).json({ success: false, message: "Video not found" });
   }
-  
+
   const stat = fs.statSync(videoPath);
   const fileSize = stat.size;
   const range = req.headers.range;
-  
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
-  res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Content-Type', 'video/mp4');
-  
+
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
+  res.setHeader(
+    "Access-Control-Expose-Headers",
+    "Content-Length, Content-Range, Accept-Ranges"
+  );
+  res.setHeader("Accept-Ranges", "bytes");
+  res.setHeader("Content-Type", "video/mp4");
+
   if (range) {
     const parts = range.replace(/bytes=/, "").split("-");
     const start = parseInt(parts[0], 10);
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-    
+
     if (start >= fileSize) {
-      res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+      res.status(416).setHeader("Content-Range", `bytes */${fileSize}`);
       return res.end();
     }
-    
-    const chunksize = (end - start) + 1;
+
+    const chunksize = end - start + 1;
     const file = fs.createReadStream(videoPath, { start, end });
-    
+
     res.writeHead(206, {
-      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-      'Content-Length': chunksize,
+      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+      "Content-Length": chunksize,
     });
-    
+
     file.pipe(res);
   } else {
     res.writeHead(200, {
-      'Content-Length': fileSize,
+      "Content-Length": fileSize,
     });
     fs.createReadStream(videoPath).pipe(res);
   }
@@ -431,49 +440,57 @@ app.get('/uploads/videos/:filename', (req, res) => {
 // Enhanced preflight handler
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   // ✅ CRITICAL: Always set CORS headers for video content
-  if (req.path.includes('/uploads/') || 
-      req.path.includes('/video/') || 
-      req.path.includes('/shorts/')) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 
-      'Content-Type, Authorization, Range, Accept, Origin, Cache-Control'
+  if (
+    req.path.includes("/uploads/") ||
+    req.path.includes("/video/") ||
+    req.path.includes("/shorts/")
+  ) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, Range, Accept, Origin, Cache-Control"
     );
-    res.setHeader('Access-Control-Expose-Headers', 
-      'Content-Length, Content-Range, Accept-Ranges, Content-Type'
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "Content-Length, Content-Range, Accept-Ranges, Content-Type"
     );
-    
-    if (req.method === 'OPTIONS') {
+
+    if (req.method === "OPTIONS") {
       return res.status(204).end();
     }
   }
-  
+
   // For API calls, be permissive
-  if (req.path.includes('/api/')) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    res.setHeader('Access-Control-Allow-Headers', 
-      'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since, X-Auth-Token'
+  if (req.path.includes("/api/")) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since, X-Auth-Token"
     );
   } else if (origin && isOriginAllowed(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (process.env.NODE_ENV === 'production') {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else if (process.env.NODE_ENV === "production") {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
   }
-  
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  
-  if (req.method === 'OPTIONS') {
+
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
+  );
+  res.setHeader("Access-Control-Max-Age", "86400");
+
+  if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
-  
+
   next();
 });
 
@@ -486,33 +503,42 @@ app.use(bodyParser.json());
 
 // Static file serving for uploads and invoices
 // Static file serving for uploads and invoices
-app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
-  setHeaders: (res, filePath) => {
-    // Set proper MIME types
-    if (filePath.endsWith('.mp4')) {
-      res.set('Content-Type', 'video/mp4');
-    } else if (filePath.endsWith('.webm')) {
-      res.set('Content-Type', 'video/webm');
-    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      res.set('Content-Type', 'image/jpeg');
-    } else if (filePath.endsWith('.png')) {
-      res.set('Content-Type', 'image/png');
-    }
-    
-    // ✅ CRITICAL: Enable CORS for media files
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Range, Content-Type, Authorization');
-    res.set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
-    
-    // ✅ CRITICAL: Enable range requests for video streaming
-    res.set('Accept-Ranges', 'bytes');
-    
-    // ✅ CRITICAL: Prevent caching issues
-    res.set('Cache-Control', 'public, max-age=3600');
-    res.set('X-Content-Type-Options', 'nosniff');
-  }
-}));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    setHeaders: (res, filePath) => {
+      // Set proper MIME types
+      if (filePath.endsWith(".mp4")) {
+        res.set("Content-Type", "video/mp4");
+      } else if (filePath.endsWith(".webm")) {
+        res.set("Content-Type", "video/webm");
+      } else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
+        res.set("Content-Type", "image/jpeg");
+      } else if (filePath.endsWith(".png")) {
+        res.set("Content-Type", "image/png");
+      }
+
+      // ✅ CRITICAL: Enable CORS for media files
+      res.set("Access-Control-Allow-Origin", "*");
+      res.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+      res.set(
+        "Access-Control-Allow-Headers",
+        "Range, Content-Type, Authorization"
+      );
+      res.set(
+        "Access-Control-Expose-Headers",
+        "Content-Length, Content-Range, Accept-Ranges"
+      );
+
+      // ✅ CRITICAL: Enable range requests for video streaming
+      res.set("Accept-Ranges", "bytes");
+
+      // ✅ CRITICAL: Prevent caching issues
+      res.set("Cache-Control", "public, max-age=3600");
+      res.set("X-Content-Type-Options", "nosniff");
+    },
+  })
+);
 app.use("/invoices", express.static(path.join(__dirname, "invoices")));
 // =================== API Routes ===================
 console.log("📋 Setting up API routes...");
@@ -528,15 +554,15 @@ app.use("/video", videoroutes);
 // ✅ TEMPORARY: Add direct /video GET endpoint until routes are fixed
 app.get("/video", async (req, res) => {
   try {
-    const mongoose = await import('mongoose');
-    const videofiles = mongoose.connection.model('videofiles');
-    
+    const mongoose = await import("mongoose");
+    const videofiles = mongoose.connection.model("videofiles");
+
     const videos = await videofiles
       .find({ visibility: { $ne: "private" } })
       .populate({
         path: "uploadedBy",
         select: "name email channelname image",
-        options: { strictPopulate: false, lean: true }
+        options: { strictPopulate: false, lean: true },
       })
       .sort({ createdAt: -1 })
       .limit(20)
@@ -548,14 +574,14 @@ app.get("/video", async (req, res) => {
       success: true,
       videos: videos,
       count: videos.length,
-      message: "Using fallback video endpoint"
+      message: "Using fallback video endpoint",
     });
   } catch (error) {
     console.error("❌ Fallback video endpoint error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch videos",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -579,7 +605,7 @@ app.use("/report", reportRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api", imageProxyRouter);
 app.use("/api/admin", adminRoutes);
-app.use('/api', healthRoutes);
+app.use("/api", healthRoutes);
 
 console.log("✅ All routes registered successfully");
 
@@ -641,18 +667,18 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get('/api/keep-alive', (req, res) => {
-  console.log('🔔 Keep-alive ping received at', new Date().toISOString());
-  
+app.get("/api/keep-alive", (req, res) => {
+  console.log("🔔 Keep-alive ping received at", new Date().toISOString());
+
   res.status(200).json({
-    status: 'alive',
-    message: 'Server is awake and running',
+    status: "alive",
+    message: "Server is awake and running",
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
-    mongodb: mongoConnected ? 'connected' : 'disconnected',
-    cronJobs: cronJobsRunning ? 'active' : 'inactive',
+    mongodb: mongoConnected ? "connected" : "disconnected",
+    cronJobs: cronJobsRunning ? "active" : "inactive",
     socketConnections: io.sockets.sockets.size,
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
@@ -1133,9 +1159,9 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found',
+    message: "Route not found",
     path: req.path,
-    method: req.method
+    method: req.method,
   });
 });
 
@@ -1153,7 +1179,7 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`   CORS Origins: ${allowedOrigins.length}`);
   console.log(`   Socket.IO Timeouts: Optimized (10s)`);
   console.log(`===== SERVER READY =====\n`);
-  
+
   serverReady = true;
 });
 
@@ -1261,7 +1287,7 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("❌ Unhandled Promise Rejection at:", promise);
   console.error("   Reason:", reason);
   // Don't exit in production, just log
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== "production") {
     console.error("   Consider fixing this promise rejection");
   }
 });
@@ -1271,7 +1297,7 @@ process.on("uncaughtException", (error) => {
   console.error("❌ Uncaught Exception:", error);
   console.error("   Stack:", error.stack);
   // Only shutdown on critical errors in development
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== "production") {
     handleShutdown("UNCAUGHT_EXCEPTION");
   }
 });
