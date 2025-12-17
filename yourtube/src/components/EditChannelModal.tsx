@@ -266,13 +266,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
-      <div
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col"
-        style={{
-          maxHeight: "95vh",
-          height: "auto",
-        }}
-      >
+     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[95vh]">
+
         {/* ========================================== */}
         {/* HEADER - FIXED AT TOP */}
         {/* ========================================== */}
@@ -507,22 +502,22 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         {/* ========================================== */}
         {/* FOOTER - FIXED AT BOTTOM (OUTSIDE SCROLL) */}
         {/* ========================================== */}
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2.5 sm:p-3 flex-shrink-0 sticky bottom-0">
+<div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 sm:p-4 flex-shrink-0">
           {activeTab === "avatar" || activeTab === "banner" ? (
             // IMAGE UPLOAD FOOTER
-            <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                disabled={uploading}
-                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpload}
-                disabled={!selectedFile || uploading}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:shadow-none disabled:cursor-not-allowed"
-              >
+            <div className="flex gap-2 sm:gap-3">
+      <button
+        onClick={onClose}
+        disabled={uploading}
+        className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-xs sm:text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={handleUpload}
+        disabled={uploading}
+        className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium rounded-lg transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
