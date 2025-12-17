@@ -18,7 +18,7 @@ router.get("/status", (req, res) => {
   try {
     const { contact } = req.query;
     const otpStore = otpController.getOTPStore(); // ✅ Get store from controller
-    
+
     // If no contact specified, return all stored OTPs
     if (!contact) {
       return res.json({
@@ -28,24 +28,24 @@ router.get("/status", (req, res) => {
         message: "Use ?contact=EMAIL_OR_PHONE to check specific OTP",
       });
     }
-    
+
     // Check for specific contact
     const stored = otpStore.get(contact);
-    
+
     res.json({
       success: true,
       contact,
       found: !!stored,
-      otp: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "production" 
-        ? stored?.otp  // ✅ Include OTP for testing
-        : undefined,
+      otp:
+        process.env.NODE_ENV === "development" ||
+        process.env.NODE_ENV === "production"
+          ? stored?.otp // ✅ Include OTP for testing
+          : undefined,
       expired: stored ? Date.now() > stored.expiry : null,
-      expiresIn: stored 
-        ? Math.floor((stored.expiry - Date.now()) / 1000) + "s" 
+      expiresIn: stored
+        ? Math.floor((stored.expiry - Date.now()) / 1000) + "s"
         : null,
-      expiryDate: stored 
-        ? new Date(stored.expiry).toLocaleString()
-        : null,
+      expiryDate: stored ? new Date(stored.expiry).toLocaleString() : null,
       totalStored: otpStore.size,
       allKeys: Array.from(otpStore.keys()),
     });
