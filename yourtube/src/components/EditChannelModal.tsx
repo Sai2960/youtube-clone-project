@@ -361,13 +361,13 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
             {(activeTab === "avatar" || activeTab === "banner") && (
               <>
                 {/* Guidelines */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <div className="bg-blue-100 dark:bg-blue-900/50 p-1 rounded-md flex-shrink-0">
-                      <ImageIcon className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <ImageIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div>
-                      <h3 className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-0.5">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
                         {activeTab === "avatar"
                           ? "Profile Picture Guidelines"
                           : "Banner Guidelines"}
@@ -384,82 +384,59 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   </div>
                 </div>
 
-                {/* Current Image */}
+                {/* Upload Image */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Current{" "}
-                    {activeTab === "avatar" ? "Profile Picture" : "Banner"}
-                  </label>
-                  <div
-                    className={`rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 mx-auto ${
-                      activeTab === "avatar"
-                        ? "w-28 h-28 sm:w-32 sm:h-32"
-                        : "w-56 h-32 sm:w-64 sm:h-36"
-                    }`}
-                  >
-                    <img
-                      src={getCurrentImage()}
-                      alt={activeTab}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = "https://github.com/shadcn.png";
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Upload New Image */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Upload New{" "}
-                    {activeTab === "avatar" ? "Profile Picture" : "Banner"}
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Upload {activeTab === "avatar" ? "Profile Picture" : "Banner"}
                   </label>
 
-                  {!previewUrl ? (
+                  {previewUrl ? (
+                    <div className="space-y-3">
+                      <div className="relative inline-block">
+                        <div
+                          className={`rounded-lg overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 ${
+                            activeTab === "avatar"
+                              ? "w-24 h-24"
+                              : "w-48 h-27"
+                          }`}
+                        >
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          onClick={handleRemove}
+                          className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full shadow-lg transition-all"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Preview • Click X to remove
+                      </p>
+                    </div>
+                  ) : (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
                     >
-                      <div className="w-10 h-10 mx-auto mb-2 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <p className="text-gray-900 dark:text-white font-medium text-xs mb-1">
+                      <p className="text-gray-900 dark:text-white font-medium text-sm mb-1">
                         Click to upload or drag and drop
                       </p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {activeTab === "avatar"
                           ? "Square images work best"
                           : "Wide images (16:9) recommended"}
                       </p>
                     </div>
-                  ) : (
-                    <div
-                      className={`relative mx-auto ${
-                        activeTab === "avatar" ? "w-28 sm:w-32" : "w-56 sm:w-64"
-                      }`}
-                    >
-                      <div
-                        className={`rounded-lg overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 ${
-                          activeTab === "avatar"
-                            ? "w-28 h-28 sm:w-32 sm:h-32"
-                            : "w-56 h-32 sm:w-64 sm:h-36"
-                        }`}
-                      >
-                        <img
-                          src={previewUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <button
-                        onClick={handleRemove}
-                        className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full shadow-lg transition-all ring-2 ring-white dark:ring-gray-900"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
                   )}
 
+                  
                   <input
                     ref={fileInputRef}
                     type="file"
