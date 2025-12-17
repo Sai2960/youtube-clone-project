@@ -753,10 +753,6 @@ export default function GestureVideoPlayer({
 
   const videoUrl = getVideoUrl(video);
 
-  function setShowWatchLimitModal(arg0: boolean) {
-    throw new Error("Function not implemented.");
-  }
-
   return (
     <div className="w-full space-y-0">
       <div
@@ -1227,7 +1223,7 @@ export default function GestureVideoPlayer({
             )}
 
             {/* Watch Time Limit Modal */}
-            {setShowWatchLimitModal && (
+            {showUpgradePrompt && (
               <div className="absolute inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-2xl">
                   <div className="text-center">
@@ -1258,6 +1254,7 @@ export default function GestureVideoPlayer({
                         : `${watchTimeLimit} minutes`}{" "}
                       per video. Upgrade to continue watching!
                     </p>
+
                     <div className="space-y-3">
                       <button
                         onClick={() => (window.location.href = "/subscription")}
@@ -1268,7 +1265,8 @@ export default function GestureVideoPlayer({
 
                       <button
                         onClick={() => {
-                          setShowWatchLimitModal(false);
+                          setShowUpgradePrompt(false);
+                          setWatchTimeExceeded(false);
                           window.location.href = "/";
                         }}
                         className="w-full bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-900 dark:text-white font-medium py-3 px-6 rounded-lg transition-colors"
