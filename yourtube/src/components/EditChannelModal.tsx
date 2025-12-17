@@ -306,7 +306,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex flex-col items-center justify-center gap-1">
               <ImageIcon className="w-4 h-4" />
               <span>Profile Picture</span>
             </div>
@@ -323,7 +323,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex flex-col items-center justify-center gap-1">
               <Camera className="w-4 h-4" />
               <span>Banner Image</span>
             </div>
@@ -340,7 +340,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex flex-col items-center justify-center gap-1">
               <Edit2 className="w-4 h-4" />
               <span>Channel Info</span>
             </div>
