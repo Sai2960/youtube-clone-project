@@ -266,13 +266,12 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
 
   return (
    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
-  <div
-    className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col"
-    style={{ 
-      maxHeight: "95vh",
-      height: "auto"
-    }}
-  >
+ <div
+  className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden"
+  style={{ 
+    maxHeight: "90vh",
+  }}
+>
         {/* ========================================== */}
         {/* HEADER - FIXED AT TOP */}
         {/* ========================================== */}
@@ -353,11 +352,11 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
        {/* ========================================== */}
         {/* SCROLLABLE CONTENT AREA */}
         {/* ========================================== */}
-       <div 
+      <div 
   className="flex-1 overflow-y-auto overscroll-contain"
-  style={{ minHeight: '350px', maxHeight: 'calc(95vh - 280px)' }}
+  style={{ minHeight: '0' }}
 >
-  <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+  <div className="p-4 sm:p-6 pb-20 space-y-4 sm:space-y-6">
             {/* ============================================ */}
             {/* IMAGE UPLOAD TABS (AVATAR & BANNER) */}
             {/* ============================================ */}
