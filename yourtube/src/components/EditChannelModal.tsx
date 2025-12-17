@@ -353,8 +353,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
        {/* ========================================== */}
         {/* SCROLLABLE CONTENT AREA */}
         {/* ========================================== */}
-       <div className="flex-1 overflow-y-auto overscroll-contain">
-  <div className="p-4 sm:p-6 pb-2 space-y-4 sm:space-y-6">
+       <div className="flex-1 overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(95vh - 280px)' }}>
+  <div className="p-4 sm:p-6 pb-24 space-y-4 sm:space-y-6">
             {/* ============================================ */}
             {/* IMAGE UPLOAD TABS (AVATAR & BANNER) */}
             {/* ============================================ */}
@@ -409,7 +409,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                 </div>
 
                 {/* Upload New Image */}
-                <div className="pb-4">
+                <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                     Upload New{" "}
                     {activeTab === "avatar" ? "Profile Picture" : "Banner"}
@@ -418,12 +418,12 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   {!previewUrl ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 sm:p-12 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 sm:p-10 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
                     >
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <p className="text-gray-900 dark:text-white font-semibold text-base sm:text-lg mb-1 sm:mb-2">
+                      <p className="text-gray-900 dark:text-white font-semibold text-base mb-1">
                         Click to upload or drag and drop
                       </p>
                       <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
@@ -478,6 +478,25 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   </div>
                 )}
 
+                {/* Guidelines Box - MATCHING OTHER TABS */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg flex-shrink-0">
+                      <Edit2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                        Channel Information Guidelines
+                      </h3>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+                        Make your channel stand out with a unique name and compelling description.
+                        <br />
+                        Your channel name will be displayed across the platform.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <Label
                     htmlFor="channelName"
@@ -499,7 +518,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   </p>
                 </div>
 
-                <div className="pb-4">
+                <div>
                   <Label
                     htmlFor="description"
                     className="text-base font-semibold mb-2 block"
@@ -514,7 +533,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                     disabled={isSubmitting}
                     rows={4}
                     maxLength={1000}
-                    className="text-base resize-none"
+                    className="text-base resize-none min-h-[100px]"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
                     {description.length}/1000 characters
