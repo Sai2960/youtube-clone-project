@@ -99,11 +99,10 @@ export default function GestureVideoPlayer({
   const [showVolumeIndicator, setShowVolumeIndicator] = useState(false);
   const [showGestureHint, setShowGestureHint] = useState(true);
   const [watchTimeExceeded, setWatchTimeExceeded] = useState(false);
-const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-const [watchedMinutes, setWatchedMinutes] = useState(0);
-const watchTimeCheckInterval = useRef<NodeJS.Timeout | null>(null);
-const { watchTimeLimit, currentPlan } = useSubscription();
-
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [watchedMinutes, setWatchedMinutes] = useState(0);
+  const watchTimeCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  const { watchTimeLimit, currentPlan } = useSubscription();
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -143,25 +142,41 @@ const { watchTimeLimit, currentPlan } = useSubscription();
     return filename;
   };
 
-useEffect(() => {
-  const videoElement = videoRef.current;
-  if (!videoElement || watchTimeLimit === -1 || !isPlaying) return;
+  useEffect(() => {
+    const videoElement = videoRef.current;
 
-  const interval = setInterval(() => {
-    const minutesWatched = Math.floor(videoElement.currentTime / 60);
-    
-    if (minutesWatched >= watchTimeLimit) {
-      console.log('⏱️ Watch limit reached:', watchTimeLimit, 'minutes');
-      videoElement.pause();
-      setIsPlaying(false);
-      setWatchTimeExceeded(true);
-      setShowWatchLimitModal(true);
-      clearInterval(interval);
-    }
-  }, 5000); // Check every 5 seconds
+    // ✅ Skip check if unlimited or not playing
+    if (!videoElement || watchTimeLimit === -1 || !isPlaying) return;
 
-  return () => clearInterval(interval);
-}, [watchTimeLimit, isPlaying]);
+    const interval = setInterval(() => {
+      // ✅ Get current watch time in MINUTES
+      const minutesWatched = Math.floor(videoElement.currentTime / 60);
+
+      // ✅ CRITICAL FIX: Convert watchTimeLimit to proper comparison
+      // watchTimeLimit is already in minutes, so compare directly
+      if (minutesWatched >= watchTimeLimit) {
+        console.log("⏱️ Watch limit reached:", {
+          minutesWatched,
+          watchTimeLimit,
+          currentPlan,
+        });
+
+        videoElement.pause();
+        setIsPlaying(false);
+        setWatchTimeExceeded(true);
+        setShowUpgradePrompt(true);
+        clearInterval(interval);
+      } else {
+        // ✅ Log remaining time for debugging
+        const remainingMinutes = watchTimeLimit - minutesWatched;
+        console.log(
+          `⏰ ${remainingMinutes} minutes remaining (${currentPlan} plan)`
+        );
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [watchTimeLimit, isPlaying, currentPlan]);
 
   // 🔥 CRITICAL FIX: Optimized video loading with duplicate prevention
   useEffect(() => {
@@ -389,22 +404,29 @@ useEffect(() => {
   };
 
   const togglePlayPause = () => {
-  if (!videoRef.current) return;
+    if (!videoRef.current) return;
 
-  // ✅ Block play if watch time exceeded
-  if (watchTimeExceeded) {
-    setShowUpgradePrompt(true);
-    return;
-  }
+    // ✅ Block play if watch time exceeded
+    if (watchTimeExceeded) {
+      setShowUpgradePrompt(true);
+      return;
+    }
 
-  if (videoRef.current.paused) {
-    videoRef.current.play();
-    setIsPlaying(true);
-  } else {
-    videoRef.current.pause();
-    setIsPlaying(false);
-  }
-};
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsPlaying(true);
+      console.log(
+        "▶️ Playing video - Plan:",
+        currentPlan,
+        "Limit:",
+        watchTimeLimit,
+        "mins"
+      );
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
 
   const handleVolumeChange = (newVolume: number) => {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
@@ -1217,8 +1239,8 @@ useEffect(() => {
                     </h3>
 
                     <p className="text-gray-600 dark:text-gray-400 mb-6">
-                      Your {currentPlan} plan allows {watchTimeLimit} minutes per video.
-                      Upgrade to continue watching!
+                      Your {currentPlan} plan allows {watchTimeLimit} minutes
+                      per video. Upgrade to continue watching!
                     </p>
 
                     <div className="space-y-3">
@@ -1270,5 +1292,3 @@ useEffect(() => {
     </div>
   );
 }
-
-
