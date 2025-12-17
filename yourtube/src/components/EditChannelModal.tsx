@@ -393,8 +393,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   <div
                     className={`rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 mx-auto ${
                       activeTab === "avatar"
-                        ? "w-24 h-24 sm:w-32 sm:h-32"
-                        : "w-48 h-27 sm:w-64 sm:h-36"
+                        ? "w-28 h-28 sm:w-32 sm:h-32"
+                        : "w-56 h-32 sm:w-64 sm:h-36"
                     }`}
                   >
                     <img
@@ -435,14 +435,14 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   ) : (
                     <div
                       className={`relative mx-auto ${
-                        activeTab === "avatar" ? "w-24 sm:w-32" : "w-48 sm:w-64"
+                        activeTab === "avatar" ? "w-28 sm:w-32" : "w-56 sm:w-64"
                       }`}
                     >
                       <div
                         className={`rounded-lg overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 ${
                           activeTab === "avatar"
-                            ? "w-24 h-24 sm:w-32 sm:h-32"
-                            : "w-48 h-27 sm:w-64 sm:h-36"
+                            ? "w-28 h-28 sm:w-32 sm:h-32"
+                            : "w-56 h-32 sm:w-64 sm:h-36"
                         }`}
                       >
                         <img
