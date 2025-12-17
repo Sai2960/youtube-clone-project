@@ -76,7 +76,6 @@ const SubscriptionPage = () => {
       return;
     }
 
-    // ✅ Allow users to change plans freely (upgrade or downgrade)
     setSelectedPlan(plan.id);
     setProcessing(true);
 
@@ -341,12 +340,10 @@ const SubscriptionPage = () => {
                   {/* ✅ FIXED: Button with proper plan change logic */}
                   <button
                     onClick={() => handleSubscribe(plan)}
-                    disabled={processing || isCurrentPlan || isPremium}
+                    disabled={processing || isCurrentPlan}
                     className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${
                       isCurrentPlan
                         ? "bg-green-500 text-white cursor-not-allowed opacity-70"
-                        : isPremium && !isCurrentPlan
-                        ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
                         : plan.id === "GOLD"
                         ? "bg-yellow-600 hover:bg-yellow-700 text-black shadow-lg hover:shadow-xl"
                         : "bg-youtube-hover hover:bg-primary text-youtube-primary hover:text-white"
@@ -359,8 +356,6 @@ const SubscriptionPage = () => {
                       </div>
                     ) : isCurrentPlan ? (
                       "Current Plan"
-                    ) : isPremium && !isCurrentPlan ? (
-                      "Cancel Current Plan First"
                     ) : (
                       "Subscribe Now"
                     )}
