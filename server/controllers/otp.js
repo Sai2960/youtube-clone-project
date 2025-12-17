@@ -143,91 +143,93 @@ const sendEmailOTP = async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = Date.now() + 300000; // 5 minutes
 
-    // ✅ Store OTP FIRST (before sending email)
+    // ✅ CRITICAL: Store OTP FIRST (before any async operations)
     otpStore.set(email, { otp, expiry: otpExpiry });
     console.log(`✅ OTP stored for ${email}: ${otp}`);
+    console.log(`   Expiry: ${new Date(otpExpiry).toISOString()}`);
+
+    // ✅ Log OTP for development
+    console.log("═══════════════════════════════════════");
+    console.log("📧 EMAIL OTP");
+    console.log(`   Email: ${email}`);
+    console.log(`   OTP: ${otp}`);
+    console.log(`   Valid until: ${new Date(otpExpiry).toLocaleString()}`);
+    console.log("═══════════════════════════════════════");
 
     const transporter = initEmailTransporter();
 
-    // ✅ Always return success (even without email service)
-    console.log("═══════════════════════════════════════");
-    console.log("📧 EMAIL OTP");
-    console.log(`Email: ${email}`);
-    console.log(`OTP: ${otp}`);
-    console.log(`Expiry: ${new Date(otpExpiry).toISOString()}`);
-    console.log("═══════════════════════════════════════");
-
+    // ✅ If no email service, return success immediately
     if (!transporter) {
-      console.log("⚠️ No email service - OTP logged above");
+      console.log("⚠️ No email service configured - OTP logged above");
       return res.json({
         success: true,
-        message: "OTP generated (check server console)",
+        message: "OTP generated successfully (check server console)",
         debug: { email, otp },
       });
     }
 
-    // ✅ Try to send email (but don't fail if it times out)
-    try {
-      await Promise.race([
-        transporter.sendMail({
-          from: `"YouTube Clone" <${process.env.EMAIL_USER}>`,
-          to: email,
-          subject: "Your OTP for Login",
-          html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f5f5f5;">
-              <div style="background-color: white; padding: 30px; border-radius: 10px;">
-                <h2 style="color: #2563eb;">🔐 OTP Verification</h2>
-                <p style="font-size: 16px; color: #333;">
-                  Your one-time password (OTP) is:
-                </p>
-                <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                  <span style="font-size: 36px; font-weight: bold; color: #2563eb; letter-spacing: 8px;">
-                    ${otp}
-                  </span>
+    // ✅ Try to send email in background (don't wait for it)
+    setImmediate(async () => {
+      try {
+        await Promise.race([
+          transporter.sendMail({
+            from: `"YouTube Clone" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: "Your OTP for Login",
+            html: `
+              <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f5f5f5;">
+                <div style="background-color: white; padding: 30px; border-radius: 10px;">
+                  <h2 style="color: #2563eb;">🔐 OTP Verification</h2>
+                  <p style="font-size: 16px; color: #333;">
+                    Your one-time password (OTP) is:
+                  </p>
+                  <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                    <span style="font-size: 36px; font-weight: bold; color: #2563eb; letter-spacing: 8px;">
+                      ${otp}
+                    </span>
+                  </div>
+                  <p style="font-size: 14px; color: #666;">
+                    ⏱️ This OTP expires in <strong>5 minutes</strong>.
+                  </p>
+                  <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;">
+                  <p style="font-size: 12px; color: #999;">
+                    If you didn't request this, please ignore this email.
+                  </p>
                 </div>
-                <p style="font-size: 14px; color: #666;">
-                  ⏱️ This OTP expires in <strong>5 minutes</strong>.
-                </p>
-                <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;">
-                <p style="font-size: 12px; color: #999;">
-                  If you didn't request this, please ignore this email.
-                </p>
               </div>
-            </div>
-          `,
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Email timeout")), 30000)
-        ),
-      ]);
+            `,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Email timeout")), 30000)
+          ),
+        ]);
 
-      console.log("✅ Email sent successfully");
+        console.log("✅ Email sent successfully to:", email);
+      } catch (emailError) {
+        console.error(
+          "⚠️ Email send failed (OTP still valid):",
+          emailError.message
+        );
+      }
+    });
 
-      return res.json({
-        success: true,
-        message: "OTP sent to your email",
-        debug: process.env.NODE_ENV === "development" ? { otp } : undefined,
-      });
-    } catch (emailError) {
-      console.error(
-        "⚠️ Email send failed (but OTP is still valid):",
-        emailError.message
-      );
-
-      // ✅ Still return success since OTP is stored
-      return res.json({
-        success: true,
-        message: "OTP generated (email service unavailable - check console)",
-        debug: { email, otp },
-      });
-    }
+    // ✅ Return success immediately (don't wait for email)
+    return res.json({
+      success: true,
+      message: "OTP generated successfully",
+      debug: process.env.NODE_ENV === "development" ? { otp } : undefined,
+    });
   } catch (error) {
     console.error("❌ Email OTP error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to send OTP",
-      details: error.message,
-    });
+
+    // ✅ Only send response if headers not sent
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to generate OTP",
+        details: error.message,
+      });
+    }
   }
 };
 
@@ -259,75 +261,66 @@ const sendSMSOTP = async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = Date.now() + 300000;
 
-    // ✅ Store with BOTH formats FIRST
+    // ✅ CRITICAL: Store with BOTH formats FIRST
     otpStore.set(phoneNumber, { otp, expiry: otpExpiry });
     otpStore.set(formattedPhone, { otp, expiry: otpExpiry });
     console.log(`✅ OTP stored for ${formattedPhone}: ${otp}`);
 
-    const client = initTwilioClient();
-
-    // ✅ Always log OTP
+    // ✅ Log OTP
     console.log("═══════════════════════════════════════");
     console.log("📱 SMS OTP");
-    console.log(`Phone: ${phoneNumber}`);
-    console.log(`Formatted: ${formattedPhone}`);
-    console.log(`OTP: ${otp}`);
-    console.log(`Expiry: ${new Date(otpExpiry).toISOString()}`);
+    console.log(`   Phone: ${phoneNumber}`);
+    console.log(`   Formatted: ${formattedPhone}`);
+    console.log(`   OTP: ${otp}`);
+    console.log(`   Valid until: ${new Date(otpExpiry).toLocaleString()}`);
     console.log("═══════════════════════════════════════");
 
+    const client = initTwilioClient();
+
+    // ✅ If no Twilio, return success immediately
     if (!client) {
       console.log("⚠️ Twilio not configured - OTP logged above");
       return res.json({
         success: true,
-        message: "OTP generated (check server console)",
+        message: "OTP generated successfully (check server console)",
         debug: { phoneNumber, formattedPhone, otp },
       });
     }
 
-    // ✅ Try SMS but don't fail if Twilio has issues
-    try {
-      await client.messages.create({
-        body: `Your YouTube Clone OTP is: ${otp}. Valid for 5 minutes.`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: formattedPhone,
-      });
+    // ✅ Try SMS in background (don't wait)
+    setImmediate(async () => {
+      try {
+        await client.messages.create({
+          body: `Your YouTube Clone OTP is: ${otp}. Valid for 5 minutes.`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: formattedPhone,
+        });
 
-      console.log("✅ SMS sent successfully");
-
-      return res.json({
-        success: true,
-        message: "OTP sent to your mobile",
-        debug: process.env.NODE_ENV === "development" ? { otp } : undefined,
-      });
-    } catch (smsError) {
-      console.error(
-        "⚠️ SMS send failed (but OTP is still valid):",
-        smsError.message
-      );
-
-      // ✅ Still return success since OTP is stored
-      let errorMessage =
-        "OTP generated (SMS service unavailable - check console)";
-
-      if (smsError.code === 21211) {
-        errorMessage = "Invalid phone number format";
-      } else if (smsError.code === 21608) {
-        errorMessage = "Phone not verified in Twilio trial account";
+        console.log("✅ SMS sent successfully to:", formattedPhone);
+      } catch (smsError) {
+        console.error(
+          "⚠️ SMS send failed (OTP still valid):",
+          smsError.message
+        );
       }
+    });
 
-      return res.json({
-        success: true,
-        message: errorMessage,
-        debug: { phoneNumber, formattedPhone, otp },
-      });
-    }
+    // ✅ Return success immediately
+    return res.json({
+      success: true,
+      message: "OTP generated successfully",
+      debug: process.env.NODE_ENV === "development" ? { otp } : undefined,
+    });
   } catch (error) {
     console.error("❌ SMS OTP error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to send OTP",
-      details: error.message,
-    });
+
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to generate OTP",
+        details: error.message,
+      });
+    }
   }
 };
 
