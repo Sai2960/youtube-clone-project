@@ -187,16 +187,31 @@ export const isSouthIndianState = (state) => {
  */
 export const determineTheme = (state) => {
   const isSouth = isSouthIndianState(state);
-  const currentHour = new Date().getHours();
+
+  // ✅ CRITICAL: Always use IST timezone for consistency
+  const currentTime = moment().tz("Asia/Kolkata");
+  const currentHour = currentTime.hour();
+  const currentMinute = currentTime.minute();
+
   const morningStart = parseInt(process.env.LIGHT_THEME_START_HOUR || "10");
   const morningEnd = parseInt(process.env.LIGHT_THEME_END_HOUR || "12");
   const isMorningTime = currentHour >= morningStart && currentHour < morningEnd;
 
+  console.log("🎨 Theme determination:", {
+    state,
+    isSouth,
+    time: `${currentHour}:${String(currentMinute).padStart(2, "0")}`,
+    isMorningTime,
+    morningWindow: `${morningStart}:00 - ${morningEnd}:00`,
+  });
+
   // Light theme ONLY for South India during morning hours
   if (isSouth && isMorningTime) {
+    console.log("✨ LIGHT theme (South India + Morning)");
     return "light";
   }
 
+  console.log("🌙 DARK theme (default)");
   return "dark";
 };
 
