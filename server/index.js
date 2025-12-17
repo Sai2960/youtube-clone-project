@@ -257,13 +257,18 @@ app.use(
       callback(null, true); // ✅ Permissive fallback
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
       "X-Requested-With",
       "Accept",
       "Origin",
+      "Cache-Control", // ✅ ADD THIS
+      "Pragma", // ✅ ADD THIS
+      "Expires", // ✅ ADD THIS
+      "If-None-Match", // ✅ ADD THIS
+      "If-Modified-Since", // ✅ ADD THIS
     ],
     exposedHeaders: ["Content-Range", "X-Content-Range", "ETag"],
     preflightContinue: false,
@@ -434,59 +439,27 @@ app.get("/uploads/videos/:filename", (req, res) => {
     fs.createReadStream(videoPath).pipe(res);
   }
 });
-// Enhanced preflight handler
-// Enhanced preflight handler
-// Enhanced preflight handler
-// Enhanced preflight handler
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // ✅ CRITICAL: Always set CORS headers for video content
-  if (
-    req.path.includes("/uploads/") ||
-    req.path.includes("/video/") ||
-    req.path.includes("/shorts/")
-  ) {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Max-Age", "86400");
-    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, Range, Accept, Origin, Cache-Control"
-    );
-    res.setHeader(
-      "Access-Control-Expose-Headers",
-      "Content-Length, Content-Range, Accept-Ranges, Content-Type"
-    );
-
-    if (req.method === "OPTIONS") {
-      return res.status(204).end();
-    }
-  }
-
-  // For API calls, be permissive
-  if (req.path.includes("/api/")) {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Max-Age", "86400");
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since, X-Auth-Token"
-    );
-  } else if (origin && isOriginAllowed(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  } else if (process.env.NODE_ENV === "production") {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-  }
-
+  // ✅ CRITICAL: Set permissive CORS for ALL requests
+  res.setHeader("Access-Control-Allow-Origin", origin || "*");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
   );
   res.setHeader("Access-Control-Max-Age", "86400");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since, X-Auth-Token, Range"
+  );
+  res.setHeader(
+    "Access-Control-Expose-Headers",
+    "Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag"
+  );
 
+  // Handle preflight
   if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
