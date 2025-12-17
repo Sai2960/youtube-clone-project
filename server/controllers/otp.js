@@ -1,4 +1,4 @@
-// server/controllers/otp.js - FIXED WITH PHONE NUMBER FORMATTING
+// server/controllers/otp.js - ENHANCED VERSION
 import nodemailer from "nodemailer";
 import twilio from "twilio";
 
@@ -80,27 +80,22 @@ const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// ✅ FORMAT PHONE NUMBER FOR TWILIO (E.164 FORMAT)
+// ✅ ENHANCED: Format phone number to E.164
 const formatPhoneNumber = (phoneNumber) => {
-  // Remove all non-digit characters except +
   let cleaned = phoneNumber.replace(/[^\d+]/g, "");
 
-  // If already has country code (+), return as is
   if (cleaned.startsWith("+")) {
     return cleaned;
   }
 
-  // If starts with country code without +, add it
   if (cleaned.startsWith("91") && cleaned.length === 12) {
     return `+${cleaned}`;
   }
 
-  // If it's a 10-digit Indian number, add +91
   if (cleaned.length === 10) {
     return `+91${cleaned}`;
   }
 
-  // Default: assume it needs +91
   return `+91${cleaned}`;
 };
 
@@ -129,7 +124,6 @@ const sendEmailOTP = async (req, res) => {
       });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -138,27 +132,24 @@ const sendEmailOTP = async (req, res) => {
       });
     }
 
-    // Block test/fake emails
     const blockList = ["test@example.com", "example.com", "test.com"];
     if (blockList.some((blocked) => email.toLowerCase().includes(blocked))) {
       return res.status(400).json({
         success: false,
-        error: "Please use a valid email address (not test/example emails)",
+        error: "Please use a valid email address",
       });
     }
 
     const otp = generateOTP();
     const otpExpiry = Date.now() + 300000; // 5 minutes
 
-    // Store OTP
     otpStore.set(email, { otp, expiry: otpExpiry });
 
     const transporter = initEmailTransporter();
 
     if (!transporter) {
-      // Mock mode - log OTP
       console.log("═══════════════════════════════════════");
-      console.log("📧 EMAIL OTP (Mock Mode - No email sent)");
+      console.log("📧 EMAIL OTP (Mock Mode)");
       console.log(`Email: ${email}`);
       console.log(`OTP: ${otp}`);
       console.log("⚠️ Configure EMAIL_USER and EMAIL_PASSWORD in .env");
@@ -167,36 +158,35 @@ const sendEmailOTP = async (req, res) => {
       return res.json({
         success: true,
         message: "OTP generated (check server console)",
-        debug: { email },
+        debug: { email, otp }, // ✅ Include OTP for testing
       });
     }
 
     console.log("📤 Sending email OTP to:", email);
 
-    // Send email with error handling
     try {
       await transporter.sendMail({
         from: `"YouTube Clone" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: "Your OTP for Login - YouTube Clone",
+        subject: "Your OTP for Login",
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f5f5f5;">
-            <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-              <h2 style="color: #2563eb; margin-bottom: 20px;">🔐 OTP Verification</h2>
-              <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-                Your one-time password (OTP) for login is:
+            <div style="background-color: white; padding: 30px; border-radius: 10px;">
+              <h2 style="color: #2563eb;">🔐 OTP Verification</h2>
+              <p style="font-size: 16px; color: #333;">
+                Your one-time password (OTP) is:
               </p>
               <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
                 <span style="font-size: 36px; font-weight: bold; color: #2563eb; letter-spacing: 8px;">
                   ${otp}
                 </span>
               </div>
-              <p style="font-size: 14px; color: #666; margin-top: 20px;">
-                ⏱️ This OTP will expire in <strong>5 minutes</strong>.
+              <p style="font-size: 14px; color: #666;">
+                ⏱️ This OTP expires in <strong>5 minutes</strong>.
               </p>
               <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;">
               <p style="font-size: 12px; color: #999;">
-                If you didn't request this OTP, please ignore this email.
+                If you didn't request this, please ignore this email.
               </p>
             </div>
           </div>
@@ -204,31 +194,29 @@ const sendEmailOTP = async (req, res) => {
       });
 
       console.log("═══════════════════════════════════════");
-      console.log("✅ EMAIL OTP SENT SUCCESSFULLY");
+      console.log("✅ EMAIL OTP SENT");
       console.log(`Email: ${email}`);
       console.log(`OTP: ${otp}`);
       console.log("═══════════════════════════════════════");
 
       res.json({
         success: true,
-        message: "OTP sent to your email. Check your inbox!",
-        debug: { email },
+        message: "OTP sent to your email",
+        debug: process.env.NODE_ENV === 'development' ? { otp } : undefined
       });
     } catch (emailError) {
-      console.error("❌ Email sending failed:", emailError);
+      console.error("❌ Email failed:", emailError);
 
-      // Still return success but log OTP for testing
       console.log("═══════════════════════════════════════");
       console.log("⚠️ EMAIL FAILED - OTP for testing:");
       console.log(`Email: ${email}`);
       console.log(`OTP: ${otp}`);
-      console.log("Error:", emailError.message);
       console.log("═══════════════════════════════════════");
 
       return res.json({
         success: true,
-        message: "OTP generated (check server console - email failed)",
-        debug: { email, error: emailError.message },
+        message: "OTP generated (email failed - check console)",
+        debug: { email, otp },
       });
     }
   } catch (error) {
@@ -241,7 +229,7 @@ const sendEmailOTP = async (req, res) => {
   }
 };
 
-// Send SMS OTP - ✅ FIXED
+// Send SMS OTP - ENHANCED
 const sendSMSOTP = async (req, res) => {
   try {
     let { phoneNumber } = req.body;
@@ -255,171 +243,151 @@ const sendSMSOTP = async (req, res) => {
       });
     }
 
-    // ✅ FORMAT PHONE NUMBER TO E.164
+    // ✅ Format to E.164
     const formattedPhone = formatPhoneNumber(phoneNumber);
-    console.log("📞 Formatted phone number:", formattedPhone);
+    console.log("📞 Formatted:", formattedPhone);
 
-    // Validate formatted number
     const phoneRegex = /^\+[1-9]\d{1,14}$/;
     if (!phoneRegex.test(formattedPhone)) {
       return res.status(400).json({
         success: false,
-        error: "Invalid phone number format. Use: 9876543210 or +919876543210",
+        error: "Invalid phone format. Use: 9876543210 or +919876543210",
       });
     }
 
     const otp = generateOTP();
-    const otpExpiry = Date.now() + 300000; // 5 minutes
+    const otpExpiry = Date.now() + 300000;
 
-    // ✅ Store OTP with BOTH formats for flexible verification
+    // ✅ Store with BOTH formats
     otpStore.set(phoneNumber, { otp, expiry: otpExpiry });
     otpStore.set(formattedPhone, { otp, expiry: otpExpiry });
 
     const client = initTwilioClient();
 
     if (!client) {
-      // Mock mode - log OTP
       console.log("═══════════════════════════════════════");
       console.log("📱 SMS OTP (Mock Mode)");
-      console.log(`Phone (Original): ${phoneNumber}`);
-      console.log(`Phone (Formatted): ${formattedPhone}`);
+      console.log(`Phone: ${phoneNumber}`);
+      console.log(`Formatted: ${formattedPhone}`);
       console.log(`OTP: ${otp}`);
-      console.log("⚠️ Configure Twilio credentials in .env:");
-      console.log("   TWILIO_ACCOUNT_SID");
-      console.log("   TWILIO_AUTH_TOKEN");
-      console.log("   TWILIO_PHONE_NUMBER");
+      console.log("⚠️ Configure Twilio credentials in .env");
       console.log("═══════════════════════════════════════");
 
       return res.json({
         success: true,
-        message: "OTP generated (Twilio not configured - check server console)",
-        debug: { phoneNumber, formattedPhone },
+        message: "OTP generated (check server console)",
+        debug: { phoneNumber, formattedPhone, otp },
       });
     }
 
-    console.log("📤 Sending SMS via Twilio...");
-    console.log("   From:", process.env.TWILIO_PHONE_NUMBER);
-    console.log("   To:", formattedPhone);
+    console.log("📤 Sending SMS...");
 
-    // Send SMS via Twilio with FORMATTED number
     await client.messages.create({
       body: `Your YouTube Clone OTP is: ${otp}. Valid for 5 minutes.`,
       from: process.env.TWILIO_PHONE_NUMBER,
-      to: formattedPhone, // ✅ Use formatted number
+      to: formattedPhone,
     });
 
     console.log("═══════════════════════════════════════");
-    console.log("✅ SMS OTP SENT SUCCESSFULLY");
-    console.log(`Phone (Original): ${phoneNumber}`);
-    console.log(`Phone (Formatted): ${formattedPhone}`);
+    console.log("✅ SMS OTP SENT");
+    console.log(`Phone: ${formattedPhone}`);
     console.log(`OTP: ${otp}`);
     console.log("═══════════════════════════════════════");
 
     res.json({
       success: true,
-      message: "OTP sent to your mobile number",
-      debug: { phoneNumber, formattedPhone },
+      message: "OTP sent to your mobile",
+      debug: process.env.NODE_ENV === 'development' ? { otp } : undefined
     });
   } catch (error) {
     console.error("❌ SMS OTP error:", error);
 
-    // Provide more helpful error message
     let errorMessage = "Failed to send OTP";
     if (error.code === 21211) {
-      errorMessage = "Invalid phone number format. Please use: +919876543210";
+      errorMessage = "Invalid phone number";
     } else if (error.code === 21608) {
-      errorMessage =
-        "This phone number is not verified in Twilio trial account";
+      errorMessage = "Phone not verified in Twilio trial";
     }
 
     res.status(500).json({
       success: false,
       error: errorMessage,
       details: error.message,
-      code: error.code,
     });
   }
 };
 
+// ✅ ENHANCED: Verify OTP with flexible phone matching
 const verifyOTP = async (req, res) => {
   try {
     const { otp, contact } = req.body;
 
-    console.log("🔐 Verify OTP request:");
+    console.log("🔐 Verify OTP:");
     console.log("   OTP:", otp);
     console.log("   Contact:", contact);
 
-    if (!otp) {
+    if (!otp || !contact) {
       return res.status(400).json({
         success: false,
-        error: "OTP is required",
+        error: "OTP and contact required",
       });
     }
 
-    if (!contact) {
-      return res.status(400).json({
-        success: false,
-        error: "Contact (email or phone) is required",
-      });
-    }
-
-    // ✅ CRITICAL FIX: Try multiple contact formats for phone numbers
+    // ✅ Try original contact first
     let storedData = otpStore.get(contact);
 
-    // If not found and looks like a phone number, try formatted versions
+    // ✅ If phone number, try formatted versions
     if (!storedData && /^\d{10}$/.test(contact)) {
-      // Try with +91 prefix
       const withPrefix = `+91${contact}`;
       storedData = otpStore.get(withPrefix);
-      console.log(`🔄 Trying formatted phone: ${withPrefix}`);
+      console.log(`🔄 Tried: ${withPrefix}`);
+    }
 
-      // If still not found, try without prefix
-      if (!storedData) {
-        const withoutPrefix = contact.replace(/^\+91/, "");
-        storedData = otpStore.get(withoutPrefix);
-        console.log(`🔄 Trying without prefix: ${withoutPrefix}`);
-      }
+    // ✅ Try without +91 prefix
+    if (!storedData && contact.startsWith('+91')) {
+      const without = contact.replace(/^\+91/, '');
+      storedData = otpStore.get(without);
+      console.log(`🔄 Tried: ${without}`);
     }
 
     if (!storedData) {
       console.log(`❌ OTP not found for: ${contact}`);
-      console.log("📋 Available contacts:", Array.from(otpStore.keys()));
+      console.log("📋 Available keys:", Array.from(otpStore.keys()));
       return res.status(400).json({
         success: false,
-        error: "OTP not found. Please request a new OTP.",
+        error: "OTP not found. Please request new OTP.",
       });
     }
 
-    // Check expiry
     if (Date.now() > storedData.expiry) {
       otpStore.delete(contact);
-      console.log(`❌ OTP expired for: ${contact}`);
       return res.status(400).json({
         success: false,
-        error: "OTP has expired. Please request a new OTP.",
+        error: "OTP expired. Please request new OTP.",
       });
     }
 
-    // Verify OTP
     if (storedData.otp !== otp) {
-      console.log(`❌ Invalid OTP for: ${contact}`);
+      console.log(`❌ Invalid OTP`);
       console.log(`   Provided: ${otp}`);
       console.log(`   Expected: ${storedData.otp}`);
       return res.status(400).json({
         success: false,
-        error: "Invalid OTP. Please try again.",
+        error: "Invalid OTP",
       });
     }
 
-    // ✅ SUCCESS - Delete all format variations
+    // ✅ Delete all format variations
     otpStore.delete(contact);
     if (/^\d{10}$/.test(contact)) {
       otpStore.delete(`+91${contact}`);
-      otpStore.delete(contact.replace(/^\+91/, ""));
+    }
+    if (contact.startsWith('+91')) {
+      otpStore.delete(contact.replace(/^\+91/, ''));
     }
 
     console.log("═══════════════════════════════════════");
-    console.log("✅ OTP VERIFIED SUCCESSFULLY");
+    console.log("✅ OTP VERIFIED");
     console.log(`Contact: ${contact}`);
     console.log("═══════════════════════════════════════");
 
@@ -428,11 +396,10 @@ const verifyOTP = async (req, res) => {
       message: "OTP verified successfully",
     });
   } catch (error) {
-    console.error("❌ OTP verification error:", error);
+    console.error("❌ Verification error:", error);
     res.status(500).json({
       success: false,
       error: "Verification failed",
-      details: error.message,
     });
   }
 };
