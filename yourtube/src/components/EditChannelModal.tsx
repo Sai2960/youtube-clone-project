@@ -355,9 +355,9 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         {/* ========================================== */}
        <div 
   className="flex-1 overflow-y-auto overscroll-contain"
-  style={{ minHeight: '350px', maxHeight: 'calc(95vh - 280px)' }}
+  style={{ minHeight: '400px', maxHeight: '500px' }} // Fixed consistent height
 >
-  <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+  <div className="p-4 sm:p-6 pb-2 space-y-4 sm:space-y-6 min-h-full flex flex-col">
             {/* ============================================ */}
             {/* IMAGE UPLOAD TABS (AVATAR & BANNER) */}
             {/* ============================================ */}
