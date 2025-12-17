@@ -168,7 +168,7 @@ export const createSubscriptionOrder = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ FIXED: Only block if subscribing to SAME plan
+    // ✅ FIXED: Allow plan changes - only block if trying to buy SAME plan
     const currentPlan = user.currentPlan || "FREE";
     if (plan === currentPlan && currentPlan !== "FREE") {
       return res.status(400).json({
@@ -177,7 +177,7 @@ export const createSubscriptionOrder = async (req, res) => {
       });
     }
 
-    // ✅ REMOVED: Downgrade prevention - allow all plan changes
+    // ✅ REMOVED: No downgrade prevention - allow all upgrades/downgrades
 
     // Get Razorpay instance
     const razorpayInstance = getRazorpayInstance();
