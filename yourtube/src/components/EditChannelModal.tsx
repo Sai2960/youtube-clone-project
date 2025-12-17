@@ -384,7 +384,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   </div>
                 </div>
 
-                {/* Current Image */}
+               {/* Current Image */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Current{" "}
@@ -393,7 +393,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                   <div
                     className={`rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 ${
                       activeTab === "avatar"
-                        ? "w-24 h-24 mx-auto"
+                        ? "w-48 h-48 mx-auto"
                         : "w-full aspect-[16/9]"
                     }`}
                   >
@@ -437,7 +437,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                       <div
                         className={`rounded-lg overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 ${
                           activeTab === "avatar"
-                            ? "w-24 h-24 mx-auto"
+                            ? "w-48 h-48 mx-auto"
                             : "w-full aspect-[16/9]"
                         }`}
                       >
