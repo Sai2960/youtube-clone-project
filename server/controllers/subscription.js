@@ -456,6 +456,7 @@ export const getSubscriptionAnalytics = async (req, res) => {
 };
 
 // Get current subscription
+// Get current subscription
 export const getCurrentSubscription = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -470,6 +471,18 @@ export const getCurrentSubscription = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
 
+    // ✅ CRITICAL FIX: Determine correct watch time limit
+    const currentPlan = user.currentPlan || "FREE";
+    const planDetails = PLAN_DETAILS[currentPlan] || PLAN_DETAILS.FREE;
+    const watchTimeLimit = planDetails.watchTime;
+
+    console.log("✅ getCurrentSubscription:", {
+      userId,
+      currentPlan,
+      watchTimeLimit,
+      subscriptionExists: !!subscription
+    });
+
     return res.json({
       success: true,
       subscription: {
@@ -481,8 +494,8 @@ export const getCurrentSubscription = async (req, res) => {
         endDate: subscription?.endDate,
         status: subscription?.status || "ACTIVE",
       },
-      currentPlan: user.currentPlan || "FREE",
-      watchTimeLimit: user.watchTimeLimit || 5,
+      currentPlan: currentPlan,
+      watchTimeLimit: watchTimeLimit, // ✅ Use plan-specific limit
       subscriptionExpiry: user.subscriptionExpiry,
     });
   } catch (error) {
