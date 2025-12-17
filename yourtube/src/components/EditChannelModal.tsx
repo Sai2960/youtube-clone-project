@@ -353,200 +353,176 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
        {/* ========================================== */}
         {/* SCROLLABLE CONTENT AREA */}
         {/* ========================================== */}
-       <div 
-  className="flex-1 overflow-y-auto overscroll-contain"
-  style={{ minHeight: '400px', maxHeight: '500px' }} // Fixed consistent height
->
-  <div className="p-4 sm:p-6 pb-2 space-y-4 sm:space-y-6 min-h-full flex flex-col">
+       <div className="flex-1 overflow-y-auto overscroll-contain">
+  <div className="p-4 sm:p-6 pb-2 space-y-4 sm:space-y-6">
             {/* ============================================ */}
             {/* IMAGE UPLOAD TABS (AVATAR & BANNER) */}
             {/* ============================================ */}
-           {(activeTab === "avatar" || activeTab === "banner") && (
-  <div className="flex flex-col flex-1 space-y-4 sm:space-y-6">
-    {/* Guidelines */}
-    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-      <div className="flex items-start gap-3">
-        <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg flex-shrink-0">
-          <ImageIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-        </div>
-        <div>
-          <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-1">
-            {activeTab === "avatar"
-              ? "Profile Picture Guidelines"
-              : "Banner Guidelines"}
-          </h3>
-          <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-            Recommended size:{" "}
-            <span className="font-semibold">
-              {getRecommendedSize()}
-            </span>
-            <br />
-            Format: JPG, PNG, or WebP • Max size: 5MB
-          </p>
-        </div>
-      </div>
-    </div>
+            {(activeTab === "avatar" || activeTab === "banner") && (
+              <>
+                {/* Guidelines */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg flex-shrink-0">
+                      <ImageIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                        {activeTab === "avatar"
+                          ? "Profile Picture Guidelines"
+                          : "Banner Guidelines"}
+                      </h3>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+                        Recommended size:{" "}
+                        <span className="font-semibold">
+                          {getRecommendedSize()}
+                        </span>
+                        <br />
+                        Format: JPG, PNG, or WebP • Max size: 5MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-    {/* Current Image */}
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-        Current{" "}
-        {activeTab === "avatar" ? "Profile Picture" : "Banner"}
-      </label>
-      <div
-        className={`rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-md ${
-          activeTab === "avatar"
-            ? "w-32 h-32 mx-auto"
-            : "w-full aspect-[16/9]"
-        }`}
-      >
-        <img
-          src={getCurrentImage()}
-          alt={activeTab}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.currentTarget.src = "https://github.com/shadcn.png";
-          }}
-        />
-      </div>
-    </div>
+                {/* Current Image */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Current{" "}
+                    {activeTab === "avatar" ? "Profile Picture" : "Banner"}
+                  </label>
+                  <div
+                    className={`rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-md ${
+                      activeTab === "avatar"
+                        ? "w-32 h-32 mx-auto"
+                        : "w-full aspect-[16/9]"
+                    }`}
+                  >
+                    <img
+                      src={getCurrentImage()}
+                      alt={activeTab}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://github.com/shadcn.png";
+                      }}
+                    />
+                  </div>
+                </div>
 
-    {/* Upload New Image - WITH FLEX-1 TO FILL REMAINING SPACE */}
-    <div className="flex-1 flex flex-col pb-4">
-      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-        Upload New{" "}
-        {activeTab === "avatar" ? "Profile Picture" : "Banner"}
-      </label>
+                {/* Upload New Image */}
+                <div className="pb-4">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Upload New{" "}
+                    {activeTab === "avatar" ? "Profile Picture" : "Banner"}
+                  </label>
 
-      <div className="flex-1 flex flex-col justify-center">
-        {!previewUrl ? (
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 sm:p-12 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
-          >
-            <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
-            </div>
-            <p className="text-gray-900 dark:text-white font-semibold text-base sm:text-lg mb-1 sm:mb-2">
-              Click to upload or drag and drop
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              {activeTab === "avatar"
-                ? "Square images work best"
-                : "Wide images (16:9) recommended"}
-            </p>
+                  {!previewUrl ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 sm:p-12 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 group"
+                    >
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <p className="text-gray-900 dark:text-white font-semibold text-base sm:text-lg mb-1 sm:mb-2">
+                        Click to upload or drag and drop
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                        {activeTab === "avatar"
+                          ? "Square images work best"
+                          : "Wide images (16:9) recommended"}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <div
+                        className={`rounded-xl overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 shadow-lg ${
+                          activeTab === "avatar"
+                            ? "w-32 h-32 mx-auto"
+                            : "w-full aspect-[16/9]"
+                        }`}
+                      >
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <button
+                        onClick={handleRemove}
+                        className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full shadow-lg transition-all ring-2 ring-white dark:ring-gray-900"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* ============================================ */}
+            {/* CHANNEL INFO TAB */}
+            {/* ============================================ */}
+            {activeTab === "info" && (
+              <>
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <div>
+                  <Label
+                    htmlFor="channelName"
+                    className="text-base font-semibold mb-2 block"
+                  >
+                    Channel Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="channelName"
+                    value={channelName}
+                    onChange={(e) => setChannelName(e.target.value)}
+                    placeholder="Enter channel name"
+                    disabled={isSubmitting}
+                    className="text-base h-12"
+                    maxLength={50}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    {channelName.length}/50 characters
+                  </p>
+                </div>
+
+                <div className="pb-4">
+                  <Label
+                    htmlFor="description"
+                    className="text-base font-semibold mb-2 block"
+                  >
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Tell viewers about your channel..."
+                    disabled={isSubmitting}
+                    rows={4}
+                    maxLength={1000}
+                    className="text-base resize-none"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    {description.length}/1000 characters
+                  </p>
+                </div>
+              </>
+            )}
           </div>
-        ) : (
-          <div className="relative">
-            <div
-              className={`rounded-xl overflow-hidden border-2 border-blue-500 bg-gray-100 dark:bg-gray-800 shadow-lg ${
-                activeTab === "avatar"
-                  ? "w-32 h-32 mx-auto"
-                  : "w-full aspect-[16/9]"
-              }`}
-            >
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <button
-              onClick={handleRemove}
-              className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full shadow-lg transition-all ring-2 ring-white dark:ring-gray-900"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-      </div>
-    </div>
-  </div>
-)}
-
-{activeTab === "info" && (
-  <div className="flex flex-col flex-1 space-y-4 sm:space-y-6 pb-6">
-    {error && (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
-        {error}
-      </div>
-    )}
-
-
-    {/* Guidelines Box */}
-    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-      <div className="flex items-start gap-3">
-        <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg flex-shrink-0">
-          <Edit2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-        </div>
-        <div>
-          <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-1">
-            Channel Information Guidelines
-          </h3>
-          <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-            Make your channel stand out with a unique name and compelling description.
-            <br />
-            Your channel name will be displayed across the platform.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    {/* Form Fields - WITH CONSISTENT SPACING */}
-    <div className="flex-1 flex flex-col space-y-5">
-      <div>
-        <Label
-          htmlFor="channelName"
-          className="text-base font-semibold mb-2 block"
-        >
-          Channel Name <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="channelName"
-          value={channelName}
-          onChange={(e) => setChannelName(e.target.value)}
-          placeholder="Enter channel name"
-          disabled={isSubmitting}
-          className="text-base h-12"
-          maxLength={50}
-        />
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-          {channelName.length}/50 characters
-        </p>
-      </div>
-
-      <div className="flex-1 flex flex-col pb-4">
-        <Label
-          htmlFor="description"
-          className="text-base font-semibold mb-2 block"
-        >
-          Description
-        </Label>
-        <Textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Tell viewers about your channel..."
-          disabled={isSubmitting}
-          rows={6}
-          maxLength={1000}
-          className="text-base resize-none flex-1"
-        />
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-          {description.length}/1000 characters
-        </p>
-      </div>
-    </div>
-  </div>
-)}          </div>
         </div>
 
         {/* ========================================== */}
