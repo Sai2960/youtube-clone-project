@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// OTPModal.tsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -24,9 +24,8 @@ export const OTPModal: React.FC<OTPModalProps> = ({
   const [error, setError] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [debugOtp, setDebugOtp] = useState(''); // For testing
+  const [debugOtp, setDebugOtp] = useState('');
 
-  // Countdown timer
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -39,9 +38,11 @@ export const OTPModal: React.FC<OTPModalProps> = ({
     setError('');
     try {
       const apiUrl = getApiUrl();
+      
+      // ✅ FIX 1: Correct endpoint paths
       const endpoint = otpMethod === 'email' 
-        ? `${apiUrl}/api/send-email-otp`
-        : `${apiUrl}/api/send-sms-otp`;
+        ? `${apiUrl}/api/otp/send-email-otp`  // ✅ Changed from /api/auth/
+        : `${apiUrl}/api/otp/send-sms-otp`;   // ✅ Changed from /api/auth/
       
       const payload = otpMethod === 'email' 
         ? { email: contact }
@@ -49,16 +50,21 @@ export const OTPModal: React.FC<OTPModalProps> = ({
 
       console.log('📤 Sending OTP to:', endpoint, payload);
 
-      const response = await axios.post(endpoint, payload);
+      // ✅ FIX 2: Use POST method (not GET)
+      const response = await axios.post(endpoint, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       
       console.log('✅ OTP Response:', response.data);
       
       if (response.data.success) {
         setOtpSent(true);
-        setCountdown(300); // 5 minutes
+        setCountdown(300);
         setError('');
         
-        // For testing - show OTP in console
+        // For testing
         if (response.data.debug?.otp) {
           setDebugOtp(response.data.debug.otp);
           console.log('🔢 TEST OTP:', response.data.debug.otp);
@@ -68,7 +74,10 @@ export const OTPModal: React.FC<OTPModalProps> = ({
       }
     } catch (err: any) {
       console.error('❌ OTP send error:', err);
-      setError(err.response?.data?.error || 'Failed to send OTP');
+      const errorMessage = err.response?.data?.error || 
+                          err.response?.data?.message || 
+                          'Failed to send OTP';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -81,9 +90,14 @@ export const OTPModal: React.FC<OTPModalProps> = ({
       console.log('🔐 Verifying OTP:', otp, 'for contact:', contact);
       const apiUrl = getApiUrl();
 
-      const response = await axios.post(`${apiUrl}/api/verify-otp`, {
+      // ✅ FIX 3: Correct verify endpoint
+      const response = await axios.post(`${apiUrl}/api/otp/verify-otp`, {
         otp,
         contact
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
       console.log('✅ Verify Response:', response.data);
@@ -96,7 +110,10 @@ export const OTPModal: React.FC<OTPModalProps> = ({
       }
     } catch (err: any) {
       console.error('❌ Verify error:', err);
-      setError(err.response?.data?.error || 'Invalid OTP');
+      const errorMessage = err.response?.data?.error || 
+                          err.response?.data?.message || 
+                          'Invalid OTP';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -151,7 +168,6 @@ export const OTPModal: React.FC<OTPModalProps> = ({
               Enter the 6-digit OTP sent to your {otpMethod === 'email' ? 'email' : 'mobile'}
             </p>
             
-            {/* Debug OTP Display (Remove in production) */}
             {debugOtp && (
               <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
