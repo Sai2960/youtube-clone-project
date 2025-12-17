@@ -66,9 +66,12 @@ export default function GestureVideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [buffered, setBuffered] = useState(0);
-  const [quality, setQuality] = useState<"auto" | "1080p" | "720p" | "480p">(
-    "auto"
-  );
+  const [quality, setQuality] = useState<
+    "auto" | "1080p" | "720p" | "480p" | "360p"
+  >("auto");
+  const [availableQualities] = useState<
+    Array<"auto" | "1080p" | "720p" | "480p" | "360p">
+  >(["auto", "1080p", "720p", "480p", "360p"]);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -105,6 +108,51 @@ export default function GestureVideoPlayer({
   const { watchTimeLimit, currentPlan } = useSubscription();
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ✅ NEW: Change video quality dynamically
+  // ✅ UPDATED: Change video quality dynamically
+  const handleQualityChange = async (
+    newQuality: "auto" | "1080p" | "720p" | "480p" | "360p"
+  ) => {
+    if (!videoRef.current) return;
+
+    console.log("🎬 Changing quality to:", newQuality);
+
+    const currentTime = videoRef.current.currentTime;
+    const wasPlaying = !videoRef.current.paused;
+
+    // ✅ Use the updated getVideoUrl function with quality parameter
+    const newVideoUrl = getVideoUrl(video, newQuality);
+
+    if (!newVideoUrl) {
+      console.error(
+        "❌ Could not generate video URL with quality:",
+        newQuality
+      );
+      return;
+    }
+
+    console.log("✅ New quality URL:", newVideoUrl.substring(0, 100));
+
+    // Update video source
+    videoRef.current.src = newVideoUrl;
+    videoRef.current.currentTime = currentTime;
+
+    // Resume playback if it was playing
+    if (wasPlaying) {
+      try {
+        await videoRef.current.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("Error resuming playback:", error);
+      }
+    }
+
+    setQuality(newQuality);
+    setShowQualityMenu(false);
+
+    console.log("✅ Quality changed to:", newQuality);
+  };
 
   // Detect mobile device
   useEffect(() => {
@@ -751,7 +799,7 @@ export default function GestureVideoPlayer({
 
   const VolumeIcon = getVolumeIcon();
 
-  const videoUrl = getVideoUrl(video);
+  const videoUrl = getVideoUrl(video, quality);
 
   return (
     <div className="w-full space-y-0">
@@ -1010,8 +1058,8 @@ export default function GestureVideoPlayer({
                               onClick={(e) => e.stopPropagation()}
                               className="h-24 accent-red-600 cursor-pointer"
                               style={{
-                                writingMode: "vertical-lr" as any,
-                                WebkitAppearance: "slider-vertical" as any,
+                                writingMode: "vertical-lr",
+                                WebkitAppearance: "slider-vertical",
                                 width: "8px",
                                 transform: "rotate(180deg)",
                               }}
@@ -1065,6 +1113,7 @@ export default function GestureVideoPlayer({
                         />
                       </Button>
 
+                      {/* ✅ ENHANCED QUALITY MENU */}
                       <div className="relative">
                         <Button
                           variant="ghost"
@@ -1075,29 +1124,68 @@ export default function GestureVideoPlayer({
                             setShowQualityMenu(!showQualityMenu);
                           }}
                         >
-                          <Settings className="w-5 h-5" />
+                          <Settings
+                            className={`w-5 h-5 ${
+                              showQualityMenu ? "text-red-500" : ""
+                            }`}
+                          />
                         </Button>
+
                         {showQualityMenu && (
-                          <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-sm rounded-lg p-2 min-w-32">
-                            {(["auto", "1080p", "720p", "480p"] as const).map(
-                              (q) => (
+                          <>
+                            {/* Backdrop */}
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setShowQualityMenu(false)}
+                            />
+
+                            {/* Quality Menu */}
+                            <div className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden min-w-40 z-50">
+                              <div className="px-3 py-2 border-b border-white/10">
+                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                                  Quality
+                                </p>
+                              </div>
+
+                              {availableQualities.map((q) => (
                                 <button
                                   key={q}
-                                  className={`w-full text-left px-3 py-2 text-sm text-white hover:bg-white/20 rounded ${
-                                    quality === q ? "bg-white/10" : ""
+                                  className={`w-full text-left px-4 py-3 text-sm transition-all flex items-center justify-between ${
+                                    quality === q
+                                      ? "bg-red-600 text-white font-semibold"
+                                      : "text-white hover:bg-white/10"
                                   }`}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setQuality(q);
-                                    setShowQualityMenu(false);
+                                    handleQualityChange(q);
                                   }}
                                 >
-                                  {q === "auto" ? "Auto" : q}
-                                  {quality === q && " ✓"}
+                                  <span>
+                                    {q === "auto" ? "Auto (recommended)" : q}
+                                  </span>
+                                  {quality === q && (
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                  )}
                                 </button>
-                              )
-                            )}
-                          </div>
+                              ))}
+
+                              <div className="px-4 py-2 bg-black/50 border-t border-white/10">
+                                <p className="text-xs text-gray-400">
+                                  Higher quality uses more data
+                                </p>
+                              </div>
+                            </div>
+                          </>
                         )}
                       </div>
 
