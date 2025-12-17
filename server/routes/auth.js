@@ -1246,5 +1246,218 @@ router.get("/health", (req, res) => {
     cloudinaryEnabled: true
   });
 });
+// ==================== LOCATION ROUTES ====================
+
+// ✅ CHECK LOCATION ENDPOINT
+router.get("/check-location", async (req, res) => {
+  try {
+    const ip = req.ip || 
+               req.connection?.remoteAddress || 
+               req.headers['x-forwarded-for']?.split(',')[0] || 
+               "127.0.0.1";
+    
+    console.log('🌍 Location check request from IP:', ip);
+    
+    const { state, theme, otpMethod, geo } = determineThemeAndOtpMethod(ip);
+    
+    res.json({
+      success: true,
+      theme,
+      otpMethod,
+      location: {
+        state,
+        country: geo.country,
+        timezone: geo.timezone
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Location check failed:', error);
+    
+    res.status(500).json({
+      success: false,
+      theme: 'dark',
+      otpMethod: 'sms',
+      location: null,
+      error: error.message
+    });
+  }
+});
+
+// ✅ OTP ROUTES
+router.post("/send-email-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: "Email is required"
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid email format"
+      });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expirationTime = Date.now() + (5 * 60 * 1000);
+    
+    // Store OTP (use Redis in production)
+    global.otpStore = global.otpStore || new Map();
+    global.otpStore.set(email, {
+      otp: otpCode,
+      expiresAt: expirationTime,
+      attempts: 0,
+      method: 'email'
+    });
+
+    console.log('📧 Email OTP generated:', otpCode);
+
+    const response = {
+      success: true,
+      message: "OTP sent to email",
+      expiresIn: 300
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      response.debug = { otp: otpCode };
+    }
+
+    res.json(response);
+
+  } catch (error) {
+    console.error('❌ Email OTP send failed:', error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to send OTP"
+    });
+  }
+});
+
+router.post("/send-sms-otp", async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+    
+    if (!phoneNumber) {
+      return res.status(400).json({
+        success: false,
+        error: "Phone number is required"
+      });
+    }
+
+    const phoneRegex = /^\+?[1-9]\d{9,14}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid phone number format"
+      });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expirationTime = Date.now() + (5 * 60 * 1000);
+    
+    global.otpStore = global.otpStore || new Map();
+    global.otpStore.set(phoneNumber, {
+      otp: otpCode,
+      expiresAt: expirationTime,
+      attempts: 0,
+      method: 'sms'
+    });
+
+    console.log('📱 SMS OTP generated:', otpCode);
+
+    const response = {
+      success: true,
+      message: "OTP sent to phone",
+      expiresIn: 300
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      response.debug = { otp: otpCode };
+    }
+
+    res.json(response);
+
+  } catch (error) {
+    console.error('❌ SMS OTP send failed:', error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to send OTP"
+    });
+  }
+});
+
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { contact, otp } = req.body;
+    
+    if (!contact || !otp) {
+      return res.status(400).json({
+        success: false,
+        error: "Contact and OTP are required"
+      });
+    }
+
+    global.otpStore = global.otpStore || new Map();
+    const storedOtpData = global.otpStore.get(contact);
+    
+    if (!storedOtpData) {
+      return res.status(400).json({
+        success: false,
+        error: "No OTP found. Please request a new one."
+      });
+    }
+
+    if (Date.now() > storedOtpData.expiresAt) {
+      global.otpStore.delete(contact);
+      return res.status(400).json({
+        success: false,
+        error: "OTP expired. Please request a new one."
+      });
+    }
+
+    if (storedOtpData.attempts >= 3) {
+      global.otpStore.delete(contact);
+      return res.status(429).json({
+        success: false,
+        error: "Too many attempts. Please request a new OTP."
+      });
+    }
+
+    if (storedOtpData.otp !== otp) {
+      storedOtpData.attempts += 1;
+      global.otpStore.set(contact, storedOtpData);
+      
+      const remainingAttempts = 3 - storedOtpData.attempts;
+      
+      return res.status(400).json({
+        success: false,
+        error: `Invalid OTP. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`
+      });
+    }
+
+    console.log('✅ OTP verified successfully for:', contact);
+    global.otpStore.delete(contact);
+
+    res.json({
+      success: true,
+      message: "OTP verified successfully",
+      contact,
+      method: storedOtpData.method
+    });
+
+  } catch (error) {
+    console.error('❌ OTP verification failed:', error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to verify OTP"
+    });
+  }
+});
 
 export default router;
