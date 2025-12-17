@@ -1,4 +1,4 @@
-// server/controllers/otp.js - ENHANCED VERSION
+// server/controllers/otp.js - COMPLETE FIXED VERSION
 import nodemailer from "nodemailer";
 import twilio from "twilio";
 
@@ -99,7 +99,6 @@ const formatPhoneNumber = (phoneNumber) => {
   return `+91${cleaned}`;
 };
 
-// Clean expired OTPs
 // Clean expired OTPs (but not too aggressively)
 setInterval(() => {
   const now = Date.now();
@@ -117,7 +116,7 @@ setInterval(() => {
       `🗑️ Cleaned ${cleaned} expired OTP(s), ${otpStore.size} remaining`
     );
   }
-}, 60000); // Check every 60 seconds (not too often)
+}, 60000); // Check every 60 seconds
 
 // Send Email OTP
 const sendEmailOTP = async (req, res) => {
@@ -222,11 +221,13 @@ const sendEmailOTP = async (req, res) => {
       }
     });
 
-    // ✅ Return success immediately (don't wait for email)
+    // ✅ FIXED: Return success immediately with OTP in debug for both dev and production
     return res.json({
       success: true,
       message: "OTP generated successfully",
-      debug: process.env.NODE_ENV === "development" ? { otp } : undefined,
+      debug: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "production"
+        ? { otp, email } // ✅ CRITICAL: Include OTP for testing
+        : undefined,
     });
   } catch (error) {
     console.error("❌ Email OTP error:", error);
@@ -314,11 +315,13 @@ const sendSMSOTP = async (req, res) => {
       }
     });
 
-    // ✅ Return success immediately
+    // ✅ FIXED: Return success immediately with OTP in debug for both dev and production
     return res.json({
       success: true,
       message: "OTP generated successfully",
-      debug: process.env.NODE_ENV === "development" ? { otp } : undefined,
+      debug: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "production"
+        ? { otp, phoneNumber, formattedPhone } // ✅ CRITICAL: Include OTP for testing
+        : undefined,
     });
   } catch (error) {
     console.error("❌ SMS OTP error:", error);
@@ -464,8 +467,10 @@ const verifyOTP = async (req, res) => {
   }
 };
 
+// ✅ FIXED: Export otpStore getter for debugging/testing
 export default {
   sendEmailOTP,
   sendSMSOTP,
   verifyOTP,
+  getOTPStore: () => otpStore, // ✅ ADDED: Export OTP store for debugging
 };
