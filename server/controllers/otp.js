@@ -1,49 +1,5 @@
-// server/controllers/otp.js - COMPLETE FIXED VERSION
-import nodemailer from "nodemailer";
+// server/controllers/otp.js
 import twilio from "twilio";
-
-// Initialize email transporter
-let emailTransporter = null;
-
-const initEmailTransporter = () => {
-  if (emailTransporter) return emailTransporter;
-
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-    console.warn("⚠️ Email credentials not found in .env file");
-    return null;
-  }
-
-  try {
-    console.log("🔧 Initializing email transporter...");
-
-    emailTransporter = nodemailer.createTransport({
-      service: "gmail",
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-
-    emailTransporter.verify((error, success) => {
-      if (error) {
-        console.error("❌ Email verification failed:", error.message);
-      } else {
-        console.log("✅ Email transporter ready");
-      }
-    });
-
-    return emailTransporter;
-  } catch (error) {
-    console.error("❌ Email transporter error:", error.message);
-    return null;
-  }
-};
 
 // Initialize Twilio client
 let twilioClient = null;
@@ -164,77 +120,53 @@ const sendEmailOTP = async (req, res) => {
     console.log(`   Valid until: ${new Date(otpExpiry).toLocaleString()}`);
     console.log("═══════════════════════════════════════");
 
-    const transporter = initEmailTransporter();
-
-    // ✅ If no email service, return success immediately
-    if (!transporter) {
-      console.log("⚠️ No email service configured - OTP logged above");
-      return res.json({
-        success: true,
-        message: "OTP generated successfully (check server console)",
-        debug: { email, otp },
-      });
-    }
-
-    // ✅ Try to send email in background (don't wait for it)
+    // ✅ NEW: Try to send email using the new emailService
     setImmediate(async () => {
       try {
-        await Promise.race([
-          transporter.sendMail({
-            from: `"YouTube Clone" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: "Your OTP for Login",
-            html: `
-              <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f5f5f5;">
-                <div style="background-color: white; padding: 30px; border-radius: 10px;">
-                  <h2 style="color: #2563eb;">🔐 OTP Verification</h2>
-                  <p style="font-size: 16px; color: #333;">
-                    Your one-time password (OTP) is:
-                  </p>
-                  <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                    <span style="font-size: 36px; font-weight: bold; color: #2563eb; letter-spacing: 8px;">
-                      ${otp}
-                    </span>
-                  </div>
-                  <p style="font-size: 14px; color: #666;">
-                    ⏱️ This OTP expires in <strong>5 minutes</strong>.
-                  </p>
-                  <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;">
-                  <p style="font-size: 12px; color: #999;">
-                    If you didn't request this, please ignore this email.
-                  </p>
-                </div>
-              </div>
-            `,
-          }),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Email timeout")), 30000)
-          ),
-        ]);
+        // Dynamically import the email service
+        const emailService = await import("../utils/emailService.js");
 
-        console.log("✅ Email sent successfully to:", email);
+        console.log("📧 Attempting to send OTP email...");
+        const result = await emailService.sendOTPEmail(email, otp, 5);
+
+        if (result.success) {
+          console.log("✅ OTP email sent successfully to:", email);
+          console.log("   Message ID:", result.messageId);
+        } else if (result.skipped) {
+          console.log(
+            "⚠️ Email service not configured - OTP logged to console only"
+          );
+        } else {
+          console.error(
+            "⚠️ Email send failed (OTP still valid):",
+            result.error
+          );
+          if (result.hint) {
+            console.log("💡", result.hint);
+          }
+        }
       } catch (emailError) {
         console.error(
-          "⚠️ Email send failed (OTP still valid):",
+          "⚠️ Email send error (OTP still valid):",
           emailError.message
         );
+        console.log("📝 OTP is still valid and can be used for verification");
       }
     });
 
-    // ✅ FIXED: Return success immediately with OTP in debug for both dev and production
+    // ✅ Return success immediately with OTP in debug
     return res.json({
       success: true,
       message: "OTP generated successfully",
       debug:
         process.env.NODE_ENV === "development" ||
         process.env.NODE_ENV === "production"
-          ? { otp, email } // ✅ CRITICAL: Include OTP for testing
+          ? { otp, email }
           : undefined,
     });
   } catch (error) {
     console.error("❌ Email OTP error:", error);
 
-    // ✅ Only send response if headers not sent
     if (!res.headersSent) {
       res.status(500).json({
         success: false,
