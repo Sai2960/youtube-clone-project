@@ -500,8 +500,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
       </div>
     </div>
 
-   {/* Form Fields */}
-    <div className="space-y-5">
+    {/* Form Fields - WITH CONSISTENT SPACING */}
+    <div className="flex-1 flex flex-col space-y-5">
       <div>
         <Label
           htmlFor="channelName"
@@ -523,7 +523,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
         </p>
       </div>
 
-      <div>
+      <div className="flex-1 flex flex-col pb-4">
         <Label
           htmlFor="description"
           className="text-base font-semibold mb-2 block"
@@ -536,9 +536,9 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Tell viewers about your channel..."
           disabled={isSubmitting}
-          rows={5}
+          rows={6}
           maxLength={1000}
-          className="text-base resize-none min-h-[120px]"
+          className="text-base resize-none flex-1"
         />
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
           {description.length}/1000 characters
@@ -546,8 +546,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
       </div>
     </div>
   </div>
-)}
-      </div>
+)}          </div>
         </div>
 
         {/* ========================================== */}
