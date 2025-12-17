@@ -100,15 +100,24 @@ const formatPhoneNumber = (phoneNumber) => {
 };
 
 // Clean expired OTPs
+// Clean expired OTPs (but not too aggressively)
 setInterval(() => {
   const now = Date.now();
+  let cleaned = 0;
+
   for (const [key, value] of otpStore.entries()) {
     if (value.expiry < now) {
       otpStore.delete(key);
-      console.log("🗑️ Cleaned expired OTP for:", key);
+      cleaned++;
     }
   }
-}, 60000);
+
+  if (cleaned > 0) {
+    console.log(
+      `🗑️ Cleaned ${cleaned} expired OTP(s), ${otpStore.size} remaining`
+    );
+  }
+}, 60000); // Check every 60 seconds (not too often)
 
 // Send Email OTP
 const sendEmailOTP = async (req, res) => {
@@ -324,14 +333,15 @@ const sendSMSOTP = async (req, res) => {
   }
 };
 
-// ✅ ENHANCED: Verify OTP with flexible phone matching
 const verifyOTP = async (req, res) => {
   try {
     const { otp, contact } = req.body;
 
-    console.log("🔐 Verify OTP:");
+    console.log("🔐 Verify OTP Request:");
     console.log("   OTP:", otp);
     console.log("   Contact:", contact);
+    console.log("   Store size:", otpStore.size);
+    console.log("   Available keys:", Array.from(otpStore.keys()));
 
     if (!otp || !contact) {
       return res.status(400).json({
@@ -342,31 +352,61 @@ const verifyOTP = async (req, res) => {
 
     // ✅ Try original contact first
     let storedData = otpStore.get(contact);
+    console.log(
+      `   Checking '${contact}':`,
+      storedData ? "Found" : "Not found"
+    );
 
     // ✅ If phone number, try formatted versions
     if (!storedData && /^\d{10}$/.test(contact)) {
       const withPrefix = `+91${contact}`;
       storedData = otpStore.get(withPrefix);
-      console.log(`🔄 Tried: ${withPrefix}`);
+      console.log(
+        `   Checking '${withPrefix}':`,
+        storedData ? "Found" : "Not found"
+      );
     }
 
     // ✅ Try without +91 prefix
     if (!storedData && contact.startsWith("+91")) {
       const without = contact.replace(/^\+91/, "");
       storedData = otpStore.get(without);
-      console.log(`🔄 Tried: ${without}`);
+      console.log(
+        `   Checking '${without}':`,
+        storedData ? "Found" : "Not found"
+      );
+    }
+
+    // ✅ Try with +91 if it's a 10-digit number
+    if (!storedData && /^\d{10}$/.test(contact)) {
+      const withPlus91 = `+91${contact}`;
+      storedData = otpStore.get(withPlus91);
+      console.log(
+        `   Checking '${withPlus91}':`,
+        storedData ? "Found" : "Not found"
+      );
     }
 
     if (!storedData) {
       console.log(`❌ OTP not found for: ${contact}`);
-      console.log("📋 Available keys:", Array.from(otpStore.keys()));
+      console.log("   All stored keys:", Array.from(otpStore.keys()));
       return res.status(400).json({
         success: false,
         error: "OTP not found. Please request new OTP.",
+        debug:
+          process.env.NODE_ENV === "development"
+            ? {
+                contact,
+                availableKeys: Array.from(otpStore.keys()),
+                storeSize: otpStore.size,
+              }
+            : undefined,
       });
     }
 
+    // ✅ Check expiry
     if (Date.now() > storedData.expiry) {
+      console.log(`❌ OTP expired for: ${contact}`);
       otpStore.delete(contact);
       return res.status(400).json({
         success: false,
@@ -374,6 +414,7 @@ const verifyOTP = async (req, res) => {
       });
     }
 
+    // ✅ Verify OTP
     if (storedData.otp !== otp) {
       console.log(`❌ Invalid OTP`);
       console.log(`   Provided: ${otp}`);
@@ -381,6 +422,13 @@ const verifyOTP = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Invalid OTP",
+        debug:
+          process.env.NODE_ENV === "development"
+            ? {
+                provided: otp,
+                expected: storedData.otp,
+              }
+            : undefined,
       });
     }
 
@@ -395,7 +443,8 @@ const verifyOTP = async (req, res) => {
 
     console.log("═══════════════════════════════════════");
     console.log("✅ OTP VERIFIED");
-    console.log(`Contact: ${contact}`);
+    console.log(`   Contact: ${contact}`);
+    console.log(`   Remaining OTPs: ${otpStore.size}`);
     console.log("═══════════════════════════════════════");
 
     res.json({
@@ -404,10 +453,14 @@ const verifyOTP = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Verification error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Verification failed",
-    });
+
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: "Verification failed",
+        details: error.message,
+      });
+    }
   }
 };
 
