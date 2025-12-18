@@ -301,118 +301,172 @@ export class WebRTCService {
   }
 
   // 🔥 REPLACE Lines 335-430 in src/lib/webrtc.ts
-setupEventListeners(
-  onRemoteStream: (stream: MediaStream) => void,
-  onIceCandidate: (candidate: RTCIceCandidate) => void
-): void {
-  if (!this.peerConnection) return;
+  setupEventListeners(
+    onRemoteStream: (stream: MediaStream) => void,
+    onIceCandidate: (candidate: RTCIceCandidate) => void
+  ): void {
+    if (!this.peerConnection) return;
 
-  this.peerConnection.ontrack = (event) => {
-    console.log("📥 Remote track:", event.track.kind);
+    // 🔥 CRITICAL: Prevent duplicate stream callbacks
+    let streamCallbackFired = false;
 
-    // 🔥 CRITICAL FIX 1: Force enable BEFORE any processing
+    this.peerConnection.ontrack = (event) => {
+      console.log("📥 Remote track received:", event.track.kind);
+      console.log("   Track ID:", event.track.id);
+      console.log("   Stream ID:", event.streams[0]?.id);
+
+      // 🔥 CRITICAL FIX 1: Force enable BEFORE any processing
       event.track.enabled = true;
-    
-    // 🔥 CRITICAL: Prevent premature stop
-    const originalStop = event.track.stop.bind(event.track);
-    event.track.stop = () => {
-      console.warn(`⚠️ Prevented ${event.track.kind} stop`);
-    };
+
+      // Prevent premature stop
+      const originalStop = event.track.stop.bind(event.track);
+      event.track.stop = () => {
+        console.warn(`⚠️ Prevented ${event.track.kind} stop`);
+      };
 
       // 🔥 Use event.streams[0] directly
-    if (event.streams && event.streams.length > 0) {
-      this.remoteStream = event.streams[0];
-      
-      // Force enable all tracks
-      this.remoteStream.getTracks().forEach(t => {
-        t.enabled = true;
-      });
+      if (event.streams && event.streams.length > 0) {
+        const stream = event.streams[0];
+
+        // Store or update remote stream
+        if (!this.remoteStream || this.remoteStream.id !== stream.id) {
+          this.remoteStream = stream;
+          console.log("   ✅ New remote stream stored:", stream.id);
+        }
+        // Force enable all tracks
+        stream.getTracks().forEach((t) => {
+          t.enabled = true;
+        });
+        // 🔥 CRITICAL FIX: Only fire callback when we have BOTH tracks
+        const hasAudio = stream.getAudioTracks().length > 0;
+        const hasVideo = stream.getVideoTracks().length > 0;
+
+        console.log("   Track status:", {
+          hasAudio,
+          hasVideo,
+          callbackFired: streamCallbackFired,
+        });
+        // Only callback once we have both tracks
+        if (hasAudio && hasVideo && !streamCallbackFired) {
+          streamCallbackFired = true;
+          console.log(
+            "   🎯 Firing onRemoteStream callback (both tracks ready)"
+          );
+          onRemoteStream(stream);
+        } else if (!streamCallbackFired) {
+          console.log("   ⏳ Waiting for both tracks before callback...");
+        }
+      }
 
       // Call callback immediately
       onRemoteStream(this.remoteStream);
-    }else {
       // Fallback: create new stream
       if (!this.remoteStream) {
         this.remoteStream = new MediaStream();
         console.log("   Created new MediaStream");
       }
-      
+
       this.remoteStream.addTrack(event.track);
       event.track.enabled = true;
-      
+
       onRemoteStream(this.remoteStream);
-    }
 
-    // 🔥 CRITICAL FIX 4: Monitor track health WITHOUT aggressive unmute
-    let hasLoggedUnmute = false;
-    
-    event.track.onmute = () => {
-      if (!hasLoggedUnmute) {
-        console.warn(`🔇 REMOTE ${event.track.kind} muted`);
-        hasLoggedUnmute = true;
+      // 🔥 CRITICAL FIX 4: Monitor track health WITHOUT aggressive unmute
+      let hasLoggedUnmute = false;
+
+      event.track.onmute = () => {
+        console.warn(`🔇 ${event.track.kind} track muted`);
+        setTimeout(() => {
+          event.track.enabled = true;
+        }, 100);
+
+        // Try to unmute once
+        setTimeout(() => {
+          event.track.enabled = true;
+          console.log(`   Attempted to re-enable ${event.track.kind}`);
+        }, 100);
+      };
+
+      event.track.onunmute = () => {
+        console.log(`🔊 ${event.track.kind} track unmuted`);
+      };
+      this.peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log("❄️ ICE candidate generated");
+          onIceCandidate(event.candidate);
+        }
+      };
+
+      this.peerConnection.oniceconnectionstatechange = () => {
+        const state = this.peerConnection?.iceConnectionState;
+        console.log("🧊 ICE connection state:", state);
+
+        if (state === "failed") {
+          console.error("❌ ICE failed - connection issue!");
+        }
+      };
+      this.peerConnection.onconnectionstatechange = () => {
+        const state = this.peerConnection?.connectionState;
+        console.log("🔌 Peer connection state:", state);
+
+        if (state === "connected") {
+          console.log("✅ Peer connection established!");
+          setTimeout(() => this.logConnectionStats(), 2000);
+        }
+      };
+
+      event.track.onended = () => {
+        console.error(`🛑 ${event.track.kind} track ended!`);
+      };
+
+      if (event.transceiver) {
+        console.log("   Transceiver direction:", event.transceiver.direction);
+        console.log(
+          "   Current direction:",
+          event.transceiver.currentDirection
+        );
       }
-      
-      // Try to unmute once
-      setTimeout(() => {
-        event.track.enabled = true;
-        console.log(`   Attempted to re-enable ${event.track.kind}`);
-      }, 100);
     };
 
-    event.track.onunmute = () => {
-      console.log(`✅ REMOTE ${event.track.kind} unmuted`);
-      hasLoggedUnmute = false;
+    // Rest of setupEventListeners stays the same...
+    this.peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log("❄️ ICE candidate:", event.candidate.type);
+        onIceCandidate(event.candidate);
+      }
     };
 
-    event.track.onended = () => {
-      console.error(`🛑 ${event.track.kind} ended!`);
+    this.peerConnection.oniceconnectionstatechange = () => {
+      const state = this.peerConnection?.iceConnectionState;
+      console.log("🧊 ICE state:", state);
+
+      if (state === "connected") {
+        console.log("✅ ICE connected!");
+      } else if (state === "failed") {
+        console.error("❌ ICE failed - may need TURN");
+      }
     };
 
-    if (event.transceiver) {
-      console.log("   Transceiver direction:", event.transceiver.direction);
-      console.log("   Current direction:", event.transceiver.currentDirection);
-    }
-  };
+    this.peerConnection.onconnectionstatechange = () => {
+      const state = this.peerConnection?.connectionState;
+      console.log("🔌 Connection:", state);
 
-  // Rest of setupEventListeners stays the same...
- this.peerConnection.onicecandidate = (event) => {
-    if (event.candidate) {
-      console.log("❄️ ICE candidate:", event.candidate.type);
-      onIceCandidate(event.candidate);
-    }
-  };
+      if (state === "connected") {
+        console.log("✅ Peer connection established successfully!");
+        setTimeout(() => this.logConnectionStats(), 1000);
+      } else if (state === "failed") {
+        console.error("❌ Peer connection failed!");
+      }
+    };
 
-this.peerConnection.oniceconnectionstatechange = () => {
-    const state = this.peerConnection?.iceConnectionState;
-    console.log("🧊 ICE state:", state);
-    
-    if (state === "connected") {
-      console.log("✅ ICE connected!");
-    } else if (state === "failed") {
-      console.error("❌ ICE failed - may need TURN");
-    }
-  };;
+    this.peerConnection.onsignalingstatechange = () => {
+      console.log("📡 Signaling state:", this.peerConnection?.signalingState);
+    };
 
- this.peerConnection.onconnectionstatechange = () => {
-    const state = this.peerConnection?.connectionState;
-    console.log("🔌 Connection:", state);
-
-    if (state === "connected") {
-      console.log("✅ Peer connection established successfully!");
-      setTimeout(() => this.logConnectionStats(), 1000);
-    } else if (state === "failed") {
-      console.error("❌ Peer connection failed!");
-    }
-  };
-
-  this.peerConnection.onsignalingstatechange = () => {
-    console.log("📡 Signaling state:", this.peerConnection?.signalingState);
-  };
-
-  this.peerConnection.onnegotiationneeded = () => {
-    console.log("🔄 Negotiation needed event fired");
-  };
-}
+    this.peerConnection.onnegotiationneeded = () => {
+      console.log("🔄 Negotiation needed event fired");
+    };
+  }
 
   async logConnectionStats(): Promise<void> {
     if (!this.peerConnection) return;

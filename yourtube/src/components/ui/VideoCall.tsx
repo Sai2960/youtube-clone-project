@@ -637,63 +637,138 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.warn("⚠️ Local video autoplay blocked");
         }
       }
+// 🔥 DEBOUNCED REMOTE STREAM HANDLER - FIXES AUTOPLAY ABORT
+let remoteStreamTimeout: NodeJS.Timeout | null = null;
+let tracksReceived = { audio: false, video: false };
+
 webrtcServiceRef.current.setupEventListeners(
   async (remoteStream: MediaStream) => {
-    console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
-
+    console.log("\n🎬 ===== REMOTE TRACK RECEIVED =====");
+    
     if (!remoteStream) {
       console.error("❌ Remote stream is null");
       return;
     }
 
-    console.log("   Stream ID:", remoteStream.id);
-    console.log("   Video tracks:", remoteStream.getVideoTracks().length);
-    console.log("   Audio tracks:", remoteStream.getAudioTracks().length);
+    // Check which tracks we have
+    const hasAudio = remoteStream.getAudioTracks().length > 0;
+    const hasVideo = remoteStream.getVideoTracks().length > 0;
 
-    const remoteVideo = remoteStream.getVideoTracks()[0];
-    const remoteAudio = remoteStream.getAudioTracks()[0];
+    console.log("📊 Stream status:", {
+      streamId: remoteStream.id,
+      audioTracks: remoteStream.getAudioTracks().length,
+      videoTracks: remoteStream.getVideoTracks().length,
+      hasAudio,
+      hasVideo
+    });
 
-    if (!remoteVideo || !remoteAudio) {
-      console.error("❌ Missing tracks:", {
-        hasVideo: !!remoteVideo,
-        hasAudio: !!remoteAudio,
-      });
-      return;
+    // Update tracking
+    if (hasAudio) tracksReceived.audio = true;
+    if (hasVideo) tracksReceived.video = true;
+
+    // Clear previous timeout
+    if (remoteStreamTimeout) {
+      clearTimeout(remoteStreamTimeout);
     }
 
-    // 🔥 CRITICAL: Force enable tracks
-    remoteVideo.enabled = true;
-    remoteAudio.enabled = true;
-
-    // 🔥 CRITICAL: Set video element FIRST
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.autoplay = true;
-      remoteVideoRef.current.playsInline = true;
-      remoteVideoRef.current.muted = false; // ⚠️ Change to false for audio
+    // 🔥 CRITICAL: Wait for BOTH tracks before attaching
+    remoteStreamTimeout = setTimeout(async () => {
+      console.log("\n🎯 ===== ATTACHING REMOTE STREAM =====");
       
-      try {
-        await remoteVideoRef.current.play();
-        console.log("✅ Video playing");
-      } catch (err: any) {
-        console.warn("⚠️ Autoplay blocked:", err);
-        setError("🔊 Click anywhere to start video");
+      const finalAudio = remoteStream.getAudioTracks()[0];
+      const finalVideo = remoteStream.getVideoTracks()[0];
+
+      if (!finalAudio || !finalVideo) {
+        console.error("❌ Missing tracks after timeout:", {
+          hasAudio: !!finalAudio,
+          hasVideo: !!finalVideo
+        });
+        
+        // Wait a bit longer if we're missing tracks
+        if (!finalAudio || !finalVideo) {
+          console.log("⏳ Waiting 500ms more for tracks...");
+          setTimeout(() => {
+            const retryAudio = remoteStream.getAudioTracks()[0];
+            const retryVideo = remoteStream.getVideoTracks()[0];
+            
+            if (retryAudio) retryAudio.enabled = true;
+            if (retryVideo) retryVideo.enabled = true;
+            
+            attachRemoteStream(remoteStream);
+          }, 500);
+          return;
+        }
       }
-    }
 
-    // Monitor tracks
-    remoteVideo.onended = () => console.error("🛑 VIDEO ended!");
-    remoteAudio.onended = () => console.error("🛑 AUDIO ended!");
+      // Force enable
+      finalAudio.enabled = true;
+      finalVideo.enabled = true;
 
-    setConnectionStatus("connected");
-    setError(null);
-    console.log("✅ Remote stream setup complete\n");
+      console.log("✅ Both tracks ready:", {
+        audio: { enabled: finalAudio.enabled, muted: finalAudio.muted },
+        video: { enabled: finalVideo.enabled, muted: finalVideo.muted }
+      });
+
+      attachRemoteStream(remoteStream);
+    }, 300); // Wait 300ms for both tracks to arrive
   },
   (candidate: RTCIceCandidate) => {
     const socket = getSocket();
     socket.emit("ice-candidate", roomId, candidate);
   }
 );
+
+// 🔥 HELPER: Attach remote stream to video element
+const attachRemoteStream = async (stream: MediaStream) => {
+  console.log("🔗 Attaching stream to video element...");
+  
+  if (!remoteVideoRef.current) {
+    console.error("❌ Remote video ref not available");
+    return;
+  }
+
+  // 🔥 CRITICAL: Set srcObject ONCE
+  remoteVideoRef.current.srcObject = stream;
+  remoteVideoRef.current.autoplay = true;
+  remoteVideoRef.current.playsInline = true;
+  remoteVideoRef.current.muted = false;
+
+  console.log("✅ srcObject set, attempting playback...");
+
+  try {
+    await remoteVideoRef.current.play();
+    console.log("✅ Remote video playing!");
+    setConnectionStatus("connected");
+    setError(null);
+  } catch (err: any) {
+    console.error("❌ Playback failed:", err.name);
+    
+    if (err.name === "NotAllowedError" || err.name === "AbortError") {
+      setError("🔊 Click anywhere to start audio/video");
+      
+      // Try again on user click
+      const resumePlayback = async () => {
+        try {
+          if (remoteVideoRef.current) {
+            await remoteVideoRef.current.play();
+            console.log("✅ Playback resumed after click");
+            setError(null);
+          }
+        } catch (e) {
+          console.error("Still blocked:", e);
+        }
+      };
+      
+      document.addEventListener("click", resumePlayback, { once: true });
+    }
+  }
+
+  // Monitor tracks
+  stream.getAudioTracks()[0].onended = () => console.error("🛑 AUDIO ended!");
+  stream.getVideoTracks()[0].onended = () => console.error("🛑 VIDEO ended!");
+  
+  console.log("✅ Remote stream fully attached\n");
+};
       webrtcServiceRef.current.addLocalStreamToPeer();
 
       console.log("📞 Joining room:", roomId);
