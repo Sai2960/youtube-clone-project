@@ -227,47 +227,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
   const initializingRef = useRef(false);
   const initializedRef = useRef(false);
-
-  useEffect(() => {
-    const resumeAudioContext = async () => {
-      try {
-        const AudioContext =
-          (window as any).AudioContext || (window as any).webkitAudioContext;
-        if (AudioContext) {
-          const ctx = new AudioContext();
-          if (ctx.state === "suspended") {
-            await ctx.resume();
-            console.log("✅ Audio context resumed");
-          }
-          ctx.close();
-        }
-      } catch (err) {
-        console.warn("⚠️ Could not resume audio context:", err);
-      }
-    };
-
-    resumeAudioContext();
-  }, []);
-
-  useEffect(() => {
-    const handleFirstClick = async () => {
-      console.log("🎵 User clicked - forcing audio playback");
-      const audioElements = document.querySelectorAll("audio");
-      audioElements.forEach(async (audio) => {
-        try {
-          if (audio.paused) {
-            await audio.play();
-            console.log("✅ Audio resumed after click");
-          }
-        } catch (err) {
-          console.error("❌ Could not play audio:", err);
-        }
-      });
-    };
-
-    document.addEventListener("click", handleFirstClick, { once: true });
-    return () => document.removeEventListener("click", handleFirstClick);
-  }, []);
+  const [needsInteraction, setNeedsInteraction] = useState(true);
+  const [readyToStart, setReadyToStart] = useState(false);
 
   useEffect(() => {
     const enterFullscreen = async () => {
@@ -461,6 +422,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
       return;
     }
 
+    // 🔥 WAIT for user interaction
+    if (!readyToStart) {
+      console.log("⏳ Waiting for user to click 'Start Call'");
+      return;
+    }
+
     initializingRef.current = true;
 
     const init = async () => {
@@ -478,7 +445,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       initializedRef.current = false;
       initializingRef.current = false;
     };
-  }, [roomId]);
+  }, [roomId, readyToStart]); // 🔥 Add readyToStart dependency
 
   const initializeCall = async () => {
     try {
@@ -587,25 +554,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("🎬 Setting up local video element");
 
         // Clear any existing stream
-        if (localVideoRef.current.srcObject) {
-          const oldStream = localVideoRef.current.srcObject as MediaStream;
-          oldStream.getTracks().forEach((t) => t.stop());
-        }
-
         localVideoRef.current.srcObject = localStream;
         localVideoRef.current.muted = true;
         localVideoRef.current.playsInline = true;
         localVideoRef.current.autoplay = true;
-
         // Force play with error handling
         try {
-          const playPromise = localVideoRef.current.play();
-          if (playPromise !== undefined) {
-            await playPromise;
-            console.log("✅ Local video playing");
-          }
+          await localVideoRef.current.play();
+          console.log("✅ Local video playing");
         } catch (e: any) {
-          console.warn("⚠️ Local video autoplay blocked:", e.message);
+          console.error("❌ Local video failed:", e.message);
+
           // Set up click handler to start video
           const startVideo = async () => {
             try {
@@ -1120,6 +1079,55 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         </div>
       )}
+      {needsInteraction && (
+        <div
+          className="absolute inset-0 bg-black/95 flex items-center justify-center z-50 cursor-pointer"
+          onClick={async () => {
+            console.log("👆 User clicked - starting media");
+
+            // Resume AudioContext
+            try {
+              const AudioCtx =
+                (window as any).AudioContext ||
+                (window as any).webkitAudioContext;
+              if (AudioCtx) {
+                const ctx = new AudioCtx();
+                if (ctx.state === "suspended") {
+                  await ctx.resume();
+                  console.log("✅ AudioContext resumed after click");
+                }
+                ctx.close();
+              }
+            } catch (err) {
+              console.warn("⚠️ Could not resume audio:", err);
+            }
+
+            setNeedsInteraction(false);
+            setReadyToStart(true);
+          }}
+        >
+          <div className="text-center px-4">
+            <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+              <svg
+                className="w-10 h-10 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+            <h2 className="text-white text-2xl font-bold mb-3">
+              Click to Start Call
+            </h2>
+            <p className="text-gray-300 text-base mb-2">
+              with {remotePeerName}
+            </p>
+            <p className="text-gray-500 text-sm">
+              Click anywhere to enable camera and microphone
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Local Video Preview - Mobile Optimized */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
@@ -1276,7 +1284,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
     </div>
   );
 };
-
 <style jsx global>{`
   #remote-video,
   #local-video,
