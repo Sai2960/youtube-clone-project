@@ -86,17 +86,17 @@ const getBackendUrl = () => {
 // Haptic Feedback Utility
 const hapticFeedback = {
   light: () => {
-    if ('vibrate' in navigator) {
+    if ("vibrate" in navigator) {
       navigator.vibrate(10);
     }
   },
   selection: () => {
-    if ('vibrate' in navigator) {
+    if ("vibrate" in navigator) {
       navigator.vibrate(5);
     }
   },
   impact: () => {
-    if ('vibrate' in navigator) {
+    if ("vibrate" in navigator) {
       navigator.vibrate(15);
     }
   },
@@ -119,8 +119,127 @@ const Home: NextPage = () => {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const isDragging = useRef(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
-useEffect(() => {
+  // pages/index.tsx - Lines 133-155
+  const [backendReady, setBackendReady] = useState(false);
+  const [backendCheckAttempts, setBackendCheckAttempts] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const pingBackend = async (attempt = 1): Promise<void> => {
+      if (!isMounted) return;
+
+      console.log(`🔍 Checking backend availability (attempt ${attempt})...`);
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        const response = await fetch(
+          `${
+            process.env.NEXT_PUBLIC_API_URL ||
+            "https://youtube-clone-project-q3pd.onrender.com"
+          }/api/health`,
+          {
+            signal: controller.signal,
+            method: "GET",
+            cache: "no-cache",
+          }
+        );
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          console.log("✅ Backend is ready!");
+          if (isMounted) {
+            setBackendReady(true);
+            setConnectionError(null);
+            fetchVideos();
+            fetchShorts();
+          }
+          return;
+        }
+      } catch (error) {
+        console.warn(`⚠️ Backend check ${attempt} failed:`, error);
+      }
+
+      // Retry with exponential backoff (max 5 attempts)
+      if (attempt < 5 && isMounted) {
+        setBackendCheckAttempts(attempt);
+        setConnectionError(
+          `Waking up server... (attempt ${attempt}/5) - Free tier servers sleep after inactivity`
+        );
+
+        const delay = Math.min(5000 * Math.pow(1.5, attempt - 1), 15000);
+        setTimeout(() => pingBackend(attempt + 1), delay);
+      } else if (isMounted) {
+        setConnectionError("Server is not responding. Please try again later.");
+      }
+    };
+
+    pingBackend();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Only fetch data after backend is ready
+  useEffect(() => {
+    if (backendReady) {
+      fetchVideos();
+      fetchShorts();
+
+      const handleFocus = () => {
+        console.log("🔄 Window focused - refreshing data");
+        fetchVideos();
+      };
+
+      window.addEventListener("focus", handleFocus);
+      return () => window.removeEventListener("focus", handleFocus);
+    }
+  }, [backendReady]);
+  // pages/index.tsx - After line 133
+  useEffect(() => {
+    // Check if backend is reachable
+    const checkBackend = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch(
+          `${
+            process.env.NEXT_PUBLIC_API_URL ||
+            "https://youtube-clone-project-q3pd.onrender.com"
+          }/api/health`,
+          { signal: controller.signal }
+        ).catch(() => null);
+
+        clearTimeout(timeoutId);
+
+        if (!response || !response.ok) {
+          setConnectionError(
+            "Backend server is not responding. It may be starting up (this can take 30-60 seconds on free tier)."
+          );
+        } else {
+          setConnectionError(null);
+        }
+      } catch (error) {
+        setConnectionError(
+          "Cannot reach backend server. Check your internet connection."
+        );
+      }
+    };
+
+    checkBackend();
+    const interval = setInterval(checkBackend, 10000); // Check every 10s
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     fetchVideos();
     fetchShorts();
 
@@ -128,7 +247,7 @@ useEffect(() => {
     console.log("📱 Home page mounted, viewport:", {
       width: window.innerWidth,
       height: window.innerHeight,
-      isMobile: window.innerWidth < 1024
+      isMobile: window.innerWidth < 1024,
     });
 
     // ✅ CRITICAL FIX: Refresh on window focus
@@ -187,7 +306,7 @@ useEffect(() => {
     }
   };
 
-const fetchShorts = async () => {
+  const fetchShorts = async () => {
     try {
       setLoadingShorts(true);
       console.log("🎬 Fetching shorts...");
@@ -477,7 +596,7 @@ const fetchShorts = async () => {
     isDragging.current = false;
   };
 
-const handleShortClick = (
+  const handleShortClick = (
     e: React.MouseEvent,
     shortId: string,
     index: number
@@ -500,6 +619,56 @@ const handleShortClick = (
       <Head>
         <title>YourTube - Home</title>
       </Head>
+      {/* Connection Error Banner */}
+      {connectionError && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white px-4 py-3 text-center text-sm lg:text-base">
+          <div className="flex items-center justify-center gap-2">
+            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span className="font-semibold">{connectionError}</span>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-4 py-1 bg-white text-yellow-600 rounded font-semibold text-xs"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
+      {/* Backend Loading Screen */}
+{!backendReady && !connectionError && (
+  <div className="fixed inset-0 z-40 bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
+    <div className="text-center px-4">
+      <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        Loading YourTube
+      </h2>
+      <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
+        {backendCheckAttempts > 0 
+          ? `Waking up server... (${backendCheckAttempts}/5)` 
+          : 'Connecting to server...'}
+      </p>
+      <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">
+        Free tier servers may take 30-60 seconds to wake up
+      </p>
+    </div>
+  </div>
+)}
 
       <div
         ref={containerRef}
@@ -510,13 +679,13 @@ const handleShortClick = (
           overflow: "visible",
         }}
       >
-         {/* Debug Info - Remove after testing */}
-        {process.env.NODE_ENV === 'development' && (
+        {/* Debug Info - Remove after testing */}
+        {process.env.NODE_ENV === "development" && (
           <div className="lg:hidden fixed top-2 right-2 z-50 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg">
-            Shorts: {shorts.length} | Loading: {loadingShorts ? 'Y' : 'N'}
+            Shorts: {shorts.length} | Loading: {loadingShorts ? "Y" : "N"}
           </div>
         )}
-        
+
         {/* Pull to Refresh Indicator */}
         {pullDistance > 0 && (
           <div
@@ -550,7 +719,7 @@ const handleShortClick = (
         {/* Shorts Section - YouTube Style */}
         {/* Shorts Section - YouTube Style */}
         {shorts.length > 0 && (
-          <section 
+          <section
             className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
             style={{
               display: "block",
@@ -558,7 +727,7 @@ const handleShortClick = (
               minHeight: "200px",
             }}
           >
-         {/* Header */}
+            {/* Header */}
             <div className="flex items-center gap-3 px-4 mb-4 lg:px-6 bg-white dark:bg-gray-900">
               <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl shadow-md">
                 <svg
@@ -573,7 +742,7 @@ const handleShortClick = (
               </h2>
             </div>
 
-         {loadingShorts ? (
+            {loadingShorts ? (
               <div
                 className="overflow-x-hidden px-4 lg:px-6 bg-white dark:bg-gray-900"
                 style={{ display: "flex", gap: "12px" }}
@@ -620,7 +789,7 @@ const handleShortClick = (
                   />
                 </button>
 
-               {/* Shorts Container */}
+                {/* Shorts Container */}
                 <div
                   ref={shortsScrollRef}
                   className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
@@ -636,125 +805,128 @@ const handleShortClick = (
                   onTouchMove={handleShortsScrollTouchMove}
                   onTouchEnd={handleShortsScrollTouchEnd}
                 >
-                 {shorts.slice(0, 12).map((short, index) => {
-  const shortAvatar = getShortAvatar(short);
-  const shortChannelName = getShortChannelName(short);
+                  {shorts.slice(0, 12).map((short, index) => {
+                    const shortAvatar = getShortAvatar(short);
+                    const shortChannelName = getShortChannelName(short);
 
-  return (
-    <div
-      key={short._id}
-      onClick={(e) => {
-        if (!(e.target as HTMLElement).closest(".no-click")) {
-          handleShortClick(e, short._id, index);
-        }
-      }}
-      className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
-      style={{
-        minWidth: "160px",
-        userSelect: "none",
-        WebkitTapHighlightColor: "transparent",
-      }}
-    >
-      {/* Thumbnail Card */}
-      <div
-        className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
-        style={{
-          paddingBottom: "177.5%",
-        }}
-      >
-        <img
-          src={short.thumbnailUrl}
-          alt={short.title}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105"
-          loading="lazy"
-        />
+                    return (
+                      <div
+                        key={short._id}
+                        onClick={(e) => {
+                          if (!(e.target as HTMLElement).closest(".no-click")) {
+                            handleShortClick(e, short._id, index);
+                          }
+                        }}
+                        className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
+                        style={{
+                          minWidth: "160px",
+                          userSelect: "none",
+                          WebkitTapHighlightColor: "transparent",
+                        }}
+                      >
+                        {/* Thumbnail Card */}
+                        <div
+                          className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
+                          style={{
+                            paddingBottom: "177.5%",
+                          }}
+                        >
+                          <img
+                            src={short.thumbnailUrl}
+                            alt={short.title}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105"
+                            loading="lazy"
+                          />
 
-        {/* Play Icon Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-300 bg-black/40 dark:bg-black/50 pointer-events-none">
-          <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 group-hover/short:scale-100 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-300">
-            <Play 
-              size={24} 
-              className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8" 
-              fill="currentColor" 
-            />
-          </div>
-        </div>
+                          {/* Play Icon Overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-300 bg-black/40 dark:bg-black/50 pointer-events-none">
+                            <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 group-hover/short:scale-100 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-300">
+                              <Play
+                                size={24}
+                                className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8"
+                                fill="currentColor"
+                              />
+                            </div>
+                          </div>
 
-        {/* Bottom Gradient */}
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+                          {/* Bottom Gradient */}
+                          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-        {/* Views Badge */}
-        <div className="absolute bottom-3 left-3 bg-black/80 dark:bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg active:scale-105 transition-transform duration-150">
-          <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-          </svg>
-          <span className="text-xs font-bold text-white whitespace-nowrap drop-shadow-md">
-            {formatViewsShort(short.views)} views
-          </span>
-        </div>
-      </div>
+                          {/* Views Badge */}
+                          <div className="absolute bottom-3 left-3 bg-black/80 dark:bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg active:scale-105 transition-transform duration-150">
+                            <svg
+                              className="w-3.5 h-3.5 fill-white"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                            </svg>
+                            <span className="text-xs font-bold text-white whitespace-nowrap drop-shadow-md">
+                              {formatViewsShort(short.views)} views
+                            </span>
+                          </div>
+                        </div>
 
-      {/* Title */}
-      <h3
-        className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
-        style={{
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          wordBreak: "break-word",
-          minHeight: "2.5rem",
-          textShadow: "0 1px 2px rgba(0,0,0,0.1)",
-        }}
-      >
-        {short.title}
-      </h3>
+                        {/* Title */}
+                        <h3
+                          className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            wordBreak: "break-word",
+                            minHeight: "2.5rem",
+                            textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                          }}
+                        >
+                          {short.title}
+                        </h3>
 
-      {/* Channel Info */}
-      <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
-        {/* Avatar */}
-        <div
-          className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
-          onClick={(e) => {
-            e.stopPropagation();
-            hapticFeedback.selection();
-            router.push(`/channel/${short.userId?._id}`);
-          }}
-        >
-          <img
-            src={getImageUrl(
-              short.userId?.image || short.userId?.avatar,
-              true
-            )}
-            alt={shortChannelName}
-            className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
-            onError={(e) => {
-              e.currentTarget.src =
-                'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-            }}
-          />
-        </div>
+                        {/* Channel Info */}
+                        <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
+                          {/* Avatar */}
+                          <div
+                            className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              hapticFeedback.selection();
+                              router.push(`/channel/${short.userId?._id}`);
+                            }}
+                          >
+                            <img
+                              src={getImageUrl(
+                                short.userId?.image || short.userId?.avatar,
+                                true
+                              )}
+                              alt={shortChannelName}
+                              className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                              onError={(e) => {
+                                e.currentTarget.src =
+                                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+                              }}
+                            />
+                          </div>
 
-        {/* Channel Name */}
-        <span
-          className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
-          style={{
-            textShadow: "0 1px 2px rgba(0,0,0,0.05)",
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            hapticFeedback.selection();
-            router.push(`/channel/${short.userId?._id}`);
-          }}
-          title={shortChannelName}
-        >
-          {shortChannelName}
-        </span>
-      </div>
-    </div>
-  );
-})}
+                          {/* Channel Name */}
+                          <span
+                            className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
+                            style={{
+                              textShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              hapticFeedback.selection();
+                              router.push(`/channel/${short.userId?._id}`);
+                            }}
+                            title={shortChannelName}
+                          >
+                            {shortChannelName}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
