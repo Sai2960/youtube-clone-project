@@ -47,21 +47,22 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 
     // Step 2: Wait for device enumeration
     await new Promise((resolve) => setTimeout(resolve, 500));
-    
+
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter((d) => d.kind === "audioinput");
 
     console.log(`🎤 Found ${audioInputs.length} microphones`);
 
     // Step 3: Try USB microphone FIRST (your "USB Audio and HID")
-    const usbMic = audioInputs.find((d) => 
-      d.label.toLowerCase().includes("usb") && 
-      !d.label.toLowerCase().includes("monitor")
+    const usbMic = audioInputs.find(
+      (d) =>
+        d.label.toLowerCase().includes("usb") &&
+        !d.label.toLowerCase().includes("monitor")
     );
 
     if (usbMic) {
       console.log(`🎯 Trying USB mic: ${usbMic.label}`);
-      
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -82,10 +83,10 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         const audioTrack = stream.getAudioTracks()[0];
-        
+
         // Force enable and verify
         audioTrack.enabled = true;
-        
+
         if (audioTrack.readyState === "live" && !audioTrack.muted) {
           console.log(`✅ SUCCESS! Using ${usbMic.label}`);
           return stream;
@@ -125,13 +126,15 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     throw new Error("All microphones failed");
   } catch (err: any) {
     console.error("❌ Media access failed:", err);
-    
+
     if (err.name === "NotAllowedError") {
       throw new Error("🚫 Camera/mic blocked! Click 🔒 in address bar → Allow");
     } else if (err.name === "NotReadableError") {
-      throw new Error("⚠️ Microphone in use. Close Zoom/Teams/Discord and refresh.");
+      throw new Error(
+        "⚠️ Microphone in use. Close Zoom/Teams/Discord and refresh."
+      );
     }
-    
+
     throw err;
   }
 };
@@ -275,22 +278,22 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, []);
 
   useEffect(() => {
-  const enablePlayback = async () => {
-    console.log("👆 User clicked - enabling playback");
-    
-    if (remoteVideoRef.current) {
-      try {
-        await remoteVideoRef.current.play();
-        console.log("✅ Video resumed");
-      } catch (err) {
-        console.error("Still blocked:", err);
-      }
-    }
-  };
+    const enablePlayback = async () => {
+      console.log("👆 User clicked - enabling playback");
 
-  document.addEventListener('click', enablePlayback, { once: true });
-  return () => document.removeEventListener('click', enablePlayback);
-}, []);
+      if (remoteVideoRef.current) {
+        try {
+          await remoteVideoRef.current.play();
+          console.log("✅ Video resumed");
+        } catch (err) {
+          console.error("Still blocked:", err);
+        }
+      }
+    };
+
+    document.addEventListener("click", enablePlayback, { once: true });
+    return () => document.removeEventListener("click", enablePlayback);
+  }, []);
 
   useEffect(() => {
     const handleFirstClick = async () => {
@@ -502,55 +505,55 @@ const VideoCall: React.FC<VideoCallProps> = ({
   // This is the one that calls initializeCall()
 
   useEffect(() => {
-  console.log("🔄 Mount effect triggered, roomId:", roomId);
+    console.log("🔄 Mount effect triggered, roomId:", roomId);
 
-  if (!roomId) {
-    console.error("❌ No roomId provided!");
-    setError("Invalid room ID");
-    return;
-  }
-
-  // Prevent double initialization
-  if (initializingRef.current || initializedRef.current) {
-    console.log("⚠️ Already initialized, skipping");
-    return;
-  }
-
-  initializingRef.current = true;
-  
-  let mounted = true;
-
-  const init = async () => {
-    try {
-      console.log("🎬 Starting call initialization...");
-      await initializeCall();
-      
-      if (mounted) {
-        initializedRef.current = true;
-        console.log("✅ Initialization complete");
-      }
-    } catch (error: any) {
-      console.error("❌ Init error:", error);
-      if (mounted) {
-        setError(error.message || "Failed to initialize call");
-      }
-    } finally {
-      initializingRef.current = false;
+    if (!roomId) {
+      console.error("❌ No roomId provided!");
+      setError("Invalid room ID");
+      return;
     }
-  };
 
-  // Small delay to ensure DOM is ready
-  const timer = setTimeout(init, 100);
-
-  return () => {
-    mounted = false;
-    clearTimeout(timer);
-    console.log("🧹 Unmounting...");
-    if (initializedRef.current && !callEndedRef.current) {
-      cleanup(false);
+    // Prevent double initialization
+    if (initializingRef.current || initializedRef.current) {
+      console.log("⚠️ Already initialized, skipping");
+      return;
     }
-  };
-}, [roomId]); // Add roomId as  roomId dependency to prevent re-init
+
+    initializingRef.current = true;
+
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        console.log("🎬 Starting call initialization...");
+        await initializeCall();
+
+        if (mounted) {
+          initializedRef.current = true;
+          console.log("✅ Initialization complete");
+        }
+      } catch (error: any) {
+        console.error("❌ Init error:", error);
+        if (mounted) {
+          setError(error.message || "Failed to initialize call");
+        }
+      } finally {
+        initializingRef.current = false;
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(init, 100);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+      console.log("🧹 Unmounting...");
+      if (initializedRef.current && !callEndedRef.current) {
+        cleanup(false);
+      }
+    };
+  }, [roomId]); // Add roomId as  roomId dependency to prevent re-init
 
   const initializeCall = async () => {
     try {
@@ -560,6 +563,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       console.log("   Is Initiator:", isInitiator);
       console.log("   User:", user?._id);
 
+      // 🔥 STEP 1: Wait for socket
       let socket;
       try {
         socket = await waitForSocket(10000);
@@ -567,146 +571,172 @@ const VideoCall: React.FC<VideoCallProps> = ({
       } catch (err) {
         setError("Connection failed. Please refresh the page.");
         return;
-      }// 🔥 SIMPLIFIED REMOTE STREAM HANDLER
-webrtcServiceRef.current.setupEventListeners(
-  async (remoteStream: MediaStream) => {
-    console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
-    
-    if (!remoteStream) {
-      console.error("❌ Remote stream is null");
-      return;
-    }
+      }
 
-    const audioTracks = remoteStream.getAudioTracks();
-    const videoTracks = remoteStream.getVideoTracks();
+      // 🔥 STEP 2: Create WebRTC service FIRST
+      console.log("🔧 Creating WebRTC service...");
+      webrtcServiceRef.current = new WebRTCService();
+      recordingServiceRef.current = new RecordingService();
 
-    console.log("📊 Tracks:", {
-      audio: audioTracks.length,
-      video: videoTracks.length,
-      streamId: remoteStream.id
-    });
+      const pc = webrtcServiceRef.current.getPeerConnection();
+      if (pc) {
+        (window as any).peerConnection = pc;
+        console.log("✅ PeerConnection exposed globally");
+      }
 
-    // Force enable all tracks
-    remoteStream.getTracks().forEach(track => {
-      track.enabled = true;
-      console.log(`✅ ${track.kind} enabled:`, track.enabled);
-    });
+      // 🔥 STEP 3: Get local media stream
+      let localStream: MediaStream;
+      try {
+        console.log("🎤 Requesting media...");
+        localStream = await ensureAudioNotMuted();
 
-    // 🔥 CRITICAL: Attach immediately if we have both tracks
-    if (audioTracks.length > 0 && videoTracks.length > 0) {
-      console.log("🎯 Both tracks ready, attaching now...");
-      
-      if (!remoteVideoRef.current) {
-        console.error("❌ remoteVideoRef not ready!");
+        console.log("✅ Local stream obtained");
+        console.log("   Video tracks:", localStream.getVideoTracks().length);
+        console.log("   Audio tracks:", localStream.getAudioTracks().length);
+
+        const audioTrack = localStream.getAudioTracks()[0];
+        if (!audioTrack) {
+          throw new Error("Audio track missing!");
+        }
+
+        console.log("🎤 Audio track:", {
+          enabled: audioTrack.enabled,
+          muted: audioTrack.muted,
+          readyState: audioTrack.readyState,
+          label: audioTrack.label,
+        });
+
+        if (audioTrack.muted) {
+          throw new Error("Audio track is muted. Microphone may be in use.");
+        }
+
+        // Force enable all tracks
+        localStream.getTracks().forEach((track) => {
+          track.enabled = true;
+          console.log(`   ✅ ${track.kind} enabled:`, track.enabled);
+        });
+
+        webrtcServiceRef.current.setLocalStream(localStream);
+      } catch (error: any) {
+        console.error("❌ Media access failed:", error);
+
+        if (error.name === "NotAllowedError") {
+          setError(
+            "Camera/microphone blocked! Click the 🔒 icon in address bar."
+          );
+        } else if (error.name === "NotFoundError") {
+          setError("No camera or microphone found.");
+        } else if (error.name === "NotReadableError") {
+          setError("Camera/microphone in use. Close other apps and try again.");
+        } else {
+          setError("Failed to access camera/microphone: " + error.message);
+        }
         return;
       }
 
-      // Set srcObject
-      remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.muted = false; // CRITICAL for audio
-      remoteVideoRef.current.autoplay = true;
-      remoteVideoRef.current.playsInline = true;
+      // 🔥 STEP 4: Set local video
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStream;
+        localVideoRef.current.muted = true;
+        console.log("✅ Local video element set");
 
-      console.log("✅ srcObject set, playing...");
-
-      try {
-        await remoteVideoRef.current.play();
-        console.log("✅ PLAYBACK STARTED!");
-        setConnectionStatus("connected");
-        setError(null);
-      } catch (err: any) {
-        console.error("❌ Playback blocked:", err.name);
-        
-        if (err.name === "NotAllowedError") {
-          setError("🔊 Click anywhere to unmute");
-          
-          // Auto-resume on click
-          const resumeOnClick = async () => {
-            try {
-              await remoteVideoRef.current?.play();
-              console.log("✅ Resumed after click");
-              setError(null);
-            } catch (e) {
-              console.error("Still blocked:", e);
-            }
-          };
-          
-          document.addEventListener("click", resumeOnClick, { once: true });
+        try {
+          await localVideoRef.current.play();
+        } catch (e) {
+          console.warn("⚠️ Local video autoplay blocked");
         }
       }
 
-      // Monitor track health
-      audioTracks[0].onended = () => console.error("🛑 Audio ended!");
-      videoTracks[0].onended = () => console.error("🛑 Video ended!");
-      
-    } else {
-      console.warn("⏳ Waiting for both tracks...");
-    }
-  },
-  (candidate: RTCIceCandidate) => {
-    const socket = getSocket();
-    socket.emit("ice-candidate", roomId, candidate);
-  }
-);
+      // 🔥 STEP 5: Setup event listeners (NOW webrtcServiceRef.current exists!)
+      console.log("🎧 Setting up event listeners...");
+      webrtcServiceRef.current.setupEventListeners(
+        async (remoteStream: MediaStream) => {
+          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
-      
-
-// 🔥 HELPER: Attach remote stream to video element
-const attachRemoteStream = async (stream: MediaStream) => {
-  console.log("🔗 Attaching stream to video element...");
-  
-  if (!remoteVideoRef.current) {
-    console.error("❌ Remote video ref not available");
-    return;
-  }
-
-  // 🔥 CRITICAL: Set srcObject ONCE
-  remoteVideoRef.current.srcObject = stream;
-  remoteVideoRef.current.autoplay = true;
-  remoteVideoRef.current.playsInline = true;
-  remoteVideoRef.current.muted = false;
-
-  console.log("✅ srcObject set, attempting playback...");
-
-  try {
-    await remoteVideoRef.current.play();
-    console.log("✅ Remote video playing!");
-    setConnectionStatus("connected");
-    setError(null);
-  } catch (err: any) {
-    console.error("❌ Playback failed:", err.name);
-    
-    if (err.name === "NotAllowedError" || err.name === "AbortError") {
-      setError("🔊 Click anywhere to start audio/video");
-      
-      // Try again on user click
-      const resumePlayback = async () => {
-        try {
-          if (remoteVideoRef.current) {
-            await remoteVideoRef.current.play();
-            console.log("✅ Playback resumed after click");
-            setError(null);
+          if (!remoteStream) {
+            console.error("❌ Remote stream is null");
+            return;
           }
-        } catch (e) {
-          console.error("Still blocked:", e);
-        }
-      };
-      
-      document.addEventListener("click", resumePlayback, { once: true });
-    }
-  }
 
-  // Monitor tracks
-  stream.getAudioTracks()[0].onended = () => console.error("🛑 AUDIO ended!");
-  stream.getVideoTracks()[0].onended = () => console.error("🛑 VIDEO ended!");
-  
-  console.log("✅ Remote stream fully attached\n");
-};
+          const audioTracks = remoteStream.getAudioTracks();
+          const videoTracks = remoteStream.getVideoTracks();
+
+          console.log("📊 Tracks:", {
+            audio: audioTracks.length,
+            video: videoTracks.length,
+            streamId: remoteStream.id,
+          });
+
+          // Force enable all tracks
+          remoteStream.getTracks().forEach((track) => {
+            track.enabled = true;
+            console.log(`✅ ${track.kind} enabled:`, track.enabled);
+          });
+
+          // 🔥 Attach if we have both tracks
+          if (audioTracks.length > 0 && videoTracks.length > 0) {
+            console.log("🎯 Both tracks ready, attaching...");
+
+            if (!remoteVideoRef.current) {
+              console.error("❌ remoteVideoRef not ready!");
+              return;
+            }
+
+            // Set srcObject
+            remoteVideoRef.current.srcObject = remoteStream;
+            remoteVideoRef.current.muted = false; // CRITICAL
+            remoteVideoRef.current.autoplay = true;
+            remoteVideoRef.current.playsInline = true;
+
+            console.log("✅ srcObject set, playing...");
+
+            try {
+              await remoteVideoRef.current.play();
+              console.log("✅ PLAYBACK STARTED!");
+              setConnectionStatus("connected");
+              setError(null);
+            } catch (err: any) {
+              console.error("❌ Playback blocked:", err.name);
+
+              if (err.name === "NotAllowedError") {
+                setError("🔊 Click anywhere to unmute");
+
+                const resumeOnClick = async () => {
+                  try {
+                    await remoteVideoRef.current?.play();
+                    console.log("✅ Resumed after click");
+                    setError(null);
+                  } catch (e) {
+                    console.error("Still blocked:", e);
+                  }
+                };
+
+                document.addEventListener("click", resumeOnClick, {
+                  once: true,
+                });
+              }
+            }
+
+            // Monitor track health
+            audioTracks[0].onended = () => console.error("🛑 Audio ended!");
+            videoTracks[0].onended = () => console.error("🛑 Video ended!");
+          } else {
+            console.warn("⏳ Waiting for both tracks...");
+          }
+        },
+        (candidate: RTCIceCandidate) => {
+          socket.emit("ice-candidate", roomId, candidate);
+        }
+      );
+
+      // 🔥 STEP 6: Add local stream to peer
       webrtcServiceRef.current.addLocalStreamToPeer();
 
+      // 🔥 STEP 7: Join room
       console.log("📞 Joining room:", roomId);
       socket.emit("join-room", roomId, user?._id || socket.id);
 
+      // 🔥 STEP 8: Handle initiator logic
       if (isInitiator) {
         console.log("⏳ Waiting for both users...");
 
@@ -739,28 +769,31 @@ const attachRemoteStream = async (stream: MediaStream) => {
         console.log("⏳ Waiting for offer...");
       }
 
+      // 🔥 STEP 9: Debug verification
       console.log("===== INITIALIZATION COMPLETE =====\n");
-console.log("===== INITIALIZATION COMPLETE =====\n");
-      
-      // 🔥 DEBUG: Verify everything is set up
       console.log("🔍 POST-INIT VERIFICATION:");
-      console.log("  - Local stream:", !!webrtcServiceRef.current?.getLocalStream());
+      console.log(
+        "  - Local stream:",
+        !!webrtcServiceRef.current?.getLocalStream()
+      );
       console.log("  - WebRTC service:", !!webrtcServiceRef.current);
-      console.log("  - Peer connection:", !!webrtcServiceRef.current?.getPeerConnection());
+      console.log(
+        "  - Peer connection:",
+        !!webrtcServiceRef.current?.getPeerConnection()
+      );
       console.log("  - Local video ref:", !!localVideoRef.current);
       console.log("  - Remote video ref:", !!remoteVideoRef.current);
-      console.log("  - Socket connected:", getSocket().connected);
-      
+      console.log("  - Socket connected:", socket.connected);
+
       // Expose for debugging
       (window as any).debugVideoCall = {
         localStream: webrtcServiceRef.current?.getLocalStream(),
         webrtc: webrtcServiceRef.current,
         pc: webrtcServiceRef.current?.getPeerConnection(),
         localVideo: localVideoRef.current,
-        remoteVideo: remoteVideoRef.current
+        remoteVideo: remoteVideoRef.current,
       };
       console.log("✅ Debug object: window.debugVideoCall");
-      
     } catch (error: any) {
       console.error("❌ Initialization error:", error);
       setError(error.message || "Failed to initialize call");
@@ -1003,20 +1036,22 @@ console.log("===== INITIALIZATION COMPLETE =====\n");
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
     >
-<video
-  ref={remoteVideoRef}
-  id="remote-video"
-  autoPlay
-  playsInline
-  muted={false}
-  controls={false}
-  className="w-full h-full object-cover absolute inset-0"
-  style={{ objectFit: 'cover' }}
-  onLoadedMetadata={(e) => {
-    console.log("✅ Remote video metadata loaded");
-    e.currentTarget.play().catch(err => console.error("Play failed:", err));
-  }}
-/>
+      <video
+        ref={remoteVideoRef}
+        id="remote-video"
+        autoPlay
+        playsInline
+        muted={false}
+        controls={false}
+        className="w-full h-full object-cover absolute inset-0"
+        style={{ objectFit: "cover" }}
+        onLoadedMetadata={(e) => {
+          console.log("✅ Remote video metadata loaded");
+          e.currentTarget
+            .play()
+            .catch((err) => console.error("Play failed:", err));
+        }}
+      />
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
           <div className="text-center px-4">
