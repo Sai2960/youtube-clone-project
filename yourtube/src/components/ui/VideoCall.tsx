@@ -275,6 +275,24 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, []);
 
   useEffect(() => {
+  const enablePlayback = async () => {
+    console.log("👆 User clicked - enabling playback");
+    
+    if (remoteVideoRef.current) {
+      try {
+        await remoteVideoRef.current.play();
+        console.log("✅ Video resumed");
+      } catch (err) {
+        console.error("Still blocked:", err);
+      }
+    }
+  };
+
+  document.addEventListener('click', enablePlayback, { once: true });
+  return () => document.removeEventListener('click', enablePlayback);
+}, []);
+
+  useEffect(() => {
     const handleFirstClick = async () => {
       console.log("🎵 User clicked - forcing audio playback");
       const audioElements = document.querySelectorAll("audio");
@@ -619,9 +637,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.warn("⚠️ Local video autoplay blocked");
         }
       }
-
-  // 🔥 REPLACE Lines 580-680 in VideoCall.tsx (inside initializeCall, the remote stream handler)
-
 webrtcServiceRef.current.setupEventListeners(
   async (remoteStream: MediaStream) => {
     console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
@@ -643,106 +658,35 @@ webrtcServiceRef.current.setupEventListeners(
         hasVideo: !!remoteVideo,
         hasAudio: !!remoteAudio,
       });
-      setError("Remote peer's camera/mic not available");
       return;
     }
 
-    // 🔥 CRITICAL: Log initial track states
-    console.log("📹 Remote video track:", {
-      id: remoteVideo.id,
-      enabled: remoteVideo.enabled,
-      muted: remoteVideo.muted,
-      readyState: remoteVideo.readyState,
-    });
+    // 🔥 CRITICAL: Force enable tracks
+    remoteVideo.enabled = true;
+    remoteAudio.enabled = true;
 
-    console.log("🎤 Remote audio track:", {
-      id: remoteAudio.id,
-      enabled: remoteAudio.enabled,
-      muted: remoteAudio.muted,
-      readyState: remoteAudio.readyState,
-    });
-
-    // 🔥 CRITICAL: Set video element IMMEDIATELY
+    // 🔥 CRITICAL: Set video element FIRST
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
       remoteVideoRef.current.autoplay = true;
       remoteVideoRef.current.playsInline = true;
-      remoteVideoRef.current.muted = true;
+      remoteVideoRef.current.muted = false; // ⚠️ Change to false for audio
       
-      console.log("✅ Video element srcObject set");
-
       try {
         await remoteVideoRef.current.play();
-        console.log("✅ Video element playing");
-      } catch (err) {
-        console.warn("⚠️ Video autoplay blocked:", err);
+        console.log("✅ Video playing");
+      } catch (err: any) {
+        console.warn("⚠️ Autoplay blocked:", err);
+        setError("🔊 Click anywhere to start video");
       }
     }
 
-    // 🔥 CRITICAL: Create separate audio element
-    const existingAudio = document.getElementById("remote-audio-element");
-    if (existingAudio) {
-      existingAudio.remove();
-      console.log("🗑️ Removed old audio element");
-    }
+    // Monitor tracks
+    remoteVideo.onended = () => console.error("🛑 VIDEO ended!");
+    remoteAudio.onended = () => console.error("🛑 AUDIO ended!");
 
-    const audioElement = document.createElement("audio");
-    audioElement.id = "remote-audio-element";
-    audioElement.autoplay = true;
-    audioElement.muted = false;
-    audioElement.volume = 1.0;
-    audioElement.style.display = "none";
-    
-    // 🔥 CRITICAL: Use the SAME stream, not a new MediaStream
-    audioElement.srcObject = remoteStream;
-
-    document.body.appendChild(audioElement);
-    console.log("✅ Audio element added");
-
-    // Try to play audio
-    try {
-      await audioElement.play();
-      console.log("✅ Audio playing");
-      setConnectionStatus("connected");
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Audio autoplay blocked:", err.name);
-      if (err.name === "NotAllowedError") {
-        setError("🔊 Click anywhere to enable audio");
-        
-        const enableAudio = async () => {
-          try {
-            await audioElement.play();
-            console.log("✅ Audio enabled after click");
-            setError(null);
-          } catch (e) {
-            console.error("Still blocked:", e);
-          }
-        };
-        
-        document.addEventListener("click", enableAudio, { once: true });
-      }
-    }
-
-    // Monitor track state
-    remoteVideo.onended = () => {
-      console.error("🛑 Remote VIDEO track ended unexpectedly!");
-    };
-
-    remoteAudio.onended = () => {
-      console.error("🛑 Remote AUDIO track ended unexpectedly!");
-    };
-
-    remoteAudio.onmute = () => {
-      console.warn("🔇 Remote audio muted");
-      setRemoteAudioStatus("muted");
-    };
-
-    remoteAudio.onunmute = () => {
-      console.log("🔊 Remote audio unmuted");
-      setRemoteAudioStatus("active");
-    };
-
+    setConnectionStatus("connected");
+    setError(null);
     console.log("✅ Remote stream setup complete\n");
   },
   (candidate: RTCIceCandidate) => {
@@ -1030,13 +974,14 @@ webrtcServiceRef.current.setupEventListeners(
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
     >
-      <video
-        ref={remoteVideoRef}
-        id="remote-video" // 🔥 CRITICAL: Must have this ID
-        autoPlay
-        playsInline
-        className="w-full h-full object-cover absolute inset-0"
-      />
+ <video
+  ref={remoteVideoRef}
+  id="remote-video"
+  autoPlay
+  playsInline
+  muted={false}  // ⚠️ CRITICAL: Must be false for audio
+  className="w-full h-full object-cover absolute inset-0"
+/>
 
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">

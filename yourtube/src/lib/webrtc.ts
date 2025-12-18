@@ -308,37 +308,29 @@ setupEventListeners(
   if (!this.peerConnection) return;
 
   this.peerConnection.ontrack = (event) => {
-    console.log("📥 Remote track received:", event.track.kind);
-    console.log("   Track ID:", event.track.id);
-    console.log("   Enabled:", event.track.enabled);
-    console.log("   Muted:", event.track.muted);
-    console.log("   Ready state:", event.track.readyState);
-    console.log("   Label:", event.track.label);
+    console.log("📥 Remote track:", event.track.kind);
 
     // 🔥 CRITICAL FIX 1: Force enable BEFORE any processing
-    event.track.enabled = true;
-
-    // 🔥 CRITICAL FIX 2: Prevent track from being stopped
+      event.track.enabled = true;
+    
+    // 🔥 CRITICAL: Prevent premature stop
     const originalStop = event.track.stop.bind(event.track);
     event.track.stop = () => {
-      console.warn(`⚠️ Prevented premature stop of ${event.track.kind} track`);
-      // Don't actually stop the track
+      console.warn(`⚠️ Prevented ${event.track.kind} stop`);
     };
 
-    // 🔥 CRITICAL FIX 3: Handle stream IMMEDIATELY
+      // 🔥 Use event.streams[0] directly
     if (event.streams && event.streams.length > 0) {
       this.remoteStream = event.streams[0];
-      console.log("✅ Using event.streams[0] directly");
       
-      // Force enable all tracks in stream
-      this.remoteStream.getTracks().forEach((track) => {
-        track.enabled = true;
-        console.log(`   Force enabled ${track.kind}: ${track.enabled}`);
+      // Force enable all tracks
+      this.remoteStream.getTracks().forEach(t => {
+        t.enabled = true;
       });
 
       // Call callback immediately
       onRemoteStream(this.remoteStream);
-    } else {
+    }else {
       // Fallback: create new stream
       if (!this.remoteStream) {
         this.remoteStream = new MediaStream();
@@ -373,9 +365,7 @@ setupEventListeners(
     };
 
     event.track.onended = () => {
-      console.error(`🛑 REMOTE ${event.track.kind} track ended`);
-      console.error(`   This should NOT happen during active call`);
-      console.error(`   Check if remote peer is calling track.stop() somewhere`);
+      console.error(`🛑 ${event.track.kind} ended!`);
     };
 
     if (event.transceiver) {
@@ -385,33 +375,27 @@ setupEventListeners(
   };
 
   // Rest of setupEventListeners stays the same...
-  this.peerConnection.onicecandidate = (event) => {
+ this.peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
-      console.log("❄️ ICE candidate generated:", {
-        type: event.candidate.type,
-        protocol: event.candidate.protocol,
-        address: event.candidate.address || "hidden",
-      });
+      console.log("❄️ ICE candidate:", event.candidate.type);
       onIceCandidate(event.candidate);
-    } else {
-      console.log("✅ ICE gathering complete");
     }
   };
 
-  this.peerConnection.oniceconnectionstatechange = () => {
+this.peerConnection.oniceconnectionstatechange = () => {
     const state = this.peerConnection?.iceConnectionState;
-    console.log("🧊 ICE connection state:", state);
-
-    if (state === "failed" || state === "disconnected") {
-      console.error(
-        "❌ ICE connection issue! May need to restart ICE or check TURN servers"
-      );
+    console.log("🧊 ICE state:", state);
+    
+    if (state === "connected") {
+      console.log("✅ ICE connected!");
+    } else if (state === "failed") {
+      console.error("❌ ICE failed - may need TURN");
     }
-  };
+  };;
 
-  this.peerConnection.onconnectionstatechange = () => {
+ this.peerConnection.onconnectionstatechange = () => {
     const state = this.peerConnection?.connectionState;
-    console.log("🔌 Connection state:", state);
+    console.log("🔌 Connection:", state);
 
     if (state === "connected") {
       console.log("✅ Peer connection established successfully!");
