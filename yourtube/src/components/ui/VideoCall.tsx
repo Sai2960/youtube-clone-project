@@ -40,32 +40,35 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     console.log("📋 Step 1: Requesting permissions...");
     const permissionStream = await navigator.mediaDevices.getUserMedia({
       audio: true,
-      video: true
+      video: true,
     });
-    
+
     // Close immediately - we just needed permissions
-    permissionStream.getTracks().forEach(t => t.stop());
+    permissionStream.getTracks().forEach((t) => t.stop());
     console.log("✅ Permissions granted");
-    
+
     // Step 2: Enumerate devices (labels now visible)
-    await new Promise(resolve => setTimeout(resolve, 200)); // Small delay
+    await new Promise((resolve) => setTimeout(resolve, 200)); // Small delay
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter((d) => d.kind === "audioinput");
-    
+
     console.log(`🎤 Found ${audioInputs.length} microphones:`);
     audioInputs.forEach((d, i) => {
-      console.log(`   ${i + 1}. ${d.label} [${d.deviceId.substring(0, 20)}...]`);
+      console.log(
+        `   ${i + 1}. ${d.label} [${d.deviceId.substring(0, 20)}...]`
+      );
     });
 
     // Step 3: Try devices in order
-    const devicesToTry = audioInputs.filter(d => 
-      d.deviceId !== 'default' && 
-      d.deviceId !== 'communications' &&
-      !d.label.toLowerCase().includes('monitor')
+    const devicesToTry = audioInputs.filter(
+      (d) =>
+        d.deviceId !== "default" &&
+        d.deviceId !== "communications" &&
+        !d.label.toLowerCase().includes("monitor")
     );
 
     // Add default as fallback
-    const defaultDevice = audioInputs.find(d => d.deviceId === 'default');
+    const defaultDevice = audioInputs.find((d) => d.deviceId === "default");
     if (defaultDevice) {
       devicesToTry.push(defaultDevice);
     }
@@ -73,8 +76,10 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     for (let i = 0; i < devicesToTry.length; i++) {
       const device = devicesToTry[i];
       if (!device) continue;
-      
-      console.log(`🔍 Attempt ${i + 1}/${devicesToTry.length}: ${device.label}`);
+
+      console.log(
+        `🔍 Attempt ${i + 1}/${devicesToTry.length}: ${device.label}`
+      );
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -94,10 +99,14 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         const videoTrack = stream.getVideoTracks()[0];
 
         // Wait for track to initialize
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        console.log(`   Audio: enabled=${audioTrack.enabled}, muted=${audioTrack.muted}, state=${audioTrack.readyState}`);
-        console.log(`   Video: enabled=${videoTrack.enabled}, state=${videoTrack.readyState}`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        console.log(
+          `   Audio: enabled=${audioTrack.enabled}, muted=${audioTrack.muted}, state=${audioTrack.readyState}`
+        );
+        console.log(
+          `   Video: enabled=${videoTrack.enabled}, state=${videoTrack.readyState}`
+        );
 
         // Force enable
         audioTrack.enabled = true;
@@ -106,13 +115,12 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         // Verify audio is working
         if (audioTrack.muted || audioTrack.readyState !== "live") {
           console.warn(`   ❌ Track not ready, trying next...`);
-          stream.getTracks().forEach(t => t.stop());
+          stream.getTracks().forEach((t) => t.stop());
           continue;
         }
 
         console.log(`   ✅ SUCCESS! Using ${device.label}`);
         return stream;
-
       } catch (err: any) {
         console.warn(`   ⚠️ Failed: ${err.name}`);
         continue;
@@ -120,16 +128,19 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     }
 
     throw new Error("No working microphone found");
-
   } catch (err: any) {
     console.error("❌ Media access failed:", err);
-    
+
     if (err.name === "NotAllowedError") {
-      throw new Error("🚫 Permission denied! Click the 🔒 icon in address bar → Allow camera/mic");
+      throw new Error(
+        "🚫 Permission denied! Click the 🔒 icon in address bar → Allow camera/mic"
+      );
     } else if (err.name === "NotFoundError") {
       throw new Error("❌ No camera/microphone detected");
     } else if (err.name === "NotReadableError") {
-      throw new Error("⚠️ Camera/mic in use by another app. Close other apps and refresh.");
+      throw new Error(
+        "⚠️ Camera/mic in use by another app. Close other apps and refresh."
+      );
     } else {
       throw err;
     }
@@ -139,9 +150,12 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
-      const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const AudioContext =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
       const audioContext = new AudioContext();
-      const source = audioContext.createMediaStreamSource(new MediaStream([track]));
+      const source = audioContext.createMediaStreamSource(
+        new MediaStream([track])
+      );
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       source.connect(analyser);
@@ -154,14 +168,19 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
         analyser.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
 
-        console.log(`🎤 Audio level check ${checkCount + 1}/${maxChecks}: ${average.toFixed(2)}`);
+        console.log(
+          `🎤 Audio level check ${
+            checkCount + 1
+          }/${maxChecks}: ${average.toFixed(2)}`
+        );
 
         checkCount++;
 
         // Consider it working if we detect ANY sound level > 0
         // OR if track properties look good
         if (average > 0 || checkCount >= maxChecks) {
-          const isWorking = average > 0 || (track.readyState === 'live' && !track.muted);
+          const isWorking =
+            average > 0 || (track.readyState === "live" && !track.muted);
           console.log(isWorking ? "✅ Audio verified" : "⚠️ No audio detected");
           audioContext.close();
           resolve(isWorking);
@@ -175,6 +194,42 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
       console.error("❌ Audio verification failed:", error);
       resolve(true); // Assume working if we can't verify
     }
+  });
+};
+// Helper to wait for track to be ready - ADD THIS BEFORE VideoCall component
+const waitForTrackReady = (
+  track: MediaStreamTrack,
+  kind: string
+): Promise<void> => {
+  return new Promise((resolve) => {
+    if (track.readyState === "live" && !track.muted) {
+      console.log(`✅ ${kind} track ready immediately`);
+      resolve();
+      return;
+    }
+
+    console.log(`⏳ Waiting for ${kind} track...`);
+    let resolved = false;
+
+    const checkReady = () => {
+      if (track.readyState === "live" && !track.muted && !resolved) {
+        resolved = true;
+        console.log(`✅ ${kind} track became ready`);
+        resolve();
+      }
+    };
+
+    track.addEventListener("unmute", checkReady, { once: true });
+    const interval = setInterval(checkReady, 100);
+
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        clearInterval(interval);
+        console.log(`⏰ ${kind} track timeout - proceeding anyway`);
+        resolve();
+      }
+    }, 5000);
   });
 };
 
@@ -436,44 +491,46 @@ const VideoCall: React.FC<VideoCallProps> = ({
     };
   }, [roomId, webrtcServiceRef.current]);
 
-// REPLACE THIS ENTIRE useEffect (around line 270-290)
-// This is the one that calls initializeCall()
+  // REPLACE THIS ENTIRE useEffect (around line 270-290)
+  // This is the one that calls initializeCall()
 
-useEffect(() => {
-  console.log("🔄 Initialization useEffect triggered");
-  
-  // Prevent double initialization
-  if (initializingRef.current || initializedRef.current) {
-    console.log("⚠️ Already initializing/initialized, skipping");
-    return;
-  }
+  useEffect(() => {
+    console.log("🔄 Initialization useEffect triggered");
 
-  initializingRef.current = true;
-  console.log("✅ Starting initialization...");
-
-  const init = async () => {
-    try {
-      await initializeCall();
-      initializedRef.current = true;
-      console.log("✅ Initialization complete");
-    } catch (error: any) {
-      console.error("❌ Initialization failed:", error);
-      setError("Failed to initialize call: " + (error.message || "Unknown error"));
-    } finally {
-      initializingRef.current = false;
+    // Prevent double initialization
+    if (initializingRef.current || initializedRef.current) {
+      console.log("⚠️ Already initializing/initialized, skipping");
+      return;
     }
-  };
 
-  init();
+    initializingRef.current = true;
+    console.log("✅ Starting initialization...");
 
-  // Cleanup on unmount
-  return () => {
-    console.log("🧹 Component unmounting");
-    if (initializedRef.current && !callEndedRef.current) {
-      cleanup(false);
-    }
-  };
-}, []); // Remove roomId dependency to prevent re-init
+    const init = async () => {
+      try {
+        await initializeCall();
+        initializedRef.current = true;
+        console.log("✅ Initialization complete");
+      } catch (error: any) {
+        console.error("❌ Initialization failed:", error);
+        setError(
+          "Failed to initialize call: " + (error.message || "Unknown error")
+        );
+      } finally {
+        initializingRef.current = false;
+      }
+    };
+
+    init();
+
+    // Cleanup on unmount
+    return () => {
+      console.log("🧹 Component unmounting");
+      if (initializedRef.current && !callEndedRef.current) {
+        cleanup(false);
+      }
+    };
+  }, []); // Remove roomId dependency to prevent re-init
   const initializeCall = async () => {
     try {
       setError(null);
@@ -575,115 +632,126 @@ useEffect(() => {
       }
 
       webrtcServiceRef.current.setupEventListeners(
-  async (remoteStream: MediaStream) => {
-    console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+        async (remoteStream: MediaStream) => {
+          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
-    if (!remoteStream || !remoteVideoRef.current) {
-      console.error("❌ Missing remote stream or video ref");
-      return;
-    }
+          if (!remoteStream || !remoteVideoRef.current) {
+            console.error("❌ Missing remote stream or video ref");
+            return;
+          }
 
-    // Remove old audio elements
-    document.querySelectorAll("#remote-audio-element").forEach(el => el.remove());
+          // Remove old audio elements
+          document
+            .querySelectorAll("#remote-audio-element")
+            .forEach((el) => el.remove());
 
-    const remoteAudio = remoteStream.getAudioTracks()[0];
-    const remoteVideo = remoteStream.getVideoTracks()[0];
+          const remoteAudio = remoteStream.getAudioTracks()[0];
+          const remoteVideo = remoteStream.getVideoTracks()[0];
 
-    console.log("🎤 Remote audio:", remoteAudio ? {
-      id: remoteAudio.id,
-      enabled: remoteAudio.enabled,
-      muted: remoteAudio.muted,
-      readyState: remoteAudio.readyState,
-    } : "MISSING");
+          console.log(
+            "🎤 Remote audio:",
+            remoteAudio
+              ? {
+                  id: remoteAudio.id,
+                  enabled: remoteAudio.enabled,
+                  muted: remoteAudio.muted,
+                  readyState: remoteAudio.readyState,
+                }
+              : "MISSING"
+          );
 
-    console.log("📹 Remote video:", remoteVideo ? {
-      id: remoteVideo.id,
-      enabled: remoteVideo.enabled,
-      readyState: remoteVideo.readyState,
-    } : "MISSING");
+          console.log(
+            "📹 Remote video:",
+            remoteVideo
+              ? {
+                  id: remoteVideo.id,
+                  enabled: remoteVideo.enabled,
+                  readyState: remoteVideo.readyState,
+                }
+              : "MISSING"
+          );
 
-    if (!remoteAudio || !remoteVideo) {
-      setError("⚠️ Remote user's camera/mic is blocked or not working");
-      console.error("❌ Missing tracks - remote user needs to:");
-      console.error("   1. Allow camera/mic permissions");
-      console.error("   2. Check system settings");
-      console.error("   3. Close other apps using camera/mic");
-      console.error("   4. Refresh the page");
-      return;
-    }
+          if (!remoteAudio || !remoteVideo) {
+            setError("⚠️ Remote user's camera/mic is blocked or not working");
+            console.error("❌ Missing tracks - remote user needs to:");
+            console.error("   1. Allow camera/mic permissions");
+            console.error("   2. Check system settings");
+            console.error("   3. Close other apps using camera/mic");
+            console.error("   4. Refresh the page");
+            return;
+          }
 
-    // Wait for tracks to become live
-    await Promise.all([
-      waitForTrackReady(remoteAudio, "audio"),
-      waitForTrackReady(remoteVideo, "video")
-    ]);
+          // Wait for tracks to become live
+          await Promise.all([
+            waitForTrackReady(remoteAudio, "audio"),
+            waitForTrackReady(remoteVideo, "video"),
+          ]);
 
-    // Force enable
-    remoteAudio.enabled = true;
-    remoteVideo.enabled = true;
+          // Force enable
+          remoteAudio.enabled = true;
+          remoteVideo.enabled = true;
 
-    // Setup video element (muted for video only)
-    const videoElement = remoteVideoRef.current;
-    videoElement.srcObject = remoteStream;
-    videoElement.autoplay = true;
-    videoElement.playsInline = true;
-    videoElement.muted = true;
-    videoElement.volume = 0;
+          // Setup video element (muted for video only)
+          const videoElement = remoteVideoRef.current;
+          videoElement.srcObject = remoteStream;
+          videoElement.autoplay = true;
+          videoElement.playsInline = true;
+          videoElement.muted = true;
+          videoElement.volume = 0;
 
-    // Setup audio element (unmuted for audio only)
-    const audioElement = document.createElement("audio");
-    audioElement.id = "remote-audio-element";
-    audioElement.autoplay = true;
-    audioElement.muted = false;
-    audioElement.volume = 1.0;
-    audioElement.style.display = "none";
-    audioElement.srcObject = new MediaStream([remoteAudio]);
+          // Setup audio element (unmuted for audio only)
+          const audioElement = document.createElement("audio");
+          audioElement.id = "remote-audio-element";
+          audioElement.autoplay = true;
+          audioElement.muted = false;
+          audioElement.volume = 1.0;
+          audioElement.style.display = "none";
+          audioElement.srcObject = new MediaStream([remoteAudio]);
 
-    document.body.appendChild(audioElement);
-    console.log("✅ Audio element added");
+          document.body.appendChild(audioElement);
+          console.log("✅ Audio element added");
 
-    // Play with retries
-    const playMedia = async () => {
-      try {
-        await Promise.all([
-          videoElement.play(),
-          audioElement.play()
-        ]);
-        console.log("✅ AUDIO & VIDEO PLAYING");
-        setConnectionStatus("connected");
-        setError(null);
-      } catch (err: any) {
-        if (err.name === "NotAllowedError") {
-          setError("🔊 CLICK ANYWHERE to enable audio");
-          const enableOnClick = () => {
-            audioElement.play().catch(console.error);
-            videoElement.play().catch(console.error);
-            setError(null);
+          // Play with retries
+          const playMedia = async () => {
+            try {
+              await Promise.all([videoElement.play(), audioElement.play()]);
+              console.log("✅ AUDIO & VIDEO PLAYING");
+              setConnectionStatus("connected");
+              setError(null);
+            } catch (err: any) {
+              if (err.name === "NotAllowedError") {
+                setError("🔊 CLICK ANYWHERE to enable audio");
+                const enableOnClick = () => {
+                  audioElement.play().catch(console.error);
+                  videoElement.play().catch(console.error);
+                  setError(null);
+                };
+                document.addEventListener("click", enableOnClick, {
+                  once: true,
+                });
+              } else {
+                console.error("❌ Play error:", err);
+              }
+            }
           };
-          document.addEventListener("click", enableOnClick, { once: true });
-        } else {
-          console.error("❌ Play error:", err);
+
+          setTimeout(playMedia, 500);
+
+          // Monitor track state
+          remoteAudio.onmute = () => {
+            console.warn("🔇 Remote muted");
+            setRemoteAudioStatus("muted");
+          };
+          remoteAudio.onunmute = () => {
+            console.log("🔊 Remote unmuted");
+            setRemoteAudioStatus("active");
+          };
+        },
+        (candidate: RTCIceCandidate) => {
+          const socket = getSocket();
+          socket.emit("ice-candidate", roomId, candidate);
         }
-      }
-    };
-
-    setTimeout(playMedia, 500);
-
-    // Monitor track state
-    remoteAudio.onmute = () => {
-      console.warn("🔇 Remote muted");
-      setRemoteAudioStatus("muted");
-    };
-    remoteAudio.onunmute = () => {
-      console.log("🔊 Remote unmuted");
-      setRemoteAudioStatus("active");
-    };
-  },
-  (candidate: RTCIceCandidate) => {
-    const socket = getSocket();
-    socket.emit("ice-candidate", roomId, candidate);
-  }
-);
+      );
       webrtcServiceRef.current.addLocalStreamToPeer();
 
       console.log("📞 Joining room:", roomId);
@@ -1140,7 +1208,3 @@ useEffect(() => {
 };
 
 export default VideoCall;
-function waitForTrackReady(remoteAudio: MediaStreamTrack, arg1: string): any {
-  throw new Error("Function not implemented.");
-}
-
