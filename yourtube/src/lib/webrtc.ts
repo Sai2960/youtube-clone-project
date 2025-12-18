@@ -149,6 +149,7 @@ export class WebRTCService {
     // 🔥 CRITICAL: Force enable all tracks before adding
     this.localStream.getTracks().forEach((track) => {
       track.enabled = true;
+
       console.log(`➕ Adding ${track.kind} track:`, {
         id: track.id,
         enabled: track.enabled,
@@ -156,17 +157,18 @@ export class WebRTCService {
         readyState: track.readyState,
         label: track.label,
       });
+
       this.peerConnection?.addTrack(track, this.localStream!);
     });
 
     const transceivers = this.peerConnection.getTransceivers();
-    console.log(`✅ Total transceivers: ${transceivers.length}`);
+    console.log(`✅ Total transceivers after addTrack: ${transceivers.length}`);
     transceivers.forEach((t, i) => {
       console.log(
-        `   Transceiver ${i}: ${t.direction} ${t.sender.track?.kind}`
+        `   Transceiver ${i}: ${t.mid} ${t.direction} ${t.sender.track?.kind}`
       );
 
-      // Force sendrecv direction
+      // 🔥 Force sendrecv for all transceivers
       if (t.direction !== "sendrecv") {
         t.direction = "sendrecv";
         console.log(`   ✅ Fixed transceiver ${i} to sendrecv`);
@@ -294,15 +296,42 @@ export class WebRTCService {
       console.log("   Enabled:", event.track.enabled);
       console.log("   Muted:", event.track.muted);
       console.log("   Ready state:", event.track.readyState);
+      console.log("   Label:", event.track.label);
 
-      // 🔥 FORCE ENABLE TRACK
-      event.track.enabled = true;
+      if (event.transceiver) {
+        console.log("   Transceiver direction:", event.transceiver.direction);
+        console.log(
+          "   Current direction:",
+          event.transceiver.currentDirection
+        );
+      }
+
+      // 🔥 CRITICAL: Diagnose why track is muted
+      if (event.track.muted) {
+        console.warn(
+          "⚠️ Track received MUTED - this means NO DATA is being sent"
+        );
+        console.warn("   This is a SENDER-SIDE issue, not receiver-side");
+        console.warn("   Remote user may have:");
+        console.warn("   1. Microphone muted in system");
+        console.warn("   2. Another app using microphone");
+        console.warn("   3. Permission denied");
+        console.warn("   4. Physical microphone issue");
+      }
 
       if (event.streams && event.streams.length > 0) {
         this.remoteStream = event.streams[0];
         console.log("✅ Remote stream set from event.streams");
+        console.log("   Stream ID:", this.remoteStream.id);
+        console.log(
+          "   Video tracks:",
+          this.remoteStream.getVideoTracks().length
+        );
+        console.log(
+          "   Audio tracks:",
+          this.remoteStream.getAudioTracks().length
+        );
 
-        // 🔥 FORCE ENABLE ALL TRACKS IN STREAM
         this.remoteStream.getTracks().forEach((track) => {
           track.enabled = true;
           console.log(`   Force enabled ${track.kind}: ${track.enabled}`);
@@ -310,11 +339,16 @@ export class WebRTCService {
 
         onRemoteStream(this.remoteStream);
       } else {
+        console.log("⚠️ No streams in event, creating new MediaStream");
         if (!this.remoteStream) {
           this.remoteStream = new MediaStream();
+          console.log("   Created new remote stream:", this.remoteStream.id);
         }
         this.remoteStream.addTrack(event.track);
+        console.log("   Added track to stream");
+
         event.track.enabled = true;
+
         onRemoteStream(this.remoteStream);
       }
     };
