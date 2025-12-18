@@ -298,6 +298,36 @@ export class WebRTCService {
       console.log("   Ready state:", event.track.readyState);
       console.log("   Label:", event.track.label);
 
+      event.track.enabled = true;
+
+      // 🔥 Set up aggressive unmute monitoring
+      const forceUnmute = () => {
+        if (event.track.muted) {
+          console.warn(`🔧 Forcing ${event.track.kind} track unmute...`);
+          event.track.enabled = false;
+          setTimeout(() => {
+            event.track.enabled = true;
+            console.log(`   ✅ Track re-enabled: ${event.track.enabled}`);
+          }, 100);
+        }
+      };
+      // Monitor track state
+      event.track.onmute = () => {
+        console.error(`🚨 REMOTE ${event.track.kind} MUTED!`);
+        forceUnmute();
+      };
+
+      event.track.onunmute = () => {
+        console.log(`✅ REMOTE ${event.track.kind} UNMUTED`);
+      };
+
+      // Try to force unmute if initially muted
+      if (event.track.muted) {
+        console.warn("⚠️ Track arrived muted, attempting fix...");
+        setTimeout(forceUnmute, 500);
+        setTimeout(forceUnmute, 1000);
+        setTimeout(forceUnmute, 2000);
+      }
       if (event.transceiver) {
         console.log("   Transceiver direction:", event.transceiver.direction);
         console.log(

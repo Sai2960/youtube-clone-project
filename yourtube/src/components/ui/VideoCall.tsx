@@ -29,40 +29,88 @@ interface VideoCallProps {
 }
 
 // Windows Audio Device Tester
+// 🔥 COMPLETE FIX FOR MUTED TRACKS
+// Replace the ensureAudioNotMuted function (around line 40-85)
+
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
-  console.log("🔧 Getting media devices...");
+  console.log("🔧 Getting media devices with AGGRESSIVE unmuting...");
 
   try {
-    // 🔥 MAIN FIX: Don't specify exact device ID - let browser choose
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-      video: {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
+    // Get ALL available devices first
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const audioInputs = devices.filter((d) => d.kind === "audioinput");
+    
+    console.log("🎤 Available microphones:");
+    audioInputs.forEach((d, i) => {
+      console.log(`   ${i + 1}. ${d.label} | ID: ${d.deviceId}`);
     });
 
-    const audioTrack = stream.getAudioTracks()[0];
-    const videoTrack = stream.getVideoTracks()[0];
+    // 🔥 Try each microphone until one works
+    for (let i = 0; i < audioInputs.length; i++) {
+      const device = audioInputs[i];
+      
+      // Skip "default" and "communications" aliases
+      if (device.deviceId === "default" || device.deviceId === "communications") {
+        console.log(`   ⏭️ Skipping alias: ${device.label}`);
+        continue;
+      }
 
-    console.log("✅ Media obtained:");
-    console.log("   Audio:", audioTrack?.label || "Unknown");
-    console.log("   Video:", videoTrack?.label || "Unknown");
-    console.log("   Audio enabled:", audioTrack?.enabled);
-    console.log("   Audio muted:", audioTrack?.muted);
+      console.log(`   🔍 Trying: ${device.label}`);
 
-    // Check if audio is actually working
-    if (audioTrack && !audioTrack.muted) {
-      return stream;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: { exact: device.deviceId },
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+
+        const audioTrack = stream.getAudioTracks()[0];
+        const videoTrack = stream.getVideoTracks()[0];
+
+        console.log(`✅ Got stream from: ${device.label}`);
+        console.log("   Audio:", {
+          enabled: audioTrack?.enabled,
+          muted: audioTrack?.muted,
+          readyState: audioTrack?.readyState,
+          label: audioTrack?.label,
+        });
+
+        // 🔥 CRITICAL: Force enable and unmute
+        if (audioTrack) {
+          audioTrack.enabled = true;
+          
+          // Verify it's actually working
+          if (audioTrack.muted || audioTrack.readyState !== "live") {
+            console.warn(`   ⚠️ Track is muted/dead, trying next device...`);
+            stream.getTracks().forEach((t) => t.stop());
+            continue;
+          }
+
+          console.log("   ✅ Audio track is LIVE and UNMUTED");
+          
+          // Force enable video too
+          if (videoTrack) {
+            videoTrack.enabled = true;
+          }
+
+          return stream;
+        }
+      } catch (err: any) {
+        console.warn(`   ❌ Failed to get ${device.label}:`, err.name);
+        continue;
+      }
     }
 
-    // If muted, throw error with clear message
+    // If we get here, no working microphone was found
     throw new Error(
-      "Microphone is muted in Windows. Right-click speaker icon → Open Sound Settings → check microphone"
+      "No working microphone found. All devices are either muted, in use, or blocked."
     );
   } catch (err: any) {
     console.error("❌ Media access failed:", err);
@@ -72,7 +120,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         "🚫 Browser blocked camera/mic. Click 🔒 in address bar → Allow"
       );
     } else if (err.name === "NotFoundError") {
-      throw new Error("❌ No camera/microphone found");
+      throw new Error("❌ No camera or microphone found");
     } else if (err.name === "NotReadableError") {
       throw new Error(
         "⚠️ Camera/mic in use by another app. Close it and refresh."
