@@ -261,57 +261,36 @@ export class WebRTCService {
   ): void {
     if (!this.peerConnection) return;
 
-    this.peerConnection.ontrack = (event) => {
-      console.log('📥 Remote track received:', event.track.kind);
-      console.log('   Track ID:', event.track.id);
-      console.log('   Enabled:', event.track.enabled);
-      console.log('   Muted:', event.track.muted);
-      console.log('   Ready state:', event.track.readyState);
-      console.log('   Label:', event.track.label);
+   this.peerConnection.ontrack = (event) => {
+  console.log('📥 Remote track received:', event.track.kind);
+  console.log('   Track ID:', event.track.id);
+  console.log('   Enabled:', event.track.enabled);
+  console.log('   Muted:', event.track.muted);
+  console.log('   Ready state:', event.track.readyState);
 
-      if (event.transceiver) {
-        console.log('   Transceiver direction:', event.transceiver.direction);
-        console.log('   Current direction:', event.transceiver.currentDirection);
-      }
+  // 🔥 FORCE ENABLE TRACK
+  event.track.enabled = true;
 
-      // 🔥 CRITICAL: Diagnose why track is muted
-      if (event.track.muted) {
-        console.warn('⚠️ Track received MUTED - this means NO DATA is being sent');
-        console.warn('   This is a SENDER-SIDE issue, not receiver-side');
-        console.warn('   Remote user may have:');
-        console.warn('   1. Microphone muted in system');
-        console.warn('   2. Another app using microphone');
-        console.warn('   3. Permission denied');
-        console.warn('   4. Physical microphone issue');
-      }
-
-      if (event.streams && event.streams.length > 0) {
-        this.remoteStream = event.streams[0];
-        console.log('✅ Remote stream set from event.streams');
-        console.log('   Stream ID:', this.remoteStream.id);
-        console.log('   Video tracks:', this.remoteStream.getVideoTracks().length);
-        console.log('   Audio tracks:', this.remoteStream.getAudioTracks().length);
-        
-        this.remoteStream.getTracks().forEach(track => {
-          track.enabled = true;
-          console.log(`   Force enabled ${track.kind}: ${track.enabled}`);
-        });
-        
-        onRemoteStream(this.remoteStream);
-      } else {
-        console.log('⚠️ No streams in event, creating new MediaStream');
-        if (!this.remoteStream) {
-          this.remoteStream = new MediaStream();
-          console.log('   Created new remote stream:', this.remoteStream.id);
-        }
-        this.remoteStream.addTrack(event.track);
-        console.log('   Added track to stream');
-        
-        event.track.enabled = true;
-        
-        onRemoteStream(this.remoteStream);
-      }
-    };
+  if (event.streams && event.streams.length > 0) {
+    this.remoteStream = event.streams[0];
+    console.log('✅ Remote stream set from event.streams');
+    
+    // 🔥 FORCE ENABLE ALL TRACKS IN STREAM
+    this.remoteStream.getTracks().forEach(track => {
+      track.enabled = true;
+      console.log(`   Force enabled ${track.kind}: ${track.enabled}`);
+    });
+    
+    onRemoteStream(this.remoteStream);
+  } else {
+    if (!this.remoteStream) {
+      this.remoteStream = new MediaStream();
+    }
+    this.remoteStream.addTrack(event.track);
+    event.track.enabled = true;
+    onRemoteStream(this.remoteStream);
+  }
+};
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
