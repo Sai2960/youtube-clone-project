@@ -539,323 +539,187 @@ useEffect(() => {
       }
 
       // 🔥 MAIN FIX: Remote stream handler with track waiting
-      webrtcServiceRef.current.setupEventListeners(
-        async (remoteStream: MediaStream) => {
-          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+    
+webrtcServiceRef.current.setupEventListeners(
+  async (remoteStream: MediaStream) => {
+    console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+    console.log("   Stream ID:", remoteStream.id);
+    console.log("   Audio tracks:", remoteStream.getAudioTracks().length);
+    console.log("   Video tracks:", remoteStream.getVideoTracks().length);
 
-          if (!remoteStream || !remoteVideoRef.current) {
-            console.error("❌ Missing remote stream or video ref");
-            return;
+    if (!remoteVideoRef.current) {
+      console.error("❌ No remote video element!");
+      return;
+    }
+
+    const remoteAudio = remoteStream.getAudioTracks()[0];
+    const remoteVideo = remoteStream.getVideoTracks()[0];
+
+    if (!remoteVideo) {
+      console.error("❌ No remote VIDEO track!");
+      setError("No video received from remote peer");
+      return;
+    }
+
+    if (!remoteAudio) {
+      console.error("❌ No remote AUDIO track!");
+      setError("No audio received from remote peer");
+    }
+
+    // 🔥 FORCE ENABLE ALL TRACKS IMMEDIATELY
+    remoteStream.getTracks().forEach(track => {
+      track.enabled = true;
+      console.log(`   ✅ Enabled ${track.kind}: ${track.enabled}`);
+    });
+
+    console.log("🎥 Remote video track:", {
+      id: remoteVideo.id,
+      label: remoteVideo.label,
+      enabled: remoteVideo.enabled,
+      muted: remoteVideo.muted,
+      readyState: remoteVideo.readyState,
+    });
+
+    if (remoteAudio) {
+      console.log("🎤 Remote audio track:", {
+        id: remoteAudio.id,
+        label: remoteAudio.label,
+        enabled: remoteAudio.enabled,
+        muted: remoteAudio.muted,
+        readyState: remoteAudio.readyState,
+      });
+    }
+
+    // 🔥 CRITICAL FIX 1: Clear any existing stream first
+    if (remoteVideoRef.current.srcObject) {
+      console.log("🧹 Clearing old remote stream");
+      const oldStream = remoteVideoRef.current.srcObject as MediaStream;
+      oldStream.getTracks().forEach(t => t.stop());
+    }
+
+    // 🔥 CRITICAL FIX 2: Set video element attributes BEFORE setting srcObject
+    remoteVideoRef.current.autoplay = true;
+    remoteVideoRef.current.playsInline = true;
+    remoteVideoRef.current.muted = false; // DON'T mute - we want audio
+    remoteVideoRef.current.volume = 1.0;
+
+    // 🔥 CRITICAL FIX 3: Set srcObject
+    remoteVideoRef.current.srcObject = remoteStream;
+    console.log("✅ Remote stream assigned to video element");
+
+    // 🔥 CRITICAL FIX 4: Force play with aggressive retry
+    const forcePlay = async (attempt = 1): Promise<void> => {
+      if (attempt > 10) {
+        console.error("❌ Failed to play video after 10 attempts");
+        setError("⚠️ Video failed to start. Click to retry.");
+        return;
+      }
+
+      try {
+        console.log(`▶️ Play attempt ${attempt}/10...`);
+        
+        // Wait a bit longer on each retry
+        await new Promise(r => setTimeout(r, attempt * 200));
+
+        await remoteVideoRef.current!.play();
+
+        console.log("✅ VIDEO PLAYING!", {
+          paused: remoteVideoRef.current!.paused,
+          currentTime: remoteVideoRef.current!.currentTime,
+          readyState: remoteVideoRef.current!.readyState,
+          videoWidth: remoteVideoRef.current!.videoWidth,
+          videoHeight: remoteVideoRef.current!.videoHeight,
+        });
+
+        setConnectionStatus("connected");
+        setError(null);
+
+        // 🔥 Verify video is actually rendering
+        setTimeout(() => {
+          const video = remoteVideoRef.current!;
+          if (video.videoWidth === 0 || video.videoHeight === 0) {
+            console.error("🚨 Video dimensions are 0!");
+            setError("Video stream has no dimensions");
+          } else {
+            console.log(`✅ Video rendering: ${video.videoWidth}x${video.videoHeight}`);
           }
+        }, 1000);
 
-          // 🔥 Remove any old audio elements
-          document
-            .querySelectorAll("#remote-audio-element")
-            .forEach((el) => el.remove());
+      } catch (err: any) {
+        console.error(`❌ Play attempt ${attempt} failed:`, err.name, err.message);
 
-          const remoteAudio = remoteStream.getAudioTracks()[0];
-          const remoteVideo = remoteStream.getVideoTracks()[0];
-
-          if (!remoteAudio) {
-            console.error("❌ No remote audio track!");
-            setError("No audio track received");
-            return;
-          }
-
-          console.log("🎤 Remote audio track:", {
-            id: remoteAudio.id,
-            label: remoteAudio.label,
-            enabled: remoteAudio.enabled,
-            muted: remoteAudio.muted,
-            readyState: remoteAudio.readyState,
-          });
-
-          // ===== Wait for track to be ready =====
-          await new Promise<void>((resolve) => {
-            if (remoteAudio.readyState === "live" && !remoteAudio.muted) {
-              console.log("✅ Track ready immediately");
-              resolve();
-            } else {
-              console.log("⏳ Waiting for track...");
-
-              let resolved = false;
-              const checkReady = () => {
-                if (remoteAudio.readyState === "live" && !resolved) {
-                  resolved = true;
-                  console.log("✅ Track became ready");
-                  resolve();
-                }
-              };
-
-              remoteAudio.addEventListener(
-                "unmute",
-                () => {
-                  console.log("📢 Track unmuted");
-                  checkReady();
-                },
-                { once: true }
-              );
-
-              const interval = setInterval(checkReady, 100);
-
-              setTimeout(() => {
-                if (!resolved) {
-                  resolved = true;
-                  clearInterval(interval);
-                  console.log("⏰ Timeout - proceeding anyway");
-                  resolve();
-                }
-              }, 5000);
-            }
-          });
-
-          remoteAudio.enabled = true;
-
-          // ===== VIDEO ELEMENT (muted, for video only) =====
-          const videoElement = remoteVideoRef.current;
-          videoElement.srcObject = remoteStream;
-          videoElement.autoplay = true;
-          videoElement.playsInline = true;
-          videoElement.muted = true; // Video element is MUTED
-          videoElement.volume = 0;
-
-          // ===== AUDIO ELEMENT (unmuted, for audio only) =====
-          const audioElement = document.createElement("audio");
-          audioElement.id = "remote-audio-element";
-          audioElement.autoplay = true;
-          audioElement.muted = false;
-          audioElement.volume = 1.0;
-          audioElement.style.display = "none";
-
-          // 🔥 CRITICAL: Create NEW MediaStream with ONLY audio track
-          const audioOnlyStream = new MediaStream([remoteAudio]);
-          audioElement.srcObject = audioOnlyStream;
-
-          console.log("🔊 Created audio element with audio-only stream");
-
-          // ===== Set output device to VG240Y S (your monitor) =====
-          if ("setSinkId" in audioElement) {
+        if (err.name === "NotAllowedError") {
+          // Browser blocked autoplay
+          setError("🖱️ CLICK ANYWHERE to start video");
+          
+          const enableVideo = async () => {
             try {
-              const devices = await navigator.mediaDevices.enumerateDevices();
-              const audioOutputs = devices.filter(
-                (d) => d.kind === "audiooutput"
-              );
-
-              console.log("🔊 Available outputs:");
-              audioOutputs.forEach((d, i) => {
-                console.log(`   ${i + 1}. ${d.label} | ID: ${d.deviceId}`);
-              });
-
-              // 🔥 CRITICAL: Find the REAL VG240Y (not the 'default' alias)
-              let targetDevice = audioOutputs.find((d) => {
-                const label = d.label.toLowerCase();
-                const isVG240Y =
-                  label.includes("vg240y") ||
-                  label.includes("nvidia high definition audio");
-                const isNotAlias =
-                  d.deviceId !== "default" && d.deviceId !== "communications";
-                return isVG240Y && isNotAlias;
-              });
-
-              // Fallback: USB Speakers
-              if (!targetDevice) {
-                targetDevice = audioOutputs.find(
-                  (d) =>
-                    d.label.includes("USB Audio") &&
-                    d.label.includes("Speakers")
-                );
-              }
-
-              // Last resort: First non-alias device
-              if (!targetDevice) {
-                targetDevice = audioOutputs.find(
-                  (d) =>
-                    d.deviceId !== "default" && d.deviceId !== "communications"
-                );
-              }
-
-              if (targetDevice) {
-                console.log(
-                  "🎯 Attempting to set audio to:",
-                  targetDevice.label
-                );
-                console.log("   Device ID:", targetDevice.deviceId);
-
-                // Set the sink
-                await (audioElement as any).setSinkId(targetDevice.deviceId);
-
-                const actualSinkId = (audioElement as any).sinkId;
-                console.log("✅ Audio routed to:", targetDevice.label);
-                console.log("✅ Verified sinkId:", actualSinkId);
-
-                // 🔥 VERIFY it's not 'default'
-                if (
-                  actualSinkId === "default" ||
-                  actualSinkId === "communications"
-                ) {
-                  console.error(
-                    "❌ FAILED! Still using alias device:",
-                    actualSinkId
-                  );
-                  setError("⚠️ Audio routing failed - using wrong device");
-                } else {
-                  console.log("🎉 SUCCESS! Using actual device ID");
-                  setError(`🔊 AUDIO: ${targetDevice.label}`);
-                  setTimeout(() => setError(null), 3000);
-                }
-              } else {
-                console.error("❌ No suitable audio output device found!");
-                setError("⚠️ No audio device found");
-              }
-            } catch (err: any) {
-              console.error("❌ setSinkId failed:", err.name, err.message);
-              setError(`⚠️ Audio routing failed: ${err.message}`);
-            }
-          }
-
-          // Add to DOM
-          document.body.appendChild(audioElement);
-          console.log("✅ Audio element added to DOM");
-
-          // ===== FORCE PLAY WITH RETRIES =====
-          const playAudio = async (attempt: number = 1): Promise<void> => {
-            if (attempt > 10) {
-              console.error("❌ Failed to play audio after 10 attempts");
-              setError("⚠️ Click anywhere to enable audio");
-              return;
-            }
-
-            try {
-              const delay = 100 * attempt;
-              console.log(
-                `⏳ Play attempt ${attempt}/10 (waiting ${delay}ms)...`
-              );
-
-              await new Promise((r) => setTimeout(r, delay));
-
-              // Resume audio context if suspended
-              const AudioCtx =
-                (window as any).AudioContext ||
-                (window as any).webkitAudioContext;
-              if (AudioCtx) {
-                const ctx = new AudioCtx();
-                if (ctx.state === "suspended") {
-                  await ctx.resume();
-                  console.log("✅ Audio context resumed");
-                }
-                ctx.close();
-              }
-
-              await audioElement.play();
-
-              console.log("✅ AUDIO PLAYING!", {
-                paused: audioElement.paused,
-                volume: audioElement.volume,
-                muted: audioElement.muted,
-                currentTime: audioElement.currentTime,
-                readyState: audioElement.readyState,
-                trackEnabled: remoteAudio.enabled,
-                trackMuted: remoteAudio.muted,
-              });
-
-              setRemoteAudioStatus("active");
+              await remoteVideoRef.current!.play();
+              console.log("✅ Video started after user interaction!");
               setError(null);
-            } catch (err: any) {
-              console.error(`❌ Play attempt ${attempt} failed:`, err.name);
-
-              if (err.name === "NotAllowedError" && attempt >= 3) {
-                console.log("🖱️ Waiting for user click...");
-                setError("🔊 CLICK ANYWHERE to enable audio");
-
-                const enableAudio = async () => {
-                  try {
-                    await audioElement.play();
-                    console.log("✅ Audio started after click!");
-                    setError(null);
-                    setRemoteAudioStatus("active");
-                  } catch (e) {
-                    console.error("❌ Still failed:", e);
-                    setError("⚠️ Audio error - check Windows sound settings");
-                  }
-                };
-
-                document.addEventListener("click", enableAudio, { once: true });
-                document.addEventListener(
-                  "keydown",
-                  (e) => {
-                    if (e.code === "Space" || e.code === "Enter") {
-                      enableAudio();
-                    }
-                  },
-                  { once: true }
-                );
-              } else {
-                return playAudio(attempt + 1);
-              }
+              setConnectionStatus("connected");
+            } catch (e) {
+              console.error("❌ Still failed after click:", e);
             }
           };
 
-          await playAudio();
-
-          // ===== Monitor track state =====
-          remoteAudio.onmute = () => {
-            console.warn("🔇 Remote muted");
-            setRemoteAudioStatus("muted");
-          };
-
-          remoteAudio.onunmute = () => {
-            console.log("🔊 Remote unmuted");
-            setRemoteAudioStatus("active");
-            if (audioElement.paused) {
-              audioElement.play().catch(console.error);
-            }
-          };
-
-          remoteAudio.onended = () => {
-            console.warn("⏹️ Remote audio ended");
-            setRemoteAudioStatus("ended");
-            audioElement.remove();
-          };
-
-          // ===== Play video =====
-          try {
-            await videoElement.play();
-            console.log("✅ Video playing");
-            setConnectionStatus("connected");
-          } catch (err: any) {
-            console.error("❌ Video play failed:", err);
-            if (err.name === "NotAllowedError") {
-              document.addEventListener(
-                "click",
-                async () => {
-                  await videoElement.play().catch(console.error);
-                },
-                { once: true }
-              );
-            }
-          }
-
-          // ===== Keep audio alive =====
-          const keepAlive = setInterval(() => {
-            if (
-              audioElement.paused &&
-              remoteAudio.readyState === "live" &&
-              !remoteAudio.muted
-            ) {
-              console.warn("⚠️ Audio paused, restarting...");
-              audioElement.play().catch(console.error);
-            }
-          }, 2000);
-
-          (audioElement as any)._keepAlive = keepAlive;
-        },
-        (candidate: RTCIceCandidate) => {
-          const socket = getSocket();
-          console.log("❄️ Sending ICE candidate");
-          socket.emit("ice-candidate", roomId, candidate);
+          document.addEventListener("click", enableVideo, { once: true });
+          document.addEventListener("keydown", enableVideo, { once: true });
+          return;
         }
-      );
 
+        // Retry
+        return forcePlay(attempt + 1);
+      }
+    };
+
+    await forcePlay();
+
+    // 🔥 Monitor video state
+    remoteVideo.onmute = () => {
+      console.warn("🔇 Remote VIDEO muted");
+      setError("Remote video is muted");
+    };
+
+    remoteVideo.onunmute = () => {
+      console.log("🔊 Remote VIDEO unmuted");
+      setError(null);
+    };
+
+    remoteVideo.onended = () => {
+      console.warn("⏹️ Remote VIDEO ended");
+      setError("Remote video stream ended");
+    };
+
+    // 🔥 Audio handling (if present)
+    if (remoteAudio) {
+      remoteAudio.onmute = () => {
+        console.warn("🔇 Remote AUDIO muted");
+        setRemoteAudioStatus("muted");
+      };
+
+      remoteAudio.onunmute = () => {
+        console.log("🔊 Remote AUDIO unmuted");
+        setRemoteAudioStatus("active");
+      };
+
+      remoteAudio.onended = () => {
+        console.warn("⏹️ Remote AUDIO ended");
+        setRemoteAudioStatus("ended");
+      };
+
+      // If audio is not muted, mark as active
+      if (!remoteAudio.muted) {
+        setRemoteAudioStatus("active");
+      }
+    }
+  },
+  (candidate: RTCIceCandidate) => {
+    const socket = getSocket();
+    console.log("❄️ Sending ICE candidate");
+    socket.emit("ice-candidate", roomId, candidate);
+  }
+);
       webrtcServiceRef.current.addLocalStreamToPeer();
 
       console.log("📞 Joining room:", roomId);
