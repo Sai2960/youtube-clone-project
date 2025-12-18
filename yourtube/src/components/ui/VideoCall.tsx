@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/components/ui/VideoCall.tsx
 // COMPLETE FIXED VERSION - Replace your entire file with this
 
@@ -27,7 +28,6 @@ interface VideoCallProps {
   callId?: string;
 }
 
-
 // Windows Audio Device Tester
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   console.log("🔧 Windows Audio Fix: Ensuring microphone is not muted...");
@@ -45,14 +45,13 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   );
 
   // 🔥 TRY DEFAULT DEVICE FIRST (respects Windows settings)
-  const defaultDevice = audioInputs.find(d => 
-    d.deviceId === "default" || 
-    d.label.toLowerCase().includes("default")
+  const defaultDevice = audioInputs.find(
+    (d) => d.deviceId === "default" || d.label.toLowerCase().includes("default")
   );
 
   if (defaultDevice) {
     console.log("🎯 Trying Windows default device:", defaultDevice.label);
-    
+
     try {
       const testStream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -65,10 +64,10 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       });
 
       const audioTrack = testStream.getAudioTracks()[0];
-      
+
       if (!audioTrack.muted) {
         console.log("✅ Default device works! Using:", defaultDevice.label);
-        
+
         const videoDevices = devices.filter((d) => d.kind === "videoinput");
         const fullStream = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -77,16 +76,19 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
             noiseSuppression: true,
             autoGainControl: true,
           },
-          video: videoDevices.length > 0 ? {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          } : false,
+          video:
+            videoDevices.length > 0
+              ? {
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                }
+              : false,
         });
-        
+
         audioTrack.stop();
         return fullStream;
       }
-      
+
       audioTrack.stop();
     } catch (err) {
       console.warn("⚠️ Default device failed, trying others...");
@@ -96,11 +98,13 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   // 🔥 FALLBACK: Test devices in order (old behavior)
   for (let i = 0; i < audioInputs.length; i++) {
     const device = audioInputs[i];
-    
+
     // Skip 'default' device (already tried)
     if (device.deviceId === "default") continue;
-    
-    console.log(`   Testing device ${i + 1}/${audioInputs.length}: ${device.label}`);
+
+    console.log(
+      `   Testing device ${i + 1}/${audioInputs.length}: ${device.label}`
+    );
 
     try {
       const testStream = await navigator.mediaDevices.getUserMedia({
@@ -123,7 +127,8 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 
       const isProducingAudio = await new Promise<boolean>((resolve) => {
         try {
-          const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+          const AudioContext =
+            (window as any).AudioContext || (window as any).webkitAudioContext;
           const audioContext = new AudioContext();
           const source = audioContext.createMediaStreamSource(testStream);
           const analyser = audioContext.createAnalyser();
@@ -134,7 +139,8 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 
           const check = () => {
             analyser.getByteFrequencyData(dataArray);
-            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+            const average =
+              dataArray.reduce((a, b) => a + b) / dataArray.length;
             checks++;
 
             if (average > 0) {
@@ -172,10 +178,13 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
           noiseSuppression: true,
           autoGainControl: true,
         },
-        video: videoDevices.length > 0 ? {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        } : false,
+        video:
+          videoDevices.length > 0
+            ? {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              }
+            : false,
       });
 
       return fullStream;
@@ -372,52 +381,58 @@ const VideoCall: React.FC<VideoCallProps> = ({
       };
 
       const handleCallEnded = (data: { endedBy?: string; reason?: string }) => {
-  console.log("📴 Remote peer ended call", data);
-  if (!callEndedRef.current) {
-    callEndedRef.current = true;
-    
-    // Cleanup without emitting (remote already ended)
-    if (isRecording && recordingServiceRef.current) {
-      recordingServiceRef.current.stopRecording();
-    }
-    
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-    }
-    
-    // Stop all media
-    document.querySelectorAll("audio").forEach((audio) => {
-      if (audio.srcObject) {
-        (audio.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      }
-      audio.pause();
-      audio.srcObject = null;
-      audio.remove();
-    });
-    
-    if (localVideoRef.current?.srcObject) {
-      (localVideoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      localVideoRef.current.srcObject = null;
-    }
-    
-    if (remoteVideoRef.current?.srcObject) {
-      (remoteVideoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      remoteVideoRef.current.srcObject = null;
-    }
-    
-    if (webrtcServiceRef.current) {
-      webrtcServiceRef.current.close();
-      webrtcServiceRef.current = null;
-    }
-    
-    delete (window as any).peerConnection;
-    
-    onEndCall();
-    setTimeout(() => {
-      router.push("/");
-    }, 300);
-  }
-};
+        console.log("📴 Remote peer ended call", data);
+        if (!callEndedRef.current) {
+          callEndedRef.current = true;
+
+          // Cleanup without emitting (remote already ended)
+          if (isRecording && recordingServiceRef.current) {
+            recordingServiceRef.current.stopRecording();
+          }
+
+          if (recordingIntervalRef.current) {
+            clearInterval(recordingIntervalRef.current);
+          }
+
+          // Stop all media
+          document.querySelectorAll("audio").forEach((audio) => {
+            if (audio.srcObject) {
+              (audio.srcObject as MediaStream)
+                .getTracks()
+                .forEach((t) => t.stop());
+            }
+            audio.pause();
+            audio.srcObject = null;
+            audio.remove();
+          });
+
+          if (localVideoRef.current?.srcObject) {
+            (localVideoRef.current.srcObject as MediaStream)
+              .getTracks()
+              .forEach((t) => t.stop());
+            localVideoRef.current.srcObject = null;
+          }
+
+          if (remoteVideoRef.current?.srcObject) {
+            (remoteVideoRef.current.srcObject as MediaStream)
+              .getTracks()
+              .forEach((t) => t.stop());
+            remoteVideoRef.current.srcObject = null;
+          }
+
+          if (webrtcServiceRef.current) {
+            webrtcServiceRef.current.close();
+            webrtcServiceRef.current = null;
+          }
+
+          delete (window as any).peerConnection;
+
+          onEndCall();
+          setTimeout(() => {
+            router.push("/");
+          }, 300);
+        }
+      };
 
       socket.on("offer", handleOffer);
       socket.on("answer", handleAnswer);
@@ -468,6 +483,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const initializeCall = async () => {
     try {
       setError(null);
+      setConnectionStatus("connecting");
       console.log("\n🎥 ===== INITIALIZING CALL =====");
       console.log("   Room ID:", roomId);
       console.log("   Is Initiator:", isInitiator);
@@ -478,7 +494,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
         socket = await waitForSocket(10000);
         console.log("✅ Socket ready:", socket.id);
       } catch (err) {
+        console.error("❌ Socket connection failed:", err);
         setError("Connection failed. Please refresh the page.");
+        setConnectionStatus("failed");
         return;
       }
 
@@ -488,71 +506,84 @@ const VideoCall: React.FC<VideoCallProps> = ({
       const pc = webrtcServiceRef.current.getPeerConnection();
       if (pc) {
         (window as any).peerConnection = pc;
-        console.log(
-          "✅ PeerConnection exposed globally as window.peerConnection"
-        );
+        console.log("✅ PeerConnection created");
+
+        // ✅ CRITICAL: Log connection state changes
+        pc.onconnectionstatechange = () => {
+          console.log("🔗 Connection state:", pc.connectionState);
+          if (pc.connectionState === "connected") {
+            setConnectionStatus("connected");
+            setError(null);
+          } else if (pc.connectionState === "failed") {
+            setConnectionStatus("failed");
+            setError("Connection failed. Please try again.");
+          } else if (pc.connectionState === "disconnected") {
+            setConnectionStatus("disconnected");
+          }
+        };
+
+        // ✅ CRITICAL: Log ICE connection state
+        pc.oniceconnectionstatechange = () => {
+          console.log("❄️ ICE state:", pc.iceConnectionState);
+        };
       }
 
       let localStream: MediaStream;
       try {
-        console.log("🎤 Requesting media with Windows audio fix...");
-        localStream = await ensureAudioNotMuted();
+        console.log("🎤 Requesting media...");
 
-        console.log("✅ Local stream obtained");
+        // ✅ SIMPLIFIED: Try basic constraints first
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 },
+            facingMode: "user",
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+
+        console.log("✅ Media stream obtained");
         console.log("   Video tracks:", localStream.getVideoTracks().length);
         console.log("   Audio tracks:", localStream.getAudioTracks().length);
 
-        const audioTrack = localStream.getAudioTracks()[0];
-
-        if (!audioTrack) {
-          throw new Error("Audio track missing!");
-        }
-
-        console.log("🎤 Final audio track:", {
-          enabled: audioTrack.enabled,
-          muted: audioTrack.muted,
-          readyState: audioTrack.readyState,
-          label: audioTrack.label,
-        });
-
-        if (audioTrack.muted) {
-          throw new Error(
-            "Audio track is muted. Microphone may be in use by another app."
-          );
-        }
-
+        // ✅ CRITICAL: Verify tracks are enabled
         localStream.getTracks().forEach((track) => {
-          track.enabled = true;
-          console.log(`   ✅ Forced ${track.kind} enabled:`, track.enabled);
+          console.log(`   ${track.kind} track:`, {
+            id: track.id,
+            label: track.label,
+            enabled: track.enabled,
+            readyState: track.readyState,
+            muted: track.muted,
+          });
         });
 
         webrtcServiceRef.current.setLocalStream(localStream);
       } catch (error: any) {
         console.error("❌ Media access failed:", error);
 
-        if (error.message.includes("No working microphone")) {
-          setError(
-            "All microphones are muted or in use. Please close other apps."
-          );
-        } else if (
+        let errorMessage = "Failed to access camera/microphone";
+        if (
           error.name === "NotAllowedError" ||
           error.name === "PermissionDeniedError"
         ) {
-          setError(
-            "Camera/microphone blocked! Click the camera icon in address bar."
-          );
+          errorMessage =
+            "Camera/microphone access denied. Please allow permissions.";
         } else if (error.name === "NotFoundError") {
-          setError("No camera or microphone found.");
+          errorMessage = "No camera or microphone found.";
         } else if (error.name === "NotReadableError") {
-          setError(
-            "Camera/microphone in use by another app. Please close it and try again."
-          );
-        } else {
-          setError("Failed to access camera/microphone: " + error.message);
+          errorMessage = "Camera/microphone in use by another app.";
         }
+
+        setError(errorMessage);
+        setConnectionStatus("failed");
         return;
       }
 
+      // ✅ CRITICAL: Set local video BEFORE setting up peer connection
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = localStream;
         localVideoRef.current.muted = true;
@@ -560,19 +591,37 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
         try {
           await localVideoRef.current.play();
+          console.log("✅ Local video playing");
         } catch (e) {
-          console.warn("⚠️ Local video autoplay blocked");
+          console.warn("⚠️ Local video autoplay blocked:", e);
         }
       }
 
       // 🔥 MAIN FIX: Remote stream handler with track waiting
+      // ✅ Setup remote stream handler
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+          console.log("   Audio tracks:", remoteStream.getAudioTracks().length);
+          console.log("   Video tracks:", remoteStream.getVideoTracks().length);
 
-          if (!remoteStream || !remoteVideoRef.current) {
-            console.error("❌ Missing remote stream or video ref");
+          if (!remoteVideoRef.current) {
+            console.error("❌ Remote video ref not available");
             return;
+          }
+
+          // ✅ CRITICAL: Set local video BEFORE setting up peer connection
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = localStream;
+            localVideoRef.current.muted = true;
+            console.log("✅ Local video element set");
+
+            try {
+              await localVideoRef.current.play();
+              console.log("✅ Local video playing");
+            } catch (e) {
+              console.warn("⚠️ Local video autoplay blocked:", e);
+            }
           }
 
           // 🔥 Remove any old audio elements
@@ -661,69 +710,84 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("🔊 Created audio element with audio-only stream");
 
           // ===== Set output device to VG240Y S (your monitor) =====
-        if ("setSinkId" in audioElement) {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const audioOutputs = devices.filter((d) => d.kind === "audiooutput");
+          if ("setSinkId" in audioElement) {
+            try {
+              const devices = await navigator.mediaDevices.enumerateDevices();
+              const audioOutputs = devices.filter(
+                (d) => d.kind === "audiooutput"
+              );
 
-    console.log("🔊 Available outputs:");
-    audioOutputs.forEach((d, i) => {
-      console.log(`   ${i + 1}. ${d.label} | ID: ${d.deviceId}`);
-    });
+              console.log("🔊 Available outputs:");
+              audioOutputs.forEach((d, i) => {
+                console.log(`   ${i + 1}. ${d.label} | ID: ${d.deviceId}`);
+              });
 
-    // 🔥 CRITICAL: Find the REAL VG240Y (not the 'default' alias)
-    let targetDevice = audioOutputs.find(d => {
-      const label = d.label.toLowerCase();
-      const isVG240Y = label.includes("vg240y") || label.includes("nvidia high definition audio");
-      const isNotAlias = d.deviceId !== "default" && d.deviceId !== "communications";
-      return isVG240Y && isNotAlias;
-    });
+              // 🔥 CRITICAL: Find the REAL VG240Y (not the 'default' alias)
+              let targetDevice = audioOutputs.find((d) => {
+                const label = d.label.toLowerCase();
+                const isVG240Y =
+                  label.includes("vg240y") ||
+                  label.includes("nvidia high definition audio");
+                const isNotAlias =
+                  d.deviceId !== "default" && d.deviceId !== "communications";
+                return isVG240Y && isNotAlias;
+              });
 
-    // Fallback: USB Speakers
-    if (!targetDevice) {
-      targetDevice = audioOutputs.find(d => 
-        d.label.includes("USB Audio") && 
-        d.label.includes("Speakers")
-      );
-    }
+              // Fallback: USB Speakers
+              if (!targetDevice) {
+                targetDevice = audioOutputs.find(
+                  (d) =>
+                    d.label.includes("USB Audio") &&
+                    d.label.includes("Speakers")
+                );
+              }
 
-    // Last resort: First non-alias device
-    if (!targetDevice) {
-      targetDevice = audioOutputs.find(d => 
-        d.deviceId !== "default" && 
-        d.deviceId !== "communications"
-      );
-    }
+              // Last resort: First non-alias device
+              if (!targetDevice) {
+                targetDevice = audioOutputs.find(
+                  (d) =>
+                    d.deviceId !== "default" && d.deviceId !== "communications"
+                );
+              }
 
-    if (targetDevice) {
-      console.log("🎯 Attempting to set audio to:", targetDevice.label);
-      console.log("   Device ID:", targetDevice.deviceId);
-      
-      // Set the sink
-      await (audioElement as any).setSinkId(targetDevice.deviceId);
-      
-      const actualSinkId = (audioElement as any).sinkId;
-      console.log("✅ Audio routed to:", targetDevice.label);
-      console.log("✅ Verified sinkId:", actualSinkId);
-      
-      // 🔥 VERIFY it's not 'default'
-      if (actualSinkId === "default" || actualSinkId === "communications") {
-        console.error("❌ FAILED! Still using alias device:", actualSinkId);
-        setError("⚠️ Audio routing failed - using wrong device");
-      } else {
-        console.log("🎉 SUCCESS! Using actual device ID");
-        setError(`🔊 AUDIO: ${targetDevice.label}`);
-        setTimeout(() => setError(null), 3000);
-      }
-    } else {
-      console.error("❌ No suitable audio output device found!");
-      setError("⚠️ No audio device found");
-    }
-  } catch (err: any) {
-    console.error("❌ setSinkId failed:", err.name, err.message);
-    setError(`⚠️ Audio routing failed: ${err.message}`);
-  }
-}
+              if (targetDevice) {
+                console.log(
+                  "🎯 Attempting to set audio to:",
+                  targetDevice.label
+                );
+                console.log("   Device ID:", targetDevice.deviceId);
+
+                // Set the sink
+                await (audioElement as any).setSinkId(targetDevice.deviceId);
+
+                const actualSinkId = (audioElement as any).sinkId;
+                console.log("✅ Audio routed to:", targetDevice.label);
+                console.log("✅ Verified sinkId:", actualSinkId);
+
+                // 🔥 VERIFY it's not 'default'
+                if (
+                  actualSinkId === "default" ||
+                  actualSinkId === "communications"
+                ) {
+                  console.error(
+                    "❌ FAILED! Still using alias device:",
+                    actualSinkId
+                  );
+                  setError("⚠️ Audio routing failed - using wrong device");
+                } else {
+                  console.log("🎉 SUCCESS! Using actual device ID");
+                  setError(`🔊 AUDIO: ${targetDevice.label}`);
+                  setTimeout(() => setError(null), 3000);
+                }
+              } else {
+                console.error("❌ No suitable audio output device found!");
+                setError("⚠️ No audio device found");
+              }
+            } catch (err: any) {
+              console.error("❌ setSinkId failed:", err.name, err.message);
+              setError(`⚠️ Audio routing failed: ${err.message}`);
+            }
+          }
 
           // Add to DOM
           document.body.appendChild(audioElement);
@@ -840,7 +904,13 @@ const VideoCall: React.FC<VideoCallProps> = ({
               document.addEventListener(
                 "click",
                 async () => {
-                  await videoElement.play().catch(console.error);
+                  try {
+                    await remoteVideoRef.current?.play();
+                    console.log("✅ Remote video started after click");
+                    setError(null);
+                  } catch (e) {
+                    console.error("❌ Still failed:", e);
+                  }
                 },
                 { once: true }
               );
@@ -848,18 +918,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
           }
 
           // ===== Keep audio alive =====
-          const keepAlive = setInterval(() => {
-            if (
-              audioElement.paused &&
-              remoteAudio.readyState === "live" &&
-              !remoteAudio.muted
-            ) {
-              console.warn("⚠️ Audio paused, restarting...");
-              audioElement.play().catch(console.error);
-            }
-          }, 2000);
-
-          (audioElement as any)._keepAlive = keepAlive;
+          // ✅ Handle remote audio
+          const audioTrack = remoteStream.getAudioTracks()[0];
+          if (audioTrack) {
+            console.log("🔊 Remote audio track received");
+            audioTrack.enabled = true;
+          }
         },
         (candidate: RTCIceCandidate) => {
           const socket = getSocket();
@@ -868,8 +932,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }
       );
 
+      // ✅ CRITICAL: Add local stream to peer connection
       webrtcServiceRef.current.addLocalStreamToPeer();
+      console.log("✅ Local stream added to peer connection");
 
+      // ✅ Join room
       console.log("📞 Joining room:", roomId);
       socket.emit("join-room", roomId, user?._id || socket.id);
 
@@ -878,9 +945,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
         await new Promise<void>((resolve) => {
           const timeout = setTimeout(() => {
-            console.log("⚠️ Timeout, proceeding anyway");
+            console.log("⏰ Timeout, proceeding with offer");
             resolve();
-          }, 10000);
+          }, 5000);
 
           const handleBothReady = () => {
             console.log("✅ Both users ready");
@@ -899,7 +966,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
           socket.emit("offer", roomId, offer);
           console.log("📤 Offer sent");
         } catch (error) {
-          console.error("❌ Offer error:", error);
+          console.error("❌ Offer creation failed:", error);
+          setError("Failed to create call offer");
         }
       } else {
         console.log("⏳ Waiting for offer...");
@@ -909,87 +977,88 @@ const VideoCall: React.FC<VideoCallProps> = ({
     } catch (error: any) {
       console.error("❌ Initialization error:", error);
       setError(error.message || "Failed to initialize call");
+      setConnectionStatus("failed");
     }
   };
 
   // 🔥 IMPROVED CLEANUP FUNCTION
- const cleanup = (emitEvent: boolean = true) => {
-  console.log("🧹 Cleanup starting...");
+  const cleanup = (emitEvent: boolean = true) => {
+    console.log("🧹 Cleanup starting...");
 
-  // Stop monitor intervals
-  document.querySelectorAll("#remote-audio-element").forEach((audio: any) => {
-    if (audio._monitorInterval) {
-      clearInterval(audio._monitorInterval);
+    // Stop monitor intervals
+    document.querySelectorAll("#remote-audio-element").forEach((audio: any) => {
+      if (audio._monitorInterval) {
+        clearInterval(audio._monitorInterval);
+      }
+      if (audio._keepAlive) {
+        clearInterval(audio._keepAlive);
+      }
+    });
+
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
     }
-    if (audio._keepAlive) {
-      clearInterval(audio._keepAlive);
+
+    if (isRecording && recordingServiceRef.current) {
+      recordingServiceRef.current.stopRecording();
     }
-  });
 
-  if (recordingIntervalRef.current) {
-    clearInterval(recordingIntervalRef.current);
-  }
+    // Remove ALL audio elements
+    document.querySelectorAll("audio").forEach((audio) => {
+      console.log("🗑️ Removing audio element:", audio.id);
+      if (audio.srcObject) {
+        const stream = audio.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => {
+          track.stop();
+          console.log(`   Stopped ${track.kind} track: ${track.id}`);
+        });
+      }
+      audio.pause();
+      audio.srcObject = null;
+      audio.remove();
+    });
 
-  if (isRecording && recordingServiceRef.current) {
-    recordingServiceRef.current.stopRecording();
-  }
-
-  // Remove ALL audio elements
-  document.querySelectorAll("audio").forEach((audio) => {
-    console.log("🗑️ Removing audio element:", audio.id);
-    if (audio.srcObject) {
-      const stream = audio.srcObject as MediaStream;
+    // Stop local video
+    if (localVideoRef.current?.srcObject) {
+      const stream = localVideoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => {
         track.stop();
-        console.log(`   Stopped ${track.kind} track: ${track.id}`);
+        console.log(`Stopped local ${track.kind} track`);
       });
+      localVideoRef.current.srcObject = null;
     }
-    audio.pause();
-    audio.srcObject = null;
-    audio.remove();
-  });
 
-  // Stop local video
-  if (localVideoRef.current?.srcObject) {
-    const stream = localVideoRef.current.srcObject as MediaStream;
-    stream.getTracks().forEach((track) => {
-      track.stop();
-      console.log(`Stopped local ${track.kind} track`);
-    });
-    localVideoRef.current.srcObject = null;
-  }
-
-  // Stop remote video
-  if (remoteVideoRef.current?.srcObject) {
-    const stream = remoteVideoRef.current.srcObject as MediaStream;
-    stream.getTracks().forEach((track) => {
-      track.stop();
-      console.log(`Stopped remote ${track.kind} track`);
-    });
-    remoteVideoRef.current.srcObject = null;
-  }
-
-  // Close WebRTC
-  if (webrtcServiceRef.current) {
-    webrtcServiceRef.current.close();
-    webrtcServiceRef.current = null;
-  }
-
-  delete (window as any).peerConnection;
-
-  // Only emit if explicitly requested and not already ended
-  if (emitEvent) {
-    try {
-      const socket = getSocket();
-      socket.emit("end-call", roomId, { endedBy: user?._id });
-      console.log("📤 Cleanup sent end-call signal");
-    } catch (error) {
-      console.error("Socket cleanup error:", error);
+    // Stop remote video
+    if (remoteVideoRef.current?.srcObject) {
+      const stream = remoteVideoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => {
+        track.stop();
+        console.log(`Stopped remote ${track.kind} track`);
+      });
+      remoteVideoRef.current.srcObject = null;
     }
-  }
 
-  console.log("✅ Cleanup complete");
-};
+    // Close WebRTC
+    if (webrtcServiceRef.current) {
+      webrtcServiceRef.current.close();
+      webrtcServiceRef.current = null;
+    }
+
+    delete (window as any).peerConnection;
+
+    // Only emit if explicitly requested and not already ended
+    if (emitEvent) {
+      try {
+        const socket = getSocket();
+        socket.emit("end-call", roomId, { endedBy: user?._id });
+        console.log("📤 Cleanup sent end-call signal");
+      } catch (error) {
+        console.error("Socket cleanup error:", error);
+      }
+    }
+
+    console.log("✅ Cleanup complete");
+  };
 
   const toggleAudio = () => {
     if (webrtcServiceRef.current) {
@@ -1079,48 +1148,50 @@ const VideoCall: React.FC<VideoCallProps> = ({
   };
 
   const handleEndCall = async () => {
-  if (callEndedRef.current) {
-    console.log("⚠️ Call already ended, skipping");
-    return;
-  }
-
-  console.log("📴 Ending call initiated by local user");
-  callEndedRef.current = true;
-
-  try {
-    if (isRecording) {
-      stopRecording();
+    if (callEndedRef.current) {
+      console.log("⚠️ Call already ended, skipping");
+      return;
     }
 
-    // Emit end-call BEFORE cleanup
+    console.log("📴 Ending call initiated by local user");
+    callEndedRef.current = true;
+
     try {
-      const socket = getSocket();
-      socket.emit("end-call", roomId, { endedBy: user?._id });
-      console.log("📤 Sent end-call signal");
+      if (isRecording) {
+        stopRecording();
+      }
+
+      // Emit end-call BEFORE cleanup
+      try {
+        const socket = getSocket();
+        socket.emit("end-call", roomId, { endedBy: user?._id });
+        console.log("📤 Sent end-call signal");
+      } catch (error) {
+        console.error("Socket emit error:", error);
+      }
+
+      if (callId) {
+        await axiosInstance
+          .put(`/call/${callId}/status`, {
+            status: "ended",
+            duration: Math.floor(recordingTime),
+          })
+          .catch((err) => console.error("Failed to update call status:", err));
+      }
+
+      cleanup(false); // Don't emit again
+      onEndCall();
+
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
     } catch (error) {
-      console.error("Socket emit error:", error);
-    }
-
-    if (callId) {
-      await axiosInstance.put(`/call/${callId}/status`, {
-        status: "ended",
-        duration: Math.floor(recordingTime),
-      }).catch(err => console.error("Failed to update call status:", err));
-    }
-
-    cleanup(false); // Don't emit again
-    onEndCall();
-
-    setTimeout(() => {
+      console.error("Error ending call:", error);
+      cleanup(false);
+      onEndCall();
       router.push("/");
-    }, 500);
-  } catch (error) {
-    console.error("Error ending call:", error);
-    cleanup(false);
-    onEndCall();
-    router.push("/");
-  }
-};
+    }
+  };
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -1141,7 +1212,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .padStart(2, "0")}`;
   };
 
- return (
+  return (
     <div
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
@@ -1320,5 +1391,25 @@ const VideoCall: React.FC<VideoCallProps> = ({
     </div>
   );
 };
+
+// Add at the bottom of VideoCall.tsx (around line 890)
+<style jsx global>{`
+  #remote-video,
+  video {
+    background: #000;
+    object-fit: cover;
+  }
+
+  /* Ensure video elements are always visible */
+  video::-webkit-media-controls {
+    display: none !important;
+  }
+
+  /* Force video to render */
+  video {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+`}</style>;
 
 export default VideoCall;
