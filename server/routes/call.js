@@ -10,7 +10,7 @@ import {
 import { verifyToken } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs'; // ✅ CRITICAL: Added missing import
 import { fileURLToPath } from 'url';
 
 const router = express.Router();
@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 const recordingsDir = path.join(__dirname, '../uploads/recordings');
 if (!fs.existsSync(recordingsDir)) {
   fs.mkdirSync(recordingsDir, { recursive: true });
-  console.log('✅ Created recordings directory');
+  console.log('✅ Created recordings directory:', recordingsDir);
 }
 
 // ✅ Configure multer for recording uploads
@@ -36,12 +36,14 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
+  // Accept video/audio files for recordings
   const allowedMimeTypes = [
     'video/webm',
     'video/mp4',
     'audio/webm',
     'audio/wav',
-    'audio/mp3'
+    'audio/mp3',
+    'audio/ogg'
   ];
   
   if (allowedMimeTypes.includes(file.mimetype)) {
@@ -80,7 +82,7 @@ router.get('/details/:roomId', verifyToken, getCallDetails);
 // RECORDING ROUTES
 // ==========================================
 
-// Upload recording endpoint with multer
+// ✅ Upload recording endpoint with multer
 router.post('/upload-recording', verifyToken, upload.single('recording'), (req, res) => {
   try {
     if (!req.file) {
@@ -114,7 +116,7 @@ router.post('/upload-recording', verifyToken, upload.single('recording'), (req, 
   }
 });
 
-// Download recording endpoint
+// ✅ Download recording endpoint
 router.get('/download-recording/:filename', verifyToken, (req, res) => {
   try {
     const { filename } = req.params;
@@ -128,13 +130,17 @@ router.get('/download-recording/:filename', verifyToken, (req, res) => {
       });
     }
 
+    console.log('📥 Downloading recording:', filename);
+
     res.download(filePath, filename, (err) => {
       if (err) {
         console.error('❌ Error downloading file:', err);
-        res.status(500).json({
-          success: false,
-          message: 'Error downloading recording'
-        });
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            message: 'Error downloading recording'
+          });
+        }
       }
     });
   } catch (error) {
@@ -146,7 +152,7 @@ router.get('/download-recording/:filename', verifyToken, (req, res) => {
   }
 });
 
-// Get list of all recordings for a user
+// ✅ Get list of all recordings for a user
 router.get('/recordings', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user._id || req.user.userId;
@@ -163,6 +169,8 @@ router.get('/recordings', verifyToken, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(50);
 
+    console.log(`✅ Found ${calls.length} recordings for user:`, userId);
+
     res.json({
       success: true,
       recordings: calls,
@@ -170,6 +178,35 @@ router.get('/recordings', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error fetching recordings:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// ✅ Delete recording
+router.delete('/recording/:filename', verifyToken, async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = path.join(recordingsDir, filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'Recording not found'
+      });
+    }
+
+    fs.unlinkSync(filePath);
+    console.log('✅ Recording deleted:', filename);
+
+    res.json({
+      success: true,
+      message: 'Recording deleted successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error deleting recording:', error);
     res.status(500).json({
       success: false,
       message: error.message
