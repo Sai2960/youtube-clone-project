@@ -261,7 +261,7 @@ export class WebRTCService {
   ): void {
     if (!this.peerConnection) return;
 
-   this.peerConnection.ontrack = (event) => {
+ this.peerConnection.ontrack = (event) => {
   console.log('📥 Remote track received:', event.track.kind);
   console.log('   Track ID:', event.track.id);
   console.log('   Enabled:', event.track.enabled);
