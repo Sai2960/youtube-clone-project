@@ -1058,8 +1058,8 @@ export default function GestureVideoPlayer({
                               onClick={(e) => e.stopPropagation()}
                               className="h-24 accent-red-600 cursor-pointer"
                               style={{
-                                writingMode: "vertical-lr",
-                                WebkitAppearance: "slider-vertical",
+                                writingMode: "vertical-lr" as any,
+                                WebkitAppearance: "slider-vertical" as any,
                                 width: "8px",
                                 transform: "rotate(180deg)",
                               }}
@@ -1113,7 +1113,6 @@ export default function GestureVideoPlayer({
                         />
                       </Button>
 
-                      {/* ✅ ENHANCED QUALITY MENU */}
                       <div className="relative">
                         <Button
                           variant="ghost"
@@ -1130,62 +1129,27 @@ export default function GestureVideoPlayer({
                             }`}
                           />
                         </Button>
-
                         {showQualityMenu && (
-                          <>
-                            {/* Backdrop */}
-                            <div
-                              className="fixed inset-0 z-40"
-                              onClick={() => setShowQualityMenu(false)}
-                            />
-
-                            {/* Quality Menu */}
-                            <div className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden min-w-40 z-50">
-                              <div className="px-3 py-2 border-b border-white/10">
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                                  Quality
-                                </p>
-                              </div>
-
-                              {availableQualities.map((q) => (
+                          <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-sm rounded-lg p-2 min-w-32">
+                            {(["auto", "1080p", "720p", "480p"] as const).map(
+                              (q) => (
                                 <button
                                   key={q}
-                                  className={`w-full text-left px-4 py-3 text-sm transition-all flex items-center justify-between ${
-                                    quality === q
-                                      ? "bg-red-600 text-white font-semibold"
-                                      : "text-white hover:bg-white/10"
+                                  className={`w-full text-left px-3 py-2 text-sm text-white hover:bg-white/20 rounded ${
+                                    quality === q ? "bg-white/10" : ""
                                   }`}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleQualityChange(q);
+                                    setQuality(q);
+                                    setShowQualityMenu(false);
                                   }}
                                 >
-                                  <span>
-                                    {q === "auto" ? "Auto (recommended)" : q}
-                                  </span>
-                                  {quality === q && (
-                                    <svg
-                                      className="w-4 h-4"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                  )}
+                                  {q === "auto" ? "Auto" : q}
+                                  {quality === q && " ✓"}
                                 </button>
-                              ))}
-
-                              <div className="px-4 py-2 bg-black/50 border-t border-white/10">
-                                <p className="text-xs text-gray-400">
-                                  Higher quality uses more data
-                                </p>
-                              </div>
-                            </div>
-                          </>
+                              )
+                            )}
+                          </div>
                         )}
                       </div>
 
