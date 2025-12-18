@@ -32,62 +32,45 @@ interface VideoCallProps {
 // 🔥 COMPLETE FIX FOR MUTED TRACKS
 // Replace the ensureAudioNotMuted function (around line 40-85)
 
+// 🔥 REPLACE Lines 40-85 in VideoCall.tsx
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
-  console.log("🔧 Getting media devices with AGGRESSIVE unmuting...");
+  console.log("🔧 Getting media with Windows audio fix...");
 
   try {
     // Step 1: Request permissions FIRST
-    console.log("📋 Step 1: Requesting permissions...");
-    const permissionStream = await navigator.mediaDevices.getUserMedia({
+    const permStream = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: true,
     });
-
-    // Close immediately - we just needed permissions
-    permissionStream.getTracks().forEach((t) => t.stop());
+    permStream.getTracks().forEach((t) => t.stop());
     console.log("✅ Permissions granted");
 
-    // Step 2: Enumerate devices (labels now visible)
-    await new Promise((resolve) => setTimeout(resolve, 200)); // Small delay
+    // Step 2: Wait for device enumeration
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter((d) => d.kind === "audioinput");
 
-    console.log(`🎤 Found ${audioInputs.length} microphones:`);
-    audioInputs.forEach((d, i) => {
-      console.log(
-        `   ${i + 1}. ${d.label} [${d.deviceId.substring(0, 20)}...]`
-      );
-    });
+    console.log(`🎤 Found ${audioInputs.length} microphones`);
 
-    // Step 3: Try devices in order
-    const devicesToTry = audioInputs.filter(
-      (d) =>
-        d.deviceId !== "default" &&
-        d.deviceId !== "communications" &&
-        !d.label.toLowerCase().includes("monitor")
+    // Step 3: Try USB microphone FIRST (your "USB Audio and HID")
+    const usbMic = audioInputs.find((d) => 
+      d.label.toLowerCase().includes("usb") && 
+      !d.label.toLowerCase().includes("monitor")
     );
 
-    // Add default as fallback
-    const defaultDevice = audioInputs.find((d) => d.deviceId === "default");
-    if (defaultDevice) {
-      devicesToTry.push(defaultDevice);
-    }
-
-    for (let i = 0; i < devicesToTry.length; i++) {
-      const device = devicesToTry[i];
-      if (!device) continue;
-
-      console.log(
-        `🔍 Attempt ${i + 1}/${devicesToTry.length}: ${device.label}`
-      );
-
+    if (usbMic) {
+      console.log(`🎯 Trying USB mic: ${usbMic.label}`);
+      
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            deviceId: { exact: device.deviceId },
+            deviceId: { exact: usbMic.deviceId },
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
+            sampleRate: 48000, // Higher sample rate
+            channelCount: 1,
           },
           video: {
             width: { ideal: 1280 },
@@ -95,55 +78,61 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
           },
         });
 
+        // Wait for track initialization
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         const audioTrack = stream.getAudioTracks()[0];
-        const videoTrack = stream.getVideoTracks()[0];
-
-        // Wait for track to initialize
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        console.log(
-          `   Audio: enabled=${audioTrack.enabled}, muted=${audioTrack.muted}, state=${audioTrack.readyState}`
-        );
-        console.log(
-          `   Video: enabled=${videoTrack.enabled}, state=${videoTrack.readyState}`
-        );
-
-        // Force enable
+        
+        // Force enable and verify
         audioTrack.enabled = true;
-        videoTrack.enabled = true;
-
-        // Verify audio is working
-        if (audioTrack.muted || audioTrack.readyState !== "live") {
-          console.warn(`   ❌ Track not ready, trying next...`);
-          stream.getTracks().forEach((t) => t.stop());
-          continue;
+        
+        if (audioTrack.readyState === "live" && !audioTrack.muted) {
+          console.log(`✅ SUCCESS! Using ${usbMic.label}`);
+          return stream;
         }
 
-        console.log(`   ✅ SUCCESS! Using ${device.label}`);
-        return stream;
-      } catch (err: any) {
-        console.warn(`   ⚠️ Failed: ${err.name}`);
-        continue;
+        console.warn("USB mic not ready, trying next...");
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (err) {
+        console.warn(`USB mic failed: ${err.message}`);
       }
     }
 
-    throw new Error("No working microphone found");
+    // Step 4: Fallback to default
+    console.log("📌 Trying default microphone...");
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 48000,
+      },
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const audioTrack = stream.getAudioTracks()[0];
+    audioTrack.enabled = true;
+
+    if (audioTrack.readyState === "live" && !audioTrack.muted) {
+      console.log("✅ Default mic working");
+      return stream;
+    }
+
+    throw new Error("All microphones failed");
   } catch (err: any) {
     console.error("❌ Media access failed:", err);
-
+    
     if (err.name === "NotAllowedError") {
-      throw new Error(
-        "🚫 Permission denied! Click the 🔒 icon in address bar → Allow camera/mic"
-      );
-    } else if (err.name === "NotFoundError") {
-      throw new Error("❌ No camera/microphone detected");
+      throw new Error("🚫 Camera/mic blocked! Click 🔒 in address bar → Allow");
     } else if (err.name === "NotReadableError") {
-      throw new Error(
-        "⚠️ Camera/mic in use by another app. Close other apps and refresh."
-      );
-    } else {
-      throw err;
+      throw new Error("⚠️ Microphone in use. Close Zoom/Teams/Discord and refresh.");
     }
+    
+    throw err;
   }
 };
 // 🔥 NEW: Verify audio track is actually producing sound
