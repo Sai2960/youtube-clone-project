@@ -340,30 +340,55 @@ const VideoCall: React.FC<VideoCallProps> = ({
     };
   }, [roomId, webrtcServiceRef.current]);
 
-  useEffect(() => {
-    if (initializingRef.current || initializedRef.current) {
-      console.log("⚠️ Skipping duplicate initialization");
-      return;
-    }
+// REPLACE THIS ENTIRE useEffect (around line 270-290)
+// This is the one that calls initializeCall()
 
-    initializingRef.current = true;
+useEffect(() => {
+  console.log("🔄 Initialization useEffect triggered");
+  console.log("   initializingRef:", initializingRef.current);
+  console.log("   initializedRef:", initializedRef.current);
+  console.log("   roomId:", roomId);
 
-    const init = async () => {
+  // 🔥 FIX: Only skip if CURRENTLY initializing (not if already initialized)
+  if (initializingRef.current) {
+    console.log("⚠️ Already initializing, skipping duplicate");
+    return;
+  }
+
+  // 🔥 FIX: Reset initialization on roomId change
+  if (initializedRef.current) {
+    console.log("⚠️ Already initialized for this room, skipping");
+    return;
+  }
+
+  initializingRef.current = true;
+  console.log("✅ Starting initialization...");
+
+  const init = async () => {
+    try {
       await initializeCall();
       initializedRef.current = true;
+      console.log("✅ Initialization complete");
+    } catch (error) {
+      console.error("❌ Initialization failed:", error);
+      setError("Failed to initialize call: " + error.message);
+    } finally {
       initializingRef.current = false;
-    };
+    }
+  };
 
-    init();
+  init();
 
-    return () => {
-      if (initializedRef.current && !callEndedRef.current) {
-        cleanup(false);
-      }
-      initializedRef.current = false;
-      initializingRef.current = false;
-    };
-  }, [roomId]);
+  return () => {
+    console.log("🧹 Cleanup on unmount");
+    if (initializedRef.current && !callEndedRef.current) {
+      cleanup(false);
+    }
+    // Reset refs for potential remount
+    initializedRef.current = false;
+    initializingRef.current = false;
+  };
+}, [roomId]); // 🔥 CRITICAL: Depend on roomId to re-init if room changes
 
   const initializeCall = async () => {
     try {
