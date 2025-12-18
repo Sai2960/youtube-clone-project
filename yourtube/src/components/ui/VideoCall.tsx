@@ -584,11 +584,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
 
       // ✅ CRITICAL: Set local video BEFORE setting up peer connection
-      if (localVideoRef.current) {
+     // ✅ Set local video once
+      if (localVideoRef.current && localStream) {
         localVideoRef.current.srcObject = localStream;
         localVideoRef.current.muted = true;
-        console.log("✅ Local video element set");
-
+        localVideoRef.current.playsInline = true;
+        
         try {
           await localVideoRef.current.play();
           console.log("✅ Local video playing");
@@ -596,32 +597,20 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.warn("⚠️ Local video autoplay blocked:", e);
         }
       }
-
       // 🔥 MAIN FIX: Remote stream handler with track waiting
       // ✅ Setup remote stream handler
-      webrtcServiceRef.current.setupEventListeners(
+   webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
           console.log("   Audio tracks:", remoteStream.getAudioTracks().length);
           console.log("   Video tracks:", remoteStream.getVideoTracks().length);
 
+          // Wait for video element to be ready
+          await new Promise(resolve => setTimeout(resolve, 100));
+
           if (!remoteVideoRef.current) {
             console.error("❌ Remote video ref not available");
             return;
-          }
-
-          // ✅ CRITICAL: Set local video BEFORE setting up peer connection
-          if (localVideoRef.current) {
-            localVideoRef.current.srcObject = localStream;
-            localVideoRef.current.muted = true;
-            console.log("✅ Local video element set");
-
-            try {
-              await localVideoRef.current.play();
-              console.log("✅ Local video playing");
-            } catch (e) {
-              console.warn("⚠️ Local video autoplay blocked:", e);
-            }
           }
 
           // 🔥 Remove any old audio elements
@@ -689,130 +678,87 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
           // ===== VIDEO ELEMENT (muted, for video only) =====
           const videoElement = remoteVideoRef.current;
+          
+          // Clear any existing stream
+          if (videoElement.srcObject) {
+            const oldStream = videoElement.srcObject as MediaStream;
+            oldStream.getTracks().forEach(t => t.stop());
+          }
+          
           videoElement.srcObject = remoteStream;
           videoElement.autoplay = true;
           videoElement.playsInline = true;
-          videoElement.muted = true; // Video element is MUTED
-          videoElement.volume = 0;
+          videoElement.muted = false; // NOT muted - will handle audio
+          videoElement.volume = 1.0;
+          
+          console.log("✅ Remote video element configured");
 
-          // ===== AUDIO ELEMENT (unmuted, for audio only) =====
-          const audioElement = document.createElement("audio");
-          audioElement.id = "remote-audio-element";
-          audioElement.autoplay = true;
-          audioElement.muted = false;
-          audioElement.volume = 1.0;
-          audioElement.style.display = "none";
 
-          // 🔥 CRITICAL: Create NEW MediaStream with ONLY audio track
-          const audioOnlyStream = new MediaStream([remoteAudio]);
-          audioElement.srcObject = audioOnlyStream;
-
-          console.log("🔊 Created audio element with audio-only stream");
-
-          // ===== Set output device to VG240Y S (your monitor) =====
-          if ("setSinkId" in audioElement) {
+          // ===== AUDIO ROUTING =====
+          // Use setSinkId on the VIDEO element instead of creating separate audio element
+          if ("setSinkId" in videoElement) {
             try {
               const devices = await navigator.mediaDevices.enumerateDevices();
-              const audioOutputs = devices.filter(
-                (d) => d.kind === "audiooutput"
-              );
+              const audioOutputs = devices.filter(d => d.kind === "audiooutput");
 
-              console.log("🔊 Available outputs:");
-              audioOutputs.forEach((d, i) => {
-                console.log(`   ${i + 1}. ${d.label} | ID: ${d.deviceId}`);
-              });
+              console.log("🔊 Available outputs:", audioOutputs.map(d => d.label));
 
-              // 🔥 CRITICAL: Find the REAL VG240Y (not the 'default' alias)
-              let targetDevice = audioOutputs.find((d) => {
+              // Find the real VG240Y device
+              let targetDevice = audioOutputs.find(d => {
                 const label = d.label.toLowerCase();
-                const isVG240Y =
-                  label.includes("vg240y") ||
-                  label.includes("nvidia high definition audio");
-                const isNotAlias =
-                  d.deviceId !== "default" && d.deviceId !== "communications";
-                return isVG240Y && isNotAlias;
+                return (label.includes("vg240y") || label.includes("nvidia high definition audio")) 
+                       && d.deviceId !== "default" && d.deviceId !== "communications";
               });
 
-              // Fallback: USB Speakers
+              // Fallback to USB Speakers
               if (!targetDevice) {
-                targetDevice = audioOutputs.find(
-                  (d) =>
-                    d.label.includes("USB Audio") &&
-                    d.label.includes("Speakers")
+                targetDevice = audioOutputs.find(d => 
+                  d.label.includes("USB Audio") && d.label.includes("Speakers")
                 );
               }
 
-              // Last resort: First non-alias device
+              // Last resort: first non-default device
               if (!targetDevice) {
-                targetDevice = audioOutputs.find(
-                  (d) =>
-                    d.deviceId !== "default" && d.deviceId !== "communications"
+                targetDevice = audioOutputs.find(d => 
+                  d.deviceId !== "default" && d.deviceId !== "communications"
                 );
               }
 
               if (targetDevice) {
-                console.log(
-                  "🎯 Attempting to set audio to:",
-                  targetDevice.label
-                );
-                console.log("   Device ID:", targetDevice.deviceId);
-
-                // Set the sink
-                await (audioElement as any).setSinkId(targetDevice.deviceId);
-
-                const actualSinkId = (audioElement as any).sinkId;
-                console.log("✅ Audio routed to:", targetDevice.label);
-                console.log("✅ Verified sinkId:", actualSinkId);
-
-                // 🔥 VERIFY it's not 'default'
-                if (
-                  actualSinkId === "default" ||
-                  actualSinkId === "communications"
-                ) {
-                  console.error(
-                    "❌ FAILED! Still using alias device:",
-                    actualSinkId
-                  );
-                  setError("⚠️ Audio routing failed - using wrong device");
-                } else {
-                  console.log("🎉 SUCCESS! Using actual device ID");
-                  setError(`🔊 AUDIO: ${targetDevice.label}`);
+                console.log("🎯 Setting output to:", targetDevice.label);
+                await (videoElement as any).setSinkId(targetDevice.deviceId);
+                
+                const actualSinkId = (videoElement as any).sinkId;
+                console.log("✅ Audio output set:", actualSinkId);
+                
+                if (actualSinkId === targetDevice.deviceId) {
+                  setError(`🔊 Audio: ${targetDevice.label}`);
                   setTimeout(() => setError(null), 3000);
                 }
-              } else {
-                console.error("❌ No suitable audio output device found!");
-                setError("⚠️ No audio device found");
               }
             } catch (err: any) {
-              console.error("❌ setSinkId failed:", err.name, err.message);
+              console.error("❌ setSinkId failed:", err);
               setError(`⚠️ Audio routing failed: ${err.message}`);
             }
           }
 
-          // Add to DOM
-          document.body.appendChild(audioElement);
-          console.log("✅ Audio element added to DOM");
-
           // ===== FORCE PLAY WITH RETRIES =====
-          const playAudio = async (attempt: number = 1): Promise<void> => {
+        // ===== PLAY VIDEO WITH AUDIO =====
+          const playVideoWithRetries = async (attempt: number = 1): Promise<void> => {
             if (attempt > 10) {
-              console.error("❌ Failed to play audio after 10 attempts");
-              setError("⚠️ Click anywhere to enable audio");
+              console.error("❌ Failed to play after 10 attempts");
+              setError("⚠️ Click anywhere to enable video/audio");
               return;
             }
 
             try {
               const delay = 100 * attempt;
-              console.log(
-                `⏳ Play attempt ${attempt}/10 (waiting ${delay}ms)...`
-              );
-
+              console.log(`⏳ Play attempt ${attempt}/10 (waiting ${delay}ms)...`);
+              
               await new Promise((r) => setTimeout(r, delay));
 
               // Resume audio context if suspended
-              const AudioCtx =
-                (window as any).AudioContext ||
-                (window as any).webkitAudioContext;
+              const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
               if (AudioCtx) {
                 const ctx = new AudioCtx();
                 if (ctx.state === "suspended") {
@@ -822,76 +768,79 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 ctx.close();
               }
 
-              await audioElement.play();
+              await videoElement.play();  // ✅ Using videoElement, not audioElement
 
-              console.log("✅ AUDIO PLAYING!", {
-                paused: audioElement.paused,
-                volume: audioElement.volume,
-                muted: audioElement.muted,
-                currentTime: audioElement.currentTime,
-                readyState: audioElement.readyState,
+              console.log("✅ VIDEO+AUDIO PLAYING!", {
+                paused: videoElement.paused,
+                volume: videoElement.volume,
+                muted: videoElement.muted,
+                currentTime: videoElement.currentTime,
+                readyState: videoElement.readyState,
                 trackEnabled: remoteAudio.enabled,
                 trackMuted: remoteAudio.muted,
               });
 
               setRemoteAudioStatus("active");
+              setConnectionStatus("connected");
               setError(null);
             } catch (err: any) {
               console.error(`❌ Play attempt ${attempt} failed:`, err.name);
 
               if (err.name === "NotAllowedError" && attempt >= 3) {
-                console.log("🖱️ Waiting for user click...");
-                setError("🔊 CLICK ANYWHERE to enable audio");
+                console.log("🖱️ Waiting for user interaction...");
+                setError("🔊 CLICK ANYWHERE to enable video/audio");
 
-                const enableAudio = async () => {
+                const enableMedia = async () => {
                   try {
-                    await audioElement.play();
-                    console.log("✅ Audio started after click!");
+                    await videoElement.play();
+                    console.log("✅ Video+Audio started after interaction!");
                     setError(null);
                     setRemoteAudioStatus("active");
+                    setConnectionStatus("connected");
                   } catch (e) {
                     console.error("❌ Still failed:", e);
-                    setError("⚠️ Audio error - check Windows sound settings");
+                    setError("⚠️ Media error - check browser permissions");
                   }
                 };
 
-                document.addEventListener("click", enableAudio, { once: true });
-                document.addEventListener(
-                  "keydown",
-                  (e) => {
-                    if (e.code === "Space" || e.code === "Enter") {
-                      enableAudio();
-                    }
-                  },
-                  { once: true }
-                );
+                document.addEventListener("click", enableMedia, { once: true });
+                document.addEventListener("keydown", (e) => {
+                  if (e.code === "Space" || e.code === "Enter") {
+                    enableMedia();
+                  }
+                }, { once: true });
               } else {
-                return playAudio(attempt + 1);
+                return playVideoWithRetries(attempt + 1);
               }
             }
           };
 
-          await playAudio();
+          await playVideoWithRetries();
 
-          // ===== Monitor track state =====
-          remoteAudio.onmute = () => {
-            console.warn("🔇 Remote muted");
-            setRemoteAudioStatus("muted");
-          };
+        // ===== Monitor remote tracks =====
+          remoteStream.getTracks().forEach(track => {
+            track.onended = () => {
+              console.warn(`⏹️ Remote ${track.kind} track ended`);
+              if (track.kind === "audio") setRemoteAudioStatus("ended");
+            };
+            
+            track.onmute = () => {
+              console.warn(`🔇 Remote ${track.kind} muted`);
+              if (track.kind === "audio") setRemoteAudioStatus("muted");
+            };
+            
+            track.onunmute = () => {
+              console.log(`🔊 Remote ${track.kind} unmuted`);
+              if (track.kind === "audio") {
+                setRemoteAudioStatus("active");
+                if (videoElement.paused) {
+                  videoElement.play().catch(console.error);  // ✅ videoElement, not audioElement
+                }
+              }
+            };
+          });
 
-          remoteAudio.onunmute = () => {
-            console.log("🔊 Remote unmuted");
-            setRemoteAudioStatus("active");
-            if (audioElement.paused) {
-              audioElement.play().catch(console.error);
-            }
-          };
-
-          remoteAudio.onended = () => {
-            console.warn("⏹️ Remote audio ended");
-            setRemoteAudioStatus("ended");
-            audioElement.remove();
-          };
+          console.log("✅ Track monitoring setup complete");
 
           // ===== Play video =====
           try {
