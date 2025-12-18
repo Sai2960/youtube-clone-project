@@ -1,11 +1,13 @@
-// lib/callEvents.ts - Socket event handlers for screen sharing
+// lib/callEvents.ts - Socket event handlers for screen sharing and recording
 import { Socket } from 'socket.io-client';
 
 export interface CallEventHandlers {
-  onScreenShareStarted?: (userId: string) => void;
-  onScreenShareStopped?: (userId: string) => void;
-  onRecordingStarted?: (userId: string) => void;
-  onRecordingStopped?: (userId: string) => void;
+  onScreenShareStarted?: (data: { userId: string; socketId: string; streamType: string }) => void;
+  onScreenShareStopped?: (data: { userId: string; socketId: string }) => void;
+  onRecordingStarted?: (data: { userId: string; socketId: string; timestamp: number }) => void;
+  onRecordingStopped?: (data: { userId: string; socketId: string; recordingData?: any; timestamp: number }) => void;
+  onPeerAudioToggled?: (data: { socketId: string; enabled: boolean; timestamp: number }) => void;
+  onPeerVideoToggled?: (data: { socketId: string; enabled: boolean; timestamp: number }) => void;
 }
 
 /**
@@ -18,27 +20,39 @@ export const setupCallEvents = (
 ): (() => void) => {
   
   // Screen share started by remote peer
-  const handleScreenShareStarted = (userId: string) => {
-    console.log('🖥️ Remote peer started screen sharing:', userId);
-    handlers.onScreenShareStarted?.(userId);
+  const handleScreenShareStarted = (data: { userId: string; socketId: string; streamType: string }) => {
+    console.log('🖥️ Remote peer started screen sharing:', data);
+    handlers.onScreenShareStarted?.(data);
   };
 
   // Screen share stopped by remote peer
-  const handleScreenShareStopped = (userId: string) => {
-    console.log('🖥️ Remote peer stopped screen sharing:', userId);
-    handlers.onScreenShareStopped?.(userId);
+  const handleScreenShareStopped = (data: { userId: string; socketId: string }) => {
+    console.log('🖥️ Remote peer stopped screen sharing:', data);
+    handlers.onScreenShareStopped?.(data);
   };
 
   // Recording started notification
-  const handleRecordingStarted = (userId: string) => {
-    console.log('🔴 Recording started by:', userId);
-    handlers.onRecordingStarted?.(userId);
+  const handleRecordingStarted = (data: { userId: string; socketId: string; timestamp: number }) => {
+    console.log('🔴 Recording started by:', data);
+    handlers.onRecordingStarted?.(data);
   };
 
   // Recording stopped notification
-  const handleRecordingStopped = (userId: string) => {
-    console.log('⏹️ Recording stopped by:', userId);
-    handlers.onRecordingStopped?.(userId);
+  const handleRecordingStopped = (data: { userId: string; socketId: string; recordingData?: any; timestamp: number }) => {
+    console.log('⏹️ Recording stopped by:', data);
+    handlers.onRecordingStopped?.(data);
+  };
+
+  // Audio toggled by peer
+  const handlePeerAudioToggled = (data: { socketId: string; enabled: boolean; timestamp: number }) => {
+    console.log(`🎤 Peer ${data.enabled ? 'enabled' : 'disabled'} audio`);
+    handlers.onPeerAudioToggled?.(data);
+  };
+
+  // Video toggled by peer
+  const handlePeerVideoToggled = (data: { socketId: string; enabled: boolean; timestamp: number }) => {
+    console.log(`📹 Peer ${data.enabled ? 'enabled' : 'disabled'} video`);
+    handlers.onPeerVideoToggled?.(data);
   };
 
   // Register listeners
@@ -46,6 +60,8 @@ export const setupCallEvents = (
   socket.on('screen-share-stopped', handleScreenShareStopped);
   socket.on('recording-started', handleRecordingStarted);
   socket.on('recording-stopped', handleRecordingStopped);
+  socket.on('peer-audio-toggled', handlePeerAudioToggled);
+  socket.on('peer-video-toggled', handlePeerVideoToggled);
 
   console.log('✅ Call event listeners registered for room:', roomId);
 
@@ -55,6 +71,8 @@ export const setupCallEvents = (
     socket.off('screen-share-stopped', handleScreenShareStopped);
     socket.off('recording-started', handleRecordingStarted);
     socket.off('recording-stopped', handleRecordingStopped);
+    socket.off('peer-audio-toggled', handlePeerAudioToggled);
+    socket.off('peer-video-toggled', handlePeerVideoToggled);
     console.log('🧹 Call event listeners removed for room:', roomId);
   };
 };
@@ -62,8 +80,13 @@ export const setupCallEvents = (
 /**
  * Emit screen share started event
  */
-export const emitScreenShareStarted = (socket: Socket, roomId: string, userId: string): void => {
-  socket.emit('start-screen-share', roomId, userId);
+export const emitScreenShareStarted = (
+  socket: Socket, 
+  roomId: string, 
+  userId: string, 
+  streamType: string = 'screen'
+): void => {
+  socket.emit('start-screen-share', roomId, userId, streamType);
   console.log('📤 Screen share started event emitted');
 };
 
@@ -86,7 +109,28 @@ export const emitRecordingStarted = (socket: Socket, roomId: string, userId: str
 /**
  * Emit recording stopped event
  */
-export const emitRecordingStopped = (socket: Socket, roomId: string, userId: string): void => {
-  socket.emit('recording-stopped', roomId, userId);
+export const emitRecordingStopped = (
+  socket: Socket, 
+  roomId: string, 
+  userId: string, 
+  recordingData?: any
+): void => {
+  socket.emit('recording-stopped', roomId, userId, recordingData);
   console.log('📤 Recording stopped event emitted');
+};
+
+/**
+ * Emit audio toggle event
+ */
+export const emitAudioToggled = (socket: Socket, roomId: string, enabled: boolean): void => {
+  socket.emit('audio-toggled', roomId, enabled);
+  console.log(`📤 Audio ${enabled ? 'enabled' : 'disabled'} event emitted`);
+};
+
+/**
+ * Emit video toggle event
+ */
+export const emitVideoToggled = (socket: Socket, roomId: string, enabled: boolean): void => {
+  socket.emit('video-toggled', roomId, enabled);
+  console.log(`📤 Video ${enabled ? 'enabled' : 'disabled'} event emitted`);
 };
