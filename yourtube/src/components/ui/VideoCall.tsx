@@ -620,178 +620,136 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }
       }
 
-      webrtcServiceRef.current.setupEventListeners(
-        async (remoteStream: MediaStream) => {
-          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+  // 🔥 REPLACE Lines 580-680 in VideoCall.tsx (inside initializeCall, the remote stream handler)
 
-          if (!remoteStream) {
-            console.error("❌ Remote stream is null");
-            return;
-          }
+webrtcServiceRef.current.setupEventListeners(
+  async (remoteStream: MediaStream) => {
+    console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
-          // 🔥 CRITICAL FIX: Wait for DOM elements to exist
-          const waitForElement = (
-            selector: string,
-            timeout = 5000
-          ): Promise<HTMLElement> => {
-            return new Promise((resolve, reject) => {
-              const element = document.querySelector(selector) as HTMLElement;
-              if (element) {
-                resolve(element);
-                return;
-              }
+    if (!remoteStream) {
+      console.error("❌ Remote stream is null");
+      return;
+    }
 
-              const observer = new MutationObserver(() => {
-                const el = document.querySelector(selector) as HTMLElement;
-                if (el) {
-                  observer.disconnect();
-                  resolve(el);
-                }
-              });
+    console.log("   Stream ID:", remoteStream.id);
+    console.log("   Video tracks:", remoteStream.getVideoTracks().length);
+    console.log("   Audio tracks:", remoteStream.getAudioTracks().length);
 
-              observer.observe(document.body, {
-                childList: true,
-                subtree: true,
-              });
+    const remoteVideo = remoteStream.getVideoTracks()[0];
+    const remoteAudio = remoteStream.getAudioTracks()[0];
 
-              setTimeout(() => {
-                observer.disconnect();
-                reject(
-                  new Error(`Element ${selector} not found after ${timeout}ms`)
-                );
-              }, timeout);
-            });
-          };
+    if (!remoteVideo || !remoteAudio) {
+      console.error("❌ Missing tracks:", {
+        hasVideo: !!remoteVideo,
+        hasAudio: !!remoteAudio,
+      });
+      setError("Remote peer's camera/mic not available");
+      return;
+    }
 
+    // 🔥 CRITICAL: Log initial track states
+    console.log("📹 Remote video track:", {
+      id: remoteVideo.id,
+      enabled: remoteVideo.enabled,
+      muted: remoteVideo.muted,
+      readyState: remoteVideo.readyState,
+    });
+
+    console.log("🎤 Remote audio track:", {
+      id: remoteAudio.id,
+      enabled: remoteAudio.enabled,
+      muted: remoteAudio.muted,
+      readyState: remoteAudio.readyState,
+    });
+
+    // 🔥 CRITICAL: Set video element IMMEDIATELY
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.autoplay = true;
+      remoteVideoRef.current.playsInline = true;
+      remoteVideoRef.current.muted = true;
+      
+      console.log("✅ Video element srcObject set");
+
+      try {
+        await remoteVideoRef.current.play();
+        console.log("✅ Video element playing");
+      } catch (err) {
+        console.warn("⚠️ Video autoplay blocked:", err);
+      }
+    }
+
+    // 🔥 CRITICAL: Create separate audio element
+    const existingAudio = document.getElementById("remote-audio-element");
+    if (existingAudio) {
+      existingAudio.remove();
+      console.log("🗑️ Removed old audio element");
+    }
+
+    const audioElement = document.createElement("audio");
+    audioElement.id = "remote-audio-element";
+    audioElement.autoplay = true;
+    audioElement.muted = false;
+    audioElement.volume = 1.0;
+    audioElement.style.display = "none";
+    
+    // 🔥 CRITICAL: Use the SAME stream, not a new MediaStream
+    audioElement.srcObject = remoteStream;
+
+    document.body.appendChild(audioElement);
+    console.log("✅ Audio element added");
+
+    // Try to play audio
+    try {
+      await audioElement.play();
+      console.log("✅ Audio playing");
+      setConnectionStatus("connected");
+      setError(null);
+    } catch (err: any) {
+      console.error("❌ Audio autoplay blocked:", err.name);
+      if (err.name === "NotAllowedError") {
+        setError("🔊 Click anywhere to enable audio");
+        
+        const enableAudio = async () => {
           try {
-            console.log("⏳ Waiting for video elements...");
-            const remoteVideoElement = await waitForElement("#remote-video");
-            console.log("✅ Remote video element found");
-
-            const remoteAudio = remoteStream.getAudioTracks()[0];
-            const remoteVideo = remoteStream.getVideoTracks()[0];
-
-            console.log(
-              "🎤 Remote audio:",
-              remoteAudio
-                ? {
-                    id: remoteAudio.id,
-                    enabled: remoteAudio.enabled,
-                    muted: remoteAudio.muted,
-                    readyState: remoteAudio.readyState,
-                  }
-                : "MISSING"
-            );
-
-            console.log(
-              "📹 Remote video:",
-              remoteVideo
-                ? {
-                    id: remoteVideo.id,
-                    enabled: remoteVideo.enabled,
-                    readyState: remoteVideo.readyState,
-                  }
-                : "MISSING"
-            );
-
-            if (!remoteAudio || !remoteVideo) {
-              setError("⚠️ Remote user's camera/mic is blocked or not working");
-              return;
-            }
-
-            // Wait for tracks to become live
-            await Promise.all([
-              waitForTrackReady(remoteAudio, "audio"),
-              waitForTrackReady(remoteVideo, "video"),
-            ]);
-
-            // Force enable
-            remoteAudio.enabled = true;
-            remoteVideo.enabled = true;
-
-            // Remove old audio elements
-            document
-              .querySelectorAll("#remote-audio-element")
-              .forEach((el) => el.remove());
-
-            // Setup video element
-            const videoElement = remoteVideoElement as HTMLVideoElement;
-            videoElement.srcObject = remoteStream;
-            videoElement.autoplay = true;
-            videoElement.playsInline = true;
-            videoElement.muted = true; // Mute video element to prevent echo
-            videoElement.volume = 0;
-
-            console.log("✅ Video srcObject set:", videoElement.srcObject);
-
-            // Setup separate audio element
-            const audioElement = document.createElement("audio");
-            audioElement.id = "remote-audio-element";
-            audioElement.autoplay = true;
-            audioElement.muted = false;
-            audioElement.volume = 1.0;
-            audioElement.style.display = "none";
-            audioElement.srcObject = new MediaStream([remoteAudio]);
-
-            document.body.appendChild(audioElement);
-            console.log("✅ Audio element added to DOM");
-
-            // Play media with retries
-            const playMedia = async () => {
-              try {
-                console.log("🎬 Attempting to play media...");
-                await Promise.all([videoElement.play(), audioElement.play()]);
-                console.log("✅ AUDIO & VIDEO PLAYING");
-                setConnectionStatus("connected");
-                setError(null);
-              } catch (err: any) {
-                console.error("❌ Autoplay error:", err);
-                if (err.name === "NotAllowedError") {
-                  setError("🔊 CLICK ANYWHERE to enable audio");
-                  const enableOnClick = () => {
-                    console.log("👆 User clicked, attempting playback...");
-                    audioElement.play().catch(console.error);
-                    videoElement.play().catch(console.error);
-                    setError(null);
-                  };
-                  document.addEventListener("click", enableOnClick, {
-                    once: true,
-                  });
-                }
-              }
-            };
-
-            // Wait a bit before playing
-            setTimeout(playMedia, 500);
-
-            // Monitor track state
-            remoteAudio.onmute = () => {
-              console.warn("🔇 Remote audio muted");
-              setRemoteAudioStatus("muted");
-            };
-            remoteAudio.onunmute = () => {
-              console.log("🔊 Remote audio unmuted");
-              setRemoteAudioStatus("active");
-            };
-
-            remoteAudio.onended = () => {
-              console.warn("🛑 Remote audio track ended");
-            };
-            remoteVideo.onended = () => {
-              console.warn("🛑 Remote video track ended");
-            };
-
-            console.log("✅ Remote stream setup complete");
-          } catch (error) {
-            console.error("❌ Error setting up remote stream:", error);
-            setError("Failed to display remote video");
+            await audioElement.play();
+            console.log("✅ Audio enabled after click");
+            setError(null);
+          } catch (e) {
+            console.error("Still blocked:", e);
           }
-        },
-        (candidate: RTCIceCandidate) => {
-          const socket = getSocket();
-          socket.emit("ice-candidate", roomId, candidate);
-        }
-      );
+        };
+        
+        document.addEventListener("click", enableAudio, { once: true });
+      }
+    }
+
+    // Monitor track state
+    remoteVideo.onended = () => {
+      console.error("🛑 Remote VIDEO track ended unexpectedly!");
+    };
+
+    remoteAudio.onended = () => {
+      console.error("🛑 Remote AUDIO track ended unexpectedly!");
+    };
+
+    remoteAudio.onmute = () => {
+      console.warn("🔇 Remote audio muted");
+      setRemoteAudioStatus("muted");
+    };
+
+    remoteAudio.onunmute = () => {
+      console.log("🔊 Remote audio unmuted");
+      setRemoteAudioStatus("active");
+    };
+
+    console.log("✅ Remote stream setup complete\n");
+  },
+  (candidate: RTCIceCandidate) => {
+    const socket = getSocket();
+    socket.emit("ice-candidate", roomId, candidate);
+  }
+);
       webrtcServiceRef.current.addLocalStreamToPeer();
 
       console.log("📞 Joining room:", roomId);
