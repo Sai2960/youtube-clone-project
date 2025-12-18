@@ -27,7 +27,22 @@ interface VideoCallProps {
   remotePeerName?: string;
   callId?: string;
 }
-
+const resumeAudioContext = async (): Promise<void> => {
+  try {
+    const AudioCtx =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+        console.log("✅ AudioContext resumed");
+      }
+      ctx.close();
+    }
+  } catch (err) {
+    console.warn("⚠️ Could not resume AudioContext:", err);
+  }
+};
 // Windows Audio Device Tester
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   console.log("🔧 Windows Audio Fix: Ensuring microphone is not muted...");
@@ -499,7 +514,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
       try {
         console.log("🎤 Requesting media...");
 
-        // ✅ SIMPLIFIED: Try basic constraints first
+        // ✅ FIX: Resume AudioContext BEFORE requesting media
+        await resumeAudioContext();
+
         localStream = await navigator.mediaDevices.getUserMedia({
           video: {
             width: { ideal: 1280, max: 1920 },
@@ -517,8 +534,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("   Video tracks:", localStream.getVideoTracks().length);
         console.log("   Audio tracks:", localStream.getAudioTracks().length);
 
-        // ✅ CRITICAL: Verify tracks are enabled
         localStream.getTracks().forEach((track) => {
+          // ✅ FIX: Force enable all tracks
+          track.enabled = true;
           console.log(`   ${track.kind} track:`, {
             id: track.id,
             label: track.label,
@@ -531,7 +549,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
         webrtcServiceRef.current.setLocalStream(localStream);
       } catch (error: any) {
         console.error("❌ Media access failed:", error);
-
         let errorMessage = "Failed to access camera/microphone";
         if (
           error.name === "NotAllowedError" ||
@@ -544,7 +561,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
         } else if (error.name === "NotReadableError") {
           errorMessage = "Camera/microphone in use by another app.";
         }
-
         setError(errorMessage);
         setConnectionStatus("failed");
         return;
@@ -553,17 +569,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
       if (localVideoRef.current && localStream) {
         console.log("🎬 Setting up local video element");
 
-        // Clear any existing stream
         localVideoRef.current.srcObject = localStream;
         localVideoRef.current.muted = true;
         localVideoRef.current.playsInline = true;
         localVideoRef.current.autoplay = true;
-        // Force play with error handling
+
         try {
           await localVideoRef.current.play();
           console.log("✅ Local video playing");
         } catch (e: any) {
-          console.error("❌ Local video failed:", e.message);
+          console.warn("⚠️ Local video autoplay blocked:", e.message);
 
           // Set up click handler to start video
           const startVideo = async () => {
@@ -583,7 +598,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("   Audio tracks:", remoteStream.getAudioTracks().length);
           console.log("   Video tracks:", remoteStream.getVideoTracks().length);
 
-          // Wait for video element to be ready
           await new Promise((resolve) => setTimeout(resolve, 100));
 
           if (!remoteVideoRef.current) {
@@ -592,10 +606,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
           }
 
           // 🔥 CRITICAL: Clear old streams and elements
-          document
-            .querySelectorAll("#remote-audio-element")
-            .forEach((el) => el.remove());
+          await resumeAudioContext();
 
+          // Clear old streams
           if (remoteVideoRef.current.srcObject) {
             const oldStream = remoteVideoRef.current.srcObject as MediaStream;
             oldStream.getTracks().forEach((t) => t.stop());
@@ -620,10 +633,15 @@ const VideoCall: React.FC<VideoCallProps> = ({
             setRemoteAudioStatus("active");
           });
 
-          if (remoteAudio) remoteAudio.enabled = true;
+          if (remoteAudio) {
+            remoteAudio.enabled = true;
+            remoteAudio.addEventListener("unmute", () => {
+              console.log("🔊 Remote audio unmuted");
+              setRemoteAudioStatus("active");
+            });
+          }
           if (remoteVideo) remoteVideo.enabled = true;
 
-          // Set up video element
           const videoElement = remoteVideoRef.current;
           videoElement.srcObject = remoteStream;
           videoElement.autoplay = true;
@@ -633,7 +651,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
           console.log("✅ Remote video element configured");
 
-          // Set audio output device
           if ("setSinkId" in videoElement) {
             try {
               const devices = await navigator.mediaDevices.enumerateDevices();
@@ -645,7 +662,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 audioOutputs.map((d) => d.label)
               );
 
-              // Find best output device (prioritize non-default)
               let targetDevice = audioOutputs.find(
                 (d) =>
                   d.deviceId !== "default" &&
@@ -662,80 +678,38 @@ const VideoCall: React.FC<VideoCallProps> = ({
               if (targetDevice) {
                 console.log("🎯 Setting audio output to:", targetDevice.label);
                 await (videoElement as any).setSinkId(targetDevice.deviceId);
-                console.log(
-                  "✅ Audio output set to device:",
-                  targetDevice.deviceId
-                );
+                console.log("✅ Audio output device set");
               }
             } catch (err: any) {
               console.error("❌ setSinkId failed:", err);
             }
           }
-
           // Play video with retries
           const playWithRetries = async (
             attempt: number = 1
           ): Promise<void> => {
-            if (attempt > 5) {
-              console.error("❌ Failed to play after 5 attempts");
-              setError("Click anywhere to start video/audio");
-
-              // Set up interaction handler
-              const enablePlayback = async () => {
-                try {
-                  await videoElement.play();
-                  console.log("✅ Playback started after interaction");
-                  setError(null);
-                  setRemoteAudioStatus("active");
-                  setConnectionStatus("connected");
-                } catch (e) {
-                  console.error("❌ Still failed:", e);
-                }
-              };
-
-              document.addEventListener("click", enablePlayback, {
-                once: true,
-              });
-              document.addEventListener(
-                "keydown",
-                (e) => {
-                  if (e.code === "Space" || e.code === "Enter")
-                    enablePlayback();
-                },
-                { once: true }
-              );
+            if (attempt > 3) {
+              console.warn("⚠️ Autoplay blocked - need user interaction");
+              setError("Click anywhere to start audio/video");
+              setNeedsInteraction(true);
               return;
             }
 
             try {
-              const delay = 100 * attempt;
-              await new Promise((r) => setTimeout(r, delay));
-
-              // Resume audio context if suspended
-              const AudioCtx =
-                (window as any).AudioContext ||
-                (window as any).webkitAudioContext;
-              if (AudioCtx) {
-                const ctx = new AudioCtx();
-                if (ctx.state === "suspended") {
-                  await ctx.resume();
-                  console.log("✅ Audio context resumed");
-                }
-                ctx.close();
-              }
-
+              await new Promise((r) => setTimeout(r, 100 * attempt));
+              await resumeAudioContext();
               await videoElement.play();
 
-              console.log("✅ VIDEO+AUDIO PLAYING!", {
+              console.log("✅ REMOTE VIDEO+AUDIO PLAYING!", {
                 paused: videoElement.paused,
                 volume: videoElement.volume,
                 muted: videoElement.muted,
-                readyState: videoElement.readyState,
               });
 
               setRemoteAudioStatus("active");
               setConnectionStatus("connected");
               setError(null);
+              setNeedsInteraction(false);
             } catch (err: any) {
               console.error(`❌ Play attempt ${attempt} failed:`, err.name);
               return playWithRetries(attempt + 1);
@@ -750,12 +724,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
               console.warn(`⏹️ Remote ${track.kind} track ended`);
               if (track.kind === "audio") setRemoteAudioStatus("ended");
             };
-
             track.onmute = () => {
               console.warn(`🔇 Remote ${track.kind} muted`);
               if (track.kind === "audio") setRemoteAudioStatus("muted");
             };
-
             track.onunmute = () => {
               console.log(`🔊 Remote ${track.kind} unmuted`);
               if (track.kind === "audio") {
@@ -1085,21 +1057,22 @@ const VideoCall: React.FC<VideoCallProps> = ({
           onClick={async () => {
             console.log("👆 User clicked - starting media");
 
-            // Resume AudioContext
+            // ✅ FIX: Resume AudioContext on interaction
+            await resumeAudioContext();
+
+            // ✅ FIX: Try to play all video elements
             try {
-              const AudioCtx =
-                (window as any).AudioContext ||
-                (window as any).webkitAudioContext;
-              if (AudioCtx) {
-                const ctx = new AudioCtx();
-                if (ctx.state === "suspended") {
-                  await ctx.resume();
-                  console.log("✅ AudioContext resumed after click");
-                }
-                ctx.close();
+              if (localVideoRef.current && localVideoRef.current.srcObject) {
+                await localVideoRef.current.play();
+                console.log("✅ Local video started");
+              }
+
+              if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
+                await remoteVideoRef.current.play();
+                console.log("✅ Remote video started");
               }
             } catch (err) {
-              console.warn("⚠️ Could not resume audio:", err);
+              console.error("❌ Failed to start videos:", err);
             }
 
             setNeedsInteraction(false);

@@ -149,7 +149,6 @@ export class WebRTCService {
     // 🔥 CRITICAL: Force enable all tracks before adding
     this.localStream.getTracks().forEach((track) => {
       track.enabled = true;
-
       console.log(`➕ Adding ${track.kind} track:`, {
         id: track.id,
         enabled: track.enabled,
@@ -157,18 +156,17 @@ export class WebRTCService {
         readyState: track.readyState,
         label: track.label,
       });
-
       this.peerConnection?.addTrack(track, this.localStream!);
     });
 
     const transceivers = this.peerConnection.getTransceivers();
-    console.log(`✅ Total transceivers after addTrack: ${transceivers.length}`);
+    console.log(`✅ Total transceivers: ${transceivers.length}`);
     transceivers.forEach((t, i) => {
       console.log(
-        `   Transceiver ${i}: ${t.mid} ${t.direction} ${t.sender.track?.kind}`
+        `   Transceiver ${i}: ${t.direction} ${t.sender.track?.kind}`
       );
 
-      // 🔥 Force sendrecv for all transceivers
+      // Force sendrecv direction
       if (t.direction !== "sendrecv") {
         t.direction = "sendrecv";
         console.log(`   ✅ Fixed transceiver ${i} to sendrecv`);
