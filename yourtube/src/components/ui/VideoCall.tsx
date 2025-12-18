@@ -28,167 +28,60 @@ interface VideoCallProps {
   callId?: string;
 }
 
-
 // Windows Audio Device Tester
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
-  console.log("🔧 Windows Audio Fix: Ensuring microphone is not muted...");
+  console.log("🔧 Getting media devices...");
 
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  const audioInputs = devices.filter((d) => d.kind === "audioinput");
+  try {
+    // 🔥 MAIN FIX: Don't specify exact device ID - let browser choose
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    });
 
-  if (audioInputs.length === 0) {
-    throw new Error("No microphone found");
-  }
+    const audioTrack = stream.getAudioTracks()[0];
+    const videoTrack = stream.getVideoTracks()[0];
 
-  console.log(
-    `   Found ${audioInputs.length} audio inputs:`,
-    audioInputs.map((d) => d.label || d.deviceId)
-  );
+    console.log("✅ Media obtained:");
+    console.log("   Audio:", audioTrack?.label || "Unknown");
+    console.log("   Video:", videoTrack?.label || "Unknown");
+    console.log("   Audio enabled:", audioTrack?.enabled);
+    console.log("   Audio muted:", audioTrack?.muted);
 
-  // 🔥 TRY DEFAULT DEVICE FIRST (respects Windows settings)
-  const defaultDevice = audioInputs.find(d => 
-    d.deviceId === "default" || 
-    d.label.toLowerCase().includes("default")
-  );
+    // Check if audio is actually working
+    if (audioTrack && !audioTrack.muted) {
+      return stream;
+    }
 
-  if (defaultDevice) {
-    console.log("🎯 Trying Windows default device:", defaultDevice.label);
-    
-    try {
-      const testStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: { exact: defaultDevice.deviceId },
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: false,
-      });
+    // If muted, throw error with clear message
+    throw new Error(
+      "Microphone is muted in Windows. Right-click speaker icon → Open Sound Settings → check microphone"
+    );
+  } catch (err: any) {
+    console.error("❌ Media access failed:", err);
 
-      const audioTrack = testStream.getAudioTracks()[0];
-      
-      if (!audioTrack.muted) {
-        console.log("✅ Default device works! Using:", defaultDevice.label);
-        
-        const videoDevices = devices.filter((d) => d.kind === "videoinput");
-        const fullStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            deviceId: { exact: defaultDevice.deviceId },
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-          video: videoDevices.length > 0 ? {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          } : false,
-        });
-        
-        audioTrack.stop();
-        return fullStream;
-      }
-      
-      audioTrack.stop();
-    } catch (err) {
-      console.warn("⚠️ Default device failed, trying others...");
+    if (err.name === "NotAllowedError") {
+      throw new Error(
+        "🚫 Browser blocked camera/mic. Click 🔒 in address bar → Allow"
+      );
+    } else if (err.name === "NotFoundError") {
+      throw new Error("❌ No camera/microphone found");
+    } else if (err.name === "NotReadableError") {
+      throw new Error(
+        "⚠️ Camera/mic in use by another app. Close it and refresh."
+      );
+    } else {
+      throw new Error(err.message || "Failed to access media devices");
     }
   }
-
-  // 🔥 FALLBACK: Test devices in order (old behavior)
-  for (let i = 0; i < audioInputs.length; i++) {
-    const device = audioInputs[i];
-    
-    // Skip 'default' device (already tried)
-    if (device.deviceId === "default") continue;
-    
-    console.log(`   Testing device ${i + 1}/${audioInputs.length}: ${device.label}`);
-
-    try {
-      const testStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: device.deviceId ? { exact: device.deviceId } : undefined,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: false,
-      });
-
-      const audioTrack = testStream.getAudioTracks()[0];
-
-      if (audioTrack.muted) {
-        console.warn(`   ❌ Device ${i + 1} is MUTED`);
-        audioTrack.stop();
-        continue;
-      }
-
-      const isProducingAudio = await new Promise<boolean>((resolve) => {
-        try {
-          const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
-          const audioContext = new AudioContext();
-          const source = audioContext.createMediaStreamSource(testStream);
-          const analyser = audioContext.createAnalyser();
-          source.connect(analyser);
-
-          const dataArray = new Uint8Array(analyser.frequencyBinCount);
-          let checks = 0;
-
-          const check = () => {
-            analyser.getByteFrequencyData(dataArray);
-            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-            checks++;
-
-            if (average > 0) {
-              console.log(`   ✅ Device ${i + 1} producing audio!`);
-              audioContext.close();
-              resolve(true);
-            } else if (checks < 3) {
-              setTimeout(check, 300);
-            } else {
-              audioContext.close();
-              resolve(false);
-            }
-          };
-
-          setTimeout(check, 100);
-        } catch (err) {
-          resolve(false);
-        }
-      });
-
-      if (!isProducingAudio) {
-        console.warn(`   ❌ Device ${i + 1} not producing audio`);
-        audioTrack.stop();
-        continue;
-      }
-
-      console.log(`   ✅ Found working device: ${device.label}`);
-      audioTrack.stop();
-
-      const videoDevices = devices.filter((d) => d.kind === "videoinput");
-      const fullStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: device.deviceId ? { exact: device.deviceId } : undefined,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: videoDevices.length > 0 ? {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        } : false,
-      });
-
-      return fullStream;
-    } catch (err: any) {
-      console.error(`   ❌ Device ${i + 1} error:`, err.message);
-      continue;
-    }
-  }
-
-  throw new Error("No working microphone found");
 };
-
 const VideoCall: React.FC<VideoCallProps> = ({
   roomId,
   isInitiator,
@@ -373,52 +266,58 @@ const VideoCall: React.FC<VideoCallProps> = ({
       };
 
       const handleCallEnded = (data: { endedBy?: string; reason?: string }) => {
-  console.log("📴 Remote peer ended call", data);
-  if (!callEndedRef.current) {
-    callEndedRef.current = true;
-    
-    // Cleanup without emitting (remote already ended)
-    if (isRecording && recordingServiceRef.current) {
-      recordingServiceRef.current.stopRecording();
-    }
-    
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-    }
-    
-    // Stop all media
-    document.querySelectorAll("audio").forEach((audio) => {
-      if (audio.srcObject) {
-        (audio.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      }
-      audio.pause();
-      audio.srcObject = null;
-      audio.remove();
-    });
-    
-    if (localVideoRef.current?.srcObject) {
-      (localVideoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      localVideoRef.current.srcObject = null;
-    }
-    
-    if (remoteVideoRef.current?.srcObject) {
-      (remoteVideoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      remoteVideoRef.current.srcObject = null;
-    }
-    
-    if (webrtcServiceRef.current) {
-      webrtcServiceRef.current.close();
-      webrtcServiceRef.current = null;
-    }
-    
-    delete (window as any).peerConnection;
-    
-    onEndCall();
-    setTimeout(() => {
-      router.push("/");
-    }, 300);
-  }
-};
+        console.log("📴 Remote peer ended call", data);
+        if (!callEndedRef.current) {
+          callEndedRef.current = true;
+
+          // Cleanup without emitting (remote already ended)
+          if (isRecording && recordingServiceRef.current) {
+            recordingServiceRef.current.stopRecording();
+          }
+
+          if (recordingIntervalRef.current) {
+            clearInterval(recordingIntervalRef.current);
+          }
+
+          // Stop all media
+          document.querySelectorAll("audio").forEach((audio) => {
+            if (audio.srcObject) {
+              (audio.srcObject as MediaStream)
+                .getTracks()
+                .forEach((t) => t.stop());
+            }
+            audio.pause();
+            audio.srcObject = null;
+            audio.remove();
+          });
+
+          if (localVideoRef.current?.srcObject) {
+            (localVideoRef.current.srcObject as MediaStream)
+              .getTracks()
+              .forEach((t) => t.stop());
+            localVideoRef.current.srcObject = null;
+          }
+
+          if (remoteVideoRef.current?.srcObject) {
+            (remoteVideoRef.current.srcObject as MediaStream)
+              .getTracks()
+              .forEach((t) => t.stop());
+            remoteVideoRef.current.srcObject = null;
+          }
+
+          if (webrtcServiceRef.current) {
+            webrtcServiceRef.current.close();
+            webrtcServiceRef.current = null;
+          }
+
+          delete (window as any).peerConnection;
+
+          onEndCall();
+          setTimeout(() => {
+            router.push("/");
+          }, 300);
+        }
+      };
 
       socket.on("offer", handleOffer);
       socket.on("answer", handleAnswer);
@@ -662,69 +561,84 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("🔊 Created audio element with audio-only stream");
 
           // ===== Set output device to VG240Y S (your monitor) =====
-        if ("setSinkId" in audioElement) {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const audioOutputs = devices.filter((d) => d.kind === "audiooutput");
+          if ("setSinkId" in audioElement) {
+            try {
+              const devices = await navigator.mediaDevices.enumerateDevices();
+              const audioOutputs = devices.filter(
+                (d) => d.kind === "audiooutput"
+              );
 
-    console.log("🔊 Available outputs:");
-    audioOutputs.forEach((d, i) => {
-      console.log(`   ${i + 1}. ${d.label} | ID: ${d.deviceId}`);
-    });
+              console.log("🔊 Available outputs:");
+              audioOutputs.forEach((d, i) => {
+                console.log(`   ${i + 1}. ${d.label} | ID: ${d.deviceId}`);
+              });
 
-    // 🔥 CRITICAL: Find the REAL VG240Y (not the 'default' alias)
-    let targetDevice = audioOutputs.find(d => {
-      const label = d.label.toLowerCase();
-      const isVG240Y = label.includes("vg240y") || label.includes("nvidia high definition audio");
-      const isNotAlias = d.deviceId !== "default" && d.deviceId !== "communications";
-      return isVG240Y && isNotAlias;
-    });
+              // 🔥 CRITICAL: Find the REAL VG240Y (not the 'default' alias)
+              let targetDevice = audioOutputs.find((d) => {
+                const label = d.label.toLowerCase();
+                const isVG240Y =
+                  label.includes("vg240y") ||
+                  label.includes("nvidia high definition audio");
+                const isNotAlias =
+                  d.deviceId !== "default" && d.deviceId !== "communications";
+                return isVG240Y && isNotAlias;
+              });
 
-    // Fallback: USB Speakers
-    if (!targetDevice) {
-      targetDevice = audioOutputs.find(d => 
-        d.label.includes("USB Audio") && 
-        d.label.includes("Speakers")
-      );
-    }
+              // Fallback: USB Speakers
+              if (!targetDevice) {
+                targetDevice = audioOutputs.find(
+                  (d) =>
+                    d.label.includes("USB Audio") &&
+                    d.label.includes("Speakers")
+                );
+              }
 
-    // Last resort: First non-alias device
-    if (!targetDevice) {
-      targetDevice = audioOutputs.find(d => 
-        d.deviceId !== "default" && 
-        d.deviceId !== "communications"
-      );
-    }
+              // Last resort: First non-alias device
+              if (!targetDevice) {
+                targetDevice = audioOutputs.find(
+                  (d) =>
+                    d.deviceId !== "default" && d.deviceId !== "communications"
+                );
+              }
 
-    if (targetDevice) {
-      console.log("🎯 Attempting to set audio to:", targetDevice.label);
-      console.log("   Device ID:", targetDevice.deviceId);
-      
-      // Set the sink
-      await (audioElement as any).setSinkId(targetDevice.deviceId);
-      
-      const actualSinkId = (audioElement as any).sinkId;
-      console.log("✅ Audio routed to:", targetDevice.label);
-      console.log("✅ Verified sinkId:", actualSinkId);
-      
-      // 🔥 VERIFY it's not 'default'
-      if (actualSinkId === "default" || actualSinkId === "communications") {
-        console.error("❌ FAILED! Still using alias device:", actualSinkId);
-        setError("⚠️ Audio routing failed - using wrong device");
-      } else {
-        console.log("🎉 SUCCESS! Using actual device ID");
-        setError(`🔊 AUDIO: ${targetDevice.label}`);
-        setTimeout(() => setError(null), 3000);
-      }
-    } else {
-      console.error("❌ No suitable audio output device found!");
-      setError("⚠️ No audio device found");
-    }
-  } catch (err: any) {
-    console.error("❌ setSinkId failed:", err.name, err.message);
-    setError(`⚠️ Audio routing failed: ${err.message}`);
-  }
-}
+              if (targetDevice) {
+                console.log(
+                  "🎯 Attempting to set audio to:",
+                  targetDevice.label
+                );
+                console.log("   Device ID:", targetDevice.deviceId);
+
+                // Set the sink
+                await (audioElement as any).setSinkId(targetDevice.deviceId);
+
+                const actualSinkId = (audioElement as any).sinkId;
+                console.log("✅ Audio routed to:", targetDevice.label);
+                console.log("✅ Verified sinkId:", actualSinkId);
+
+                // 🔥 VERIFY it's not 'default'
+                if (
+                  actualSinkId === "default" ||
+                  actualSinkId === "communications"
+                ) {
+                  console.error(
+                    "❌ FAILED! Still using alias device:",
+                    actualSinkId
+                  );
+                  setError("⚠️ Audio routing failed - using wrong device");
+                } else {
+                  console.log("🎉 SUCCESS! Using actual device ID");
+                  setError(`🔊 AUDIO: ${targetDevice.label}`);
+                  setTimeout(() => setError(null), 3000);
+                }
+              } else {
+                console.error("❌ No suitable audio output device found!");
+                setError("⚠️ No audio device found");
+              }
+            } catch (err: any) {
+              console.error("❌ setSinkId failed:", err.name, err.message);
+              setError(`⚠️ Audio routing failed: ${err.message}`);
+            }
+          }
 
           // Add to DOM
           document.body.appendChild(audioElement);
@@ -914,83 +828,83 @@ const VideoCall: React.FC<VideoCallProps> = ({
   };
 
   // 🔥 IMPROVED CLEANUP FUNCTION
- const cleanup = (emitEvent: boolean = true) => {
-  console.log("🧹 Cleanup starting...");
+  const cleanup = (emitEvent: boolean = true) => {
+    console.log("🧹 Cleanup starting...");
 
-  // Stop monitor intervals
-  document.querySelectorAll("#remote-audio-element").forEach((audio: any) => {
-    if (audio._monitorInterval) {
-      clearInterval(audio._monitorInterval);
+    // Stop monitor intervals
+    document.querySelectorAll("#remote-audio-element").forEach((audio: any) => {
+      if (audio._monitorInterval) {
+        clearInterval(audio._monitorInterval);
+      }
+      if (audio._keepAlive) {
+        clearInterval(audio._keepAlive);
+      }
+    });
+
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
     }
-    if (audio._keepAlive) {
-      clearInterval(audio._keepAlive);
+
+    if (isRecording && recordingServiceRef.current) {
+      recordingServiceRef.current.stopRecording();
     }
-  });
 
-  if (recordingIntervalRef.current) {
-    clearInterval(recordingIntervalRef.current);
-  }
+    // Remove ALL audio elements
+    document.querySelectorAll("audio").forEach((audio) => {
+      console.log("🗑️ Removing audio element:", audio.id);
+      if (audio.srcObject) {
+        const stream = audio.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => {
+          track.stop();
+          console.log(`   Stopped ${track.kind} track: ${track.id}`);
+        });
+      }
+      audio.pause();
+      audio.srcObject = null;
+      audio.remove();
+    });
 
-  if (isRecording && recordingServiceRef.current) {
-    recordingServiceRef.current.stopRecording();
-  }
-
-  // Remove ALL audio elements
-  document.querySelectorAll("audio").forEach((audio) => {
-    console.log("🗑️ Removing audio element:", audio.id);
-    if (audio.srcObject) {
-      const stream = audio.srcObject as MediaStream;
+    // Stop local video
+    if (localVideoRef.current?.srcObject) {
+      const stream = localVideoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => {
         track.stop();
-        console.log(`   Stopped ${track.kind} track: ${track.id}`);
+        console.log(`Stopped local ${track.kind} track`);
       });
+      localVideoRef.current.srcObject = null;
     }
-    audio.pause();
-    audio.srcObject = null;
-    audio.remove();
-  });
 
-  // Stop local video
-  if (localVideoRef.current?.srcObject) {
-    const stream = localVideoRef.current.srcObject as MediaStream;
-    stream.getTracks().forEach((track) => {
-      track.stop();
-      console.log(`Stopped local ${track.kind} track`);
-    });
-    localVideoRef.current.srcObject = null;
-  }
-
-  // Stop remote video
-  if (remoteVideoRef.current?.srcObject) {
-    const stream = remoteVideoRef.current.srcObject as MediaStream;
-    stream.getTracks().forEach((track) => {
-      track.stop();
-      console.log(`Stopped remote ${track.kind} track`);
-    });
-    remoteVideoRef.current.srcObject = null;
-  }
-
-  // Close WebRTC
-  if (webrtcServiceRef.current) {
-    webrtcServiceRef.current.close();
-    webrtcServiceRef.current = null;
-  }
-
-  delete (window as any).peerConnection;
-
-  // Only emit if explicitly requested and not already ended
-  if (emitEvent) {
-    try {
-      const socket = getSocket();
-      socket.emit("end-call", roomId, { endedBy: user?._id });
-      console.log("📤 Cleanup sent end-call signal");
-    } catch (error) {
-      console.error("Socket cleanup error:", error);
+    // Stop remote video
+    if (remoteVideoRef.current?.srcObject) {
+      const stream = remoteVideoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => {
+        track.stop();
+        console.log(`Stopped remote ${track.kind} track`);
+      });
+      remoteVideoRef.current.srcObject = null;
     }
-  }
 
-  console.log("✅ Cleanup complete");
-};
+    // Close WebRTC
+    if (webrtcServiceRef.current) {
+      webrtcServiceRef.current.close();
+      webrtcServiceRef.current = null;
+    }
+
+    delete (window as any).peerConnection;
+
+    // Only emit if explicitly requested and not already ended
+    if (emitEvent) {
+      try {
+        const socket = getSocket();
+        socket.emit("end-call", roomId, { endedBy: user?._id });
+        console.log("📤 Cleanup sent end-call signal");
+      } catch (error) {
+        console.error("Socket cleanup error:", error);
+      }
+    }
+
+    console.log("✅ Cleanup complete");
+  };
 
   const toggleAudio = () => {
     if (webrtcServiceRef.current) {
@@ -1080,48 +994,50 @@ const VideoCall: React.FC<VideoCallProps> = ({
   };
 
   const handleEndCall = async () => {
-  if (callEndedRef.current) {
-    console.log("⚠️ Call already ended, skipping");
-    return;
-  }
-
-  console.log("📴 Ending call initiated by local user");
-  callEndedRef.current = true;
-
-  try {
-    if (isRecording) {
-      stopRecording();
+    if (callEndedRef.current) {
+      console.log("⚠️ Call already ended, skipping");
+      return;
     }
 
-    // Emit end-call BEFORE cleanup
+    console.log("📴 Ending call initiated by local user");
+    callEndedRef.current = true;
+
     try {
-      const socket = getSocket();
-      socket.emit("end-call", roomId, { endedBy: user?._id });
-      console.log("📤 Sent end-call signal");
+      if (isRecording) {
+        stopRecording();
+      }
+
+      // Emit end-call BEFORE cleanup
+      try {
+        const socket = getSocket();
+        socket.emit("end-call", roomId, { endedBy: user?._id });
+        console.log("📤 Sent end-call signal");
+      } catch (error) {
+        console.error("Socket emit error:", error);
+      }
+
+      if (callId) {
+        await axiosInstance
+          .put(`/call/${callId}/status`, {
+            status: "ended",
+            duration: Math.floor(recordingTime),
+          })
+          .catch((err) => console.error("Failed to update call status:", err));
+      }
+
+      cleanup(false); // Don't emit again
+      onEndCall();
+
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
     } catch (error) {
-      console.error("Socket emit error:", error);
-    }
-
-    if (callId) {
-      await axiosInstance.put(`/call/${callId}/status`, {
-        status: "ended",
-        duration: Math.floor(recordingTime),
-      }).catch(err => console.error("Failed to update call status:", err));
-    }
-
-    cleanup(false); // Don't emit again
-    onEndCall();
-
-    setTimeout(() => {
+      console.error("Error ending call:", error);
+      cleanup(false);
+      onEndCall();
       router.push("/");
-    }, 500);
-  } catch (error) {
-    console.error("Error ending call:", error);
-    cleanup(false);
-    onEndCall();
-    router.push("/");
-  }
-};
+    }
+  };
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -1142,7 +1058,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .padStart(2, "0")}`;
   };
 
- return (
+  return (
     <div
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
