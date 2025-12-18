@@ -635,117 +635,168 @@ const VideoCall: React.FC<VideoCallProps> = ({
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
-          if (!remoteStream || !remoteVideoRef.current) {
-            console.error("❌ Missing remote stream or video ref");
+          if (!remoteStream) {
+            console.error("❌ Remote stream is null");
             return;
           }
 
-          // Remove old audio elements
-          document
-            .querySelectorAll("#remote-audio-element")
-            .forEach((el) => el.remove());
-
-          const remoteAudio = remoteStream.getAudioTracks()[0];
-          const remoteVideo = remoteStream.getVideoTracks()[0];
-
-          console.log(
-            "🎤 Remote audio:",
-            remoteAudio
-              ? {
-                  id: remoteAudio.id,
-                  enabled: remoteAudio.enabled,
-                  muted: remoteAudio.muted,
-                  readyState: remoteAudio.readyState,
-                }
-              : "MISSING"
-          );
-
-          console.log(
-            "📹 Remote video:",
-            remoteVideo
-              ? {
-                  id: remoteVideo.id,
-                  enabled: remoteVideo.enabled,
-                  readyState: remoteVideo.readyState,
-                }
-              : "MISSING"
-          );
-
-          if (!remoteAudio || !remoteVideo) {
-            setError("⚠️ Remote user's camera/mic is blocked or not working");
-            console.error("❌ Missing tracks - remote user needs to:");
-            console.error("   1. Allow camera/mic permissions");
-            console.error("   2. Check system settings");
-            console.error("   3. Close other apps using camera/mic");
-            console.error("   4. Refresh the page");
-            return;
-          }
-
-          // Wait for tracks to become live
-          await Promise.all([
-            waitForTrackReady(remoteAudio, "audio"),
-            waitForTrackReady(remoteVideo, "video"),
-          ]);
-
-          // Force enable
-          remoteAudio.enabled = true;
-          remoteVideo.enabled = true;
-
-          // Setup video element (muted for video only)
-          const videoElement = remoteVideoRef.current;
-          videoElement.srcObject = remoteStream;
-          videoElement.autoplay = true;
-          videoElement.playsInline = true;
-          videoElement.muted = true;
-          videoElement.volume = 0;
-
-          // Setup audio element (unmuted for audio only)
-          const audioElement = document.createElement("audio");
-          audioElement.id = "remote-audio-element";
-          audioElement.autoplay = true;
-          audioElement.muted = false;
-          audioElement.volume = 1.0;
-          audioElement.style.display = "none";
-          audioElement.srcObject = new MediaStream([remoteAudio]);
-
-          document.body.appendChild(audioElement);
-          console.log("✅ Audio element added");
-
-          // Play with retries
-          const playMedia = async () => {
-            try {
-              await Promise.all([videoElement.play(), audioElement.play()]);
-              console.log("✅ AUDIO & VIDEO PLAYING");
-              setConnectionStatus("connected");
-              setError(null);
-            } catch (err: any) {
-              if (err.name === "NotAllowedError") {
-                setError("🔊 CLICK ANYWHERE to enable audio");
-                const enableOnClick = () => {
-                  audioElement.play().catch(console.error);
-                  videoElement.play().catch(console.error);
-                  setError(null);
-                };
-                document.addEventListener("click", enableOnClick, {
-                  once: true,
-                });
-              } else {
-                console.error("❌ Play error:", err);
+          // 🔥 CRITICAL FIX: Wait for DOM elements to exist
+          const waitForElement = (
+            selector: string,
+            timeout = 5000
+          ): Promise<HTMLElement> => {
+            return new Promise((resolve, reject) => {
+              const element = document.querySelector(selector) as HTMLElement;
+              if (element) {
+                resolve(element);
+                return;
               }
+
+              const observer = new MutationObserver(() => {
+                const el = document.querySelector(selector) as HTMLElement;
+                if (el) {
+                  observer.disconnect();
+                  resolve(el);
+                }
+              });
+
+              observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+              });
+
+              setTimeout(() => {
+                observer.disconnect();
+                reject(
+                  new Error(`Element ${selector} not found after ${timeout}ms`)
+                );
+              }, timeout);
+            });
+          };
+
+          try {
+            console.log("⏳ Waiting for video elements...");
+            const remoteVideoElement = await waitForElement("#remote-video");
+            console.log("✅ Remote video element found");
+
+            const remoteAudio = remoteStream.getAudioTracks()[0];
+            const remoteVideo = remoteStream.getVideoTracks()[0];
+
+            console.log(
+              "🎤 Remote audio:",
+              remoteAudio
+                ? {
+                    id: remoteAudio.id,
+                    enabled: remoteAudio.enabled,
+                    muted: remoteAudio.muted,
+                    readyState: remoteAudio.readyState,
+                  }
+                : "MISSING"
+            );
+
+            console.log(
+              "📹 Remote video:",
+              remoteVideo
+                ? {
+                    id: remoteVideo.id,
+                    enabled: remoteVideo.enabled,
+                    readyState: remoteVideo.readyState,
+                  }
+                : "MISSING"
+            );
+
+            if (!remoteAudio || !remoteVideo) {
+              setError("⚠️ Remote user's camera/mic is blocked or not working");
+              return;
             }
-          };
 
-          setTimeout(playMedia, 500);
+            // Wait for tracks to become live
+            await Promise.all([
+              waitForTrackReady(remoteAudio, "audio"),
+              waitForTrackReady(remoteVideo, "video"),
+            ]);
 
-          // Monitor track state
-          remoteAudio.onmute = () => {
-            console.warn("🔇 Remote muted");
-            setRemoteAudioStatus("muted");
-          };
-          remoteAudio.onunmute = () => {
-            console.log("🔊 Remote unmuted");
-            setRemoteAudioStatus("active");
-          };
+            // Force enable
+            remoteAudio.enabled = true;
+            remoteVideo.enabled = true;
+
+            // Remove old audio elements
+            document
+              .querySelectorAll("#remote-audio-element")
+              .forEach((el) => el.remove());
+
+            // Setup video element
+            const videoElement = remoteVideoElement as HTMLVideoElement;
+            videoElement.srcObject = remoteStream;
+            videoElement.autoplay = true;
+            videoElement.playsInline = true;
+            videoElement.muted = true; // Mute video element to prevent echo
+            videoElement.volume = 0;
+
+            console.log("✅ Video srcObject set:", videoElement.srcObject);
+
+            // Setup separate audio element
+            const audioElement = document.createElement("audio");
+            audioElement.id = "remote-audio-element";
+            audioElement.autoplay = true;
+            audioElement.muted = false;
+            audioElement.volume = 1.0;
+            audioElement.style.display = "none";
+            audioElement.srcObject = new MediaStream([remoteAudio]);
+
+            document.body.appendChild(audioElement);
+            console.log("✅ Audio element added to DOM");
+
+            // Play media with retries
+            const playMedia = async () => {
+              try {
+                console.log("🎬 Attempting to play media...");
+                await Promise.all([videoElement.play(), audioElement.play()]);
+                console.log("✅ AUDIO & VIDEO PLAYING");
+                setConnectionStatus("connected");
+                setError(null);
+              } catch (err: any) {
+                console.error("❌ Autoplay error:", err);
+                if (err.name === "NotAllowedError") {
+                  setError("🔊 CLICK ANYWHERE to enable audio");
+                  const enableOnClick = () => {
+                    console.log("👆 User clicked, attempting playback...");
+                    audioElement.play().catch(console.error);
+                    videoElement.play().catch(console.error);
+                    setError(null);
+                  };
+                  document.addEventListener("click", enableOnClick, {
+                    once: true,
+                  });
+                }
+              }
+            };
+
+            // Wait a bit before playing
+            setTimeout(playMedia, 500);
+
+            // Monitor track state
+            remoteAudio.onmute = () => {
+              console.warn("🔇 Remote audio muted");
+              setRemoteAudioStatus("muted");
+            };
+            remoteAudio.onunmute = () => {
+              console.log("🔊 Remote audio unmuted");
+              setRemoteAudioStatus("active");
+            };
+
+            remoteAudio.onended = () => {
+              console.warn("🛑 Remote audio track ended");
+            };
+            remoteVideo.onended = () => {
+              console.warn("🛑 Remote video track ended");
+            };
+
+            console.log("✅ Remote stream setup complete");
+          } catch (error) {
+            console.error("❌ Error setting up remote stream:", error);
+            setError("Failed to display remote video");
+          }
         },
         (candidate: RTCIceCandidate) => {
           const socket = getSocket();
@@ -1034,7 +1085,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
     >
       <video
         ref={remoteVideoRef}
-        id="remote-video"
+        id="remote-video" // 🔥 CRITICAL: Must have this ID
         autoPlay
         playsInline
         className="w-full h-full object-cover absolute inset-0"
