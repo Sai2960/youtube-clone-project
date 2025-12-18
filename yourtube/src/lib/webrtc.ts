@@ -308,17 +308,20 @@ export class WebRTCService {
     // 🔥 CRITICAL: Prevent duplicate stream callbacks
     let streamCallbackFired = false;
 
-    this.peerConnection.ontrack = (event) => {
-      console.log("📥 Remote track received:", event.track.kind);
-      console.log("   Track ID:", event.track.id);
-      console.log("   Stream ID:", event.streams[0]?.id);
-      console.log("   Track enabled:", event.track.enabled);
-      console.log("   Track muted:", event.track.muted);
-      console.log("   Track readyState:", event.track.readyState);
-
-      // 🔥 CRITICAL: Force enable IMMEDIATELY
-      event.track.enabled = true;
-
+   this.peerConnection.ontrack = (event) => {
+  console.log("📥 Remote track received:", event.track.kind);
+  
+  // 🔥 FORCE ENABLE IMMEDIATELY
+  event.track.enabled = true;
+ if (event.track.kind === 'audio') {
+    console.log("🎤 Audio track:", {
+      id: event.track.id,
+      enabled: event.track.enabled,
+      muted: event.track.muted,
+      readyState: event.track.readyState,
+      label: event.track.label
+    });
+  }
       // 🔥 CRITICAL: Prevent premature stop
       const originalStop = event.track.stop.bind(event.track);
       event.track.stop = () => {
@@ -326,20 +329,20 @@ export class WebRTCService {
       };
 
       // 🔥 CRITICAL: Use event.streams[0] directly
-      if (event.streams && event.streams.length > 0) {
-        const stream = event.streams[0];
+     if (event.streams && event.streams.length > 0) {
+    const stream = event.streams[0];
+    
+    // Force enable ALL tracks
+    stream.getTracks().forEach(t => {
+      t.enabled = true;
+    });
 
-        // Store or update remote stream
-        if (!this.remoteStream || this.remoteStream.id !== stream.id) {
-          this.remoteStream = stream;
-          console.log("   ✅ New remote stream stored:", stream.id);
-        }
-
-        // 🔥 CRITICAL: Force enable ALL tracks in stream
-        stream.getTracks().forEach((t) => {
-          t.enabled = true;
-          console.log(`   ✅ Forced ${t.kind} track enabled:`, t.enabled);
-        });
+    // Store remote stream
+    this.remoteStream = stream;
+    
+    // 🔥 Call callback immediately
+    onRemoteStream(stream);
+  
 
         // 🔥 CRITICAL: Only fire callback when we have BOTH tracks
         const hasAudio = stream.getAudioTracks().length > 0;
