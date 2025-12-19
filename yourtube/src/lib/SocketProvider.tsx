@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useMemo } from 'react';
 import { initializeSocket, disconnectSocket } from './socket';
 import { useUser } from './AuthContext';

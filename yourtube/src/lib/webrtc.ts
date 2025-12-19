@@ -127,7 +127,9 @@ export class WebRTCService {
     // ✅ CRITICAL FIX: Force enable ALL tracks immediately
     stream.getTracks().forEach((track) => {
       track.enabled = true;
-      console.log(`   ✅ ${track.kind}: ${track.label} - enabled=${track.enabled}, muted=${track.muted}`);
+      console.log(
+        `   ✅ ${track.kind}: ${track.label} - enabled=${track.enabled}, muted=${track.muted}`
+      );
     });
 
     console.log("✅ Local stream configured");
@@ -142,67 +144,90 @@ export class WebRTCService {
   }
 
   // ✅ CRITICAL FIX: Completely rewritten to ensure proper transceiver setup
- // ✅ CRITICAL FIX: Completely rewritten to ensure proper transceiver setup
-addLocalStreamToPeer(): void {
-  if (!this.localStream || !this.peerConnection) {
-    console.error("❌ Cannot add stream to peer");
-    return;
-  }
+  // ✅ CRITICAL FIX: Completely rewritten to ensure proper transceiver setup
+  async addLocalStreamToPeer(): Promise<void> {
+    if (!this.localStream || !this.peerConnection) {
+      console.error("❌ Cannot add stream to peer");
+      return;
+    }
 
-  console.log("\n📤 Adding Local Stream to Peer (FIXED)");
+    console.log("\n📤 Adding Local Stream to Peer (FIXED v2)");
 
-  // ✅ CRITICAL: Get existing transceivers FIRST
-  let transceivers = this.peerConnection.getTransceivers();
-  console.log(`   Found ${transceivers.length} existing transceivers`);
+    // ✅ Get existing transceivers
+    let transceivers = this.peerConnection.getTransceivers();
+    console.log(`   Found ${transceivers.length} existing transceivers`);
 
-  // Step 1: If no transceivers exist, add tracks to create them
-  if (transceivers.length === 0) {
-    console.log("   Creating new transceivers by adding tracks...");
-    this.localStream.getTracks().forEach((track) => {
-      console.log(`      Adding ${track.kind}: ${track.label}`);
-      this.peerConnection?.addTrack(track, this.localStream!);
-    });
-    
-    // Refresh transceiver list
-    transceivers = this.peerConnection.getTransceivers();
-    console.log(`   ✅ Created ${transceivers.length} transceivers`);
-  } else {
-    // Step 2: Replace tracks in existing transceivers
-    console.log("   Using existing transceivers, replacing tracks...");
-    
-    const audioTrack = this.localStream.getAudioTracks()[0];
-    const videoTrack = this.localStream.getVideoTracks()[0];
-    
-    for (const transceiver of transceivers) {
-      const sender = transceiver.sender;
-      
-      if (transceiver.receiver.track?.kind === 'audio' && audioTrack) {
-        sender.replaceTrack(audioTrack);
-        console.log(`      ✅ Replaced audio track: ${audioTrack.label}`);
-      } else if (transceiver.receiver.track?.kind === 'video' && videoTrack) {
-        sender.replaceTrack(videoTrack);
-        console.log(`      ✅ Replaced video track: ${videoTrack.label}`);
+    // Step 1: If no transceivers exist, add tracks to create them
+    if (transceivers.length === 0) {
+      console.log("   Creating new transceivers...");
+      // Add tracks with explicit direction
+      this.localStream.getTracks().forEach((track) => {
+        console.log(`      Adding ${track.kind}: ${track.label}`);
+        const sender = this.peerConnection!.addTrack(track, this.localStream!);
+
+        // Get the transceiver that was just created
+        const transceiver = this.peerConnection!.getTransceivers().find(
+          (t) => t.sender === sender
+        );
+
+        if (transceiver) {
+          transceiver.direction = "sendrecv";
+          console.log(`      ✅ Set ${track.kind} transceiver to sendrecv`);
+        }
+      });
+
+      this.localStream.getTracks().forEach((track) => {
+        console.log(`      Adding ${track.kind}: ${track.label}`);
+        this.peerConnection?.addTrack(track, this.localStream!);
+      });
+
+      // Refresh transceiver list
+      transceivers = this.peerConnection.getTransceivers();
+      console.log(`   ✅ Created ${transceivers.length} transceivers`);
+    } else {
+      console.log("   Replacing tracks in existing transceivers...");
+
+      const audioTrack = this.localStream.getAudioTracks()[0];
+      const videoTrack = this.localStream.getVideoTracks()[0];
+
+      for (const transceiver of transceivers) {
+        const kind = transceiver.receiver.track?.kind;
+
+        if (kind === "audio" && audioTrack) {
+          await transceiver.sender.replaceTrack(audioTrack);
+          transceiver.direction = "sendrecv";
+          console.log(`      ✅ Replaced audio track`);
+        } else if (kind === "video" && videoTrack) {
+          await transceiver.sender.replaceTrack(videoTrack);
+          transceiver.direction = "sendrecv";
+          console.log(`      ✅ Replaced video track`);
+        }
       }
     }
+
+    // ✅ CRITICAL: Final verification and force sendrecv
+    console.log("\n   🔧 Final transceiver verification:");
+    transceivers.forEach((transceiver, index) => {
+      const track = transceiver.sender.track;
+      const oldDirection = transceiver.direction;
+
+      // Force sendrecv
+      transceiver.direction = "sendrecv";
+
+      console.log(`      Transceiver ${index}:`);
+      console.log(`         Kind: ${track?.kind || "unknown"}`);
+      console.log(`         Track: ${track?.label || "none"}`);
+      console.log(`         Enabled: ${track?.enabled}`);
+      console.log(`         Direction: ${oldDirection} → sendrecv`);
+      console.log(
+        `         Current direction: ${transceiver.currentDirection || "none"}`
+      );
+    });
+
+    console.log(
+      `\n✅ Stream setup complete with ${transceivers.length} transceivers\n`
+    );
   }
-
-  // Step 3: CRITICAL - Force ALL transceivers to sendrecv
-  console.log("\n   🔧 Forcing transceivers to sendrecv...");
-  transceivers.forEach((transceiver, index) => {
-    const oldDirection = transceiver.direction;
-    
-    // ✅ FORCE sendrecv - this is the key fix
-    transceiver.direction = "sendrecv";
-    
-    console.log(`      Transceiver ${index}:`);
-    console.log(`         Kind: ${transceiver.sender.track?.kind || 'unknown'}`);
-    console.log(`         Direction: ${oldDirection} → sendrecv`);
-    console.log(`         Sender track: ${transceiver.sender.track?.label || 'none'}`);
-    console.log(`         Sender enabled: ${transceiver.sender.track?.enabled}`);
-  });
-
-  console.log(`\n✅ Stream setup complete with ${transceivers.length} transceivers`);
-}
 
   // ✅ FIXED: Added explicit constraints and validation
   async createOffer(): Promise<RTCSessionDescriptionInit> {
@@ -215,7 +240,7 @@ addLocalStreamToPeer(): void {
     // ✅ Pre-offer validation
     const transceivers = this.peerConnection.getTransceivers();
     console.log(`   Pre-offer check: ${transceivers.length} transceivers`);
-    
+
     let fixCount = 0;
     transceivers.forEach((t, i) => {
       if (t.direction !== "sendrecv") {
@@ -248,10 +273,10 @@ addLocalStreamToPeer(): void {
       const hasSendonly = offer.sdp.includes("a=sendonly");
       const hasRecvonly = offer.sdp.includes("a=recvonly");
 
-      console.log(`      Audio: ${hasAudio ? '✅' : '❌'}`);
-      console.log(`      Video: ${hasVideo ? '✅' : '❌'}`);
+      console.log(`      Audio: ${hasAudio ? "✅" : "❌"}`);
+      console.log(`      Video: ${hasVideo ? "✅" : "❌"}`);
       console.log(`      Sendrecv count: ${sendrecvCount}`);
-      
+
       if (!hasAudio || !hasVideo) {
         console.error("      🚨 MISSING MEDIA SECTIONS!");
       }
@@ -278,7 +303,7 @@ addLocalStreamToPeer(): void {
     // ✅ Pre-answer validation
     const transceivers = this.peerConnection.getTransceivers();
     console.log(`   Pre-answer check: ${transceivers.length} transceivers`);
-    
+
     let fixCount = 0;
     transceivers.forEach((t, i) => {
       if (t.direction === "recvonly" && t.sender.track) {
@@ -306,10 +331,10 @@ addLocalStreamToPeer(): void {
       const hasVideo = answer.sdp.includes("m=video");
       const sendrecvCount = (answer.sdp.match(/a=sendrecv/g) || []).length;
 
-      console.log(`      Audio: ${hasAudio ? '✅' : '❌'}`);
-      console.log(`      Video: ${hasVideo ? '✅' : '❌'}`);
+      console.log(`      Audio: ${hasAudio ? "✅" : "❌"}`);
+      console.log(`      Video: ${hasVideo ? "✅" : "❌"}`);
       console.log(`      Sendrecv count: ${sendrecvCount}`);
-      
+
       if (!hasAudio || !hasVideo || sendrecvCount < 2) {
         console.error("      🚨 ANSWER SDP VALIDATION FAILED!");
       }
@@ -319,7 +344,9 @@ addLocalStreamToPeer(): void {
     return answer;
   }
 
-  async setRemoteDescription(description: RTCSessionDescriptionInit): Promise<void> {
+  async setRemoteDescription(
+    description: RTCSessionDescriptionInit
+  ): Promise<void> {
     if (!this.peerConnection) {
       throw new Error("Peer connection not initialized");
     }
@@ -334,8 +361,8 @@ addLocalStreamToPeer(): void {
       const sendrecvCount = (description.sdp.match(/a=sendrecv/g) || []).length;
 
       console.log("   📊 Remote SDP:");
-      console.log(`      Audio: ${hasAudio ? '✅' : '❌'}`);
-      console.log(`      Video: ${hasVideo ? '✅' : '❌'}`);
+      console.log(`      Audio: ${hasAudio ? "✅" : "❌"}`);
+      console.log(`      Video: ${hasVideo ? "✅" : "❌"}`);
       console.log(`      Sendrecv: ${sendrecvCount}`);
 
       if (!hasAudio || !hasVideo) {
@@ -343,7 +370,9 @@ addLocalStreamToPeer(): void {
       }
     }
 
-    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(description));
+    await this.peerConnection.setRemoteDescription(
+      new RTCSessionDescription(description)
+    );
     console.log("✅ Remote description set");
   }
 
@@ -360,7 +389,7 @@ addLocalStreamToPeer(): void {
 
     try {
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      
+
       const candidateStr = candidate.candidate;
       let type = "unknown";
       if (candidateStr.includes("typ host")) type = "host";
@@ -412,11 +441,17 @@ addLocalStreamToPeer(): void {
       // ✅ Check if we have both tracks
       const audioTracks = this.remoteStream.getAudioTracks();
       const videoTracks = this.remoteStream.getVideoTracks();
-      
-      console.log(`   Current tracks: audio=${audioTracks.length}, video=${videoTracks.length}`);
+
+      console.log(
+        `   Current tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
+      );
 
       // ✅ Fire callback when we have BOTH tracks
-      if (audioTracks.length > 0 && videoTracks.length > 0 && !this.callbackFired) {
+      if (
+        audioTracks.length > 0 &&
+        videoTracks.length > 0 &&
+        !this.callbackFired
+      ) {
         this.callbackFired = true;
 
         console.log("\n🎉 ===== BOTH TRACKS READY (FIXED) =====");
@@ -426,7 +461,9 @@ addLocalStreamToPeer(): void {
         // ✅ Force enable all tracks
         this.remoteStream.getTracks().forEach((t) => {
           t.enabled = true;
-          console.log(`      ${t.kind}: enabled=${t.enabled}, muted=${t.muted}`);
+          console.log(
+            `      ${t.kind}: enabled=${t.enabled}, muted=${t.muted}`
+          );
         });
 
         // ✅ Small delay for stability
@@ -441,9 +478,11 @@ addLocalStreamToPeer(): void {
       if (event.candidate) {
         let type = "unknown";
         if (event.candidate.candidate.includes("typ host")) type = "host";
-        else if (event.candidate.candidate.includes("typ srflx")) type = "srflx";
-        else if (event.candidate.candidate.includes("typ relay")) type = "relay";
-        
+        else if (event.candidate.candidate.includes("typ srflx"))
+          type = "srflx";
+        else if (event.candidate.candidate.includes("typ relay"))
+          type = "relay";
+
         console.log(`❄️ ICE candidate: ${type}`);
         onIceCandidate(event.candidate);
       }
@@ -526,7 +565,9 @@ addLocalStreamToPeer(): void {
     }
   }
 
-  async startScreenShare(preferCurrentTab: boolean = true): Promise<MediaStream> {
+  async startScreenShare(
+    preferCurrentTab: boolean = true
+  ): Promise<MediaStream> {
     try {
       console.log("\n🖥️ Starting Screen Share");
 
@@ -539,13 +580,17 @@ addLocalStreamToPeer(): void {
         preferCurrentTab: preferCurrentTab,
       } as any;
 
-      this.screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+      this.screenStream = await navigator.mediaDevices.getDisplayMedia(
+        displayMediaOptions
+      );
 
       const videoTrack = this.screenStream.getVideoTracks()[0];
       console.log("   ✅ Screen track:", videoTrack.label);
 
       if (this.peerConnection && this.localStream) {
-        const sender = this.peerConnection.getSenders().find((s) => s.track?.kind === "video");
+        const sender = this.peerConnection
+          .getSenders()
+          .find((s) => s.track?.kind === "video");
 
         if (sender) {
           await sender.replaceTrack(videoTrack);
@@ -574,14 +619,18 @@ addLocalStreamToPeer(): void {
     }
 
     if (this.peerConnection && this.originalVideoTrack) {
-      const sender = this.peerConnection.getSenders().find((s) => s.track?.kind === "video");
+      const sender = this.peerConnection
+        .getSenders()
+        .find((s) => s.track?.kind === "video");
 
       if (sender) {
         if (this.originalVideoTrack.readyState === "live") {
           await sender.replaceTrack(this.originalVideoTrack);
           console.log("   ✅ Restored camera");
         } else {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
           const newVideoTrack = stream.getVideoTracks()[0];
           await sender.replaceTrack(newVideoTrack);
           this.originalVideoTrack = newVideoTrack;
