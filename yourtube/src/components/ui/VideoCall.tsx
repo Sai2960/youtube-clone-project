@@ -25,25 +25,67 @@ interface VideoCallProps {
   callId?: string;
 }
 
-// ✅ OPTIMIZED: Simplified audio verification with optimistic validation
+// ✅ ENHANCED: Audio verification with actual level testing
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
-  console.log("🎤 Audio track validation:", {
+  console.log("🎤 Verifying audio track:", {
     readyState: track.readyState,
     muted: track.muted,
     enabled: track.enabled,
     label: track.label,
   });
 
-  const isValid = track.readyState === "live" && !track.muted && track.enabled;
-
-  if (!isValid) {
-    console.warn("⚠️ Audio track not ready yet");
+  if (track.readyState !== "live" || track.muted || !track.enabled) {
+    console.warn("⚠️ Audio track not ready");
+    return false;
   }
 
-  return isValid;
+  // Test actual audio levels
+  try {
+    const AudioContext =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    const audioContext = new AudioContext();
+    const stream = new MediaStream([track]);
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    return new Promise((resolve) => {
+      let maxLevel = 0;
+      let checks = 0;
+
+      const checkLevel = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        maxLevel = Math.max(maxLevel, avg);
+        checks++;
+
+        console.log(`🎤 Audio level check ${checks}/5: ${avg.toFixed(2)}`);
+
+        if (checks >= 5) {
+          audioContext.close();
+          const isWorking = maxLevel > 0.5;
+          console.log(
+            `🎤 Audio verification: ${
+              isWorking ? "✅ PASS" : "❌ FAIL"
+            } (max: ${maxLevel.toFixed(2)})`
+          );
+          resolve(isWorking);
+        } else {
+          setTimeout(checkLevel, 200);
+        }
+      };
+
+      checkLevel();
+    });
+  } catch (err) {
+    console.error("❌ Audio verification failed:", err);
+    return true; // Optimistic fallback
+  }
 };
 
-// ✅ KEPT: Helper to wait for track readiness (useful for USB mic scenarios)
+// ✅ KEPT: Helper for USB mic scenarios
 const waitForTrackReady = (
   track: MediaStreamTrack,
   kind: string
@@ -79,9 +121,11 @@ const waitForTrackReady = (
     }, 5000);
   });
 };
-// ✅ MERGED: Best of both - Enhanced media acquisition with Windows audio fix + simplified fallback
+// ✅ COMPLETELY REWRITTEN: Prioritize webcam's built-in microphone with fallbacks
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
-  console.log("🔧 Getting media with enhanced audio handling...");
+  console.log(
+    "🔧 Starting media acquisition with intelligent mic selection..."
+  );
 
   try {
     // Step 1: Request permissions FIRST
@@ -97,103 +141,167 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter((d) => d.kind === "audioinput");
+    const videoInputs = devices.filter((d) => d.kind === "videoinput");
 
-    console.log(`🎤 Found ${audioInputs.length} microphones`);
+    console.log(`📹 Found ${videoInputs.length} cameras`);
+    console.log(`🎤 Found ${audioInputs.length} microphones:`);
+    audioInputs.forEach((mic, i) => {
+      console.log(
+        `   ${i + 1}. ${mic.label} (${mic.deviceId.substring(0, 8)}...)`
+      );
+    });
 
-    // Step 3: Try USB microphone FIRST (if available)
-    const usbMic = audioInputs.find(
-      (d) =>
-        d.label.toLowerCase().includes("usb") &&
-        !d.label.toLowerCase().includes("monitor")
-    );
+    // Step 3: Find the primary camera
+    const camera =
+      videoInputs.find(
+        (v) =>
+          v.label.toLowerCase().includes("hd") ||
+          v.label.toLowerCase().includes("camera") ||
+          v.label.toLowerCase().includes("video")
+      ) || videoInputs[0];
 
-    if (usbMic) {
-      console.log(`🎯 Trying USB mic: ${usbMic.label}`);
+    console.log(`📹 Selected camera: ${camera?.label}`);
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            deviceId: { exact: usbMic.deviceId },
+    // Step 4: Find microphone - Priority order:
+    // 1. Webcam's built-in mic (matches camera label or has HD/camera/video)
+    // 2. USB microphone (if explicitly needed)
+    // 3. Default system microphone
+
+    let targetMic = audioInputs.find((mic) => {
+      const micLabel = mic.label.toLowerCase();
+      const cameraLabel = camera?.label.toLowerCase() || "";
+
+      // Check if mic belongs to the camera
+      if (cameraLabel.includes("hd") && micLabel.includes("hd")) {
+        return true;
+      }
+
+      // Check for common patterns indicating built-in webcam mic
+      if (
+        micLabel.includes("video") ||
+        micLabel.includes("camera") ||
+        (cameraLabel && micLabel.includes(cameraLabel.split(" ")[0]))
+      ) {
+        return true;
+      }
+
+      return false;
+    });
+
+    // Fallback to USB mic if webcam mic not found
+    if (!targetMic) {
+      targetMic = audioInputs.find(
+        (d) =>
+          d.label.toLowerCase().includes("usb") &&
+          !d.label.toLowerCase().includes("monitor")
+      );
+    }
+
+    // Final fallback: default microphone (avoid communications/monitor)
+    if (!targetMic) {
+      targetMic =
+        audioInputs.find(
+          (m) =>
+            m.deviceId !== "default" &&
+            m.deviceId !== "communications" &&
+            !m.label.toLowerCase().includes("monitor")
+        ) || audioInputs[0];
+    }
+
+    console.log(`🎯 Target microphone: ${targetMic?.label}`);
+
+    // Step 5: Request media with specific devices
+    const constraints = {
+      audio: targetMic
+        ? {
+            deviceId: { exact: targetMic.deviceId },
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 48000,
+            channelCount: 1,
+          }
+        : {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
             sampleRate: 48000,
             channelCount: 1,
           },
-          video: {
+      video: camera
+        ? {
+            deviceId: { exact: camera.deviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30 },
+          }
+        : {
             width: { ideal: 1280 },
             height: { ideal: 720 },
             frameRate: { ideal: 30 },
           },
-        });
+    };
 
-        // Small delay for USB mic initialization
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log("📡 Requesting media...");
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-        const audioTrack = stream.getAudioTracks()[0];
-        audioTrack.enabled = true;
-
-        const isAudioWorking = await verifyAudioTrack(audioTrack);
-        if (
-          isAudioWorking &&
-          audioTrack.readyState === "live" &&
-          !audioTrack.muted
-        ) {
-          console.log(`✅ SUCCESS! Using ${usbMic.label}`);
-          return stream;
-        }
-
-        console.warn("USB mic not ready, trying next...");
-        stream.getTracks().forEach((t) => t.stop());
-      } catch (err: any) {
-        console.warn(`USB mic failed: ${err.message}`);
-      }
-    }
-
-    // Step 4: Fallback to default microphone
-    console.log("📌 Trying default microphone...");
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        sampleRate: 48000,
-        channelCount: 1,
-      },
-      video: {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        frameRate: { ideal: 30 },
-      },
-    });
-
-    // Small delay for track initialization
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Force enable all tracks
-    stream.getTracks().forEach((track) => {
-      track.enabled = true;
-    });
+    // Wait for tracks to initialize
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const audioTrack = stream.getAudioTracks()[0];
-    const isAudioWorking = await verifyAudioTrack(audioTrack);
+    const videoTrack = stream.getVideoTracks()[0];
 
-    if (
-      isAudioWorking &&
-      audioTrack.readyState === "live" &&
-      !audioTrack.muted
-    ) {
-      console.log("✅ Default mic working");
-      return stream;
+    console.log("✅ Stream obtained:");
+    console.log(`   🎤 Audio: ${audioTrack.label}`);
+    console.log(`   📹 Video: ${videoTrack.label}`);
+
+    // Force enable all tracks
+    audioTrack.enabled = true;
+    videoTrack.enabled = true;
+
+    // Verify audio is actually working
+    const audioWorks = await verifyAudioTrack(audioTrack);
+
+    if (!audioWorks) {
+      console.warn("⚠️ Selected mic not working, trying fallback...");
+
+      // Try default microphone
+      stream.getTracks().forEach((t) => t.stop());
+
+      const fallbackStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 1,
+        },
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 },
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      fallbackStream.getTracks().forEach((t) => (t.enabled = true));
+
+      const fallbackAudio = fallbackStream.getAudioTracks()[0];
+      console.log("✅ Using fallback microphone:", fallbackAudio.label);
+
+      // Verify fallback
+      const fallbackWorks = await verifyAudioTrack(fallbackAudio);
+      if (!fallbackWorks) {
+        console.warn(
+          "⚠️ Fallback mic verification incomplete, proceeding anyway"
+        );
+      }
+
+      return fallbackStream;
     }
 
-    // If verification failed but we have a stream, proceed anyway (optimistic)
-    if (audioTrack && audioTrack.readyState === "live") {
-      console.warn("⚠️ Audio verification incomplete, but proceeding");
-      return stream;
-    }
-
-    throw new Error("All microphones failed");
+    console.log("✅ Media acquisition complete with verified audio");
+    return stream;
   } catch (err: any) {
     console.error("❌ Media access failed:", err);
 
@@ -551,10 +659,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("   ICE state:", pc.iceConnectionState);
       }
 
-      // Step 3: Get local media stream
+      // Step 3: Get local media stream with ENHANCED audio selection
       let localStream: MediaStream;
       try {
-        console.log("🎤 Requesting media with enhanced audio handling...");
+        console.log("🎤 Requesting media with intelligent mic selection...");
         localStream = await ensureAudioNotMuted();
 
         console.log("✅ Local stream obtained");
@@ -622,7 +730,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.warn("⚠️ Local video autoplay blocked (normal)");
         }
       }
-
       // Step 5: Setup remote stream event listener
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
@@ -1096,7 +1203,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.error("❌ Video error:", e);
         }}
       />
-
       {/* ✅ Connecting Overlay */}
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
@@ -1108,7 +1214,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         </div>
       )}
-
       {/* ✅ Local Video (Picture-in-Picture) */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
         <video
@@ -1124,7 +1229,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         )}
       </div>
-
       {/* ✅ Top Bar - Peer Info & Recording Status */}
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 safe-area-top">
         <div className="flex items-center justify-between gap-2">
@@ -1164,7 +1268,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           )}
         </div>
       </div>
-
       {/* ✅ Error Banner */}
       {error && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
@@ -1189,7 +1292,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </button>
         </div>
       )}
-
+      ## Part 13: JSX Return (UI Components - Part 2 - Controls) & Export
+      ```typescript
       {/* ✅ Bottom Controls Bar */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 safe-area-bottom">
         <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
@@ -1281,4 +1385,5 @@ const VideoCall: React.FC<VideoCallProps> = ({
     </div>
   );
 };
+
 export default VideoCall;
