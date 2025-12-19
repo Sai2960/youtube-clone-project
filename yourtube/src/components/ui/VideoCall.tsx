@@ -25,7 +25,7 @@ interface VideoCallProps {
   remotePeerName?: string;
   callId?: string;
 }
-// ✅ ENHANCED: Audio verification with actual level testing
+// ✅ Audio verification with actual level testing
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   console.log("🎤 Verifying audio track:", {
     readyState: track.readyState,
@@ -39,7 +39,6 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
     return false;
   }
 
-  // Test actual audio levels
   try {
     const AudioContext =
       (window as any).AudioContext || (window as any).webkitAudioContext;
@@ -84,50 +83,14 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
     return true; // Optimistic fallback
   }
 };
-// ✅ Helper for USB mic scenarios
-const waitForTrackReady = (
-  track: MediaStreamTrack,
-  kind: string
-): Promise<void> => {
-  return new Promise((resolve) => {
-    if (track.readyState === "live" && !track.muted) {
-      console.log(`✅ ${kind} track ready immediately`);
-      resolve();
-      return;
-    }
-
-    console.log(`⏳ Waiting for ${kind} track...`);
-    let resolved = false;
-
-    const checkReady = () => {
-      if (track.readyState === "live" && !track.muted && !resolved) {
-        resolved = true;
-        console.log(`✅ ${kind} track became ready`);
-        resolve();
-      }
-    };
-
-    track.addEventListener("unmute", checkReady, { once: true });
-    const interval = setInterval(checkReady, 100);
-
-    setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        clearInterval(interval);
-        console.log(`⏰ ${kind} track timeout - proceeding anyway`);
-        resolve();
-      }
-    }, 5000);
-  });
-};
-// ✅ COMPLETELY REWRITTEN: Prioritize webcam's built-in microphone with fallbacks
+// ✅ Intelligent microphone selection with webcam priority
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   console.log(
     "🔧 Starting media acquisition with intelligent mic selection..."
   );
 
   try {
-    // Step 1: Request permissions FIRST
+    // Step 1: Request permissions
     const permStream = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: true,
@@ -150,7 +113,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       );
     });
 
-    // Step 3: Find the primary camera
+    // Step 3: Find primary camera
     const camera =
       videoInputs.find(
         (v) =>
@@ -161,21 +124,16 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 
     console.log(`📹 Selected camera: ${camera?.label}`);
 
-    // Step 4: Find microphone - Priority order:
-    // 1. Webcam's built-in mic (matches camera label or has HD/camera/video)
-    // 2. USB microphone (if explicitly needed)
-    // 3. Default system microphone
-
+    // Step 4: Find microphone - Priority order
     let targetMic = audioInputs.find((mic) => {
       const micLabel = mic.label.toLowerCase();
       const cameraLabel = camera?.label.toLowerCase() || "";
 
-      // Check if mic belongs to the camera
+      // Check if mic belongs to camera
       if (cameraLabel.includes("hd") && micLabel.includes("hd")) {
         return true;
       }
 
-      // Check for common patterns indicating built-in webcam mic
       if (
         micLabel.includes("video") ||
         micLabel.includes("camera") ||
@@ -187,7 +145,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       return false;
     });
 
-    // Fallback to USB mic if webcam mic not found
+    // Fallback to USB mic
     if (!targetMic) {
       targetMic = audioInputs.find(
         (d) =>
@@ -196,7 +154,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       );
     }
 
-    // Final fallback: default microphone (avoid communications/monitor)
+    // Final fallback: default microphone
     if (!targetMic) {
       targetMic =
         audioInputs.find(
@@ -208,6 +166,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     }
 
     console.log(`🎯 Target microphone: ${targetMic?.label}`);
+
     // Step 5: Request media with specific devices
     const constraints = {
       audio: targetMic
@@ -253,17 +212,15 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     console.log(`   🎤 Audio: ${audioTrack.label}`);
     console.log(`   📹 Video: ${videoTrack.label}`);
 
-    // Force enable all tracks
+    // Force enable
     audioTrack.enabled = true;
     videoTrack.enabled = true;
 
-    // Verify audio is actually working
+    // Verify audio
     const audioWorks = await verifyAudioTrack(audioTrack);
 
     if (!audioWorks) {
       console.warn("⚠️ Selected mic not working, trying fallback...");
-
-      // Try default microphone
       stream.getTracks().forEach((t) => t.stop());
 
       const fallbackStream = await navigator.mediaDevices.getUserMedia({
@@ -287,37 +244,11 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       const fallbackAudio = fallbackStream.getAudioTracks()[0];
       console.log("✅ Using fallback microphone:", fallbackAudio.label);
 
-      // Verify fallback
-      const fallbackWorks = await verifyAudioTrack(fallbackAudio);
-      if (!fallbackWorks) {
-        console.warn(
-          "⚠️ Fallback mic verification incomplete, proceeding anyway"
-        );
-      }
-
       return fallbackStream;
     }
 
     console.log("✅ Media acquisition complete with verified audio");
-
-    // ✅ CRITICAL: Add small delay for track stabilization
     await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // ✅ Final verification
-    const finalAudio = stream.getAudioTracks()[0];
-    const finalVideo = stream.getVideoTracks()[0];
-
-    console.log("🎯 Final track states:", {
-      audio: {
-        enabled: finalAudio?.enabled,
-        muted: finalAudio?.muted,
-        state: finalAudio?.readyState,
-      },
-      video: {
-        enabled: finalVideo?.enabled,
-        state: finalVideo?.readyState,
-      },
-    });
 
     return stream;
   } catch (err: any) {
@@ -349,7 +280,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const router = useRouter();
   const { user } = useUser();
 
-  // ✅ State Management
+  // State Management
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -358,9 +289,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const [connectionStatus, setConnectionStatus] = useState("connecting");
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showPlayButton, setShowPlayButton] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
 
-  // ✅ Refs
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const webrtcServiceRef = useRef<WebRTCService | null>(null);
@@ -370,7 +302,24 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const isEndingCallRef = useRef(false);
   const initializingRef = useRef(false);
   const initializedRef = useRef(false);
-  // ✅ Auto-enter fullscreen on mount
+  // ✅ Detect user interaction before starting call
+  useEffect(() => {
+    const handleInteraction = () => {
+      if (!userInteracted) {
+        console.log("✅ User interaction detected");
+        setUserInteracted(true);
+      }
+    };
+
+    document.addEventListener("click", handleInteraction, { once: true });
+    document.addEventListener("touchstart", handleInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("touchstart", handleInteraction);
+    };
+  }, [userInteracted]);
+  // ✅ Auto-enter fullscreen
   useEffect(() => {
     const enterFullscreen = async () => {
       try {
@@ -384,7 +333,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
 
-    enterFullscreen();
+    if (userInteracted) {
+      enterFullscreen();
+    }
 
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -398,16 +349,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
         document.exitFullscreen().catch(console.error);
       }
     };
-  }, []);
-  // ✅ Resume AudioContext on user interaction
+  }, [userInteracted]);
+  // ✅ Resume AudioContext
   useEffect(() => {
+    if (!userInteracted) return;
+
     const resumeAudioContext = () => {
       const AudioContext =
         (window as any).AudioContext || (window as any).webkitAudioContext;
 
       if (AudioContext) {
         console.log("🎤 Attempting to resume AudioContext...");
-
         const ctx = new AudioContext();
         if (ctx.state === "suspended") {
           ctx
@@ -428,18 +380,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     const timer = setTimeout(resumeAudioContext, 1000);
 
-    const events = ["click", "touchstart", "keydown"];
-    events.forEach((evt) => {
-      document.addEventListener(evt, resumeAudioContext, { once: true });
-    });
-
     return () => {
       clearTimeout(timer);
-      events.forEach((evt) => {
-        document.removeEventListener(evt, resumeAudioContext);
-      });
     };
-  }, []);
+  }, [userInteracted]);
   // ✅ Socket event handlers
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
@@ -448,10 +392,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     const setupHandlers = async () => {
       try {
-        socket = await waitForSocket(5000);
+        socket = await waitForSocket(15000);
         console.log("✅ Socket ready for event handlers:", socket.id);
       } catch (err) {
         console.error("❌ Socket not ready for handlers");
+        setError("Connection timeout. Please refresh.");
         return;
       }
 
@@ -462,7 +407,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("\n📥 ===== RECEIVED OFFER =====");
         console.log("   Type:", data.offer.type);
         console.log("   From:", data.from);
-        console.log("   SDP length:", data.offer.sdp?.length);
 
         if (!webrtcServiceRef.current) {
           console.error("❌ WebRTC service not available");
@@ -490,7 +434,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("\n📥 ===== RECEIVED ANSWER =====");
         console.log("   Type:", data.answer.type);
         console.log("   From:", data.from);
-        console.log("   SDP length:", data.answer.sdp?.length);
 
         if (!webrtcServiceRef.current) {
           console.error("❌ WebRTC service not available");
@@ -607,6 +550,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
       return;
     }
 
+    if (!userInteracted) {
+      console.log("⏳ Waiting for user interaction...");
+      return;
+    }
+
     if (initializingRef.current || initializedRef.current) {
       console.log("⚠️ Already initialized, skipping");
       return;
@@ -645,7 +593,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         cleanup(false);
       }
     };
-  }, [roomId]);
+  }, [roomId, userInteracted]);
   const initializeCall = async () => {
     try {
       setError(null);
@@ -670,7 +618,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       // Step 1: Wait for socket
       let socket;
       try {
-        socket = await waitForSocket(10000);
+        socket = await waitForSocket(15000);
         console.log("✅ Socket ready:", socket.id);
       } catch (err) {
         setError("Connection failed. Please refresh the page.");
@@ -681,7 +629,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       webrtcServiceRef.current = new WebRTCService();
       recordingServiceRef.current = new RecordingService();
 
-      // ✅ FIX: Only declare 'pc' once
       const pc = webrtcServiceRef.current?.getPeerConnection();
       if (pc) {
         (window as any).peerConnection = pc;
@@ -753,7 +700,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
             console.log(`   ✅ Enabled ${t.kind}: ${t.label}`);
           });
 
-          // ✅ CRITICAL FIX: Create dedicated audio element for audio playback
+          // ✅ CRITICAL FIX: Create dedicated audio element
           console.log("🔊 Creating audio element for remote audio...");
 
           // Remove any existing audio elements
@@ -778,8 +725,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
           try {
             await audioElement.play();
             console.log("✅ Audio element playing");
-          } catch (err) {
-            console.error("❌ Audio play failed:", err);
+          } catch (err: any) {
+            console.warn("⚠️ Audio blocked:", err.name);
+            setShowPlayButton(true);
           }
 
           // Clear existing srcObject
@@ -836,13 +784,15 @@ const VideoCall: React.FC<VideoCallProps> = ({
               console.log("✅ VIDEO PLAYING!");
               setConnectionStatus("connected");
               setError(null);
+              setShowPlayButton(false);
               return true;
             } catch (err: any) {
               console.error(`❌ Play failed (${err.name}):`, err.message);
 
               if (err.name === "NotAllowedError") {
                 console.log("🔊 Autoplay blocked - need user gesture");
-                setError("🔊 Tap screen to enable video");
+                setShowPlayButton(true);
+                setError("🔊 Tap the play button to start");
 
                 return new Promise((resolve) => {
                   const handleInteraction = async () => {
@@ -852,6 +802,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
                       console.log("✅ Resumed after user gesture!");
                       setConnectionStatus("connected");
                       setError(null);
+                      setShowPlayButton(false);
                       resolve(true);
                     } catch (e) {
                       console.error("❌ Still failed:", e);
@@ -889,8 +840,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
           };
 
           const success = await tryPlay();
-          if (!success) {
-            setError("⚠️ Video playback failed - tap anywhere to retry");
+          if (!success && !showPlayButton) {
+            setShowPlayButton(true);
+            setError("⚠️ Tap play button to start video");
           }
 
           console.log("✅ Remote stream setup complete\n");
@@ -1092,7 +1044,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       setError("Screen sharing failed");
     }
   };
-
   const startRecording = async () => {
     try {
       const localVideo = localVideoRef.current;
@@ -1128,6 +1079,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       setError("Failed to start recording");
     }
   };
+
   const stopRecording = () => {
     if (recordingServiceRef.current) {
       recordingServiceRef.current.stopRecording();
@@ -1146,6 +1098,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       console.error("Error emitting recording-stopped:", error);
     }
   };
+
   const handleEndCall = async () => {
     if (callEndedRef.current) {
       console.log("⚠️ Call already ended, skipping");
@@ -1196,6 +1149,35 @@ const VideoCall: React.FC<VideoCallProps> = ({
       router.push("/");
     }
   };
+
+  const handlePlayClick = async () => {
+    try {
+      console.log("🎬 Manual play triggered");
+
+      // Play audio
+      const audioEl = document.getElementById(
+        "remote-audio-element"
+      ) as HTMLAudioElement;
+      if (audioEl) {
+        await audioEl.play();
+        console.log("✅ Audio resumed");
+      }
+
+      // Play video
+      if (remoteVideoRef.current) {
+        await remoteVideoRef.current.play();
+        console.log("✅ Video resumed");
+        setConnectionStatus("connected");
+      }
+
+      setShowPlayButton(false);
+      setError(null);
+    } catch (err) {
+      console.error("❌ Manual play failed:", err);
+      setError("Playback failed - please try again");
+    }
+  };
+
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -1209,6 +1191,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       console.error("Fullscreen error:", error);
     }
   };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -1216,12 +1199,34 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .toString()
       .padStart(2, "0")}`;
   };
-
+  // ✅ Show initial interaction prompt
+  if (!userInteracted) {
+    return (
+      <div className="w-screen h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-8">
+            <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
+              <Video className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-white text-3xl font-bold mb-2">
+              Ready to join?
+            </h1>
+            <p className="text-gray-400 text-lg">
+              Tap the button below to start your call
+            </p>
+          </div>
+          <button
+            onClick={() => setUserInteracted(true)}
+            className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
+          >
+            🎥 START CALL
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div
-      ref={containerRef}
-      className="w-screen h-screen bg-black relative overflow-hidden touch-none"
-    >
+    <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* Remote Video (Main) */}
       <video
         ref={remoteVideoRef}
@@ -1241,7 +1246,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
             console.log("✅ Video playing after metadata");
           } catch (err) {
             console.warn("Autoplay blocked:", err);
-            setError("🔊 Tap screen to start video");
+            setShowPlayButton(true);
           }
         }}
         onCanPlay={async (e) => {
@@ -1250,12 +1255,14 @@ const VideoCall: React.FC<VideoCallProps> = ({
             await e.currentTarget.play();
           } catch (err) {
             console.warn("Play blocked:", err);
+            setShowPlayButton(true);
           }
         }}
         onPlay={() => {
           console.log("✅ Video PLAYING");
           setConnectionStatus("connected");
           setError(null);
+          setShowPlayButton(false);
         }}
         onPause={() => {
           console.warn("⚠️ Video PAUSED - attempting resume");
@@ -1263,7 +1270,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }}
         onError={(e) => {
           console.error("❌ Video error:", e);
-          setError("Video playback error - tap to retry");
+          setError("Video playback error - tap play button");
+          setShowPlayButton(true);
         }}
       />
       {/* Connecting Overlay */}
@@ -1326,52 +1334,25 @@ const VideoCall: React.FC<VideoCallProps> = ({
           )}
         </div>
       </div>
-      ``` ## Part 16: JSX Return Statement (Part 2 - Final) ```typescript
-      {/* Emergency Play Button */}
-      {connectionStatus === "connected" && error?.includes("tap") && (
-        <div className="absolute inset-0 flex items-center justify-center z-25 pointer-events-none">
+      ## Part 17: JSX Return - Main Video Call UI (Part 2 - Final) ```typescript
+      {/* Play Button Overlay */}
+      {showPlayButton && (
+        <div className="absolute inset-0 flex items-center justify-center z-25 bg-black/50">
           <button
-            onClick={async () => {
-              try {
-                await remoteVideoRef.current?.play();
-                const audioEl = document.getElementById(
-                  "remote-audio-element"
-                ) as HTMLAudioElement;
-                if (audioEl) await audioEl.play();
-                console.log("✅ Emergency play activated");
-                setError(null);
-              } catch (err) {
-                console.error("Emergency play failed:", err);
-              }
-            }}
-            className="p-6 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-lg pointer-events-auto"
+            onClick={handlePlayClick}
+            className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
           >
-            <Play className="w-10 h-10 text-white" fill="currentColor" />
+            <Play
+              className="w-12 h-12 sm:w-16 sm:h-16 text-white"
+              fill="currentColor"
+            />
           </button>
         </div>
       )}
       {/* Error Banner */}
-      {error && (
+      {error && !showPlayButton && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
           <p className="font-semibold">{error}</p>
-          <button
-            onClick={async () => {
-              try {
-                await remoteVideoRef.current?.play();
-                const audioEl = document.getElementById(
-                  "remote-audio-element"
-                ) as HTMLAudioElement;
-                if (audioEl) await audioEl.play();
-                setConnectionStatus("connected");
-                setError(null);
-              } catch (err: any) {
-                console.error("Manual play failed:", err);
-              }
-            }}
-            className="mt-2 px-4 py-2 bg-white text-red-600 rounded font-bold hover:bg-gray-100 active:bg-gray-200 transition"
-          >
-            ▶️ CLICK TO PLAY
-          </button>
         </div>
       )}
       {/* Bottom Controls */}
