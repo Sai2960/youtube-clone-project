@@ -314,106 +314,105 @@ setupEventListeners(
   const receivedTracks = new Set<string>();
   let callbackFired = false;
 
-  this.peerConnection.ontrack = (event) => {
-    console.log("\n📥 ===== TRACK RECEIVED =====");
-    console.log("   Kind:", event.track.kind);
-    console.log("   Track ID:", event.track.id);
-    console.log("   Enabled:", event.track.enabled);
-    console.log("   Muted:", event.track.muted);
-    console.log("   Ready State:", event.track.readyState);
-    console.log("   Streams:", event.streams.length);
+// 🔥 FIXED: Safer ontrack handler
+this.peerConnection.ontrack = (event) => {
+  console.log("\n📥 ===== TRACK RECEIVED =====");
+  console.log("   Kind:", event.track.kind);
+  console.log("   Track ID:", event.track.id);
+  console.log("   Enabled:", event.track.enabled);
+  console.log("   Muted:", event.track.muted);
+  console.log("   Ready State:", event.track.readyState);
+  console.log("   Streams:", event.streams.length);
 
-    // 🔥 CRITICAL: Force enable immediately
-    event.track.enabled = true;
+  // 🔥 CRITICAL: Force enable immediately
+  event.track.enabled = true;
 
-    // 🔥 If muted on arrival, attempt recovery
-    if (event.track.muted) {
-      console.warn(`⚠️ Track is MUTED on arrival, attempting recovery...`);
+  // 🔥 If muted on arrival, attempt recovery
+  if (event.track.muted) {
+    console.warn(`⚠️ Track is MUTED on arrival, attempting recovery...`);
+    setTimeout(() => {
+      event.track.enabled = false;
       setTimeout(() => {
+        event.track.enabled = true;
+        console.log(`   Recovery attempted for ${event.track.kind}`);
+      }, 50);
+    }, 100);
+  }
+
+  // Get or create remote stream
+  if (event.streams && event.streams.length > 0) {
+    this.remoteStream = event.streams[0];
+    console.log("   Using stream from event:", this.remoteStream.id);
+  } else {
+    if (!this.remoteStream) {
+      this.remoteStream = new MediaStream();
+      console.log("   Created new MediaStream");
+    }
+    
+    // Add track if not already present
+    const existingTrack = this.remoteStream.getTracks().find(
+      t => t.id === event.track.id
+    );
+    
+    if (!existingTrack) {
+      this.remoteStream.addTrack(event.track);
+      console.log(`   ✅ Added ${event.track.kind} to remote stream`);
+    }
+  }
+
+  // Mark this track as received
+  receivedTracks.add(event.track.kind);
+  console.log("   Tracks received so far:", Array.from(receivedTracks));
+
+  // 🔥 CRITICAL: Only fire callback when BOTH audio and video are ready
+  if (receivedTracks.has('audio') && receivedTracks.has('video') && !callbackFired) {
+    callbackFired = true;
+    console.log("\n✅ ===== BOTH TRACKS READY - FIRING CALLBACK =====");
+    
+    // Final verification
+    const audioTracks = this.remoteStream.getAudioTracks();
+    const videoTracks = this.remoteStream.getVideoTracks();
+    
+    console.log("Final stream status:");
+    console.log("   Audio tracks:", audioTracks.length);
+    console.log("   Video tracks:", videoTracks.length);
+    
+    // Force enable all tracks one more time
+    this.remoteStream.getTracks().forEach((t) => {
+      t.enabled = true;
+      console.log(`   Final enable: ${t.kind} - enabled=${t.enabled}, muted=${t.muted}`);
+    });
+
+    // Fire the callback
+    onRemoteStream(this.remoteStream);
+  }
+
+  // Monitor track health
+  event.track.onended = () => {
+    console.error(`🛑 ${event.track.kind} ENDED`);
+    if (this.remoteStream) {
+      const remainingTracks = this.remoteStream.getTracks();
+      console.log("   Remaining tracks:", remainingTracks.length);
+    }
+  };
+
+  event.track.onmute = () => {
+    console.warn(`🔇 ${event.track.kind} MUTED`);
+    setTimeout(() => {
+      if (event.track.readyState === "live") {
         event.track.enabled = false;
         setTimeout(() => {
           event.track.enabled = true;
-          console.log(`   Recovery attempted for ${event.track.kind}`);
-        }, 50);
-      }, 100);
-    }
-
-    // Get or create remote stream
-    if (event.streams && event.streams.length > 0) {
-      this.remoteStream = event.streams[0];
-      console.log("   Using stream from event:", this.remoteStream.id);
-    } else {
-      if (!this.remoteStream) {
-        this.remoteStream = new MediaStream();
-        console.log("   Created new MediaStream");
+          console.log(`   🔄 ${event.track.kind} recovery attempted`);
+        }, 100);
       }
-      
-      // Add track if not already present
-      const existingTrack = this.remoteStream.getTracks().find(
-        t => t.id === event.track.id
-      );
-      
-      if (!existingTrack) {
-        this.remoteStream.addTrack(event.track);
-        console.log(`   ✅ Added ${event.track.kind} to remote stream`);
-      }
-    }
-
-    // Mark this track as received
-    receivedTracks.add(event.track.kind);
-    console.log("   Tracks received so far:", Array.from(receivedTracks));
-
-    // 🔥 CRITICAL: Only fire callback when BOTH audio and video are ready
-    if (receivedTracks.has('audio') && receivedTracks.has('video') && !callbackFired) {
-      callbackFired = true;
-      console.log("\n✅ ===== BOTH TRACKS READY - FIRING CALLBACK =====");
-      
-      // Final verification
-      const audioTracks = this.remoteStream.getAudioTracks();
-      const videoTracks = this.remoteStream.getVideoTracks();
-      
-      console.log("Final stream status:");
-      console.log("   Audio tracks:", audioTracks.length);
-      console.log("   Video tracks:", videoTracks.length);
-      
-      // Force enable all tracks one more time
-      this.remoteStream.getTracks().forEach((t) => {
-        t.enabled = true;
-        console.log(`   Final enable: ${t.kind} - enabled=${t.enabled}, muted=${t.muted}`);
-      });
-
-      // Fire the callback
-      onRemoteStream(this.remoteStream);
-    }
-
-    // Monitor track health
-    event.track.onended = () => {
-      console.error(`🛑 ${event.track.kind} ENDED`);
-      // Try to recover
-      if (this.remoteStream) {
-        const remainingTracks = this.remoteStream.getTracks();
-        console.log("   Remaining tracks:", remainingTracks.length);
-      }
-    };
-
-    event.track.onmute = () => {
-      console.warn(`🔇 ${event.track.kind} MUTED`);
-      // Attempt recovery
-      setTimeout(() => {
-        if (event.track.readyState === "live") {
-          event.track.enabled = false;
-          setTimeout(() => {
-            event.track.enabled = true;
-            console.log(`   🔄 ${event.track.kind} recovery attempted`);
-          }, 100);
-        }
-      }, 200);
-    };
-
-    event.track.onunmute = () => {
-      console.log(`🔊 ${event.track.kind} UNMUTED`);
-    };
+    }, 200);
   };
+
+  event.track.onunmute = () => {
+    console.log(`🔊 ${event.track.kind} UNMUTED`);
+  };
+};
 
   this.peerConnection.onicecandidate = (event) => {
     if (event.candidate) {

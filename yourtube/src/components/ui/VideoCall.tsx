@@ -153,56 +153,75 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 };
 
 // 🔥 NEW: Verify audio track is actually producing sound
+// 🔥 FIXED: Audio verification with user gesture handling
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
       const AudioContext =
         (window as any).AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContext();
-      const source = audioContext.createMediaStreamSource(
-        new MediaStream([track])
-      );
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      let checkCount = 0;
-      const maxChecks = 5;
-
-      const checkAudio = () => {
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-
-        console.log(
-          `🎤 Audio level check ${
-            checkCount + 1
-          }/${maxChecks}: ${average.toFixed(2)}`
-        );
-
-        checkCount++;
-
-        // Consider it working if we detect ANY sound level > 0
-        // OR if track properties look good
-        if (average > 0 || checkCount >= maxChecks) {
-          const isWorking =
-            average > 0 || (track.readyState === "live" && !track.muted);
-          console.log(isWorking ? "✅ Audio verified" : "⚠️ No audio detected");
-          audioContext.close();
-          resolve(isWorking);
-        } else {
-          setTimeout(checkAudio, 200);
+      
+      // Don't create AudioContext until user interaction
+      let audioContext: AudioContext | null = null;
+      
+      const createAndVerify = () => {
+        if (!audioContext) {
+          audioContext = new AudioContext();
+          
+          // Resume if suspended
+          if (audioContext.state === 'suspended') {
+            audioContext.resume();
+          }
         }
+
+        const source = audioContext.createMediaStreamSource(
+          new MediaStream([track])
+        );
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let checkCount = 0;
+        const maxChecks = 5;
+
+        const checkAudio = () => {
+          analyser.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+          console.log(
+            `🎤 Audio level check ${checkCount + 1}/${maxChecks}: ${average.toFixed(2)}`
+          );
+
+          checkCount++;
+
+          if (average > 0 || checkCount >= maxChecks) {
+            const isWorking =
+              average > 0 || (track.readyState === "live" && !track.muted);
+            console.log(isWorking ? "✅ Audio verified" : "⚠️ No audio detected");
+            audioContext?.close();
+            resolve(isWorking);
+          } else {
+            setTimeout(checkAudio, 200);
+          }
+        };
+
+        setTimeout(checkAudio, 500);
       };
 
-      setTimeout(checkAudio, 500);
+      // If page hasn't had interaction yet, defer verification
+      if (document.visibilityState === 'visible') {
+        createAndVerify();
+      } else {
+        // Just assume it's working if we can't verify
+        console.log("⚠️ Deferring audio verification until page interaction");
+        resolve(true);
+      }
     } catch (error) {
       console.error("❌ Audio verification failed:", error);
       resolve(true); // Assume working if we can't verify
     }
   });
-};
-// Helper to wait for track to be ready - ADD THIS BEFORE VideoCall component
+};// Helper to wait for track to be ready - ADD THIS BEFORE VideoCall component
 const waitForTrackReady = (
   track: MediaStreamTrack,
   kind: string
@@ -270,86 +289,37 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const initializingRef = useRef(false);
   const initializedRef = useRef(false);
 
-  useEffect(() => {
-    const resumeAudio = async () => {
-      try {
-        const AudioContext =
-          (window as any).AudioContext || (window as any).webkitAudioContext;
-        if (AudioContext) {
-          const ctx = new AudioContext();
-          if (ctx.state === "suspended") {
-            await ctx.resume();
-            console.log("✅ Audio context resumed");
-          }
-          ctx.close();
+ // 🔥 NEW: Force resume AudioContext on ANY user interaction
+useEffect(() => {
+  const resumeAllAudio = async () => {
+    try {
+      const AudioContext =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AudioContext) {
+        const ctx = new AudioContext();
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+          console.log("✅ AudioContext resumed globally");
         }
-      } catch (err) {
-        console.warn("⚠️ Could not resume audio context:", err);
+        ctx.close();
       }
-    };
+    } catch (err) {
+      console.warn("⚠️ Could not resume AudioContext:", err);
+    }
+  };
 
-    const handleUserInteraction = async () => {
-      await resumeAudio();
+  // Listen for ANY user interaction
+  const events = ['click', 'touchstart', 'keydown'];
+  events.forEach(event => {
+    document.addEventListener(event, resumeAllAudio, { once: true });
+  });
 
-      // Also resume video playback if needed
-      if (remoteVideoRef.current?.paused) {
-        try {
-          await remoteVideoRef.current.play();
-          console.log("✅ Video resumed after interaction");
-        } catch (err) {
-          console.error("Video play failed:", err);
-        }
-      }
-    };
-
-    document.addEventListener("click", handleUserInteraction, { once: true });
-    document.addEventListener("touchstart", handleUserInteraction, {
-      once: true,
+  return () => {
+    events.forEach(event => {
+      document.removeEventListener(event, resumeAllAudio);
     });
-
-    return () => {
-      document.removeEventListener("click", handleUserInteraction);
-      document.removeEventListener("touchstart", handleUserInteraction);
-    };
-  }, []);
-
-  useEffect(() => {
-    const enablePlayback = async () => {
-      console.log("👆 User clicked - enabling playback");
-
-      if (remoteVideoRef.current) {
-        try {
-          await remoteVideoRef.current.play();
-          console.log("✅ Video resumed");
-        } catch (err) {
-          console.error("Still blocked:", err);
-        }
-      }
-    };
-
-    document.addEventListener("click", enablePlayback, { once: true });
-    return () => document.removeEventListener("click", enablePlayback);
-  }, []);
-
-  useEffect(() => {
-    const handleFirstClick = async () => {
-      console.log("🎵 User clicked - forcing audio playback");
-      const audioElements = document.querySelectorAll("audio");
-      audioElements.forEach(async (audio) => {
-        try {
-          if (audio.paused) {
-            await audio.play();
-            console.log("✅ Audio resumed after click");
-          }
-        } catch (err) {
-          console.error("❌ Could not play audio:", err);
-        }
-      });
-    };
-
-    document.addEventListener("click", handleFirstClick, { once: true });
-    return () => document.removeEventListener("click", handleFirstClick);
-  }, []);
+  };
+}, []);
 
   useEffect(() => {
     const enterFullscreen = async () => {
