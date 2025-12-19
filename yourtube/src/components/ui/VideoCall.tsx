@@ -25,7 +25,6 @@ interface VideoCallProps {
   remotePeerName?: string;
   callId?: string;
 }
-
 // ✅ ENHANCED: Audio verification with actual level testing
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   console.log("🎤 Verifying audio track:", {
@@ -85,8 +84,7 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
     return true; // Optimistic fallback
   }
 };
-
-// ✅ KEPT: Helper for USB mic scenarios
+// ✅ Helper for USB mic scenarios
 const waitForTrackReady = (
   track: MediaStreamTrack,
   kind: string
@@ -210,7 +208,6 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     }
 
     console.log(`🎯 Target microphone: ${targetMic?.label}`);
-
     // Step 5: Request media with specific devices
     const constraints = {
       audio: targetMic
@@ -301,7 +298,6 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       return fallbackStream;
     }
 
-    // At the end of ensureAudioNotMuted, around line 245
     console.log("✅ Media acquisition complete with verified audio");
 
     // ✅ CRITICAL: Add small delay for track stabilization
@@ -362,7 +358,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const [connectionStatus, setConnectionStatus] = useState("connecting");
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [remoteAudioStatus, setRemoteAudioStatus] = useState<string>("waiting");
 
   // ✅ Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -601,7 +596,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
     return () => {
       cleanup.then((fn) => fn && fn());
     };
-  }, [roomId, webrtcServiceRef.current, isRecording, onEndCall, router]);
+  }, [roomId, isRecording, onEndCall, router]);
   // ✅ Main initialization effect
   useEffect(() => {
     console.log("🔄 Mount effect triggered, roomId:", roomId);
@@ -651,24 +646,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
   }, [roomId]);
-  // KEY FIXES:
-  // 1. Removed duplicate 'pc' declaration (line ~782)
-  // 2. Moved emergency play button inside return statement
-  // 3. Added audio element creation in remote stream callback
-  // 4. Fixed event handler cleanup
-
-  // Add this to your initializeCall function, around line 782:
-
-  // BEFORE (WRONG):
-  // const pc = webrtcServiceRef.current?.getPeerConnection(); // ❌ Duplicate
-  // if (pc) {
-  //   (window as any).peerConnection = pc;
-  // }
-
-  // AFTER (CORRECT):
-  // ✅ REMOVE the duplicate declaration, use the existing 'pc' from line ~652
-
-  // Replace lines 652-782 with this in initializeCall:
   const initializeCall = async () => {
     try {
       setError(null);
@@ -753,9 +730,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.warn("⚠️ Local video autoplay blocked (normal)");
         }
       }
-
       // Step 5: Setup remote stream listener
-      // ✅ FIX: Add audio element creation
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
@@ -822,7 +797,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           remoteVideoRef.current.srcObject = remoteStream;
           remoteVideoRef.current.autoplay = true;
           remoteVideoRef.current.playsInline = true;
-          remoteVideoRef.current.muted = false; // Keep this for video element
+          remoteVideoRef.current.muted = false;
           remoteVideoRef.current.volume = 1.0;
           remoteVideoRef.current.load();
 
@@ -873,7 +848,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
                   const handleInteraction = async () => {
                     try {
                       await remoteVideoRef.current?.play();
-                      await audioElement.play(); // Also resume audio
+                      await audioElement.play();
                       console.log("✅ Resumed after user gesture!");
                       setConnectionStatus("connected");
                       setError(null);
@@ -926,7 +901,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("❄️ ICE candidate sent");
         }
       );
-
       // Step 6: Add local stream
       webrtcServiceRef.current.addLocalStreamToPeer();
 
@@ -981,7 +955,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("⏳ Waiting for offer...");
       }
 
-      // Connection monitoring - reuse existing 'pc'
+      // Connection monitoring
       if (pc) {
         const checkConnection = setInterval(() => {
           if (
@@ -1010,19 +984,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
       setError(error.message || "Failed to initialize call");
     }
   };
-
   const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...");
-
-    // Clean up audio element monitoring intervals
-    document.querySelectorAll("#remote-audio-element").forEach((audio: any) => {
-      if (audio._monitorInterval) {
-        clearInterval(audio._monitorInterval);
-      }
-      if (audio._keepAlive) {
-        clearInterval(audio._keepAlive);
-      }
-    });
 
     // Clear recording interval
     if (recordingIntervalRef.current) {
@@ -1091,6 +1054,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     console.log("✅ Cleanup complete");
   };
+
   const toggleAudio = () => {
     if (webrtcServiceRef.current) {
       const newState = !isAudioEnabled;
@@ -1164,12 +1128,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
       setError("Failed to start recording");
     }
   };
-
   const stopRecording = () => {
     if (recordingServiceRef.current) {
       recordingServiceRef.current.stopRecording();
     }
-
     setIsRecording(false);
 
     if (recordingIntervalRef.current) {
@@ -1184,13 +1146,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
       console.error("Error emitting recording-stopped:", error);
     }
   };
-
   const handleEndCall = async () => {
     if (callEndedRef.current) {
       console.log("⚠️ Call already ended, skipping");
       return;
     }
-
     console.log("📴 Ending call initiated by local user");
     callEndedRef.current = true;
     isEndingCallRef.current = true;
@@ -1209,31 +1169,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       } catch (error) {
         console.error("Socket emit error:", error);
       }
-      {
-        /* Emergency Play Button - Shows when video isn't playing */
-      }
-      {
-        connectionStatus === "connected" && remoteVideoRef.current && (
-          <button
-            onClick={async () => {
-              try {
-                await remoteVideoRef.current?.play();
-                console.log("✅ Emergency play activated");
-                setError(null);
-              } catch (err) {
-                console.error("Emergency play failed:", err);
-              }
-            }}
-            className="p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-lg touch-manipulation lg:hidden"
-            aria-label="Force play video"
-          >
-            <Play
-              className="w-4 h-4 xs:w-5 xs:h-5 text-white"
-              fill="currentColor"
-            />
-          </button>
-        );
-      }
+
       // Update call status in backend
       if (callId) {
         await axiosInstance
@@ -1260,7 +1196,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       router.push("/");
     }
   };
-
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -1274,7 +1209,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       console.error("Fullscreen error:", error);
     }
   };
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -1282,7 +1216,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .toString()
       .padStart(2, "0")}`;
   };
-  // Replace the return statement (around line 1140+) with this fixed version:
 
   return (
     <div
@@ -1333,7 +1266,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           setError("Video playback error - tap to retry");
         }}
       />
-
       {/* Connecting Overlay */}
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
@@ -1345,7 +1277,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         </div>
       )}
-
       {/* Local Video (PiP) */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
         <video
@@ -1361,7 +1292,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         )}
       </div>
-
       {/* Top Bar */}
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 safe-area-top">
         <div className="flex items-center justify-between gap-2">
@@ -1396,15 +1326,14 @@ const VideoCall: React.FC<VideoCallProps> = ({
           )}
         </div>
       </div>
-
-      {/* ✅ FIX: Emergency Play Button - Moved inside return */}
+      ``` ## Part 16: JSX Return Statement (Part 2 - Final) ```typescript
+      {/* Emergency Play Button */}
       {connectionStatus === "connected" && error?.includes("tap") && (
         <div className="absolute inset-0 flex items-center justify-center z-25 pointer-events-none">
           <button
             onClick={async () => {
               try {
                 await remoteVideoRef.current?.play();
-                // Also try to resume audio element
                 const audioEl = document.getElementById(
                   "remote-audio-element"
                 ) as HTMLAudioElement;
@@ -1421,7 +1350,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </button>
         </div>
       )}
-
       {/* Error Banner */}
       {error && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
@@ -1446,7 +1374,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </button>
         </div>
       )}
-
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 safe-area-bottom">
         <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
@@ -1532,4 +1459,5 @@ const VideoCall: React.FC<VideoCallProps> = ({
     </div>
   );
 };
+
 export default VideoCall;
