@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 
-// lib/socket.ts - Lines 8-39
+// lib/socket.ts - Complete Fixed Version
 let socket: Socket | null = null;
 let currentUserId: string | null = null;
 let isRegistered = false;
@@ -71,7 +71,6 @@ export const initializeSocket = (userId: string): Socket => {
   console.log("🔌 Initializing Socket.IO");
   console.log("   User ID:", userId);
   console.log("   Backend URL:", SOCKET_URL);
-  // Line 49 - ADD this line
   console.log("🔧 Socket Configuration:");
   console.log("   URL:", SOCKET_URL);
   console.log("   Environment:", process.env.NODE_ENV);
@@ -124,7 +123,6 @@ export const initializeSocket = (userId: string): Socket => {
     console.log("⬆️ Socket upgraded to:", transport.name);
   });
 
-  // lib/socket.ts - Lines 85-95 (connect_error handler)
   socket.on("connect_error", (error) => {
     console.error("❌ Socket connection error:", error.message);
     console.error("   Error type:", error.name);

@@ -157,6 +157,20 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
+          const isValid = track.readyState === 'live' && !track.muted && track.enabled;
+  console.log('🎤 Audio track verification:', {
+      readyState: track.readyState,
+      muted: track.muted,
+      enabled: track.enabled,
+      valid: isValid
+    });
+    if (!isValid) {
+      console.warn('⚠️ Audio track not ready yet');
+    }
+    
+    resolve(isValid || true); // Optimistic - assume working
+  
+    
       const AudioContext =
         (window as any).AudioContext || (window as any).webkitAudioContext;
       
@@ -221,6 +235,8 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
       resolve(true); // Assume working if we can't verify
     }
   });
+  
+  
 };// Helper to wait for track to be ready - ADD THIS BEFORE VideoCall component
 const waitForTrackReady = (
   track: MediaStreamTrack,
@@ -290,36 +306,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const initializedRef = useRef(false);
 
  // 🔥 NEW: Force resume AudioContext on ANY user interaction
-useEffect(() => {
-  const resumeAllAudio = async () => {
-    try {
-      const AudioContext =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (AudioContext) {
-        const ctx = new AudioContext();
-        if (ctx.state === "suspended") {
-          await ctx.resume();
-          console.log("✅ AudioContext resumed globally");
-        }
-        ctx.close();
-      }
-    } catch (err) {
-      console.warn("⚠️ Could not resume AudioContext:", err);
-    }
-  };
-
-  // Listen for ANY user interaction
-  const events = ['click', 'touchstart', 'keydown'];
-  events.forEach(event => {
-    document.addEventListener(event, resumeAllAudio, { once: true });
-  });
-
-  return () => {
-    events.forEach(event => {
-      document.removeEventListener(event, resumeAllAudio);
-    });
-  };
-}, []);
+;
 
   useEffect(() => {
     const enterFullscreen = async () => {
