@@ -1225,17 +1225,42 @@ const VideoCall: React.FC<VideoCallProps> = ({
         autoPlay
         playsInline
         muted={false}
+        controls={false} // ✅ ADDED
         className="w-full h-full object-cover absolute inset-0"
-        style={{ backgroundColor: "#000" }} // Show black background if no video
+        style={{
+          backgroundColor: "#000",
+          width: "100%", // ✅ FORCE DIMENSIONS
+          height: "100%",
+          objectFit: "cover",
+          display: "block", // ✅ PREVENT HIDDEN
+        }}
         onLoadedMetadata={(e) => {
           console.log("✅ Remote video metadata loaded");
           const video = e.currentTarget;
+
+          // ✅ CHECK DIMENSIONS
+          console.log("Video dimensions:", {
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            clientWidth: video.clientWidth,
+            clientHeight: video.clientHeight,
+          });
+
+          // ✅ FORCE PLAY
           video.play().catch((err) => {
             console.error("❌ Autoplay failed:", err.name);
             if (err.name === "NotAllowedError") {
               setError("🔊 Click to enable audio/video");
             }
           });
+        }}
+        onCanPlay={(e) => {
+          console.log("✅ Video CAN PLAY");
+          e.currentTarget.play().catch(console.error);
+        }}
+        onPlaying={() => {
+          console.log("✅ Video IS PLAYING");
+          setError(null);
         }}
         onError={(e) => {
           console.error("❌ Video element error:", e);
@@ -1314,6 +1339,25 @@ const VideoCall: React.FC<VideoCallProps> = ({
       {error && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
           <p className="font-semibold">{error}</p>
+
+          {/* ✅ ADDED: Manual play button */}
+          <button
+            onClick={async () => {
+              const video = remoteVideoRef.current;
+              if (video) {
+                try {
+                  await video.play();
+                  console.log("✅ Manual play successful");
+                  setError(null);
+                } catch (err: any) {
+                  console.error("Manual play failed:", err.name);
+                }
+              }
+            }}
+            className="mt-2 px-4 py-2 bg-white text-red-600 rounded font-bold"
+          >
+            ▶️ CLICK TO PLAY VIDEO
+          </button>
         </div>
       )}
 
