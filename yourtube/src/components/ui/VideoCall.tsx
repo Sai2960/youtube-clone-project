@@ -9,6 +9,7 @@ import {
   MonitorUp,
   Circle,
   Maximize,
+  Play,
 } from "lucide-react";
 import { WebRTCService } from "@/lib/webrtc";
 import { RecordingService } from "@/lib/recordingService";
@@ -300,7 +301,28 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       return fallbackStream;
     }
 
+    // At the end of ensureAudioNotMuted, around line 245
     console.log("✅ Media acquisition complete with verified audio");
+
+    // ✅ CRITICAL: Add small delay for track stabilization
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // ✅ Final verification
+    const finalAudio = stream.getAudioTracks()[0];
+    const finalVideo = stream.getVideoTracks()[0];
+
+    console.log("🎯 Final track states:", {
+      audio: {
+        enabled: finalAudio?.enabled,
+        muted: finalAudio?.muted,
+        state: finalAudio?.readyState,
+      },
+      video: {
+        enabled: finalVideo?.enabled,
+        state: finalVideo?.readyState,
+      },
+    });
+
     return stream;
   } catch (err: any) {
     console.error("❌ Media access failed:", err);
@@ -751,123 +773,79 @@ const VideoCall: React.FC<VideoCallProps> = ({
             videoLabel: videoTracks[0]?.label,
           });
 
-          // Log and enable all tracks
-          audioTracks.forEach((track, i) => {
-            console.log(`🎤 Audio track ${i}:`, {
-              id: track.id.substring(0, 8),
-              enabled: track.enabled,
-              muted: track.muted,
-              readyState: track.readyState,
-            });
+          // ✅ CRITICAL FIX: Force enable ALL tracks immediately
+          remoteStream.getTracks().forEach((track) => {
             track.enabled = true;
+            console.log(`   ✅ Enabled ${track.kind} track`);
           });
 
-          videoTracks.forEach((track, i) => {
-            console.log(`📹 Video track ${i}:`, {
-              id: track.id.substring(0, 8),
-              enabled: track.enabled,
-              muted: track.muted,
-              readyState: track.readyState,
-            });
-            track.enabled = true;
-          });
+          // ✅ CRITICAL FIX: Set srcObject BEFORE any waiting
+          console.log("📺 Setting video srcObject...");
+          remoteVideoRef.current.srcObject = remoteStream;
+          remoteVideoRef.current.autoplay = true;
+          remoteVideoRef.current.playsInline = true;
+          remoteVideoRef.current.muted = false;
 
-          // Attach stream to video element
-          if (remoteVideoRef.current.srcObject !== remoteStream) {
-            console.log("📺 Attaching remote stream to <video>");
-            remoteVideoRef.current.srcObject = remoteStream;
-            remoteVideoRef.current.autoplay = true;
-            remoteVideoRef.current.playsInline = true;
-            remoteVideoRef.current.muted = false; // ✅ CRITICAL for audio
-          }
-
-          // Wait for video metadata
-          console.log("⏳ Waiting for video metadata...");
+          // ✅ Wait briefly for metadata
           await new Promise<void>((resolve) => {
+            const timeout = setTimeout(() => {
+              console.log("⏰ Metadata timeout");
+              resolve();
+            }, 2000);
+
             if (remoteVideoRef.current!.readyState >= 2) {
+              clearTimeout(timeout);
               console.log("✅ Metadata already loaded");
               resolve();
             } else {
               remoteVideoRef.current!.onloadedmetadata = () => {
-                console.log("✅ Metadata loaded via event");
+                clearTimeout(timeout);
+                console.log("✅ Metadata loaded");
                 resolve();
               };
-              setTimeout(() => {
-                console.log("⏰ Metadata timeout - continuing anyway");
-                resolve();
-              }, 3000);
             }
           });
 
-          // Attempt playback with retry logic
-          const attemptPlay = async (attempt = 1): Promise<void> => {
-            if (!remoteVideoRef.current) return;
+          // ✅ CRITICAL FIX: Force play immediately
+          try {
+            console.log("▶️ Attempting immediate playback...");
+            await remoteVideoRef.current!.play();
+            console.log("✅ PLAYBACK STARTED!");
+            setConnectionStatus("connected");
+            setError(null);
+          } catch (err: any) {
+            console.error("❌ Play failed:", err.name);
 
-            console.log(`▶️ Play attempt ${attempt}...`);
+            if (err.name === "NotAllowedError") {
+              setError("🔊 Click anywhere to enable video");
 
-            try {
-              await remoteVideoRef.current.play();
-              console.log("✅ PLAYBACK STARTED SUCCESSFULLY!");
-              setConnectionStatus("connected");
-              setError(null);
-              return;
-            } catch (err: any) {
-              console.error(`❌ Play failed (${err.name}):`, err.message);
+              // ✅ Wait for user gesture
+              const handleClick = async () => {
+                try {
+                  await remoteVideoRef.current?.play();
+                  console.log("✅ Resumed after click!");
+                  setConnectionStatus("connected");
+                  setError(null);
+                } catch (e) {
+                  console.error("❌ Still failed:", e);
+                }
+                document.removeEventListener("click", handleClick);
+              };
 
-              if (err.name === "NotAllowedError") {
-                console.log("🔒 Autoplay blocked - waiting for user click");
-                setError("🔊 Click anywhere to enable audio/video");
-
-                const handleUserGesture = async () => {
-                  console.log("👆 User clicked!");
-                  try {
-                    if (remoteVideoRef.current) {
-                      await remoteVideoRef.current.play();
-                      console.log("✅ Playback resumed!");
-                      setConnectionStatus("connected");
-                      setError(null);
-                    }
-                  } catch (e: any) {
-                    console.error("❌ Still failed:", e.name);
-                  }
-
-                  document.removeEventListener("click", handleUserGesture);
-                  document.removeEventListener("touchstart", handleUserGesture);
-                };
-
-                document.addEventListener("click", handleUserGesture, {
-                  once: true,
-                });
-                document.addEventListener("touchstart", handleUserGesture, {
-                  once: true,
-                });
-              } else if (attempt < 3) {
-                console.log(`🔄 Retrying in 500ms (attempt ${attempt + 1})...`);
-                await new Promise((r) => setTimeout(r, 500));
-                return attemptPlay(attempt + 1);
-              } else {
-                setError("⚠️ Video playback failed after 3 attempts");
-              }
+              document.addEventListener("click", handleClick, { once: true });
+            } else {
+              // Retry once
+              setTimeout(async () => {
+                try {
+                  await remoteVideoRef.current?.play();
+                  console.log("✅ Retry successful!");
+                  setConnectionStatus("connected");
+                } catch (e) {
+                  console.error("❌ Retry failed:", e);
+                }
+              }, 500);
             }
-          };
-
-          await attemptPlay();
-
-          // Health monitoring for audio tracks
-          const monitorHealth = () => {
-            audioTracks.forEach((track) => {
-              if (track.readyState === "live" && track.muted) {
-                console.warn("🔇 Audio track muted - attempting recovery");
-                track.enabled = false;
-                setTimeout(() => {
-                  track.enabled = true;
-                }, 100);
-              }
-            });
-          };
-
-          const healthCheckInterval = setInterval(monitorHealth, 5000);
-          setTimeout(() => clearInterval(healthCheckInterval), 60000);
+          }
 
           console.log("✅ Remote stream setup complete\n");
         },
@@ -877,7 +855,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("❄️ ICE candidate sent");
         }
       );
-
       // Step 6: Add local stream to peer connection
       webrtcServiceRef.current.addLocalStreamToPeer();
 
@@ -1122,7 +1099,31 @@ const VideoCall: React.FC<VideoCallProps> = ({
       } catch (error) {
         console.error("Socket emit error:", error);
       }
-
+      {
+        /* Emergency Play Button - Shows when video isn't playing */
+      }
+      {
+        connectionStatus === "connected" && remoteVideoRef.current && (
+          <button
+            onClick={async () => {
+              try {
+                await remoteVideoRef.current?.play();
+                console.log("✅ Emergency play activated");
+                setError(null);
+              } catch (err) {
+                console.error("Emergency play failed:", err);
+              }
+            }}
+            className="p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-lg touch-manipulation lg:hidden"
+            aria-label="Force play video"
+          >
+            <Play
+              className="w-4 h-4 xs:w-5 xs:h-5 text-white"
+              fill="currentColor"
+            />
+          </button>
+        );
+      }
       // Update call status in backend
       if (callId) {
         await axiosInstance
@@ -1184,12 +1185,23 @@ const VideoCall: React.FC<VideoCallProps> = ({
         playsInline
         muted={false}
         className="w-full h-full object-cover absolute inset-0"
-        style={{ backgroundColor: "#000" }}
-        onLoadedMetadata={() => {
-          console.log("✅ Video metadata loaded");
+        style={{
+          backgroundColor: "#000",
+          objectFit: "cover", // ✅ ADDED
         }}
-        onCanPlay={() => {
+        onLoadedMetadata={(e) => {
+          console.log("✅ Video metadata loaded");
+          // ✅ FORCE PLAY on metadata load
+          e.currentTarget.play().catch((err) => {
+            console.warn("Autoplay blocked:", err);
+          });
+        }}
+        onCanPlay={(e) => {
           console.log("✅ Video can play");
+          // ✅ FORCE PLAY when ready
+          e.currentTarget.play().catch((err) => {
+            console.warn("Play blocked:", err);
+          });
         }}
         onPlay={() => {
           console.log("✅ Video PLAYING");
@@ -1197,12 +1209,42 @@ const VideoCall: React.FC<VideoCallProps> = ({
           setError(null);
         }}
         onPause={() => {
-          console.warn("⚠️ Video PAUSED");
+          console.warn("⚠️ Video PAUSED - attempting resume");
+          // ✅ AUTO-RESUME if paused unexpectedly
+          remoteVideoRef.current?.play().catch(console.error);
         }}
         onError={(e) => {
           console.error("❌ Video error:", e);
+          setError("Video playback error");
         }}
       />
+      {/* ✅ Click to Play Overlay */}
+      {connectionStatus === "connected" && error?.includes("Click") && (
+        <div
+          className="absolute inset-0 bg-black/80 flex items-center justify-center z-30 cursor-pointer"
+          onClick={async () => {
+            try {
+              await remoteVideoRef.current?.play();
+              console.log("✅ Manual play successful");
+              setError(null);
+            } catch (err) {
+              console.error("Manual play failed:", err);
+            }
+          }}
+        >
+          <div className="text-center px-4">
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+              <Play className="w-10 h-10 text-black" fill="currentColor" />
+            </div>
+            <p className="text-white text-xl font-bold mb-2">
+              Tap to Start Video
+            </p>
+            <p className="text-gray-300 text-sm">
+              Browser requires user interaction
+            </p>
+          </div>
+        </div>
+      )}
       {/* ✅ Connecting Overlay */}
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
