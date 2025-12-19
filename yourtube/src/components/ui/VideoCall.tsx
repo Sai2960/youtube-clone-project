@@ -1,7 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/components/ui/VideoCall.tsx
-// COMPLETE FIXED VERSION - Replace your entire file with this
-
 import React, { useEffect, useRef, useState } from "react";
 import {
   PhoneOff,
@@ -27,127 +24,7 @@ interface VideoCallProps {
   remotePeerName?: string;
   callId?: string;
 }
-
-const ensureAudioNotMuted = async (): Promise<MediaStream> => {
-  console.log("🔧 Getting media with Windows audio fix...");
-
-  try {
-    // Step 1: Request permissions FIRST
-    const permStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: true,
-    });
-    permStream.getTracks().forEach((t) => t.stop());
-    console.log("✅ Permissions granted");
-
-    // Step 2: Wait for device enumeration
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const audioInputs = devices.filter((d) => d.kind === "audioinput");
-
-    console.log(`🎤 Found ${audioInputs.length} microphones`);
-
-    // Step 3: Try USB microphone FIRST (your "USB Audio and HID")
-    const usbMic = audioInputs.find(
-      (d) =>
-        d.label.toLowerCase().includes("usb") &&
-        !d.label.toLowerCase().includes("monitor")
-    );
-
-    if (usbMic) {
-      console.log(`🎯 Trying USB mic: ${usbMic.label}`);
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            deviceId: { exact: usbMic.deviceId },
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 48000, // Higher sample rate
-            channelCount: 1,
-          },
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        });
-
-        // Wait for track initialization
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const audioTrack = stream.getAudioTracks()[0];
-
-        // Force enable and verify
-        audioTrack.enabled = true;
-
-        // 🔥 NEW: Verify audio is producing sound
-        const isAudioWorking = await verifyAudioTrack(audioTrack);
-        if (
-          isAudioWorking &&
-          audioTrack.readyState === "live" &&
-          !audioTrack.muted
-        ) {
-          console.log(`✅ SUCCESS! Using ${usbMic.label}`);
-          return stream;
-        }
-
-        console.warn("USB mic not ready, trying next...");
-        stream.getTracks().forEach((t) => t.stop());
-      } catch (err) {
-        console.warn(`USB mic failed: ${err.message}`);
-      }
-    }
-
-    // Step 4: Fallback to default
-    console.log("📌 Trying default microphone...");
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        sampleRate: 48000,
-      },
-      video: {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const audioTrack = stream.getAudioTracks()[0];
-    audioTrack.enabled = true;
-
-    // 🔥 NEW: Verify default audio
-    const isAudioWorking = await verifyAudioTrack(audioTrack);
-    if (
-      isAudioWorking &&
-      audioTrack.readyState === "live" &&
-      !audioTrack.muted
-    ) {
-      console.log("✅ Default mic working");
-      return stream;
-    }
-
-    throw new Error("All microphones failed");
-  } catch (err: any) {
-    console.error("❌ Media access failed:", err);
-
-    if (err.name === "NotAllowedError") {
-      throw new Error("🚫 Camera/mic blocked! Click 🔒 in address bar → Allow");
-    } else if (err.name === "NotReadableError") {
-      throw new Error(
-        "⚠️ Microphone in use. Close Zoom/Teams/Discord and refresh."
-      );
-    }
-
-    throw err;
-  }
-};
-
-// 🔥 NEW: Verify audio track is actually producing sound
-// 🔥 FIXED: Audio verification with user gesture handling
+// 🔥 Audio verification with optimistic validation
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   console.log('🎤 Audio track validation:', {
     readyState: track.readyState,
@@ -156,86 +33,17 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
     label: track.label
   });
   
-  return new Promise((resolve) => {
-    try {
-     const isValid = track.readyState === 'live' && !track.muted && track.enabled;
+  // Optimistic approach - trust the track state
+  const isValid = track.readyState === 'live' && !track.muted && track.enabled;
   
   if (!isValid) {
     console.warn('⚠️ Audio track not ready yet');
   }
   
   return isValid;
-// Optimistic - assume working
+};
 
-      const AudioContext =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
-
-      // Don't create AudioContext until user interaction
-      let audioContext: AudioContext | null = null;
-
-      const createAndVerify = () => {
-        if (!audioContext) {
-          audioContext = new AudioContext();
-
-          // Resume if suspended
-          if (audioContext.state === "suspended") {
-            audioContext.resume();
-          }
-        }
-
-        const source = audioContext.createMediaStreamSource(
-          new MediaStream([track])
-        );
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        source.connect(analyser);
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        let checkCount = 0;
-        const maxChecks = 5;
-
-        const checkAudio = () => {
-          analyser.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-
-          console.log(
-            `🎤 Audio level check ${
-              checkCount + 1
-            }/${maxChecks}: ${average.toFixed(2)}`
-          );
-
-          checkCount++;
-
-          if (average > 0 || checkCount >= maxChecks) {
-            const isWorking =
-              average > 0 || (track.readyState === "live" && !track.muted);
-            console.log(
-              isWorking ? "✅ Audio verified" : "⚠️ No audio detected"
-            );
-            audioContext?.close();
-            resolve(isWorking);
-          } else {
-            setTimeout(checkAudio, 200);
-          }
-        };
-
-        setTimeout(checkAudio, 500);
-      };
-
-      // If page hasn't had interaction yet, defer verification
-      if (document.visibilityState === "visible") {
-        createAndVerify();
-      } else {
-        // Just assume it's working if we can't verify
-        console.log("⚠️ Deferring audio verification until page interaction");
-        resolve(true);
-      }
-    } catch (error) {
-      console.error("❌ Audio verification failed:", error);
-      resolve(true); // Assume working if we can't verify
-    }
-  });
-}; // Helper to wait for track to be ready - ADD THIS BEFORE VideoCall component
+// Helper to wait for track readiness
 const waitForTrackReady = (
   track: MediaStreamTrack,
   kind: string
@@ -272,6 +80,108 @@ const waitForTrackReady = (
   });
 };
 
+// Enhanced media acquisition with Windows audio fix
+const ensureAudioNotMuted = async (): Promise<MediaStream> => {
+  console.log("🔧 Getting media with Windows audio fix...");
+
+  try {
+    // Step 1: Request permissions FIRST
+    const permStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: true,
+    });
+    permStream.getTracks().forEach((t) => t.stop());
+    console.log("✅ Permissions granted");
+
+    // Step 2: Wait for device enumeration
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const audioInputs = devices.filter((d) => d.kind === "audioinput");
+
+    console.log(`🎤 Found ${audioInputs.length} microphones`);
+
+    // Step 3: Try USB microphone FIRST
+    const usbMic = audioInputs.find(
+      (d) =>
+        d.label.toLowerCase().includes("usb") &&
+        !d.label.toLowerCase().includes("monitor")
+    );
+
+    if (usbMic) {
+      console.log(`🎯 Trying USB mic: ${usbMic.label}`);
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: { exact: usbMic.deviceId },
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 48000,
+            channelCount: 1,
+          },
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const audioTrack = stream.getAudioTracks()[0];
+        audioTrack.enabled = true;
+
+        const isAudioWorking = await verifyAudioTrack(audioTrack);
+        if (isAudioWorking && audioTrack.readyState === "live" && !audioTrack.muted) {
+          console.log(`✅ SUCCESS! Using ${usbMic.label}`);
+          return stream;
+        }
+
+        console.warn("USB mic not ready, trying next...");
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (err: any) {
+        console.warn(`USB mic failed: ${err.message}`);
+      }
+    }
+
+    // Step 4: Fallback to default
+    console.log("📌 Trying default microphone...");
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 48000,
+      },
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const audioTrack = stream.getAudioTracks()[0];
+    audioTrack.enabled = true;
+
+    const isAudioWorking = await verifyAudioTrack(audioTrack);
+    if (isAudioWorking && audioTrack.readyState === "live" && !audioTrack.muted) {
+      console.log("✅ Default mic working");
+      return stream;
+    }
+
+    throw new Error("All microphones failed");
+  } catch (err: any) {
+    console.error("❌ Media access failed:", err);
+
+    if (err.name === "NotAllowedError") {
+      throw new Error("🚫 Camera/mic blocked! Click 🔒 in address bar → Allow");
+    } else if (err.name === "NotReadableError") {
+      throw new Error("⚠️ Microphone in use. Close Zoom/Teams/Discord and refresh.");
+    }
+
+    throw err;
+  }
+};
 const VideoCall: React.FC<VideoCallProps> = ({
   roomId,
   isInitiator,
@@ -281,6 +191,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
 }) => {
   const router = useRouter();
   const { user } = useUser();
+  
+  // State
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -291,6 +203,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [remoteAudioStatus, setRemoteAudioStatus] = useState<string>("waiting");
 
+  // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -299,11 +212,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const callEndedRef = useRef(false);
   const isEndingCallRef = useRef(false);
-
   const initializingRef = useRef(false);
   const initializedRef = useRef(false);
-
-  // 🔥 NEW: Force resume AudioContext on ANY user interaction
+  // Auto-enter fullscreen on mount
   useEffect(() => {
     const enterFullscreen = async () => {
       try {
@@ -332,13 +243,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
   }, []);
-  // 🔥 NEW: Resume AudioContext on ANY user interaction
+  // Resume AudioContext on user interaction
   useEffect(() => {
     const resumeAudioContext = () => {
       const AudioContext =
         (window as any).AudioContext || (window as any).webkitAudioContext;
 
-      // Resume any suspended AudioContexts globally
       if (AudioContext) {
         console.log("🎤 Attempting to resume AudioContext...");
 
@@ -360,10 +270,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
 
-    // Try on mount
     const timer = setTimeout(resumeAudioContext, 1000);
 
-    // Also try on user interaction
     const events = ["click", "touchstart", "keydown"];
     events.forEach((evt) => {
       document.addEventListener(evt, resumeAudioContext, { once: true });
@@ -376,7 +284,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       });
     };
   }, []);
-
+  // Socket event handlers
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
 
@@ -464,7 +372,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
         if (!callEndedRef.current) {
           callEndedRef.current = true;
 
-          // Cleanup without emitting (remote already ended)
           if (isRecording && recordingServiceRef.current) {
             recordingServiceRef.current.stopRecording();
           }
@@ -473,7 +380,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             clearInterval(recordingIntervalRef.current);
           }
 
-          // Stop all media
           document.querySelectorAll("audio").forEach((audio) => {
             if (audio.srcObject) {
               (audio.srcObject as MediaStream)
@@ -532,11 +438,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
     return () => {
       cleanup.then((fn) => fn && fn());
     };
-  }, [roomId, webrtcServiceRef.current]);
-
-  // REPLACE THIS ENTIRE useEffect (around line 270-290)
-  // This is the one that calls initializeCall()
-
+  }, [roomId, webrtcServiceRef.current, isRecording, onEndCall, router]);
+  // Main initialization effect
   useEffect(() => {
     console.log("🔄 Mount effect triggered, roomId:", roomId);
 
@@ -546,7 +449,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       return;
     }
 
-    // Prevent double initialization
     if (initializingRef.current || initializedRef.current) {
       console.log("⚠️ Already initialized, skipping");
       return;
@@ -575,7 +477,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
 
-    // Small delay to ensure DOM is ready
     const timer = setTimeout(init, 100);
 
     return () => {
@@ -586,8 +487,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         cleanup(false);
       }
     };
-  }, [roomId]); // Add roomId as  roomId dependency to prevent re-init
-
+  }, [roomId]);
   const initializeCall = async () => {
     try {
       setError(null);
@@ -605,289 +505,222 @@ const VideoCall: React.FC<VideoCallProps> = ({
         return;
       }
 
-   webrtcServiceRef.current = new WebRTCService();
-recordingServiceRef.current = new RecordingService();
+      webrtcServiceRef.current = new WebRTCService();
+      recordingServiceRef.current = new RecordingService();
 
-// 🔥 CRITICAL: Expose peerConnection to window for debugging
-const pc = webrtcServiceRef.current.getPeerConnection();
-if (pc) {
-  (window as any).peerConnection = pc;
-  console.log("✅ PeerConnection exposed as window.peerConnection");
-  console.log("   Connection state:", pc.connectionState);
-  console.log("   ICE state:", pc.iceConnectionState);
-}
-     let localStream: MediaStream;
-try {
-  console.log("🎤 Requesting media with Windows audio fix...");
-  localStream = await ensureAudioNotMuted();
-
-  console.log("✅ Local stream obtained");
-  console.log("   Video tracks:", localStream.getVideoTracks().length);
-  console.log("   Audio tracks:", localStream.getAudioTracks().length);
-
-  const audioTrack = localStream.getAudioTracks()[0];
-  const videoTrack = localStream.getVideoTracks()[0];
-
-  if (!audioTrack) {
-    throw new Error("Audio track missing!");
-  }
-
-  console.log("🎤 Audio track details:", {
-    enabled: audioTrack.enabled,
-    muted: audioTrack.muted,
-    readyState: audioTrack.readyState,
-    label: audioTrack.label,
-  });
-
-  console.log("📹 Video track details:", {
-    enabled: videoTrack.enabled,
-    readyState: videoTrack.readyState,
-    label: videoTrack.label,
-  });
-
-  // 🔥 CRITICAL: Force enable ALL tracks
-  localStream.getTracks().forEach((track) => {
-    track.enabled = true;
-  });
-
-  webrtcServiceRef.current.setLocalStream(localStream);
-  
-} catch (error: any) {
-  console.error("❌ Media access failed:", error);
-
-  if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-    setError("Camera/microphone blocked! Click camera icon in address bar and allow.");
-  } else if (error.name === "NotFoundError") {
-    setError("No camera or microphone found.");
-  } else if (error.name === "NotReadableError") {
-    setError("Camera/microphone in use. Close other apps (Zoom/Teams/Discord) and refresh.");
-  } else {
-    setError("Failed to access camera/microphone: " + error.message);
-  }
-  return;
-}
-
-// 🔥 Setup local video preview
-if (localVideoRef.current) {
-  localVideoRef.current.srcObject = localStream;
-  localVideoRef.current.muted = true;
-  console.log("✅ Local video element set");
-
-  try {
-    await localVideoRef.current.play();
-    console.log("✅ Local video playing");
-  } catch (e) {
-    console.warn("⚠️ Local video autoplay blocked (normal)");
-  }
-}
-      // 🔥 FIXED: Single attachment point with force unmute
-      let remoteStreamAttached = false;
-      const pendingTracks = { audio: false, video: false };
-
-     webrtcServiceRef.current.setupEventListeners(
-  async (remoteStream: MediaStream) => {
-    console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
-
-    if (!remoteStream || !remoteVideoRef.current) {
-      console.error("❌ Missing stream or video element");
-      return;
-    }
-
-    const audioTracks = remoteStream.getAudioTracks();
-    const videoTracks = remoteStream.getVideoTracks();
-
-    console.log("📊 Remote stream details:", {
-      streamId: remoteStream.id,
-      audioTracks: audioTracks.length,
-      videoTracks: videoTracks.length,
-      audioLabel: audioTracks[0]?.label,
-      videoLabel: videoTracks[0]?.label,
-    });
-
-    // 🔥 Log each track status
-    audioTracks.forEach((track, i) => {
-      console.log(`🎤 Audio track ${i}:`, {
-        id: track.id.substring(0, 8),
-        enabled: track.enabled,
-        muted: track.muted,
-        readyState: track.readyState,
-      });
-      track.enabled = true; // Force enable
-    });
-
-    videoTracks.forEach((track, i) => {
-      console.log(`📹 Video track ${i}:`, {
-        id: track.id.substring(0, 8),
-        enabled: track.enabled,
-        muted: track.muted,
-        readyState: track.readyState,
-      });
-      track.enabled = true; // Force enable
-    });
-
-    // 🔥 Attach stream to video element
-    if (remoteVideoRef.current.srcObject !== remoteStream) {
-      console.log("📺 Attaching remote stream to <video>");
-      remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.autoplay = true;
-      remoteVideoRef.current.playsInline = true;
-      remoteVideoRef.current.muted = false; // ✅ MUST be false for audio
-    }
-
-    // 🔥 Wait for video to be ready
-    console.log("⏳ Waiting for video metadata...");
-    await new Promise<void>((resolve) => {
-      if (remoteVideoRef.current!.readyState >= 2) {
-        console.log("✅ Metadata already loaded");
-        resolve();
-      } else {
-        remoteVideoRef.current!.onloadedmetadata = () => {
-          console.log("✅ Metadata loaded via event");
-          resolve();
-        };
-        setTimeout(() => {
-          console.log("⏰ Metadata timeout - continuing anyway");
-          resolve();
-        }, 3000);
+      const pc = webrtcServiceRef.current.getPeerConnection();
+      if (pc) {
+        (window as any).peerConnection = pc;
+        console.log("✅ PeerConnection exposed as window.peerConnection");
+        console.log("   Connection state:", pc.connectionState);
+        console.log("   ICE state:", pc.iceConnectionState);
       }
-    });
 
-    // 🔥 Attempt playback with retry logic
-    const attemptPlay = async (attempt = 1): Promise<void> => {
-      if (!remoteVideoRef.current) return;
-
-      console.log(`▶️ Play attempt ${attempt}...`);
-
+      let localStream: MediaStream;
       try {
-        await remoteVideoRef.current.play();
-        console.log("✅ PLAYBACK STARTED SUCCESSFULLY!");
-        setConnectionStatus("connected");
-        setError(null);
-        return;
+        console.log("🎤 Requesting media with Windows audio fix...");
+        localStream = await ensureAudioNotMuted();
+
+        console.log("✅ Local stream obtained");
+        console.log("   Video tracks:", localStream.getVideoTracks().length);
+        console.log("   Audio tracks:", localStream.getAudioTracks().length);
+
+        const audioTrack = localStream.getAudioTracks()[0];
+        const videoTrack = localStream.getVideoTracks()[0];
+
+        if (!audioTrack) {
+          throw new Error("Audio track missing!");
+        }
+
+        console.log("🎤 Audio track details:", {
+          enabled: audioTrack.enabled,
+          muted: audioTrack.muted,
+          readyState: audioTrack.readyState,
+          label: audioTrack.label,
+        });
+
+        console.log("📹 Video track details:", {
+          enabled: videoTrack.enabled,
+          readyState: videoTrack.readyState,
+          label: videoTrack.label,
+        });
+
+        localStream.getTracks().forEach((track) => {
+          track.enabled = true;
+        });
+
+        webrtcServiceRef.current.setLocalStream(localStream);
         
-      } catch (err: any) {
-        console.error(`❌ Play failed (${err.name}):`, err.message);
+      } catch (error: any) {
+        console.error("❌ Media access failed:", error);
 
-        if (err.name === "NotAllowedError") {
-          // Autoplay blocked - wait for user interaction
-          console.log("🔒 Autoplay blocked - waiting for user click");
-          setError("🔊 Click anywhere to enable audio/video");
-
-          const handleUserGesture = async () => {
-            console.log("👆 User clicked!");
-            try {
-              if (remoteVideoRef.current) {
-                await remoteVideoRef.current.play();
-                console.log("✅ Playback resumed!");
-                setConnectionStatus("connected");
-                setError(null);
-              }
-            } catch (e: any) {
-              console.error("❌ Still failed:", e.name);
-            }
-
-            // Remove listeners
-            document.removeEventListener("click", handleUserGesture);
-            document.removeEventListener("touchstart", handleUserGesture);
-          };
-
-          document.addEventListener("click", handleUserGesture, { once: true });
-          document.addEventListener("touchstart", handleUserGesture, { once: true });
-          
-        } else if (attempt < 3) {
-          // Retry for other errors
-          console.log(`🔄 Retrying in 500ms (attempt ${attempt + 1})...`);
-          await new Promise(r => setTimeout(r, 500));
-          return attemptPlay(attempt + 1);
+        if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+          setError("Camera/microphone blocked! Click camera icon in address bar and allow.");
+        } else if (error.name === "NotFoundError") {
+          setError("No camera or microphone found.");
+        } else if (error.name === "NotReadableError") {
+          setError("Camera/microphone in use. Close other apps (Zoom/Teams/Discord) and refresh.");
         } else {
-          setError("⚠️ Video playback failed after 3 attempts");
+          setError("Failed to access camera/microphone: " + error.message);
         }
+        return;
       }
-    };
 
-    await attemptPlay();
-
-    // 🔥 Monitor track health
-    const monitorHealth = () => {
-      audioTracks.forEach(track => {
-        if (track.readyState === 'live' && track.muted) {
-          console.warn("🔇 Audio track muted - attempting recovery");
-          track.enabled = false;
-          setTimeout(() => { track.enabled = true; }, 100);
-        }
-      });
-    };
-
-    // Check every 5 seconds for 60 seconds
-    const healthCheckInterval = setInterval(monitorHealth, 5000);
-    setTimeout(() => clearInterval(healthCheckInterval), 60000);
-
-    console.log("✅ Remote stream setup complete\n");
-  },
-  (candidate: RTCIceCandidate) => {
-    const socket = getSocket();
-    socket.emit("ice-candidate", roomId, candidate);
-    console.log("❄️ ICE candidate sent");
-  }
-);
-      // 🔥 HELPER: Attach remote stream to video element
-      const attachRemoteStream = async (stream: MediaStream) => {
-        console.log("🔗 Attaching stream to video element...");
-
-        if (!remoteVideoRef.current) {
-          console.error("❌ Remote video ref not available");
-          return;
-        }
-
-        // 🔥 CRITICAL: Set srcObject ONCE
-        remoteVideoRef.current.srcObject = stream;
-        remoteVideoRef.current.autoplay = true;
-        remoteVideoRef.current.playsInline = true;
-        remoteVideoRef.current.muted = false;
-
-        console.log("✅ srcObject set, attempting playback...");
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStream;
+        localVideoRef.current.muted = true;
+        console.log("✅ Local video element set");
 
         try {
-          await remoteVideoRef.current.play();
-          console.log("✅ Remote video playing!");
-          setConnectionStatus("connected");
-          setError(null);
-        } catch (err: any) {
-          console.error("❌ Playback failed:", err.name);
-
-          if (err.name === "NotAllowedError" || err.name === "AbortError") {
-            setError("🔊 Click anywhere to start audio/video");
-
-            // Try again on user click
-            const resumePlayback = async () => {
-              try {
-                if (remoteVideoRef.current) {
-                  await remoteVideoRef.current.play();
-                  console.log("✅ Playback resumed after click");
-                  setError(null);
-                }
-              } catch (e) {
-                console.error("Still blocked:", e);
-              }
-            };
-
-            document.addEventListener("click", resumePlayback, { once: true });
-          }
+          await localVideoRef.current.play();
+          console.log("✅ Local video playing");
+        } catch (e) {
+          console.warn("⚠️ Local video autoplay blocked (normal)");
         }
+      }
+      // Setup remote stream event listener
+      webrtcServiceRef.current.setupEventListeners(
+        async (remoteStream: MediaStream) => {
+          console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
 
-        // Monitor tracks
-        stream.getAudioTracks()[0].onended = () =>
-          console.error("🛑 AUDIO ended!");
-        stream.getVideoTracks()[0].onended = () =>
-          console.error("🛑 VIDEO ended!");
+          if (!remoteStream || !remoteVideoRef.current) {
+            console.error("❌ Missing stream or video element");
+            return;
+          }
 
-        console.log("✅ Remote stream fully attached\n");
-      };
+          const audioTracks = remoteStream.getAudioTracks();
+          const videoTracks = remoteStream.getVideoTracks();
+
+          console.log("📊 Remote stream details:", {
+            streamId: remoteStream.id,
+            audioTracks: audioTracks.length,
+            videoTracks: videoTracks.length,
+            audioLabel: audioTracks[0]?.label,
+            videoLabel: videoTracks[0]?.label,
+          });
+
+          audioTracks.forEach((track, i) => {
+            console.log(`🎤 Audio track ${i}:`, {
+              id: track.id.substring(0, 8),
+              enabled: track.enabled,
+              muted: track.muted,
+              readyState: track.readyState,
+            });
+            track.enabled = true;
+          });
+
+          videoTracks.forEach((track, i) => {
+            console.log(`📹 Video track ${i}:`, {
+              id: track.id.substring(0, 8),
+              enabled: track.enabled,
+              muted: track.muted,
+              readyState: track.readyState,
+            });
+            track.enabled = true;
+          });
+
+          if (remoteVideoRef.current.srcObject !== remoteStream) {
+            console.log("📺 Attaching remote stream to <video>");
+            remoteVideoRef.current.srcObject = remoteStream;
+            remoteVideoRef.current.autoplay = true;
+            remoteVideoRef.current.playsInline = true;
+            remoteVideoRef.current.muted = false;
+          }
+
+          console.log("⏳ Waiting for video metadata...");
+          await new Promise<void>((resolve) => {
+            if (remoteVideoRef.current!.readyState >= 2) {
+              console.log("✅ Metadata already loaded");
+              resolve();
+            } else {
+              remoteVideoRef.current!.onloadedmetadata = () => {
+                console.log("✅ Metadata loaded via event");
+                resolve();
+              };
+              setTimeout(() => {
+                console.log("⏰ Metadata timeout - continuing anyway");
+                resolve();
+              }, 3000);
+            }
+          });
+
+          const attemptPlay = async (attempt = 1): Promise<void> => {
+            if (!remoteVideoRef.current) return;
+
+            console.log(`▶️ Play attempt ${attempt}...`);
+
+            try {
+              await remoteVideoRef.current.play();
+              console.log("✅ PLAYBACK STARTED SUCCESSFULLY!");
+              setConnectionStatus("connected");
+              setError(null);
+              return;
+              
+            } catch (err: any) {
+              console.error(`❌ Play failed (${err.name}):`, err.message);
+
+              if (err.name === "NotAllowedError") {
+                console.log("🔒 Autoplay blocked - waiting for user click");
+                setError("🔊 Click anywhere to enable audio/video");
+
+                const handleUserGesture = async () => {
+                  console.log("👆 User clicked!");
+                  try {
+                    if (remoteVideoRef.current) {
+                      await remoteVideoRef.current.play();
+                      console.log("✅ Playback resumed!");
+                      setConnectionStatus("connected");
+                      setError(null);
+                    }
+                  } catch (e: any) {
+                    console.error("❌ Still failed:", e.name);
+                  }
+
+                  document.removeEventListener("click", handleUserGesture);
+                  document.removeEventListener("touchstart", handleUserGesture);
+                };
+
+                document.addEventListener("click", handleUserGesture, { once: true });
+                document.addEventListener("touchstart", handleUserGesture, { once: true });
+                
+              } else if (attempt < 3) {
+                console.log(`🔄 Retrying in 500ms (attempt ${attempt + 1})...`);
+                await new Promise(r => setTimeout(r, 500));
+                return attemptPlay(attempt + 1);
+              } else {
+                setError("⚠️ Video playback failed after 3 attempts");
+              }
+            }
+          };
+
+          await attemptPlay();
+
+          const monitorHealth = () => {
+            audioTracks.forEach(track => {
+              if (track.readyState === 'live' && track.muted) {
+                console.warn("🔇 Audio track muted - attempting recovery");
+                track.enabled = false;
+                setTimeout(() => { track.enabled = true; }, 100);
+              }
+            });
+          };
+
+          const healthCheckInterval = setInterval(monitorHealth, 5000);
+          setTimeout(() => clearInterval(healthCheckInterval), 60000);
+
+          console.log("✅ Remote stream setup complete\n");
+        },
+        (candidate: RTCIceCandidate) => {
+          const socket = getSocket();
+          socket.emit("ice-candidate", roomId, candidate);
+          console.log("❄️ ICE candidate sent");
+        }
+      );
+
       webrtcServiceRef.current.addLocalStreamToPeer();
 
       console.log("📞 Joining room:", roomId);
       socket.emit("join-room", roomId, user?._id || socket.id);
-
       if (isInitiator) {
         console.log("⏳ Waiting for both users...");
 
@@ -926,12 +759,9 @@ if (localVideoRef.current) {
       setError(error.message || "Failed to initialize call");
     }
   };
-
-  // 🔥 IMPROVED CLEANUP FUNCTION
   const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...");
 
-    // Stop monitor intervals
     document.querySelectorAll("#remote-audio-element").forEach((audio: any) => {
       if (audio._monitorInterval) {
         clearInterval(audio._monitorInterval);
@@ -949,7 +779,6 @@ if (localVideoRef.current) {
       recordingServiceRef.current.stopRecording();
     }
 
-    // Remove ALL audio elements
     document.querySelectorAll("audio").forEach((audio) => {
       console.log("🗑️ Removing audio element:", audio.id);
       if (audio.srcObject) {
@@ -964,7 +793,6 @@ if (localVideoRef.current) {
       audio.remove();
     });
 
-    // Stop local video
     if (localVideoRef.current?.srcObject) {
       const stream = localVideoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => {
@@ -974,7 +802,6 @@ if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
     }
 
-    // Stop remote video
     if (remoteVideoRef.current?.srcObject) {
       const stream = remoteVideoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => {
@@ -984,7 +811,6 @@ if (localVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
     }
 
-    // Close WebRTC
     if (webrtcServiceRef.current) {
       webrtcServiceRef.current.close();
       webrtcServiceRef.current = null;
@@ -992,7 +818,6 @@ if (localVideoRef.current) {
 
     delete (window as any).peerConnection;
 
-    // Only emit if explicitly requested and not already ended
     if (emitEvent) {
       try {
         const socket = getSocket();
@@ -1005,7 +830,6 @@ if (localVideoRef.current) {
 
     console.log("✅ Cleanup complete");
   };
-
   const toggleAudio = () => {
     if (webrtcServiceRef.current) {
       const newState = !isAudioEnabled;
@@ -1107,7 +931,6 @@ if (localVideoRef.current) {
         stopRecording();
       }
 
-      // Emit end-call BEFORE cleanup
       try {
         const socket = getSocket();
         socket.emit("end-call", roomId, { endedBy: user?._id });
@@ -1125,7 +948,7 @@ if (localVideoRef.current) {
           .catch((err) => console.error("Failed to update call status:", err));
       }
 
-      cleanup(false); // Don't emit again
+      cleanup(false);
       onEndCall();
 
       setTimeout(() => {
@@ -1138,6 +961,7 @@ if (localVideoRef.current) {
       router.push("/");
     }
   };
+
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -1157,37 +981,37 @@ if (localVideoRef.current) {
       .toString()
       .padStart(2, "0")}`;
   };
-
   return (
     <div
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
     >
-    <video
-  ref={remoteVideoRef}
-  id="remote-video"
-  autoPlay
-  playsInline
-  muted={false} // ✅ CRITICAL - must be false for audio
-  className="w-full h-full object-cover absolute inset-0"
-  style={{ backgroundColor: "#000" }}
-  onLoadedMetadata={() => {
-    console.log("✅ Video metadata loaded");
-  }}
-  onCanPlay={() => {
-    console.log("✅ Video can play");
-  }}
-  onPlay={() => {
-    console.log("✅ Video PLAYING");
-    setError(null);
-  }}
-  onPause={() => {
-    console.warn("⚠️ Video PAUSED");
-  }}
-  onError={(e) => {
-    console.error("❌ Video error:", e);
-  }}
-/>
+      <video
+        ref={remoteVideoRef}
+        id="remote-video"
+        autoPlay
+        playsInline
+        muted={false}
+        className="w-full h-full object-cover absolute inset-0"
+        style={{ backgroundColor: "#000" }}
+        onLoadedMetadata={() => {
+          console.log("✅ Video metadata loaded");
+        }}
+        onCanPlay={() => {
+          console.log("✅ Video can play");
+        }}
+        onPlay={() => {
+          console.log("✅ Video PLAYING");
+          setError(null);
+        }}
+        onPause={() => {
+          console.warn("⚠️ Video PAUSED");
+        }}
+        onError={(e) => {
+          console.error("❌ Video error:", e);
+        }}
+      />
+
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
           <div className="text-center px-4">
@@ -1199,7 +1023,6 @@ if (localVideoRef.current) {
         </div>
       )}
 
-      {/* Local Video Preview - Mobile Optimized */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
         <video
           ref={localVideoRef}
@@ -1214,8 +1037,6 @@ if (localVideoRef.current) {
           </div>
         )}
       </div>
-
-      {/* Header - Mobile Optimized */}
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 safe-area-top">
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -1244,7 +1065,6 @@ if (localVideoRef.current) {
             </div>
           </div>
 
-          {/* Recording Indicator - Mobile Optimized */}
           {isRecording && (
             <div className="flex items-center gap-1.5 sm:gap-3 bg-red-600/90 px-2.5 py-1.5 sm:px-6 sm:py-3 rounded-full animate-pulse flex-shrink-0">
               <Circle className="w-2.5 h-2.5 sm:w-4 sm:h-4 fill-white text-white" />
@@ -1256,12 +1076,9 @@ if (localVideoRef.current) {
         </div>
       </div>
 
-      {/* Error Message - Mobile Optimized */}
       {error && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
           <p className="font-semibold">{error}</p>
-
-          {/* ✅ ADDED: Manual play button */}
           <button
             onClick={async () => {
               const video = remoteVideoRef.current;
@@ -1281,11 +1098,8 @@ if (localVideoRef.current) {
           </button>
         </div>
       )}
-
-      {/* Bottom Controls - Mobile Optimized - KEEP ALL BUTTONS */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 safe-area-bottom">
         <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
-          {/* Audio Button */}
           <button
             onClick={toggleAudio}
             className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
@@ -1298,80 +1112,73 @@ if (localVideoRef.current) {
             {isAudioEnabled ? (
               <Mic className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
             ) : (
-              <MicOff className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-            )}
-          </button>
+              <MicOff className="w-4 h-4 xs:w-5xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+)}
+</button>
+      <button
+        onClick={toggleVideo}
+        className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
+          isVideoEnabled
+            ? "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
+            : "bg-red-600 hover:bg-red-700 active:bg-red-800"
+        }`}
+        aria-label={isVideoEnabled ? "Turn off video" : "Turn on video"}
+      >
+        {isVideoEnabled ? (
+          <Video className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+        ) : (
+          <VideoOff className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+        )}
+      </button>
 
-          {/* Video Button */}
-          <button
-            onClick={toggleVideo}
-            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
-              isVideoEnabled
-                ? "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
-                : "bg-red-600 hover:bg-red-700 active:bg-red-800"
-            }`}
-            aria-label={isVideoEnabled ? "Turn off video" : "Turn on video"}
-          >
-            {isVideoEnabled ? (
-              <Video className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-            ) : (
-              <VideoOff className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-            )}
-          </button>
+      <button
+        onClick={toggleScreenShare}
+        className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
+          isScreenSharing
+            ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 ring-2 sm:ring-4 ring-blue-400/50"
+            : "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
+        }`}
+        aria-label={isScreenSharing ? "Stop sharing" : "Share screen"}
+      >
+        <MonitorUp className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+      </button>
 
-          {/* Screen Share Button - KEPT */}
-          <button
-            onClick={toggleScreenShare}
-            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
-              isScreenSharing
-                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 ring-2 sm:ring-4 ring-blue-400/50"
-                : "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
-            }`}
-            aria-label={isScreenSharing ? "Stop sharing" : "Share screen"}
-          >
-            <MonitorUp className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-          </button>
+      <button
+        onClick={isRecording ? stopRecording : startRecording}
+        disabled={connectionStatus !== "connected"}
+        className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg disabled:opacity-50 touch-manipulation ${
+          isRecording
+            ? "bg-red-600 hover:bg-red-700 active:bg-red-800 ring-2 sm:ring-4 ring-red-400/50"
+            : "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
+        }`}
+        aria-label={isRecording ? "Stop recording" : "Start recording"}
+      >
+        <Circle
+          className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white ${
+            isRecording ? "fill-white" : ""
+          }`}
+        />
+      </button>
 
-          {/* Recording Button - KEPT */}
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={connectionStatus !== "connected"}
-            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg disabled:opacity-50 touch-manipulation ${
-              isRecording
-                ? "bg-red-600 hover:bg-red-700 active:bg-red-800 ring-2 sm:ring-4 ring-red-400/50"
-                : "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
-            }`}
-            aria-label={isRecording ? "Stop recording" : "Start recording"}
-          >
-            <Circle
-              className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white ${
-                isRecording ? "fill-white" : ""
-              }`}
-            />
-          </button>
+      <button
+        onClick={toggleFullscreen}
+        className="p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full bg-gray-700 hover:bg-gray-600 active:bg-gray-500 transition-all shadow-lg touch-manipulation"
+        aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+      >
+        <Maximize className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+      </button>
 
-          {/* Fullscreen Button - KEPT */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full bg-gray-700 hover:bg-gray-600 active:bg-gray-500 transition-all shadow-lg touch-manipulation"
-            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          >
-            <Maximize className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-          </button>
-
-          {/* End Call Button - Slightly Larger */}
-          <button
-            onClick={handleEndCall}
-            disabled={isEndingCallRef.current}
-            className="p-3 xs:p-3.5 sm:p-5 md:p-6 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:bg-gray-600 transition-all shadow-xl ml-1 sm:ml-4 touch-manipulation"
-            aria-label="End call"
-          >
-            <PhoneOff className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
-          </button>
-        </div>
-      </div>
+      <button
+        onClick={handleEndCall}
+        disabled={isEndingCallRef.current}
+        className="p-3 xs:p-3.5 sm:p-5 md:p-6 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:bg-gray-600 transition-all shadow-xl ml-1 sm:ml-4 touch-manipulation"
+        aria-label="End call"
+      >
+        <PhoneOff className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
+      </button>
     </div>
-  );
+  </div>
+</div>
+);
 };
-
 export default VideoCall;
