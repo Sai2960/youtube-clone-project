@@ -142,50 +142,67 @@ export class WebRTCService {
   }
 
   // ✅ CRITICAL FIX: Completely rewritten to ensure proper transceiver setup
-  addLocalStreamToPeer(): void {
-    if (!this.localStream || !this.peerConnection) {
-      console.error("❌ Cannot add stream to peer");
-      return;
-    }
+ // ✅ CRITICAL FIX: Completely rewritten to ensure proper transceiver setup
+addLocalStreamToPeer(): void {
+  if (!this.localStream || !this.peerConnection) {
+    console.error("❌ Cannot add stream to peer");
+    return;
+  }
 
-    console.log("\n📤 Adding Local Stream to Peer (FIXED)");
+  console.log("\n📤 Adding Local Stream to Peer (FIXED)");
 
-    // Step 1: Remove existing senders
-    const existingSenders = this.peerConnection.getSenders();
-    console.log(`   Removing ${existingSenders.length} existing senders...`);
-    existingSenders.forEach((sender) => {
-      if (sender.track) {
-        this.peerConnection?.removeTrack(sender);
-      }
-    });
+  // ✅ CRITICAL: Get existing transceivers FIRST
+  let transceivers = this.peerConnection.getTransceivers();
+  console.log(`   Found ${transceivers.length} existing transceivers`);
 
-    // Step 2: Add tracks with explicit stream parameter
-    console.log("\n   ➕ Adding tracks...");
+  // Step 1: If no transceivers exist, add tracks to create them
+  if (transceivers.length === 0) {
+    console.log("   Creating new transceivers by adding tracks...");
     this.localStream.getTracks().forEach((track) => {
       console.log(`      Adding ${track.kind}: ${track.label}`);
-      console.log(`         enabled=${track.enabled}, muted=${track.muted}, state=${track.readyState}`);
-      
       this.peerConnection?.addTrack(track, this.localStream!);
     });
-
-    // Step 3: CRITICAL - Force ALL transceivers to sendrecv
-    console.log("\n   🔧 Forcing transceivers to sendrecv...");
-    const transceivers = this.peerConnection.getTransceivers();
     
-    transceivers.forEach((transceiver, index) => {
-      const oldDirection = transceiver.direction;
+    // Refresh transceiver list
+    transceivers = this.peerConnection.getTransceivers();
+    console.log(`   ✅ Created ${transceivers.length} transceivers`);
+  } else {
+    // Step 2: Replace tracks in existing transceivers
+    console.log("   Using existing transceivers, replacing tracks...");
+    
+    const audioTrack = this.localStream.getAudioTracks()[0];
+    const videoTrack = this.localStream.getVideoTracks()[0];
+    
+    for (const transceiver of transceivers) {
+      const sender = transceiver.sender;
       
-      // ✅ FORCE sendrecv - this is the key fix
-      transceiver.direction = "sendrecv";
-      
-      console.log(`      Transceiver ${index}:`);
-      console.log(`         Kind: ${transceiver.sender.track?.kind || 'unknown'}`);
-      console.log(`         Direction: ${oldDirection} → sendrecv`);
-      console.log(`         Track: ${transceiver.sender.track?.label || 'none'}`);
-    });
-
-    console.log(`\n✅ Added ${this.localStream.getTracks().length} tracks with ${transceivers.length} transceivers`);
+      if (transceiver.receiver.track?.kind === 'audio' && audioTrack) {
+        sender.replaceTrack(audioTrack);
+        console.log(`      ✅ Replaced audio track: ${audioTrack.label}`);
+      } else if (transceiver.receiver.track?.kind === 'video' && videoTrack) {
+        sender.replaceTrack(videoTrack);
+        console.log(`      ✅ Replaced video track: ${videoTrack.label}`);
+      }
+    }
   }
+
+  // Step 3: CRITICAL - Force ALL transceivers to sendrecv
+  console.log("\n   🔧 Forcing transceivers to sendrecv...");
+  transceivers.forEach((transceiver, index) => {
+    const oldDirection = transceiver.direction;
+    
+    // ✅ FORCE sendrecv - this is the key fix
+    transceiver.direction = "sendrecv";
+    
+    console.log(`      Transceiver ${index}:`);
+    console.log(`         Kind: ${transceiver.sender.track?.kind || 'unknown'}`);
+    console.log(`         Direction: ${oldDirection} → sendrecv`);
+    console.log(`         Sender track: ${transceiver.sender.track?.label || 'none'}`);
+    console.log(`         Sender enabled: ${transceiver.sender.track?.enabled}`);
+  });
+
+  console.log(`\n✅ Stream setup complete with ${transceivers.length} transceivers`);
+}
 
   // ✅ FIXED: Added explicit constraints and validation
   async createOffer(): Promise<RTCSessionDescriptionInit> {

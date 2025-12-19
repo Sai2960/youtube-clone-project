@@ -655,9 +655,20 @@ const VideoCall: React.FC<VideoCallProps> = ({
     try {
       setError(null);
       console.log("\n🎥 ===== INITIALIZING CALL =====");
-      console.log("   Room ID:", roomId);
-      console.log("   Is Initiator:", isInitiator);
-      console.log("   User:", user?._id);
+      try {
+        const AudioContext =
+          (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (AudioContext) {
+          const tempCtx = new AudioContext();
+          if (tempCtx.state === "suspended") {
+            await tempCtx.resume();
+            console.log("✅ AudioContext resumed before call setup");
+          }
+          tempCtx.close();
+        }
+      } catch (err) {
+        console.warn("⚠️ Could not resume AudioContext:", err);
+      }
 
       // Step 1: Wait for socket connection
       let socket;
@@ -753,6 +764,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }
       }
       // Step 5: Setup remote stream event listener
+      // Step 5: Setup remote stream event listener
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
@@ -767,31 +779,56 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
           console.log("📊 Remote stream details:", {
             streamId: remoteStream.id,
+            active: remoteStream.active,
             audioTracks: audioTracks.length,
             videoTracks: videoTracks.length,
-            audioLabel: audioTracks[0]?.label,
-            videoLabel: videoTracks[0]?.label,
           });
 
-          // ✅ CRITICAL FIX: Force enable ALL tracks immediately
+          // ✅ CRITICAL: Verify tracks are actually live
+          const audioLive = audioTracks[0]?.readyState === "live";
+          const videoLive = videoTracks[0]?.readyState === "live";
+
+          console.log("🔍 Track states:", {
+            audio: {
+              live: audioLive,
+              enabled: audioTracks[0]?.enabled,
+              muted: audioTracks[0]?.muted,
+            },
+            video: {
+              live: videoLive,
+              enabled: videoTracks[0]?.enabled,
+              muted: videoTracks[0]?.muted,
+            },
+          });
+
+          if (!audioLive || !videoLive) {
+            console.error("🚨 TRACKS NOT LIVE!");
+            setError("Media connection failed - tracks not live");
+            return;
+          }
+
+          // ✅ Force enable all tracks
           remoteStream.getTracks().forEach((track) => {
             track.enabled = true;
             console.log(`   ✅ Enabled ${track.kind} track`);
           });
 
-          // ✅ CRITICAL FIX: Set srcObject BEFORE any waiting
+          // ✅ Set srcObject
           console.log("📺 Setting video srcObject...");
           remoteVideoRef.current.srcObject = remoteStream;
           remoteVideoRef.current.autoplay = true;
           remoteVideoRef.current.playsInline = true;
           remoteVideoRef.current.muted = false;
 
-          // ✅ Wait briefly for metadata
+          // ✅ CRITICAL: Set volume to maximum
+          remoteVideoRef.current.volume = 1.0;
+
+          // ✅ Wait for metadata with timeout
           await new Promise<void>((resolve) => {
             const timeout = setTimeout(() => {
               console.log("⏰ Metadata timeout");
               resolve();
-            }, 2000);
+            }, 3000);
 
             if (remoteVideoRef.current!.readyState >= 2) {
               clearTimeout(timeout);
@@ -806,45 +843,59 @@ const VideoCall: React.FC<VideoCallProps> = ({
             }
           });
 
-          // ✅ CRITICAL FIX: Force play immediately
-          try {
-            console.log("▶️ Attempting immediate playback...");
-            await remoteVideoRef.current!.play();
-            console.log("✅ PLAYBACK STARTED!");
-            setConnectionStatus("connected");
-            setError(null);
-          } catch (err: any) {
-            console.error("❌ Play failed:", err.name);
+          // ✅ Force play with retry
+          let playAttempts = 0;
+          const tryPlay = async (): Promise<boolean> => {
+            try {
+              console.log(`▶️ Play attempt ${++playAttempts}...`);
+              await remoteVideoRef.current!.play();
+              console.log("✅ PLAYBACK STARTED!");
+              setConnectionStatus("connected");
+              setError(null);
+              return true;
+            } catch (err: any) {
+              console.error(`❌ Play failed (${err.name}):`, err.message);
 
-            if (err.name === "NotAllowedError") {
-              setError("🔊 Click anywhere to enable video");
+              if (err.name === "NotAllowedError") {
+                setError("🔊 Tap screen to enable video");
 
-              // ✅ Wait for user gesture
-              const handleClick = async () => {
-                try {
-                  await remoteVideoRef.current?.play();
-                  console.log("✅ Resumed after click!");
-                  setConnectionStatus("connected");
-                  setError(null);
-                } catch (e) {
-                  console.error("❌ Still failed:", e);
-                }
-                document.removeEventListener("click", handleClick);
-              };
+                // Wait for user gesture
+                return new Promise((resolve) => {
+                  const handleClick = async () => {
+                    try {
+                      await remoteVideoRef.current?.play();
+                      console.log("✅ Resumed after click!");
+                      setConnectionStatus("connected");
+                      setError(null);
+                      resolve(true);
+                    } catch (e) {
+                      console.error("❌ Still failed:", e);
+                      resolve(false);
+                    }
+                    document.removeEventListener("click", handleClick);
+                    document.removeEventListener("touchstart", handleClick);
+                  };
 
-              document.addEventListener("click", handleClick, { once: true });
-            } else {
-              // Retry once
-              setTimeout(async () => {
-                try {
-                  await remoteVideoRef.current?.play();
-                  console.log("✅ Retry successful!");
-                  setConnectionStatus("connected");
-                } catch (e) {
-                  console.error("❌ Retry failed:", e);
-                }
-              }, 500);
+                  document.addEventListener("click", handleClick, {
+                    once: true,
+                  });
+                  document.addEventListener("touchstart", handleClick, {
+                    once: true,
+                  });
+                });
+              } else if (playAttempts < 3) {
+                // Retry after delay
+                await new Promise((r) => setTimeout(r, 500));
+                return tryPlay();
+              }
+
+              return false;
             }
+          };
+
+          const success = await tryPlay();
+          if (!success) {
+            setError("⚠️ Video playback failed - tap to retry");
           }
 
           console.log("✅ Remote stream setup complete\n");
@@ -855,6 +906,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("❄️ ICE candidate sent");
         }
       );
+
       // Step 6: Add local stream to peer connection
       webrtcServiceRef.current.addLocalStreamToPeer();
 
@@ -888,6 +940,21 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("✅ Offer created");
           socket.emit("offer", roomId, offer);
           console.log("📤 Offer sent");
+
+          // ✅ NEW: Verify transceivers after offer
+          const pc = webrtcServiceRef.current.getPeerConnection();
+          if (pc) {
+            const transceivers = pc.getTransceivers();
+            console.log("\n🔍 Post-offer verification:");
+            transceivers.forEach((t, i) => {
+              console.log(`   Transceiver ${i}:`, {
+                kind: t.sender.track?.kind,
+                direction: t.direction,
+                senderEnabled: t.sender.track?.enabled,
+                senderMuted: t.sender.track?.muted,
+              });
+            });
+          }
         } catch (error) {
           console.error("❌ Offer error:", error);
         }
@@ -901,6 +968,32 @@ const VideoCall: React.FC<VideoCallProps> = ({
       setError(error.message || "Failed to initialize call");
     }
   };
+  // ✅ NEW: Add connection state monitoring
+  const pc = webrtcServiceRef.current.getPeerConnection();
+  if (pc) {
+    const checkConnection = setInterval(() => {
+      if (
+        pc.connectionState === "connected" &&
+        pc.iceConnectionState === "connected"
+      ) {
+        console.log("✅ Connection verified - checking media flow...");
+        webrtcServiceRef.current?.logConnectionStats();
+        clearInterval(checkConnection);
+      } else if (
+        pc.connectionState === "failed" ||
+        pc.iceConnectionState === "failed"
+      ) {
+        console.error("❌ Connection failed!");
+        setError("Connection failed - please refresh");
+        clearInterval(checkConnection);
+      }
+    }, 2000);
+
+    // Clear after 30 seconds
+    setTimeout(() => clearInterval(checkConnection), 30000);
+  }
+
+  console.log("===== INITIALIZATION COMPLETE =====\n");
   const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...");
 

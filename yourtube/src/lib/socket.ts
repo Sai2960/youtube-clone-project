@@ -52,8 +52,15 @@ console.log("   Environment:", process.env.NODE_ENV);
 
 export const initializeSocket = (userId: string): Socket => {
   // Check if socket is already connected for the same user
-  if (socket && socket.connected && isRegistered && currentUserId === userId) {
+  if (socket && socket.connected && currentUserId === userId) {
     console.log("✅ Socket already connected for user:", userId);
+    
+    // ✅ CRITICAL: Re-register if not registered
+    if (!isRegistered) {
+      console.log("📝 Re-registering existing socket");
+      socket.emit("register-user", userId);
+    }
+    
     return socket;
   }
 
