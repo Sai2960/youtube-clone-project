@@ -664,234 +664,163 @@ const VideoCall: React.FC<VideoCallProps> = ({
       let remoteStreamAttached = false;
       const pendingTracks = { audio: false, video: false };
 
-      webrtcServiceRef.current.setupEventListeners(
-        async (remoteStream: MediaStream) => {
-          console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
+    // 🔥 REPLACE Lines 411-520 in VideoCall.tsx
+setupEventListeners(
+  async (remoteStream: MediaStream) => {
+    console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
 
-          if (!remoteStream) {
-            console.error("❌ Remote stream is null");
-            return;
-          }
+    if (!remoteStream) {
+      console.error("❌ Remote stream is null");
+      return;
+    }
 
-          const audioTracks = remoteStream.getAudioTracks();
-          const videoTracks = remoteStream.getVideoTracks();
+    const audioTracks = remoteStream.getAudioTracks();
+    const videoTracks = remoteStream.getVideoTracks();
 
-          console.log("📊 Stream status:", {
-            streamId: remoteStream.id,
-            audioTracks: audioTracks.length,
-            videoTracks: videoTracks.length,
-            alreadyAttached: remoteStreamAttached,
-          });
+    console.log("📊 Stream status:", {
+      streamId: remoteStream.id,
+      audioTracks: audioTracks.length,
+      videoTracks: videoTracks.length,
+    });
 
-          // Update pending tracks
-          if (audioTracks.length > 0) pendingTracks.audio = true;
-          if (videoTracks.length > 0) pendingTracks.video = true;
+    // 🔥 CRITICAL: Force enable and unmute IMMEDIATELY
+    audioTracks.forEach(track => {
+      track.enabled = true;
+      console.log("🎤 Audio track:", {
+        id: track.id,
+        enabled: track.enabled,
+        muted: track.muted,
+        readyState: track.readyState,
+        label: track.label
+      });
+    });
 
-          // 🔥 CRITICAL: Only attach once we have BOTH tracks
-          if (
-            pendingTracks.audio &&
-            pendingTracks.video &&
-            !remoteStreamAttached
-          ) {
-            remoteStreamAttached = true;
+    videoTracks.forEach(track => {
+      track.enabled = true;
+      console.log("📹 Video track:", {
+        id: track.id,
+        enabled: track.enabled,
+        muted: track.muted,
+        readyState: track.readyState,
+        label: track.label
+      });
+    });
 
-            console.log("✅ Both tracks ready, attaching stream...");
+    if (!remoteVideoRef.current) {
+      console.error("❌ Remote video element not found");
+      return;
+    }
 
-            const audioTrack = audioTracks[0];
-            const videoTrack = videoTracks[0];
+    // 🔥 CRITICAL: Set srcObject IMMEDIATELY - no waiting
+    remoteVideoRef.current.srcObject = remoteStream;
+    remoteVideoRef.current.autoplay = true;
+    remoteVideoRef.current.playsInline = true;
+    remoteVideoRef.current.muted = false;
 
-            // 🔥 NEW: Log initial track state
-            console.log("📊 Initial track states:", {
-              audio: {
-                enabled: audioTrack.enabled,
-                muted: audioTrack.muted,
-                readyState: audioTrack.readyState,
-              },
-              video: {
-                enabled: videoTrack.enabled,
-                muted: videoTrack.muted,
-                readyState: videoTrack.readyState,
-              },
-            });
+    console.log("✅ Stream attached to video element");
 
-            // 🔥 CRITICAL: Force enable and wait for unmute
-            audioTrack.enabled = true;
-            videoTrack.enabled = true;
+    // 🔥 Force play with aggressive retry
+    let playAttempts = 0;
+    const maxAttempts = 5;
 
-            // 🔥 NEW: Wait for video to unmute (max 3 seconds)
-            if (videoTrack.muted) {
-              console.log("⏳ Video is muted, waiting for unmute...");
+    const tryPlay = async () => {
+      try {
+        playAttempts++;
+        console.log(`▶️ Play attempt ${playAttempts}/${maxAttempts}`);
+        
+        await remoteVideoRef.current!.play();
+        
+        console.log("✅ PLAYBACK SUCCESS!");
+        setConnectionStatus("connected");
+        setError(null);
+        
+      } catch (err: any) {
+        console.error(`❌ Play attempt ${playAttempts} failed:`, err.name);
 
-              await new Promise<void>((resolve) => {
-                let checkCount = 0;
-                const maxChecks = 30; // 3 seconds
+        if (err.name === "NotAllowedError") {
+          // Browser blocking autoplay
+          setError("🔊 Click anywhere to enable audio/video");
 
-                const checkUnmute = () => {
-                  checkCount++;
-                  console.log(
-                    `   Check ${checkCount}/${maxChecks}: muted=${videoTrack.muted}`
-                  );
-
-                  if (!videoTrack.muted) {
-                    console.log("✅ Video unmuted!");
-                    resolve();
-                  } else if (checkCount >= maxChecks) {
-                    console.warn(
-                      "⚠️ Video still muted after timeout, proceeding anyway"
-                    );
-                    resolve();
-                  } else {
-                    setTimeout(checkUnmute, 100);
-                  }
-                };
-
-                videoTrack.onunmute = () => {
-                  console.log("🔊 Video unmute event fired");
-                  resolve();
-                };
-
-                checkUnmute();
-              });
+          const handleClick = async () => {
+            try {
+              await remoteVideoRef.current?.play();
+              console.log("✅ Resumed after user interaction");
+              setError(null);
+              document.removeEventListener("click", handleClick);
+              document.removeEventListener("touchstart", handleClick);
+            } catch (e) {
+              console.error("Still blocked:", e);
             }
+          };
 
-            // 🔥 NEW: Log final track state
-            console.log("📊 Final track states:", {
-              audio: {
-                enabled: audioTrack.enabled,
-                muted: audioTrack.muted,
-                readyState: audioTrack.readyState,
-              },
-              video: {
-                enabled: videoTrack.enabled,
-                muted: videoTrack.muted,
-                readyState: videoTrack.readyState,
-              },
-            });
-
-            if (!remoteVideoRef.current) {
-              console.error("❌ Remote video element not found");
-              return;
-            }
-
-            // 🔥 Set srcObject only ONCE
-            remoteVideoRef.current.srcObject = remoteStream;
-            remoteVideoRef.current.autoplay = true;
-            remoteVideoRef.current.playsInline = true;
-            remoteVideoRef.current.muted = false;
-
-            console.log("✅ Stream attached to video element");
-
-            // 🔥 Attempt playback with retry
-            let playAttempts = 0;
-            const tryPlay = async () => {
-              try {
-                await remoteVideoRef.current!.play();
-                console.log("✅ Remote video playing!");
-                setConnectionStatus("connected");
-                setError(null);
-              } catch (err: any) {
-                playAttempts++;
-                console.error(
-                  `❌ Play attempt ${playAttempts} failed:`,
-                  err.name
-                );
-
-                if (err.name === "NotAllowedError" && playAttempts < 3) {
-                  setError("🔊 Click anywhere to enable audio/video");
-
-                  const handleInteraction = async () => {
-                    try {
-                      await remoteVideoRef.current?.play();
-                      console.log("✅ Playback resumed after interaction");
-                      setError(null);
-                    } catch (e) {
-                      console.error("Still failed:", e);
-                    }
-                  };
-
-                  document.addEventListener("click", handleInteraction, {
-                    once: true,
-                  });
-                  document.addEventListener("touchstart", handleInteraction, {
-                    once: true,
-                  });
-                } else if (playAttempts < 3) {
-                  setTimeout(tryPlay, 500);
-                }
-              }
-            };
-
-            await tryPlay();
-
-            // 🔥 NEW: Aggressive unmute monitoring
-            const monitorMute = () => {
-              if (videoTrack.muted) {
-                console.warn("🔇 VIDEO STILL MUTED - attempting recovery");
-                videoTrack.enabled = false;
-                setTimeout(() => {
-                  videoTrack.enabled = true;
-                  console.log("🔄 Track toggled");
-                }, 100);
-              }
-
-              if (audioTrack.muted) {
-                console.warn("🔇 AUDIO MUTED - attempting recovery");
-                audioTrack.enabled = false;
-                setTimeout(() => {
-                  audioTrack.enabled = true;
-                  console.log("🔄 Audio track toggled");
-                }, 100);
-              }
-            };
-
-            // Check every 2 seconds
-            const monitorInterval = setInterval(monitorMute, 2000);
-
-            // Stop monitoring after 30 seconds
-            setTimeout(() => clearInterval(monitorInterval), 30000);
-
-            // Monitor track health
-            audioTrack.onended = () => {
-              console.error("🛑 AUDIO ENDED");
-              clearInterval(monitorInterval);
-            };
-
-            videoTrack.onended = () => {
-              console.error("🛑 VIDEO ENDED");
-              clearInterval(monitorInterval);
-            };
-
-            audioTrack.onmute = () => {
-              console.warn("🔇 AUDIO MUTED EVENT");
-              setTimeout(() => {
-                audioTrack.enabled = true;
-              }, 100);
-            };
-
-            videoTrack.onmute = () => {
-              console.warn("🔇 VIDEO MUTED EVENT");
-              setTimeout(() => {
-                videoTrack.enabled = true;
-              }, 100);
-            };
-
-            audioTrack.onunmute = () => {
-              console.log("🔊 AUDIO UNMUTED EVENT");
-            };
-
-            videoTrack.onunmute = () => {
-              console.log("🔊 VIDEO UNMUTED EVENT");
-            };
-          } else if (!remoteStreamAttached) {
-            console.log("⏳ Waiting for both tracks...", pendingTracks);
-          }
-        },
-        (candidate: RTCIceCandidate) => {
-          const socket = getSocket();
-          socket.emit("ice-candidate", roomId, candidate);
+          document.addEventListener("click", handleClick, { once: true });
+          document.addEventListener("touchstart", handleClick, { once: true });
+          
+        } else if (playAttempts < maxAttempts) {
+          // Retry after delay
+          setTimeout(tryPlay, 300 * playAttempts);
+        } else {
+          console.error("❌ All play attempts failed");
+          setError("Video playback failed. Click to retry.");
         }
-      );
+      }
+    };
 
+    // Start playback attempts
+    tryPlay();
+
+    // 🔥 CRITICAL: Monitor track muting
+    const monitorInterval = setInterval(() => {
+      audioTracks.forEach(track => {
+        if (track.muted || !track.enabled) {
+          console.warn("🔇 AUDIO MUTED - forcing recovery");
+          track.enabled = false;
+          setTimeout(() => { track.enabled = true; }, 50);
+        }
+      });
+
+      videoTracks.forEach(track => {
+        if (track.muted || !track.enabled) {
+          console.warn("🔇 VIDEO MUTED - forcing recovery");
+          track.enabled = false;
+          setTimeout(() => { track.enabled = true; }, 50);
+        }
+      });
+    }, 2000);
+
+    // Stop monitoring after 30 seconds
+    setTimeout(() => clearInterval(monitorInterval), 30000);
+
+    // Track end handlers
+    audioTracks.forEach(track => {
+      track.onended = () => {
+        console.error("🛑 AUDIO TRACK ENDED");
+        clearInterval(monitorInterval);
+      };
+      track.onmute = () => {
+        console.warn("🔇 AUDIO MUTED EVENT");
+        setTimeout(() => { track.enabled = true; }, 100);
+      };
+      track.onunmute = () => console.log("🔊 AUDIO UNMUTED");
+    });
+
+    videoTracks.forEach(track => {
+      track.onended = () => {
+        console.error("🛑 VIDEO TRACK ENDED");
+        clearInterval(monitorInterval);
+      };
+      track.onmute = () => {
+        console.warn("🔇 VIDEO MUTED EVENT");
+        setTimeout(() => { track.enabled = true; }, 100);
+      };
+      track.onunmute = () => console.log("🔊 VIDEO UNMUTED");
+    });
+  },
+  (candidate: RTCIceCandidate) => {
+    const socket = getSocket();
+    socket.emit("ice-candidate", roomId, candidate);
+  }
+);
       // 🔥 HELPER: Attach remote stream to video element
       const attachRemoteStream = async (stream: MediaStream) => {
         console.log("🔗 Attaching stream to video element...");
@@ -1460,3 +1389,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
 };
 
 export default VideoCall;
+
+function setupEventListeners(arg0: (remoteStream: MediaStream) => Promise<void>, arg1: (candidate: RTCIceCandidate) => void) {
+  throw new Error("Function not implemented.");
+}
+

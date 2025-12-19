@@ -39,113 +39,111 @@ export class WebRTCService {
     };
   }
 
-  s; // 🔥 REPLACE Lines 40-95 in webrtc.ts
-  // REPLACE Lines 40-95 in webrtc.ts
-setLocalStream(stream: MediaStream): void {
-  this.localStream = stream;
+  setLocalStream(stream: MediaStream): void {
+    this.localStream = stream;
 
-  if (stream.getVideoTracks().length > 0) {
-    this.originalVideoTrack = stream.getVideoTracks()[0];
+    if (stream.getVideoTracks().length > 0) {
+      this.originalVideoTrack = stream.getVideoTracks()[0];
+    }
+
+    console.log("✅ Local stream stored");
+
+    // 🔥 CRITICAL: Force enable ALL tracks IMMEDIATELY
+    stream.getTracks().forEach((track) => {
+      track.enabled = true;
+
+      console.log(`   ${track.kind} track:`, {
+        id: track.id,
+        enabled: track.enabled,
+        muted: track.muted,
+        readyState: track.readyState,
+        label: track.label,
+      });
+
+      // 🔥 NEW: Add track event listeners
+      track.onended = () => {
+        console.error(`🚨 LOCAL ${track.kind} track ENDED unexpectedly!`);
+      };
+
+      track.onmute = () => {
+        console.warn(`🔇 LOCAL ${track.kind} track MUTED!`);
+        // Force unmute
+        track.enabled = true;
+      };
+
+      // 🔥 CRITICAL: Verify audio track
+      if (track.kind === "audio") {
+        this.verifyAudioTrack(track);
+      }
+    });
   }
 
-  console.log("✅ Local stream stored");
-
-  // 🔥 CRITICAL: Force enable ALL tracks IMMEDIATELY
-  stream.getTracks().forEach((track) => {
-    track.enabled = true;
-
-    console.log(`   ${track.kind} track:`, {
-      id: track.id,
-      enabled: track.enabled,
-      muted: track.muted,
-      readyState: track.readyState,
-      label: track.label,
-    });
-
-    // 🔥 NEW: Add track event listeners
-    track.onended = () => {
-      console.error(`🚨 LOCAL ${track.kind} track ENDED unexpectedly!`);
-    };
-
-    track.onmute = () => {
-      console.warn(`🔇 LOCAL ${track.kind} track MUTED!`);
-      // Force unmute
-      track.enabled = true;
-    };
-
-    // 🔥 CRITICAL: Verify audio track
-    if (track.kind === "audio") {
-      this.verifyAudioTrack(track);
-    }
-  });
-}
-
-// 🔥 NEW: Verify audio track is producing data
-private verifyAudioTrack(track: MediaStreamTrack): void {
-  try {
-    const AudioContext =
-      (window as any).AudioContext || (window as any).webkitAudioContext;
-    const audioContext = new AudioContext();
-    const source = audioContext.createMediaStreamSource(
-      new MediaStream([track])
-    );
-    const analyser = audioContext.createAnalyser();
-    source.connect(analyser);
-
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    // Check audio level multiple times
-    let checkCount = 0;
-    const maxChecks = 10;
-
-    const checkAudio = () => {
-      analyser.getByteFrequencyData(dataArray);
-      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-
-      console.log(
-        `🎤 Local audio level check ${checkCount + 1}/${maxChecks}:`,
-        average.toFixed(2)
+  // 🔥 NEW: Verify audio track is producing data
+  private verifyAudioTrack(track: MediaStreamTrack): void {
+    try {
+      const AudioContext =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(
+        new MediaStream([track])
       );
+      const analyser = audioContext.createAnalyser();
+      source.connect(analyser);
 
-      checkCount++;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-      if (average > 0) {
+      // Check audio level multiple times
+      let checkCount = 0;
+      const maxChecks = 10;
+
+      const checkAudio = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
         console.log(
-          "✅ Local audio is WORKING - detected sound level:",
+          `🎤 Local audio level check ${checkCount + 1}/${maxChecks}:`,
           average.toFixed(2)
         );
-        audioContext.close();
-      } else if (checkCount < maxChecks) {
-        setTimeout(checkAudio, 300);
-      } else {
-        console.error(
-          "❌ LOCAL AUDIO NOT WORKING - No sound detected after",
-          maxChecks,
-          "checks"
-        );
-        console.error("   Possible issues:");
-        console.error("   1. Microphone is muted in system settings");
-        console.error("   2. Another app is using the microphone");
-        console.error("   3. Microphone permissions not granted");
-        console.error("   4. Physical microphone issue");
-        audioContext.close();
-      }
-    };
 
-    // Start checking after a small delay
-    setTimeout(checkAudio, 500);
-  } catch (error) {
-    console.error("❌ Audio verification failed:", error);
+        checkCount++;
+
+        if (average > 0) {
+          console.log(
+            "✅ Local audio is WORKING - detected sound level:",
+            average.toFixed(2)
+          );
+          audioContext.close();
+        } else if (checkCount < maxChecks) {
+          setTimeout(checkAudio, 300);
+        } else {
+          console.error(
+            "❌ LOCAL AUDIO NOT WORKING - No sound detected after",
+            maxChecks,
+            "checks"
+          );
+          console.error("   Possible issues:");
+          console.error("   1. Microphone is muted in system settings");
+          console.error("   2. Another app is using the microphone");
+          console.error("   3. Microphone permissions not granted");
+          console.error("   4. Physical microphone issue");
+          audioContext.close();
+        }
+      };
+
+      // Start checking after a small delay
+      setTimeout(checkAudio, 500);
+    } catch (error) {
+      console.error("❌ Audio verification failed:", error);
+    }
   }
-}
 
-getLocalStream(): MediaStream | null {
-  return this.localStream;
-}
+  getLocalStream(): MediaStream | null {
+    return this.localStream;
+  }
 
-getRemoteStream(): MediaStream | null {
-  return this.remoteStream;
-}
+  getRemoteStream(): MediaStream | null {
+    return this.remoteStream;
+  }
 
   addLocalStreamToPeer(): void {
     if (!this.localStream || !this.peerConnection) {
@@ -301,161 +299,135 @@ getRemoteStream(): MediaStream | null {
     }
   }
 
-  // 🔥 REPLACE Lines 335-430 in src/lib/webrtc.ts
- // 🔥 REPLACE Lines 335-430 in src/lib/webrtc.ts
-setupEventListeners(
-  onRemoteStream: (stream: MediaStream) => void,
-  onIceCandidate: (candidate: RTCIceCandidate) => void
-): void {
-  if (!this.peerConnection) return;
+  // 🔥 MERGED: Simplified and optimized setupEventListeners
+  setupEventListeners(
+    onRemoteStream: (stream: MediaStream) => void,
+    onIceCandidate: (candidate: RTCIceCandidate) => void
+  ): void {
+    if (!this.peerConnection) return;
 
-  console.log("🔧 Setting up WebRTC event listeners");
+    console.log("🔧 Setting up WebRTC event listeners");
 
-  // 🔥 CRITICAL: Track incoming tracks separately
-  const incomingTracks = new Map<string, MediaStreamTrack>();
-  let callbackTimer: NodeJS.Timeout | null = null;
+    // Track counter to prevent duplicate callbacks
+    let tracksReceived = { audio: false, video: false };
+    let callbackFired = false;
 
-  // 🔥 CRITICAL: Prevent duplicate stream callbacks
-  let streamCallbackFired = false;
+    this.peerConnection.ontrack = (event) => {
+      console.log("\n📥 ===== TRACK RECEIVED =====");
+      console.log("   Kind:", event.track.kind);
+      console.log("   Track ID:", event.track.id);
+      console.log("   Enabled:", event.track.enabled);
+      console.log("   Muted:", event.track.muted);
+      console.log("   Ready State:", event.track.readyState);
 
-  this.peerConnection.ontrack = (event) => {
-    console.log("\n📥 ===== TRACK RECEIVED =====");
-    console.log("   Kind:", event.track.kind);
-    console.log("   Track ID:", event.track.id);
-    console.log("   Stream ID:", event.streams[0]?.id);
-    console.log("   Enabled:", event.track.enabled);
-    console.log("   Muted:", event.track.muted);
-    console.log("   Ready State:", event.track.readyState);
+      // 🔥 FORCE ENABLE IMMEDIATELY
+      event.track.enabled = true;
 
-    // 🔥 Force enable immediately
-    event.track.enabled = true;
-
-    // 🔥 NEW: If muted, try to force unmute
-    if (event.track.muted) {
-      console.warn(`⚠️ Track is MUTED on arrival, attempting recovery...`);
-      // Strategy 1: Disable/Enable toggle
-      event.track.enabled = false;
-      setTimeout(() => {
-        event.track.enabled = true;
-        console.log(`   Toggled ${event.track.kind} track`);
-      }, 100);
-    }
-
-    // Store track
-    incomingTracks.set(event.track.kind, event.track);
-
-    // 🔥 Get or create remote stream
-    if (event.streams && event.streams.length > 0) {
-      this.remoteStream = event.streams[0];
-    } else if (!this.remoteStream) {
-      this.remoteStream = new MediaStream();
-    }
-
-    // Add track if not already in stream
-    if (!this.remoteStream.getTracks().includes(event.track)) {
-      this.remoteStream.addTrack(event.track);
-      console.log(`   ✅ Added ${event.track.kind} to remote stream`);
-    }
-
-    // 🔥 Debounced callback - wait for both tracks
-    if (callbackTimer) {
-      clearTimeout(callbackTimer);
-    }
-
-    callbackTimer = setTimeout(() => {
-      const hasAudio = this.remoteStream!.getAudioTracks().length > 0;
-      const hasVideo = this.remoteStream!.getVideoTracks().length > 0;
-
-      console.log("🎯 Debounced callback check:", { hasAudio, hasVideo });
-
-      if (hasAudio && hasVideo && !streamCallbackFired) {
-        streamCallbackFired = true;
-        console.log("✅ Both tracks ready - firing callback");
-
-        // 🔥 Force enable all tracks one more time
-        this.remoteStream!.getTracks().forEach((t) => {
-          t.enabled = true;
-          // 🔥 NEW: If still muted, log warning
-          if (t.muted) {
-            console.warn(`⚠️ ${t.kind} track STILL MUTED before callback`);
-          }
-        });
-        onRemoteStream(this.remoteStream!);
-      } else {
-        console.log("⏳ Still waiting for tracks...");
-      }
-    }, 200); // Wait 200ms for both tracks
-
-    // Monitor track events
-    event.track.onended = () => {
-      console.error(`🛑 ${event.track.kind} ENDED`);
-    };
-
-    event.track.onmute = () => {
-      console.error(`🔇 ${event.track.kind} MUTED!`);
-      // Immediate recovery attempt
-      setTimeout(() => {
+      // 🔥 NEW: If muted on arrival, attempt recovery
+      if (event.track.muted) {
+        console.warn(`⚠️ Track is MUTED on arrival, attempting recovery...`);
         event.track.enabled = false;
         setTimeout(() => {
           event.track.enabled = true;
+          console.log(`   Toggled ${event.track.kind} track`);
+        }, 100);
+      }
+
+      // Update tracker
+      if (event.track.kind === "audio") tracksReceived.audio = true;
+      if (event.track.kind === "video") tracksReceived.video = true;
+
+      // Get or create remote stream
+      if (event.streams && event.streams.length > 0) {
+        this.remoteStream = event.streams[0];
+      } else if (!this.remoteStream) {
+        this.remoteStream = new MediaStream();
+      }
+
+      // Add track if not already present
+      if (!this.remoteStream.getTracks().includes(event.track)) {
+        this.remoteStream.addTrack(event.track);
+        console.log(`   ✅ Added ${event.track.kind} to remote stream`);
+      }
+
+      // 🔥 FIRE CALLBACK ONCE BOTH TRACKS ARRIVE
+      if (tracksReceived.audio && tracksReceived.video && !callbackFired) {
+        callbackFired = true;
+        console.log("✅ BOTH TRACKS READY - FIRING CALLBACK");
+
+        // Final force enable
+        this.remoteStream.getTracks().forEach((t) => {
+          t.enabled = true;
+          console.log(
+            `   Final enable: ${t.kind} - enabled=${t.enabled}, muted=${t.muted}`
+          );
+        });
+
+        onRemoteStream(this.remoteStream);
+      } else {
+        console.log("⏳ Waiting for tracks...", tracksReceived);
+      }
+
+      // Monitor track health
+      event.track.onended = () =>
+        console.error(`🛑 ${event.track.kind} ENDED`);
+      event.track.onmute = () => {
+        console.warn(`🔇 ${event.track.kind} MUTED`);
+        setTimeout(() => {
+          event.track.enabled = true;
           console.log(`   🔄 ${event.track.kind} track recovery attempted`);
-        }, 50);
-      }, 100);
+        }, 100);
+      };
+      event.track.onunmute = () =>
+        console.log(`🔊 ${event.track.kind} UNMUTED`);
+
+      if (event.transceiver) {
+        console.log("   Transceiver direction:", event.transceiver.direction);
+        console.log(
+          "   Current direction:",
+          event.transceiver.currentDirection
+        );
+      }
     };
 
-    event.track.onunmute = () => {
-      console.log(`🔊 ${event.track.kind} UNMUTED`);
+    this.peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log("❄️ ICE candidate:", event.candidate.type);
+        onIceCandidate(event.candidate);
+      }
     };
 
-    if (event.transceiver) {
-      console.log("   Transceiver direction:", event.transceiver.direction);
-      console.log(
-        "   Current direction:",
-        event.transceiver.currentDirection
-      );
-    }
-  };
+    this.peerConnection.oniceconnectionstatechange = () => {
+      const state = this.peerConnection?.iceConnectionState;
+      console.log("🧊 ICE state:", state);
 
-  // Consolidated event handlers (no duplicates)
-  this.peerConnection.onicecandidate = (event) => {
-    if (event.candidate) {
-      console.log("❄️ ICE candidate:", event.candidate.type);
-      onIceCandidate(event.candidate);
-    }
-  };
+      if (state === "connected") {
+        console.log("✅ ICE connected");
+        setTimeout(() => this.logConnectionStats(), 2000);
+      } else if (state === "failed") {
+        console.error("❌ ICE failed - connection issue");
+      }
+    };
 
-  this.peerConnection.oniceconnectionstatechange = () => {
-    const state = this.peerConnection?.iceConnectionState;
-    console.log("🧊 ICE state:", state);
+    this.peerConnection.onconnectionstatechange = () => {
+      const state = this.peerConnection?.connectionState;
+      console.log("🔌 Connection state:", state);
 
-    if (state === "connected") {
-      console.log("✅ ICE connected");
-      setTimeout(() => this.logConnectionStats(), 2000);
-    } else if (state === "failed") {
-      console.error("❌ ICE failed - connection issue");
-    }
-  };
+      if (state === "connected") {
+        console.log("✅ Peer connected");
+      } else if (state === "failed") {
+        console.error("❌ Connection failed");
+      }
+    };
 
-  this.peerConnection.onconnectionstatechange = () => {
-    const state = this.peerConnection?.connectionState;
-    console.log("🔌 Connection state:", state);
+    this.peerConnection.onsignalingstatechange = () => {
+      console.log("📡 Signaling state:", this.peerConnection?.signalingState);
+    };
 
-    if (state === "connected") {
-      console.log("✅ Peer connected");
-    } else if (state === "failed") {
-      console.error("❌ Connection failed");
-    }
-  };
-
-  this.peerConnection.onsignalingstatechange = () => {
-    console.log("📡 Signaling state:", this.peerConnection?.signalingState);
-  };
-
-  this.peerConnection.onnegotiationneeded = () => {
-    console.log("🔄 Negotiation needed event fired");
-  };
-}
-
+    this.peerConnection.onnegotiationneeded = () => {
+      console.log("🔄 Negotiation needed event fired");
+    };
+  }
 
   async logConnectionStats(): Promise<void> {
     if (!this.peerConnection) return;
