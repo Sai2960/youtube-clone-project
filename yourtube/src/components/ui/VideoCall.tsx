@@ -962,38 +962,38 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("⏳ Waiting for offer...");
       }
 
+      // ✅ MOVE THIS CODE HERE (INSIDE initializeCall, BEFORE the final console.log)
+      const peerConnection = webrtcServiceRef.current?.getPeerConnection();
+      if (pc) {
+        const checkConnection = setInterval(() => {
+          if (
+            pc.connectionState === "connected" &&
+            pc.iceConnectionState === "connected"
+          ) {
+            console.log("✅ Connection verified - checking media flow...");
+            webrtcServiceRef.current?.logConnectionStats();
+            clearInterval(checkConnection);
+          } else if (
+            pc.connectionState === "failed" ||
+            pc.iceConnectionState === "failed"
+          ) {
+            console.error("❌ Connection failed!");
+            setError("Connection failed - please refresh");
+            clearInterval(checkConnection);
+          }
+        }, 2000);
+
+        // Clear after 30 seconds
+        setTimeout(() => clearInterval(checkConnection), 30000);
+      }
+
       console.log("===== INITIALIZATION COMPLETE =====\n");
     } catch (error: any) {
       console.error("❌ Initialization error:", error);
       setError(error.message || "Failed to initialize call");
     }
   };
-  // ✅ NEW: Add connection state monitoring
-  const pc = webrtcServiceRef.current.getPeerConnection();
-  if (pc) {
-    const checkConnection = setInterval(() => {
-      if (
-        pc.connectionState === "connected" &&
-        pc.iceConnectionState === "connected"
-      ) {
-        console.log("✅ Connection verified - checking media flow...");
-        webrtcServiceRef.current?.logConnectionStats();
-        clearInterval(checkConnection);
-      } else if (
-        pc.connectionState === "failed" ||
-        pc.iceConnectionState === "failed"
-      ) {
-        console.error("❌ Connection failed!");
-        setError("Connection failed - please refresh");
-        clearInterval(checkConnection);
-      }
-    }, 2000);
 
-    // Clear after 30 seconds
-    setTimeout(() => clearInterval(checkConnection), 30000);
-  }
-
-  console.log("===== INITIALIZATION COMPLETE =====\n");
   const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...");
 
