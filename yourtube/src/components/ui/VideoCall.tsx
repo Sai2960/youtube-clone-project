@@ -684,7 +684,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       webrtcServiceRef.current = new WebRTCService();
       recordingServiceRef.current = new RecordingService();
 
-      const pc = webrtcServiceRef.current.getPeerConnection();
+      const pc = webrtcServiceRef.current?.getPeerConnection(); // ❌ This redeclares 'pc'
       if (pc) {
         (window as any).peerConnection = pc;
         console.log("✅ PeerConnection exposed as window.peerConnection");
@@ -962,8 +962,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("⏳ Waiting for offer...");
       }
 
-      // ✅ MOVE THIS CODE HERE (INSIDE initializeCall, BEFORE the final console.log)
-      const peerConnection = webrtcServiceRef.current?.getPeerConnection();
+      // ✅ Connection monitoring - reuse existing 'pc' variable
       if (pc) {
         const checkConnection = setInterval(() => {
           if (
@@ -1311,33 +1310,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           setError("Video playback error");
         }}
       />
-      {/* ✅ Click to Play Overlay */}
-      {connectionStatus === "connected" && error?.includes("Click") && (
-        <div
-          className="absolute inset-0 bg-black/80 flex items-center justify-center z-30 cursor-pointer"
-          onClick={async () => {
-            try {
-              await remoteVideoRef.current?.play();
-              console.log("✅ Manual play successful");
-              setError(null);
-            } catch (err) {
-              console.error("Manual play failed:", err);
-            }
-          }}
-        >
-          <div className="text-center px-4">
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-              <Play className="w-10 h-10 text-black" fill="currentColor" />
-            </div>
-            <p className="text-white text-xl font-bold mb-2">
-              Tap to Start Video
-            </p>
-            <p className="text-gray-300 text-sm">
-              Browser requires user interaction
-            </p>
-          </div>
-        </div>
-      )}
       {/* ✅ Connecting Overlay */}
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
@@ -1403,6 +1375,25 @@ const VideoCall: React.FC<VideoCallProps> = ({
           )}
         </div>
       </div>
+      {/* Add AFTER the Error Banner, before the bottom controls */}
+      {connectionStatus === "connected" && error?.includes("tap to retry") && (
+        <div className="absolute inset-0 flex items-center justify-center z-25">
+          <button
+            onClick={async () => {
+              try {
+                await remoteVideoRef.current?.play();
+                console.log("✅ Emergency play activated");
+                setError(null);
+              } catch (err) {
+                console.error("Emergency play failed:", err);
+              }
+            }}
+            className="p-6 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-lg"
+          >
+            <Play className="w-10 h-10 text-white" fill="currentColor" />
+          </button>
+        </div>
+      )}
       {/* ✅ Error Banner */}
       {error && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
