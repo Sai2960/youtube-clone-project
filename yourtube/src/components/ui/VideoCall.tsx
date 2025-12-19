@@ -664,8 +664,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
       let remoteStreamAttached = false;
       const pendingTracks = { audio: false, video: false };
 
-    // 🔥 REPLACE Lines 411-520 in VideoCall.tsx
-setupEventListeners(
+// 🔥 FIXED: Call setupEventListeners on the WebRTC service instance
+webrtcServiceRef.current.setupEventListeners(
   async (remoteStream: MediaStream) => {
     console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
 
@@ -1389,8 +1389,4 @@ setupEventListeners(
 };
 
 export default VideoCall;
-
-function setupEventListeners(arg0: (remoteStream: MediaStream) => Promise<void>, arg1: (candidate: RTCIceCandidate) => void) {
-  throw new Error("Function not implemented.");
-}
 
