@@ -28,12 +28,6 @@ interface VideoCallProps {
   callId?: string;
 }
 
-// Windows Audio Device Tester
-// 🔥 COMPLETE FIX FOR MUTED TRACKS
-// Replace the ensureAudioNotMuted function (around line 40-85)
-
-// 🔥 REPLACE Lines 40-85 in VideoCall.tsx
-// 🔥 REPLACE Lines 40-85 in VideoCall.tsx
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   console.log("🔧 Getting media with Windows audio fix...");
 
@@ -157,32 +151,33 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
-          const isValid = track.readyState === 'live' && !track.muted && track.enabled;
-  console.log('🎤 Audio track verification:', {
-      readyState: track.readyState,
-      muted: track.muted,
-      enabled: track.enabled,
-      valid: isValid
-    });
-    if (!isValid) {
-      console.warn('⚠️ Audio track not ready yet');
-    }
-    
-    resolve(isValid || true); // Optimistic - assume working
-  
-    
+      const isValid =
+        track.readyState === "live" && !track.muted && track.enabled;
+      console.log("🎤 Audio track validation:", {
+        readyState: track.readyState,
+        muted: track.muted,
+        enabled: track.enabled,
+        label: track.label,
+      });
+      if (!isValid) {
+        console.warn("⚠️ Audio track not ready");
+        resolve(false);
+        return;
+      }
+      resolve(isValid || true); // Optimistic - assume working
+
       const AudioContext =
         (window as any).AudioContext || (window as any).webkitAudioContext;
-      
+
       // Don't create AudioContext until user interaction
       let audioContext: AudioContext | null = null;
-      
+
       const createAndVerify = () => {
         if (!audioContext) {
           audioContext = new AudioContext();
-          
+
           // Resume if suspended
-          if (audioContext.state === 'suspended') {
+          if (audioContext.state === "suspended") {
             audioContext.resume();
           }
         }
@@ -203,7 +198,9 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
 
           console.log(
-            `🎤 Audio level check ${checkCount + 1}/${maxChecks}: ${average.toFixed(2)}`
+            `🎤 Audio level check ${
+              checkCount + 1
+            }/${maxChecks}: ${average.toFixed(2)}`
           );
 
           checkCount++;
@@ -211,7 +208,9 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
           if (average > 0 || checkCount >= maxChecks) {
             const isWorking =
               average > 0 || (track.readyState === "live" && !track.muted);
-            console.log(isWorking ? "✅ Audio verified" : "⚠️ No audio detected");
+            console.log(
+              isWorking ? "✅ Audio verified" : "⚠️ No audio detected"
+            );
             audioContext?.close();
             resolve(isWorking);
           } else {
@@ -223,7 +222,7 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
       };
 
       // If page hasn't had interaction yet, defer verification
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         createAndVerify();
       } else {
         // Just assume it's working if we can't verify
@@ -235,9 +234,7 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
       resolve(true); // Assume working if we can't verify
     }
   });
-  
-  
-};// Helper to wait for track to be ready - ADD THIS BEFORE VideoCall component
+}; // Helper to wait for track to be ready - ADD THIS BEFORE VideoCall component
 const waitForTrackReady = (
   track: MediaStreamTrack,
   kind: string
@@ -305,9 +302,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const initializingRef = useRef(false);
   const initializedRef = useRef(false);
 
- // 🔥 NEW: Force resume AudioContext on ANY user interaction
-;
-
+  // 🔥 NEW: Force resume AudioContext on ANY user interaction
   useEffect(() => {
     const enterFullscreen = async () => {
       try {
@@ -334,6 +329,50 @@ const VideoCall: React.FC<VideoCallProps> = ({
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(console.error);
       }
+    };
+  }, []);
+  // 🔥 NEW: Resume AudioContext on ANY user interaction
+  useEffect(() => {
+    const resumeAudioContext = () => {
+      const AudioContext =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+
+      // Resume any suspended AudioContexts globally
+      if (AudioContext) {
+        console.log("🎤 Attempting to resume AudioContext...");
+
+        const ctx = new AudioContext();
+        if (ctx.state === "suspended") {
+          ctx
+            .resume()
+            .then(() => {
+              console.log("✅ AudioContext resumed");
+              ctx.close();
+            })
+            .catch((err) => {
+              console.error("❌ AudioContext resume failed:", err);
+            });
+        } else {
+          console.log("✅ AudioContext already running");
+          ctx.close();
+        }
+      }
+    };
+
+    // Try on mount
+    const timer = setTimeout(resumeAudioContext, 1000);
+
+    // Also try on user interaction
+    const events = ["click", "touchstart", "keydown"];
+    events.forEach((evt) => {
+      document.addEventListener(evt, resumeAudioContext, { once: true });
+    });
+
+    return () => {
+      clearTimeout(timer);
+      events.forEach((evt) => {
+        document.removeEventListener(evt, resumeAudioContext);
+      });
     };
   }, []);
 
@@ -652,6 +691,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       const pendingTracks = { audio: false, video: false };
 
       // 🔥 FIXED: Single stable attachment - replace lines 485-650
+      // 🔥 FIXED: Remote stream attachment with proper autoplay handling
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
@@ -661,93 +701,136 @@ const VideoCall: React.FC<VideoCallProps> = ({
             return;
           }
 
-          // 🔥 CRITICAL: Only set srcObject if it's different
-          if (remoteVideoRef.current.srcObject !== remoteStream) {
-            console.log("📺 Setting new remote stream");
-            remoteVideoRef.current.srcObject = remoteStream;
-          }
-
           const audioTracks = remoteStream.getAudioTracks();
           const videoTracks = remoteStream.getVideoTracks();
 
-          console.log("📊 Stream status:", {
+          console.log("📊 Stream contents:", {
             streamId: remoteStream.id,
             audioTracks: audioTracks.length,
             videoTracks: videoTracks.length,
+            audioEnabled: audioTracks[0]?.enabled,
+            audioMuted: audioTracks[0]?.muted,
+            videoEnabled: videoTracks[0]?.enabled,
           });
 
-          // 🔥 Force enable all tracks
+          // 🔥 CRITICAL: Force enable all tracks BEFORE attaching
           [...audioTracks, ...videoTracks].forEach((track) => {
             track.enabled = true;
-            console.log(`✅ ${track.kind}:`, {
+            console.log(`✅ Enabled ${track.kind}:`, {
+              id: track.id.substring(0, 8),
               enabled: track.enabled,
               muted: track.muted,
               readyState: track.readyState,
             });
           });
 
-          // 🔥 Wait for video element to be ready
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          // 🔥 Set srcObject only if different
+          if (remoteVideoRef.current.srcObject !== remoteStream) {
+            console.log("📺 Attaching remote stream to video element");
+            remoteVideoRef.current.srcObject = remoteStream;
+            remoteVideoRef.current.autoplay = true;
+            remoteVideoRef.current.playsInline = true;
+            remoteVideoRef.current.muted = false; // CRITICAL for audio
+          }
 
-          // 🔥 Start playback with retry
-          const attemptPlay = async (attempt = 1, maxAttempts = 5) => {
+          // 🔥 Wait for metadata to load
+          await new Promise<void>((resolve) => {
+            if (remoteVideoRef.current!.readyState >= 2) {
+              resolve();
+            } else {
+              remoteVideoRef.current!.onloadedmetadata = () => resolve();
+              setTimeout(resolve, 2000); // Timeout fallback
+            }
+          });
+
+          console.log("✅ Video metadata loaded, attempting play...");
+
+          // 🔥 FIXED: Robust play with user gesture fallback
+          const attemptPlay = async (retry = 0): Promise<void> => {
             if (!remoteVideoRef.current) return;
 
             try {
-              await remoteVideoRef.current.play();
-              console.log("✅ Playback started successfully");
-              setConnectionStatus("connected");
-              setError(null);
-            } catch (err: any) {
-              console.error(`❌ Play attempt ${attempt} failed:`, err.name);
+              const playPromise = remoteVideoRef.current.play();
 
-              if (err.name === "NotAllowedError") {
+              if (playPromise !== undefined) {
+                await playPromise;
+                console.log("✅ Remote video playing successfully!");
+                setConnectionStatus("connected");
+                setError(null);
+              }
+            } catch (err: any) {
+              console.error(`❌ Play failed (attempt ${retry + 1}):`, err.name);
+
+              if (err.name === "NotAllowedError" || err.name === "AbortError") {
+                // Autoplay blocked - need user interaction
                 setError("🔊 Click anywhere to enable audio/video");
 
-                const handleInteraction = async () => {
+                // Wait for ANY user interaction
+                const enableOnInteraction = async (event: Event) => {
+                  console.log("👆 User interaction detected:", event.type);
+
                   if (remoteVideoRef.current) {
                     try {
                       await remoteVideoRef.current.play();
+                      console.log("✅ Playback resumed after user gesture");
+                      setConnectionStatus("connected");
                       setError(null);
-                      console.log("✅ Resumed after user interaction");
-                    } catch (e) {
-                      console.error("Still blocked:", e);
+                    } catch (e: any) {
+                      console.error("Still failed:", e.name);
+                      setError("⚠️ Please refresh and try again");
                     }
                   }
-                  document.removeEventListener("click", handleInteraction);
-                  document.removeEventListener("touchstart", handleInteraction);
+
+                  // Remove all listeners
+                  ["click", "touchstart", "keydown"].forEach((evt) => {
+                    document.removeEventListener(evt, enableOnInteraction);
+                  });
                 };
 
-                document.addEventListener("click", handleInteraction, {
-                  once: true,
+                // Listen for multiple interaction types
+                ["click", "touchstart", "keydown"].forEach((evt) => {
+                  document.addEventListener(evt, enableOnInteraction, {
+                    once: true,
+                  });
                 });
-                document.addEventListener("touchstart", handleInteraction, {
-                  once: true,
-                });
-              } else if (err.name !== "AbortError" && attempt < maxAttempts) {
-                // Retry for non-abort errors
-                setTimeout(() => attemptPlay(attempt + 1, maxAttempts), 500);
+              } else if (retry < 3) {
+                // Retry for other errors
+                console.log(`🔄 Retrying play in 500ms...`);
+                await new Promise((r) => setTimeout(r, 500));
+                return attemptPlay(retry + 1);
+              } else {
+                setError(
+                  "⚠️ Video playback failed. Please check your connection."
+                );
               }
             }
           };
 
-          attemptPlay();
+          await attemptPlay();
 
-          // 🔥 Monitor track health (but don't force recovery too aggressively)
+          // 🔥 Monitor track health (without being too aggressive)
+          let monitorCount = 0;
           const monitorInterval = setInterval(() => {
-            [...audioTracks, ...videoTracks].forEach((track) => {
+            monitorCount++;
+
+            audioTracks.forEach((track) => {
               if (track.readyState === "live" && track.muted && track.enabled) {
-                console.warn(`🔇 ${track.kind} muted, attempting recovery`);
+                console.warn(
+                  `🔇 Audio muted after ${monitorCount * 3}s, recovering...`
+                );
                 track.enabled = false;
                 setTimeout(() => {
                   track.enabled = true;
                 }, 100);
               }
             });
-          }, 5000); // Check every 5 seconds instead of 2
 
-          // Stop monitoring after 60 seconds
-          setTimeout(() => clearInterval(monitorInterval), 60000);
+            // Stop monitoring after 60 seconds
+            if (monitorCount >= 20) {
+              clearInterval(monitorInterval);
+              console.log("✅ Audio monitoring ended");
+            }
+          }, 3000);
         },
         (candidate: RTCIceCandidate) => {
           const socket = getSocket();
@@ -1092,7 +1175,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         id="remote-video"
         autoPlay
         playsInline
-        muted={false}
+        muted={false} // ✅ CRITICAL: Must be false for audio
         className="w-full h-full object-cover absolute inset-0"
         style={{
           backgroundColor: "#000",
@@ -1101,17 +1184,38 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("✅ Remote video metadata loaded");
           const video = e.currentTarget;
 
-          // Just log, don't force play here
-          console.log("Video dimensions:", {
+          console.log("Video state:", {
             videoWidth: video.videoWidth,
             videoHeight: video.videoHeight,
+            readyState: video.readyState,
+            paused: video.paused,
+            muted: video.muted,
+          });
+
+          // 🔥 Force play after metadata loads
+          video.play().catch((err) => {
+            console.warn("⚠️ Auto-play blocked:", err.name);
+            setError("🔊 Click anywhere to start video");
+          });
+        }}
+        onCanPlay={(e) => {
+          console.log("✅ Remote video can play");
+          e.currentTarget.play().catch((err) => {
+            console.warn("⚠️ Play blocked:", err.name);
           });
         }}
         onError={(e) => {
           console.error("❌ Video element error:", e);
+          setError("Video playback error");
+        }}
+        onPlay={() => {
+          console.log("✅ Remote video PLAYING");
+          setError(null);
+        }}
+        onPause={() => {
+          console.warn("⚠️ Remote video PAUSED");
         }}
       />
-
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
           <div className="text-center px-4">

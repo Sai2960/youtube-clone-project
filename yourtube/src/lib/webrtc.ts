@@ -80,8 +80,7 @@ export class WebRTCService {
 
   // 🔥 FIXED: Audio verification without AudioContext until user interaction
   private verifyAudioTrack(track: MediaStreamTrack): void {
-    // Don't create AudioContext on track initialization - it causes warnings
-    console.log("🎤 Audio track detected:", {
+    console.log("🎤 Audio track registered:", {
       id: track.id,
       enabled: track.enabled,
       muted: track.muted,
@@ -112,8 +111,7 @@ export class WebRTCService {
 
         const checkAudio = () => {
           analyser.getByteFrequencyData(dataArray);
-          const average =
-            dataArray.reduce((a, b) => a + b) / dataArray.length;
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
 
           console.log(`🎤 Audio level: ${average.toFixed(2)}`);
           checkCount++;
@@ -378,8 +376,7 @@ export class WebRTCService {
       }
 
       // Monitor track health
-      event.track.onended = () =>
-        console.error(`🛑 ${event.track.kind} ENDED`);
+      event.track.onended = () => console.error(`🛑 ${event.track.kind} ENDED`);
       event.track.onmute = () => {
         console.warn(`🔇 ${event.track.kind} MUTED`);
         setTimeout(() => {
