@@ -33,6 +33,7 @@ interface VideoCallProps {
 // Replace the ensureAudioNotMuted function (around line 40-85)
 
 // 🔥 REPLACE Lines 40-85 in VideoCall.tsx
+// 🔥 REPLACE Lines 40-85 in VideoCall.tsx
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   console.log("🔧 Getting media with Windows audio fix...");
 
@@ -87,7 +88,9 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         // Force enable and verify
         audioTrack.enabled = true;
 
-        if (audioTrack.readyState === "live" && !audioTrack.muted) {
+        // 🔥 NEW: Verify audio is producing sound
+        const isAudioWorking = await verifyAudioTrack(audioTrack);
+        if (isAudioWorking && audioTrack.readyState === "live" && !audioTrack.muted) {
           console.log(`✅ SUCCESS! Using ${usbMic.label}`);
           return stream;
         }
@@ -118,7 +121,9 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     const audioTrack = stream.getAudioTracks()[0];
     audioTrack.enabled = true;
 
-    if (audioTrack.readyState === "live" && !audioTrack.muted) {
+    // 🔥 NEW: Verify default audio
+    const isAudioWorking = await verifyAudioTrack(audioTrack);
+    if (isAudioWorking && audioTrack.readyState === "live" && !audioTrack.muted) {
       console.log("✅ Default mic working");
       return stream;
     }
@@ -138,6 +143,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     throw err;
   }
 };
+
 // 🔥 NEW: Verify audio track is actually producing sound
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   return new Promise((resolve) => {
