@@ -1098,7 +1098,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       console.error("Error emitting recording-stopped:", error);
     }
   };
-
   const handleEndCall = async () => {
     if (callEndedRef.current) {
       console.log("⚠️ Call already ended, skipping");
@@ -1225,6 +1224,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       </div>
     );
   }
+
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* Remote Video (Main) */}
@@ -1334,10 +1334,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
           )}
         </div>
       </div>
-      ## Part 17: JSX Return - Main Video Call UI (Part 2 - Final) ```typescript
+      # Part 18: JSX Return - Main Video Call UI (Part 2 - Final) ```typescript
       {/* Play Button Overlay */}
       {showPlayButton && (
-        <div className="absolute inset-0 flex items-center justify-center z-25 bg-black/50">
+        <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
           <button
             onClick={handlePlayClick}
             className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
