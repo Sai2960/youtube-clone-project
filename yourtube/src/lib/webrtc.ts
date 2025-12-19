@@ -146,88 +146,80 @@ export class WebRTCService {
   // ✅ CRITICAL FIX: Completely rewritten to ensure proper transceiver setup
   // ✅ CRITICAL FIX: Completely rewritten to ensure proper transceiver setup
   async addLocalStreamToPeer(): Promise<void> {
-    if (!this.localStream || !this.peerConnection) {
-      console.error("❌ Cannot add stream to peer");
-      return;
-    }
+  if (!this.localStream || !this.peerConnection) {
+    console.error("❌ Cannot add stream to peer");
+    return;
+  }
 
-    console.log("\n📤 Adding Local Stream to Peer (FIXED v2)");
+  console.log("\n📤 Adding Local Stream to Peer (FIXED v3)");
 
-    // ✅ Get existing transceivers
-    let transceivers = this.peerConnection.getTransceivers();
-    console.log(`   Found ${transceivers.length} existing transceivers`);
+  // ✅ Get existing transceivers
+  let transceivers = this.peerConnection.getTransceivers();
+  console.log(`   Found ${transceivers.length} existing transceivers`);
 
-    // Step 1: If no transceivers exist, add tracks to create them
-    if (transceivers.length === 0) {
-      console.log("   Creating new transceivers...");
-      // Add tracks with explicit direction
-      this.localStream.getTracks().forEach((track) => {
-        console.log(`      Adding ${track.kind}: ${track.label}`);
-        const sender = this.peerConnection!.addTrack(track, this.localStream!);
-
-        // Get the transceiver that was just created
-        const transceiver = this.peerConnection!.getTransceivers().find(
-          (t) => t.sender === sender
-        );
-
-        if (transceiver) {
-          transceiver.direction = "sendrecv";
-          console.log(`      ✅ Set ${track.kind} transceiver to sendrecv`);
-        }
-      });
-
-      this.localStream.getTracks().forEach((track) => {
-        console.log(`      Adding ${track.kind}: ${track.label}`);
-        this.peerConnection?.addTrack(track, this.localStream!);
-      });
-
-      // Refresh transceiver list
-      transceivers = this.peerConnection.getTransceivers();
-      console.log(`   ✅ Created ${transceivers.length} transceivers`);
-    } else {
-      console.log("   Replacing tracks in existing transceivers...");
-
-      const audioTrack = this.localStream.getAudioTracks()[0];
-      const videoTrack = this.localStream.getVideoTracks()[0];
-
-      for (const transceiver of transceivers) {
-        const kind = transceiver.receiver.track?.kind;
-
-        if (kind === "audio" && audioTrack) {
-          await transceiver.sender.replaceTrack(audioTrack);
-          transceiver.direction = "sendrecv";
-          console.log(`      ✅ Replaced audio track`);
-        } else if (kind === "video" && videoTrack) {
-          await transceiver.sender.replaceTrack(videoTrack);
-          transceiver.direction = "sendrecv";
-          console.log(`      ✅ Replaced video track`);
-        }
+  if (transceivers.length === 0) {
+    // Step 1: Create new transceivers by adding tracks
+    console.log("   Creating new transceivers...");
+    
+    this.localStream.getTracks().forEach((track) => {
+      console.log(`      Adding ${track.kind}: ${track.label}`);
+      const sender = this.peerConnection!.addTrack(track, this.localStream!);
+      
+      // Get the transceiver that was just created
+      const transceiver = this.peerConnection!.getTransceivers().find(
+        (t) => t.sender === sender
+      );
+      
+      if (transceiver) {
+        transceiver.direction = "sendrecv";
+        console.log(`      ✅ Set ${track.kind} transceiver to sendrecv`);
+      }
+    });
+    
+    // Refresh transceiver list
+    transceivers = this.peerConnection.getTransceivers();
+    console.log(`   ✅ Created ${transceivers.length} transceivers`);
+  } else {
+    // Step 2: Replace tracks in existing transceivers
+    console.log("   Replacing tracks in existing transceivers...");
+    
+    const audioTrack = this.localStream.getAudioTracks()[0];
+    const videoTrack = this.localStream.getVideoTracks()[0];
+    
+    for (const transceiver of transceivers) {
+      const kind = transceiver.receiver.track?.kind;
+      
+      if (kind === "audio" && audioTrack) {
+        await transceiver.sender.replaceTrack(audioTrack);
+        transceiver.direction = "sendrecv";
+        console.log(`      ✅ Replaced audio track`);
+      } else if (kind === "video" && videoTrack) {
+        await transceiver.sender.replaceTrack(videoTrack);
+        transceiver.direction = "sendrecv";
+        console.log(`      ✅ Replaced video track`);
       }
     }
-
-    // ✅ CRITICAL: Final verification and force sendrecv
-    console.log("\n   🔧 Final transceiver verification:");
-    transceivers.forEach((transceiver, index) => {
-      const track = transceiver.sender.track;
-      const oldDirection = transceiver.direction;
-
-      // Force sendrecv
-      transceiver.direction = "sendrecv";
-
-      console.log(`      Transceiver ${index}:`);
-      console.log(`         Kind: ${track?.kind || "unknown"}`);
-      console.log(`         Track: ${track?.label || "none"}`);
-      console.log(`         Enabled: ${track?.enabled}`);
-      console.log(`         Direction: ${oldDirection} → sendrecv`);
-      console.log(
-        `         Current direction: ${transceiver.currentDirection || "none"}`
-      );
-    });
-
-    console.log(
-      `\n✅ Stream setup complete with ${transceivers.length} transceivers\n`
-    );
   }
+
+  // Step 3: CRITICAL - Force ALL transceivers to sendrecv
+  console.log("\n   🔧 Final transceiver verification:");
+  transceivers.forEach((transceiver, index) => {
+    const track = transceiver.sender.track;
+    const oldDirection = transceiver.direction;
+    
+    // Force sendrecv
+    transceiver.direction = "sendrecv";
+    
+    console.log(`      Transceiver ${index}:`);
+    console.log(`         Kind: ${track?.kind || "unknown"}`);
+    console.log(`         Track: ${track?.label || "none"}`);
+    console.log(`         Enabled: ${track?.enabled}`);
+    console.log(`         Direction: ${oldDirection} → sendrecv`);
+    console.log(`         Current direction: ${transceiver.currentDirection || "none"}`);
+  });
+
+  console.log(`\n✅ Stream setup complete with ${transceivers.length} transceivers\n`);
+}
 
   // ✅ FIXED: Added explicit constraints and validation
   async createOffer(): Promise<RTCSessionDescriptionInit> {
