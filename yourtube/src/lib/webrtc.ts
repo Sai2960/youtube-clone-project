@@ -1,11 +1,9 @@
-// lib/webrtc.ts - COMPLETE FIXED VERSION WITH AUDIO DIAGNOSTICS
+// lib/webrtc.ts - COMPLETE FIXED VERSION
+
 const ICE_SERVERS = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:19302" },
     {
       urls: "turn:openrelay.metered.ca:80",
       username: "openrelayproject",
@@ -28,15 +26,8 @@ export class WebRTCService {
   private originalVideoTrack: MediaStreamTrack | null = null;
 
   constructor() {
-    console.log("🔧 Creating WebRTC peer connection with TURN servers");
+    console.log("🔧 Creating WebRTC peer connection");
     this.peerConnection = new RTCPeerConnection(ICE_SERVERS);
-
-    this.peerConnection.onicegatheringstatechange = () => {
-      console.log(
-        "🧊 ICE gathering state:",
-        this.peerConnection?.iceGatheringState
-      );
-    };
   }
 
   setLocalStream(stream: MediaStream): void {
@@ -46,102 +37,14 @@ export class WebRTCService {
       this.originalVideoTrack = stream.getVideoTracks()[0];
     }
 
-    console.log("✅ Local stream stored");
+    console.log("✅ Local stream set");
 
-    // 🔥 CRITICAL: Force enable ALL tracks IMMEDIATELY
+    // Force enable all tracks
     stream.getTracks().forEach((track) => {
       track.enabled = true;
-
-      console.log(`   ${track.kind} track:`, {
-        id: track.id,
-        enabled: track.enabled,
-        muted: track.muted,
-        readyState: track.readyState,
-        label: track.label,
-      });
-
-      // 🔥 NEW: Add track event listeners
-      track.onended = () => {
-        console.error(`🚨 LOCAL ${track.kind} track ENDED unexpectedly!`);
-      };
-
-      track.onmute = () => {
-        console.warn(`🔇 LOCAL ${track.kind} track MUTED!`);
-        // Force unmute
-        track.enabled = true;
-      };
-
-      // 🔥 CRITICAL: Verify audio track
-      if (track.kind === "audio") {
-        this.verifyAudioTrack(track);
-      }
+      console.log(`   ${track.kind}: ${track.label}`);
+      console.log(`      enabled=${track.enabled}, muted=${track.muted}`);
     });
-  }
-
-  // 🔥 FIXED: Audio verification without AudioContext until user interaction
-  private verifyAudioTrack(track: MediaStreamTrack): void {
-    console.log("🎤 Audio track registered:", {
-      id: track.id,
-      enabled: track.enabled,
-      muted: track.muted,
-      readyState: track.readyState,
-      label: track.label,
-    });
-
-    // Defer audio verification until first user interaction
-    const verifyOnInteraction = () => {
-      try {
-        const AudioContext =
-          (window as any).AudioContext || (window as any).webkitAudioContext;
-        const audioContext = new AudioContext();
-
-        if (audioContext.state === "suspended") {
-          audioContext.resume();
-        }
-
-        const source = audioContext.createMediaStreamSource(
-          new MediaStream([track])
-        );
-        const analyser = audioContext.createAnalyser();
-        source.connect(analyser);
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        let checkCount = 0;
-        const maxChecks = 5;
-
-        const checkAudio = () => {
-          analyser.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-
-          console.log(`🎤 Audio level: ${average.toFixed(2)}`);
-          checkCount++;
-
-          if (average > 0 || checkCount >= maxChecks) {
-            console.log(
-              average > 0 ? "✅ Audio verified" : "⚠️ No audio detected"
-            );
-            audioContext.close();
-          } else {
-            setTimeout(checkAudio, 200);
-          }
-        };
-
-        setTimeout(checkAudio, 500);
-      } catch (error) {
-        console.error("❌ Audio verification failed:", error);
-      }
-    };
-
-    // Wait for user interaction
-    const events = ["click", "touchstart", "keydown"];
-    const handler = () => {
-      verifyOnInteraction();
-      events.forEach((e) => document.removeEventListener(e, handler));
-    };
-
-    events.forEach((e) =>
-      document.addEventListener(e, handler, { once: true })
-    );
   }
 
   getLocalStream(): MediaStream | null {
@@ -154,43 +57,29 @@ export class WebRTCService {
 
   addLocalStreamToPeer(): void {
     if (!this.localStream || !this.peerConnection) {
-      console.error("❌ Cannot add stream: missing stream or peer");
+      console.error("❌ Cannot add stream");
       return;
     }
 
-    const senders = this.peerConnection.getSenders();
-    console.log(`📊 Current senders: ${senders.length}`);
-
-    senders.forEach((sender) => {
+    // Remove existing senders
+    this.peerConnection.getSenders().forEach((sender) => {
       if (sender.track) {
         this.peerConnection?.removeTrack(sender);
-        console.log(`   Removed ${sender.track.kind} sender`);
       }
     });
 
-    // 🔥 CRITICAL: Force enable all tracks before adding
+    // Add all tracks
     this.localStream.getTracks().forEach((track) => {
       track.enabled = true;
-
-      console.log(`➕ Adding ${track.kind} track:`, {
-        id: track.id,
-        enabled: track.enabled,
-        muted: track.muted,
-        readyState: track.readyState,
-        label: track.label,
-      });
-
+      console.log(`➕ Adding ${track.kind} track: ${track.id}`);
       this.peerConnection?.addTrack(track, this.localStream!);
     });
 
+    // ✅ CRITICAL FIX: Force all transceivers to sendrecv
     const transceivers = this.peerConnection.getTransceivers();
-    console.log(`✅ Total transceivers after addTrack: ${transceivers.length}`);
-    transceivers.forEach((t, i) => {
-      console.log(
-        `   Transceiver ${i}: ${t.mid} ${t.direction} ${t.sender.track?.kind}`
-      );
+    console.log(`📊 Transceivers: ${transceivers.length}`);
 
-      // 🔥 Force sendrecv for all transceivers
+    transceivers.forEach((t, i) => {
       if (t.direction !== "sendrecv") {
         t.direction = "sendrecv";
         console.log(`   ✅ Fixed transceiver ${i} to sendrecv`);
@@ -201,24 +90,12 @@ export class WebRTCService {
   }
 
   async createOffer(): Promise<RTCSessionDescriptionInit> {
-    if (!this.peerConnection)
-      throw new Error("Peer connection not initialized");
+    if (!this.peerConnection) throw new Error("Peer not initialized");
 
-    const transceivers = this.peerConnection.getTransceivers();
-    console.log(`📊 Transceivers before offer: ${transceivers.length}`);
-
-    transceivers.forEach((t, i) => {
-      console.log(`   Transceiver ${i}:`, {
-        kind: t.sender.track?.kind,
-        direction: t.direction,
-        mid: t.mid,
-        trackEnabled: t.sender.track?.enabled,
-        trackMuted: t.sender.track?.muted,
-      });
-
+    // ✅ Ensure all transceivers are sendrecv
+    this.peerConnection.getTransceivers().forEach((t) => {
       if (t.direction !== "sendrecv") {
         t.direction = "sendrecv";
-        console.log(`   ✅ Fixed transceiver ${i} to sendrecv`);
       }
     });
 
@@ -229,39 +106,25 @@ export class WebRTCService {
 
     await this.peerConnection.setLocalDescription(offer);
     console.log("✅ Offer created");
-    console.log("   Type:", offer.type);
-    console.log("   Has audio:", offer.sdp?.includes("m=audio"));
-    console.log("   Has video:", offer.sdp?.includes("m=video"));
+    console.log("   Audio:", offer.sdp?.includes("m=audio"));
+    console.log("   Video:", offer.sdp?.includes("m=video"));
 
     return offer;
   }
 
   async createAnswer(): Promise<RTCSessionDescriptionInit> {
-    if (!this.peerConnection)
-      throw new Error("Peer connection not initialized");
+    if (!this.peerConnection) throw new Error("Peer not initialized");
 
-    const transceivers = this.peerConnection.getTransceivers();
-    console.log(`📊 Transceivers before answer: ${transceivers.length}`);
-
-    transceivers.forEach((t, i) => {
-      console.log(`   Transceiver ${i}:`, {
-        kind: t.receiver.track?.kind,
-        direction: t.direction,
-        mid: t.mid,
-      });
-
+    // ✅ Ensure all transceivers are sendrecv
+    this.peerConnection.getTransceivers().forEach((t) => {
       if (t.direction === "recvonly" && t.sender.track) {
         t.direction = "sendrecv";
-        console.log(`   ✅ Fixed transceiver ${i} to sendrecv`);
       }
     });
 
     const answer = await this.peerConnection.createAnswer();
     await this.peerConnection.setLocalDescription(answer);
     console.log("✅ Answer created");
-    console.log("   Type:", answer.type);
-    console.log("   Has audio:", answer.sdp?.includes("m=audio"));
-    console.log("   Has video:", answer.sdp?.includes("m=video"));
 
     return answer;
   }
@@ -269,27 +132,12 @@ export class WebRTCService {
   async setRemoteDescription(
     description: RTCSessionDescriptionInit
   ): Promise<void> {
-    if (!this.peerConnection)
-      throw new Error("Peer connection not initialized");
+    if (!this.peerConnection) throw new Error("Peer not initialized");
 
     await this.peerConnection.setRemoteDescription(
       new RTCSessionDescription(description)
     );
     console.log("✅ Remote description set");
-    console.log("   Type:", description.type);
-
-    const transceivers = this.peerConnection.getTransceivers();
-    console.log(
-      `📊 Transceivers after setRemoteDescription: ${transceivers.length}`
-    );
-    transceivers.forEach((transceiver, index) => {
-      console.log(`   Transceiver ${index}:`, {
-        kind: transceiver.receiver.track?.kind,
-        direction: transceiver.direction,
-        currentDirection: transceiver.currentDirection,
-        mid: transceiver.mid,
-      });
-    });
   }
 
   async addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
@@ -297,50 +145,36 @@ export class WebRTCService {
 
     try {
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      console.log(
-        "✅ ICE candidate added:",
-        candidate.candidate.substring(0, 50) + "..."
-      );
+      console.log("✅ ICE candidate added");
     } catch (error) {
       console.error("❌ ICE candidate error:", error);
     }
   }
 
-  // 🔥 MERGED: Simplified and optimized setupEventListeners
+  // ✅ COMPLETELY REWRITTEN: Simplified and fixed
   setupEventListeners(
     onRemoteStream: (stream: MediaStream) => void,
     onIceCandidate: (candidate: RTCIceCandidate) => void
   ): void {
     if (!this.peerConnection) return;
 
-    console.log("🔧 Setting up WebRTC event listeners");
+    console.log("🔧 Setting up event listeners");
 
-    // Track counter to prevent duplicate callbacks
     let tracksReceived = { audio: false, video: false };
     let callbackFired = false;
 
+    // ✅ FIXED: Immediate track handling
     this.peerConnection.ontrack = (event) => {
-      console.log("\n📥 ===== TRACK RECEIVED =====");
-      console.log("   Kind:", event.track.kind);
+      console.log(`\n📥 TRACK RECEIVED: ${event.track.kind}`);
       console.log("   Track ID:", event.track.id);
       console.log("   Enabled:", event.track.enabled);
       console.log("   Muted:", event.track.muted);
-      console.log("   Ready State:", event.track.readyState);
+      console.log("   Ready:", event.track.readyState);
 
-      // 🔥 FORCE ENABLE IMMEDIATELY
+      // ✅ CRITICAL: Force enable immediately
       event.track.enabled = true;
 
-      // 🔥 NEW: If muted on arrival, attempt recovery
-      if (event.track.muted) {
-        console.warn(`⚠️ Track is MUTED on arrival, attempting recovery...`);
-        event.track.enabled = false;
-        setTimeout(() => {
-          event.track.enabled = true;
-          console.log(`   Toggled ${event.track.kind} track`);
-        }, 100);
-      }
-
-      // Update tracker
+      // Track received
       if (event.track.kind === "audio") tracksReceived.audio = true;
       if (event.track.kind === "video") tracksReceived.video = true;
 
@@ -357,43 +191,35 @@ export class WebRTCService {
         console.log(`   ✅ Added ${event.track.kind} to remote stream`);
       }
 
-      // 🔥 FIRE CALLBACK ONCE BOTH TRACKS ARRIVE
-      if (tracksReceived.audio && tracksReceived.video && !callbackFired) {
+      // ✅ FIXED: Fire callback immediately when FIRST track arrives
+      // Don't wait for both - the video element can handle progressive loading
+      if (!callbackFired) {
         callbackFired = true;
-        console.log("✅ BOTH TRACKS READY - FIRING CALLBACK");
+        console.log("✅ FIRING REMOTE STREAM CALLBACK");
 
-        // Final force enable
+        // Force enable all tracks
         this.remoteStream.getTracks().forEach((t) => {
           t.enabled = true;
-          console.log(
-            `   Final enable: ${t.kind} - enabled=${t.enabled}, muted=${t.muted}`
-          );
         });
 
-        onRemoteStream(this.remoteStream);
-      } else {
-        console.log("⏳ Waiting for tracks...", tracksReceived);
+        // ✅ Small delay to ensure tracks are stable
+        setTimeout(() => {
+          onRemoteStream(this.remoteStream!);
+        }, 100);
       }
 
       // Monitor track health
-      event.track.onended = () => console.error(`🛑 ${event.track.kind} ENDED`);
+      event.track.onended = () => {
+        console.error(`🛑 ${event.track.kind} ENDED`);
+      };
+
       event.track.onmute = () => {
         console.warn(`🔇 ${event.track.kind} MUTED`);
-        setTimeout(() => {
-          event.track.enabled = true;
-          console.log(`   🔄 ${event.track.kind} track recovery attempted`);
-        }, 100);
       };
-      event.track.onunmute = () =>
-        console.log(`🔊 ${event.track.kind} UNMUTED`);
 
-      if (event.transceiver) {
-        console.log("   Transceiver direction:", event.transceiver.direction);
-        console.log(
-          "   Current direction:",
-          event.transceiver.currentDirection
-        );
-      }
+      event.track.onunmute = () => {
+        console.log(`🔊 ${event.track.kind} UNMUTED`);
+      };
     };
 
     this.peerConnection.onicecandidate = (event) => {
@@ -411,28 +237,16 @@ export class WebRTCService {
         console.log("✅ ICE connected");
         setTimeout(() => this.logConnectionStats(), 2000);
       } else if (state === "failed") {
-        console.error("❌ ICE failed - connection issue");
+        console.error("❌ ICE connection failed");
       }
     };
 
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection?.connectionState;
       console.log("🔌 Connection state:", state);
-
-      if (state === "connected") {
-        console.log("✅ Peer connected");
-      } else if (state === "failed") {
-        console.error("❌ Connection failed");
-      }
     };
 
-    this.peerConnection.onsignalingstatechange = () => {
-      console.log("📡 Signaling state:", this.peerConnection?.signalingState);
-    };
-
-    this.peerConnection.onnegotiationneeded = () => {
-      console.log("🔄 Negotiation needed event fired");
-    };
+    console.log("✅ Event listeners registered");
   }
 
   async logConnectionStats(): Promise<void> {
@@ -440,59 +254,35 @@ export class WebRTCService {
 
     try {
       const stats = await this.peerConnection.getStats();
-      let audioInbound = false;
-      let videoInbound = false;
       let audioBytes = 0;
       let videoBytes = 0;
 
       stats.forEach((report) => {
         if (report.type === "inbound-rtp") {
           if (report.kind === "audio") {
-            audioInbound = true;
-            audioBytes = report.bytesReceived;
+            audioBytes = report.bytesReceived || 0;
             console.log("🎤 Audio stats:", {
-              bytesReceived: report.bytesReceived,
-              packetsReceived: report.packetsReceived,
-              packetsLost: report.packetsLost,
-              jitter: report.jitter,
+              bytes: report.bytesReceived,
+              packets: report.packetsReceived,
+              lost: report.packetsLost,
             });
           } else if (report.kind === "video") {
-            videoInbound = true;
-            videoBytes = report.bytesReceived;
+            videoBytes = report.bytesReceived || 0;
             console.log("📹 Video stats:", {
-              bytesReceived: report.bytesReceived,
-              packetsReceived: report.packetsReceived,
-              packetsLost: report.packetsLost,
-              framesReceived: report.framesReceived,
+              bytes: report.bytesReceived,
+              packets: report.packetsReceived,
+              lost: report.packetsLost,
             });
           }
         }
-
-        if (report.type === "candidate-pair" && report.state === "succeeded") {
-          console.log("✅ Active candidate pair:", {
-            localCandidateType: report.localCandidateType,
-            remoteCandidateType: report.remoteCandidateType,
-            bytesReceived: report.bytesReceived,
-            bytesSent: report.bytesSent,
-          });
-        }
       });
 
-      // 🔥 CRITICAL DIAGNOSTIC
-      if (!audioInbound || audioBytes === 0) {
-        console.error("🚨 NO AUDIO DATA RECEIVED!");
-        console.error("   This confirms remote peer is NOT sending audio");
-        console.error("   Remote peer needs to check:");
-        console.error("   1. System microphone is not muted");
-        console.error("   2. Browser has microphone permission");
-        console.error("   3. No other app is using microphone");
-        console.error("   4. Microphone is properly connected");
-      } else {
-        console.log("✅ Audio data flowing:", audioBytes, "bytes received");
+      if (audioBytes === 0) {
+        console.error("🚨 NO AUDIO DATA - Check remote peer's microphone!");
       }
 
-      if (!videoInbound) {
-        console.warn("⚠️ NO VIDEO DATA RECEIVED!");
+      if (videoBytes === 0) {
+        console.error("🚨 NO VIDEO DATA - Check remote peer's camera!");
       }
     } catch (error) {
       console.error("Error getting stats:", error);
@@ -505,18 +295,10 @@ export class WebRTCService {
     try {
       console.log("🖥️ Starting screen share...");
 
-      const displayMediaOptions: DisplayMediaStreamOptions = {
-        video: {
-          cursor: "always" as any,
-          displaySurface: preferCurrentTab ? "browser" : "monitor",
-        } as any,
+      this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: "always" as any },
         audio: false,
-        preferCurrentTab: preferCurrentTab,
-      } as any;
-
-      this.screenStream = await navigator.mediaDevices.getDisplayMedia(
-        displayMediaOptions
-      );
+      } as any);
 
       if (this.peerConnection && this.localStream) {
         const videoTrack = this.screenStream.getVideoTracks()[0];
@@ -526,11 +308,10 @@ export class WebRTCService {
 
         if (sender) {
           await sender.replaceTrack(videoTrack);
-          console.log("✅ Video track replaced with screen");
+          console.log("✅ Switched to screen share");
         }
 
         videoTrack.onended = () => {
-          console.log("🛑 Screen share ended");
           this.stopScreenShare();
         };
       }
@@ -561,59 +342,38 @@ export class WebRTCService {
   }
 
   toggleAudio(enabled: boolean): void {
-    if (!this.localStream) {
-      console.warn("⚠️ No local stream");
-      return;
-    }
+    if (!this.localStream) return;
 
     this.localStream.getAudioTracks().forEach((track) => {
       track.enabled = enabled;
-      console.log(`🎤 Local audio ${enabled ? "enabled" : "disabled"}`);
-      console.log("   Track enabled:", track.enabled);
-      console.log("   Track muted:", track.muted);
-      console.log("   Track state:", track.readyState);
+      console.log(`🎤 Audio ${enabled ? "enabled" : "disabled"}`);
     });
   }
 
   toggleVideo(enabled: boolean): void {
-    if (!this.localStream) {
-      console.warn("⚠️ No local stream");
-      return;
-    }
+    if (!this.localStream) return;
 
     this.localStream.getVideoTracks().forEach((track) => {
       track.enabled = enabled;
-      console.log(`📹 Local video ${enabled ? "enabled" : "disabled"}`);
-      console.log("   Track enabled:", track.enabled);
-      console.log("   Track state:", track.readyState);
+      console.log(`📹 Video ${enabled ? "enabled" : "disabled"}`);
     });
   }
 
   close(): void {
     console.log("🧹 Closing WebRTC");
 
-    if (this.localStream) {
-      this.localStream.getTracks().forEach((track) => {
-        track.stop();
-        console.log(`   Stopped ${track.kind} track`);
-      });
-      this.localStream = null;
-    }
+    [this.localStream, this.screenStream].forEach((stream) => {
+      stream?.getTracks().forEach((track) => track.stop());
+    });
 
-    if (this.screenStream) {
-      this.screenStream.getTracks().forEach((track) => track.stop());
-      this.screenStream = null;
-    }
+    this.peerConnection?.close();
 
-    if (this.peerConnection) {
-      this.peerConnection.close();
-      this.peerConnection = null;
-    }
-
+    this.localStream = null;
     this.remoteStream = null;
-    this.originalVideoTrack = null;
+    this.screenStream = null;
+    this.peerConnection = null;
 
-    console.log("✅ WebRTC closed completely");
+    console.log("✅ WebRTC closed");
   }
 
   getPeerConnection(): RTCPeerConnection | null {
@@ -633,8 +393,7 @@ export class WebRTCService {
       const stats = await this.peerConnection.getStats();
       let hasAudio = false;
       let hasVideo = false;
-      let totalPacketsLost = 0;
-      let totalPacketsReceived = 0;
+      let lossRate = 0;
 
       stats.forEach((report) => {
         if (report.type === "inbound-rtp") {
@@ -644,20 +403,19 @@ export class WebRTCService {
           if (report.kind === "video" && report.bytesReceived > 0) {
             hasVideo = true;
           }
-          totalPacketsLost += report.packetsLost || 0;
-          totalPacketsReceived += report.packetsReceived || 0;
+          const lost = report.packetsLost || 0;
+          const received = report.packetsReceived || 0;
+          if (received > 0) {
+            lossRate = lost / received;
+          }
         }
       });
-
-      const lossRate =
-        totalPacketsReceived > 0 ? totalPacketsLost / totalPacketsReceived : 0;
 
       const quality =
         lossRate < 0.05 ? "good" : lossRate < 0.15 ? "poor" : "none";
 
       return { audio: hasAudio, video: hasVideo, quality };
     } catch (error) {
-      console.error("Error getting connection quality:", error);
       return { audio: false, video: false, quality: "none" };
     }
   }

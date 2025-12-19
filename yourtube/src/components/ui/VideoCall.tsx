@@ -24,26 +24,26 @@ interface VideoCallProps {
   remotePeerName?: string;
   callId?: string;
 }
-// 🔥 Audio verification with optimistic validation
+
+// ✅ OPTIMIZED: Simplified audio verification with optimistic validation
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
-  console.log('🎤 Audio track validation:', {
+  console.log("🎤 Audio track validation:", {
     readyState: track.readyState,
     muted: track.muted,
     enabled: track.enabled,
-    label: track.label
+    label: track.label,
   });
-  
-  // Optimistic approach - trust the track state
-  const isValid = track.readyState === 'live' && !track.muted && track.enabled;
-  
+
+  const isValid = track.readyState === "live" && !track.muted && track.enabled;
+
   if (!isValid) {
-    console.warn('⚠️ Audio track not ready yet');
+    console.warn("⚠️ Audio track not ready yet");
   }
-  
+
   return isValid;
 };
 
-// Helper to wait for track readiness
+// ✅ KEPT: Helper to wait for track readiness (useful for USB mic scenarios)
 const waitForTrackReady = (
   track: MediaStreamTrack,
   kind: string
@@ -79,10 +79,9 @@ const waitForTrackReady = (
     }, 5000);
   });
 };
-
-// Enhanced media acquisition with Windows audio fix
+// ✅ MERGED: Best of both - Enhanced media acquisition with Windows audio fix + simplified fallback
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
-  console.log("🔧 Getting media with Windows audio fix...");
+  console.log("🔧 Getting media with enhanced audio handling...");
 
   try {
     // Step 1: Request permissions FIRST
@@ -101,7 +100,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 
     console.log(`🎤 Found ${audioInputs.length} microphones`);
 
-    // Step 3: Try USB microphone FIRST
+    // Step 3: Try USB microphone FIRST (if available)
     const usbMic = audioInputs.find(
       (d) =>
         d.label.toLowerCase().includes("usb") &&
@@ -124,15 +123,22 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
           video: {
             width: { ideal: 1280 },
             height: { ideal: 720 },
+            frameRate: { ideal: 30 },
           },
         });
 
+        // Small delay for USB mic initialization
         await new Promise((resolve) => setTimeout(resolve, 1000));
+
         const audioTrack = stream.getAudioTracks()[0];
         audioTrack.enabled = true;
 
         const isAudioWorking = await verifyAudioTrack(audioTrack);
-        if (isAudioWorking && audioTrack.readyState === "live" && !audioTrack.muted) {
+        if (
+          isAudioWorking &&
+          audioTrack.readyState === "live" &&
+          !audioTrack.muted
+        ) {
           console.log(`✅ SUCCESS! Using ${usbMic.label}`);
           return stream;
         }
@@ -144,7 +150,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       }
     }
 
-    // Step 4: Fallback to default
+    // Step 4: Fallback to default microphone
     console.log("📌 Trying default microphone...");
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -152,20 +158,38 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         noiseSuppression: true,
         autoGainControl: true,
         sampleRate: 48000,
+        channelCount: 1,
       },
       video: {
         width: { ideal: 1280 },
         height: { ideal: 720 },
+        frameRate: { ideal: 30 },
       },
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const audioTrack = stream.getAudioTracks()[0];
-    audioTrack.enabled = true;
+    // Small delay for track initialization
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
+    // Force enable all tracks
+    stream.getTracks().forEach((track) => {
+      track.enabled = true;
+    });
+
+    const audioTrack = stream.getAudioTracks()[0];
     const isAudioWorking = await verifyAudioTrack(audioTrack);
-    if (isAudioWorking && audioTrack.readyState === "live" && !audioTrack.muted) {
+
+    if (
+      isAudioWorking &&
+      audioTrack.readyState === "live" &&
+      !audioTrack.muted
+    ) {
       console.log("✅ Default mic working");
+      return stream;
+    }
+
+    // If verification failed but we have a stream, proceed anyway (optimistic)
+    if (audioTrack && audioTrack.readyState === "live") {
+      console.warn("⚠️ Audio verification incomplete, but proceeding");
       return stream;
     }
 
@@ -173,10 +197,17 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   } catch (err: any) {
     console.error("❌ Media access failed:", err);
 
-    if (err.name === "NotAllowedError") {
+    if (
+      err.name === "NotAllowedError" ||
+      err.name === "PermissionDeniedError"
+    ) {
       throw new Error("🚫 Camera/mic blocked! Click 🔒 in address bar → Allow");
     } else if (err.name === "NotReadableError") {
-      throw new Error("⚠️ Microphone in use. Close Zoom/Teams/Discord and refresh.");
+      throw new Error(
+        "⚠️ Microphone in use. Close Zoom/Teams/Discord and refresh."
+      );
+    } else if (err.name === "NotFoundError") {
+      throw new Error("⚠️ No camera or microphone found.");
     }
 
     throw err;
@@ -191,8 +222,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
 }) => {
   const router = useRouter();
   const { user } = useUser();
-  
-  // State
+
+  // ✅ State Management
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -203,7 +234,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [remoteAudioStatus, setRemoteAudioStatus] = useState<string>("waiting");
 
-  // Refs
+  // ✅ Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -214,7 +245,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const isEndingCallRef = useRef(false);
   const initializingRef = useRef(false);
   const initializedRef = useRef(false);
-  // Auto-enter fullscreen on mount
+  // ✅ Auto-enter fullscreen on mount
   useEffect(() => {
     const enterFullscreen = async () => {
       try {
@@ -243,7 +274,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
   }, []);
-  // Resume AudioContext on user interaction
+  // ✅ Resume AudioContext on user interaction
   useEffect(() => {
     const resumeAudioContext = () => {
       const AudioContext =
@@ -284,7 +315,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       });
     };
   }, []);
-  // Socket event handlers
+  // ✅ Socket event handlers
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
 
@@ -380,6 +411,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
             clearInterval(recordingIntervalRef.current);
           }
 
+          // Clean up all audio elements
           document.querySelectorAll("audio").forEach((audio) => {
             if (audio.srcObject) {
               (audio.srcObject as MediaStream)
@@ -391,6 +423,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
             audio.remove();
           });
 
+          // Clean up video refs
           if (localVideoRef.current?.srcObject) {
             (localVideoRef.current.srcObject as MediaStream)
               .getTracks()
@@ -439,7 +472,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       cleanup.then((fn) => fn && fn());
     };
   }, [roomId, webrtcServiceRef.current, isRecording, onEndCall, router]);
-  // Main initialization effect
+  // ✅ Main initialization effect
   useEffect(() => {
     console.log("🔄 Mount effect triggered, roomId:", roomId);
 
@@ -496,6 +529,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       console.log("   Is Initiator:", isInitiator);
       console.log("   User:", user?._id);
 
+      // Step 1: Wait for socket connection
       let socket;
       try {
         socket = await waitForSocket(10000);
@@ -505,6 +539,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         return;
       }
 
+      // Step 2: Initialize WebRTC and Recording services
       webrtcServiceRef.current = new WebRTCService();
       recordingServiceRef.current = new RecordingService();
 
@@ -516,9 +551,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("   ICE state:", pc.iceConnectionState);
       }
 
+      // Step 3: Get local media stream
       let localStream: MediaStream;
       try {
-        console.log("🎤 Requesting media with Windows audio fix...");
+        console.log("🎤 Requesting media with enhanced audio handling...");
         localStream = await ensureAudioNotMuted();
 
         console.log("✅ Local stream obtained");
@@ -545,27 +581,35 @@ const VideoCall: React.FC<VideoCallProps> = ({
           label: videoTrack.label,
         });
 
+        // Force enable all tracks
         localStream.getTracks().forEach((track) => {
           track.enabled = true;
         });
 
         webrtcServiceRef.current.setLocalStream(localStream);
-        
       } catch (error: any) {
         console.error("❌ Media access failed:", error);
 
-        if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-          setError("Camera/microphone blocked! Click camera icon in address bar and allow.");
+        if (
+          error.name === "NotAllowedError" ||
+          error.name === "PermissionDeniedError"
+        ) {
+          setError(
+            "Camera/microphone blocked! Click camera icon in address bar and allow."
+          );
         } else if (error.name === "NotFoundError") {
           setError("No camera or microphone found.");
         } else if (error.name === "NotReadableError") {
-          setError("Camera/microphone in use. Close other apps (Zoom/Teams/Discord) and refresh.");
+          setError(
+            "Camera/microphone in use. Close other apps (Zoom/Teams/Discord) and refresh."
+          );
         } else {
           setError("Failed to access camera/microphone: " + error.message);
         }
         return;
       }
 
+      // Step 4: Set local video element
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = localStream;
         localVideoRef.current.muted = true;
@@ -578,7 +622,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.warn("⚠️ Local video autoplay blocked (normal)");
         }
       }
-      // Setup remote stream event listener
+
+      // Step 5: Setup remote stream event listener
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
@@ -599,6 +644,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
             videoLabel: videoTracks[0]?.label,
           });
 
+          // Log and enable all tracks
           audioTracks.forEach((track, i) => {
             console.log(`🎤 Audio track ${i}:`, {
               id: track.id.substring(0, 8),
@@ -619,14 +665,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
             track.enabled = true;
           });
 
+          // Attach stream to video element
           if (remoteVideoRef.current.srcObject !== remoteStream) {
             console.log("📺 Attaching remote stream to <video>");
             remoteVideoRef.current.srcObject = remoteStream;
             remoteVideoRef.current.autoplay = true;
             remoteVideoRef.current.playsInline = true;
-            remoteVideoRef.current.muted = false;
+            remoteVideoRef.current.muted = false; // ✅ CRITICAL for audio
           }
 
+          // Wait for video metadata
           console.log("⏳ Waiting for video metadata...");
           await new Promise<void>((resolve) => {
             if (remoteVideoRef.current!.readyState >= 2) {
@@ -644,6 +692,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
             }
           });
 
+          // Attempt playback with retry logic
           const attemptPlay = async (attempt = 1): Promise<void> => {
             if (!remoteVideoRef.current) return;
 
@@ -655,7 +704,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
               setConnectionStatus("connected");
               setError(null);
               return;
-              
             } catch (err: any) {
               console.error(`❌ Play failed (${err.name}):`, err.message);
 
@@ -680,12 +728,15 @@ const VideoCall: React.FC<VideoCallProps> = ({
                   document.removeEventListener("touchstart", handleUserGesture);
                 };
 
-                document.addEventListener("click", handleUserGesture, { once: true });
-                document.addEventListener("touchstart", handleUserGesture, { once: true });
-                
+                document.addEventListener("click", handleUserGesture, {
+                  once: true,
+                });
+                document.addEventListener("touchstart", handleUserGesture, {
+                  once: true,
+                });
               } else if (attempt < 3) {
                 console.log(`🔄 Retrying in 500ms (attempt ${attempt + 1})...`);
-                await new Promise(r => setTimeout(r, 500));
+                await new Promise((r) => setTimeout(r, 500));
                 return attemptPlay(attempt + 1);
               } else {
                 setError("⚠️ Video playback failed after 3 attempts");
@@ -695,12 +746,15 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
           await attemptPlay();
 
+          // Health monitoring for audio tracks
           const monitorHealth = () => {
-            audioTracks.forEach(track => {
-              if (track.readyState === 'live' && track.muted) {
+            audioTracks.forEach((track) => {
+              if (track.readyState === "live" && track.muted) {
                 console.warn("🔇 Audio track muted - attempting recovery");
                 track.enabled = false;
-                setTimeout(() => { track.enabled = true; }, 100);
+                setTimeout(() => {
+                  track.enabled = true;
+                }, 100);
               }
             });
           };
@@ -717,16 +771,20 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }
       );
 
+      // Step 6: Add local stream to peer connection
       webrtcServiceRef.current.addLocalStreamToPeer();
 
+      // Step 7: Join room
       console.log("📞 Joining room:", roomId);
       socket.emit("join-room", roomId, user?._id || socket.id);
+
+      // Step 8: Handle initiator flow
       if (isInitiator) {
         console.log("⏳ Waiting for both users...");
 
         await new Promise<void>((resolve) => {
           const timeout = setTimeout(() => {
-            console.log("⚠️ Timeout, proceeding anyway");
+            console.log("⏰ Timeout, proceeding anyway");
             resolve();
           }, 10000);
 
@@ -762,6 +820,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...");
 
+    // Clean up audio element monitoring intervals
     document.querySelectorAll("#remote-audio-element").forEach((audio: any) => {
       if (audio._monitorInterval) {
         clearInterval(audio._monitorInterval);
@@ -771,14 +830,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     });
 
+    // Clear recording interval
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
     }
 
+    // Stop recording if active
     if (isRecording && recordingServiceRef.current) {
       recordingServiceRef.current.stopRecording();
     }
 
+    // Remove all audio elements
     document.querySelectorAll("audio").forEach((audio) => {
       console.log("🗑️ Removing audio element:", audio.id);
       if (audio.srcObject) {
@@ -793,6 +855,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       audio.remove();
     });
 
+    // Clean up local video
     if (localVideoRef.current?.srcObject) {
       const stream = localVideoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => {
@@ -802,6 +865,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       localVideoRef.current.srcObject = null;
     }
 
+    // Clean up remote video
     if (remoteVideoRef.current?.srcObject) {
       const stream = remoteVideoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => {
@@ -811,13 +875,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
       remoteVideoRef.current.srcObject = null;
     }
 
+    // Close WebRTC connection
     if (webrtcServiceRef.current) {
       webrtcServiceRef.current.close();
       webrtcServiceRef.current = null;
     }
 
+    // Remove global peer connection reference
     delete (window as any).peerConnection;
 
+    // Emit end call event if requested
     if (emitEvent) {
       try {
         const socket = getSocket();
@@ -844,6 +911,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       const newState = !isVideoEnabled;
       webrtcServiceRef.current.toggleVideo(newState);
       setIsVideoEnabled(newState);
+      console.log(`📹 Local video ${newState ? "enabled" : "disabled"}`);
     }
   };
 
@@ -854,13 +922,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
         await webrtcServiceRef.current?.startScreenShare(true);
         socket.emit("start-screen-share", roomId);
         setIsScreenSharing(true);
+        console.log("✅ Screen sharing started");
       } else {
         await webrtcServiceRef.current?.stopScreenShare();
         socket.emit("stop-screen-share", roomId);
         setIsScreenSharing(false);
+        console.log("✅ Screen sharing stopped");
       }
     } catch (error) {
-      console.error("Screen share error:", error);
+      console.error("❌ Screen share error:", error);
+      setError("Screen sharing failed");
     }
   };
 
@@ -892,8 +963,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
+
+      console.log("✅ Recording started");
     } catch (error: any) {
-      console.error("Recording error:", error);
+      console.error("❌ Recording error:", error);
       setError("Failed to start recording");
     }
   };
@@ -912,6 +985,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
     try {
       const socket = getSocket();
       socket.emit("recording-stopped", roomId, user?._id);
+      console.log("✅ Recording stopped");
     } catch (error) {
       console.error("Error emitting recording-stopped:", error);
     }
@@ -925,12 +999,15 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     console.log("📴 Ending call initiated by local user");
     callEndedRef.current = true;
+    isEndingCallRef.current = true;
 
     try {
+      // Stop recording if active
       if (isRecording) {
         stopRecording();
       }
 
+      // Emit end call event
       try {
         const socket = getSocket();
         socket.emit("end-call", roomId, { endedBy: user?._id });
@@ -939,6 +1016,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.error("Socket emit error:", error);
       }
 
+      // Update call status in backend
       if (callId) {
         await axiosInstance
           .put(`/call/${callId}/status`, {
@@ -948,7 +1026,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
           .catch((err) => console.error("Failed to update call status:", err));
       }
 
+      // Cleanup resources
       cleanup(false);
+
+      // Navigate away
       onEndCall();
 
       setTimeout(() => {
@@ -966,8 +1047,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
+        console.log("✅ Entered fullscreen");
       } else {
         await document.exitFullscreen();
+        console.log("✅ Exited fullscreen");
       }
     } catch (error) {
       console.error("Fullscreen error:", error);
@@ -986,6 +1069,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
     >
+      {/* ✅ Remote Video (Main) */}
       <video
         ref={remoteVideoRef}
         id="remote-video"
@@ -1002,6 +1086,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }}
         onPlay={() => {
           console.log("✅ Video PLAYING");
+          setConnectionStatus("connected");
           setError(null);
         }}
         onPause={() => {
@@ -1012,6 +1097,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }}
       />
 
+      {/* ✅ Connecting Overlay */}
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
           <div className="text-center px-4">
@@ -1023,6 +1109,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         </div>
       )}
 
+      {/* ✅ Local Video (Picture-in-Picture) */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
         <video
           ref={localVideoRef}
@@ -1037,6 +1124,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         )}
       </div>
+
+      {/* ✅ Top Bar - Peer Info & Recording Status */}
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 safe-area-top">
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -1064,7 +1153,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
               )}
             </div>
           </div>
-
+          {/* ✅ Recording Indicator */}
           {isRecording && (
             <div className="flex items-center gap-1.5 sm:gap-3 bg-red-600/90 px-2.5 py-1.5 sm:px-6 sm:py-3 rounded-full animate-pulse flex-shrink-0">
               <Circle className="w-2.5 h-2.5 sm:w-4 sm:h-4 fill-white text-white" />
@@ -1076,6 +1165,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         </div>
       </div>
 
+      {/* ✅ Error Banner */}
       {error && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
           <p className="font-semibold">{error}</p>
@@ -1086,20 +1176,24 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 try {
                   await video.play();
                   console.log("✅ Manual play successful");
+                  setConnectionStatus("connected");
                   setError(null);
                 } catch (err: any) {
                   console.error("Manual play failed:", err.name);
                 }
               }
             }}
-            className="mt-2 px-4 py-2 bg-white text-red-600 rounded font-bold"
+            className="mt-2 px-4 py-2 bg-white text-red-600 rounded font-bold hover:bg-gray-100 active:bg-gray-200 transition"
           >
             ▶️ CLICK TO PLAY VIDEO
           </button>
         </div>
       )}
+
+      {/* ✅ Bottom Controls Bar */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 safe-area-bottom">
         <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
+          {/* Audio Toggle */}
           <button
             onClick={toggleAudio}
             className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
@@ -1112,73 +1206,79 @@ const VideoCall: React.FC<VideoCallProps> = ({
             {isAudioEnabled ? (
               <Mic className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
             ) : (
-              <MicOff className="w-4 h-4 xs:w-5xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-)}
-</button>
-      <button
-        onClick={toggleVideo}
-        className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
-          isVideoEnabled
-            ? "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
-            : "bg-red-600 hover:bg-red-700 active:bg-red-800"
-        }`}
-        aria-label={isVideoEnabled ? "Turn off video" : "Turn on video"}
-      >
-        {isVideoEnabled ? (
-          <Video className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-        ) : (
-          <VideoOff className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-        )}
-      </button>
+              <MicOff className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+            )}
+          </button>
 
-      <button
-        onClick={toggleScreenShare}
-        className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
-          isScreenSharing
-            ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 ring-2 sm:ring-4 ring-blue-400/50"
-            : "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
-        }`}
-        aria-label={isScreenSharing ? "Stop sharing" : "Share screen"}
-      >
-        <MonitorUp className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-      </button>
+          {/* Video Toggle */}
+          <button
+            onClick={toggleVideo}
+            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
+              isVideoEnabled
+                ? "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
+                : "bg-red-600 hover:bg-red-700 active:bg-red-800"
+            }`}
+            aria-label={isVideoEnabled ? "Turn off video" : "Turn on video"}
+          >
+            {isVideoEnabled ? (
+              <Video className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+            ) : (
+              <VideoOff className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+            )}
+          </button>
 
-      <button
-        onClick={isRecording ? stopRecording : startRecording}
-        disabled={connectionStatus !== "connected"}
-        className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg disabled:opacity-50 touch-manipulation ${
-          isRecording
-            ? "bg-red-600 hover:bg-red-700 active:bg-red-800 ring-2 sm:ring-4 ring-red-400/50"
-            : "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
-        }`}
-        aria-label={isRecording ? "Stop recording" : "Start recording"}
-      >
-        <Circle
-          className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white ${
-            isRecording ? "fill-white" : ""
-          }`}
-        />
-      </button>
+          {/* Screen Share Toggle */}
+          <button
+            onClick={toggleScreenShare}
+            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
+              isScreenSharing
+                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 ring-2 sm:ring-4 ring-blue-400/50"
+                : "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
+            }`}
+            aria-label={isScreenSharing ? "Stop sharing" : "Share screen"}
+          >
+            <MonitorUp className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+          </button>
 
-      <button
-        onClick={toggleFullscreen}
-        className="p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full bg-gray-700 hover:bg-gray-600 active:bg-gray-500 transition-all shadow-lg touch-manipulation"
-        aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-      >
-        <Maximize className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-      </button>
+          {/* Recording Toggle */}
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={connectionStatus !== "connected"}
+            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation ${
+              isRecording
+                ? "bg-red-600 hover:bg-red-700 active:bg-red-800 ring-2 sm:ring-4 ring-red-400/50"
+                : "bg-gray-700 hover:bg-gray-600 active:bg-gray-500"
+            }`}
+            aria-label={isRecording ? "Stop recording" : "Start recording"}
+          >
+            <Circle
+              className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white ${
+                isRecording ? "fill-white" : ""
+              }`}
+            />
+          </button>
 
-      <button
-        onClick={handleEndCall}
-        disabled={isEndingCallRef.current}
-        className="p-3 xs:p-3.5 sm:p-5 md:p-6 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:bg-gray-600 transition-all shadow-xl ml-1 sm:ml-4 touch-manipulation"
-        aria-label="End call"
-      >
-        <PhoneOff className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
-      </button>
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            className="p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full bg-gray-700 hover:bg-gray-600 active:bg-gray-500 transition-all shadow-lg touch-manipulation"
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          >
+            <Maximize className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+          </button>
+
+          {/* End Call Button */}
+          <button
+            onClick={handleEndCall}
+            disabled={isEndingCallRef.current}
+            className="p-3 xs:p-3.5 sm:p-5 md:p-6 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all shadow-xl ml-1 sm:ml-4 touch-manipulation"
+            aria-label="End call"
+          >
+            <PhoneOff className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-);
+  );
 };
 export default VideoCall;
