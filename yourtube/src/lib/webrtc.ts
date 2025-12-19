@@ -328,8 +328,36 @@ export class WebRTCService {
       // 🔥 Force enable immediately
       event.track.enabled = true;
 
+      // 🔥 NEW: If muted, try to force unmute
+      if (event.track.muted) {
+        console.warn(`⚠️ Track is MUTED on arrival, attempting recovery...`);
+
+        // Strategy 1: Disable/Enable toggle
+        event.track.enabled = false;
+        setTimeout(() => {
+          event.track.enabled = true;
+          console.log(`   Toggled ${event.track.kind} track`);
+        }, 100);
+      }
       // Store track
       incomingTracks.set(event.track.kind, event.track);
+
+      // 🔥 Get or create remote stream
+      if (event.streams && event.streams.length > 0) {
+        this.remoteStream = event.streams[0];
+      } else if (!this.remoteStream) {
+        this.remoteStream = new MediaStream();
+      }
+      // Add track if not already in stream
+      if (!this.remoteStream.getTracks().includes(event.track)) {
+        this.remoteStream.addTrack(event.track);
+        console.log(`   ✅ Added ${event.track.kind} to remote stream`);
+      }
+
+      // 🔥 Debounced callback - wait for both tracks
+      if (callbackTimer) {
+        clearTimeout(callbackTimer);
+      }
 
       // Prevent premature stop
       const originalStop = event.track.stop.bind(event.track);
@@ -367,11 +395,15 @@ export class WebRTCService {
           if (hasAudio && hasVideo) {
             console.log("✅ Both tracks ready - firing callback");
 
-            // Force enable all tracks one more time
+            // 🔥 Force enable all tracks one more time
             this.remoteStream!.getTracks().forEach((t) => {
               t.enabled = true;
-            });
 
+              // 🔥 NEW: If still muted, log warning
+              if (t.muted) {
+                console.warn(`⚠️ ${t.kind} track STILL MUTED before callback`);
+              }
+            });
             onRemoteStream(this.remoteStream!);
           } else {
             console.log("⏳ Still waiting for tracks...");
@@ -428,10 +460,17 @@ export class WebRTCService {
       // 🔥 CRITICAL FIX 4: Monitor track health WITHOUT aggressive unmute
       let hasLoggedUnmute = false;
 
+      // 🔥 NEW: Enhanced mute monitoring
       event.track.onmute = () => {
-        console.warn(`🔇 ${event.track.kind} MUTED`);
+        console.error(`🔇 ${event.track.kind} MUTED!`);
+
+        // Immediate recovery attempt
         setTimeout(() => {
-          event.track.enabled = true;
+          event.track.enabled = false;
+          setTimeout(() => {
+            event.track.enabled = true;
+            console.log(`   🔄 ${event.track.kind} track recovery attempted`);
+          }, 50);
         }, 100);
       };
       event.track.onunmute = () => {
@@ -471,7 +510,7 @@ export class WebRTCService {
       };
 
       event.track.onended = () => {
-        console.error(`🛑 ${event.track.kind} track ended!`);
+        console.error(`🛑 ${event.track.kind} ENDED`);
       };
 
       if (event.transceiver) {

@@ -654,7 +654,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.warn("⚠️ Local video autoplay blocked");
         }
       }
-      // 🔥 FIXED: Single attachment point for remote stream
+      // 🔥 FIXED: Single attachment point with force unmute
       let remoteStreamAttached = false;
       const pendingTracks = { audio: false, video: false };
 
@@ -691,9 +691,76 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
             console.log("✅ Both tracks ready, attaching stream...");
 
-            // Force enable all tracks
-            audioTracks[0].enabled = true;
-            videoTracks[0].enabled = true;
+            const audioTrack = audioTracks[0];
+            const videoTrack = videoTracks[0];
+
+            // 🔥 NEW: Log initial track state
+            console.log("📊 Initial track states:", {
+              audio: {
+                enabled: audioTrack.enabled,
+                muted: audioTrack.muted,
+                readyState: audioTrack.readyState,
+              },
+              video: {
+                enabled: videoTrack.enabled,
+                muted: videoTrack.muted,
+                readyState: videoTrack.readyState,
+              },
+            });
+
+            // 🔥 CRITICAL: Force enable and wait for unmute
+            audioTrack.enabled = true;
+            videoTrack.enabled = true;
+
+            // 🔥 NEW: Wait for video to unmute (max 3 seconds)
+            if (videoTrack.muted) {
+              console.log("⏳ Video is muted, waiting for unmute...");
+
+              await new Promise<void>((resolve) => {
+                let checkCount = 0;
+                const maxChecks = 30; // 3 seconds
+
+                const checkUnmute = () => {
+                  checkCount++;
+                  console.log(
+                    `   Check ${checkCount}/${maxChecks}: muted=${videoTrack.muted}`
+                  );
+
+                  if (!videoTrack.muted) {
+                    console.log("✅ Video unmuted!");
+                    resolve();
+                  } else if (checkCount >= maxChecks) {
+                    console.warn(
+                      "⚠️ Video still muted after timeout, proceeding anyway"
+                    );
+                    resolve();
+                  } else {
+                    setTimeout(checkUnmute, 100);
+                  }
+                };
+
+                videoTrack.onunmute = () => {
+                  console.log("🔊 Video unmute event fired");
+                  resolve();
+                };
+
+                checkUnmute();
+              });
+            }
+
+            // 🔥 NEW: Log final track state
+            console.log("📊 Final track states:", {
+              audio: {
+                enabled: audioTrack.enabled,
+                muted: audioTrack.muted,
+                readyState: audioTrack.readyState,
+              },
+              video: {
+                enabled: videoTrack.enabled,
+                muted: videoTrack.muted,
+                readyState: videoTrack.readyState,
+              },
+            });
 
             if (!remoteVideoRef.current) {
               console.error("❌ Remote video element not found");
@@ -724,7 +791,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 );
 
                 if (err.name === "NotAllowedError" && playAttempts < 3) {
-                  // Wait for user interaction
                   setError("🔊 Click anywhere to enable audio/video");
 
                   const handleInteraction = async () => {
@@ -732,11 +798,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
                       await remoteVideoRef.current?.play();
                       console.log("✅ Playback resumed after interaction");
                       setError(null);
-                      document.removeEventListener("click", handleInteraction);
-                      document.removeEventListener(
-                        "touchstart",
-                        handleInteraction
-                      );
                     } catch (e) {
                       console.error("Still failed:", e);
                     }
@@ -749,25 +810,71 @@ const VideoCall: React.FC<VideoCallProps> = ({
                     once: true,
                   });
                 } else if (playAttempts < 3) {
-                  // Retry after delay
                   setTimeout(tryPlay, 500);
                 }
               }
             };
 
-            // Start playback attempt
             await tryPlay();
 
-            // Monitor track health
-            audioTracks[0].onended = () => console.error("🛑 AUDIO ENDED");
-            videoTracks[0].onended = () => console.error("🛑 VIDEO ENDED");
-            audioTracks[0].onmute = () => {
-              console.warn("🔇 AUDIO MUTED");
-              audioTracks[0].enabled = true;
+            // 🔥 NEW: Aggressive unmute monitoring
+            const monitorMute = () => {
+              if (videoTrack.muted) {
+                console.warn("🔇 VIDEO STILL MUTED - attempting recovery");
+                videoTrack.enabled = false;
+                setTimeout(() => {
+                  videoTrack.enabled = true;
+                  console.log("🔄 Track toggled");
+                }, 100);
+              }
+
+              if (audioTrack.muted) {
+                console.warn("🔇 AUDIO MUTED - attempting recovery");
+                audioTrack.enabled = false;
+                setTimeout(() => {
+                  audioTrack.enabled = true;
+                  console.log("🔄 Audio track toggled");
+                }, 100);
+              }
             };
-            videoTracks[0].onmute = () => {
-              console.warn("🔇 VIDEO MUTED");
-              videoTracks[0].enabled = true;
+
+            // Check every 2 seconds
+            const monitorInterval = setInterval(monitorMute, 2000);
+
+            // Stop monitoring after 30 seconds
+            setTimeout(() => clearInterval(monitorInterval), 30000);
+
+            // Monitor track health
+            audioTrack.onended = () => {
+              console.error("🛑 AUDIO ENDED");
+              clearInterval(monitorInterval);
+            };
+
+            videoTrack.onended = () => {
+              console.error("🛑 VIDEO ENDED");
+              clearInterval(monitorInterval);
+            };
+
+            audioTrack.onmute = () => {
+              console.warn("🔇 AUDIO MUTED EVENT");
+              setTimeout(() => {
+                audioTrack.enabled = true;
+              }, 100);
+            };
+
+            videoTrack.onmute = () => {
+              console.warn("🔇 VIDEO MUTED EVENT");
+              setTimeout(() => {
+                videoTrack.enabled = true;
+              }, 100);
+            };
+
+            audioTrack.onunmute = () => {
+              console.log("🔊 AUDIO UNMUTED EVENT");
+            };
+
+            videoTrack.onunmute = () => {
+              console.log("🔊 VIDEO UNMUTED EVENT");
             };
           } else if (!remoteStreamAttached) {
             console.log("⏳ Waiting for both tracks...", pendingTracks);
@@ -1112,28 +1219,28 @@ const VideoCall: React.FC<VideoCallProps> = ({
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
     >
-   <video
-  ref={remoteVideoRef}
-  id="remote-video"
-  autoPlay
-  playsInline
-  muted={false}
-  className="w-full h-full object-cover absolute inset-0"
-  style={{ backgroundColor: '#000' }} // Show black background if no video
-  onLoadedMetadata={(e) => {
-    console.log("✅ Remote video metadata loaded");
-    const video = e.currentTarget;
-    video.play().catch(err => {
-      console.error("❌ Autoplay failed:", err.name);
-      if (err.name === "NotAllowedError") {
-        setError("🔊 Click to enable audio/video");
-      }
-    });
-  }}
-  onError={(e) => {
-    console.error("❌ Video element error:", e);
-  }}
-/>
+      <video
+        ref={remoteVideoRef}
+        id="remote-video"
+        autoPlay
+        playsInline
+        muted={false}
+        className="w-full h-full object-cover absolute inset-0"
+        style={{ backgroundColor: "#000" }} // Show black background if no video
+        onLoadedMetadata={(e) => {
+          console.log("✅ Remote video metadata loaded");
+          const video = e.currentTarget;
+          video.play().catch((err) => {
+            console.error("❌ Autoplay failed:", err.name);
+            if (err.name === "NotAllowedError") {
+              setError("🔊 Click to enable audio/video");
+            }
+          });
+        }}
+        onError={(e) => {
+          console.error("❌ Video element error:", e);
+        }}
+      />
 
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
