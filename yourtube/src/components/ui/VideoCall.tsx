@@ -1112,22 +1112,29 @@ const VideoCall: React.FC<VideoCallProps> = ({
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
     >
-      <video
-        ref={remoteVideoRef}
-        id="remote-video"
-        autoPlay
-        playsInline
-        muted={false}
-        controls={false}
-        className="w-full h-full object-cover absolute inset-0"
-        style={{ objectFit: "cover" }}
-        onLoadedMetadata={(e) => {
-          console.log("✅ Remote video metadata loaded");
-          e.currentTarget
-            .play()
-            .catch((err) => console.error("Play failed:", err));
-        }}
-      />
+   <video
+  ref={remoteVideoRef}
+  id="remote-video"
+  autoPlay
+  playsInline
+  muted={false}
+  className="w-full h-full object-cover absolute inset-0"
+  style={{ backgroundColor: '#000' }} // Show black background if no video
+  onLoadedMetadata={(e) => {
+    console.log("✅ Remote video metadata loaded");
+    const video = e.currentTarget;
+    video.play().catch(err => {
+      console.error("❌ Autoplay failed:", err.name);
+      if (err.name === "NotAllowedError") {
+        setError("🔊 Click to enable audio/video");
+      }
+    });
+  }}
+  onError={(e) => {
+    console.error("❌ Video element error:", e);
+  }}
+/>
+
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
           <div className="text-center px-4">
