@@ -1301,7 +1301,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       ref={containerRef}
       className="w-screen h-screen bg-black relative overflow-hidden touch-none"
     >
-      {/* ✅ Remote Video (Main) */}
       {/* ✅ Remote Video (Main) - FIXED */}
       <video
         ref={remoteVideoRef}
@@ -1319,6 +1318,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
           try {
             await e.currentTarget.play();
             console.log("✅ Video playing after metadata");
+            setConnectionStatus("connected");
+            setError(null);
           } catch (err) {
             console.warn("Autoplay blocked, waiting for user gesture:", err);
             setError("🔊 Tap screen to start video");
@@ -1420,9 +1421,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
         </div>
       </div>
 
-      {/* ✅ Emergency Play Button */}
-      {connectionStatus === "connected" && error?.includes("tap to retry") && (
-        <div className="absolute inset-0 flex items-center justify-center z-25">
+      {/* ✅ Emergency Play Button - PROPERLY PLACED */}
+      {connectionStatus === "connected" && error?.includes("tap") && (
+        <div className="absolute inset-0 flex items-center justify-center z-25 pointer-events-none">
           <button
             onClick={async () => {
               try {
@@ -1433,7 +1434,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 console.error("Emergency play failed:", err);
               }
             }}
-            className="p-6 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-lg"
+            className="pointer-events-auto p-6 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl animate-pulse"
           >
             <Play className="w-10 h-10 text-white" fill="currentColor" />
           </button>
@@ -1556,5 +1557,4 @@ const VideoCall: React.FC<VideoCallProps> = ({
     </div>
   );
 };
-
 export default VideoCall;
