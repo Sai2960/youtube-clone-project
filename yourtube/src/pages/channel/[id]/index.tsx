@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import ChannelHeader from "@/components/ChannelHeader";
 import ChannelVideos from "@/components/ChannelVideos";
 import VideoUploader from "@/components/VideoUploader";
+import dynamic from "next/dynamic"; // ✅ Add dynamic import
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
 import { getSocket, isSocketConnected } from "@/lib/socket";
