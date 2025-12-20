@@ -303,6 +303,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const isEndingCallRef = useRef(false);
   const initializingRef = useRef(false);
   const initializedRef = useRef(false);
+  const remoteStreamReceivedRef = useRef(false);
   // ✅ Detect user interaction before starting call
   useEffect(() => {
     const handleInteraction = () => {
@@ -567,41 +568,41 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, [roomId, userInteracted]);
 
   // ✅ Audio monitoring
-useEffect(() => {
-  if (connectionStatus !== "connected" || !webrtcServiceRef.current) return;
+  useEffect(() => {
+    if (connectionStatus !== "connected" || !webrtcServiceRef.current) return;
 
-  const monitor = setInterval(async () => {
-    const audioEl = document.getElementById(
-      "remote-audio-element"
-    ) as HTMLAudioElement;
+    const monitor = setInterval(async () => {
+      const audioEl = document.getElementById(
+        "remote-audio-element"
+      ) as HTMLAudioElement;
 
-    if (audioEl) {
-      console.log("🔊 Audio element status:", {
-        paused: audioEl.paused,
-        muted: audioEl.muted,
-        volume: audioEl.volume,
-        readyState: audioEl.readyState,
-      });
+      if (audioEl) {
+        console.log("🔊 Audio element status:", {
+          paused: audioEl.paused,
+          muted: audioEl.muted,
+          volume: audioEl.volume,
+          readyState: audioEl.readyState,
+        });
 
-      // Auto-resume if paused
-      if (audioEl.paused) {
-        console.log("⚠️ Audio paused, attempting resume...");
-        try {
-          await audioEl.play();
-        } catch (err) {
-          console.error("❌ Auto-resume failed:", err);
+        // Auto-resume if paused
+        if (audioEl.paused) {
+          console.log("⚠️ Audio paused, attempting resume...");
+          try {
+            await audioEl.play();
+          } catch (err) {
+            console.error("❌ Auto-resume failed:", err);
+          }
         }
       }
-    }
 
-    // Verify WebRTC stats
-    if (webrtcServiceRef.current) {
-      await webrtcServiceRef.current.logConnectionStats();
-    }
-  }, 5000);
+      // Verify WebRTC stats
+      if (webrtcServiceRef.current) {
+        await webrtcServiceRef.current.logConnectionStats();
+      }
+    }, 5000);
 
-  return () => clearInterval(monitor);
-}, [connectionStatus]);
+    return () => clearInterval(monitor);
+  }, [connectionStatus]);
 
   const initializeCall = async () => {
     try {
@@ -687,10 +688,15 @@ useEffect(() => {
         }
       }
       // Step 5: Setup remote stream listener
-      // ✅ FIXED: Remote stream handler with proper DOM timing
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
-          console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
+          console.log("\n🎬 ===== REMOTE STREAM CALLBACK FIRED =====");
+
+          if (remoteStreamReceivedRef.current) {
+            console.log("⚠️ Stream already processed, skipping");
+            return;
+          }
+          remoteStreamReceivedRef.current = true;
 
           if (!remoteStream || !remoteVideoRef.current) {
             console.error("❌ Missing stream or video element");
@@ -701,160 +707,84 @@ useEffect(() => {
           const videoTracks = remoteStream.getVideoTracks();
 
           console.log(
-            `📊 Tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
+            `📊 Remote tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
           );
 
           // Force enable all tracks
           remoteStream.getTracks().forEach((t) => {
             t.enabled = true;
-            console.log(`   ✅ Enabled ${t.kind}: ${t.label}`);
+            console.log(`   ✅ Force enabled ${t.kind}: ${t.label}`);
           });
 
-          // ✅ CRITICAL FIX: Wait for next frame to ensure DOM is ready
-          await new Promise((resolve) => requestAnimationFrame(resolve));
+          // Wait for DOM to be ready
+          await new Promise((resolve) => setTimeout(resolve, 200));
 
-          // ✅ CRITICAL FIX: Create audio element AFTER DOM is ready
-          console.log("🔊 Creating audio element for remote audio...");
-
-          // Remove any existing audio elements
-          document
-            .querySelectorAll("#remote-audio-element")
-            .forEach((el) => el.remove());
-
-          const audioElement = document.createElement("audio");
-          audioElement.id = "remote-audio-element";
-          audioElement.autoplay = true;
-          audioElement.setAttribute("playsinline", "true");
-          audioElement.muted = false;
-          audioElement.volume = 1.0;
-          audioElement.style.display = "none";
-
-          // Create audio-only stream
-          const audioStream = new MediaStream(audioTracks);
-          audioElement.srcObject = audioStream;
-
-          // ✅ CRITICAL: Append to body BEFORE playing
-          document.body.appendChild(audioElement);
-
-          // ✅ Wait for audio to be ready
-          await new Promise<void>((resolve) => {
-            if (audioElement.readyState >= 2) {
-              resolve();
-            } else {
-              audioElement.onloadedmetadata = () => resolve();
-              setTimeout(resolve, 1000); // Safety timeout
-            }
-          });
-
-          // ✅ Try to play audio with error handling
-          try {
-            const playPromise = audioElement.play();
-            if (playPromise !== undefined) {
-              await playPromise;
-              console.log("✅ Audio element playing");
-            }
-          } catch (err: any) {
-            console.warn("⚠️ Audio autoplay blocked:", err.name);
-            if (err.name === "NotAllowedError") {
-              setShowPlayButton(true);
-              setError("🔊 Click play to enable audio");
-            }
-          }
-
-          // ✅ Clear existing video srcObject
-          if (remoteVideoRef.current.srcObject) {
-            console.log("🔄 Clearing existing srcObject");
-            const oldStream = remoteVideoRef.current.srcObject as MediaStream;
-            oldStream.getTracks().forEach((t) => t.stop());
-            remoteVideoRef.current.srcObject = null;
-          }
-
-          // ✅ Wait for cleanup
-          await new Promise((resolve) => setTimeout(resolve, 100));
-
-          // ✅ Set video srcObject
-          console.log("📺 Setting video srcObject...");
+          // ✅ Set video element FIRST
+          console.log("📺 Setting remote video srcObject...");
           remoteVideoRef.current.srcObject = remoteStream;
           remoteVideoRef.current.autoplay = true;
           remoteVideoRef.current.playsInline = true;
           remoteVideoRef.current.muted = false;
           remoteVideoRef.current.volume = 1.0;
-
-          // ✅ CRITICAL: Load the video
           remoteVideoRef.current.load();
 
-          // Wait for metadata with timeout
+          // Wait for video metadata
           await new Promise<void>((resolve) => {
-            const timeout = setTimeout(() => {
-              console.log("⏰ Metadata timeout");
-              resolve();
-            }, 5000);
-
             if (remoteVideoRef.current!.readyState >= 2) {
-              clearTimeout(timeout);
-              console.log("✅ Metadata already loaded");
+              console.log("✅ Video metadata already loaded");
               resolve();
             } else {
               remoteVideoRef.current!.onloadedmetadata = () => {
-                clearTimeout(timeout);
-                console.log("✅ Metadata loaded");
+                console.log("✅ Video metadata loaded");
                 resolve();
               };
+              setTimeout(resolve, 3000);
             }
           });
 
-          // ✅ Try play with proper error handling
-          let playAttempts = 0;
-          const maxAttempts = 3;
-
-          const tryPlay = async (): Promise<boolean> => {
-            playAttempts++;
-            console.log(`▶️ Play attempt ${playAttempts}/${maxAttempts}...`);
-
-            if (!document.contains(remoteVideoRef.current)) {
-              console.error("❌ Video element not in DOM!");
-              return false;
-            }
-
-            try {
-              await remoteVideoRef.current!.play();
-              console.log("✅ VIDEO PLAYING!");
-              setConnectionStatus("connected");
-              setError(null);
-              setShowPlayButton(false);
-              return true;
-            } catch (err: any) {
-              console.error(
-                `❌ Play attempt ${playAttempts} failed:`,
-                err.name
-              );
-
-              if (err.name === "NotAllowedError") {
-                console.log("🔊 Autoplay blocked - showing play button");
-                setShowPlayButton(true);
-                setError("🔊 Tap play to start video");
-                return false;
-              } else if (
-                err.name === "AbortError" &&
-                playAttempts < maxAttempts
-              ) {
-                console.log("⏳ Retrying play...");
-                await new Promise((r) => setTimeout(r, 500));
-                return tryPlay();
-              }
-
-              return false;
-            }
-          };
-
-          const success = await tryPlay();
-
-          if (!success && !showPlayButton) {
+          // Try to play video
+          try {
+            await remoteVideoRef.current.play();
+            console.log("✅ Remote video PLAYING!");
+            setConnectionStatus("connected");
+            setShowPlayButton(false);
+            setError(null);
+          } catch (err: any) {
+            console.error("❌ Video autoplay blocked:", err.name);
             setShowPlayButton(true);
-            setError("⚠️ Tap play to start");
+            setError("🔊 Tap play to start");
           }
 
-          console.log("✅ Remote stream setup complete\n");
+          // ✅ Create separate audio element
+          if (audioTracks.length > 0) {
+            console.log("🔊 Setting up audio element...");
+
+            // Remove existing
+            document
+              .querySelectorAll("#remote-audio-element")
+              .forEach((el) => el.remove());
+
+            const audio = document.createElement("audio");
+            audio.id = "remote-audio-element";
+            audio.autoplay = true;
+            audio.setAttribute("playsinline", "true");
+            audio.muted = false;
+            audio.volume = 1.0;
+            audio.style.display = "none";
+
+            const audioStream = new MediaStream(audioTracks);
+            audio.srcObject = audioStream;
+            document.body.appendChild(audio);
+
+            try {
+              await audio.play();
+              console.log("✅ Audio playing!");
+            } catch (err) {
+              console.warn("⚠️ Audio autoplay blocked");
+            }
+          }
+
+          console.log("✅ Remote stream setup COMPLETE\n");
         },
         (candidate: RTCIceCandidate) => {
           const socket = getSocket();

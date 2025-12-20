@@ -433,13 +433,13 @@ export class WebRTCService {
 
     // ✅ CRITICAL FIX: Simplified ontrack handler
     this.peerConnection.addEventListener("track", (event) => {
-      console.log("\n📥 ===== TRACK RECEIVED (FIXED) =====");
-      console.log("   Kind:", event.track.kind);
-      console.log("   Label:", event.track.label);
-      console.log("   Enabled:", event.track.enabled);
-      console.log("   Muted:", event.track.muted);
-      console.log("   State:", event.track.readyState);
-
+      console.log("\n📥 ===== TRACK RECEIVED (DEBUGGING) =====");
+      console.log("   Track kind:", event.track.kind);
+      console.log("   Track label:", event.track.label);
+      console.log("   Track enabled:", event.track.enabled);
+      console.log("   Track readyState:", event.track.readyState);
+      console.log("   Streams count:", event.streams?.length || 0);
+      console.log("   Callback fired before:", this.callbackFired);
       // ✅ Force enable immediately
       event.track.enabled = true;
 
