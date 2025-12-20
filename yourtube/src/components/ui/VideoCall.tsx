@@ -251,8 +251,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
   // ✅ CRITICAL FIX: Persistent audio element setup
   // ✅ PRODUCTION-READY: Remote audio setup
- const setupRemoteAudio = async (stream: MediaStream) => {
-  console.log("🔊 Setting up remote audio (PRODUCTION FIX)");
+const setupRemoteAudio = async (stream: MediaStream) => {
+  console.log("🔊 Setting up remote audio (FIXED)");
 
   const audioTracks = stream.getAudioTracks();
   if (audioTracks.length === 0) {
@@ -335,32 +335,34 @@ const VideoCall: React.FC<VideoCallProps> = ({
       setShowPlayButton(false);
       setError(null);
 
-      // ✅ ONLY create AudioContext after successful play
-      try {
-        const AudioContextClass =
-          (window as any).AudioContext || (window as any).webkitAudioContext;
+      // ✅ CRITICAL: ONLY create AudioContext AFTER successful play AND user interaction
+      if (userInteracted) {
+        try {
+          const AudioContextClass =
+            (window as any).AudioContext || (window as any).webkitAudioContext;
 
-        if (AudioContextClass && !audioContextRef.current) {
-          audioContextRef.current = new AudioContextClass({
-            latencyHint: "interactive",
-            sampleRate: 48000,
-          });
+          if (AudioContextClass && !audioContextRef.current) {
+            audioContextRef.current = new AudioContextClass({
+              latencyHint: "interactive",
+              sampleRate: 48000,
+            });
 
-          console.log("✅ AudioContext created after play:", audioContextRef.current.state);
+            console.log("✅ AudioContext created:", audioContextRef.current.state);
 
-          const source =
-            audioContextRef.current.createMediaStreamSource(audioStream);
-          const gainNode = audioContextRef.current.createGain();
+            const source =
+              audioContextRef.current.createMediaStreamSource(audioStream);
+            const gainNode = audioContextRef.current.createGain();
 
-          gainNode.gain.value = 2.0;
+            gainNode.gain.value = 2.0;
 
-          source.connect(gainNode);
-          gainNode.connect(audioContextRef.current.destination);
+            source.connect(gainNode);
+            gainNode.connect(audioContextRef.current.destination);
 
-          console.log("✅ Audio pipeline connected with 2x gain");
+            console.log("✅ Audio pipeline connected with 2x gain");
+          }
+        } catch (err) {
+          console.error("❌ AudioContext setup failed (non-critical):", err);
         }
-      } catch (err) {
-        console.error("❌ AudioContext setup failed (non-critical):", err);
       }
 
       return true;
@@ -718,65 +720,55 @@ const initializeCall = async () => {
       throw new Error("Socket module not loaded");
     }
 
-    let socket;
-    try {
-      console.log("🔌 Getting socket connection...");
-      socket = await waitForSocket(15000);
-      console.log("✅ Socket ready:", socket.id);
-    } catch (err: any) {
-      console.error("❌ Socket connection failed:", err.message);
-      setError("Failed to connect to server. Please check your internet connection.");
-      return;
-    }
+// ✅ CRITICAL: Wait for socket connection BEFORE proceeding
+let socket;
+try {
+  console.log("🔌 Waiting for socket connection...");
+  socket = await waitForSocket(15000);
+  
+  if (!socket.connected) {
+    throw new Error("Socket failed to connect");
+  }
+  
+  console.log("✅ Socket connected:", socket.id);
+} catch (err: any) {
+  console.error("❌ Socket connection failed:", err.message);
+  setError("Failed to connect to server. Please refresh and try again.");
+  return;
+}
       // Initialize services
       webrtcServiceRef.current = new WebRTCService();
       recordingServiceRef.current = new RecordingService();
-
-      const pc = webrtcServiceRef.current?.getPeerConnection();
-      if (pc) {
-        (window as any).peerConnection = pc;
-        console.log("✅ PeerConnection exposed");
-      }
-
-      // Get media
-      let localStream: MediaStream;
-      try {
-        console.log("🎤 Requesting media...");
-        localStream = await ensureAudioNotMuted();
-
-        const audioTrack = localStream.getAudioTracks()[0];
-        const videoTrack = localStream.getVideoTracks()[0];
-
-        if (!audioTrack) {
-          throw new Error("No audio track!");
+// ✅ CRITICAL: Verify both streams are working
+setTimeout(async () => {
+  console.log("🔍 Verifying streams...");
+  
+  const pc = webrtcServiceRef.current?.getPeerConnection();
+  if (pc) {
+    const stats = await pc.getStats();
+    let hasAudioIn = false;
+    let hasVideoIn = false;
+    
+    stats.forEach((report) => {
+      if (report.type === "inbound-rtp") {
+        if (report.kind === "audio" && report.bytesReceived > 0) {
+          hasAudioIn = true;
+          console.log("✅ Audio data flowing:", report.bytesReceived, "bytes");
         }
-
-        console.log("🎤 Audio:", audioTrack.label);
-        console.log("📹 Video:", videoTrack.label);
-
-        localStream.getTracks().forEach((track) => {
-          track.enabled = true;
-        });
-
-        webrtcServiceRef.current.setLocalStream(localStream);
-      } catch (error: any) {
-        console.error("❌ Media access failed:", error);
-        setError(error.message || "Camera/mic failed");
-        return;
-      }
-
-      // Set local video
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = localStream;
-        localVideoRef.current.muted = true;
-
-        try {
-          await localVideoRef.current.play();
-          console.log("✅ Local video playing");
-        } catch (e) {
-          console.warn("⚠️ Local autoplay blocked");
+        if (report.kind === "video" && report.bytesReceived > 0) {
+          hasVideoIn = true;
+          console.log("✅ Video data flowing:", report.bytesReceived, "bytes");
         }
       }
+    });
+    
+    if (!hasAudioIn || !hasVideoIn) {
+      console.warn("⚠️ No data flowing - may need user interaction");
+      setShowPlayButton(true);
+      setError("🎬 Click play to start media");
+    }
+  }
+}, 3000);
 
       // ✅ FIXED: Remote stream handling
       webrtcServiceRef.current.setupEventListeners(

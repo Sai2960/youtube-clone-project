@@ -14,29 +14,18 @@ const getSocketURL = () => {
   // ✅ HARDCODED FALLBACK for production
   const PRODUCTION_URL = "https://youtube-clone-project-q3pd.onrender.com";
 
-  // Try environment variables first
-  const envUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 
-                 process.env.NEXT_PUBLIC_BACKEND_URL;
-  
-  if (envUrl) {
-    console.log("🔧 Using environment URL:", envUrl);
-    return envUrl;
-  }
-
-  // Detect Vercel deployment
+  // ✅ CRITICAL FIX: Check actual deployment first
   const hostname = window.location.hostname;
-  if (hostname.includes("vercel.app") || hostname.includes("netlify.app")) {
-    console.log("🌐 Production detected - using Render backend");
-    return PRODUCTION_URL;
-  }
-
+  
   // Local development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
+    console.log("🏠 Local development detected");
     return "http://localhost:5000";
   }
 
-  // Final fallback
-  console.log("🔧 Using fallback URL");
+  // Production deployment (Vercel/Netlify/etc)
+  console.log("🌐 Production detected:", hostname);
+  console.log("🔧 Using Render backend:", PRODUCTION_URL);
   return PRODUCTION_URL;
 };
 
