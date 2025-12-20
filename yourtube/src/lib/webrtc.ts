@@ -141,6 +141,28 @@ export class WebRTCService {
   getRemoteStream(): MediaStream | null {
     return this.remoteStream;
   }
+
+  async verifyAudioFlow(): Promise<boolean> {
+    if (!this.peerConnection) return false;
+
+    try {
+      const stats = await this.peerConnection.getStats();
+      let audioWorking = false;
+
+      stats.forEach((report) => {
+        if (report.type === "inbound-rtp" && report.kind === "audio") {
+          const bytesReceived = report.bytesReceived || 0;
+          audioWorking = bytesReceived > 0;
+          console.log(`🎤 Audio bytes received: ${bytesReceived}`);
+        }
+      });
+
+      return audioWorking;
+    } catch (err) {
+      console.error("❌ Audio verification failed:", err);
+      return false;
+    }
+  }
   // ✅ CRITICAL FIX: Completely rewritten to ensure proper transceiver setup
   async addLocalStreamToPeer(): Promise<void> {
     if (!this.localStream || !this.peerConnection) {

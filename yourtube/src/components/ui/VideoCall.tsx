@@ -565,6 +565,44 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
   }, [roomId, userInteracted]);
+
+  // ✅ Audio monitoring
+useEffect(() => {
+  if (connectionStatus !== "connected" || !webrtcServiceRef.current) return;
+
+  const monitor = setInterval(async () => {
+    const audioEl = document.getElementById(
+      "remote-audio-element"
+    ) as HTMLAudioElement;
+
+    if (audioEl) {
+      console.log("🔊 Audio element status:", {
+        paused: audioEl.paused,
+        muted: audioEl.muted,
+        volume: audioEl.volume,
+        readyState: audioEl.readyState,
+      });
+
+      // Auto-resume if paused
+      if (audioEl.paused) {
+        console.log("⚠️ Audio paused, attempting resume...");
+        try {
+          await audioEl.play();
+        } catch (err) {
+          console.error("❌ Auto-resume failed:", err);
+        }
+      }
+    }
+
+    // Verify WebRTC stats
+    if (webrtcServiceRef.current) {
+      await webrtcServiceRef.current.logConnectionStats();
+    }
+  }, 5000);
+
+  return () => clearInterval(monitor);
+}, [connectionStatus]);
+
   const initializeCall = async () => {
     try {
       setError(null);
@@ -649,6 +687,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }
       }
       // Step 5: Setup remote stream listener
+      // ✅ FIXED: Remote stream handler with proper DOM timing
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
@@ -671,7 +710,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
             console.log(`   ✅ Enabled ${t.kind}: ${t.label}`);
           });
 
-          // ✅ CRITICAL FIX: Create dedicated audio element
+          // ✅ CRITICAL FIX: Wait for next frame to ensure DOM is ready
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+
+          // ✅ CRITICAL FIX: Create audio element AFTER DOM is ready
           console.log("🔊 Creating audio element for remote audio...");
 
           // Remove any existing audio elements
@@ -691,17 +733,35 @@ const VideoCall: React.FC<VideoCallProps> = ({
           const audioStream = new MediaStream(audioTracks);
           audioElement.srcObject = audioStream;
 
+          // ✅ CRITICAL: Append to body BEFORE playing
           document.body.appendChild(audioElement);
 
+          // ✅ Wait for audio to be ready
+          await new Promise<void>((resolve) => {
+            if (audioElement.readyState >= 2) {
+              resolve();
+            } else {
+              audioElement.onloadedmetadata = () => resolve();
+              setTimeout(resolve, 1000); // Safety timeout
+            }
+          });
+
+          // ✅ Try to play audio with error handling
           try {
-            await audioElement.play();
-            console.log("✅ Audio element playing");
+            const playPromise = audioElement.play();
+            if (playPromise !== undefined) {
+              await playPromise;
+              console.log("✅ Audio element playing");
+            }
           } catch (err: any) {
-            console.warn("⚠️ Audio blocked:", err.name);
-            setShowPlayButton(true);
+            console.warn("⚠️ Audio autoplay blocked:", err.name);
+            if (err.name === "NotAllowedError") {
+              setShowPlayButton(true);
+              setError("🔊 Click play to enable audio");
+            }
           }
 
-          // Clear existing srcObject
+          // ✅ Clear existing video srcObject
           if (remoteVideoRef.current.srcObject) {
             console.log("🔄 Clearing existing srcObject");
             const oldStream = remoteVideoRef.current.srcObject as MediaStream;
@@ -709,18 +769,21 @@ const VideoCall: React.FC<VideoCallProps> = ({
             remoteVideoRef.current.srcObject = null;
           }
 
-          await new Promise((resolve) => requestAnimationFrame(resolve));
+          // ✅ Wait for cleanup
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
-          // Set video srcObject
+          // ✅ Set video srcObject
           console.log("📺 Setting video srcObject...");
           remoteVideoRef.current.srcObject = remoteStream;
           remoteVideoRef.current.autoplay = true;
           remoteVideoRef.current.playsInline = true;
           remoteVideoRef.current.muted = false;
           remoteVideoRef.current.volume = 1.0;
+
+          // ✅ CRITICAL: Load the video
           remoteVideoRef.current.load();
 
-          // Wait for metadata
+          // Wait for metadata with timeout
           await new Promise<void>((resolve) => {
             const timeout = setTimeout(() => {
               console.log("⏰ Metadata timeout");
@@ -740,17 +803,20 @@ const VideoCall: React.FC<VideoCallProps> = ({
             }
           });
 
-          // Try play with retry
+          // ✅ Try play with proper error handling
           let playAttempts = 0;
+          const maxAttempts = 3;
+
           const tryPlay = async (): Promise<boolean> => {
+            playAttempts++;
+            console.log(`▶️ Play attempt ${playAttempts}/${maxAttempts}...`);
+
+            if (!document.contains(remoteVideoRef.current)) {
+              console.error("❌ Video element not in DOM!");
+              return false;
+            }
+
             try {
-              console.log(`▶️ Play attempt ${++playAttempts}...`);
-
-              if (!document.contains(remoteVideoRef.current)) {
-                console.error("❌ Video element not in DOM!");
-                return false;
-              }
-
               await remoteVideoRef.current!.play();
               console.log("✅ VIDEO PLAYING!");
               setConnectionStatus("connected");
@@ -758,50 +824,21 @@ const VideoCall: React.FC<VideoCallProps> = ({
               setShowPlayButton(false);
               return true;
             } catch (err: any) {
-              console.error(`❌ Play failed (${err.name}):`, err.message);
+              console.error(
+                `❌ Play attempt ${playAttempts} failed:`,
+                err.name
+              );
 
               if (err.name === "NotAllowedError") {
-                console.log("🔊 Autoplay blocked - need user gesture");
+                console.log("🔊 Autoplay blocked - showing play button");
                 setShowPlayButton(true);
-                setError("🔊 Tap the play button to start");
-
-                return new Promise((resolve) => {
-                  const handleInteraction = async () => {
-                    try {
-                      await remoteVideoRef.current?.play();
-                      await audioElement.play();
-                      console.log("✅ Resumed after user gesture!");
-                      setConnectionStatus("connected");
-                      setError(null);
-                      setShowPlayButton(false);
-                      resolve(true);
-                    } catch (e) {
-                      console.error("❌ Still failed:", e);
-                      resolve(false);
-                    }
-                    cleanup();
-                  };
-
-                  const cleanup = () => {
-                    document.removeEventListener("click", handleInteraction);
-                    document.removeEventListener(
-                      "touchstart",
-                      handleInteraction
-                    );
-                    document.removeEventListener("keydown", handleInteraction);
-                  };
-
-                  document.addEventListener("click", handleInteraction, {
-                    once: true,
-                  });
-                  document.addEventListener("touchstart", handleInteraction, {
-                    once: true,
-                  });
-                  document.addEventListener("keydown", handleInteraction, {
-                    once: true,
-                  });
-                });
-              } else if (err.name === "AbortError" && playAttempts < 3) {
+                setError("🔊 Tap play to start video");
+                return false;
+              } else if (
+                err.name === "AbortError" &&
+                playAttempts < maxAttempts
+              ) {
+                console.log("⏳ Retrying play...");
                 await new Promise((r) => setTimeout(r, 500));
                 return tryPlay();
               }
@@ -811,9 +848,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
           };
 
           const success = await tryPlay();
+
           if (!success && !showPlayButton) {
             setShowPlayButton(true);
-            setError("⚠️ Tap play button to start video");
+            setError("⚠️ Tap play to start");
           }
 
           console.log("✅ Remote stream setup complete\n");
@@ -1123,30 +1161,56 @@ const VideoCall: React.FC<VideoCallProps> = ({
   };
 
   const handlePlayClick = async () => {
-    try {
-      console.log("🎬 Manual play triggered");
+    console.log("🎬 Manual play button clicked");
 
-      // Play audio
+    try {
+      // Step 1: Resume audio element
       const audioEl = document.getElementById(
         "remote-audio-element"
       ) as HTMLAudioElement;
+
       if (audioEl) {
-        await audioEl.play();
-        console.log("✅ Audio resumed");
+        console.log("🔊 Attempting audio play...");
+        try {
+          await audioEl.play();
+          console.log("✅ Audio resumed");
+        } catch (err) {
+          console.error("❌ Audio play failed:", err);
+        }
+      } else {
+        console.warn("⚠️ Audio element not found");
       }
 
-      // Play video
+      // Step 2: Resume video element
       if (remoteVideoRef.current) {
-        await remoteVideoRef.current.play();
-        console.log("✅ Video resumed");
-        setConnectionStatus("connected");
+        console.log("📹 Attempting video play...");
+        try {
+          await remoteVideoRef.current.play();
+          console.log("✅ Video resumed");
+          setConnectionStatus("connected");
+          setError(null);
+          setShowPlayButton(false);
+        } catch (err) {
+          console.error("❌ Video play failed:", err);
+          setError("⚠️ Playback failed - please try again");
+        }
       }
 
-      setShowPlayButton(false);
-      setError(null);
+      // Step 3: Resume AudioContext if needed
+      const AudioContext =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+
+      if (AudioContext) {
+        const ctx = new AudioContext();
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+          console.log("✅ AudioContext resumed");
+        }
+        ctx.close();
+      }
     } catch (err) {
       console.error("❌ Manual play failed:", err);
-      setError("Playback failed - please try again");
+      setError("⚠️ Could not start playback");
     }
   };
 
