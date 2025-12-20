@@ -25,6 +25,7 @@ interface VideoCallProps {
   remotePeerName?: string;
   callId?: string;
 }
+
 // ✅ Audio verification with actual level testing
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   console.log("🎤 Verifying audio track:", {
@@ -319,6 +320,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       document.removeEventListener("touchstart", handleInteraction);
     };
   }, [userInteracted]);
+
   // ✅ Auto-enter fullscreen
   useEffect(() => {
     const enterFullscreen = async () => {
@@ -350,6 +352,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
   }, [userInteracted]);
+
   // ✅ Resume AudioContext
   useEffect(() => {
     if (!userInteracted) return;
@@ -479,40 +482,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
             clearInterval(recordingIntervalRef.current);
           }
 
-          // Clean up all audio elements
-          document.querySelectorAll("audio").forEach((audio) => {
-            if (audio.srcObject) {
-              (audio.srcObject as MediaStream)
-                .getTracks()
-                .forEach((t) => t.stop());
-            }
-            audio.pause();
-            audio.srcObject = null;
-            audio.remove();
-          });
-
-          // Clean up video refs
-          if (localVideoRef.current?.srcObject) {
-            (localVideoRef.current.srcObject as MediaStream)
-              .getTracks()
-              .forEach((t) => t.stop());
-            localVideoRef.current.srcObject = null;
-          }
-
-          if (remoteVideoRef.current?.srcObject) {
-            (remoteVideoRef.current.srcObject as MediaStream)
-              .getTracks()
-              .forEach((t) => t.stop());
-            remoteVideoRef.current.srcObject = null;
-          }
-
-          if (webrtcServiceRef.current) {
-            webrtcServiceRef.current.close();
-            webrtcServiceRef.current = null;
-          }
-
-          delete (window as any).peerConnection;
-
+          cleanup(false);
           onEndCall();
           setTimeout(() => {
             router.push("/");
@@ -535,9 +505,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
       };
     };
 
-    const cleanup = setupHandlers();
+    const cleanupPromise = setupHandlers();
+
     return () => {
-      cleanup.then((fn) => fn && fn());
+      cleanupPromise.then((fn) => fn && fn());
     };
   }, [roomId, isRecording, onEndCall, router]);
   // ✅ Main initialization effect
@@ -621,7 +592,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         socket = await waitForSocket(15000);
         console.log("✅ Socket ready:", socket.id);
       } catch (err) {
-        setError("Connection failed. Please refresh the page.");
+        setError("Connection failed. Please check backend server.");
         return;
       }
 
@@ -1044,6 +1015,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       setError("Screen sharing failed");
     }
   };
+
   const startRecording = async () => {
     try {
       const localVideo = localVideoRef.current;
@@ -1098,6 +1070,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       console.error("Error emitting recording-stopped:", error);
     }
   };
+
   const handleEndCall = async () => {
     if (callEndedRef.current) {
       console.log("⚠️ Call already ended, skipping");
@@ -1198,7 +1171,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .toString()
       .padStart(2, "0")}`;
   };
-
   // ✅ Show initial interaction prompt
   if (!userInteracted) {
     return (
@@ -1225,7 +1197,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       </div>
     );
   }
-
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* Remote Video (Main) */}
@@ -1360,7 +1331,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
           <p className="font-semibold">{error}</p>
         </div>
       )}
-
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 safe-area-bottom">
         <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
