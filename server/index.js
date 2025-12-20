@@ -75,6 +75,7 @@ import otpRoutes from "./routes/otp.js";
 import imageProxyRouter from "./routes/imageProxy.js";
 import adminRoutes from "./routes/admin.js";
 import healthRoutes from "./routes/health.js";
+import { setupCallHandlers } from "./sockets/callHandler.js";
 
 // Cron job services for scheduled tasks
 import { startAllCronJobs, stopAllCronJobs } from "./services/cronJobs.js";
@@ -442,26 +443,26 @@ app.get("/uploads/videos/:filename", (req, res) => {
 // ✅ ENHANCED CORS - COMPLETE FIX
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   // Allow all origins in production (or restrict to your Vercel domain)
-  res.setHeader('Access-Control-Allow-Origin', origin || '*');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader("Access-Control-Allow-Origin", origin || "*");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD'
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
   );
-  res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader("Access-Control-Max-Age", "86400");
   res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, Range, If-None-Match, If-Modified-Since, X-Auth-Token'
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, Range, If-None-Match, If-Modified-Since, X-Auth-Token"
   );
   res.setHeader(
-    'Access-Control-Expose-Headers',
-    'Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag, X-Request-Id'
+    "Access-Control-Expose-Headers",
+    "Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag, X-Request-Id"
   );
 
   // ✅ CRITICAL: Handle OPTIONS preflight
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
 
@@ -696,6 +697,14 @@ io.on("connection", (socket) => {
   console.log("   Socket ID:", socket.id);
   console.log("   Total connections:", io.sockets.sockets.size);
 
+  // ✅ CRITICAL FIX: Setup call handlers from external file
+  try {
+    setupCallHandlers(io, socket);
+    console.log("✅ Call handlers initialized for socket:", socket.id);
+  } catch (error) {
+    console.error("❌ Failed to setup call handlers:", error);
+  }
+
   // User registration - links userId to socketId
   socket.on("register-user", (userId) => {
     if (!userId) {
@@ -733,123 +742,6 @@ io.on("connection", (socket) => {
       userId,
       socketId: socket.id,
       timestamp: Date.now(),
-    });
-  });
-
-  // Join a call room
-  socket.on("join-room", (roomId, userId) => {
-    console.log("\n📞 Join room request");
-    console.log("   Socket:", socket.id);
-    console.log("   User:", userId || "anonymous");
-    console.log("   Room:", roomId);
-
-    if (!roomId) {
-      console.error("❌ Join failed: No room ID provided");
-      socket.emit("join-error", { message: "Room ID is required" });
-      return;
-    }
-
-    // Add socket to the room
-    socket.join(roomId);
-
-    // Track room membership
-    if (!activeCallRooms.has(roomId)) {
-      activeCallRooms.set(roomId, new Set());
-    }
-    activeCallRooms.get(roomId).add(socket.id);
-
-    // Get current room info
-    const room = io.sockets.adapter.rooms.get(roomId);
-    const participantCount = room ? room.size : 0;
-
-    console.log(`   Participants in room: ${participantCount}`);
-
-    // Tell others in the room that someone joined
-    socket.to(roomId).emit("user-joined", {
-      userId: userId || socket.id,
-      socketId: socket.id,
-      roomId: roomId,
-    });
-
-    // Confirm join to this socket
-    socket.emit("room-joined", {
-      roomId,
-      userCount: participantCount,
-      socketId: socket.id,
-    });
-
-    // Special signal when exactly 2 users are ready (for 1-on-1 calls)
-    if (participantCount === 2) {
-      console.log("✅ Both participants ready - call can begin");
-      io.to(roomId).emit("both-users-ready", {
-        roomId,
-        userCount: 2,
-        timestamp: Date.now(),
-      });
-    }
-
-    console.log("✅ User joined room successfully\n");
-  });
-
-  // WebRTC signaling - offer
-  socket.on("offer", (roomId, offer) => {
-    console.log("\n📤 WebRTC Offer received");
-    console.log("   From:", socket.id);
-    console.log("   Room:", roomId);
-    console.log("   Offer type:", offer?.type);
-
-    if (!roomId || !offer) {
-      console.error("❌ Invalid offer: missing data");
-      return;
-    }
-
-    const room = io.sockets.adapter.rooms.get(roomId);
-    if (!room) {
-      console.error("❌ Room does not exist:", roomId);
-      return;
-    }
-
-    // Forward offer to everyone else in the room
-    socket.to(roomId).emit("offer", {
-      offer: offer,
-      from: socket.id,
-    });
-
-    console.log("✅ Offer broadcasted\n");
-  });
-
-  // WebRTC signaling - answer
-  socket.on("answer", (roomId, answer) => {
-    console.log("\n📤 WebRTC Answer received");
-    console.log("   From:", socket.id);
-    console.log("   Room:", roomId);
-
-    if (!roomId || !answer) {
-      console.error("❌ Invalid answer: missing data");
-      return;
-    }
-
-    // Forward answer to everyone else in the room
-    socket.to(roomId).emit("answer", {
-      answer: answer,
-      from: socket.id,
-    });
-
-    console.log("✅ Answer broadcasted\n");
-  });
-
-  // WebRTC signaling - ICE candidate
-  socket.on("ice-candidate", (roomId, candidate) => {
-    if (!roomId || !candidate) {
-      console.error("❌ Invalid ICE candidate: missing data");
-      return;
-    }
-
-    console.log("❄️  Forwarding ICE candidate to room:", roomId);
-
-    socket.to(roomId).emit("ice-candidate", {
-      candidate: candidate,
-      from: socket.id,
     });
   });
 
@@ -897,140 +789,6 @@ io.on("connection", (socket) => {
         message: "User not available or offline",
       });
     }
-  });
-
-  // Accept an incoming call
-  socket.on("accept-call", (roomId) => {
-    console.log("✅ Call accepted in room:", roomId);
-    if (!roomId) return;
-
-    socket.to(roomId).emit("call-accepted", {
-      acceptedBy: socket.id,
-    });
-  });
-
-  // Reject an incoming call
-  socket.on("reject-call", (roomId) => {
-    console.log("❌ Call rejected in room:", roomId);
-    if (!roomId) return;
-
-    socket.to(roomId).emit("call-rejected", {
-      rejectedBy: socket.id,
-    });
-
-    // Clean up room
-    socket.leave(roomId);
-    const roomSockets = activeCallRooms.get(roomId);
-    if (roomSockets) {
-      roomSockets.delete(socket.id);
-      if (roomSockets.size === 0) {
-        activeCallRooms.delete(roomId);
-      }
-    }
-  });
-
-  // End an ongoing call
-  socket.on("end-call", (roomId) => {
-    console.log("\n📴 Call ended");
-    console.log("   Room:", roomId);
-    console.log("   Ended by:", socket.id);
-
-    if (!roomId) return;
-
-    // Notify others in the room
-    socket.to(roomId).emit("call-ended", {
-      endedBy: socket.id,
-      reason: "user-action",
-    });
-
-    // Clean up room
-    socket.leave(roomId);
-    const roomSockets = activeCallRooms.get(roomId);
-    if (roomSockets) {
-      roomSockets.delete(socket.id);
-      if (roomSockets.size === 0) {
-        activeCallRooms.delete(roomId);
-      }
-    }
-
-    console.log("✅ Call ended successfully\n");
-  });
-
-  // Screen sharing started
-  socket.on("start-screen-share", (roomId) => {
-    console.log("🖥️  Screen sharing started in room:", roomId);
-    if (!roomId) return;
-
-    socket.to(roomId).emit("screen-share-started", {
-      socketId: socket.id,
-      timestamp: Date.now(),
-    });
-  });
-
-  // Screen sharing stopped
-  socket.on("stop-screen-share", (roomId) => {
-    console.log("🖥️  Screen sharing stopped in room:", roomId);
-    if (!roomId) return;
-
-    socket.to(roomId).emit("screen-share-stopped", {
-      socketId: socket.id,
-      timestamp: Date.now(),
-    });
-  });
-
-  // Recording started notification
-  socket.on("recording-started", (roomId, userId) => {
-    console.log("🔴 Recording started in room:", roomId);
-    if (!roomId) return;
-
-    socket.to(roomId).emit("recording-started", {
-      userId: userId || socket.id,
-      socketId: socket.id,
-      timestamp: Date.now(),
-    });
-  });
-
-  // Recording stopped notification
-  socket.on("recording-stopped", (roomId, userId, recordingData) => {
-    console.log("⏹️  Recording stopped in room:", roomId);
-    if (!roomId) return;
-
-    socket.to(roomId).emit("recording-stopped", {
-      userId: userId || socket.id,
-      socketId: socket.id,
-      recordingData,
-      timestamp: Date.now(),
-    });
-  });
-
-  // Audio toggle notification
-  socket.on("audio-toggled", (roomId, isEnabled) => {
-    if (!roomId) return;
-
-    console.log(
-      `🎤 Audio ${isEnabled ? "enabled" : "disabled"} in room: ${roomId}`
-    );
-
-    socket.to(roomId).emit("peer-audio-toggled", {
-      socketId: socket.id,
-      enabled: isEnabled,
-      timestamp: Date.now(),
-    });
-  });
-
-  // Video toggle notification
-  socket.on("video-toggled", (roomId, isEnabled) => {
-    if (!roomId) return;
-
-    console.log(
-      `📹 Video ${isEnabled ? "enabled" : "disabled"} in room: ${roomId}`
-    );
-
-    socket.to(roomId).emit("peer-video-toggled", {
-      socketId: socket.id,
-      enabled: isEnabled,
-      timestamp: Date.now(),
-    });
   });
 
   // Handle disconnection
@@ -1085,18 +843,6 @@ io.on("connection", (socket) => {
   // Error handling
   socket.on("error", (error) => {
     console.error("❌ Socket error:", error);
-  });
-
-  socket.on("call-error", (roomId, error) => {
-    if (!roomId) return;
-
-    console.error("❌ Call error in room", roomId, ":", error);
-
-    socket.to(roomId).emit("call-error", {
-      error,
-      from: socket.id,
-      timestamp: Date.now(),
-    });
   });
 
   // Simple ping/pong for connection monitoring
