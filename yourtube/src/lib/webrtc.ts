@@ -52,17 +52,14 @@ const ICE_SERVERS: RTCConfiguration = {
       urls: [
         "turn:openrelay.metered.ca:80",
         "turn:openrelay.metered.ca:443",
-        "turn:openrelay.metered.ca:443?transport=tcp"
+        "turn:openrelay.metered.ca:443?transport=tcp",
       ],
       username: "openrelayproject",
       credential: "openrelayproject",
     },
     // ✅ Additional public TURN server as fallback
     {
-      urls: [
-        "turn:relay.metered.ca:80",
-        "turn:relay.metered.ca:443",
-      ],
+      urls: ["turn:relay.metered.ca:80", "turn:relay.metered.ca:443"],
       username: "openrelayproject",
       credential: "openrelayproject",
     },
@@ -339,74 +336,36 @@ export class WebRTCService {
       throw new Error("Peer connection not initialized");
     }
 
-    console.log("\n📝 Creating SDP Offer (ENHANCED)");
+    console.log("\n📝 Creating SDP Offer");
 
-    // ✅ Pre-offer validation and fixing
+    // ✅ Pre-offer: Force ALL transceivers to sendrecv
     const transceivers = this.peerConnection.getTransceivers();
-    console.log(`   Pre-offer check: ${transceivers.length} transceivers`);
+    console.log(`   Transceivers: ${transceivers.length}`);
 
-    let fixCount = 0;
     transceivers.forEach((t, i) => {
       if (t.direction !== "sendrecv") {
         console.warn(`⚠️ Fixing transceiver ${i}: ${t.direction} → sendrecv`);
         t.direction = "sendrecv";
-        fixCount++;
-        console.log(`      Fixed transceiver ${i}: ${t.sender.track?.kind}`);
       }
     });
 
-    if (fixCount > 0) {
-      console.log(`   ✅ Fixed ${fixCount} transceivers before offer`);
-    }
-
     // ✅ Create offer with explicit constraints
-    const offerOptions: RTCOfferOptions = {
+    const offer = await this.peerConnection.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: true,
-      iceRestart: false,
-    };
+    });
 
-    const offer = await this.peerConnection.createOffer(offerOptions);
-
-    // ✅ CRITICAL: Validate and fix SDP
+    // ✅ Validate SDP
     if (offer.sdp) {
-      console.log("\n   📊 SDP Validation:");
-
       const issues = this.validateSDP(offer.sdp);
-
       if (issues.length > 0) {
-        console.error("🚨 SDP Validation Failed:");
-        issues.forEach((issue) => console.error(`  - ${issue}`));
-
-        // Attempt to fix SDP
+        console.error("🚨 SDP Issues:", issues);
         offer.sdp = this.fixSDP(offer.sdp);
-        console.log("   🔧 SDP has been auto-fixed");
-      }
-
-      // Log validation results
-      const hasAudio = offer.sdp.includes("m=audio");
-      const hasVideo = offer.sdp.includes("m=video");
-      const sendrecvCount = (offer.sdp.match(/a=sendrecv/g) || []).length;
-      const hasSendonly = offer.sdp.includes("a=sendonly");
-      const hasRecvonly = offer.sdp.includes("a=recvonly");
-
-      console.log(`      Audio: ${hasAudio ? "✅" : "❌"}`);
-      console.log(`      Video: ${hasVideo ? "✅" : "❌"}`);
-      console.log(`      Sendrecv count: ${sendrecvCount}`);
-
-      if (!hasAudio || !hasVideo) {
-        console.error("      🚨 MISSING MEDIA SECTIONS!");
-      }
-      if (sendrecvCount < 2) {
-        console.error(`      🚨 EXPECTED 2 SENDRECV, GOT ${sendrecvCount}!`);
-      }
-      if (hasSendonly || hasRecvonly) {
-        console.error("      🚨 ONE-WAY MEDIA DETECTED!");
       }
     }
 
     await this.peerConnection.setLocalDescription(offer);
-    console.log("✅ Offer created and set as local description");
+    console.log("✅ Offer created");
     return offer;
   }
   // ✅ FIXED: Enhanced answer creation with validation
@@ -531,39 +490,36 @@ export class WebRTCService {
     }
   }
   // ✅ ENHANCED: Comprehensive track verification with detailed diagnostics
-private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
-  console.log(`🔍 Verifying ${track.kind} track:`, track.label);
+  private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
+    console.log(`🔍 Verifying ${track.kind} track:`, track.label);
 
-  // Check 1: Ready state
-  if (track.readyState !== "live") {
-    console.error(`  ❌ Track not live: ${track.readyState}`);
-    return false;
-  }
+    // Check 1: Ready state
+    if (track.readyState !== "live") {
+      console.error(`  ❌ Track not live: ${track.readyState}`);
+      return false;
+    }
 
+    // Check 2: Enabled state
+    if (!track.enabled) {
+      console.warn(`  ⚠️ Track disabled, enabling...`);
+      track.enabled = true;
+    }
 
-   // Check 2: Enabled state
-  if (!track.enabled) {
-    console.warn(`  ⚠️ Track disabled, enabling...`);
-    track.enabled = true;
-  }
+    // Check 3: Muted state
+    if (track.muted) {
+      console.warn(`  ⚠️ Track muted (may unmute automatically)`);
+    }
 
-  // Check 3: Muted state
-  if (track.muted) {
-    console.warn(`  ⚠️ Track muted (may unmute automatically)`);
-  }
+    // Check 4: Track settings
+    const settings = track.getSettings();
+    console.log(`  📊 Track settings:`, {
+      sampleRate: settings.sampleRate,
+      channelCount: settings.channelCount,
+      width: settings.width,
+      height: settings.height,
+      frameRate: settings.frameRate,
+    });
 
-   // Check 4: Track settings
-  const settings = track.getSettings();
-  console.log(`  📊 Track settings:`, {
-    sampleRate: settings.sampleRate,
-    channelCount: settings.channelCount,
-    width: settings.width,
-    height: settings.height,
-    frameRate: settings.frameRate,
-  });
-
-
-  
     // Check 5: For audio, verify actual data flow
     if (track.kind === "audio") {
       try {
@@ -571,7 +527,6 @@ private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
           (window as any).AudioContext || (window as any).webkitAudioContext;
 
         if (!AudioContext) {
-          
           console.warn(
             "  ⚠️ AudioContext not available, skipping audio verification"
           );
@@ -642,30 +597,30 @@ private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
 
     // For video, check dimensions and frame rate
     // For video, check dimensions
-  if (track.kind === "video") {
-    const settings = track.getSettings();
-    if (settings.width && settings.height) {
-      console.log(
-        `  ✅ Video: ${settings.width}x${settings.height} @ ${
-          settings.frameRate || "unknown"
-        }fps`
-      );
-
-      if (settings.width < 160 || settings.height < 120) {
-        console.warn(
-          `  ⚠️ Video resolution very low: ${settings.width}x${settings.height}`
+    if (track.kind === "video") {
+      const settings = track.getSettings();
+      if (settings.width && settings.height) {
+        console.log(
+          `  ✅ Video: ${settings.width}x${settings.height} @ ${
+            settings.frameRate || "unknown"
+          }fps`
         );
+
+        if (settings.width < 160 || settings.height < 120) {
+          console.warn(
+            `  ⚠️ Video resolution very low: ${settings.width}x${settings.height}`
+          );
+        }
+
+        return true;
+      } else {
+        console.warn("  ⚠️ Video has no dimensions yet");
+        return true; // Optimistic
       }
-
-      return true;
-    } else {
-      console.warn("  ⚠️ Video has no dimensions yet");
-      return true; // Optimistic
     }
-  }
 
-  return true;
-}
+    return true;
+  }
   // ✅ CRITICAL FIX: Enhanced remote stream handling with comprehensive verification
   setupEventListeners(
     onRemoteStream: (stream: MediaStream) => void,
@@ -684,82 +639,57 @@ private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
     this.remoteStream = new MediaStream();
 
     // ✅ ENHANCED: Track handler with comprehensive monitoring
-  const trackHandler = async (event: RTCTrackEvent) => {
-  console.log("\n📥 ===== TRACK RECEIVED (CRITICAL FIX) =====");
-  console.log("   Track kind:", event.track.kind);
-  console.log("   Track label:", event.track.label);
-  console.log("   Track ID:", event.track.id);
-  console.log("   Track enabled:", event.track.enabled);
-  console.log("   Track readyState:", event.track.readyState);
-  console.log("   Track muted:", event.track.muted);
-  console.log("   Streams count:", event.streams?.length || 0);
-  console.log("   Transceiver direction:", event.transceiver?.direction);
-  console.log("   Transceiver currentDirection:", event.transceiver?.currentDirection);
+    const trackHandler = async (event: RTCTrackEvent) => {
+      console.log("\n📥 ===== TRACK RECEIVED (CRITICAL FIX) =====");
+      console.log("   Track kind:", event.track.kind);
+      console.log("   Track label:", event.track.label);
+      console.log("   Track enabled:", event.track.enabled);
+      console.log("   Track readyState:", event.track.readyState);
+      console.log("   Track muted:", event.track.muted);
 
-  // ✅ CRITICAL FIX: Force transceiver to sendrecv if not already
-  if (event.transceiver) {
-    const oldDirection = event.transceiver.direction;
-    if (oldDirection !== "sendrecv" && oldDirection !== "recvonly") {
-      console.warn(`⚠️ Fixing transceiver direction: ${oldDirection} → sendrecv`);
-      event.transceiver.direction = "sendrecv";
-    }
-  }
+      // ✅ CRITICAL: Force enable track IMMEDIATELY
+      event.track.enabled = true;
 
-      // ✅ Force enable immediately
-  event.track.enabled = true;
-
-      // ✅ NEW: Monitor track state changes
-      event.track.onmute = () => {
-        console.warn(`⚠️ ${event.track.kind} track muted`);
-      };
-
-      event.track.onunmute = () => {
-        console.log(`✅ ${event.track.kind} track unmuted`);
-      };
-
-      event.track.onended = () => {
-        console.warn(`🛑 ${event.track.kind} track ended`);
-      };
+      // ✅ CRITICAL: Verify transceiver direction
+      if (event.transceiver) {
+        const oldDir = event.transceiver.direction;
+        if (oldDir !== "sendrecv" && oldDir !== "recvonly") {
+          console.warn(`⚠️ Fixing transceiver: ${oldDir} → sendrecv`);
+          event.transceiver.direction = "sendrecv";
+        }
+      }
 
       // ✅ Get or create remote stream
       if (event.streams && event.streams.length > 0) {
         this.remoteStream = event.streams[0];
-        console.log("   Using provided stream:", this.remoteStream.id);
       } else {
         if (!this.remoteStream) {
           this.remoteStream = new MediaStream();
-          console.log("   Created new stream:", this.remoteStream.id);
         }
 
-        // ✅ Check if track already exists
-        const existingTrack = this.remoteStream
+        // Check if track already exists
+        const exists = this.remoteStream
           .getTracks()
           .find((t) => t.id === event.track.id);
-
-        if (!existingTrack) {
+        if (!exists) {
           this.remoteStream.addTrack(event.track);
-          console.log(`   Added ${event.track.kind} track to stream`);
-        } else {
-          console.log(`   Track ${event.track.id} already in stream`);
         }
       }
 
-      // ✅ NEW: Verify stream is active
-      if (!this.remoteStream.active) {
-        console.error("❌ Remote stream is not active!");
-      } else {
-        console.log("   ✅ Remote stream is active");
-      }
+      // ✅ Monitor track state
+      event.track.onmute = () => console.warn(`⚠️ ${event.track.kind} muted`);
+      event.track.onunmute = () =>
+        console.log(`✅ ${event.track.kind} unmuted`);
+      event.track.onended = () => console.warn(`🛑 ${event.track.kind} ended`);
 
-      // ✅ Check if we have both tracks
       const audioTracks = this.remoteStream.getAudioTracks();
       const videoTracks = this.remoteStream.getVideoTracks();
 
       console.log(
-        `   Current tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
+        `   Tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
       );
 
-      // ✅ Fire callback when we have BOTH tracks AND verified
+      // ✅ Fire callback when BOTH tracks present
       if (
         audioTracks.length > 0 &&
         videoTracks.length > 0 &&
@@ -767,36 +697,21 @@ private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
       ) {
         this.callbackFired = true;
 
-        console.log("\n🎉 ===== BOTH TRACKS READY (ENHANCED) =====");
-        console.log("   Stream ID:", this.remoteStream.id);
-        console.log("   Active:", this.remoteStream.active);
+        console.log("🎉 BOTH TRACKS READY");
 
-        // ✅ Force enable all tracks
+        // Force enable all tracks
         this.remoteStream.getTracks().forEach((t) => {
           t.enabled = true;
-          console.log(
-            `      ${t.kind}: enabled=${t.enabled}, muted=${t.muted}, state=${t.readyState}`
-          );
+          console.log(`  ${t.kind}: enabled=${t.enabled}, muted=${t.muted}`);
         });
 
-        // ✅ Final verification log
-        console.log("🔍 Final track states:");
-        this.remoteStream.getTracks().forEach((t) => {
-          console.log(
-            `  ${t.kind}: enabled=${t.enabled}, muted=${t.muted}, state=${t.readyState}`
-          );
-        });
-
-        // ✅ Small delay for stability
+        // Small delay for stability
         setTimeout(() => {
-          console.log("   🚀 Firing callback");
+          console.log("🚀 Firing callback");
           onRemoteStream(this.remoteStream!);
-        }, 150);
-      } else if (audioTracks.length > 0 && videoTracks.length > 0) {
-        console.log("   ⚠️ Both tracks present but callback already fired");
+        }, 100); // ✅ Reduced from 150ms to 100ms
       }
     };
-
     this.peerConnection.addEventListener("track", trackHandler);
 
     // Store cleanup handler
