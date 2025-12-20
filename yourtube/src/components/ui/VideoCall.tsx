@@ -785,6 +785,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("✅ Local video attached");
       }
       // ✅ FIXED: Remote stream handling
+      // ✅ FIXED: Remote stream handling
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
@@ -795,6 +796,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
           }
           remoteStreamReceivedRef.current = true;
 
+          if (!remoteStream || !remoteVideoRef.current) {
+            console.error("❌ Missing stream or video element");
+            return;
+          }
+
           const audioTracks = remoteStream.getAudioTracks();
           const videoTracks = remoteStream.getVideoTracks();
 
@@ -802,50 +808,64 @@ const VideoCall: React.FC<VideoCallProps> = ({
             `📊 Tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
           );
 
-          // ✅ CRITICAL: Force enable ALL tracks
+          // ✅ CRITICAL: Force enable ALL tracks immediately
           remoteStream.getTracks().forEach((track) => {
             track.enabled = true;
-            console.log(`✅ ${track.kind}: enabled`);
+            console.log(
+              `✅ ${track.kind}: ${track.label} enabled=${track.enabled} muted=${track.muted}`
+            );
           });
 
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          // ✅ Wait for tracks to stabilize
+          await new Promise((resolve) => setTimeout(resolve, 500));
 
           // ✅ Setup video element
           const videoEl = remoteVideoRef.current;
-          if (!videoEl) {
-            console.error("❌ No video element!");
-            return;
-          }
 
           // Clean old stream
           if (videoEl.srcObject) {
             const oldStream = videoEl.srcObject as MediaStream;
             oldStream.getTracks().forEach((t) => t.stop());
+            videoEl.srcObject = null;
           }
 
-          // ✅ CRITICAL: Attach stream
+          // ✅ CRITICAL: Attach stream with proper settings
           videoEl.srcObject = remoteStream;
           videoEl.autoplay = true;
           videoEl.playsInline = true;
           videoEl.muted = false; // ✅ MUST be false for audio
           videoEl.volume = 1.0;
+          videoEl.controls = false;
 
           // Wait for metadata
           await new Promise<void>((resolve) => {
             if (videoEl.readyState >= 2) {
+              console.log("✅ Video metadata already loaded");
               resolve();
             } else {
               const handler = () => {
+                console.log("✅ Video metadata loaded");
                 videoEl.removeEventListener("loadedmetadata", handler);
                 resolve();
               };
               videoEl.addEventListener("loadedmetadata", handler);
-              setTimeout(resolve, 5000); // Timeout
+
+              // Timeout after 5 seconds
+              setTimeout(() => {
+                videoEl.removeEventListener("loadedmetadata", handler);
+                resolve();
+              }, 5000);
             }
           });
 
+          // Additional stabilization delay
+          await new Promise((resolve) => setTimeout(resolve, 300));
+
           // ✅ Try to play video
           try {
+            videoEl.volume = 1.0;
+            videoEl.muted = false;
+
             await videoEl.play();
             console.log("✅ Video playing!");
             setConnectionStatus("connected");
@@ -853,13 +873,38 @@ const VideoCall: React.FC<VideoCallProps> = ({
             setError(null);
           } catch (err: any) {
             console.error("❌ Video play failed:", err.name);
-            setShowPlayButton(true);
-            setError("🎬 Click play to start");
+
+            if (
+              err.name === "NotAllowedError" ||
+              err.name === "NotSupportedError"
+            ) {
+              setShowPlayButton(true);
+              setError("🎬 Click play to start");
+            } else {
+              // Retry after 1 second
+              setTimeout(async () => {
+                try {
+                  videoEl.volume = 1.0;
+                  videoEl.muted = false;
+                  await videoEl.play();
+                  console.log("✅ Video retry succeeded");
+                  setShowPlayButton(false);
+                  setConnectionStatus("connected");
+                } catch (retryErr) {
+                  console.error("❌ Video retry failed:", retryErr);
+                  setShowPlayButton(true);
+                }
+              }, 1000);
+            }
           }
 
           // ✅ Setup audio (separate element for better control)
           if (audioTracks.length > 0) {
+            console.log("🔊 Setting up audio...");
+            await new Promise((resolve) => setTimeout(resolve, 500));
             await setupRemoteAudio(remoteStream);
+          } else {
+            console.error("❌ NO AUDIO TRACKS!");
           }
 
           console.log("===== SETUP COMPLETE =====\n");
@@ -867,6 +912,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         (candidate: RTCIceCandidate) => {
           const socket = getSocket();
           socket.emit("ice-candidate", roomId, candidate);
+          console.log("❄️ ICE candidate sent");
         }
       );
       // Add local stream
