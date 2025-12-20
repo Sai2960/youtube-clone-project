@@ -1198,6 +1198,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .toString()
       .padStart(2, "0")}`;
   };
+
   // ✅ Show initial interaction prompt
   if (!userInteracted) {
     return (
@@ -1274,6 +1275,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           setShowPlayButton(true);
         }}
       />
+
       {/* Connecting Overlay */}
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
@@ -1285,6 +1287,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         </div>
       )}
+
       {/* Local Video (PiP) */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
         <video
@@ -1300,6 +1303,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         )}
       </div>
+
       {/* Top Bar */}
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 safe-area-top">
         <div className="flex items-center justify-between gap-2">
@@ -1334,7 +1338,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           )}
         </div>
       </div>
-      # Part 18: JSX Return - Main Video Call UI (Part 2 - Final) ```typescript
+
       {/* Play Button Overlay */}
       {showPlayButton && (
         <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
@@ -1349,12 +1353,14 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </button>
         </div>
       )}
+
       {/* Error Banner */}
       {error && !showPlayButton && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
           <p className="font-semibold">{error}</p>
         </div>
       )}
+
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 safe-area-bottom">
         <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
