@@ -704,7 +704,6 @@ const setupRemoteAudio = async (stream: MediaStream) => {
 
     return () => clearInterval(monitor);
   }, [connectionStatus]);
-
 const initializeCall = async () => {
   try {
     setError(null);
@@ -715,11 +714,10 @@ const initializeCall = async () => {
       throw new Error("User not authenticated");
     }
 
-    // ✅ CRITICAL: Initialize socket if not already done
-    if (!getSocket || typeof getSocket !== 'function') {
-      throw new Error("Socket module not loaded");
+    // ✅ NEW: Prevent navigation during initialization
+    if (typeof window !== 'undefined') {
+      window.onbeforeunload = () => "Call is connecting...";
     }
-
 // ✅ CRITICAL: Wait for socket connection BEFORE proceeding
 let socket;
 try {
@@ -926,12 +924,13 @@ setTimeout(async () => {
     }
   };
 
-  const cleanup = (emitEvent: boolean = true) => {
-    console.log("🧹 Cleanup...");
-
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-    }
+const cleanup = (emitEvent: boolean = true) => {
+  console.log("🧹 Cleanup...");
+  
+  // ✅ NEW: Remove navigation blocker
+  if (typeof window !== 'undefined') {
+    window.onbeforeunload = null;
+  }
 
     if (isRecording && recordingServiceRef.current) {
       recordingServiceRef.current.stopRecording();

@@ -11,21 +11,18 @@ const getSocketURL = () => {
     return "http://localhost:5000";
   }
 
-  // ✅ HARDCODED FALLBACK for production
   const PRODUCTION_URL = "https://youtube-clone-project-q3pd.onrender.com";
-
-  // ✅ CRITICAL FIX: Check actual deployment first
   const hostname = window.location.hostname;
   
-  // Local development
+  // ✅ Local development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
-    console.log("🏠 Local development detected");
+    console.log("🏠 Local environment");
     return "http://localhost:5000";
   }
 
-  // Production deployment (Vercel/Netlify/etc)
-  console.log("🌐 Production detected:", hostname);
-  console.log("🔧 Using Render backend:", PRODUCTION_URL);
+  // ✅ Production (Vercel/Netlify)
+  console.log("🌐 Production environment:", hostname);
+  console.log("🔧 Using backend:", PRODUCTION_URL);
   return PRODUCTION_URL;
 };
 

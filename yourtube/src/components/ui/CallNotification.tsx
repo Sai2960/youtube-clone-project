@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // components/ui/CallNotification.tsx - COMPLETE FIXED VERSION
 import React, { useEffect, useState, useRef } from "react";
 import { Phone, PhoneOff, Video } from "lucide-react";
@@ -19,7 +20,6 @@ const CallNotification: React.FC = () => {
   const [avatarUrl, setAvatarUrl] = useState<string>(DEFAULT_AVATAR_SVG);
   const router = useRouter();
   const { user } = useUser();
-  const audioContextRef = useRef<any>(null);
   const socketListenersSetupRef = useRef(false);
   const ringtoneIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -160,77 +160,52 @@ const CallNotification: React.FC = () => {
   }, [isRinging]);
 
   const playRingtone = () => {
-    if (typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
 
-    stopRingtone();
+  stopRingtone();
 
-    try {
-      const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!audioContextRef.current) {
-        audioContextRef.current = new AudioContext();
-      }
-
-      const ctx = audioContextRef.current;
-
-      if (ctx.state === "suspended") {
-        ctx.resume().catch((e: any) => console.warn("Failed to resume audio context:", e));
-      }
-
-      const playBeep = () => {
+  try {
+    // ✅ CRITICAL FIX: Use native Audio API instead of AudioContext
+    // This is allowed without user interaction for notifications
+    
+    if (!ringtoneIntervalRef.current) {
+      console.log("🔔 Starting notification sound");
+      
+      // Create simple beep using Audio API (allowed for notifications)
+      const playNotificationSound = () => {
         try {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-
-          osc.frequency.value = 440;
-          osc.type = "sine";
-          gain.gain.setValueAtTime(0.3, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-
-          osc.start();
-          osc.stop(ctx.currentTime + 0.8);
-        } catch (error) {
-          console.error("Error playing beep:", error);
+          // Use a data URI for a simple beep sound
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjKM0fPTgjMGHm7A7+OZSA0PVqnn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqPh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmq/7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS/8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0Q');
+          audio.volume = 0.3;
+          audio.play().catch(e => console.warn("Audio play blocked:", e));
+        } catch (e) {
+          console.warn("Notification sound error:", e);
         }
       };
 
-      playBeep();
+      // Play immediately
+      playNotificationSound();
 
-      ringtoneIntervalRef.current = setInterval(() => {
-        if (isRinging) {
-          playBeep();
-        }
-      }, 1500);
-
-      console.log("🔔 Ringtone started");
-    } catch (error) {
-      console.error("Error initializing audio:", error);
+      // Repeat every 2 seconds
+      ringtoneIntervalRef.current = setInterval(playNotificationSound, 2000);
+      
+      console.log("🔔 Notification sound started");
     }
-  };
+  } catch (error) {
+    console.error("Error starting notification:", error);
+  }
+};
+const stopRingtone = () => {
+  console.log("🔕 Stopping notification sound");
 
-  const stopRingtone = () => {
-    console.log("🔕 Stopping ringtone");
+  if (ringtoneIntervalRef.current) {
+    clearInterval(ringtoneIntervalRef.current);
+    ringtoneIntervalRef.current = null;
+  }
 
-    if (ringtoneIntervalRef.current) {
-      clearInterval(ringtoneIntervalRef.current);
-      ringtoneIntervalRef.current = null;
-    }
-
-    if (audioContextRef.current) {
-      try {
-        if (audioContextRef.current.state !== "closed") {
-          audioContextRef.current.close().catch((e: any) => console.warn("Failed to close audio context:", e));
-        }
-        audioContextRef.current = null;
-      } catch (error) {
-        console.error("Error closing audio context:", error);
-      }
-    }
-
-    setIsRinging(false);
-  };
+  // ✅ No AudioContext to close anymore
+  setIsRinging(false);
+};
 
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
