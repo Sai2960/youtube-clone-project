@@ -737,10 +737,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
         throw new Error("User not authenticated");
       }
 
-      // ✅ NEW: Prevent navigation during initialization
+      // ✅ Prevent navigation during initialization
       if (typeof window !== "undefined") {
         window.onbeforeunload = () => "Call is connecting...";
       }
+
       // ✅ CRITICAL: Wait for socket connection BEFORE proceeding
       let socket;
       try {
@@ -760,6 +761,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
       // Initialize services
       webrtcServiceRef.current = new WebRTCService();
       recordingServiceRef.current = new RecordingService();
+      // ✅ Expose peer connection to window for debugging
+      if (typeof window !== "undefined") {
+        (window as any).peerConnection =
+          webrtcServiceRef.current.getPeerConnection();
+        console.log("✅ Peer connection exposed to window.peerConnection");
+      }
 
       // ✅ CRITICAL: Get media stream FIRST
       console.log("🎤 Acquiring media stream...");
@@ -768,7 +775,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       if (!stream) {
         throw new Error("Failed to get media stream");
       }
-
       console.log("✅ Media stream acquired:", {
         id: stream.id,
         audio: stream.getAudioTracks().length,
@@ -784,16 +790,20 @@ const VideoCall: React.FC<VideoCallProps> = ({
         await localVideoRef.current.play().catch(console.error);
         console.log("✅ Local video attached");
       }
-      // ✅ FIXED: Remote stream handling
-      // ✅ FIXED: Remote stream handling
+      // ✅ CRITICAL FIX: Setup event listeners BEFORE adding tracks
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
           if (remoteStreamReceivedRef.current) {
-            console.log("⚠️ Already processed");
+            console.log("⚠️ Already processed, skipping");
             return;
           }
+
+          console.log("🔍 Remote stream details:");
+          console.log("   Stream ID:", remoteStream.id);
+          console.log("   Active:", remoteStream.active);
+
           remoteStreamReceivedRef.current = true;
 
           if (!remoteStream || !remoteVideoRef.current) {
@@ -804,22 +814,50 @@ const VideoCall: React.FC<VideoCallProps> = ({
           const audioTracks = remoteStream.getAudioTracks();
           const videoTracks = remoteStream.getVideoTracks();
 
-          console.log(
-            `📊 Tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
-          );
+          console.log(`📊 Tracks received:`);
+          console.log(`   Audio tracks: ${audioTracks.length}`);
+          console.log(`   Video tracks: ${videoTracks.length}`);
 
-          // ✅ CRITICAL: Force enable ALL tracks immediately
-          remoteStream.getTracks().forEach((track) => {
-            track.enabled = true;
-            console.log(
-              `✅ ${track.kind}: ${track.label} enabled=${track.enabled} muted=${track.muted}`
-            );
+          audioTracks.forEach((track, i) => {
+            console.log(`   Audio ${i}:`, track.label, {
+              enabled: track.enabled,
+              muted: track.muted,
+              readyState: track.readyState,
+            });
           });
 
-          // ✅ Wait for tracks to stabilize
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          if (audioTracks.length === 0 || videoTracks.length === 0) {
+            console.error("❌ MISSING TRACKS!");
+            setError("Remote stream missing audio or video");
+            return;
+          }
+
+          // Mark as received
+          remoteStreamReceivedRef.current = true;
+
+          videoTracks.forEach((track, i) => {
+            console.log(`   Video ${i}:`, track.label, {
+              enabled: track.enabled,
+              muted: track.muted,
+              readyState: track.readyState,
+            });
+          });
+
+          // ✅ Force enable ALL tracks immediately
+          remoteStream.getTracks().forEach((track) => {
+            track.enabled = true;
+            console.log(`✅ Enabled ${track.kind}: ${track.label}`);
+          });
+
+          // Wait for stabilization
+          await new Promise((resolve) => setTimeout(resolve, 300));
 
           // ✅ Setup video element
+          if (!remoteVideoRef.current) {
+            console.error("❌ Remote video element not found!");
+            return;
+          }
+
           const videoEl = remoteVideoRef.current;
 
           // Clean old stream
@@ -829,13 +867,13 @@ const VideoCall: React.FC<VideoCallProps> = ({
             videoEl.srcObject = null;
           }
 
-          // ✅ CRITICAL: Attach stream with proper settings
+          // Attach new stream
           videoEl.srcObject = remoteStream;
           videoEl.autoplay = true;
           videoEl.playsInline = true;
-          videoEl.muted = false; // ✅ MUST be false for audio
+          videoEl.muted = false; // ✅ Must be false for audio
           videoEl.volume = 1.0;
-          videoEl.controls = false;
+          console.log("✅ Remote stream attached to video element");
 
           // Wait for metadata
           await new Promise<void>((resolve) => {
@@ -849,14 +887,31 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 resolve();
               };
               videoEl.addEventListener("loadedmetadata", handler);
-
-              // Timeout after 5 seconds
               setTimeout(() => {
                 videoEl.removeEventListener("loadedmetadata", handler);
+                console.warn("⚠️ Metadata load timeout");
                 resolve();
               }, 5000);
             }
           });
+
+          // Try to play video
+          try {
+            await videoEl.play();
+            console.log("✅ Video playing!");
+            setConnectionStatus("connected");
+            setShowPlayButton(false);
+            setError(null);
+          } catch (err: any) {
+            console.error("❌ Video play failed:", err.name);
+            setShowPlayButton(true);
+            setError("Click play to start");
+          }
+
+          // ✅ Setup audio element (separate for better control)
+          console.log("🔊 Setting up separate audio element...");
+          await setupRemoteAudio(remoteStream);
+          console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
 
           // Additional stabilization delay
           await new Promise((resolve) => setTimeout(resolve, 300));
@@ -910,11 +965,19 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("===== SETUP COMPLETE =====\n");
         },
         (candidate: RTCIceCandidate) => {
+          console.log("❄️ Sending ICE candidate");
           const socket = getSocket();
           socket.emit("ice-candidate", roomId, candidate);
-          console.log("❄️ ICE candidate sent");
         }
       );
+      // ✅ CRITICAL: Add local stream to peer connection
+      console.log("📤 Adding local stream to peer connection...");
+      await webrtcServiceRef.current.addLocalStreamToPeer();
+      console.log("✅ Local stream added");
+
+      // Join room
+      console.log("🚪 Joining room:", roomId);
+      socket.emit("join-room", roomId, user?._id || socket.id);
       // Add local stream
       // Add local stream
       webrtcServiceRef.current.addLocalStreamToPeer();
@@ -973,10 +1036,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
       // Initiator flow
       if (isInitiator) {
+        console.log("📝 Waiting for both users to be ready...");
+
         await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => resolve(), 10000);
+          const timeout = setTimeout(() => {
+            console.warn("⚠️ Timeout waiting for both users");
+            resolve();
+          }, 10000);
 
           const handleBothReady = () => {
+            console.log("✅ Both users ready!");
             clearTimeout(timeout);
             socket.off("both-users-ready", handleBothReady);
             resolve();
@@ -986,21 +1055,25 @@ const VideoCall: React.FC<VideoCallProps> = ({
         });
 
         try {
+          console.log("📝 Creating offer...");
           const offer = await webrtcServiceRef.current.createOffer();
+          console.log("📤 Sending offer to room:", roomId);
           socket.emit("offer", roomId, offer);
-          console.log("📤 Offer sent");
+          console.log("✅ Offer sent");
         } catch (error) {
-          console.error("❌ Offer error:", error);
+          console.error("❌ Offer creation failed:", error);
+          setError("Failed to create offer");
         }
+      } else {
+        console.log("👂 Waiting to receive offer from initiator...");
       }
 
-      console.log("===== INIT COMPLETE =====\n");
+      console.log("===== INITIALIZATION COMPLETE =====\n");
     } catch (error: any) {
-      console.error("❌ Init error:", error);
-      setError(error.message || "Init failed");
+      console.error("❌ Initialization failed:", error);
+      setError(error.message || "Failed to initialize call");
     }
   };
-
   const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup...");
 
