@@ -439,28 +439,29 @@ app.get("/uploads/videos/:filename", (req, res) => {
     fs.createReadStream(videoPath).pipe(res);
   }
 });
+// ✅ ENHANCED CORS - COMPLETE FIX
 app.use((req, res, next) => {
   const origin = req.headers.origin;
+  
+  // Allow all origins in production (or restrict to your Vercel domain)
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD'
+  );
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, Range, If-None-Match, If-Modified-Since, X-Auth-Token'
+  );
+  res.setHeader(
+    'Access-Control-Expose-Headers',
+    'Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag, X-Request-Id'
+  );
 
-  // ✅ CRITICAL: Set permissive CORS for ALL requests
-  res.setHeader("Access-Control-Allow-Origin", origin || "*");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
-  );
-  res.setHeader("Access-Control-Max-Age", "86400");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since, X-Auth-Token, Range"
-  );
-  res.setHeader(
-    "Access-Control-Expose-Headers",
-    "Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag"
-  );
-
-  // Handle preflight
-  if (req.method === "OPTIONS") {
+  // ✅ CRITICAL: Handle OPTIONS preflight
+  if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
 
