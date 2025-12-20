@@ -167,41 +167,49 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
       return;
     }
 
-    // ✅ If already connected and registered, resolve immediately
-    if (socket.connected && isRegistered) {
-      console.log("✅ Socket already ready");
+    // ✅ CRITICAL FIX: If connected, resolve immediately (don't wait for registration flag)
+    // The registration is async but doesn't block the socket from working
+    if (socket.connected) {
+      console.log("✅ Socket connected - resolving immediately");
+      
+      // Trigger registration if not done yet, but don't wait for it
+      if (!isRegistered && currentUserId) {
+        console.log("🔄 Triggering registration in background");
+        socket.emit("register-user", currentUserId);
+      }
+      
       resolve(socket);
       return;
     }
 
     console.log("⏳ Waiting for socket connection...");
-    console.log("   Current state: connected =", socket.connected, "registered =", isRegistered);
+    console.log("   Current state: connected =", socket.connected);
 
     const startTime = Date.now();
     
     const checkInterval = setInterval(() => {
       const elapsed = Date.now() - startTime;
       
-      if (socket?.connected && isRegistered) {
-        console.log(`✅ Socket ready after ${elapsed}ms`);
+      if (socket?.connected) {
+        console.log(`✅ Socket connected after ${elapsed}ms`);
         clearInterval(checkInterval);
+        
+        // Trigger registration in background
+        if (!isRegistered && currentUserId) {
+          socket.emit("register-user", currentUserId);
+        }
+        
         resolve(socket);
       } else if (elapsed > maxWaitMs) {
         clearInterval(checkInterval);
-        const msg = `Socket timeout after ${elapsed}ms (connected: ${socket?.connected}, registered: ${isRegistered})`;
+        const msg = `Socket connection timeout after ${elapsed}ms`;
         console.error("❌", msg);
         reject(new Error(msg));
       } else if (elapsed % 1000 === 0) {
         // Log every second
-        console.log(`   Still waiting... ${Math.floor(elapsed / 1000)}s (connected: ${socket?.connected}, registered: ${isRegistered})`);
+        console.log(`   Still waiting... ${Math.floor(elapsed / 1000)}s (connected: ${socket?.connected})`);
       }
     }, 100);
-
-    // ✅ Also try to trigger registration if connected but not registered
-    if (socket?.connected && !isRegistered && currentUserId) {
-      console.log("🔄 Triggering re-registration");
-      socket.emit("register-user", currentUserId);
-    }
   });
 };
 
