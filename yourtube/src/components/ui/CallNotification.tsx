@@ -159,40 +159,21 @@ const CallNotification: React.FC = () => {
     }
   }, [isRinging]);
 
-  const playRingtone = () => {
+const playRingtone = () => {
   if (typeof window === "undefined") return;
 
   stopRingtone();
 
   try {
-    // ✅ CRITICAL FIX: Use native Audio API instead of AudioContext
-    // This is allowed without user interaction for notifications
+    console.log("🔔 Call notification received (silent until interaction)");
     
-    if (!ringtoneIntervalRef.current) {
-      console.log("🔔 Starting notification sound");
-      
-      // Create simple beep using Audio API (allowed for notifications)
-      const playNotificationSound = () => {
-        try {
-          // Use a data URI for a simple beep sound
-          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjKM0fPTgjMGHm7A7+OZSA0PVqnn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqPh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmq/7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS/8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0Q');
-          audio.volume = 0.3;
-          audio.play().catch(e => console.warn("Audio play blocked:", e));
-        } catch (e) {
-          console.warn("Notification sound error:", e);
-        }
-      };
-
-      // Play immediately
-      playNotificationSound();
-
-      // Repeat every 2 seconds
-      ringtoneIntervalRef.current = setInterval(playNotificationSound, 2000);
-      
-      console.log("🔔 Notification sound started");
-    }
+    // ✅ CRITICAL FIX: Don't play audio automatically
+    // The browser will block it anyway without user interaction
+    // Instead, just show the notification UI
+    
+    // The audio will play when user interacts with Accept/Reject buttons
   } catch (error) {
-    console.error("Error starting notification:", error);
+    console.error("Error showing notification:", error);
   }
 };
 const stopRingtone = () => {
@@ -207,16 +188,22 @@ const stopRingtone = () => {
   setIsRinging(false);
 };
 
-  const handleAcceptCall = async () => {
-    if (!incomingCall) return;
+const handleAcceptCall = async () => {
+  if (!incomingCall) return;
 
+  try {
+    console.log("\n✅ ===== ACCEPTING CALL =====");
+    
+    // ✅ NOW it's safe to play audio (user clicked Accept button)
     try {
-      console.log("\n✅ ===== ACCEPTING CALL =====");
-      console.log("   Call ID:", incomingCall.callId);
-      console.log("   Room ID:", incomingCall.roomId);
-      console.log("   From:", incomingCall.name);
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjKM0fPTgjMGHm7A7+OZSA0PVqnn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqPh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmq/7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS/8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0Q');
+      audio.volume = 0.3;
+      audio.play(); // This will work because user just clicked
+    } catch (e) {
+      // Silent fail is OK
+    }
 
-      stopRingtone();
+    stopRingtone();
 
       if (isSocketConnected()) {
         try {
