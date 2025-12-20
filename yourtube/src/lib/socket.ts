@@ -71,33 +71,37 @@ export const initializeSocket = (userId: string): Socket => {
 
   const isSecure = SOCKET_URL.startsWith("https");
 
-  socket = io(SOCKET_URL, {
-    transports: ["polling", "websocket"],
-    upgrade: true,
-    reconnection: true,
-    reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    timeout: 30000,
-    autoConnect: true,
-    withCredentials: true,
-    secure: isSecure,
-    rejectUnauthorized: false,
-    query: { userId },
-    path: "/socket.io/",
-  });
+socket = io(SOCKET_URL, {
+  transports: ["polling", "websocket"],
+  upgrade: true,
+  reconnection: true,
+  reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 30000,
+  autoConnect: true,
+  withCredentials: true,
+  secure: isSecure,
+  rejectUnauthorized: false,
+  query: { userId },
+  path: "/socket.io/",
+});
 
-  // Connection handlers
-  socket.on("connect", () => {
-    console.log("✅ Socket connected:", socket?.id);
-    console.log("   Transport:", socket?.io.engine.transport.name);
-    reconnectAttempts = 0;
+// ✅ CRITICAL: Force immediate connection attempt
+console.log("🔄 Forcing socket connection...");
+socket.connect();
 
-    if (userId && socket) {
-      socket.emit("register-user", userId);
-    }
-  });
+// Connection handlers
+socket.on("connect", () => {
+  console.log("✅ Socket connected:", socket?.id);
+  console.log("   Transport:", socket?.io.engine.transport.name);
+  reconnectAttempts = 0;
 
+  if (userId && socket) {
+    console.log("📝 Registering user:", userId);
+    socket.emit("register-user", userId);
+  }
+});
   socket.on("user-registered", (data) => {
     console.log("✅ User registration confirmed:", data);
     isRegistered = true;
@@ -149,21 +153,47 @@ export const isSocketConnected = (): boolean => {
 
 export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
   return new Promise((resolve, reject) => {
-    if (socket?.connected && isRegistered) {
+    // ✅ CRITICAL FIX: Check if socket exists first
+    if (!socket) {
+      reject(new Error("Socket not initialized. Call initializeSocket first."));
+      return;
+    }
+
+    // ✅ If already connected and registered, resolve immediately
+    if (socket.connected && isRegistered) {
+      console.log("✅ Socket already ready");
       resolve(socket);
       return;
     }
 
+    console.log("⏳ Waiting for socket connection...");
+    console.log("   Current state: connected =", socket.connected, "registered =", isRegistered);
+
     const startTime = Date.now();
+    
     const checkInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      
       if (socket?.connected && isRegistered) {
+        console.log(`✅ Socket ready after ${elapsed}ms`);
         clearInterval(checkInterval);
         resolve(socket);
-      } else if (Date.now() - startTime > maxWaitMs) {
+      } else if (elapsed > maxWaitMs) {
         clearInterval(checkInterval);
-        reject(new Error("Socket connection timeout - backend may be down"));
+        const msg = `Socket timeout after ${elapsed}ms (connected: ${socket?.connected}, registered: ${isRegistered})`;
+        console.error("❌", msg);
+        reject(new Error(msg));
+      } else if (elapsed % 1000 === 0) {
+        // Log every second
+        console.log(`   Still waiting... ${Math.floor(elapsed / 1000)}s (connected: ${socket?.connected}, registered: ${isRegistered})`);
       }
     }, 100);
+
+    // ✅ Also try to trigger registration if connected but not registered
+    if (socket?.connected && !isRegistered && currentUserId) {
+      console.log("🔄 Triggering re-registration");
+      socket.emit("register-user", currentUserId);
+    }
   });
 };
 
