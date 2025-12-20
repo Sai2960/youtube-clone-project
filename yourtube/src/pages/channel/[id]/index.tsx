@@ -252,72 +252,35 @@ const ChannelPage = () => {
   // FETCH VIDEOS
   // ============================================================================
 
+  // ✅ FETCH VIDEOS - NO ETAG
   useEffect(() => {
     const fetchVideos = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for videos");
-        return;
-      }
+      if (!id || typeof id !== "string") return;
 
       try {
         setVideosLoading(true);
-        console.log("📹 Fetching videos for channel:", id);
+        console.log("📹 Fetching videos:", id);
 
-        const timestamp = Date.now();
-
-        // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
         const response = await axiosInstance.get(`/video/channel/${id}`, {
           params: {
-            _t: timestamp,
+            _t: Date.now(),
             nocache: "true",
-            mobile: "true",
           },
           headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
             Pragma: "no-cache",
             Expires: "0",
-            // ✅ REMOVED: "If-None-Match" - this was causing CORS error
           },
-          // ✅ CRITICAL: Disable Axios's automatic ETag handling
-          transformRequest: [
-            (data, headers) => {
-              delete headers["If-None-Match"];
-              delete headers["If-Modified-Since"];
-              return data;
-            },
-          ],
-        });
-
-        console.log("📹 Videos API response:", {
-          success: response.data.success,
-          count:
-            response.data.data?.length || response.data.videos?.length || 0,
-          timestamp: response.data.timestamp,
         });
 
         if (response.data.success && Array.isArray(response.data.data)) {
-          console.log("✅ Setting videos:", response.data.data.length);
           setVideos(response.data.data);
           setTimeout(() => setRenderKey((prev) => prev + 1), 100);
-        } else if (
-          response.data.videos &&
-          Array.isArray(response.data.videos)
-        ) {
-          console.log(
-            "✅ Setting videos (alternate):",
-            response.data.videos.length
-          );
-          setVideos(response.data.videos);
-          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
         } else {
-          console.log("⚠️ No videos in response");
           setVideos([]);
         }
       } catch (error: any) {
-        console.error("❌ Error fetching videos:", {
-          message: error.message,
-          status: error.response?.status,
-        });
+        console.error("❌ Videos error:", error.message);
         setVideos([]);
       } finally {
         setVideosLoading(false);
@@ -327,79 +290,41 @@ const ChannelPage = () => {
     const timer = setTimeout(fetchVideos, 150);
     return () => clearTimeout(timer);
   }, [id, refreshKey]);
-  // ============================================================================
-  // FETCH SHORTS
-  // ============================================================================
 
+  // ✅ FETCH SHORTS - NO ETAG
   useEffect(() => {
     const fetchShorts = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for shorts");
-        return;
-      }
+      if (!id || typeof id !== "string") return;
 
       try {
         setShortsLoading(true);
         setShortsError(null);
-        console.log("🎬 Fetching shorts for channel:", id);
+        console.log("🎬 Fetching shorts:", id);
 
-        const timestamp = Date.now();
-
-        // ✅ CRITICAL FIX: Remove if-none-match header
         const response = await axiosInstance.get(`/shorts/channel/${id}`, {
           params: {
             page: 1,
             limit: 100,
-            _t: timestamp,
+            _t: Date.now(),
             nocache: "true",
-            mobile: "true",
           },
           headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
             Pragma: "no-cache",
             Expires: "0",
-            // ✅ REMOVED: "If-None-Match" - this was causing CORS error
           },
-          // ✅ CRITICAL: Disable Axios's automatic ETag handling
-          transformRequest: [
-            (data, headers) => {
-              delete headers["If-None-Match"];
-              delete headers["If-Modified-Since"];
-              return data;
-            },
-          ],
-        });
-
-        console.log("🎬 Shorts API response:", {
-          success: response.data.success,
-          count:
-            response.data.data?.length || response.data.shorts?.length || 0,
-          timestamp: response.data.timestamp,
         });
 
         if (response.data.success) {
           const fetchedShorts =
             response.data.data || response.data.shorts || [];
-          console.log("✅ Setting shorts:", fetchedShorts.length);
-
-          const processedShorts = fetchedShorts.map((short: any) => ({
-            ...short,
-            thumbnailUrl: short.thumbnailUrl || short.thumbnail,
-            videoUrl: short.videoUrl || short.video,
-          }));
-
-          setShorts(processedShorts);
+          setShorts(fetchedShorts);
           setTimeout(() => setRenderKey((prev) => prev + 1), 100);
         } else {
-          console.log("⚠️ No shorts in response");
           setShorts([]);
         }
       } catch (error: any) {
-        console.error("❌ Error fetching shorts:", {
-          message: error.message,
-          status: error.response?.status,
-        });
-
+        console.error("❌ Shorts error:", error.message);
         if (error.response?.status !== 404) {
           setShortsError("Failed to load shorts");
         }
@@ -560,7 +485,7 @@ const ChannelPage = () => {
           onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
 
-   {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE, NO OVERLAPPING */}
+        {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE, NO OVERLAPPING */}
         {channel && isMounted && (
           <div
             ref={infoBarRef}
@@ -648,7 +573,10 @@ const ChannelPage = () => {
             UPLOAD SECTION - OWN CHANNEL ONLY
             ============================================================================ */}
         {isOwnChannel && (
-          <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-0 max-w-7xl mx-auto" style={{ position: "relative", zIndex: 5 }}>
+          <div
+            className="px-4 sm:px-6 pb-6 sm:pb-8 pt-0 max-w-7xl mx-auto"
+            style={{ position: "relative", zIndex: 5 }}
+          >
             <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
               {/* Upload Tabs */}
               <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide bg-white dark:bg-gray-800">

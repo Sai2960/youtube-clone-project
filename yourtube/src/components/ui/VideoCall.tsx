@@ -270,93 +270,97 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const audioContextRef = useRef<AudioContext | null>(null);
 
   // ✅ CRITICAL FIX: Persistent audio element setup
+  // ✅ PRODUCTION-READY: Remote audio setup
   const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 Setting up remote audio (PRODUCTION FIX v2)");
+    console.log("🔊 Setting up remote audio (FINAL FIX)");
 
     const audioTracks = stream.getAudioTracks();
     if (audioTracks.length === 0) {
-      console.warn("⚠️ No audio tracks in remote stream");
+      console.warn("⚠️ No audio tracks");
       return;
     }
-    // Force enable audio tracks
+
+    // Force enable
     audioTracks.forEach((track) => {
       track.enabled = true;
       console.log(
-        `🎤 Audio track: ${track.label}, enabled=${track.enabled}, muted=${track.muted}`
+        `🎤 ${track.label}: enabled=${track.enabled}, muted=${track.muted}`
       );
     });
 
-    // Clean up old audio
+    // Clean old audio
     if (remoteAudioRef.current) {
       try {
         remoteAudioRef.current.pause();
         remoteAudioRef.current.srcObject = null;
         remoteAudioRef.current.remove();
       } catch (e) {
-        console.warn("Error cleaning old audio:", e);
+        console.warn("Cleanup error:", e);
       }
     }
 
-    // Wait for DOM to be ready
     await new Promise((resolve) => setTimeout(resolve, 100));
 
+    // ✅ Create audio element with production settings
     const audioEl = document.createElement("audio");
     audioEl.id = "remote-audio-persistent";
     audioEl.autoplay = true;
     audioEl.setAttribute("playsinline", "true");
     audioEl.muted = false;
     audioEl.volume = 1.0;
-    audioEl.controls = false; // ✅ Hide controls in production
-    audioEl.style.cssText = "position:fixed;left:-9999px;width:1px;height:1px;"; // ✅ Hidden but not display:none
+    audioEl.controls = false;
 
-    // Create isolated audio stream
+    // ✅ CRITICAL: Position off-screen but visible to DOM
+    audioEl.style.cssText =
+      "position:fixed;left:-9999px;width:1px;height:1px;pointer-events:none;";
+
+    // Create audio stream
     const audioStream = new MediaStream(audioTracks);
     audioEl.srcObject = audioStream;
 
-    // Store reference BEFORE appending
+    // Store reference
     remoteAudioRef.current = audioEl;
-    // Append to body
     document.body.appendChild(audioEl);
-    // Setup event handlers
+
+    // Event handlers
     audioEl.oncanplay = () => console.log("✅ Audio ready");
     audioEl.onplay = () => console.log("✅ Audio PLAYING");
 
     audioEl.onpause = () => {
-      console.warn("⚠️ Audio paused unexpectedly");
+      console.warn("⚠️ Audio paused");
       if (!callEndedRef.current && audioEl.srcObject) {
         setTimeout(() => {
-          audioEl.play().catch((e) => console.error("Resume failed:", e));
+          audioEl.play().catch(console.error);
         }, 100);
       }
     };
 
-    audioEl.onerror = (e) => {
-      console.error("❌ Audio error:", audioEl.error);
-    };
-    // Setup AudioContext for production
+    audioEl.onerror = (e) => console.error("❌ Audio error:", audioEl.error);
+
+    // ✅ AudioContext setup (only if available)
     try {
       const AudioContextClass =
         (window as any).AudioContext || (window as any).webkitAudioContext;
 
       if (!AudioContextClass) {
-        console.warn("⚠️ AudioContext not available");
-        // Continue without AudioContext - the audio element might still work
+        console.warn(
+          "⚠️ AudioContext not available - using audio element only"
+        );
       } else {
-        // Close old context if exists
+        // Close old context
         if (audioContextRef.current?.state !== "closed") {
           try {
             await audioContextRef.current?.close();
-          } catch (e) {
-            console.warn("Error closing old context:", e);
-          }
+          } catch (e) {}
         }
+
         // Create new context
         audioContextRef.current = new AudioContextClass({
           latencyHint: "interactive",
           sampleRate: 48000,
         });
 
-        console.log("✅ AudioContext created:", audioContextRef.current.state);
+        console.log("✅ AudioContext:", audioContextRef.current.state);
 
         // Resume if suspended
         if (audioContextRef.current.state === "suspended") {
@@ -364,60 +368,52 @@ const VideoCall: React.FC<VideoCallProps> = ({
           console.log("✅ AudioContext resumed");
         }
 
-        // Build audio pipeline
+        // Build pipeline
         const source =
           audioContextRef.current.createMediaStreamSource(audioStream);
         const gainNode = audioContextRef.current.createGain();
 
-        gainNode.gain.value = 1.5; // ✅ Boost volume slightly for production
+        gainNode.gain.value = 1.5; // Boost volume
 
         source.connect(gainNode);
         gainNode.connect(audioContextRef.current.destination);
 
-        console.log("✅ AudioContext pipeline connected");
+        console.log("✅ Audio pipeline connected");
       }
     } catch (err) {
-      console.error("❌ AudioContext setup failed:", err);
-      // Continue anyway - audio element might work without it
+      console.error("❌ AudioContext failed:", err);
     }
 
-    // Wait a bit then try to play
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // Attempt playback with retry logic
-    let playAttempts = 0;
+    // ✅ Play with retry
+    let attempts = 0;
     const maxAttempts = 3;
 
     const attemptPlay = async (): Promise<boolean> => {
       try {
         await audioEl.play();
-        console.log("✅ Remote audio started successfully");
+        console.log("✅ Audio playing");
         setShowPlayButton(false);
         setError(null);
         return true;
       } catch (err: any) {
-        playAttempts++;
-        console.error(
-          `❌ Audio play attempt ${playAttempts} failed:`,
-          err.name
-        );
+        attempts++;
+        console.error(`❌ Play attempt ${attempts}:`, err.name);
 
         if (err.name === "NotAllowedError") {
           setShowPlayButton(true);
-          setError("🔊 Click play button to enable audio");
+          setError("🔊 Click play to enable audio");
           return false;
         }
 
-        if (playAttempts < maxAttempts) {
-          console.log(`⏳ Retrying in ${playAttempts * 500}ms...`);
-          await new Promise((resolve) =>
-            setTimeout(resolve, playAttempts * 500)
-          );
+        if (attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, attempts * 500));
           return attemptPlay();
         }
 
         setShowPlayButton(true);
-        setError("⚠️ Audio requires interaction - tap play");
+        setError("⚠️ Audio requires interaction");
         return false;
       }
     };
