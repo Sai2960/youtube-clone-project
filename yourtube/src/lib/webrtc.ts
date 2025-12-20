@@ -424,12 +424,15 @@ export class WebRTCService {
       return;
     }
 
-    console.log("\n🔧 Setting up Event Listeners (FIXED)");
+    console.log("\n🔧 Setting up Event Listeners (WORKING VERSION)");
 
     this.callbackFired = false;
 
+    // ✅ WORKING FIX: Create remote stream immediately
+    this.remoteStream = new MediaStream();
+
     // ✅ CRITICAL FIX: Simplified ontrack handler
-    this.peerConnection.ontrack = (event) => {
+    this.peerConnection.addEventListener("track", (event) => {
       console.log("\n📥 ===== TRACK RECEIVED (FIXED) =====");
       console.log("   Kind:", event.track.kind);
       console.log("   Label:", event.track.label);
@@ -484,9 +487,9 @@ export class WebRTCService {
           onRemoteStream(this.remoteStream!);
         }, 100);
       }
-    };
+    });
 
-    this.peerConnection.onicecandidate = (event) => {
+    this.peerConnection.addEventListener("icecandidate", (event) => {
       if (event.candidate) {
         let type = "unknown";
         if (event.candidate.candidate.includes("typ host")) type = "host";
@@ -498,9 +501,9 @@ export class WebRTCService {
         console.log(`❄️ ICE candidate: ${type}`);
         onIceCandidate(event.candidate);
       }
-    };
+    });
 
-    this.peerConnection.oniceconnectionstatechange = () => {
+    this.peerConnection.addEventListener("iceconnectionstatechange", () => {
       const state = this.peerConnection?.iceConnectionState;
       console.log(`🧊 ICE Connection State: ${state}`);
 
@@ -510,9 +513,9 @@ export class WebRTCService {
       } else if (state === "failed") {
         console.error("   ❌ ICE connection failed!");
       }
-    };
+    });
 
-    this.peerConnection.onconnectionstatechange = () => {
+    this.peerConnection.addEventListener("connectionstatechange", () => {
       const state = this.peerConnection?.connectionState;
       console.log(`🔌 Connection State: ${state}`);
 
@@ -521,9 +524,9 @@ export class WebRTCService {
       } else if (state === "failed") {
         console.error("   ❌ Connection failed!");
       }
-    };
+    });
 
-    console.log("✅ Event listeners registered");
+    console.log("✅ Event listeners registered with addEventListener");
   }
   async logConnectionStats(): Promise<void> {
     if (!this.peerConnection) return;
