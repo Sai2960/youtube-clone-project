@@ -271,80 +271,111 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
   // ✅ CRITICAL FIX: Persistent audio element setup
   const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 Setting up remote audio (FIXED)");
+    console.log("🔊 Setting up remote audio (ENHANCED FIX)");
 
     const audioTracks = stream.getAudioTracks();
     if (audioTracks.length === 0) {
-      console.warn("⚠️ No audio tracks");
+      console.warn("⚠️ No audio tracks in remote stream");
       return;
     }
 
-    // Remove old audio element
+    // ✅ Remove old audio element if exists
     if (remoteAudioRef.current) {
       remoteAudioRef.current.pause();
       remoteAudioRef.current.srcObject = null;
       remoteAudioRef.current.remove();
     }
 
-    // Create new persistent audio element
+    // ✅ Create persistent audio element
     const audioEl = document.createElement("audio");
     audioEl.id = "remote-audio-persistent";
     audioEl.autoplay = true;
     audioEl.setAttribute("playsinline", "true");
     audioEl.muted = false;
     audioEl.volume = 1.0;
-    audioEl.style.display = "none"; // ✅ CRITICAL: Hide from UI
+    audioEl.style.display = "none";
 
-    // ✅ CRITICAL: Create isolated audio stream
+    // ✅ Create isolated audio stream
     const audioStream = new MediaStream(audioTracks);
     audioEl.srcObject = audioStream;
 
-    // Store reference
+    // ✅ Store reference and append to body
     remoteAudioRef.current = audioEl;
     document.body.appendChild(audioEl);
-    // ✅ Handle audio events
-    audioEl.oncanplay = () => console.log("✅ Audio can play");
+    // ✅ Setup event listeners for monitoring
+    audioEl.oncanplay = () => console.log("✅ Audio ready to play");
     audioEl.onplay = () => console.log("✅ Audio PLAYING");
     audioEl.onpause = () => {
-      console.warn("⚠️ Audio paused");
+      console.warn("⚠️ Audio paused unexpectedly");
       audioEl.play().catch(console.error);
     };
     audioEl.onerror = (e) => console.error("❌ Audio error:", e);
-
     // ✅ Attempt to play
-    // Try to play
-    try {
-      await audioEl.play();
-      console.log("✅ Remote audio started");
-    } catch (err: any) {
-      console.error("❌ Audio play failed:", err.name);
-      if (err.name === "NotAllowedError") {
-        setShowPlayButton(true);
-        setError("🔊 Tap play to enable audio");
-      }
-    }
 
+    // ✅ CRITICAL: Resume AudioContext if needed
     try {
       const AudioContext =
         (window as any).AudioContext || (window as any).webkitAudioContext;
 
       if (AudioContext) {
         if (audioContextRef.current) {
-          audioContextRef.current.close();
+          if (audioContextRef.current.state === "suspended") {
+            await audioContextRef.current.resume();
+            console.log("✅ Resumed existing AudioContext");
+          }
+        } else {
+          audioContextRef.current = new AudioContext();
+          console.log("✅ Created new AudioContext");
         }
 
-        audioContextRef.current = new AudioContext();
+        // ✅ CRITICAL: Resume if suspended (autoplay policy)
+        if (audioContextRef.current.state === "suspended") {
+          await audioContextRef.current.resume();
+          console.log("✅ AudioContext resumed from suspended state");
+        }
+
         const source =
           audioContextRef.current.createMediaStreamSource(audioStream);
         const analyser = audioContextRef.current.createAnalyser();
+        const gainNode = audioContextRef.current.createGain();
 
+        // ✅ Enhanced routing with gain control
         source.connect(analyser);
-        analyser.connect(audioContextRef.current.destination);
+        analyser.connect(gainNode);
+        gainNode.connect(audioContextRef.current.destination);
+        gainNode.gain.value = 1.0; // Full volume
 
-        console.log("✅ AudioContext connected");
+        console.log("✅ AudioContext pipeline connected:", {
+          state: audioContextRef.current.state,
+          sampleRate: audioContextRef.current.sampleRate,
+          volume: gainNode.gain.value,
+        });
       }
     } catch (err) {
-      console.warn("⚠️ AudioContext setup failed:", err);
+      console.error("❌ AudioContext setup failed:", err);
+    }
+
+    // ✅ Attempt to play with error handling
+    try {
+      await audioEl.play();
+      console.log("✅ Remote audio started successfully");
+    } catch (err: any) {
+      console.error("❌ Audio play failed:", err.name, err.message);
+
+      if (err.name === "NotAllowedError") {
+        setShowPlayButton(true);
+        setError("🔊 Click play button to enable audio");
+      } else {
+        // Try again after a delay
+        setTimeout(async () => {
+          try {
+            await audioEl.play();
+            console.log("✅ Audio play retry succeeded");
+          } catch (retryErr) {
+            console.error("❌ Audio play retry failed:", retryErr);
+          }
+        }, 500);
+      }
     }
   };
 
@@ -402,25 +433,35 @@ const VideoCall: React.FC<VideoCallProps> = ({
   useEffect(() => {
     if (!userInteracted) return;
 
-    const resumeAudioContext = () => {
-      const AudioContext =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
+    // ✅ CRITICAL: Resume all audio contexts on user interaction
+    const resumeAllAudio = async () => {
+      try {
+        const AudioContext =
+          (window as any).AudioContext || (window as any).webkitAudioContext;
 
-      if (AudioContext) {
-        const ctx = new AudioContext();
-        if (ctx.state === "suspended") {
-          ctx.resume().then(() => {
-            console.log("✅ AudioContext resumed");
-            ctx.close();
-          });
-        } else {
-          ctx.close();
+        if (AudioContext) {
+          // Resume any existing context
+          if (audioContextRef.current?.state === "suspended") {
+            await audioContextRef.current.resume();
+            console.log("✅ Resumed AudioContext on user interaction");
+          }
+
+          // Also try resuming the audio element
+          if (remoteAudioRef.current?.paused) {
+            try {
+              await remoteAudioRef.current.play();
+              console.log("✅ Resumed audio element on user interaction");
+            } catch (err) {
+              console.warn("⚠️ Could not resume audio element:", err);
+            }
+          }
         }
+      } catch (err) {
+        console.error("❌ Error resuming audio:", err);
       }
     };
 
-    const timer = setTimeout(resumeAudioContext, 1000);
-    return () => clearTimeout(timer);
+    resumeAllAudio();
   }, [userInteracted]);
 
   // Socket event handlers
@@ -585,12 +626,13 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, [roomId, userInteracted]);
 
   // Audio monitoring
+  // ✅ Monitor connection and track states
   useEffect(() => {
     if (connectionStatus !== "connected" || !webrtcServiceRef.current) return;
 
     const monitor = setInterval(async () => {
+      // Check audio element
       const audioEl = remoteAudioRef.current;
-
       if (audioEl) {
         if (audioEl.paused) {
           console.log("⚠️ Audio paused, resuming...");
@@ -600,8 +642,48 @@ const VideoCall: React.FC<VideoCallProps> = ({
             console.error("❌ Resume failed:", err);
           }
         }
+
+        console.log("🔊 Audio state:", {
+          paused: audioEl.paused,
+          volume: audioEl.volume,
+          muted: audioEl.muted,
+          srcObject: !!audioEl.srcObject,
+        });
       }
 
+      // Check AudioContext
+      if (audioContextRef.current) {
+        if (audioContextRef.current.state === "suspended") {
+          console.warn("⚠️ AudioContext suspended, resuming...");
+          try {
+            await audioContextRef.current.resume();
+          } catch (err) {
+            console.error("❌ AudioContext resume failed:", err);
+          }
+        }
+
+        console.log("🎵 AudioContext state:", audioContextRef.current.state);
+      }
+
+      // Check video element
+      if (remoteVideoRef.current) {
+        const video = remoteVideoRef.current;
+        console.log("📹 Video state:", {
+          paused: video.paused,
+          muted: video.muted,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight,
+          readyState: video.readyState,
+          srcObject: !!video.srcObject,
+        });
+
+        if (video.paused && !callEndedRef.current) {
+          console.warn("⚠️ Video paused unexpectedly, resuming...");
+          video.play().catch(console.error);
+        }
+      }
+
+      // Check connection stats
       if (webrtcServiceRef.current) {
         await webrtcServiceRef.current.logConnectionStats();
       }
@@ -813,16 +895,23 @@ const VideoCall: React.FC<VideoCallProps> = ({
       recordingServiceRef.current.stopRecording();
     }
 
-    // Clean remote audio
     if (remoteAudioRef.current) {
       remoteAudioRef.current.pause();
       if (remoteAudioRef.current.srcObject) {
         const stream = remoteAudioRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
+        stream.getTracks().forEach((track) => {
+          track.stop();
+          console.log(`🛑 Stopped ${track.kind} track`);
+        });
       }
       remoteAudioRef.current.srcObject = null;
-      remoteAudioRef.current.remove();
-      remoteAudioRef.current = null;
+      // ✅ DON'T remove from DOM - just hide it
+      remoteAudioRef.current.style.display = "none";
+      // Only nullify reference if truly cleaning up permanently
+      if (callEndedRef.current) {
+        remoteAudioRef.current.remove();
+        remoteAudioRef.current = null;
+      }
     }
 
     // Close AudioContext
@@ -1123,7 +1212,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         id="remote-video"
         autoPlay
         playsInline
-        muted={false} // Video element handles video
+        muted={true} // ✅ ALWAYS muted - audio handled separately
         className="w-full h-full object-cover absolute inset-0"
         style={{
           backgroundColor: "#000",
