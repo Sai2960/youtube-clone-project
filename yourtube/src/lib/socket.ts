@@ -57,41 +57,49 @@ export const initializeSocket = (userId: string): Socket => {
 
   const isSecure = SOCKET_URL.startsWith("https");
 
-socket = io(SOCKET_URL, {
-  transports: ["polling", "websocket"],
-  upgrade: true,
-  reconnection: true,
-  reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  timeout: 30000,
-  autoConnect: true,
-  withCredentials: true,
-  secure: isSecure,
-  rejectUnauthorized: false,
-  query: { userId },
-  path: "/socket.io/",
-});
+  socket = io(SOCKET_URL, {
+    transports: ["polling", "websocket"],
+    upgrade: true,
+    reconnection: true,
+    reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 30000,
+    autoConnect: true,
+    withCredentials: true,
+    secure: isSecure,
+    rejectUnauthorized: false,
+    query: { userId },
+    path: "/socket.io/",
+  });
 
-// ✅ CRITICAL: Force immediate connection attempt
-console.log("🔄 Forcing socket connection...");
-socket.connect();
-// ✅ CRITICAL: Expose socket to window for debugging
-if (typeof window !== 'undefined') {
-  (window as any).__socket = socket;
-  console.log("✅ Socket exposed to window.__socket");
-}
-// Connection handlers
-socket.on("connect", () => {
-  console.log("✅ Socket connected:", socket?.id);
-  console.log("   Transport:", socket?.io.engine.transport.name);
-  reconnectAttempts = 0;
+  // ✅ CRITICAL: Force immediate connection attempt
+  console.log("🔄 Forcing socket connection...");
+  socket.connect();
 
-  if (userId && socket) {
-    console.log("📝 Registering user:", userId);
-    socket.emit("register-user", userId);
+  // ✅ CRITICAL: Expose socket to window for debugging
+  if (typeof window !== 'undefined') {
+    (window as any).__socket = socket;
+    console.log("✅ Socket exposed to window.__socket");
+    
+    // ✅ NEW: Log all socket events
+    socket.onAny((eventName, ...args) => {
+      console.log(`📨 Socket event: ${eventName}`, args);
+    });
   }
-});
+
+  // Connection handlers
+  socket.on("connect", () => {
+    console.log("✅ Socket connected:", socket?.id);
+    console.log("   Transport:", socket?.io.engine.transport.name);
+    reconnectAttempts = 0;
+
+    if (userId && socket) {
+      console.log("📝 Registering user:", userId);
+      socket.emit("register-user", userId);
+    }
+  });
+
   socket.on("user-registered", (data) => {
     console.log("✅ User registration confirmed:", data);
     isRegistered = true;
@@ -100,6 +108,7 @@ socket.on("connect", () => {
   socket.on("connect_error", (error) => {
     console.error("❌ Socket connection error:", error.message);
     console.error("   URL:", SOCKET_URL);
+    console.error("   Stack:", error.stack);
     isRegistered = false;
     reconnectAttempts++;
 
@@ -125,6 +134,15 @@ socket.on("connect", () => {
     if (userId && socket) {
       socket.emit("register-user", userId);
     }
+  });
+
+  // ✅ NEW: Log connection state changes
+  socket.io.on("ping", () => {
+    console.log("🏓 Ping sent");
+  });
+
+  socket.io.on("packet", (packet) => {
+    console.log("📦 Packet:", packet.type, packet.data);
   });
 
   return socket;
