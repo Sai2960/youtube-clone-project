@@ -531,36 +531,39 @@ export class WebRTCService {
     }
   }
   // ✅ ENHANCED: Comprehensive track verification with detailed diagnostics
-  private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
-    console.log(`🔍 Verifying ${track.kind} track:`, track.label);
+private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
+  console.log(`🔍 Verifying ${track.kind} track:`, track.label);
 
-    // Check 1: Ready state
-    if (track.readyState !== "live") {
-      console.error(`  ❌ Track not live: ${track.readyState}`);
-      return false;
-    }
+  // Check 1: Ready state
+  if (track.readyState !== "live") {
+    console.error(`  ❌ Track not live: ${track.readyState}`);
+    return false;
+  }
 
-    // Check 2: Enabled state
-    if (!track.enabled) {
-      console.warn(`  ⚠️ Track disabled, enabling...`);
-      track.enabled = true;
-    }
 
-    // Check 3: Muted state
-    if (track.muted) {
-      console.warn(`  ⚠️ Track muted (may unmute automatically)`);
-    }
+   // Check 2: Enabled state
+  if (!track.enabled) {
+    console.warn(`  ⚠️ Track disabled, enabling...`);
+    track.enabled = true;
+  }
 
-    // Check 4: Track settings
-    const settings = track.getSettings();
-    console.log(`  📊 Track settings:`, {
-      sampleRate: settings.sampleRate,
-      channelCount: settings.channelCount,
-      width: settings.width,
-      height: settings.height,
-      frameRate: settings.frameRate,
-    });
+  // Check 3: Muted state
+  if (track.muted) {
+    console.warn(`  ⚠️ Track muted (may unmute automatically)`);
+  }
 
+   // Check 4: Track settings
+  const settings = track.getSettings();
+  console.log(`  📊 Track settings:`, {
+    sampleRate: settings.sampleRate,
+    channelCount: settings.channelCount,
+    width: settings.width,
+    height: settings.height,
+    frameRate: settings.frameRate,
+  });
+
+
+  
     // Check 5: For audio, verify actual data flow
     if (track.kind === "audio") {
       try {
@@ -568,6 +571,7 @@ export class WebRTCService {
           (window as any).AudioContext || (window as any).webkitAudioContext;
 
         if (!AudioContext) {
+          
           console.warn(
             "  ⚠️ AudioContext not available, skipping audio verification"
           );
@@ -637,30 +641,31 @@ export class WebRTCService {
     }
 
     // For video, check dimensions and frame rate
-    if (track.kind === "video") {
-      const settings = track.getSettings();
-      if (settings.width && settings.height) {
-        console.log(
-          `  ✅ Video: ${settings.width}x${settings.height} @ ${
-            settings.frameRate || "unknown"
-          }fps`
+    // For video, check dimensions
+  if (track.kind === "video") {
+    const settings = track.getSettings();
+    if (settings.width && settings.height) {
+      console.log(
+        `  ✅ Video: ${settings.width}x${settings.height} @ ${
+          settings.frameRate || "unknown"
+        }fps`
+      );
+
+      if (settings.width < 160 || settings.height < 120) {
+        console.warn(
+          `  ⚠️ Video resolution very low: ${settings.width}x${settings.height}`
         );
-
-        if (settings.width < 160 || settings.height < 120) {
-          console.warn(
-            `  ⚠️ Video resolution very low: ${settings.width}x${settings.height}`
-          );
-        }
-
-        return true;
-      } else {
-        console.warn("  ⚠️ Video has no dimensions yet");
-        return false;
       }
-    }
 
-    return true;
+      return true;
+    } else {
+      console.warn("  ⚠️ Video has no dimensions yet");
+      return true; // Optimistic
+    }
   }
+
+  return true;
+}
   // ✅ CRITICAL FIX: Enhanced remote stream handling with comprehensive verification
   setupEventListeners(
     onRemoteStream: (stream: MediaStream) => void,

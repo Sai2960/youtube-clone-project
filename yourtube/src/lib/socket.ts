@@ -90,7 +90,11 @@ socket = io(SOCKET_URL, {
 // ✅ CRITICAL: Force immediate connection attempt
 console.log("🔄 Forcing socket connection...");
 socket.connect();
-
+// ✅ CRITICAL: Expose socket to window for debugging
+if (typeof window !== 'undefined') {
+  (window as any).__socket = socket;
+  console.log("✅ Socket exposed to window.__socket");
+}
 // Connection handlers
 socket.on("connect", () => {
   console.log("✅ Socket connected:", socket?.id);

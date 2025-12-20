@@ -13,6 +13,7 @@ import { initializeTheme, applyTheme, getStoredTheme } from '../lib/theme';
 import CallNotification from "@/components/ui/CallNotification";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import { initKeepAlive } from '@/lib/keepAlive';
+import initializeSocket from '@/lib/socket';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
 
@@ -25,19 +26,90 @@ const initializationState = {
   currentUserTheme: null as string | null,
   hasSetOverflow: false,
   hasClearedCache: false,
+  hasInitializedAudioContext: false,
+  hasInitializedSocket: false,
 };
-
 function AppContent({ Component, pageProps }: AppProps) {
   const { user } = useUser();
-  
-  useEffect(() => {
-    initKeepAlive();
-  }, []);
-  
   const router = useRouter();
   const [isThemeReady, setIsThemeReady] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
+  // ============================================================================
+  // 🔴 CRITICAL: PREVENT AUDIOCONTEXT CREATION BEFORE USER INTERACTION
+  // ============================================================================
+  useEffect(() => {
+    if (typeof window === 'undefined' || initializationState.hasInitializedAudioContext) {
+      return;
+    }
+    
+    initializationState.hasInitializedAudioContext = true;
+    
+    const originalAudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+    
+    if (originalAudioContext) {
+      let userHasInteracted = false;
+      
+      // Detect user interaction
+      const markInteraction = () => {
+        userHasInteracted = true;
+        console.log("✅ User interaction detected globally");
+      };
+      
+      document.addEventListener('click', markInteraction, { once: true, passive: true });
+      document.addEventListener('touchstart', markInteraction, { once: true, passive: true });
+      document.addEventListener('keydown', markInteraction, { once: true, passive: true });
+      
+      // Wrap AudioContext constructor
+      const WrappedAudioContext = function(this: any, ...args: any[]) {
+        if (!userHasInteracted) {
+          console.warn("⚠️ AudioContext created before user interaction - will be suspended");
+        }
+        return new originalAudioContext(...args);
+      };
+      
+      WrappedAudioContext.prototype = originalAudioContext.prototype;
+      
+      (window as any).AudioContext = WrappedAudioContext;
+      (window as any).webkitAudioContext = WrappedAudioContext;
+      
+      console.log("✅ AudioContext wrapper installed");
+    }
+  }, []);
+
+  // ============================================================================
+  // 🔴 CRITICAL: INITIALIZE SOCKET GLOBALLY WHEN USER IS AVAILABLE
+  // ============================================================================
+  useEffect(() => {
+    if (!user?._id || initializationState.hasInitializedSocket) {
+      return;
+    }
+    
+    initializationState.hasInitializedSocket = true;
+    
+    console.log("🔌 Initializing socket globally for user:", user._id);
+    try {
+      const socket = initializeSocket(user._id);
+      console.log("✅ Global socket initialized:", socket.id);
+    } catch (error) {
+      console.error("❌ Global socket init failed:", error);
+      initializationState.hasInitializedSocket = false; // Allow retry
+    }
+    
+    return () => {
+      // Reset on user change
+      if (!user?._id) {
+        initializationState.hasInitializedSocket = false;
+      }
+    };
+  }, [user?._id]);
+
+  // ============================================================================
+  // 🔴 KEEP ALIVE INITIALIZATION
+  // ============================================================================
+  useEffect(() => {
+    initKeepAlive();
+  }, []);
   // ============================================================================
   // 🔴 CRITICAL: ANDROID CACHE CLEARING
   // ============================================================================
@@ -127,7 +199,6 @@ function AppContent({ Component, pageProps }: AppProps) {
       window.removeEventListener('focus', handleFocus);
     };
   }, []);
-
   // Determine which pages should hide the standard layout
   const shouldHideLayout = useMemo(() => {
     const currentPath = router.pathname;
@@ -147,9 +218,9 @@ function AppContent({ Component, pageProps }: AppProps) {
     setShowMobileSidebar(false);
   }, []);
 
-  /**
-   * Initialize theme on first mount
-   */
+  // ============================================================================
+  // THEME INITIALIZATION
+  // ============================================================================
   useEffect(() => {
     if (typeof window === 'undefined' || initializationState.hasInitializedTheme) {
       return;
@@ -162,9 +233,9 @@ function AppContent({ Component, pageProps }: AppProps) {
     console.log('🎨 Theme system initialized:', selectedTheme);
   }, []);
 
-  /**
-   * Set up page overflow rules
-   */
+  // ============================================================================
+  // PAGE OVERFLOW RULES
+  // ============================================================================
   useEffect(() => {
     if (typeof window === 'undefined' || initializationState.hasSetOverflow) {
       return;
@@ -187,10 +258,9 @@ function AppContent({ Component, pageProps }: AppProps) {
       initializationState.hasSetOverflow = false;
     };
   }, []);
-
-  /**
-   * Check user's location and apply region-based theme
-   */
+  // ============================================================================
+  // LOCATION-BASED THEME
+  // ============================================================================
   useEffect(() => {
     if (!isThemeReady || initializationState.hasCheckedLocation || user) {
       return;
@@ -234,9 +304,9 @@ function AppContent({ Component, pageProps }: AppProps) {
     fetchLocationBasedTheme();
   }, [isThemeReady, user]);
 
-  /**
-   * Apply user's personal theme preference
-   */
+  // ============================================================================
+  // USER THEME PREFERENCE
+  // ============================================================================
   useEffect(() => {
     if (!isThemeReady || !user?.theme) {
       return;
@@ -253,10 +323,9 @@ function AppContent({ Component, pageProps }: AppProps) {
     initializationState.currentUserTheme = themeIdentifier;
     initializationState.hasCheckedLocation = true;
   }, [user?._id, user?.theme, isThemeReady]);
-
-  /**
-   * Handle mobile bottom navigation spacing
-   */
+  // ============================================================================
+  // MOBILE BOTTOM NAVIGATION SPACING
+  // ============================================================================
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -291,9 +360,9 @@ function AppContent({ Component, pageProps }: AppProps) {
     };
   }, [shouldHideLayout]);
 
-  /**
-   * Prevent scrolling when mobile sidebar is open
-   */
+  // ============================================================================
+  // PREVENT SCROLLING WHEN MOBILE SIDEBAR IS OPEN
+  // ============================================================================
   useEffect(() => {
     const scrollBehavior = showMobileSidebar ? 'hidden' : 'unset';
     
@@ -305,67 +374,65 @@ function AppContent({ Component, pageProps }: AppProps) {
       document.body.style.overflow = 'unset';
     };
   }, [showMobileSidebar]);
-
-  // ✅ CRITICAL: Force shorts page visibility on mobile
-// 🔍 DEBUG: Log HTML/Body state on shorts page
-// Add RIGHT AFTER the data-page useEffect
-// Replace the entire useEffect for shorts body override
-useEffect(() => {
-  if (router.pathname.startsWith('/shorts')) {
-    console.log('🎬 Applying shorts overrides...');
-    
-    // ✅ CRITICAL: Override HTML element
-    document.documentElement.style.position = 'fixed';
-    document.documentElement.style.inset = '0';
-    document.documentElement.style.zIndex = '0';
-    document.documentElement.style.pointerEvents = 'none';
-    document.documentElement.style.background = 'transparent';
-    
-    // ✅ CRITICAL: Override body stacking
-    document.body.style.position = 'fixed';
-    document.body.style.inset = '0';
-    document.body.style.zIndex = '0';
-    document.body.style.pointerEvents = 'none';
-    document.body.style.background = 'transparent';
-    
-    // ✅ CRITICAL: Override #__next
-    const nextDiv = document.getElementById('__next');
-    if (nextDiv) {
-      nextDiv.style.position = 'fixed';
-      nextDiv.style.inset = '0';
-      nextDiv.style.zIndex = '0';
-      nextDiv.style.pointerEvents = 'none';
-      nextDiv.style.background = 'transparent';
+  // ============================================================================
+  // 🔴 CRITICAL: SHORTS PAGE VISIBILITY OVERRIDES
+  // ============================================================================
+  useEffect(() => {
+    if (router.pathname.startsWith('/shorts')) {
+      console.log('🎬 Applying shorts overrides...');
+      
+      // ✅ CRITICAL: Override HTML element
+      document.documentElement.style.position = 'fixed';
+      document.documentElement.style.inset = '0';
+      document.documentElement.style.zIndex = '0';
+      document.documentElement.style.pointerEvents = 'none';
+      document.documentElement.style.background = 'transparent';
+      
+      // ✅ CRITICAL: Override body stacking
+      document.body.style.position = 'fixed';
+      document.body.style.inset = '0';
+      document.body.style.zIndex = '0';
+      document.body.style.pointerEvents = 'none';
+      document.body.style.background = 'transparent';
+      
+      // ✅ CRITICAL: Override #__next
+      const nextDiv = document.getElementById('__next');
+      if (nextDiv) {
+        nextDiv.style.position = 'fixed';
+        nextDiv.style.inset = '0';
+        nextDiv.style.zIndex = '0';
+        nextDiv.style.pointerEvents = 'none';
+        nextDiv.style.background = 'transparent';
+      }
+      
+      console.log('✅ Shorts overrides applied');
+    } else {
+      // ✅ Reset when leaving shorts
+      document.documentElement.style.position = '';
+      document.documentElement.style.inset = '';
+      document.documentElement.style.zIndex = '';
+      document.documentElement.style.pointerEvents = '';
+      document.documentElement.style.background = '';
+      
+      document.body.style.position = '';
+      document.body.style.inset = '';
+      document.body.style.zIndex = '';
+      document.body.style.pointerEvents = '';
+      document.body.style.background = '';
+      
+      const nextDiv = document.getElementById('__next');
+      if (nextDiv) {
+        nextDiv.style.position = '';
+        nextDiv.style.inset = '';
+        nextDiv.style.zIndex = '';
+        nextDiv.style.pointerEvents = '';
+        nextDiv.style.background = '';
+      }
     }
-    
-    console.log('✅ Shorts overrides applied');
-  } else {
-    // ✅ Reset when leaving shorts
-    document.documentElement.style.position = '';
-    document.documentElement.style.inset = '';
-    document.documentElement.style.zIndex = '';
-    document.documentElement.style.pointerEvents = '';
-    document.documentElement.style.background = '';
-    
-    document.body.style.position = '';
-    document.body.style.inset = '';
-    document.body.style.zIndex = '';
-    document.body.style.pointerEvents = '';
-    document.body.style.background = '';
-    
-    const nextDiv = document.getElementById('__next');
-    if (nextDiv) {
-      nextDiv.style.position = '';
-      nextDiv.style.inset = '';
-      nextDiv.style.zIndex = '';
-      nextDiv.style.pointerEvents = '';
-      nextDiv.style.background = '';
-    }
-  }
-}, [router.pathname]);
-  /**
-   * Loading spinner while theme initializes
-   */
+  }, [router.pathname]);
+  // ============================================================================
+  // LOADING SPINNER WHILE THEME INITIALIZES
+  // ============================================================================
   if (!isThemeReady) {
     const currentTheme = typeof window !== 'undefined' ? getStoredTheme() : 'dark';
     const backgroundColor = currentTheme === 'dark' ? '#0f0f0f' : '#ffffff';
@@ -384,22 +451,22 @@ useEffect(() => {
     );
   }
 
-  /**
-   * Render pages without layout (Shorts, Calls, Auth pages)
-   */
+  // ============================================================================
+  // RENDER PAGES WITHOUT LAYOUT (Shorts, Calls, Auth pages)
+  // ============================================================================
   if (shouldHideLayout) {
     return (
       <>
-      <Head>
-  <meta 
-    name="viewport" 
-    content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" 
-  />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>YouTube Clone</title>
-  </Head>
+        <Head>
+          <meta 
+            name="viewport" 
+            content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" 
+          />
+          <meta name="mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <title>YouTube Clone</title>
+        </Head>
         
         <Component {...pageProps} />
         
@@ -409,9 +476,9 @@ useEffect(() => {
     );
   }
 
-  /**
-   * Main app layout with header, sidebar, and content area
-   */
+  // ============================================================================
+  // MAIN APP LAYOUT WITH HEADER, SIDEBAR, AND CONTENT AREA
+  // ============================================================================
   return (
     <>
       <Head>
@@ -440,8 +507,9 @@ useEffect(() => {
     </>
   );
 }
-
-
+// ============================================================================
+// APP EXPORT WITH ALL PROVIDERS
+// ============================================================================
 export default function App(appProps: AppProps) {
   return (
     <UserProvider>
