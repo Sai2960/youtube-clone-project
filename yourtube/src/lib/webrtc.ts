@@ -65,6 +65,8 @@ const ICE_SERVERS: RTCConfiguration = {
   iceCandidatePoolSize: 10,
   bundlePolicy: "max-bundle",
   rtcpMuxPolicy: "require",
+    iceTransportPolicy: "all", // ✅ ADD THIS - allows both STUN and TURN
+
 };
 
 export class WebRTCService {
