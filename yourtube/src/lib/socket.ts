@@ -11,7 +11,10 @@ const getSocketURL = () => {
     return "http://localhost:5000";
   }
 
-  // ✅ CRITICAL: Check environment variables first
+  // ✅ HARDCODED FALLBACK for production
+  const PRODUCTION_URL = "https://youtube-clone-project-q3pd.onrender.com";
+
+  // Try environment variables first
   const envUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 
                  process.env.NEXT_PUBLIC_BACKEND_URL;
   
@@ -20,39 +23,42 @@ const getSocketURL = () => {
     return envUrl;
   }
 
-  // ✅ Production detection
+  // Detect Vercel deployment
   const hostname = window.location.hostname;
-  if (hostname.includes("vercel.app")) {
-    console.log("🌐 Vercel detected - using Render backend");
-    return "https://youtube-clone-project-q3pd.onrender.com";
+  if (hostname.includes("vercel.app") || hostname.includes("netlify.app")) {
+    console.log("🌐 Production detected - using Render backend");
+    return PRODUCTION_URL;
   }
 
-  // Development
+  // Local development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     return "http://localhost:5000";
   }
 
-  // Fallback
-  return "https://youtube-clone-project-q3pd.onrender.com";
+  // Final fallback
+  console.log("🔧 Using fallback URL");
+  return PRODUCTION_URL;
 };
 
 const SOCKET_URL = getSocketURL();
 
 console.log("🔧 Socket Configuration:");
 console.log("   URL:", SOCKET_URL);
-console.log("   Secure:", SOCKET_URL.startsWith("https"));
+console.log("   Protocol:", SOCKET_URL.startsWith("https") ? "HTTPS" : "HTTP");
 
 export const initializeSocket = (userId: string): Socket => {
+  // Return existing socket if already connected
   if (socket?.connected && currentUserId === userId) {
-    console.log("✅ Socket already connected");
+    console.log("✅ Socket already connected for user:", userId);
     if (!isRegistered) {
       socket.emit("register-user", userId);
     }
     return socket;
   }
 
+  // Disconnect old socket if user changed
   if (socket && currentUserId !== userId) {
-    console.log("🔄 Switching user");
+    console.log("🔄 User changed, reconnecting");
     socket.disconnect();
     socket = null;
     isRegistered = false;
@@ -66,7 +72,7 @@ export const initializeSocket = (userId: string): Socket => {
   const isSecure = SOCKET_URL.startsWith("https");
 
   socket = io(SOCKET_URL, {
-    transports: ["polling", "websocket"], // ✅ Start with polling
+    transports: ["polling", "websocket"],
     upgrade: true,
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
@@ -81,9 +87,9 @@ export const initializeSocket = (userId: string): Socket => {
     path: "/socket.io/",
   });
 
-  // ===== Event Handlers =====
+  // Connection handlers
   socket.on("connect", () => {
-    console.log("✅ Connected:", socket?.id);
+    console.log("✅ Socket connected:", socket?.id);
     console.log("   Transport:", socket?.io.engine.transport.name);
     reconnectAttempts = 0;
 
@@ -93,31 +99,27 @@ export const initializeSocket = (userId: string): Socket => {
   });
 
   socket.on("user-registered", (data) => {
-    console.log("✅ Registration confirmed:", data);
+    console.log("✅ User registration confirmed:", data);
     isRegistered = true;
   });
 
   socket.on("connect_error", (error) => {
-    console.error("❌ Connection error:", error.message);
+    console.error("❌ Socket connection error:", error.message);
+    console.error("   URL:", SOCKET_URL);
     isRegistered = false;
     reconnectAttempts++;
 
     if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      console.error("❌ Max reconnection attempts");
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("socket-connection-failed", {
-            detail: { error: error.message },
-          })
-        );
-      }
+      console.error("❌ Max reconnection attempts reached");
     }
   });
 
   socket.on("disconnect", (reason) => {
-    console.log("❌ Disconnected:", reason);
+    console.log("❌ Socket disconnected:", reason);
     isRegistered = false;
+    
     if (reason === "io server disconnect") {
+      console.log("🔄 Server disconnected, reconnecting...");
       socket?.connect();
     }
   });
@@ -125,6 +127,7 @@ export const initializeSocket = (userId: string): Socket => {
   socket.on("reconnect", (attemptNumber) => {
     console.log(`✅ Reconnected after ${attemptNumber} attempts`);
     reconnectAttempts = 0;
+    
     if (userId && socket) {
       socket.emit("register-user", userId);
     }
@@ -135,7 +138,7 @@ export const initializeSocket = (userId: string): Socket => {
 
 export const getSocket = (): Socket => {
   if (!socket) {
-    throw new Error("Socket not initialized");
+    throw new Error("Socket not initialized. Call initializeSocket first.");
   }
   return socket;
 };
@@ -158,7 +161,7 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
         resolve(socket);
       } else if (Date.now() - startTime > maxWaitMs) {
         clearInterval(checkInterval);
-        reject(new Error("Socket connection timeout"));
+        reject(new Error("Socket connection timeout - backend may be down"));
       }
     }, 100);
   });
@@ -166,6 +169,7 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
 
 export const disconnectSocket = (): void => {
   if (socket) {
+    console.log("🔌 Disconnecting socket");
     socket.disconnect();
     socket = null;
     isRegistered = false;

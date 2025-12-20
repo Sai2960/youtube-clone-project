@@ -1,10 +1,9 @@
-import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: false,
   poweredByHeader: false,
   
-  // ✅ Workspace warning fix
   outputFileTracingRoot: process.cwd(),
   
   experimental: {
@@ -13,7 +12,9 @@ const nextConfig: NextConfig = {
     },
   },
   
+  // ✅ CRITICAL: Add env vars here
   env: {
+    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || 'https://youtube-clone-project-q3pd.onrender.com',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://youtube-clone-project-q3pd.onrender.com',
     NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://youtube-clone-project-q3pd.onrender.com',
     NEXT_PUBLIC_DEFAULT_AVATAR: 'https://res.cloudinary.com/dxuxxk0ss/image/upload/v1/youtube-clone/avatars/default-avatar.png',
@@ -27,12 +28,22 @@ const nextConfig: NextConfig = {
   
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      // ✅ CRITICAL: Ensure socket.io-client is bundled properly
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         net: false,
         tls: false,
+        dns: false,
       };
+      
+      // ✅ Force socket.io-client to be bundled
+      config.externals = config.externals || [];
+      if (Array.isArray(config.externals)) {
+        config.externals = config.externals.filter(
+          (ext) => typeof ext !== 'string' || !ext.includes('socket.io-client')
+        );
+      }
     }
     return config;
   },
@@ -56,40 +67,36 @@ const nextConfig: NextConfig = {
   },
   
   async headers() {
-  return [
-    {
-      source: '/:path*',
-      headers: [
-        { key: 'X-DNS-Prefetch-Control', value: 'on' },
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-        { key: 'X-XSS-Protection', value: '1; mode=block' },
-        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-      ],
-    },
-    // ✅ CRITICAL: Mobile hydration fix for channel pages
-    {
-      source: '/channel/:path*',
-      headers: [
-        { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' },
-        { key: 'Pragma', value: 'no-cache' },
-        { key: 'Expires', value: '0' },
-        { key: 'Surrogate-Control', value: 'no-store' },
-        { key: 'Vary', value: 'User-Agent' }, // Added
-      ],
-    },
-    // ✅ CRITICAL: Disable ALL caching for API responses
-    {
-      source: '/api/:path*',
-      headers: [
-        { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
-        { key: 'Pragma', value: 'no-cache' },
-        { key: 'Expires', value: '0' },
-        { key: 'Vary', value: '*' },
-      ],
-    },
-  ];
-},
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+      {
+        source: '/channel/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
+          { key: 'Vary', value: 'User-Agent' },
+        ],
+      },
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
+        ],
+      },
+    ];
+  },
   
   typescript: {
     ignoreBuildErrors: true,
@@ -100,4 +107,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
