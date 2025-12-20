@@ -1182,7 +1182,23 @@ const VideoCall: React.FC<VideoCallProps> = ({
             </p>
           </div>
           <button
-            onClick={() => setUserInteracted(true)}
+            onClick={async () => {
+              console.log("🎬 START CALL BUTTON CLICKED");
+              setUserInteracted(true);
+
+              // Force immediate initialization
+              setTimeout(async () => {
+                if (!initializingRef.current && !initializedRef.current) {
+                  console.log("🚀 FORCING CALL INITIALIZATION");
+                  try {
+                    await initializeCall();
+                    initializedRef.current = true;
+                  } catch (error) {
+                    console.error("❌ Forced init error:", error);
+                  }
+                }
+              }, 100);
+            }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >
             🎥 START CALL
