@@ -1,25 +1,9 @@
-// pages/call/[roomId].tsx - FIXED SSR VERSION
+// pages/call/[roomId].tsx - COMPLETE CALL PAGE
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic'; // ✅ ADD THIS
+import VideoCall from '@/components/ui/VideoCall';
 import { useUser } from '@/lib/AuthContext';
 import Head from 'next/head';
-
-// ✅ CRITICAL: Import VideoCall with SSR disabled
-const VideoCall = dynamic(
-  () => import('@/components/ui/VideoCall'),
-  { 
-    ssr: false, // ✅ Disable server-side rendering
-    loading: () => (
-      <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
-        <div className="text-center text-white">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl font-semibold">Loading video call...</p>
-        </div>
-      </div>
-    )
-  }
-);
 
 const CallPage = () => {
   const router = useRouter();
@@ -33,8 +17,15 @@ const CallPage = () => {
   }, []);
 
   useEffect(() => {
+    // Check if we have all required data
     if (mounted && roomId && typeof roomId === 'string') {
       console.log('📞 Call page ready');
+      console.log('   Room ID:', roomId);
+      console.log('   Call ID:', callId);
+      console.log('   Remote Name:', remoteName);
+      console.log('   Is Initiator:', initiator === 'true');
+      console.log('   User:', user?._id);
+      
       setIsReady(true);
     }
   }, [mounted, roomId, callId, remoteName, initiator, user]);
@@ -42,6 +33,7 @@ const CallPage = () => {
   const handleEndCall = () => {
     console.log('📞 Call ended, redirecting to home');
     
+    // Clear any call-related storage
     try {
       sessionStorage.removeItem('youtube_incoming_call');
       localStorage.removeItem('youtube_incoming_call');
@@ -49,10 +41,11 @@ const CallPage = () => {
       console.error('Error clearing storage:', error);
     }
     
+    // Redirect to home
     router.push('/');
   };
 
-  // ✅ Show loading until mounted (client-side only)
+  // Show loading screen until everything is ready
   if (!mounted || !isReady) {
     return (
       <>
@@ -71,7 +64,7 @@ const CallPage = () => {
     );
   }
 
-  // ✅ Validate authentication
+  // Validate user is authenticated
   if (!user?._id) {
     return (
       <>
@@ -120,19 +113,5 @@ const CallPage = () => {
     </>
   );
 };
-
-// ✅ CRITICAL: Tell Next.js to generate this as a static page
-export async function getStaticPaths() {
-  return {
-    paths: [], // No pre-rendered paths
-    fallback: 'blocking', // Generate on-demand
-  };
-}
-
-export async function getStaticProps() {
-  return {
-    props: {}, // Empty props
-  };
-}
 
 export default CallPage;
