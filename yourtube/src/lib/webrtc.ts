@@ -39,6 +39,7 @@ interface TrackInfo {
 }
 
 // ✅ ENHANCED: Comprehensive ICE configuration
+// ✅ ENHANCED: Comprehensive ICE configuration
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -46,18 +47,22 @@ const ICE_SERVERS: RTCConfiguration = {
     { urls: "stun:stun2.l.google.com:19302" },
     { urls: "stun:stun3.l.google.com:19302" },
     { urls: "stun:stun4.l.google.com:19302" },
+    // ✅ CRITICAL: Multiple TURN servers for reliability
     {
-      urls: "turn:openrelay.metered.ca:80",
+      urls: [
+        "turn:openrelay.metered.ca:80",
+        "turn:openrelay.metered.ca:443",
+        "turn:openrelay.metered.ca:443?transport=tcp"
+      ],
       username: "openrelayproject",
       credential: "openrelayproject",
     },
+    // ✅ Additional public TURN server as fallback
     {
-      urls: "turn:openrelay.metered.ca:443",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
-    {
-      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      urls: [
+        "turn:relay.metered.ca:80",
+        "turn:relay.metered.ca:443",
+      ],
       username: "openrelayproject",
       credential: "openrelayproject",
     },
@@ -65,10 +70,9 @@ const ICE_SERVERS: RTCConfiguration = {
   iceCandidatePoolSize: 10,
   bundlePolicy: "max-bundle",
   rtcpMuxPolicy: "require",
-    iceTransportPolicy: "all", // ✅ ADD THIS - allows both STUN and TURN
-
+  iceTransportPolicy: "all", // ✅ Allows both STUN and TURN
+  // ✅ REMOVED: sdpSemantics - not needed, unified-plan is default in modern browsers
 };
-
 export class WebRTCService {
   [x: string]: any;
   private peerConnection: RTCPeerConnection | null = null;
@@ -675,26 +679,29 @@ export class WebRTCService {
     this.remoteStream = new MediaStream();
 
     // ✅ ENHANCED: Track handler with comprehensive monitoring
-    const trackHandler = async (event: RTCTrackEvent) => {
-      console.log("\n📥 ===== TRACK RECEIVED (ENHANCED) =====");
-      console.log("   Track kind:", event.track.kind);
-      console.log("   Track label:", event.track.label);
-      console.log("   Track enabled:", event.track.enabled);
-      console.log("   Track readyState:", event.track.readyState);
-      console.log("   Track muted:", event.track.muted);
-      console.log("   Streams count:", event.streams?.length || 0);
-      console.log("   Callback fired before:", this.callbackFired);
+  const trackHandler = async (event: RTCTrackEvent) => {
+  console.log("\n📥 ===== TRACK RECEIVED (CRITICAL FIX) =====");
+  console.log("   Track kind:", event.track.kind);
+  console.log("   Track label:", event.track.label);
+  console.log("   Track ID:", event.track.id);
+  console.log("   Track enabled:", event.track.enabled);
+  console.log("   Track readyState:", event.track.readyState);
+  console.log("   Track muted:", event.track.muted);
+  console.log("   Streams count:", event.streams?.length || 0);
+  console.log("   Transceiver direction:", event.transceiver?.direction);
+  console.log("   Transceiver currentDirection:", event.transceiver?.currentDirection);
 
-      // ✅ CRITICAL: Verify track is ready
-      const isReady = await this.verifyTrackReady(event.track);
-
-      if (!isReady) {
-        console.error(`❌ ${event.track.kind} track not ready!`);
-        // Continue anyway but log warning
-      }
+  // ✅ CRITICAL FIX: Force transceiver to sendrecv if not already
+  if (event.transceiver) {
+    const oldDirection = event.transceiver.direction;
+    if (oldDirection !== "sendrecv" && oldDirection !== "recvonly") {
+      console.warn(`⚠️ Fixing transceiver direction: ${oldDirection} → sendrecv`);
+      event.transceiver.direction = "sendrecv";
+    }
+  }
 
       // ✅ Force enable immediately
-      event.track.enabled = true;
+  event.track.enabled = true;
 
       // ✅ NEW: Monitor track state changes
       event.track.onmute = () => {
