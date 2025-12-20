@@ -168,7 +168,6 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
     }
 
     // ✅ CRITICAL FIX: If connected, resolve immediately (don't wait for registration flag)
-    // The registration is async but doesn't block the socket from working
     if (socket.connected) {
       console.log("✅ Socket connected - resolving immediately");
       
@@ -206,8 +205,7 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
         console.error("❌", msg);
         reject(new Error(msg));
       } else if (elapsed % 1000 === 0) {
-        // Log every second
-        console.log(`   Still waiting... ${Math.floor(elapsed / 1000)}s (connected: ${socket?.connected})`);
+        console.log(`   Still waiting... ${Math.floor(elapsed / 1000)}s`);
       }
     }, 100);
   });

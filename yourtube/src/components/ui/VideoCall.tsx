@@ -734,42 +734,36 @@ try {
   setError("Failed to connect to server. Please refresh and try again.");
   return;
 }
-      // Initialize services
-      webrtcServiceRef.current = new WebRTCService();
-      recordingServiceRef.current = new RecordingService();
-// ✅ CRITICAL: Verify both streams are working
-setTimeout(async () => {
-  console.log("🔍 Verifying streams...");
-  
-  const pc = webrtcServiceRef.current?.getPeerConnection();
-  if (pc) {
-    const stats = await pc.getStats();
-    let hasAudioIn = false;
-    let hasVideoIn = false;
-    
-    stats.forEach((report) => {
-      if (report.type === "inbound-rtp") {
-        if (report.kind === "audio" && report.bytesReceived > 0) {
-          hasAudioIn = true;
-          console.log("✅ Audio data flowing:", report.bytesReceived, "bytes");
-        }
-        if (report.kind === "video" && report.bytesReceived > 0) {
-          hasVideoIn = true;
-          console.log("✅ Video data flowing:", report.bytesReceived, "bytes");
-        }
-      }
-    });
-    
-    if (!hasAudioIn || !hasVideoIn) {
-      console.warn("⚠️ No data flowing - may need user interaction");
-      setShowPlayButton(true);
-      setError("🎬 Click play to start media");
-    }
-  }
-}, 3000);
+    // Initialize services
+webrtcServiceRef.current = new WebRTCService();
+recordingServiceRef.current = new RecordingService();
 
-      // ✅ FIXED: Remote stream handling
-      webrtcServiceRef.current.setupEventListeners(
+// ✅ CRITICAL: Get media stream FIRST
+console.log("🎤 Acquiring media stream...");
+const stream = await ensureAudioNotMuted();
+
+if (!stream) {
+  throw new Error("Failed to get media stream");
+}
+
+console.log("✅ Media stream acquired:", {
+  id: stream.id,
+  audio: stream.getAudioTracks().length,
+  video: stream.getVideoTracks().length,
+});
+
+// ✅ Set local stream in WebRTC service
+webrtcServiceRef.current.setLocalStream(stream);
+
+// ✅ Attach to local video element
+if (localVideoRef.current) {
+  localVideoRef.current.srcObject = stream;
+  await localVideoRef.current.play().catch(console.error);
+  console.log("✅ Local video attached");
+}
+
+// ✅ FIXED: Remote stream handling
+webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
@@ -889,8 +883,43 @@ setTimeout(async () => {
         }
       );
       // Add local stream
-      webrtcServiceRef.current.addLocalStreamToPeer();
+// Add local stream
+webrtcServiceRef.current.addLocalStreamToPeer();
 
+// ✅ Verify stream is working after setup
+setTimeout(async () => {
+  console.log("🔍 Verifying streams...");
+  
+  const pc = webrtcServiceRef.current?.getPeerConnection();
+  if (pc) {
+    const stats = await pc.getStats();
+    let hasAudioOut = false;
+    let hasVideoOut = false;
+    
+    stats.forEach((report) => {
+      if (report.type === "outbound-rtp") {
+        if (report.kind === "audio" && report.bytesSent > 0) {
+          hasAudioOut = true;
+          console.log("✅ Audio data sending:", report.bytesSent, "bytes");
+        }
+        if (report.kind === "video" && report.bytesSent > 0) {
+          hasVideoOut = true;
+          console.log("✅ Video data sending:", report.bytesSent, "bytes");
+        }
+      }
+    });
+    
+    if (!hasAudioOut || !hasVideoOut) {
+      console.warn("⚠️ No outbound data - checking tracks");
+      const localStream = webrtcServiceRef.current?.getLocalStream();
+      if (localStream) {
+        localStream.getTracks().forEach(track => {
+          console.log(`   ${track.kind}: enabled=${track.enabled}, muted=${track.muted}, state=${track.readyState}`);
+        });
+      }
+    }
+  }
+}, 3000);
       // Join room
       socket.emit("join-room", roomId, user?._id || socket.id);
 
