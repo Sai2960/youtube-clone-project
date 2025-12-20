@@ -137,7 +137,7 @@ const CallNotification: React.FC = () => {
         if (!socketListenersSetupRef.current) {
           console.warn("⚠️ Socket connection timeout - call notifications may not work");
         }
-      }, 10000);
+      }, 20000);
 
       return () => clearInterval(checkSocketInterval);
     };

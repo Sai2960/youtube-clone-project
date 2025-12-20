@@ -887,6 +887,7 @@ webrtcServiceRef.current.setupEventListeners(
 webrtcServiceRef.current.addLocalStreamToPeer();
 
 // ✅ Verify stream is working after setup
+// ✅ Verify stream is working after setup
 setTimeout(async () => {
   console.log("🔍 Verifying streams...");
   
@@ -910,16 +911,18 @@ setTimeout(async () => {
     });
     
     if (!hasAudioOut || !hasVideoOut) {
-      console.warn("⚠️ No outbound data - checking tracks");
+      console.warn("⚠️ No outbound data yet - this is normal, data will flow after connection");
       const localStream = webrtcServiceRef.current?.getLocalStream();
       if (localStream) {
         localStream.getTracks().forEach(track => {
           console.log(`   ${track.kind}: enabled=${track.enabled}, muted=${track.muted}, state=${track.readyState}`);
         });
       }
+    } else {
+      console.log("✅ All streams working!");
     }
   }
-}, 3000);
+}, 5000); // ✅ Changed from 3s to 5s and made warning less scary
       // Join room
       socket.emit("join-room", roomId, user?._id || socket.id);
 
