@@ -55,20 +55,20 @@ export const initializeSocket = (userId: string): Socket => {
   const isSecure = SOCKET_URL.startsWith("https");
 
   socket = io(SOCKET_URL, {
-    transports: ["websocket", "polling"], // ✅ Try websocket first
+    transports: ["polling", "websocket"], // ✅ Match backend order
     upgrade: true,
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    timeout: 20000, // ✅ Increased from 30000
+    timeout: 45000, // ✅ Match backend timeout
     autoConnect: true,
     withCredentials: true,
     secure: isSecure,
     rejectUnauthorized: false,
     query: { userId },
     path: "/socket.io/",
-    forceNew: false, // ✅ Reuse existing connection if possible
+    forceNew: false,
   });
 
   // ✅ Force immediate connection
