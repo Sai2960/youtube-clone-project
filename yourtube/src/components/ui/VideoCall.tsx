@@ -747,17 +747,15 @@ const VideoCall: React.FC<VideoCallProps> = ({
       setError(null);
       console.log("\n🎥 ===== INITIALIZING CALL =====");
 
-      // ✅ CRITICAL: Verify user is available
       if (!user?._id) {
         throw new Error("User not authenticated");
       }
 
-      // ✅ Prevent navigation during initialization
       if (typeof window !== "undefined") {
         window.onbeforeunload = () => "Call is connecting...";
       }
 
-      // ✅ CRITICAL: Wait for socket connection BEFORE proceeding
+      // Wait for socket
       let socket;
       try {
         console.log("🔌 Waiting for socket connection...");
@@ -770,54 +768,53 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("✅ Socket connected:", socket.id);
       } catch (err: any) {
         console.error("❌ Socket connection failed:", err.message);
-        setError("Failed to connect to server. Please refresh and try again.");
+        setError("Failed to connect to server. Please refresh.");
         return;
       }
+
       // Initialize services
       webrtcServiceRef.current = new WebRTCService();
       recordingServiceRef.current = new RecordingService();
-      // ✅ Expose peer connection to window for debugging
+
       if (typeof window !== "undefined") {
         (window as any).peerConnection =
           webrtcServiceRef.current.getPeerConnection();
-        console.log("✅ Peer connection exposed to window.peerConnection");
+        console.log("✅ Peer connection exposed");
       }
 
-      // ✅ CRITICAL: Get media stream FIRST
+      // Get media stream
       console.log("🎤 Acquiring media stream...");
       const stream = await ensureAudioNotMuted();
 
       if (!stream) {
         throw new Error("Failed to get media stream");
       }
+
       console.log("✅ Media stream acquired:", {
         id: stream.id,
         audio: stream.getAudioTracks().length,
         video: stream.getVideoTracks().length,
       });
 
-      // ✅ Set local stream in WebRTC service
+      // Set local stream
       webrtcServiceRef.current.setLocalStream(stream);
 
-      // ✅ Attach to local video element
+      // Attach to local video
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
         await localVideoRef.current.play().catch(console.error);
         console.log("✅ Local video attached");
       }
-      // ✅ CRITICAL FIX: Setup event listeners BEFORE adding tracks
+
+      // Setup event listeners
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
           if (remoteStreamReceivedRef.current) {
-            console.log("⚠️ Already processed, skipping");
+            console.log("⚠️ Already processed");
             return;
           }
-
-          console.log("🔍 Remote stream details:");
-          console.log("   Stream ID:", remoteStream.id);
-          console.log("   Active:", remoteStream.active);
 
           remoteStreamReceivedRef.current = true;
 
@@ -829,111 +826,59 @@ const VideoCall: React.FC<VideoCallProps> = ({
           const audioTracks = remoteStream.getAudioTracks();
           const videoTracks = remoteStream.getVideoTracks();
 
-          console.log(`📊 Tracks received:`);
-          console.log(`   Audio tracks: ${audioTracks.length}`);
-          console.log(`   Video tracks: ${videoTracks.length}`);
-
-          audioTracks.forEach((track, i) => {
-            console.log(`   Audio ${i}:`, track.label, {
-              enabled: track.enabled,
-              muted: track.muted,
-              readyState: track.readyState,
-            });
-          });
+          console.log(
+            `📊 Tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
+          );
 
           if (audioTracks.length === 0 || videoTracks.length === 0) {
             console.error("❌ MISSING TRACKS!");
-            setError("Remote stream missing audio or video");
+            setError("Remote stream missing tracks");
             return;
           }
 
-          // Mark as received
-          remoteStreamReceivedRef.current = true;
-
-          videoTracks.forEach((track, i) => {
-            console.log(`   Video ${i}:`, track.label, {
-              enabled: track.enabled,
-              muted: track.muted,
-              readyState: track.readyState,
-            });
-          });
-
-          // ✅ Force enable ALL tracks immediately
+          // Force enable tracks
           remoteStream.getTracks().forEach((track) => {
             track.enabled = true;
-            console.log(`✅ Enabled ${track.kind}: ${track.label}`);
+            console.log(`✅ Enabled ${track.kind}`);
           });
 
-          // Wait for stabilization
           await new Promise((resolve) => setTimeout(resolve, 300));
 
-          // ✅ Setup video element
-          if (!remoteVideoRef.current) {
-            console.error("❌ Remote video element not found!");
-            return;
-          }
-
+          // Setup video element
           const videoEl = remoteVideoRef.current;
 
-          // Clean old stream
           if (videoEl.srcObject) {
             const oldStream = videoEl.srcObject as MediaStream;
             oldStream.getTracks().forEach((t) => t.stop());
-            videoEl.srcObject = null;
           }
 
-          // Attach new stream
           videoEl.srcObject = remoteStream;
           videoEl.autoplay = true;
           videoEl.playsInline = true;
-          videoEl.muted = false; // ✅ Must be false for audio
+          videoEl.muted = false;
           videoEl.volume = 1.0;
-          console.log("✅ Remote stream attached to video element");
+
+          console.log("✅ Remote stream attached");
 
           // Wait for metadata
           await new Promise<void>((resolve) => {
             if (videoEl.readyState >= 2) {
-              console.log("✅ Video metadata already loaded");
               resolve();
             } else {
               const handler = () => {
-                console.log("✅ Video metadata loaded");
                 videoEl.removeEventListener("loadedmetadata", handler);
                 resolve();
               };
               videoEl.addEventListener("loadedmetadata", handler);
               setTimeout(() => {
                 videoEl.removeEventListener("loadedmetadata", handler);
-                console.warn("⚠️ Metadata load timeout");
                 resolve();
               }, 5000);
             }
           });
 
-          // ✅ Wait for video metadata
-          await new Promise<void>((resolve) => {
-            if (videoEl.readyState >= 2) {
-              console.log("✅ Video metadata already loaded");
-              resolve();
-            } else {
-              const handler = () => {
-                console.log("✅ Video metadata loaded");
-                videoEl.removeEventListener("loadedmetadata", handler);
-                resolve();
-              };
-              videoEl.addEventListener("loadedmetadata", handler);
-              setTimeout(() => {
-                videoEl.removeEventListener("loadedmetadata", handler);
-                console.warn("⚠️ Metadata load timeout");
-                resolve();
-              }, 5000);
-            }
-          });
-
-          // ✅ Try to play video with retry logic
+          // Play video
           try {
-            videoEl.volume = 1.0;
-            videoEl.muted = false;
             await videoEl.play();
             console.log("✅ Video playing!");
             setConnectionStatus("connected");
@@ -941,210 +886,57 @@ const VideoCall: React.FC<VideoCallProps> = ({
             setError(null);
           } catch (err: any) {
             console.error("❌ Video play failed:", err.name);
-
-            if (
-              err.name === "NotAllowedError" ||
-              err.name === "NotSupportedError"
-            ) {
+            if (err.name === "NotAllowedError") {
               setShowPlayButton(true);
-              setError("🎬 Click play to start");
-            } else {
-              // Retry once after 1 second
-              setTimeout(async () => {
-                try {
-                  videoEl.volume = 1.0;
-                  videoEl.muted = false;
-                  await videoEl.play();
-                  console.log("✅ Video retry succeeded");
-                  setShowPlayButton(false);
-                  setConnectionStatus("connected");
-                  setError(null);
-                } catch (retryErr) {
-                  console.error("❌ Video retry failed:", retryErr);
-                  setShowPlayButton(true);
-                  setError("Click play to start");
-                }
-              }, 1000);
+              setError("Click play to start");
             }
           }
 
-          // ✅ Setup audio (ONLY ONCE, no duplicates)
+          // Setup audio
           if (audioTracks.length > 0) {
-            console.log("🔊 Setting up audio...");
-            await new Promise((resolve) => setTimeout(resolve, 500));
             await setupRemoteAudio(remoteStream);
-          } else {
-            console.error("❌ NO AUDIO TRACKS!");
-            setError("Remote peer has no audio");
-          }
-
-          console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-
-          // ✅ Try to play video
-          try {
-            videoEl.volume = 1.0;
-            videoEl.muted = false;
-
-            await videoEl.play();
-            console.log("✅ Video playing!");
-            setConnectionStatus("connected");
-            setShowPlayButton(false);
-            setError(null);
-          } catch (err: any) {
-            console.error("❌ Video play failed:", err.name);
-
-            if (
-              err.name === "NotAllowedError" ||
-              err.name === "NotSupportedError"
-            ) {
-              setShowPlayButton(true);
-              setError("🎬 Click play to start");
-            } else {
-              // Retry after 1 second
-              setTimeout(async () => {
-                try {
-                  videoEl.volume = 1.0;
-                  videoEl.muted = false;
-                  await videoEl.play();
-                  console.log("✅ Video retry succeeded");
-                  setShowPlayButton(false);
-                  setConnectionStatus("connected");
-                } catch (retryErr) {
-                  console.error("❌ Video retry failed:", retryErr);
-                  setShowPlayButton(true);
-                }
-              }, 1000);
-            }
-          }
-
-          // ✅ Setup audio (separate element for better control)
-          if (audioTracks.length > 0) {
-            console.log("🔊 Setting up audio...");
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            await setupRemoteAudio(remoteStream);
-          } else {
-            console.error("❌ NO AUDIO TRACKS!");
           }
 
           console.log("===== SETUP COMPLETE =====\n");
         },
         (candidate: RTCIceCandidate) => {
-          console.log("❄️ Sending ICE candidate");
           const socket = getSocket();
           socket.emit("ice-candidate", roomId, candidate);
         }
       );
-      // ✅ CRITICAL: Add local stream to peer connection
-      // ✅ CRITICAL: Add local stream to peer connection
-      console.log("📤 Adding local stream to peer connection...");
+
+      // ✅ Add local stream (ONLY ONCE!)
+      console.log("📤 Adding local stream...");
       await webrtcServiceRef.current.addLocalStreamToPeer();
       console.log("✅ Local stream added");
 
-      // Join room
+      // ✅ Join room (ONLY ONCE!)
       console.log("🚪 Joining room:", roomId);
-      socket.emit("join-room", roomId, user?._id || socket.id);
-      // Add local stream
-      // Add local stream
-      webrtcServiceRef.current.addLocalStreamToPeer();
-      console.log("✅ Local stream added");
+      socket.emit("join-room", roomId, user._id);
 
-      // Join room
-      console.log("🚪 Joining room:", roomId);
-      socket.emit("join-room", roomId, user?._id || socket.id);
-      // Add local stream
-      // Add local stream
-      webrtcServiceRef.current.addLocalStreamToPeer();
-
-      // ✅ Verify stream is working after setup
-      // ✅ Verify stream is working after setup
-      setTimeout(async () => {
-        console.log("🔍 Verifying streams...");
-
-        const pc = webrtcServiceRef.current?.getPeerConnection();
-        if (pc) {
-          const stats = await pc.getStats();
-          let hasAudioOut = false;
-          let hasVideoOut = false;
-
-          stats.forEach((report) => {
-            if (report.type === "outbound-rtp") {
-              if (report.kind === "audio" && report.bytesSent > 0) {
-                hasAudioOut = true;
-                console.log(
-                  "✅ Audio data sending:",
-                  report.bytesSent,
-                  "bytes"
-                );
-              }
-              if (report.kind === "video" && report.bytesSent > 0) {
-                hasVideoOut = true;
-                console.log(
-                  "✅ Video data sending:",
-                  report.bytesSent,
-                  "bytes"
-                );
-              }
-            }
-          });
-
-          if (!hasAudioOut || !hasVideoOut) {
-            console.warn(
-              "⚠️ No outbound data yet - this is normal, data will flow after connection"
-            );
-            const localStream = webrtcServiceRef.current?.getLocalStream();
-            if (localStream) {
-              localStream.getTracks().forEach((track) => {
-                console.log(
-                  `   ${track.kind}: enabled=${track.enabled}, muted=${track.muted}, state=${track.readyState}`
-                );
-              });
-            }
-          } else {
-            console.log("✅ All streams working!");
-          }
-        }
-      }, 5000); // ✅ Changed from 3s to 5s and made warning less scary
-      // Join room
-      socket.emit("join-room", roomId, user?._id || socket.id);
-
-      // Initiator flow
+      // Initiator creates offer
       if (isInitiator) {
-        console.log("📝 Waiting for both users to be ready...");
+        console.log("📝 Waiting for both users...");
 
         await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => {
-            console.warn("⚠️ Timeout waiting for both users");
-            resolve();
-          }, 10000);
-
+          const timeout = setTimeout(() => resolve(), 10000);
           const handleBothReady = () => {
-            console.log("✅ Both users ready!");
             clearTimeout(timeout);
             socket.off("both-users-ready", handleBothReady);
             resolve();
           };
-
           socket.on("both-users-ready", handleBothReady);
         });
 
-        try {
-          console.log("📝 Creating offer...");
-          const offer = await webrtcServiceRef.current.createOffer();
-          console.log("📤 Sending offer to room:", roomId);
-          socket.emit("offer", roomId, offer);
-          console.log("✅ Offer sent");
-        } catch (error) {
-          console.error("❌ Offer creation failed:", error);
-          setError("Failed to create offer");
-        }
-      } else {
-        console.log("👂 Waiting to receive offer from initiator...");
+        const offer = await webrtcServiceRef.current.createOffer();
+        socket.emit("offer", roomId, offer);
+        console.log("✅ Offer sent");
       }
 
       console.log("===== INITIALIZATION COMPLETE =====\n");
     } catch (error: any) {
       console.error("❌ Initialization failed:", error);
-      setError(error.message || "Failed to initialize call");
+      setError(error.message || "Init failed");
     }
   };
   const cleanup = (emitEvent: boolean = true) => {
