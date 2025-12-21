@@ -1047,24 +1047,42 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("✅ Offer sent");
       }
 
-      // ✅ NEW: Add debug helpers to window
+      // ✅ CRITICAL: Expose EVERYTHING to window IMMEDIATELY
       if (typeof window !== "undefined") {
+        (window as any).peerConnection = pc;
         (window as any).webrtcService = webrtcServiceRef.current;
+
+        // ✅ Add debug helper
         (window as any).checkConnection = () => {
-          const pc = webrtcServiceRef.current?.getPeerConnection();
+          const currentPc = webrtcServiceRef.current?.getPeerConnection();
           return {
             hasService: !!webrtcServiceRef.current,
-            hasPeerConnection: !!pc,
-            connectionState: pc?.connectionState,
-            signalingState: pc?.signalingState,
-            transceivers: pc?.getTransceivers().length,
+            hasPeerConnection: !!currentPc,
+            connectionState: currentPc?.connectionState,
+            signalingState: currentPc?.signalingState,
+            iceConnectionState: currentPc?.iceConnectionState,
+            iceGatheringState: currentPc?.iceGatheringState,
+            transceivers: currentPc?.getTransceivers().length,
             windowPeerConnection: !!(window as any).peerConnection,
+            windowWebrtcService: !!(window as any).webrtcService,
           };
         };
-        console.log("✅ Debug helpers added to window");
-        console.log("   Run: window.checkConnection()");
-      }
 
+        console.log("✅ All window objects exposed");
+        console.log("   Run: window.checkConnection()");
+
+        // Verify it was set
+        setTimeout(() => {
+          console.log("🔍 Verification - window objects:", {
+            peerConnection: !!(window as any).peerConnection,
+            webrtcService: !!(window as any).webrtcService,
+            checkConnection: typeof (window as any).checkConnection,
+            pcMatches: (window as any).peerConnection === pc,
+            serviceMatches:
+              (window as any).webrtcService === webrtcServiceRef.current,
+          });
+        }, 100);
+      }
       console.log("===== INITIALIZATION COMPLETE =====\n");
     } catch (error: any) {
       console.error("❌ Initialization failed:", error);
