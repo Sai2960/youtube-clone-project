@@ -629,22 +629,26 @@ const VideoCall: React.FC<VideoCallProps> = ({
   // Main initialization
   // Main initialization
   useEffect(() => {
-    console.log("🔄 Mount effect, roomId:", roomId);
+    console.log("🔄 Mount effect, roomId:", roomId, "userInteracted:", userInteracted);
 
     if (!roomId) {
       setError("Invalid room ID");
       return;
     }
 
-    // ✅ REMOVED: userInteracted check - START CALL button already ensures interaction
+    // Don't initialize until user has interacted
+    if (!userInteracted) {
+      console.log("⏳ Waiting for user interaction...");
+      return;
+    }
 
+    // Prevent double initialization
     if (initializingRef.current || initializedRef.current) {
       console.log("⚠️ Already initialized");
       return;
     }
 
     initializingRef.current = true;
-
     let mounted = true;
 
     const init = async () => {
@@ -654,19 +658,18 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
         if (mounted) {
           initializedRef.current = true;
+          initializingRef.current = false; // Reset so it can be checked again if needed
           console.log("✅ Initialization complete");
         }
       } catch (error: any) {
         console.error("❌ Init error:", error);
         if (mounted) {
           setError(error.message || "Init failed");
+          initializingRef.current = false;
         }
-      } finally {
-        initializingRef.current = false;
       }
     };
 
-    // ✅ FIXED: Start immediately, no delay
     init();
 
     return () => {
@@ -675,7 +678,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         cleanup(false);
       }
     };
-  }, [roomId]); // ✅ REMOVED: userInteracted from dependencies
+  }, [roomId, userInteracted]); // Add userInteracted back to dependencies
   // Audio monitoring
   // ✅ Monitor connection and track states
   useEffect(() => {
@@ -1234,11 +1237,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
             </h1>
             <p className="text-gray-400 text-lg">Tap to start your call</p>
           </div>
-          <button
+         <button
             onClick={() => {
-              console.log("🎬 START CALL CLICKED - Setting userInteracted");
+              console.log("🎬 START CALL CLICKED");
               setUserInteracted(true);
-              // That's it! Let the main useEffect handle initialization
+              // The useEffect will handle initialization automatically
             }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >

@@ -165,13 +165,9 @@ const playRingtone = () => {
   stopRingtone();
 
   try {
-    console.log("🔔 Call notification received (silent until interaction)");
-    
-    // ✅ CRITICAL FIX: Don't play audio automatically
-    // The browser will block it anyway without user interaction
-    // Instead, just show the notification UI
-    
-    // The audio will play when user interacts with Accept/Reject buttons
+    console.log("🔔 Incoming call - notification shown");
+    // Don't play audio until user interacts with Accept button
+    // This prevents browser autoplay blocking
   } catch (error) {
     console.error("Error showing notification:", error);
   }

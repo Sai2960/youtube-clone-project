@@ -14,14 +14,15 @@ const getSocketURL = () => {
   const PRODUCTION_URL = "https://youtube-clone-project-q3pd.onrender.com";
   const hostname = window.location.hostname;
   
-  // Local development
+  // ✅ Local development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     console.log("🏠 Local environment");
     return "http://localhost:5000";
   }
 
-  // Production
+  // ✅ Production (Vercel/Netlify)
   console.log("🌐 Production environment:", hostname);
+  console.log("🔧 Using backend:", PRODUCTION_URL);
   return PRODUCTION_URL;
 };
 
@@ -29,11 +30,12 @@ const SOCKET_URL = getSocketURL();
 
 console.log("🔧 Socket Configuration:");
 console.log("   URL:", SOCKET_URL);
+console.log("   Protocol:", SOCKET_URL.startsWith("https") ? "HTTPS" : "HTTP");
 
 export const initializeSocket = (userId: string): Socket => {
   // Return existing socket if already connected
   if (socket?.connected && currentUserId === userId) {
-    console.log("✅ Socket already connected");
+    console.log("✅ Socket already connected for user:", userId);
     if (!isRegistered) {
       socket.emit("register-user", userId);
     }
@@ -49,40 +51,53 @@ export const initializeSocket = (userId: string): Socket => {
   }
 
   currentUserId = userId;
-  console.log("🔌 Initializing Socket.IO for:", userId);
+  console.log("🔌 Initializing Socket.IO");
+  console.log("   User:", userId);
+  console.log("   URL:", SOCKET_URL);
 
   const isSecure = SOCKET_URL.startsWith("https");
 
   socket = io(SOCKET_URL, {
-    transports: ["websocket", "polling"], // ✅ CRITICAL: websocket first
+    transports: ["polling", "websocket"],
     upgrade: true,
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    timeout: 20000, // ✅ CRITICAL: Increased from 30s to 20s
+    timeout: 30000,
     autoConnect: true,
     withCredentials: true,
     secure: isSecure,
     rejectUnauthorized: false,
     query: { userId },
     path: "/socket.io/",
-    forceNew: false, // ✅ Reuse connection
   });
 
-  // ✅ CRITICAL: Force immediate connection
+  // ✅ CRITICAL: Force immediate connection attempt
   console.log("🔄 Forcing socket connection...");
   socket.connect();
 
+  // ✅ CRITICAL: Expose socket to window for debugging
+  if (typeof window !== 'undefined') {
+    (window as any).__socket = socket;
+    console.log("✅ Socket exposed to window.__socket");
+    
+    // ✅ NEW: Log all socket events
+    socket.onAny((eventName, ...args) => {
+      console.log(`📨 Socket event: ${eventName}`, args);
+    });
+  }
+
   // Connection handlers
-  socket.on("connect", () => {
+socket.on("connect", () => {
     console.log("✅ Socket connected:", socket?.id);
     console.log("   Transport:", socket?.io.engine.transport.name);
     reconnectAttempts = 0;
 
-    if (userId && socket) {
+    if (userId && socket && !isRegistered) {
       console.log("📝 Registering user:", userId);
       socket.emit("register-user", userId);
+      isRegistered = true; // Set immediately to prevent duplicate registrations
     }
   });
 
@@ -93,6 +108,8 @@ export const initializeSocket = (userId: string): Socket => {
 
   socket.on("connect_error", (error) => {
     console.error("❌ Socket connection error:", error.message);
+    console.error("   URL:", SOCKET_URL);
+    console.error("   Stack:", error.stack);
     isRegistered = false;
     reconnectAttempts++;
 
@@ -106,6 +123,7 @@ export const initializeSocket = (userId: string): Socket => {
     isRegistered = false;
     
     if (reason === "io server disconnect") {
+      console.log("🔄 Server disconnected, reconnecting...");
       socket?.connect();
     }
   });
@@ -119,12 +137,21 @@ export const initializeSocket = (userId: string): Socket => {
     }
   });
 
+  // ✅ NEW: Log connection state changes
+  socket.io.on("ping", () => {
+    console.log("🏓 Ping sent");
+  });
+
+  socket.io.on("packet", (packet) => {
+    console.log("📦 Packet:", packet.type, packet.data);
+  });
+
   return socket;
 };
 
 export const getSocket = (): Socket => {
   if (!socket) {
-    throw new Error("Socket not initialized");
+    throw new Error("Socket not initialized. Call initializeSocket first.");
   }
   return socket;
 };
@@ -133,27 +160,43 @@ export const isSocketConnected = (): boolean => {
   return socket?.connected ?? false;
 };
 
-export const waitForSocket = (maxWaitMs: number = 20000): Promise<Socket> => {
+export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
   return new Promise((resolve, reject) => {
     if (!socket) {
-      reject(new Error("Socket not initialized"));
+      reject(new Error("Socket not initialized. Call initializeSocket first."));
       return;
     }
 
-    // ✅ If connected, resolve immediately
-    if (socket.connected) {
-      console.log("✅ Socket already connected");
-      
-      if (!isRegistered && currentUserId) {
-        socket.emit("register-user", currentUserId);
-      }
-      
+    // If already connected AND registered, resolve immediately
+    if (socket.connected && isRegistered) {
+      console.log("✅ Socket connected and registered - resolving immediately");
       resolve(socket);
       return;
     }
 
-    console.log("⏳ Waiting for socket connection...");
+    // If connected but not registered, wait for registration
+    if (socket.connected && !isRegistered) {
+      console.log("⏳ Socket connected, waiting for registration...");
+      
+      const registrationHandler = () => {
+        console.log("✅ Registration confirmed");
+        socket?.off("user-registered", registrationHandler);
+        clearTimeout(registrationTimeout);
+        resolve(socket!);
+      };
 
+      socket.on("user-registered", registrationHandler);
+
+      const registrationTimeout = setTimeout(() => {
+        socket?.off("user-registered", registrationHandler);
+        console.log("✅ Registration timeout - assuming success");
+        resolve(socket!);
+      }, 2000);
+
+      return;
+    }
+
+    console.log("⏳ Waiting for socket connection...");
     const startTime = Date.now();
     
     const checkInterval = setInterval(() => {
@@ -163,15 +206,17 @@ export const waitForSocket = (maxWaitMs: number = 20000): Promise<Socket> => {
         console.log(`✅ Socket connected after ${elapsed}ms`);
         clearInterval(checkInterval);
         
-        if (!isRegistered && currentUserId) {
-          socket.emit("register-user", currentUserId);
+        // Wait briefly for registration, then resolve
+        if (isRegistered) {
+          resolve(socket);
+        } else {
+          setTimeout(() => resolve(socket!), 500);
         }
-        
-        resolve(socket);
       } else if (elapsed > maxWaitMs) {
         clearInterval(checkInterval);
-        console.error(`❌ Socket timeout after ${elapsed}ms`);
-        reject(new Error(`Socket connection timeout after ${elapsed}ms`));
+        const msg = `Socket connection timeout after ${elapsed}ms`;
+        console.error("❌", msg);
+        reject(new Error(msg));
       }
     }, 100);
   });
