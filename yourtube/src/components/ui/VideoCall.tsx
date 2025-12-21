@@ -630,14 +630,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
     };
   }, [roomId, isRecording, onEndCall, router]);
 
-  // Main initialization
-  // Main initialization
+  // Main initialization - FORCED VERSION
   useEffect(() => {
     console.log(
-      "🔄 Mount effect, roomId:",
+      "🔄 Init effect triggered - roomId:",
       roomId,
       "userInteracted:",
-      userInteracted
+      userInteracted,
+      "initializing:",
+      initializingRef.current,
+      "initialized:",
+      initializedRef.current
     );
 
     if (!roomId) {
@@ -653,33 +656,43 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     // Prevent double initialization
     if (initializingRef.current || initializedRef.current) {
-      console.log("⚠️ Already initialized");
+      console.log("⚠️ Already initializing or initialized");
       return;
     }
 
+    console.log("🚀 Starting initialization...");
     initializingRef.current = true;
     let mounted = true;
 
     const init = async () => {
       try {
-        console.log("🎬 Initializing call...");
+        console.log("🎬 Calling initializeCall()...");
         await initializeCall();
 
         if (mounted) {
           initializedRef.current = true;
-          initializingRef.current = false; // Reset so it can be checked again if needed
-          console.log("✅ Initialization complete");
+          console.log("✅ Initialization complete - refs:", {
+            webrtc: !!webrtcServiceRef.current,
+            localVideo: !!localVideoRef.current,
+            remoteVideo: !!remoteVideoRef.current,
+          });
         }
       } catch (error: any) {
         console.error("❌ Init error:", error);
         if (mounted) {
           setError(error.message || "Init failed");
+        }
+      } finally {
+        if (mounted) {
           initializingRef.current = false;
         }
       }
     };
 
-    init();
+    // ✅ CRITICAL: Add small delay to ensure React has rendered
+    setTimeout(() => {
+      init();
+    }, 100);
 
     return () => {
       mounted = false;
@@ -687,7 +700,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         cleanup(false);
       }
     };
-  }, [roomId, userInteracted]); // Add userInteracted back to dependencies
+  }, [roomId, userInteracted]);
   // Audio monitoring
   // ✅ Monitor connection and track states
   useEffect(() => {
@@ -1246,8 +1259,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .toString()
       .padStart(2, "0")}`;
   };
-  // ✅ Show initial interaction prompt
-  if (!userInteracted) {
+
+  // ✅ Show initial interaction prompt OR initializing state
+  if (!userInteracted || (userInteracted && !webrtcServiceRef.current)) {
     return (
       <div className="w-screen h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -1286,11 +1300,19 @@ const VideoCall: React.FC<VideoCallProps> = ({
               }
 
               setUserInteracted(true);
+
+              // ✅ CRITICAL: Force re-render after state update
+              setTimeout(() => {
+                console.log("🔄 Checking initialization...");
+                console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
+                console.log("   localVideoRef:", !!localVideoRef.current);
+                console.log("   remoteVideoRef:", !!remoteVideoRef.current);
+              }, 100);
             }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >
             🎥 START CALL
-          </button>{" "}
+          </button>
         </div>
       </div>
     );
