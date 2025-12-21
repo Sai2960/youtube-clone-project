@@ -225,6 +225,24 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const router = useRouter();
   const { user } = useUser();
 
+  // ✅ ADD THIS DEBUG CODE:
+  useEffect(() => {
+    console.log("🎬 VideoCall component MOUNTED");
+    console.log("   roomId:", roomId);
+    console.log("   isInitiator:", isInitiator);
+    console.log("   userInteracted:", userInteracted);
+
+    return () => {
+      console.log("🛑 VideoCall component UNMOUNTED");
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log("📹 Video refs status:");
+    console.log("   localVideoRef.current:", !!localVideoRef.current);
+    console.log("   remoteVideoRef.current:", !!remoteVideoRef.current);
+  });
+
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -1422,31 +1440,48 @@ const VideoCall: React.FC<VideoCallProps> = ({
             <h1 className="text-white text-3xl font-bold mb-2">
               Ready to join?
             </h1>
-            <p className="text-gray-400 text-lg">
-              Tap the button below to start your call
-            </p>
+            <p className="text-gray-400 text-lg">Tap to start your call</p>
           </div>
           <button
             onClick={() => {
               console.log("🎬 START CALL BUTTON CLICKED");
+              console.log("   Before: userInteracted =", userInteracted);
+
               setUserInteracted(true);
 
-              // ✅ CRITICAL: Force IMMEDIATE initialization (no timeout)
-              if (!initializingRef.current && !initializedRef.current) {
-                console.log("🚀 FORCING CALL INITIALIZATION NOW");
-                initializingRef.current = true;
+              console.log("   After: userInteracted should be true");
+              console.log("   Component should re-render now");
 
-                initializeCall()
-                  .then(() => {
-                    initializedRef.current = true;
-                    console.log("✅ Call initialized successfully");
-                  })
-                  .catch((error) => {
-                    console.error("❌ Call initialization failed:", error);
-                    setError("Failed to start call. Please try again.");
-                    initializingRef.current = false;
-                  });
-              }
+              // ✅ Force initialization immediately
+              setTimeout(() => {
+                console.log("⏱️ 100ms passed, checking initialization...");
+                console.log(
+                  "   initializingRef.current:",
+                  initializingRef.current
+                );
+                console.log(
+                  "   initializedRef.current:",
+                  initializedRef.current
+                );
+
+                if (!initializingRef.current && !initializedRef.current) {
+                  console.log("🚀 FORCING INITIALIZATION");
+                  initializingRef.current = true;
+
+                  initializeCall()
+                    .then(() => {
+                      initializedRef.current = true;
+                      console.log("✅ Initialization complete");
+                    })
+                    .catch((error) => {
+                      console.error("❌ Initialization failed:", error);
+                      setError("Failed to start call");
+                      initializingRef.current = false;
+                    });
+                } else {
+                  console.log("⚠️ Already initializing or initialized");
+                }
+              }, 100);
             }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >
@@ -1464,18 +1499,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
         id="remote-video"
         autoPlay
         playsInline
-        muted={false} // ✅ CRITICAL: Must be false for audio
+        muted={false} // ✅ Must be false for audio
         className="w-full h-full object-cover absolute inset-0"
         style={{
           backgroundColor: "#000",
           objectFit: "cover",
         }}
-        // ✅ CRITICAL: Force play on metadata
         onLoadedMetadata={async (e) => {
-          console.log("✅ Video metadata loaded");
+          console.log("✅ Remote video metadata loaded");
           try {
             await e.currentTarget.play();
-            console.log("✅ Video playing");
+            console.log("✅ Remote video playing");
           } catch (err) {
             console.error("❌ Autoplay blocked:", err);
             setShowPlayButton(true);
@@ -1497,9 +1531,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
         <video
           ref={localVideoRef}
+          id="local-video"
           autoPlay
           playsInline
-          muted={true} // Local video always muted to prevent echo
+          muted // ✅ Local always muted (no {true})
           className="w-full h-full object-cover"
           onLoadedMetadata={(e) => {
             console.log("✅ Local video metadata loaded");
