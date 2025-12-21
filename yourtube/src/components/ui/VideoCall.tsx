@@ -874,7 +874,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       recordingServiceRef.current = new RecordingService();
       console.log("✅ Recording service created");
 
-      // ✅ CRITICAL: Expose peer connection IMMEDIATELY after service creation
+      // ✅ Get peer connection (will expose later)
       const pc = webrtcServiceRef.current.getPeerConnection();
       console.log("🔍 Peer connection details:", {
         exists: !!pc,
@@ -882,19 +882,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
         signalingState: pc?.signalingState,
         transceivers: pc?.getTransceivers().length,
       });
-
-      if (typeof window !== "undefined") {
-        (window as any).peerConnection = pc;
-        console.log("✅ Peer connection exposed to window");
-
-        // Verify it was set
-        setTimeout(() => {
-          console.log("🔍 Verification - window.peerConnection:", {
-            exists: !!(window as any).peerConnection,
-            same: (window as any).peerConnection === pc,
-          });
-        }, 100);
-      }
 
       // Get media stream
       console.log("🎤 Acquiring media stream...");
@@ -1047,9 +1034,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.log("✅ Offer sent");
       }
 
-      // ✅ CRITICAL: Expose EVERYTHING to window IMMEDIATELY
+      // ✅ CRITICAL: Expose EVERYTHING to window at the END
       if (typeof window !== "undefined") {
-        (window as any).peerConnection = pc;
+        const finalPc = webrtcServiceRef.current.getPeerConnection();
+        (window as any).peerConnection = finalPc;
         (window as any).webrtcService = webrtcServiceRef.current;
 
         // ✅ Add debug helper
@@ -1077,7 +1065,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
             peerConnection: !!(window as any).peerConnection,
             webrtcService: !!(window as any).webrtcService,
             checkConnection: typeof (window as any).checkConnection,
-            pcMatches: (window as any).peerConnection === pc,
+            pcMatches: (window as any).peerConnection === finalPc,
             serviceMatches:
               (window as any).webrtcService === webrtcServiceRef.current,
           });
