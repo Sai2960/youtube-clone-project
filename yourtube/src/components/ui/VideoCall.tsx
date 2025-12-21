@@ -1236,44 +1236,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
           <button
             onClick={() => {
-              console.log("🎬 START CALL BUTTON CLICKED");
-              console.log("   Before: userInteracted =", userInteracted);
-
+              console.log("🎬 START CALL CLICKED - Setting userInteracted");
               setUserInteracted(true);
-
-              console.log("   After: userInteracted should be true");
-              console.log("   Component should re-render now");
-
-              // ✅ Force initialization immediately
-              setTimeout(() => {
-                console.log("⏱️ 100ms passed, checking initialization...");
-                console.log(
-                  "   initializingRef.current:",
-                  initializingRef.current
-                );
-                console.log(
-                  "   initializedRef.current:",
-                  initializedRef.current
-                );
-
-                if (!initializingRef.current && !initializedRef.current) {
-                  console.log("🚀 FORCING INITIALIZATION");
-                  initializingRef.current = true;
-
-                  initializeCall()
-                    .then(() => {
-                      initializedRef.current = true;
-                      console.log("✅ Initialization complete");
-                    })
-                    .catch((error) => {
-                      console.error("❌ Initialization failed:", error);
-                      setError("Failed to start call");
-                      initializingRef.current = false;
-                    });
-                } else {
-                  console.log("⚠️ Already initializing or initialized");
-                }
-              }, 100);
+              // That's it! Let the main useEffect handle initialization
             }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >
