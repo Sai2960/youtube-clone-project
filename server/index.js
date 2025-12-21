@@ -890,6 +890,65 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 const DATABASE_URL = process.env.DB_URL;
 
+// =================== Database Connection Setup ===================
+const connectToDatabase = async () => {
+  if (!DATABASE_URL) {
+    console.warn("⚠️  No MongoDB connection string provided");
+    console.warn("⚠️  Set DB_URL in your .env file");
+    console.warn("⚠️  Database features and cron jobs will not be available");
+    return;
+  }
+
+  mongoose.set("strictQuery", false);
+
+  try {
+    await mongoose.connect(DATABASE_URL, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+
+    console.log("✅ MongoDB connected successfully");
+    mongoConnected = true;
+
+    // Start cron jobs after successful database connection
+    if (!cronJobsRunning) {
+      console.log("\n⏰ ===== STARTING CRON JOBS =====");
+      try {
+        startAllCronJobs();
+        cronJobsRunning = true;
+        console.log("✅ Cron jobs started successfully");
+        console.log("===== CRON JOBS ACTIVE =====\n");
+      } catch (error) {
+        console.error("❌ Failed to start cron jobs:", error.message);
+      }
+    }
+  } catch (error) {
+    console.error("❌ MongoDB connection failed:", error.message);
+    console.log("   Retrying in 30 seconds...");
+    setTimeout(connectToDatabase, 30000);
+  }
+};
+
+// MongoDB event listeners
+mongoose.connection.on("connected", () => {
+  mongoConnected = true;
+  console.log("✅ MongoDB connection established");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("❌ MongoDB error:", err.message);
+  mongoConnected = false;
+});
+
+mongoose.connection.on("disconnected", () => {
+  mongoConnected = false;
+  if (cronJobsRunning) {
+    console.log("⚠️  MongoDB disconnected - Cron jobs may not work properly");
+  }
+  console.log("❌ MongoDB disconnected. Attempting to reconnect...");
+});
+
+// Start the server (listening on all network interfaces)
 // Start the server (listening on all network interfaces)
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`\n🚀 ===== SERVER STARTED =====`);
@@ -898,63 +957,21 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`   Network: http://0.0.0.0:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`   CORS Origins: ${allowedOrigins.length}`);
-  console.log(`   Socket.IO Timeouts: Optimized (10s)`);
+  console.log(`   Socket.IO: Configured`);
   console.log(`===== SERVER READY =====\n`);
 
   serverReady = true;
-});
 
+  // ✅ CRITICAL: Start MongoDB connection AFTER server is listening
+  // This prevents Render timeout issues
+  if (DATABASE_URL) {
+    connectToDatabase();
+  }
+});
 // Connect to MongoDB if connection string is provided
 if (DATABASE_URL) {
   mongoose.set("strictQuery", false);
 
-  const connectToDatabase = async () => {
-    try {
-      await mongoose.connect(DATABASE_URL, {
-        serverSelectionTimeoutMS: 10000,
-        socketTimeoutMS: 45000,
-      });
-
-      console.log("✅ MongoDB connected successfully");
-      mongoConnected = true;
-
-      // Start cron jobs after successful database connection
-      if (!cronJobsRunning) {
-        console.log("\n⏰ ===== STARTING CRON JOBS =====");
-        try {
-          startAllCronJobs();
-          cronJobsRunning = true;
-          console.log("✅ Cron jobs started successfully");
-          console.log("===== CRON JOBS ACTIVE =====\n");
-        } catch (error) {
-          console.error("❌ Failed to start cron jobs:", error.message);
-        }
-      }
-    } catch (error) {
-      console.error("❌ MongoDB connection failed:", error.message);
-      console.log("   Retrying in 30 seconds...");
-      setTimeout(connectToDatabase, 30000);
-    }
-  };
-
-  // MongoDB event listeners
-  mongoose.connection.on("connected", () => {
-    mongoConnected = true;
-    console.log("✅ MongoDB connection established");
-  });
-
-  mongoose.connection.on("error", (err) => {
-    console.error("❌ MongoDB error:", err.message);
-    mongoConnected = false;
-  });
-
-  mongoose.connection.on("disconnected", () => {
-    mongoConnected = false;
-    if (cronJobsRunning) {
-      console.log("⚠️  MongoDB disconnected - Cron jobs may not work properly");
-    }
-    console.log("❌ MongoDB disconnected. Attempting to reconnect...");
-  });
 
   // Initial connection attempt
   connectToDatabase();
