@@ -1313,6 +1313,14 @@ const VideoCall: React.FC<VideoCallProps> = ({
           >
             🎥 START CALL
           </button>
+
+          {/* ✅ TEMPORARY DEBUG */}
+          <div className="mt-8 p-4 bg-gray-800 rounded text-white text-xs">
+            <p>userInteracted: {String(userInteracted)}</p>
+            <p>initializing: {String(initializingRef.current)}</p>
+            <p>initialized: {String(initializedRef.current)}</p>
+            <p>webrtc: {String(!!webrtcServiceRef.current)}</p>
+          </div>
         </div>
       </div>
     );
