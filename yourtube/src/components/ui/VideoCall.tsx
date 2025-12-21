@@ -609,6 +609,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, [roomId, isRecording, onEndCall, router]);
 
   // Main initialization
+  // Main initialization
   useEffect(() => {
     console.log("🔄 Mount effect, roomId:", roomId);
 
@@ -617,10 +618,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       return;
     }
 
-    if (!userInteracted) {
-      console.log("⏳ Waiting for user interaction...");
-      return;
-    }
+    // ✅ REMOVED: userInteracted check - START CALL button already ensures interaction
 
     if (initializingRef.current || initializedRef.current) {
       console.log("⚠️ Already initialized");
@@ -650,17 +648,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
     };
 
-    const timer = setTimeout(init, 100);
+    // ✅ FIXED: Start immediately, no delay
+    init();
 
     return () => {
       mounted = false;
-      clearTimeout(timer);
       if (initializedRef.current && !callEndedRef.current) {
         cleanup(false);
       }
     };
-  }, [roomId, userInteracted]);
-
+  }, [roomId]); // ✅ REMOVED: userInteracted from dependencies
   // Audio monitoring
   // ✅ Monitor connection and track states
   useEffect(() => {
@@ -895,8 +892,30 @@ const VideoCall: React.FC<VideoCallProps> = ({
             }
           });
 
-          // Try to play video
+          // ✅ Wait for video metadata
+          await new Promise<void>((resolve) => {
+            if (videoEl.readyState >= 2) {
+              console.log("✅ Video metadata already loaded");
+              resolve();
+            } else {
+              const handler = () => {
+                console.log("✅ Video metadata loaded");
+                videoEl.removeEventListener("loadedmetadata", handler);
+                resolve();
+              };
+              videoEl.addEventListener("loadedmetadata", handler);
+              setTimeout(() => {
+                videoEl.removeEventListener("loadedmetadata", handler);
+                console.warn("⚠️ Metadata load timeout");
+                resolve();
+              }, 5000);
+            }
+          });
+
+          // ✅ Try to play video with retry logic
           try {
+            videoEl.volume = 1.0;
+            videoEl.muted = false;
             await videoEl.play();
             console.log("✅ Video playing!");
             setConnectionStatus("connected");
@@ -904,17 +923,44 @@ const VideoCall: React.FC<VideoCallProps> = ({
             setError(null);
           } catch (err: any) {
             console.error("❌ Video play failed:", err.name);
-            setShowPlayButton(true);
-            setError("Click play to start");
+
+            if (
+              err.name === "NotAllowedError" ||
+              err.name === "NotSupportedError"
+            ) {
+              setShowPlayButton(true);
+              setError("🎬 Click play to start");
+            } else {
+              // Retry once after 1 second
+              setTimeout(async () => {
+                try {
+                  videoEl.volume = 1.0;
+                  videoEl.muted = false;
+                  await videoEl.play();
+                  console.log("✅ Video retry succeeded");
+                  setShowPlayButton(false);
+                  setConnectionStatus("connected");
+                  setError(null);
+                } catch (retryErr) {
+                  console.error("❌ Video retry failed:", retryErr);
+                  setShowPlayButton(true);
+                  setError("Click play to start");
+                }
+              }, 1000);
+            }
           }
 
-          // ✅ Setup audio element (separate for better control)
-          console.log("🔊 Setting up separate audio element...");
-          await setupRemoteAudio(remoteStream);
-          console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+          // ✅ Setup audio (ONLY ONCE, no duplicates)
+          if (audioTracks.length > 0) {
+            console.log("🔊 Setting up audio...");
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            await setupRemoteAudio(remoteStream);
+          } else {
+            console.error("❌ NO AUDIO TRACKS!");
+            setError("Remote peer has no audio");
+          }
 
-          // Additional stabilization delay
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
 
           // ✅ Try to play video
           try {
@@ -971,8 +1017,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }
       );
       // ✅ CRITICAL: Add local stream to peer connection
+      // ✅ CRITICAL: Add local stream to peer connection
       console.log("📤 Adding local stream to peer connection...");
       await webrtcServiceRef.current.addLocalStreamToPeer();
+      console.log("✅ Local stream added");
+
+      // Join room
+      console.log("🚪 Joining room:", roomId);
+      socket.emit("join-room", roomId, user?._id || socket.id);
+      // Add local stream
+      // Add local stream
+      webrtcServiceRef.current.addLocalStreamToPeer();
       console.log("✅ Local stream added");
 
       // Join room
@@ -1372,22 +1427,26 @@ const VideoCall: React.FC<VideoCallProps> = ({
             </p>
           </div>
           <button
-            onClick={async () => {
+            onClick={() => {
               console.log("🎬 START CALL BUTTON CLICKED");
               setUserInteracted(true);
 
-              // Force immediate initialization
-              setTimeout(async () => {
-                if (!initializingRef.current && !initializedRef.current) {
-                  console.log("🚀 FORCING CALL INITIALIZATION");
-                  try {
-                    await initializeCall();
+              // ✅ CRITICAL: Force IMMEDIATE initialization (no timeout)
+              if (!initializingRef.current && !initializedRef.current) {
+                console.log("🚀 FORCING CALL INITIALIZATION NOW");
+                initializingRef.current = true;
+
+                initializeCall()
+                  .then(() => {
                     initializedRef.current = true;
-                  } catch (error) {
-                    console.error("❌ Forced init error:", error);
-                  }
-                }
-              }, 100);
+                    console.log("✅ Call initialized successfully");
+                  })
+                  .catch((error) => {
+                    console.error("❌ Call initialization failed:", error);
+                    setError("Failed to start call. Please try again.");
+                    initializingRef.current = false;
+                  });
+              }
             }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >
