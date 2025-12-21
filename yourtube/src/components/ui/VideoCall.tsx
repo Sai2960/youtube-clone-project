@@ -716,6 +716,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, [roomId, userInteracted]); // ✅ Only depend on these two
 
   // ✅ NEW: Diagnostic logging
+  // ✅ FIXED: Diagnostic logging with stable dependency
+  // ✅ FIXED: Diagnostic logging with stable dependency
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
 
@@ -734,7 +736,22 @@ const VideoCall: React.FC<VideoCallProps> = ({
     }, 3000);
 
     return () => clearInterval(logInterval);
-  }, [webrtcServiceRef.current]);
+  }, []); // ✅ Empty array - run once after mount
+
+  // ✅ NEW: Ensure window.peerConnection persists
+  useEffect(() => {
+    if (webrtcServiceRef.current && initializedRef.current) {
+      const pc = webrtcServiceRef.current.getPeerConnection();
+      if (pc) {
+        (window as any).peerConnection = pc;
+        (window as any).webrtcService = webrtcServiceRef.current;
+        console.log("✅ Window exposure verified:", {
+          peerConnection: !!(window as any).peerConnection,
+          webrtcService: !!(window as any).webrtcService,
+        });
+      }
+    }
+  }, [initializedRef.current]); // Re-run when initialization completes
   // Audio monitoring
   // ✅ Monitor connection and track states
   useEffect(() => {
@@ -1024,6 +1041,24 @@ const VideoCall: React.FC<VideoCallProps> = ({
         const offer = await webrtcServiceRef.current.createOffer();
         socket.emit("offer", roomId, offer);
         console.log("✅ Offer sent");
+      }
+
+      // ✅ NEW: Add debug helpers to window
+      if (typeof window !== "undefined") {
+        (window as any).webrtcService = webrtcServiceRef.current;
+        (window as any).checkConnection = () => {
+          const pc = webrtcServiceRef.current?.getPeerConnection();
+          return {
+            hasService: !!webrtcServiceRef.current,
+            hasPeerConnection: !!pc,
+            connectionState: pc?.connectionState,
+            signalingState: pc?.signalingState,
+            transceivers: pc?.getTransceivers().length,
+            windowPeerConnection: !!(window as any).peerConnection,
+          };
+        };
+        console.log("✅ Debug helpers added to window");
+        console.log("   Run: window.checkConnection()");
       }
 
       console.log("===== INITIALIZATION COMPLETE =====\n");
