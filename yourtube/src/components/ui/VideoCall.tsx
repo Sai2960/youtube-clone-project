@@ -1260,8 +1260,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .padStart(2, "0")}`;
   };
 
-  // ✅ Show initial interaction prompt OR initializing state
-  if (!userInteracted || (userInteracted && !webrtcServiceRef.current)) {
+  // ✅ Show loading during initialization
+  if (!userInteracted) {
     return (
       <div className="w-screen h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -1313,18 +1313,33 @@ const VideoCall: React.FC<VideoCallProps> = ({
           >
             🎥 START CALL
           </button>
+        </div>
+      </div>
+    );
+  }
 
-          {/* ✅ TEMPORARY DEBUG */}
-          <div className="mt-8 p-4 bg-gray-800 rounded text-white text-xs">
+  // ✅ Show initializing screen AFTER user clicks start
+  if (userInteracted && !webrtcServiceRef.current) {
+    return (
+      <div className="w-screen h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h1 className="text-white text-2xl font-bold mb-2">
+            Initializing Call...
+          </h1>
+          <p className="text-gray-400">Setting up audio and video</p>
+
+          {/* Debug info */}
+          <div className="mt-4 text-xs text-gray-500">
             <p>userInteracted: {String(userInteracted)}</p>
+            <p>webrtcService: {String(!!webrtcServiceRef.current)}</p>
             <p>initializing: {String(initializingRef.current)}</p>
-            <p>initialized: {String(initializedRef.current)}</p>
-            <p>webrtc: {String(!!webrtcServiceRef.current)}</p>
           </div>
         </div>
       </div>
     );
   }
+
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* Remote Video (Main) - FIXED */}
