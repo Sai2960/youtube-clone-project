@@ -257,6 +257,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPlayButton, setShowPlayButton] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // ✅ ADD THIS
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -681,7 +682,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
         if (mounted) {
           initializedRef.current = true;
-          initializingRef.current = false; // ✅ Reset this
+          initializingRef.current = false;
+          setIsInitialized(true); // ✅ NEW: Trigger re-render
           console.log("✅ Initialization complete - refs:", {
             webrtc: !!webrtcServiceRef.current,
             localVideo: !!localVideoRef.current,
@@ -739,8 +741,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, []); // ✅ Empty array - run once after mount
 
   // ✅ NEW: Ensure window.peerConnection persists
+  // ✅ FIXED: Ensure window objects persist - use state instead of ref
+
   useEffect(() => {
-    if (webrtcServiceRef.current && initializedRef.current) {
+    if (webrtcServiceRef.current && isInitialized) {
       const pc = webrtcServiceRef.current.getPeerConnection();
       if (pc) {
         (window as any).peerConnection = pc;
@@ -751,7 +755,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         });
       }
     }
-  }, [initializedRef.current]); // Re-run when initialization completes
+  }, [isInitialized]); // ✅ State triggers re-render// Re-run when initialization completes
   // Audio monitoring
   // ✅ Monitor connection and track states
   useEffect(() => {
@@ -1152,6 +1156,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
     initializedRef.current = false;
     initializingRef.current = false;
     remoteStreamReceivedRef.current = false;
+    setIsInitialized(false); // ✅ ADD THIS
 
     console.log("✅ Cleanup complete");
   };
