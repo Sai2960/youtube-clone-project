@@ -15,7 +15,9 @@ import axiosInstance from "@/lib/axiosinstance";
 import { normalizeAvatarUrl, DEFAULT_AVATAR_SVG } from "@/lib/imageUtils";
 
 const CallNotification: React.FC = () => {
-  const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
+  const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(
+    null
+  );
   const [isRinging, setIsRinging] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>(DEFAULT_AVATAR_SVG);
   const router = useRouter();
@@ -28,7 +30,7 @@ const CallNotification: React.FC = () => {
     if (incomingCall?.image) {
       const processedUrl = normalizeAvatarUrl(incomingCall.image);
       setAvatarUrl(processedUrl);
-      console.log('📸 Avatar URL processed:', processedUrl);
+      console.log("📸 Avatar URL processed:", processedUrl);
     } else {
       setAvatarUrl(DEFAULT_AVATAR_SVG);
     }
@@ -41,6 +43,86 @@ const CallNotification: React.FC = () => {
     }
 
     console.log("📞 Setting up call notifications for user:", user._id);
+
+    // ✅ CRITICAL FIX: Initialize socket FIRST, then setup listeners
+    const initializeAndSetup = async () => {
+      try {
+        // Step 1: Initialize socket
+        console.log("🔌 Initializing socket...");
+        const socket = initializeSocket(user._id);
+
+        // Step 2: Wait for it to actually connect
+        let connected = false;
+        let attempts = 0;
+        const maxAttempts = 40; // 20 seconds total (500ms * 40)
+
+        while (!connected && attempts < maxAttempts) {
+          if (socket.connected) {
+            connected = true;
+            console.log("✅ Socket connected successfully");
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          attempts++;
+          if (attempts % 4 === 0) {
+            console.log(`⏳ Waiting for socket... ${attempts * 0.5}s`);
+          }
+        }
+
+        if (!connected) {
+          console.error("❌ Socket failed to connect after 20 seconds");
+          return;
+        }
+
+        // Step 3: NOW setup the event listeners
+        console.log("📝 Setting up event listeners...");
+
+        const handleIncomingCall = (data: IncomingCallData) => {
+          console.log("\n📞 ===== INCOMING CALL =====");
+          console.log("   From:", data.name);
+          console.log("   User ID:", data.from);
+          console.log("   Room:", data.roomId);
+          console.log("   Call ID:", data.callId);
+          console.log("===========================\n");
+
+          setIncomingCall(data);
+          setIsRinging(true);
+          playRingtone();
+        };
+
+        const handleCallRejected = () => {
+          console.log("❌ Call rejected by remote peer");
+          setIncomingCall(null);
+          setIsRinging(false);
+          stopRingtone();
+        };
+
+        const handleCallEnded = () => {
+          console.log("📴 Call ended by remote peer");
+          setIncomingCall(null);
+          setIsRinging(false);
+          stopRingtone();
+        };
+
+        socket.on("incoming-call", handleIncomingCall);
+        socket.on("call-rejected", handleCallRejected);
+        socket.on("call-ended", handleCallEnded);
+
+        socketListenersSetupRef.current = true;
+        console.log("✅ Call notification listeners registered successfully");
+
+        // Cleanup function
+        return () => {
+          console.log("🧹 Cleaning up socket listeners");
+          socket.off("incoming-call", handleIncomingCall);
+          socket.off("call-rejected", handleCallRejected);
+          socket.off("call-ended", handleCallEnded);
+          socketListenersSetupRef.current = false;
+        };
+      } catch (error) {
+        console.error("❌ Error in socket initialization:", error);
+      }
+    };
 
     // Setup cross-tab listener
     const unsubscribeCrossTab = onIncomingCall((callData) => {
@@ -59,97 +141,15 @@ const CallNotification: React.FC = () => {
       playRingtone();
     }
 
-    // Setup socket listeners
-    const setupSocketListeners = () => {
-      if (socketListenersSetupRef.current) {
-        console.log("✅ Socket listeners already setup");
-        return;
-      }
-
-      if (!isSocketConnected()) {
-        console.log("⚠️ Socket not connected yet, initializing...");
-        try {
-          initializeSocket(user._id);
-        } catch (error) {
-          console.error("❌ Socket initialization error:", error);
-          return;
-        }
-      }
-
-      const checkSocketInterval = setInterval(() => {
-        if (isSocketConnected()) {
-          clearInterval(checkSocketInterval);
-
-          try {
-            const socket = getSocket();
-            console.log("✅ Socket connected, setting up call listeners");
-
-            const handleIncomingCall = (data: IncomingCallData) => {
-              console.log("\n📞 ===== INCOMING CALL =====");
-              console.log("   From:", data.name);
-              console.log("   User ID:", data.from);
-              console.log("   Room:", data.roomId);
-              console.log("   Call ID:", data.callId);
-              console.log("   Image:", data.image);
-              console.log("===========================\n");
-
-              setIncomingCall(data);
-              setIsRinging(true);
-              playRingtone();
-            };
-
-            const handleCallRejected = () => {
-              console.log("❌ Call rejected by remote peer");
-              setIncomingCall(null);
-              setIsRinging(false);
-              stopRingtone();
-            };
-
-            const handleCallEnded = () => {
-              console.log("📴 Call ended by remote peer");
-              setIncomingCall(null);
-              setIsRinging(false);
-              stopRingtone();
-            };
-
-            socket.on("incoming-call", handleIncomingCall);
-            socket.on("call-rejected", handleCallRejected);
-            socket.on("call-ended", handleCallEnded);
-
-            socketListenersSetupRef.current = true;
-            console.log("✅ Call notification listeners registered successfully");
-
-            return () => {
-              console.log("🧹 Cleaning up socket listeners");
-              socket.off("incoming-call", handleIncomingCall);
-              socket.off("call-rejected", handleCallRejected);
-              socket.off("call-ended", handleCallEnded);
-              socketListenersSetupRef.current = false;
-            };
-          } catch (error) {
-            console.error("❌ Error setting up socket listeners:", error);
-          }
-        }
-      }, 500);
-
-      setTimeout(() => {
-        clearInterval(checkSocketInterval);
-        if (!socketListenersSetupRef.current) {
-          console.warn("⚠️ Socket connection timeout - call notifications may not work");
-        }
-      }, 20000);
-
-      return () => clearInterval(checkSocketInterval);
-    };
-
-    const cleanupSocket = setupSocketListeners();
+    // Start the initialization
+    const cleanupPromise = initializeAndSetup();
 
     return () => {
       console.log("🧹 Cleaning up call notification component");
       unsubscribeCrossTab();
       stopRingtone();
       socketListenersSetupRef.current = false;
-      if (cleanupSocket) cleanupSocket();
+      cleanupPromise?.then((cleanup) => cleanup && cleanup());
     };
   }, [user?._id]);
 
@@ -159,47 +159,49 @@ const CallNotification: React.FC = () => {
     }
   }, [isRinging]);
 
-const playRingtone = () => {
-  if (typeof window === "undefined") return;
-
-  stopRingtone();
-
-  try {
-    console.log("🔔 Incoming call - notification shown");
-    // Don't play audio until user interacts with Accept button
-    // This prevents browser autoplay blocking
-  } catch (error) {
-    console.error("Error showing notification:", error);
-  }
-};
-const stopRingtone = () => {
-  console.log("🔕 Stopping notification sound");
-
-  if (ringtoneIntervalRef.current) {
-    clearInterval(ringtoneIntervalRef.current);
-    ringtoneIntervalRef.current = null;
-  }
-
-  // ✅ No AudioContext to close anymore
-  setIsRinging(false);
-};
-
-const handleAcceptCall = async () => {
-  if (!incomingCall) return;
-
-  try {
-    console.log("\n✅ ===== ACCEPTING CALL =====");
-    
-    // ✅ NOW it's safe to play audio (user clicked Accept button)
-    try {
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjKM0fPTgjMGHm7A7+OZSA0PVqnn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqPh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmq/7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS/8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0Q');
-      audio.volume = 0.3;
-      audio.play(); // This will work because user just clicked
-    } catch (e) {
-      // Silent fail is OK
-    }
+  const playRingtone = () => {
+    if (typeof window === "undefined") return;
 
     stopRingtone();
+
+    try {
+      console.log("🔔 Incoming call - notification shown");
+      // Don't play audio until user interacts with Accept button
+      // This prevents browser autoplay blocking
+    } catch (error) {
+      console.error("Error showing notification:", error);
+    }
+  };
+  const stopRingtone = () => {
+    console.log("🔕 Stopping notification sound");
+
+    if (ringtoneIntervalRef.current) {
+      clearInterval(ringtoneIntervalRef.current);
+      ringtoneIntervalRef.current = null;
+    }
+
+    // ✅ No AudioContext to close anymore
+    setIsRinging(false);
+  };
+
+  const handleAcceptCall = async () => {
+    if (!incomingCall) return;
+
+    try {
+      console.log("\n✅ ===== ACCEPTING CALL =====");
+
+      // ✅ NOW it's safe to play audio (user clicked Accept button)
+      try {
+        const audio = new Audio(
+          "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjKM0fPTgjMGHm7A7+OZSA0PVqnn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqPh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmq/7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS/8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0QV6vn66hVFApGnt/yvmwhBjKM0fPTgjMGHm/A7+OZSA0PVqjn7K1aGAg+ltryxnMpBSh+zPLaizsIGGS56+mjUBELTqLh8bllHAU2jdXzzn0vBSZ8yvLekD0JGGm+7OagUBELTKLi8bllHAU2jtXzzn0vBSaAy/Lakj8KFmrA7OSiTxEMUqXm7a5aGAhBmN7xwXEoBjGP0/PMezEGIXS+8NygSQ0Q"
+        );
+        audio.volume = 0.3;
+        audio.play(); // This will work because user just clicked
+      } catch (e) {
+        // Silent fail is OK
+      }
+
+      stopRingtone();
 
       if (isSocketConnected()) {
         try {
@@ -304,7 +306,7 @@ const handleAcceptCall = async () => {
                 alt={incomingCall.name}
                 className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-green-500 object-cover profile-pulse shadow-2xl"
                 onError={(e) => {
-                  console.error('❌ Avatar failed to load, using fallback');
+                  console.error("❌ Avatar failed to load, using fallback");
                   e.currentTarget.src = DEFAULT_AVATAR_SVG;
                 }}
               />
@@ -324,7 +326,9 @@ const handleAcceptCall = async () => {
           {/* Call Status Text */}
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <p className="text-gray-300 text-sm sm:text-base">Incoming video call</p>
+            <p className="text-gray-300 text-sm sm:text-base">
+              Incoming video call
+            </p>
           </div>
 
           {/* Room ID (subtle) */}
@@ -360,8 +364,14 @@ const handleAcceptCall = async () => {
         <div className="flex items-center justify-center gap-2">
           <div className="flex gap-2">
             <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full bounce-dot"></div>
-            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full bounce-dot" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full bounce-dot" style={{ animationDelay: '0.4s' }}></div>
+            <div
+              className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full bounce-dot"
+              style={{ animationDelay: "0.2s" }}
+            ></div>
+            <div
+              className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full bounce-dot"
+              style={{ animationDelay: "0.4s" }}
+            ></div>
           </div>
         </div>
 

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { WebRTCService } from "@/lib/webrtc";
 import { RecordingService } from "@/lib/recordingService";
-import { getSocket, waitForSocket } from "@/lib/socket";
+import initializeSocket, { getSocket, isSocketConnected, waitForSocket } from "@/lib/socket";
 import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import { useUser } from "@/lib/AuthContext";
@@ -745,7 +745,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     return () => clearInterval(monitor);
   }, [connectionStatus]);
-  const initializeCall = async () => {
+const initializeCall = async () => {
     try {
       setError(null);
       console.log("\n🎥 ===== INITIALIZING CALL =====");
@@ -754,9 +754,23 @@ const VideoCall: React.FC<VideoCallProps> = ({
         throw new Error("User not authenticated");
       }
 
+      // ✅ CRITICAL: Ensure socket is initialized FIRST
+      if (!isSocketConnected()) {
+        console.log("🔌 Socket not connected, initializing...");
+        try {
+          initializeSocket(user._id);
+          // Wait a bit for connection
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (err) {
+          console.error("❌ Failed to initialize socket:", err);
+        }
+      }
+
       if (typeof window !== "undefined") {
         window.onbeforeunload = () => "Call is connecting...";
       }
+
+      // Wait for socket (rest of the function continues as before...)
 
       // Wait for socket
       let socket;

@@ -13,7 +13,7 @@ const getSocketURL = () => {
 
   const PRODUCTION_URL = "https://youtube-clone-project-q3pd.onrender.com";
   const hostname = window.location.hostname;
-  
+
   // ✅ Local development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     console.log("🏠 Local environment");
@@ -34,11 +34,8 @@ console.log("   Protocol:", SOCKET_URL.startsWith("https") ? "HTTPS" : "HTTP");
 
 export const initializeSocket = (userId: string): Socket => {
   // Return existing socket if already connected
-  if (socket?.connected && currentUserId === userId) {
+  if (socket?.connected && currentUserId === userId && isRegistered) {
     console.log("✅ Socket already connected for user:", userId);
-    if (!isRegistered) {
-      socket.emit("register-user", userId);
-    }
     return socket;
   }
 
@@ -58,46 +55,45 @@ export const initializeSocket = (userId: string): Socket => {
   const isSecure = SOCKET_URL.startsWith("https");
 
   socket = io(SOCKET_URL, {
-    transports: ["polling", "websocket"],
+    transports: ["websocket", "polling"], // ✅ Try websocket first
     upgrade: true,
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    timeout: 30000,
+    timeout: 20000, // ✅ Increased from 30000
     autoConnect: true,
     withCredentials: true,
     secure: isSecure,
     rejectUnauthorized: false,
     query: { userId },
     path: "/socket.io/",
+    forceNew: false, // ✅ Reuse existing connection if possible
   });
 
-  // ✅ CRITICAL: Force immediate connection attempt
-  console.log("🔄 Forcing socket connection...");
-  socket.connect();
+  // ✅ Force immediate connection
+  if (!socket.connected) {
+    console.log("🔄 Forcing socket connection...");
+    socket.connect();
+  }
 
-  // ✅ CRITICAL: Expose socket to window for debugging
-  if (typeof window !== 'undefined') {
+  // ✅ Expose to window for debugging
+  if (typeof window !== "undefined") {
     (window as any).__socket = socket;
     console.log("✅ Socket exposed to window.__socket");
-    
-    // ✅ NEW: Log all socket events
-    socket.onAny((eventName, ...args) => {
-      console.log(`📨 Socket event: ${eventName}`, args);
-    });
   }
 
   // Connection handlers
-socket.on("connect", () => {
+  socket.on("connect", () => {
     console.log("✅ Socket connected:", socket?.id);
     console.log("   Transport:", socket?.io.engine.transport.name);
     reconnectAttempts = 0;
 
+    // Register user immediately
     if (userId && socket && !isRegistered) {
       console.log("📝 Registering user:", userId);
       socket.emit("register-user", userId);
-      isRegistered = true; // Set immediately to prevent duplicate registrations
+      // Don't set isRegistered here - wait for confirmation
     }
   });
 
@@ -109,7 +105,10 @@ socket.on("connect", () => {
   socket.on("connect_error", (error) => {
     console.error("❌ Socket connection error:", error.message);
     console.error("   URL:", SOCKET_URL);
-    console.error("   Stack:", error.stack);
+    console.error(
+      "   Transport:",
+      socket?.io.engine?.transport?.name || "none"
+    );
     isRegistered = false;
     reconnectAttempts++;
 
@@ -121,7 +120,7 @@ socket.on("connect", () => {
   socket.on("disconnect", (reason) => {
     console.log("❌ Socket disconnected:", reason);
     isRegistered = false;
-    
+
     if (reason === "io server disconnect") {
       console.log("🔄 Server disconnected, reconnecting...");
       socket?.connect();
@@ -131,19 +130,10 @@ socket.on("connect", () => {
   socket.on("reconnect", (attemptNumber) => {
     console.log(`✅ Reconnected after ${attemptNumber} attempts`);
     reconnectAttempts = 0;
-    
+
     if (userId && socket) {
       socket.emit("register-user", userId);
     }
-  });
-
-  // ✅ NEW: Log connection state changes
-  socket.io.on("ping", () => {
-    console.log("🏓 Ping sent");
-  });
-
-  socket.io.on("packet", (packet) => {
-    console.log("📦 Packet:", packet.type, packet.data);
   });
 
   return socket;
@@ -177,7 +167,7 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
     // If connected but not registered, wait for registration
     if (socket.connected && !isRegistered) {
       console.log("⏳ Socket connected, waiting for registration...");
-      
+
       const registrationHandler = () => {
         console.log("✅ Registration confirmed");
         socket?.off("user-registered", registrationHandler);
@@ -198,14 +188,14 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
 
     console.log("⏳ Waiting for socket connection...");
     const startTime = Date.now();
-    
+
     const checkInterval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      
+
       if (socket?.connected) {
         console.log(`✅ Socket connected after ${elapsed}ms`);
         clearInterval(checkInterval);
-        
+
         // Wait briefly for registration, then resolve
         if (isRegistered) {
           resolve(socket);
