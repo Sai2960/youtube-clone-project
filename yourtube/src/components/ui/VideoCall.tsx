@@ -654,9 +654,19 @@ const VideoCall: React.FC<VideoCallProps> = ({
       return;
     }
 
-    // Prevent double initialization
-    if (initializingRef.current || initializedRef.current) {
-      console.log("⚠️ Already initializing or initialized");
+    // ✅ CRITICAL FIX: More robust double-init prevention
+    if (initializingRef.current) {
+      console.warn("⚠️ Already initializing - BLOCKED");
+      return;
+    }
+
+    if (initializedRef.current) {
+      console.warn("⚠️ Already initialized - BLOCKED");
+      return;
+    }
+
+    if (webrtcServiceRef.current) {
+      console.warn("⚠️ WebRTC service already exists - BLOCKED");
       return;
     }
 
@@ -671,36 +681,60 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
         if (mounted) {
           initializedRef.current = true;
+          initializingRef.current = false; // ✅ Reset this
           console.log("✅ Initialization complete - refs:", {
             webrtc: !!webrtcServiceRef.current,
             localVideo: !!localVideoRef.current,
             remoteVideo: !!remoteVideoRef.current,
+            peerConnection: !!webrtcServiceRef.current?.getPeerConnection(),
           });
         }
       } catch (error: any) {
         console.error("❌ Init error:", error);
         if (mounted) {
           setError(error.message || "Init failed");
-        }
-      } finally {
-        if (mounted) {
-          initializingRef.current = false;
+          initializingRef.current = false; // ✅ Reset on error
         }
       }
     };
 
-    // ✅ CRITICAL: Add small delay to ensure React has rendered
-    setTimeout(() => {
-      init();
-    }, 100);
+    // ✅ Immediate execution (no timeout needed)
+    init();
 
     return () => {
       mounted = false;
-      if (initializedRef.current && !callEndedRef.current) {
+      // Don't cleanup if already cleaned up
+      if (
+        initializedRef.current &&
+        !callEndedRef.current &&
+        webrtcServiceRef.current
+      ) {
+        console.log("🧹 Component unmounting - cleaning up");
         cleanup(false);
       }
     };
-  }, [roomId, userInteracted]);
+  }, [roomId, userInteracted]); // ✅ Only depend on these two
+
+  // ✅ NEW: Diagnostic logging
+  useEffect(() => {
+    if (!webrtcServiceRef.current) return;
+
+    const logInterval = setInterval(() => {
+      const pc = webrtcServiceRef.current?.getPeerConnection();
+      console.log("📊 WebRTC Status Check:", {
+        service: !!webrtcServiceRef.current,
+        peerConnection: !!pc,
+        connectionState: pc?.connectionState,
+        signalingState: pc?.signalingState,
+        iceConnectionState: pc?.iceConnectionState,
+        iceGatheringState: pc?.iceGatheringState,
+        transceivers: pc?.getTransceivers().length,
+        windowExposed: !!(window as any).peerConnection,
+      });
+    }, 3000);
+
+    return () => clearInterval(logInterval);
+  }, [webrtcServiceRef.current]);
   // Audio monitoring
   // ✅ Monitor connection and track states
   useEffect(() => {
@@ -812,7 +846,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
 
       // Initialize services
-      // Initialize services
       console.log("🔧 Creating WebRTC service...");
       webrtcServiceRef.current = new WebRTCService();
       console.log("✅ WebRTC service created:", !!webrtcServiceRef.current);
@@ -820,21 +853,26 @@ const VideoCall: React.FC<VideoCallProps> = ({
       recordingServiceRef.current = new RecordingService();
       console.log("✅ Recording service created");
 
-      // ✅ CRITICAL DEBUG: Check peer connection
-      const pc = webrtcServiceRef.current?.getPeerConnection();
-      console.log("🔍 Peer connection from service:", {
+      // ✅ CRITICAL: Expose peer connection IMMEDIATELY after service creation
+      const pc = webrtcServiceRef.current.getPeerConnection();
+      console.log("🔍 Peer connection details:", {
         exists: !!pc,
         state: pc?.connectionState,
         signalingState: pc?.signalingState,
+        transceivers: pc?.getTransceivers().length,
       });
 
       if (typeof window !== "undefined") {
         (window as any).peerConnection = pc;
         console.log("✅ Peer connection exposed to window");
-        console.log(
-          "   window.peerConnection:",
-          !!(window as any).peerConnection
-        );
+
+        // Verify it was set
+        setTimeout(() => {
+          console.log("🔍 Verification - window.peerConnection:", {
+            exists: !!(window as any).peerConnection,
+            same: (window as any).peerConnection === pc,
+          });
+        }, 100);
       }
 
       // Get media stream
@@ -995,7 +1033,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
     }
   };
   const cleanup = (emitEvent: boolean = true) => {
-    console.log("🧹 Cleanup...");
+    console.log("🧹 Cleanup starting...", {
+      emitEvent,
+      callEnded: callEndedRef.current,
+      hasWebRTC: !!webrtcServiceRef.current,
+    });
+
+    // ✅ Prevent double cleanup
+    if (!webrtcServiceRef.current) {
+      console.log("⚠️ Already cleaned up");
+      return;
+    }
 
     // ✅ NEW: Remove navigation blocker
     if (typeof window !== "undefined") {
@@ -1016,9 +1064,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
         });
       }
       remoteAudioRef.current.srcObject = null;
-      // ✅ DON'T remove from DOM - just hide it
       remoteAudioRef.current.style.display = "none";
-      // Only nullify reference if truly cleaning up permanently
+
       if (callEndedRef.current) {
         remoteAudioRef.current.remove();
         remoteAudioRef.current = null;
@@ -1051,10 +1098,13 @@ const VideoCall: React.FC<VideoCallProps> = ({
       webrtcServiceRef.current = null;
     }
 
-    delete (window as any).peerConnection;
+    // ✅ Clean up window exposure
+    if (typeof window !== "undefined") {
+      delete (window as any).peerConnection;
+    }
 
     // Emit end call
-    if (emitEvent) {
+    if (emitEvent && !callEndedRef.current) {
       try {
         const socket = getSocket();
         socket.emit("end-call", roomId, { endedBy: user?._id });
@@ -1062,6 +1112,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
         console.error("Socket error:", error);
       }
     }
+
+    // ✅ Reset initialization flags
+    initializedRef.current = false;
+    initializingRef.current = false;
+    remoteStreamReceivedRef.current = false;
 
     console.log("✅ Cleanup complete");
   };
