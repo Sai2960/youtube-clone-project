@@ -812,13 +812,29 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }
 
       // Initialize services
+      // Initialize services
+      console.log("🔧 Creating WebRTC service...");
       webrtcServiceRef.current = new WebRTCService();
+      console.log("✅ WebRTC service created:", !!webrtcServiceRef.current);
+
       recordingServiceRef.current = new RecordingService();
+      console.log("✅ Recording service created");
+
+      // ✅ CRITICAL DEBUG: Check peer connection
+      const pc = webrtcServiceRef.current?.getPeerConnection();
+      console.log("🔍 Peer connection from service:", {
+        exists: !!pc,
+        state: pc?.connectionState,
+        signalingState: pc?.signalingState,
+      });
 
       if (typeof window !== "undefined") {
-        (window as any).peerConnection =
-          webrtcServiceRef.current.getPeerConnection();
-        console.log("✅ Peer connection exposed");
+        (window as any).peerConnection = pc;
+        console.log("✅ Peer connection exposed to window");
+        console.log(
+          "   window.peerConnection:",
+          !!(window as any).peerConnection
+        );
       }
 
       // Get media stream
