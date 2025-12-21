@@ -201,15 +201,16 @@ const io = new Server(server, {
     ],
   },
 
-  // ✅ Transport configuration
-  transports: ["polling", "websocket"],
+  // ✅ CRITICAL FIX: Match frontend transport order
+  transports: ["websocket", "polling"], // ✅ FIXED: websocket first, then polling
   allowEIO3: true,
+  allowUpgrades: true, // ✅ ADDED: Allow transport upgrades
 
   // ✅ Timeouts
-  pingTimeout: 20000, // 20 seconds
-  pingInterval: 10000, // 10 seconds
+  pingTimeout: 60000, // ✅ INCREASED: 60 seconds (was 20)
+  pingInterval: 25000, // ✅ INCREASED: 25 seconds (was 10)
   upgradeTimeout: 10000,
-  connectTimeout: 15000,
+  connectTimeout: 45000, // ✅ INCREASED: 45 seconds (was 15)
   maxHttpBufferSize: 1e8,
 
   // Path
