@@ -13,7 +13,11 @@ import {
 } from "lucide-react";
 import { WebRTCService } from "@/lib/webrtc";
 import { RecordingService } from "@/lib/recordingService";
-import initializeSocket, { getSocket, isSocketConnected, waitForSocket } from "@/lib/socket";
+import initializeSocket, {
+  getSocket,
+  isSocketConnected,
+  waitForSocket,
+} from "@/lib/socket";
 import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import { useUser } from "@/lib/AuthContext";
@@ -629,7 +633,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
   // Main initialization
   // Main initialization
   useEffect(() => {
-    console.log("🔄 Mount effect, roomId:", roomId, "userInteracted:", userInteracted);
+    console.log(
+      "🔄 Mount effect, roomId:",
+      roomId,
+      "userInteracted:",
+      userInteracted
+    );
 
     if (!roomId) {
       setError("Invalid room ID");
@@ -745,7 +754,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     return () => clearInterval(monitor);
   }, [connectionStatus]);
-const initializeCall = async () => {
+  const initializeCall = async () => {
     try {
       setError(null);
       console.log("\n🎥 ===== INITIALIZING CALL =====");
@@ -760,7 +769,7 @@ const initializeCall = async () => {
         try {
           initializeSocket(user._id);
           // Wait a bit for connection
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 2000));
         } catch (err) {
           console.error("❌ Failed to initialize socket:", err);
         }
@@ -1251,16 +1260,37 @@ const initializeCall = async () => {
             </h1>
             <p className="text-gray-400 text-lg">Tap to start your call</p>
           </div>
-         <button
-            onClick={() => {
-              console.log("🎬 START CALL CLICKED");
+          <button
+            onClick={async () => {
+              console.log("🎬 START CALL BUTTON CLICKED");
+              console.log("   Current state:", {
+                userInteracted,
+                roomId,
+                user: !!user,
+                userId: user?._id,
+              });
+
+              // Test socket first
+              try {
+                const testResponse = await fetch(
+                  "https://youtube-clone-project-q3pd.onrender.com/health"
+                );
+                const health = await testResponse.json();
+                console.log("✅ Backend health:", health);
+              } catch (e) {
+                console.error("❌ Backend unreachable:", e);
+                alert(
+                  "Backend server is not responding. Please wait a moment and try again."
+                );
+                return;
+              }
+
               setUserInteracted(true);
-              // The useEffect will handle initialization automatically
             }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >
             🎥 START CALL
-          </button>
+          </button>{" "}
         </div>
       </div>
     );
