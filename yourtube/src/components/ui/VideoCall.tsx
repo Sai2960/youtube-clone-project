@@ -511,30 +511,35 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     await attemptPlay();
   };
-
-  // ✅ FIXED: Debug commands with proper dependencies
-  // ✅ FIXED: Debug commands available immediately after mount
+  // ✅ FIXED: Debug commands with proper async handling
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Create basic debug commands immediately
     const createDebugCommands = () => {
       (window as any).debugVideoCall = {
+        // Check WebRTC service status
         checkService: () => {
-          console.log("🔍 WebRTC Service Status:");
+          console.log("🔍 ===== WebRTC Service Status =====");
           console.log("   Service exists:", !!webrtcServiceRef.current);
 
           if (webrtcServiceRef.current) {
             const pc = webrtcServiceRef.current.getPeerConnection();
-            console.log("   Peer connection:", !!pc);
-            console.log("   Connection state:", pc?.connectionState);
-            console.log("   ICE state:", pc?.iceConnectionState);
-            console.log("   Signaling state:", pc?.signalingState);
+            console.log("   Peer connection exists:", !!pc);
+            if (pc) {
+              console.log("   Connection state:", pc.connectionState);
+              console.log("   ICE state:", pc.iceConnectionState);
+              console.log("   Signaling state:", pc.signalingState);
+              console.log("   ICE gathering state:", pc.iceGatheringState);
+            }
+          } else {
+            console.log("   ❌ WebRTC service not initialized");
           }
+          console.log("=====================================\n");
         },
 
+        // Check local stream
         checkLocalStream: () => {
-          console.log("🔍 Local Stream Status:");
+          console.log("🔍 ===== Local Stream Status =====");
           const localStream = webrtcServiceRef.current?.getLocalStream();
           console.log("   Stream exists:", !!localStream);
 
@@ -551,27 +556,30 @@ const VideoCall: React.FC<VideoCallProps> = ({
             );
 
             localStream.getTracks().forEach((track, i) => {
-              console.log(`   Track ${i} (${track.kind}):`, {
-                label: track.label,
-                enabled: track.enabled,
-                muted: track.muted,
-                readyState: track.readyState,
-              });
+              console.log(`\n   Track ${i} (${track.kind}):`);
+              console.log("      Label:", track.label);
+              console.log("      Enabled:", track.enabled);
+              console.log("      Muted:", track.muted);
+              console.log("      ReadyState:", track.readyState);
             });
+          } else {
+            console.log("   ❌ No local stream");
           }
 
           console.log(
-            "   Video element srcObject:",
+            "\n   Video element srcObject:",
             !!localVideoRef.current?.srcObject
           );
           console.log(
             "   Video element paused:",
             localVideoRef.current?.paused
           );
+          console.log("==================================\n");
         },
 
+        // Check remote stream
         checkRemoteStream: () => {
-          console.log("🔍 Remote Stream Status:");
+          console.log("🔍 ===== Remote Stream Status =====");
           const remoteStream = webrtcServiceRef.current?.getRemoteStream();
           console.log("   Stream exists:", !!remoteStream);
 
@@ -588,17 +596,18 @@ const VideoCall: React.FC<VideoCallProps> = ({
             );
 
             remoteStream.getTracks().forEach((track, i) => {
-              console.log(`   Track ${i} (${track.kind}):`, {
-                label: track.label,
-                enabled: track.enabled,
-                muted: track.muted,
-                readyState: track.readyState,
-              });
+              console.log(`\n   Track ${i} (${track.kind}):`);
+              console.log("      Label:", track.label);
+              console.log("      Enabled:", track.enabled);
+              console.log("      Muted:", track.muted);
+              console.log("      ReadyState:", track.readyState);
             });
+          } else {
+            console.log("   ❌ No remote stream");
           }
 
           console.log(
-            "   Video element srcObject:",
+            "\n   Video element srcObject:",
             !!remoteVideoRef.current?.srcObject
           );
           console.log(
@@ -610,26 +619,39 @@ const VideoCall: React.FC<VideoCallProps> = ({
             height: remoteVideoRef.current?.videoHeight,
           });
           console.log("   Audio element exists:", !!remoteAudioRef.current);
-          console.log(
-            "   Audio element paused:",
-            remoteAudioRef.current?.paused
-          );
+          if (remoteAudioRef.current) {
+            console.log(
+              "   Audio element paused:",
+              remoteAudioRef.current.paused
+            );
+            console.log(
+              "   Audio element muted:",
+              remoteAudioRef.current.muted
+            );
+            console.log(
+              "   Audio element volume:",
+              remoteAudioRef.current.volume
+            );
+          }
+          console.log("===================================\n");
         },
 
+        // Check transceivers
         checkTransceivers: () => {
-          console.log("🔍 Transceivers Status:");
+          console.log("🔍 ===== Transceivers Status =====");
           const pc = webrtcServiceRef.current?.getPeerConnection();
 
           if (!pc) {
-            console.log("   No peer connection");
+            console.log("   ❌ No peer connection");
+            console.log("==================================\n");
             return;
           }
 
           const transceivers = pc.getTransceivers();
-          console.log(`   Total transceivers: ${transceivers.length}`);
+          console.log(`   Total transceivers: ${transceivers.length}\n`);
 
           transceivers.forEach((t, i) => {
-            console.log(`\n   Transceiver ${i}:`);
+            console.log(`   Transceiver ${i}:`);
             console.log(`      Mid: ${t.mid}`);
             console.log(`      Direction: ${t.direction}`);
             console.log(`      Current direction: ${t.currentDirection}`);
@@ -638,56 +660,107 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 t.sender.track?.kind || "none"
               })`
             );
-            console.log(
-              `      Sender track enabled: ${t.sender.track?.enabled}`
-            );
+            console.log(`      Sender enabled: ${t.sender.track?.enabled}`);
             console.log(
               `      Receiver track: ${t.receiver.track?.label || "none"} (${
                 t.receiver.track?.kind || "none"
               })`
             );
             console.log(
-              `      Receiver track enabled: ${t.receiver.track?.enabled}`
+              `      Receiver enabled: ${t.receiver.track?.enabled}\n`
             );
           });
+          console.log("==================================\n");
         },
 
+        // Get WebRTC stats
         getStats: async () => {
+          console.log("🔍 ===== WebRTC Stats =====");
           const pc = webrtcServiceRef.current?.getPeerConnection();
           if (!pc) {
-            console.log("No peer connection");
+            console.log("   ❌ No peer connection");
+            console.log("===========================\n");
             return;
           }
 
-          const stats = await pc.getStats();
-          console.log("📊 WebRTC Stats:");
+          try {
+            const stats = await pc.getStats();
 
-          stats.forEach((report) => {
-            if (report.type === "inbound-rtp") {
-              console.log(`\n${report.kind?.toUpperCase()} (Inbound):`);
-              console.log("   Bytes received:", report.bytesReceived || 0);
-              console.log("   Packets received:", report.packetsReceived || 0);
-              console.log("   Packets lost:", report.packetsLost || 0);
-            } else if (report.type === "outbound-rtp") {
-              console.log(`\n${report.kind?.toUpperCase()} (Outbound):`);
-              console.log("   Bytes sent:", report.bytesSent || 0);
-              console.log("   Packets sent:", report.packetsSent || 0);
+            const inboundAudio: any[] = [];
+            const inboundVideo: any[] = [];
+            const outboundAudio: any[] = [];
+            const outboundVideo: any[] = [];
+
+            stats.forEach((report) => {
+              if (report.type === "inbound-rtp") {
+                if (report.kind === "audio") inboundAudio.push(report);
+                if (report.kind === "video") inboundVideo.push(report);
+              } else if (report.type === "outbound-rtp") {
+                if (report.kind === "audio") outboundAudio.push(report);
+                if (report.kind === "video") outboundVideo.push(report);
+              }
+            });
+
+            if (inboundAudio.length > 0) {
+              console.log("\n   📥 INBOUND AUDIO:");
+              inboundAudio.forEach((r) => {
+                console.log("      Bytes received:", r.bytesReceived || 0);
+                console.log("      Packets received:", r.packetsReceived || 0);
+                console.log("      Packets lost:", r.packetsLost || 0);
+              });
             }
-          });
+
+            if (inboundVideo.length > 0) {
+              console.log("\n   📥 INBOUND VIDEO:");
+              inboundVideo.forEach((r) => {
+                console.log("      Bytes received:", r.bytesReceived || 0);
+                console.log("      Packets received:", r.packetsReceived || 0);
+                console.log("      Packets lost:", r.packetsLost || 0);
+                console.log("      Frame width:", r.frameWidth || 0);
+                console.log("      Frame height:", r.frameHeight || 0);
+              });
+            }
+
+            if (outboundAudio.length > 0) {
+              console.log("\n   📤 OUTBOUND AUDIO:");
+              outboundAudio.forEach((r) => {
+                console.log("      Bytes sent:", r.bytesSent || 0);
+                console.log("      Packets sent:", r.packetsSent || 0);
+              });
+            }
+
+            if (outboundVideo.length > 0) {
+              console.log("\n   📤 OUTBOUND VIDEO:");
+              outboundVideo.forEach((r) => {
+                console.log("      Bytes sent:", r.bytesSent || 0);
+                console.log("      Packets sent:", r.packetsSent || 0);
+                console.log("      Frame width:", r.frameWidth || 0);
+                console.log("      Frame height:", r.frameHeight || 0);
+              });
+            }
+
+            console.log("\n===========================\n");
+          } catch (err) {
+            console.error("   ❌ Error getting stats:", err);
+            console.log("===========================\n");
+          }
         },
 
+        // Force play remote video/audio
         forcePlayRemote: async () => {
-          console.log("🎬 Force playing remote video...");
+          console.log("🎬 ===== Force Playing Remote Media =====");
 
           if (remoteVideoRef.current) {
             try {
               remoteVideoRef.current.muted = false;
               remoteVideoRef.current.volume = 1.0;
               await remoteVideoRef.current.play();
-              console.log("✅ Remote video playing");
-            } catch (err) {
-              console.error("❌ Failed:", err);
+              console.log("   ✅ Remote video playing");
+            } catch (err: any) {
+              console.error("   ❌ Video failed:", err.name);
             }
+          } else {
+            console.log("   ❌ No remote video element");
           }
 
           if (remoteAudioRef.current) {
@@ -695,36 +768,95 @@ const VideoCall: React.FC<VideoCallProps> = ({
               remoteAudioRef.current.muted = false;
               remoteAudioRef.current.volume = 1.0;
               await remoteAudioRef.current.play();
-              console.log("✅ Remote audio playing");
-            } catch (err) {
-              console.error("❌ Failed:", err);
+              console.log("   ✅ Remote audio playing");
+            } catch (err: any) {
+              console.error("   ❌ Audio failed:", err.name);
             }
+          } else {
+            console.log("   ❌ No remote audio element");
           }
+
+          if (audioContextRef.current) {
+            if (audioContextRef.current.state === "suspended") {
+              await audioContextRef.current.resume();
+              console.log("   ✅ AudioContext resumed");
+            } else {
+              console.log(
+                "   ℹ️ AudioContext state:",
+                audioContextRef.current.state
+              );
+            }
+          } else {
+            console.log("   ❌ No AudioContext");
+          }
+
+          console.log("=========================================\n");
         },
 
+        // Full diagnostic - PROPERLY AWAIT ALL ASYNC OPERATIONS
         fullDiagnostic: async () => {
-          console.log("\n🔍 ===== FULL DIAGNOSTIC =====\n");
+          console.log("\n\n");
+          console.log("═══════════════════════════════════════");
+          console.log("       FULL DIAGNOSTIC REPORT");
+          console.log("═══════════════════════════════════════\n");
+
+          // Run all checks
           (window as any).debugVideoCall.checkService();
-          console.log("\n");
           (window as any).debugVideoCall.checkLocalStream();
-          console.log("\n");
           (window as any).debugVideoCall.checkRemoteStream();
-          console.log("\n");
           (window as any).debugVideoCall.checkTransceivers();
-          console.log("\n");
+
+          // Wait for async stats
           await (window as any).debugVideoCall.getStats();
-          console.log("\n===== END DIAGNOSTIC =====\n");
+
+          console.log("═══════════════════════════════════════");
+          console.log("       END DIAGNOSTIC REPORT");
+          console.log("═══════════════════════════════════════\n\n");
+
+          // Return summary
+          return {
+            hasService: !!webrtcServiceRef.current,
+            hasPeerConnection: !!webrtcServiceRef.current?.getPeerConnection(),
+            hasLocalStream: !!webrtcServiceRef.current?.getLocalStream(),
+            hasRemoteStream: !!webrtcServiceRef.current?.getRemoteStream(),
+            connectionState:
+              webrtcServiceRef.current?.getPeerConnection()?.connectionState,
+            iceConnectionState:
+              webrtcServiceRef.current?.getPeerConnection()?.iceConnectionState,
+          };
+        },
+
+        // Quick status check
+        quickCheck: () => {
+          const pc = webrtcServiceRef.current?.getPeerConnection();
+          const status = {
+            initialized: !!webrtcServiceRef.current,
+            peerConnection: !!pc,
+            connectionState: pc?.connectionState || "none",
+            iceState: pc?.iceConnectionState || "none",
+            localStream: !!webrtcServiceRef.current?.getLocalStream(),
+            remoteStream: !!webrtcServiceRef.current?.getRemoteStream(),
+            localVideoPlaying: !localVideoRef.current?.paused,
+            remoteVideoPlaying: !remoteVideoRef.current?.paused,
+            remoteAudioPlaying: !remoteAudioRef.current?.paused,
+          };
+          console.log("⚡ Quick Status:", status);
+          return status;
         },
       };
 
-      console.log("✅ Debug commands available:");
-      console.log("   window.debugVideoCall.fullDiagnostic()");
-      console.log("   window.debugVideoCall.checkService()");
-      console.log("   window.debugVideoCall.checkLocalStream()");
-      console.log("   window.debugVideoCall.checkRemoteStream()");
-      console.log("   window.debugVideoCall.checkTransceivers()");
-      console.log("   window.debugVideoCall.getStats()");
-      console.log("   window.debugVideoCall.forcePlayRemote()");
+      console.log("\n✅ Debug commands loaded successfully!");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("Available commands:");
+      console.log("  • window.debugVideoCall.quickCheck()");
+      console.log("  • window.debugVideoCall.fullDiagnostic()");
+      console.log("  • window.debugVideoCall.checkService()");
+      console.log("  • window.debugVideoCall.checkLocalStream()");
+      console.log("  • window.debugVideoCall.checkRemoteStream()");
+      console.log("  • window.debugVideoCall.checkTransceivers()");
+      console.log("  • window.debugVideoCall.getStats()");
+      console.log("  • window.debugVideoCall.forcePlayRemote()");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
     };
 
     // Create immediately on mount
@@ -740,25 +872,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     return () => {
       clearInterval(persistInterval);
-      // Don't delete on unmount - keep available for debugging
-      // delete (window as any).debugVideoCall;
+      // Keep debug commands available even after unmount
     };
-  }, []); // ✅ Run once on mount, no dependencies
-  // ✅ NEW: Persist window exposure across renders
-  useEffect(() => {
-    const persistWindow = setInterval(() => {
-      if (webrtcServiceRef.current) {
-        const pc = webrtcServiceRef.current.getPeerConnection();
-        if (pc && !(window as any).peerConnection) {
-          (window as any).peerConnection = pc;
-          (window as any).webrtcService = webrtcServiceRef.current;
-          console.log("🔧 Re-exposed window.peerConnection");
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(persistWindow);
-  }, []);
+  }, []); // Run once on mount
   // User interaction detection
   useEffect(() => {
     const handleInteraction = () => {
