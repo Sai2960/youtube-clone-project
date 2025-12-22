@@ -839,33 +839,36 @@ const VideoCall: React.FC<VideoCallProps> = ({
     return () => clearInterval(monitor);
   }, [connectionStatus]);
   const initializeCall = async () => {
+    console.log("\n🎥 ===== INITIALIZING CALL (CHECKPOINT VERSION) =====");
+
     try {
       setError(null);
-      console.log("\n🎥 ===== INITIALIZING CALL =====");
+
+      // ✅ CHECKPOINT 1
+      console.log("✅ CHECKPOINT 1: Starting initialization");
 
       if (!user?._id) {
         throw new Error("User not authenticated");
       }
+      console.log("✅ CHECKPOINT 2: User authenticated:", user._id);
 
-      // ✅ CRITICAL: Ensure socket is initialized FIRST
+      // ✅ CHECKPOINT 3: Socket initialization
       if (!isSocketConnected()) {
         console.log("🔌 Socket not connected, initializing...");
         try {
           initializeSocket(user._id);
-          // Wait a bit for connection
           await new Promise((resolve) => setTimeout(resolve, 2000));
         } catch (err) {
           console.error("❌ Failed to initialize socket:", err);
         }
       }
+      console.log("✅ CHECKPOINT 3: Socket initialized");
 
       if (typeof window !== "undefined") {
         window.onbeforeunload = () => "Call is connecting...";
       }
 
-      // Wait for socket (rest of the function continues as before...)
-
-      // Wait for socket
+      // ✅ CHECKPOINT 4: Wait for socket
       let socket;
       try {
         console.log("🔌 Waiting for socket connection...");
@@ -875,11 +878,11 @@ const VideoCall: React.FC<VideoCallProps> = ({
           throw new Error("Socket failed to connect");
         }
 
-        console.log("✅ Socket connected:", socket.id);
+        console.log("✅ CHECKPOINT 4: Socket connected:", socket.id);
       } catch (err: any) {
-        console.error("❌ Socket connection failed:", err.message);
+        console.error("❌ FAILED AT CHECKPOINT 4:", err.message);
         setError("Failed to connect to server. Please refresh.");
-        return;
+        return; // ❌ EXIT POINT
       }
 
       // Initialize services
@@ -890,40 +893,51 @@ const VideoCall: React.FC<VideoCallProps> = ({
       recordingServiceRef.current = new RecordingService();
       console.log("✅ Recording service created");
 
-      // ✅ Get peer connection (will expose later)
+      // ✅ CHECKPOINT 6: Get peer connection
       const pc = webrtcServiceRef.current.getPeerConnection();
-      console.log("🔍 Peer connection details:", {
+      console.log("✅ CHECKPOINT 6: Peer connection:", {
         exists: !!pc,
         state: pc?.connectionState,
         signalingState: pc?.signalingState,
-        transceivers: pc?.getTransceivers().length,
       });
 
-      // Get media stream
+      // ✅ CHECKPOINT 7: Get media stream
       console.log("🎤 Acquiring media stream...");
-      const stream = await ensureAudioNotMuted();
+      let stream: MediaStream;
+      try {
+        stream = await ensureAudioNotMuted();
+        console.log("✅ CHECKPOINT 7: Media stream acquired:", {
+          id: stream.id,
+          audio: stream.getAudioTracks().length,
+          video: stream.getVideoTracks().length,
+        });
+      } catch (err: any) {
+        console.error("❌ FAILED AT CHECKPOINT 7:", err);
+        setError(err.message || "Failed to get camera/mic");
+        return; // ❌ EXIT POINT
+      }
 
       if (!stream) {
+        console.error("❌ FAILED: Stream is null");
         throw new Error("Failed to get media stream");
       }
 
-      console.log("✅ Media stream acquired:", {
-        id: stream.id,
-        audio: stream.getAudioTracks().length,
-        video: stream.getVideoTracks().length,
-      });
-
-      // Set local stream
+      // ✅ CHECKPOINT 8: Set local stream
       webrtcServiceRef.current.setLocalStream(stream);
+      console.log("✅ CHECKPOINT 8: Local stream set");
 
-      // Attach to local video
+      // ✅ CHECKPOINT 9: Attach to local video
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
         await localVideoRef.current.play().catch(console.error);
-        console.log("✅ Local video attached");
+        console.log("✅ CHECKPOINT 9: Local video attached");
+      } else {
+        console.error("❌ CHECKPOINT 9 FAILED: No local video ref");
       }
 
       // Setup event listeners
+      // ✅ CHECKPOINT 10: Setup event listeners
+      console.log("🔧 Setting up event listeners...");
       webrtcServiceRef.current.setupEventListeners(
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
@@ -961,7 +975,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
           await new Promise((resolve) => setTimeout(resolve, 300));
 
-          // Setup video element
           const videoEl = remoteVideoRef.current;
 
           if (videoEl.srcObject) {
@@ -977,7 +990,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
           console.log("✅ Remote stream attached");
 
-          // Wait for metadata
           await new Promise<void>((resolve) => {
             if (videoEl.readyState >= 2) {
               resolve();
@@ -995,6 +1007,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           });
 
           // Play video
+
           try {
             await videoEl.play();
             console.log("✅ Video playing!");
@@ -1009,7 +1022,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             }
           }
 
-          // Setup audio
           if (audioTracks.length > 0) {
             await setupRemoteAudio(remoteStream);
           }
@@ -1021,17 +1033,25 @@ const VideoCall: React.FC<VideoCallProps> = ({
           socket.emit("ice-candidate", roomId, candidate);
         }
       );
+      console.log("✅ CHECKPOINT 10: Event listeners setup");
 
-      // ✅ Add local stream (ONLY ONCE!)
+      // ✅ CHECKPOINT 11: Add local stream
       console.log("📤 Adding local stream...");
-      await webrtcServiceRef.current.addLocalStreamToPeer();
-      console.log("✅ Local stream added");
+      try {
+        await webrtcServiceRef.current.addLocalStreamToPeer();
+        console.log("✅ CHECKPOINT 11: Local stream added");
+      } catch (err: any) {
+        console.error("❌ FAILED AT CHECKPOINT 11:", err);
+        setError("Failed to setup peer connection");
+        return; // ❌ EXIT POINT
+      }
 
-      // ✅ Join room (ONLY ONCE!)
+      // ✅ CHECKPOINT 12: Join room
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
+      console.log("✅ CHECKPOINT 12: Room joined");
 
-      // Initiator creates offer
+      // ✅ CHECKPOINT 13: Create offer (if initiator)
       if (isInitiator) {
         console.log("📝 Waiting for both users...");
 
@@ -1044,19 +1064,26 @@ const VideoCall: React.FC<VideoCallProps> = ({
           };
           socket.on("both-users-ready", handleBothReady);
         });
-
         const offer = await webrtcServiceRef.current.createOffer();
         socket.emit("offer", roomId, offer);
-        console.log("✅ Offer sent");
+        console.log("✅ CHECKPOINT 13: Offer sent");
+      } else {
+        console.log("✅ CHECKPOINT 13: Skipped (not initiator)");
       }
 
-      // ✅ CRITICAL: Expose EVERYTHING to window at the END
+      // ✅ CHECKPOINT 14: CRITICAL - Expose to window
+      console.log("🔧 CHECKPOINT 14: Exposing to window...");
       if (typeof window !== "undefined") {
         const finalPc = webrtcServiceRef.current.getPeerConnection();
+
+        if (!finalPc) {
+          console.error("❌ CHECKPOINT 14 FAILED: Peer connection is null!");
+          return;
+        }
+
         (window as any).peerConnection = finalPc;
         (window as any).webrtcService = webrtcServiceRef.current;
 
-        // ✅ Add debug helper
         (window as any).checkConnection = () => {
           const currentPc = webrtcServiceRef.current?.getPeerConnection();
           return {
@@ -1072,24 +1099,25 @@ const VideoCall: React.FC<VideoCallProps> = ({
           };
         };
 
-        console.log("✅ All window objects exposed");
+        console.log("✅ CHECKPOINT 14: Window objects exposed");
         console.log("   Run: window.checkConnection()");
 
-        // Verify it was set
-        setTimeout(() => {
-          console.log("🔍 Verification - window objects:", {
-            peerConnection: !!(window as any).peerConnection,
-            webrtcService: !!(window as any).webrtcService,
-            checkConnection: typeof (window as any).checkConnection,
-            pcMatches: (window as any).peerConnection === finalPc,
-            serviceMatches:
-              (window as any).webrtcService === webrtcServiceRef.current,
-          });
-        }, 100);
+        // Immediate verification
+        console.log("🔍 Immediate verification:", {
+          peerConnection: !!(window as any).peerConnection,
+          webrtcService: !!(window as any).webrtcService,
+          checkConnection: typeof (window as any).checkConnection,
+          pcMatches: (window as any).peerConnection === finalPc,
+          serviceMatches:
+            (window as any).webrtcService === webrtcServiceRef.current,
+        });
       }
-      console.log("===== INITIALIZATION COMPLETE =====\n");
+
+      console.log("✅✅✅ CHECKPOINT 15: INITIALIZATION COMPLETE ✅✅✅\n");
     } catch (error: any) {
-      console.error("❌ Initialization failed:", error);
+      console.error("❌❌❌ INITIALIZATION FAILED ❌❌❌");
+      console.error("Error:", error);
+      console.error("Stack:", error.stack);
       setError(error.message || "Init failed");
     }
   };
