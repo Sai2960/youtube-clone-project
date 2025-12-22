@@ -6,7 +6,7 @@
  * 1. Fixed transceiver direction forcing with post-negotiation monitoring
  * 2. Enhanced remote stream attachment with track verification
  * 3. Added comprehensive SDP validation and auto-fixing
- * 4. Fixed ICE candidate handling timing
+ * 4. Fixed ICE candidate handling with queuing
  * 5. Added real-time track state monitoring
  * 6. Improved audio/video flow verification
  * 7. Added proper event cleanup handlers
@@ -38,8 +38,7 @@ interface TrackInfo {
   label: string;
 }
 
-// ✅ ENHANCED: Comprehensive ICE configuration
-// ✅ ENHANCED: Comprehensive ICE configuration
+// ✅ ENHANCED: Comprehensive ICE configuration with multiple STUN/TURN servers
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -47,7 +46,6 @@ const ICE_SERVERS: RTCConfiguration = {
     { urls: "stun:stun2.l.google.com:19302" },
     { urls: "stun:stun3.l.google.com:19302" },
     { urls: "stun:stun4.l.google.com:19302" },
-    // ✅ CRITICAL: Multiple TURN servers for reliability
     {
       urls: [
         "turn:openrelay.metered.ca:80",
@@ -57,7 +55,6 @@ const ICE_SERVERS: RTCConfiguration = {
       username: "openrelayproject",
       credential: "openrelayproject",
     },
-    // ✅ Additional public TURN server as fallback
     {
       urls: ["turn:relay.metered.ca:80", "turn:relay.metered.ca:443"],
       username: "openrelayproject",
@@ -67,16 +64,19 @@ const ICE_SERVERS: RTCConfiguration = {
   iceCandidatePoolSize: 10,
   bundlePolicy: "max-bundle",
   rtcpMuxPolicy: "require",
-  iceTransportPolicy: "all", // ✅ Allows both STUN and TURN
-  // ✅ REMOVED: sdpSemantics - not needed, unified-plan is default in modern browsers
+  iceTransportPolicy: "all",
 };
 export class WebRTCService {
-  [x: string]: any;
+  // Core WebRTC components
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
   private screenStream: MediaStream | null = null;
   private originalVideoTrack: MediaStreamTrack | null = null;
+
+  // ✅ ICE candidate queue management
+  private pendingIceCandidates: RTCIceCandidateInit[] = [];
+  private remoteDescriptionSet = false;
 
   // ✅ State management
   private callbackFired = false;
@@ -95,6 +95,7 @@ export class WebRTCService {
       this.peerConnection = new RTCPeerConnection(ICE_SERVERS);
       console.log("✅ RTCPeerConnection created");
 
+      this.remoteStream = new MediaStream();
       this.setupCoreEventListeners();
     } catch (error) {
       console.error("❌ Failed to create peer connection:", error);
@@ -105,14 +106,23 @@ export class WebRTCService {
   private setupCoreEventListeners(): void {
     if (!this.peerConnection) return;
 
-    this.peerConnection.onicegatheringstatechange = () => {
-      const state = this.peerConnection?.iceGatheringState;
-      console.log("🧊 ICE Gathering State:", state);
+    this.peerConnection.oniceconnectionstatechange = () => {
+      console.log("🧊 ICE State:", this.peerConnection?.iceConnectionState);
+    };
+
+    this.peerConnection.onconnectionstatechange = () => {
+      console.log("🔌 Connection State:", this.peerConnection?.connectionState);
     };
 
     this.peerConnection.onsignalingstatechange = () => {
-      const state = this.peerConnection?.signalingState;
-      console.log("📡 Signaling State:", state);
+      console.log("📡 Signaling State:", this.peerConnection?.signalingState);
+    };
+
+    this.peerConnection.onicegatheringstatechange = () => {
+      console.log(
+        "🧊 ICE Gathering State:",
+        this.peerConnection?.iceGatheringState
+      );
     };
 
     this.peerConnection.onnegotiationneeded = () => {
@@ -368,6 +378,7 @@ export class WebRTCService {
     console.log("✅ Offer created");
     return offer;
   }
+
   // ✅ FIXED: Enhanced answer creation with validation
   async createAnswer(): Promise<RTCSessionDescriptionInit> {
     if (!this.peerConnection) {
@@ -431,7 +442,6 @@ export class WebRTCService {
     console.log("✅ Answer created and set as local description");
     return answer;
   }
-
   async setRemoteDescription(
     description: RTCSessionDescriptionInit
   ): Promise<void> {
@@ -461,7 +471,26 @@ export class WebRTCService {
     await this.peerConnection.setRemoteDescription(
       new RTCSessionDescription(description)
     );
+
+    this.remoteDescriptionSet = true;
     console.log("✅ Remote description set");
+
+    // ✅ Process any pending ICE candidates
+    if (this.pendingIceCandidates.length > 0) {
+      console.log(
+        `📦 Processing ${this.pendingIceCandidates.length} pending ICE candidates`
+      );
+      for (const candidate of this.pendingIceCandidates) {
+        try {
+          await this.peerConnection.addIceCandidate(
+            new RTCIceCandidate(candidate)
+          );
+        } catch (error) {
+          console.error("❌ Error adding pending ICE candidate:", error);
+        }
+      }
+      this.pendingIceCandidates = [];
+    }
   }
 
   async addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
@@ -472,6 +501,15 @@ export class WebRTCService {
 
     if (!candidate.candidate) {
       console.log("📭 Empty ICE candidate (end-of-candidates)");
+      return;
+    }
+
+    // ✅ Queue candidates if remote description not set yet
+    if (!this.remoteDescriptionSet) {
+      this.pendingIceCandidates.push(candidate);
+      console.log(
+        `📦 Queued ICE candidate (total: ${this.pendingIceCandidates.length})`
+      );
       return;
     }
 
@@ -595,7 +633,6 @@ export class WebRTCService {
       }
     }
 
-    // For video, check dimensions and frame rate
     // For video, check dimensions
     if (track.kind === "video") {
       const settings = track.getSettings();
@@ -636,9 +673,10 @@ export class WebRTCService {
     this.callbackFired = false;
 
     // ✅ Create remote stream immediately
-    this.remoteStream = new MediaStream();
+    if (!this.remoteStream) {
+      this.remoteStream = new MediaStream();
+    }
 
-    // ✅ ENHANCED: Track handler with comprehensive monitoring
     // ✅ ENHANCED: Track handler with comprehensive verification
     const trackHandler = async (event: RTCTrackEvent) => {
       console.log("\n📥 ===== TRACK RECEIVED (ENHANCED) =====");
@@ -1113,7 +1151,7 @@ export class WebRTCService {
     return this.peerConnection;
   }
 
-  // ✅ NEW: Get all transceivers with details
+  //🆕 Get all transceivers with details
   getTransceiverDetails(): Array<{
     index: number;
     kind: string;
@@ -1124,7 +1162,6 @@ export class WebRTCService {
     trackEnabled: boolean;
   }> {
     if (!this.peerConnection) return [];
-
     return this.peerConnection.getTransceivers().map((t, index) => ({
       index,
       kind: t.receiver.track?.kind || "unknown",
@@ -1135,14 +1172,12 @@ export class WebRTCService {
       trackEnabled: t.sender.track?.enabled || false,
     }));
   }
-
-  // ✅ NEW: Force fix all transceivers (manual emergency fix)
+  // 🆕 Force fix all transceivers (manual emergency fix)
   forceFixTransceivers(): void {
     if (!this.peerConnection) {
       console.error("❌ No peer connection");
       return;
     }
-
     console.log("\n🔧 EMERGENCY: Force fixing all transceivers");
 
     const transceivers = this.peerConnection.getTransceivers();
@@ -1158,6 +1193,7 @@ export class WebRTCService {
 
     console.log(`✅ Fixed ${fixedCount} transceivers`);
   }
+
   close(): void {
     console.log("\n🧹 Closing WebRTC Service");
 
@@ -1199,6 +1235,8 @@ export class WebRTCService {
 
     this.remoteStream = null;
     this.originalVideoTrack = null;
+    this.pendingIceCandidates = [];
+    this.remoteDescriptionSet = false;
     this.callbackFired = false;
     this.negotiationHandler = null;
 
@@ -1210,4 +1248,5 @@ export class WebRTCService {
   }
 }
 
+// ✅ Export all types
 export type { AudioDiagnostics, ConnectionQuality, TrackInfo };
