@@ -1480,6 +1480,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }
 
   // ✅ Show initializing screen AFTER user clicks start
+  // ✅ Show initializing screen AFTER user clicks start
   if (userInteracted && !webrtcServiceRef.current) {
     return (
       <div className="w-screen h-screen bg-black flex items-center justify-center">
@@ -1489,13 +1490,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             Initializing Call...
           </h1>
           <p className="text-gray-400">Setting up audio and video</p>
-
-          {/* Debug info */}
-          <div className="mt-4 text-xs text-gray-500">
-            <p>userInteracted: {String(userInteracted)}</p>
-            <p>webrtcService: {String(!!webrtcServiceRef.current)}</p>
-            <p>initializing: {String(initializingRef.current)}</p>
-          </div>
         </div>
       </div>
     );
