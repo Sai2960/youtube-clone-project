@@ -438,6 +438,22 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     await attemptPlay();
   };
+
+  // ✅ NEW: Persist window exposure across renders
+  useEffect(() => {
+    const persistWindow = setInterval(() => {
+      if (webrtcServiceRef.current) {
+        const pc = webrtcServiceRef.current.getPeerConnection();
+        if (pc && !(window as any).peerConnection) {
+          (window as any).peerConnection = pc;
+          (window as any).webrtcService = webrtcServiceRef.current;
+          console.log("🔧 Re-exposed window.peerConnection");
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(persistWindow);
+  }, []);
   // User interaction detection
   useEffect(() => {
     const handleInteraction = () => {
