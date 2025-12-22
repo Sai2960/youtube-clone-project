@@ -229,6 +229,46 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const router = useRouter();
   const { user } = useUser();
 
+  // ✅ Global debug helper (works immediately)
+  if (typeof window !== "undefined") {
+    (window as any).debugCall = {
+      checkRefs: () => {
+        console.log("🔍 Current Refs Status:");
+        console.log(
+          "   window.debugVideoCall exists:",
+          !!(window as any).debugVideoCall
+        );
+        console.log(
+          "   window.peerConnection exists:",
+          !!(window as any).peerConnection
+        );
+        console.log(
+          "   window.webrtcService exists:",
+          !!(window as any).webrtcService
+        );
+      },
+
+      waitForDebug: () => {
+        console.log("⏳ Waiting for VideoCall to initialize...");
+        const checkInterval = setInterval(() => {
+          if ((window as any).debugVideoCall) {
+            clearInterval(checkInterval);
+            console.log("✅ Debug commands ready!");
+            console.log("   Run: window.debugVideoCall.fullDiagnostic()");
+          }
+        }, 500);
+
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          if (!(window as any).debugVideoCall) {
+            console.error(
+              "❌ Debug commands never initialized - component may not have mounted"
+            );
+          }
+        }, 10000);
+      },
+    };
+  }
   // ✅ ADD THIS DEBUG CODE:
   useEffect(() => {
     console.log("🎬 VideoCall component MOUNTED");
@@ -465,9 +505,15 @@ const VideoCall: React.FC<VideoCallProps> = ({
     await attemptPlay();
   };
 
-  // ✅ Add this inside VideoCall component, after state declarations
+  // ✅ FIXED: Debug commands with proper dependencies
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // Only create debug commands after WebRTC service exists
+    if (!webrtcServiceRef.current) {
+      console.log("⏳ WebRTC service not ready, debug commands pending...");
+      return;
+    }
 
     // ✅ Expose debug functions to Chrome console
     (window as any).debugVideoCall = {
@@ -664,9 +710,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
     return () => {
       delete (window as any).debugVideoCall;
     };
-  }, []);
-
-  // Also keep the existing window.checkConnection exposure
+  }, [isInitialized]); // ✅ CRITICAL: Re-create debug commands after initialization
 
   // ✅ NEW: Persist window exposure across renders
   useEffect(() => {
