@@ -1853,7 +1853,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .padStart(2, "0")}`;
   };
 
-  // ✅ Show loading during initialization
+  // ✅ FIXED: Single loading screen logic
   if (!userInteracted) {
     return (
       <div className="w-screen h-screen bg-black flex items-center justify-center">
@@ -1888,7 +1888,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
       </div>
     );
   }
-  // ✅ Show initializing screen
+
+  // ✅ Show initializing screen while waiting for WebRTC setup
   if (userInteracted && !isInitialized) {
     console.log("📊 Showing initialization screen...");
     console.log("   userInteracted:", userInteracted);
@@ -1906,27 +1907,28 @@ const VideoCall: React.FC<VideoCallProps> = ({
           <p className="text-gray-500 text-sm mt-4">
             Check console for progress
           </p>
+
+          {/* Debug info */}
+          <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg max-w-md mx-auto">
+            <p className="text-xs text-gray-400 font-mono">
+              userInteracted: {String(userInteracted)}
+            </p>
+            <p className="text-xs text-gray-400 font-mono">
+              isInitialized: {String(isInitialized)}
+            </p>
+            <p className="text-xs text-gray-400 font-mono">
+              webrtcService: {String(!!webrtcServiceRef.current)}
+            </p>
+            <p className="text-xs text-gray-400 font-mono">
+              initializing: {String(initializingRef.current)}
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ✅ Show initializing screen AFTER user clicks start
-  // ✅ Show initializing screen AFTER user clicks start
-  if (userInteracted && !webrtcServiceRef.current) {
-    return (
-      <div className="w-screen h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h1 className="text-white text-2xl font-bold mb-2">
-            Initializing Call...
-          </h1>
-          <p className="text-gray-400">Setting up audio and video</p>
-        </div>
-      </div>
-    );
-  }
-
+  // ✅ Main call UI
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* Remote Video (Main) - FIXED */}
