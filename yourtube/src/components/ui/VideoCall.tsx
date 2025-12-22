@@ -1076,9 +1076,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
     };
   }, [roomId, isRecording, onEndCall, router]);
 
-  // Main initialization - FORCED VERSION
-  // Main initialization with DETAILED LOGGING
-// ✅ NUCLEAR OPTION: Force initialization immediately
+// ✅ FIXED: Wait for video refs to be ready before initializing
 useEffect(() => {
   console.log("\n\n");
   console.log("═══════════════════════════════════════════════════");
@@ -1089,6 +1087,8 @@ useEffect(() => {
   console.log("   initializingRef:", initializingRef.current);
   console.log("   initializedRef:", initializedRef.current);
   console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
+  console.log("   localVideoRef:", !!localVideoRef.current);  // ✅ NEW
+  console.log("   remoteVideoRef:", !!remoteVideoRef.current); // ✅ NEW
   console.log("═══════════════════════════════════════════════════\n");
 
   // ✅ Block 1: Room validation
@@ -1105,19 +1105,27 @@ useEffect(() => {
     return;
   }
 
-  // ✅ Block 3: Already initializing?
+  // ✅ NEW Block 3: Wait for video refs to be ready
+  if (!localVideoRef.current || !remoteVideoRef.current) {
+    console.log("⏳ BLOCKED: Waiting for video elements to render");
+    console.log("   localVideoRef:", !!localVideoRef.current);
+    console.log("   remoteVideoRef:", !!remoteVideoRef.current);
+    return;
+  }
+
+  // ✅ Block 4: Already initializing?
   if (initializingRef.current) {
     console.warn("⚠️ BLOCKED: Already initializing");
     return;
   }
 
-  // ✅ Block 4: Already initialized?
+  // ✅ Block 5: Already initialized?
   if (initializedRef.current) {
     console.warn("⚠️ BLOCKED: Already initialized");
     return;
   }
 
-  // ✅ Block 5: WebRTC already exists?
+  // ✅ Block 6: WebRTC already exists?
   if (webrtcServiceRef.current) {
     console.warn("⚠️ BLOCKED: WebRTC service already exists");
     return;
@@ -1177,7 +1185,7 @@ useEffect(() => {
       cleanup(false);
     }
   };
-}, [roomId, userInteracted]);
+}, [roomId, userInteracted, localVideoRef.current, remoteVideoRef.current]);
 
   // ✅ NEW: Diagnostic logging
   // ✅ FIXED: Diagnostic logging with stable dependency
