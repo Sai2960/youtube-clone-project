@@ -1087,8 +1087,6 @@ useEffect(() => {
   console.log("   initializingRef:", initializingRef.current);
   console.log("   initializedRef:", initializedRef.current);
   console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
-  console.log("   localVideoRef:", !!localVideoRef.current);  // ✅ NEW
-  console.log("   remoteVideoRef:", !!remoteVideoRef.current); // ✅ NEW
   console.log("═══════════════════════════════════════════════════\n");
 
   // ✅ Block 1: Room validation
@@ -1101,31 +1099,22 @@ useEffect(() => {
   // ✅ Block 2: User interaction check
   if (!userInteracted) {
     console.log("⏳ BLOCKED: Waiting for user interaction");
-    console.log("   This is NORMAL before clicking START CALL\n");
     return;
   }
 
-  // ✅ NEW Block 3: Wait for video refs to be ready
-  if (!localVideoRef.current || !remoteVideoRef.current) {
-    console.log("⏳ BLOCKED: Waiting for video elements to render");
-    console.log("   localVideoRef:", !!localVideoRef.current);
-    console.log("   remoteVideoRef:", !!remoteVideoRef.current);
-    return;
-  }
-
-  // ✅ Block 4: Already initializing?
+  // ✅ Block 3: Already initializing?
   if (initializingRef.current) {
     console.warn("⚠️ BLOCKED: Already initializing");
     return;
   }
 
-  // ✅ Block 5: Already initialized?
+  // ✅ Block 4: Already initialized?
   if (initializedRef.current) {
     console.warn("⚠️ BLOCKED: Already initialized");
     return;
   }
 
-  // ✅ Block 6: WebRTC already exists?
+  // ✅ Block 5: WebRTC already exists?
   if (webrtcServiceRef.current) {
     console.warn("⚠️ BLOCKED: WebRTC service already exists");
     return;
@@ -1141,6 +1130,25 @@ useEffect(() => {
 
   const init = async () => {
     try {
+      // ✅ CRITICAL: Wait for video refs to be ready
+      console.log("⏳ Waiting for video elements...");
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds max
+      
+      while ((!localVideoRef.current || !remoteVideoRef.current) && attempts < maxAttempts) {
+        console.log(`   Attempt ${attempts + 1}/${maxAttempts}: local=${!!localVideoRef.current}, remote=${!!remoteVideoRef.current}`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (!localVideoRef.current || !remoteVideoRef.current) {
+        throw new Error("Video elements failed to render after 5 seconds");
+      }
+
+      console.log("✅ Video elements ready!");
+      console.log("   localVideoRef:", !!localVideoRef.current);
+      console.log("   remoteVideoRef:", !!remoteVideoRef.current);
+
       console.log("\n🎬 ===== CALLING initializeCall() =====\n");
       
       await initializeCall();
@@ -1185,7 +1193,7 @@ useEffect(() => {
       cleanup(false);
     }
   };
-}, [roomId, userInteracted, localVideoRef.current, remoteVideoRef.current]);
+}, [roomId, userInteracted]); 
 
   // ✅ NEW: Diagnostic logging
   // ✅ FIXED: Diagnostic logging with stable dependency
