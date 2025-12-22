@@ -274,23 +274,64 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
   // ✅ CRITICAL FIX: Persistent audio element setup
   // ✅ PRODUCTION-READY: Remote audio setup
+  // ✅ FIXED: Remote audio setup with proper video handling
   const setupRemoteAudio = async (stream: MediaStream) => {
     console.log("🔊 Setting up remote audio/video");
 
     const audioTracks = stream.getAudioTracks();
     const videoTracks = stream.getVideoTracks();
 
+    console.log(
+      `📊 Remote stream tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
+    );
+
     if (audioTracks.length === 0) {
-      console.error("❌ No audio tracks!");
+      console.error("❌ No audio tracks in remote stream!");
       return;
     }
+
+    if (videoTracks.length === 0) {
+      console.error("❌ No video tracks in remote stream!");
+      return;
+    }
+
     // ✅ Force enable ALL tracks
     stream.getTracks().forEach((track) => {
       track.enabled = true;
       console.log(
-        `✅ ${track.kind}: enabled=${track.enabled}, muted=${track.muted}`
+        `✅ Enabled ${track.kind}: ${track.label}, muted=${track.muted}, readyState=${track.readyState}`
       );
     });
+
+    // ✅ CRITICAL: Attach video track to video element FIRST
+    if (remoteVideoRef.current) {
+      console.log("📹 Attaching remote stream to video element...");
+
+      // Clean old stream
+      if (remoteVideoRef.current.srcObject) {
+        const oldStream = remoteVideoRef.current.srcObject as MediaStream;
+        oldStream.getTracks().forEach((t) => t.stop());
+      }
+
+      remoteVideoRef.current.srcObject = stream;
+      remoteVideoRef.current.muted = false; // ✅ CRITICAL: Not muted for audio
+      remoteVideoRef.current.volume = 1.0;
+
+      try {
+        await remoteVideoRef.current.play();
+        console.log("✅ Remote video element playing");
+      } catch (err: any) {
+        console.error("❌ Video play failed:", err.name);
+        if (err.name === "NotAllowedError") {
+          setShowPlayButton(true);
+          setError("Click play to start");
+          return;
+        }
+      }
+    }
+
+    // ✅ Wait for video to stabilize
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Clean old audio element
     if (remoteAudioRef.current) {
@@ -298,38 +339,19 @@ const VideoCall: React.FC<VideoCallProps> = ({
         remoteAudioRef.current.pause();
         remoteAudioRef.current.srcObject = null;
         remoteAudioRef.current.remove();
-      } catch (e) {}
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // ✅ Force enable audio tracks FIRST
-    audioTracks.forEach((track) => {
-      track.enabled = true;
-      console.log(
-        `🎤 Audio track: ${track.label}, enabled=${track.enabled}, muted=${track.muted}, state=${track.readyState}`
-      );
-    });
-
-    // Clean old audio
-    if (remoteAudioRef.current) {
-      try {
-        remoteAudioRef.current.pause();
-        remoteAudioRef.current.srcObject = null;
-        remoteAudioRef.current.remove();
       } catch (e) {
-        console.warn("Cleanup error:", e);
+        console.warn("Audio cleanup error:", e);
       }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // ✅ Create NEW audio element
+    // ✅ Create separate audio element for audio-only playback
     const audioEl = document.createElement("audio");
     audioEl.id = "remote-audio-element";
     audioEl.autoplay = true;
-    audioEl.setAttribute("playsinline", "true"); // ✅ FIXED
-    audioEl.muted = false; // ✅ CRITICAL
+    audioEl.setAttribute("playsinline", "true");
+    audioEl.muted = false;
     audioEl.volume = 1.0;
 
     audioEl.style.cssText =
@@ -363,7 +385,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // ✅ Play with retry
+    // ✅ Play audio with retry
     let attempts = 0;
     const maxAttempts = 5;
 
@@ -377,7 +399,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         setShowPlayButton(false);
         setError(null);
 
-        // ✅ CRITICAL: ONLY create AudioContext AFTER successful play AND user interaction
+        // ✅ ONLY create AudioContext AFTER successful play AND user interaction
         if (userInteracted) {
           try {
             const AudioContextClass =
@@ -389,6 +411,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 latencyHint: "interactive",
                 sampleRate: 48000,
               });
+
+              if (audioContextRef.current.state === "suspended") {
+                await audioContextRef.current.resume();
+              }
 
               console.log(
                 "✅ AudioContext created:",

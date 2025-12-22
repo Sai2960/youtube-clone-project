@@ -639,32 +639,56 @@ export class WebRTCService {
     this.remoteStream = new MediaStream();
 
     // ✅ ENHANCED: Track handler with comprehensive monitoring
+    // ✅ ENHANCED: Track handler with comprehensive verification
     const trackHandler = async (event: RTCTrackEvent) => {
-      console.log("\n📥 ===== TRACK RECEIVED (CRITICAL FIX) =====");
+      console.log("\n📥 ===== TRACK RECEIVED (ENHANCED) =====");
       console.log("   Track kind:", event.track.kind);
       console.log("   Track label:", event.track.label);
+      console.log("   Track ID:", event.track.id);
       console.log("   Track enabled:", event.track.enabled);
       console.log("   Track readyState:", event.track.readyState);
       console.log("   Track muted:", event.track.muted);
+      console.log("   Streams count:", event.streams?.length || 0);
 
       // ✅ CRITICAL: Force enable track IMMEDIATELY
       event.track.enabled = true;
 
-      // ✅ CRITICAL: Verify transceiver direction
+      // ✅ Get track settings
+      const settings = event.track.getSettings();
+      console.log("   Track settings:", settings);
+
+      // ✅ CRITICAL: Verify and fix transceiver direction
       if (event.transceiver) {
         const oldDir = event.transceiver.direction;
+        const currentDir = event.transceiver.currentDirection;
+
+        console.log(
+          `   Transceiver direction: ${oldDir} (current: ${currentDir})`
+        );
+
         if (oldDir !== "sendrecv" && oldDir !== "recvonly") {
           console.warn(`⚠️ Fixing transceiver: ${oldDir} → sendrecv`);
           event.transceiver.direction = "sendrecv";
+        }
+
+        // Log sender track info
+        if (event.transceiver.sender.track) {
+          console.log(
+            `   Sender track: ${event.transceiver.sender.track.label} (${event.transceiver.sender.track.kind})`
+          );
+        } else {
+          console.warn("   ⚠️ No sender track!");
         }
       }
 
       // ✅ Get or create remote stream
       if (event.streams && event.streams.length > 0) {
         this.remoteStream = event.streams[0];
+        console.log(`   Using stream from event: ${this.remoteStream.id}`);
       } else {
         if (!this.remoteStream) {
           this.remoteStream = new MediaStream();
+          console.log("   Created new remote stream");
         }
 
         // Check if track already exists
@@ -673,21 +697,40 @@ export class WebRTCService {
           .find((t) => t.id === event.track.id);
         if (!exists) {
           this.remoteStream.addTrack(event.track);
+          console.log(`   Added ${event.track.kind} track to remote stream`);
+        } else {
+          console.log(`   Track ${event.track.kind} already in stream`);
         }
       }
 
-      // ✅ Monitor track state
-      event.track.onmute = () => console.warn(`⚠️ ${event.track.kind} muted`);
-      event.track.onunmute = () =>
-        console.log(`✅ ${event.track.kind} unmuted`);
-      event.track.onended = () => console.warn(`🛑 ${event.track.kind} ended`);
+      // ✅ Monitor track state changes
+      event.track.onmute = () => {
+        console.warn(`⚠️ Remote ${event.track.kind} MUTED`);
+      };
 
+      event.track.onunmute = () => {
+        console.log(`✅ Remote ${event.track.kind} UNMUTED`);
+      };
+
+      event.track.onended = () => {
+        console.warn(`🛑 Remote ${event.track.kind} ENDED`);
+      };
+
+      // ✅ Check current track counts
       const audioTracks = this.remoteStream.getAudioTracks();
       const videoTracks = this.remoteStream.getVideoTracks();
 
       console.log(
-        `   Tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
+        `   Current remote stream: audio=${audioTracks.length}, video=${videoTracks.length}`
       );
+
+      // ✅ Log all track details
+      this.remoteStream.getTracks().forEach((t, i) => {
+        console.log(`   Track ${i}: ${t.kind} - ${t.label}`);
+        console.log(
+          `      enabled=${t.enabled}, muted=${t.muted}, readyState=${t.readyState}`
+        );
+      });
 
       // ✅ Fire callback when BOTH tracks present
       if (
@@ -697,21 +740,44 @@ export class WebRTCService {
       ) {
         this.callbackFired = true;
 
-        console.log("🎉 BOTH TRACKS READY");
+        console.log("\n🎉 ===== BOTH TRACKS READY - FIRING CALLBACK =====");
 
-        // Force enable all tracks
+        // ✅ Force enable all tracks one more time
         this.remoteStream.getTracks().forEach((t) => {
           t.enabled = true;
-          console.log(`  ${t.kind}: enabled=${t.enabled}, muted=${t.muted}`);
         });
 
-        // Small delay for stability
+        // ✅ Verify stream is active
+        console.log("   Remote stream active:", this.remoteStream.active);
+        console.log("   Remote stream ID:", this.remoteStream.id);
+
+        // ✅ Small delay for stability
         setTimeout(() => {
-          console.log("🚀 Firing callback");
+          console.log("🚀 Executing onRemoteStream callback");
+
+          // ✅ Final verification before callback
+          const finalAudio = this.remoteStream!.getAudioTracks();
+          const finalVideo = this.remoteStream!.getVideoTracks();
+
+          console.log(
+            `   Final check: audio=${finalAudio.length}, video=${finalVideo.length}`
+          );
+
+          if (finalAudio.length === 0 || finalVideo.length === 0) {
+            console.error("❌ CRITICAL: Tracks disappeared before callback!");
+            return;
+          }
+
           onRemoteStream(this.remoteStream!);
-        }, 100); // ✅ Reduced from 150ms to 100ms
+          console.log("===== CALLBACK FIRED =====\n");
+        }, 100);
+      } else {
+        console.log(
+          `   Waiting for more tracks... (audio=${audioTracks.length}, video=${videoTracks.length})`
+        );
       }
     };
+
     this.peerConnection.addEventListener("track", trackHandler);
 
     // Store cleanup handler
