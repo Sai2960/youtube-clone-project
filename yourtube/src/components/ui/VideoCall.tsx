@@ -277,6 +277,14 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const router = useRouter();
   const { user } = useUser();
 
+  // ✅ ADD THIS - IMMEDIATE LOGGING
+  console.log("🎬 ===== VideoCall RENDER =====");
+  console.log("   Time:", new Date().toISOString());
+  console.log("   roomId:", roomId);
+  console.log("   isInitiator:", isInitiator);
+  console.log("   user:", user?._id);
+  console.log("===============================\n");
+
   useEffect(() => {
     console.log("🎬 VideoCall component MOUNTED");
     console.log("   roomId:", roomId);
@@ -1069,46 +1077,43 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, [roomId, isRecording, onEndCall, router]);
 
   // Main initialization - FORCED VERSION
+  // Main initialization with DETAILED LOGGING
   useEffect(() => {
-    console.log(
-      "🔄 Init effect triggered - roomId:",
-      roomId,
-      "userInteracted:",
-      userInteracted,
-      "initializing:",
-      initializingRef.current,
-      "initialized:",
-      initializedRef.current
-    );
+    console.log("🔄 ===== INIT EFFECT TRIGGERED =====");
+    console.log("   roomId:", roomId);
+    console.log("   userInteracted:", userInteracted);
+    console.log("   initializingRef.current:", initializingRef.current);
+    console.log("   initializedRef.current:", initializedRef.current);
+    console.log("   webrtcServiceRef.current:", !!webrtcServiceRef.current);
+    console.log("====================================\n");
 
     if (!roomId) {
+      console.error("❌ BLOCKED: No room ID");
       setError("Invalid room ID");
       return;
     }
 
-    // Don't initialize until user has interacted
     if (!userInteracted) {
-      console.log("⏳ Waiting for user interaction...");
+      console.log("⏳ BLOCKED: Waiting for user interaction...");
       return;
     }
 
-    // ✅ CRITICAL FIX: More robust double-init prevention
     if (initializingRef.current) {
-      console.warn("⚠️ Already initializing - BLOCKED");
+      console.warn("⚠️ BLOCKED: Already initializing");
       return;
     }
 
     if (initializedRef.current) {
-      console.warn("⚠️ Already initialized - BLOCKED");
+      console.warn("⚠️ BLOCKED: Already initialized");
       return;
     }
 
     if (webrtcServiceRef.current) {
-      console.warn("⚠️ WebRTC service already exists - BLOCKED");
+      console.warn("⚠️ BLOCKED: WebRTC service already exists");
       return;
     }
 
-    console.log("🚀 Starting initialization...");
+    console.log("✅ ALL CHECKS PASSED - STARTING INITIALIZATION\n");
     initializingRef.current = true;
     let mounted = true;
 
@@ -1120,39 +1125,42 @@ const VideoCall: React.FC<VideoCallProps> = ({
         if (mounted) {
           initializedRef.current = true;
           initializingRef.current = false;
-          setIsInitialized(true); // ✅ NEW: Trigger re-render
-          console.log("✅ Initialization complete - refs:", {
-            webrtc: !!webrtcServiceRef.current,
-            localVideo: !!localVideoRef.current,
-            remoteVideo: !!remoteVideoRef.current,
-            peerConnection: !!webrtcServiceRef.current?.getPeerConnection(),
-          });
+          setIsInitialized(true);
+          console.log("✅✅✅ INITIALIZATION COMPLETE ✅✅✅");
+          console.log("   webrtc:", !!webrtcServiceRef.current);
+          console.log("   localVideo:", !!localVideoRef.current);
+          console.log("   remoteVideo:", !!remoteVideoRef.current);
+          console.log(
+            "   peerConnection:",
+            !!webrtcServiceRef.current?.getPeerConnection()
+          );
         }
       } catch (error: any) {
-        console.error("❌ Init error:", error);
+        console.error("❌❌❌ INIT ERROR ❌❌❌");
+        console.error("   Message:", error.message);
+        console.error("   Stack:", error.stack);
         if (mounted) {
           setError(error.message || "Init failed");
-          initializingRef.current = false; // ✅ Reset on error
+          initializingRef.current = false;
         }
       }
     };
 
-    // ✅ Immediate execution (no timeout needed)
     init();
 
     return () => {
+      console.log("🧹 Init effect cleanup");
       mounted = false;
-      // Don't cleanup if already cleaned up
       if (
         initializedRef.current &&
         !callEndedRef.current &&
         webrtcServiceRef.current
       ) {
-        console.log("🧹 Component unmounting - cleaning up");
+        console.log("   Cleaning up resources...");
         cleanup(false);
       }
     };
-  }, [roomId, userInteracted]); // ✅ Only depend on these two
+  }, [roomId, userInteracted]);
 
   // ✅ NEW: Diagnostic logging
   // ✅ FIXED: Diagnostic logging with stable dependency
@@ -1860,44 +1868,44 @@ const VideoCall: React.FC<VideoCallProps> = ({
             <p className="text-gray-400 text-lg">Tap to start your call</p>
           </div>
           <button
-            onClick={async () => {
-              console.log("🎬 START CALL BUTTON CLICKED");
-              console.log("   Current state:", {
-                userInteracted,
-                roomId,
-                user: !!user,
-                userId: user?._id,
-              });
-
-              // Test socket first
-              try {
-                const testResponse = await fetch(
-                  "https://youtube-clone-project-q3pd.onrender.com/health"
-                );
-                const health = await testResponse.json();
-                console.log("✅ Backend health:", health);
-              } catch (e) {
-                console.error("❌ Backend unreachable:", e);
-                alert(
-                  "Backend server is not responding. Please wait a moment and try again."
-                );
-                return;
-              }
+            onClick={() => {
+              console.log("🎬 ===== START CALL BUTTON CLICKED =====");
+              console.log("   Before - userInteracted:", userInteracted);
+              console.log("   roomId:", roomId);
+              console.log("   user:", user?._id);
 
               setUserInteracted(true);
 
-              // ✅ CRITICAL: Force re-render after state update
-              setTimeout(() => {
-                console.log("🔄 Checking initialization...");
-                console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
-                console.log("   localVideoRef:", !!localVideoRef.current);
-                console.log("   remoteVideoRef:", !!remoteVideoRef.current);
-              }, 100);
+              console.log("   After - userInteracted set to TRUE");
+              console.log("   Init effect should trigger on next render");
+              console.log("=======================================\n");
             }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >
             🎥 START CALL
           </button>
+        </div>
+      </div>
+    );
+  }
+  // ✅ Show initializing screen
+  if (userInteracted && !isInitialized) {
+    console.log("📊 Showing initialization screen...");
+    console.log("   userInteracted:", userInteracted);
+    console.log("   isInitialized:", isInitialized);
+    console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
+
+    return (
+      <div className="w-screen h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h1 className="text-white text-2xl font-bold mb-2">
+            Initializing Call...
+          </h1>
+          <p className="text-gray-400">Setting up audio and video</p>
+          <p className="text-gray-500 text-sm mt-4">
+            Check console for progress
+          </p>
         </div>
       </div>
     );
