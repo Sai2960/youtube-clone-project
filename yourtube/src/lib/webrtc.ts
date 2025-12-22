@@ -1,17 +1,4 @@
-// lib/webrtc.ts - COMPLETE MERGED AND FIXED VERSION
-// All features preserved with comprehensive fixes applied
-
-/**
- * CRITICAL FIXES APPLIED:
- * 1. Fixed transceiver direction forcing with post-negotiation monitoring
- * 2. Enhanced remote stream attachment with track verification
- * 3. Added comprehensive SDP validation and auto-fixing
- * 4. Fixed ICE candidate handling with queuing
- * 5. Added real-time track state monitoring
- * 6. Improved audio/video flow verification
- * 7. Added proper event cleanup handlers
- * 8. Preserved all diagnostic and quality features
- */
+// lib/webrtc.ts - COMPLETE FIXED VERSION
 
 interface AudioDiagnostics {
   enabled: boolean;
@@ -38,7 +25,6 @@ interface TrackInfo {
   label: string;
 }
 
-// ✅ ENHANCED: Comprehensive ICE configuration with multiple STUN/TURN servers
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -55,55 +41,43 @@ const ICE_SERVERS: RTCConfiguration = {
       username: "openrelayproject",
       credential: "openrelayproject",
     },
-    {
-      urls: ["turn:relay.metered.ca:80", "turn:relay.metered.ca:443"],
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
   ],
   iceCandidatePoolSize: 10,
   bundlePolicy: "max-bundle",
   rtcpMuxPolicy: "require",
   iceTransportPolicy: "all",
 };
+
 export class WebRTCService {
-  // Core WebRTC components
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
   private screenStream: MediaStream | null = null;
   private originalVideoTrack: MediaStreamTrack | null = null;
 
-  // ✅ ICE candidate queue management
+  // ✅ CRITICAL: ICE candidate queue
   private pendingIceCandidates: RTCIceCandidateInit[] = [];
   private remoteDescriptionSet = false;
+  private isNegotiating = false;
 
-  // ✅ State management
   private callbackFired = false;
-  private audioContext: AudioContext | null = null;
-  private audioAnalyser: AnalyserNode | null = null;
   private eventCleanupHandlers: (() => void)[] = [];
-  private negotiationHandler: (() => void) | null = null;
 
   constructor() {
-    console.log(
-      "🔧 Initializing WebRTC Service (FULLY MERGED & FIXED VERSION)"
-    );
-    console.log("   ICE Servers:", ICE_SERVERS.iceServers.length);
+    console.log("🔧 Creating WebRTCService (FIXED VERSION)");
 
     try {
       this.peerConnection = new RTCPeerConnection(ICE_SERVERS);
-      console.log("✅ RTCPeerConnection created");
-
       this.remoteStream = new MediaStream();
-      this.setupCoreEventListeners();
+      this.setupInternalListeners();
+      console.log("✅ RTCPeerConnection created");
     } catch (error) {
       console.error("❌ Failed to create peer connection:", error);
       throw new Error("WebRTC initialization failed");
     }
   }
 
-  private setupCoreEventListeners(): void {
+  private setupInternalListeners(): void {
     if (!this.peerConnection) return;
 
     this.peerConnection.oniceconnectionstatechange = () => {
@@ -116,23 +90,16 @@ export class WebRTCService {
 
     this.peerConnection.onsignalingstatechange = () => {
       console.log("📡 Signaling State:", this.peerConnection?.signalingState);
+      this.isNegotiating = this.peerConnection?.signalingState !== "stable";
     };
 
     this.peerConnection.onicegatheringstatechange = () => {
-      console.log(
-        "🧊 ICE Gathering State:",
-        this.peerConnection?.iceGatheringState
-      );
+      console.log("🧊 ICE Gathering:", this.peerConnection?.iceGatheringState);
     };
-
-    this.peerConnection.onnegotiationneeded = () => {
-      console.log("🔄 Negotiation needed");
-    };
-
-    console.log("✅ Core event listeners attached");
   }
+
   setLocalStream(stream: MediaStream): void {
-    console.log("\n📹 Setting Local Stream (FIXED)");
+    console.log("\n📹 Setting Local Stream");
     console.log("   Stream ID:", stream.id);
     console.log("   Active:", stream.active);
 
@@ -143,15 +110,11 @@ export class WebRTCService {
       this.originalVideoTrack = videoTracks[0];
     }
 
-    // ✅ CRITICAL FIX: Force enable ALL tracks immediately
+    // ✅ Force enable ALL tracks
     stream.getTracks().forEach((track) => {
       track.enabled = true;
-      console.log(
-        `   ✅ ${track.kind}: ${track.label} - enabled=${track.enabled}, muted=${track.muted}`
-      );
+      console.log(`   ✅ ${track.kind}: ${track.label} enabled=${track.enabled}`);
     });
-
-    console.log("✅ Local stream configured");
   }
 
   getLocalStream(): MediaStream | null {
@@ -162,311 +125,261 @@ export class WebRTCService {
     return this.remoteStream;
   }
 
-  async verifyAudioFlow(): Promise<boolean> {
-    if (!this.peerConnection) return false;
-
-    try {
-      const stats = await this.peerConnection.getStats();
-      let audioWorking = false;
-
-      stats.forEach((report) => {
-        if (report.type === "inbound-rtp" && report.kind === "audio") {
-          const bytesReceived = report.bytesReceived || 0;
-          audioWorking = bytesReceived > 0;
-          console.log(`🎤 Audio bytes received: ${bytesReceived}`);
-        }
-      });
-
-      return audioWorking;
-    } catch (err) {
-      console.error("❌ Audio verification failed:", err);
-      return false;
-    }
+  getPeerConnection(): RTCPeerConnection | null {
+    return this.peerConnection;
   }
-  // ✅ CRITICAL FIX: Complete rewrite with post-negotiation monitoring
+
+  // ✅ CRITICAL FIX: Proper track addition with sendrecv
   async addLocalStreamToPeer(): Promise<void> {
     if (!this.localStream || !this.peerConnection) {
       throw new Error("Cannot add stream: missing stream or peer connection");
     }
 
-    console.log("📤 Adding local stream with FORCED sendrecv + MONITORING");
+    console.log("\n📤 Adding local stream to peer (FIXED)");
 
-    // Step 1: Add tracks if no transceivers exist
-    let transceivers = this.peerConnection.getTransceivers();
+    const existingTransceivers = this.peerConnection.getTransceivers();
+    console.log(`   Existing transceivers: ${existingTransceivers.length}`);
 
-    if (transceivers.length === 0) {
-      this.localStream.getTracks().forEach((track) => {
-        const sender = this.peerConnection!.addTrack(track, this.localStream!);
-        const transceiver = this.peerConnection!.getTransceivers().find(
+    // ✅ Add tracks if no transceivers exist
+    if (existingTransceivers.length === 0) {
+      for (const track of this.localStream.getTracks()) {
+        track.enabled = true;
+        console.log(`   Adding ${track.kind}: ${track.label}`);
+        
+        const sender = this.peerConnection.addTrack(track, this.localStream);
+        
+        // Find the transceiver and set direction
+        const transceiver = this.peerConnection.getTransceivers().find(
           (t) => t.sender === sender
         );
+        
         if (transceiver) {
           transceiver.direction = "sendrecv";
-          console.log(`✅ Set ${track.kind} to sendrecv`);
+          console.log(`   ✅ ${track.kind} transceiver → sendrecv`);
         }
-      });
+      }
     } else {
       // Replace tracks in existing transceivers
-      console.log("   Replacing tracks in existing transceivers...");
-
       const audioTrack = this.localStream.getAudioTracks()[0];
       const videoTrack = this.localStream.getVideoTracks()[0];
 
-      for (const transceiver of transceivers) {
-        const kind = transceiver.receiver.track?.kind;
+      for (const transceiver of existingTransceivers) {
+        const kind = transceiver.receiver.track?.kind || transceiver.sender.track?.kind;
 
         if (kind === "audio" && audioTrack) {
           await transceiver.sender.replaceTrack(audioTrack);
           transceiver.direction = "sendrecv";
-          console.log(`      ✅ Replaced audio track`);
+          console.log("   ✅ Replaced audio track");
         } else if (kind === "video" && videoTrack) {
           await transceiver.sender.replaceTrack(videoTrack);
           transceiver.direction = "sendrecv";
-          console.log(`      ✅ Replaced video track`);
+          console.log("   ✅ Replaced video track");
         }
       }
     }
 
-    // Step 2: CRITICAL - Force ALL transceivers to sendrecv and verify
-    console.log("\n   🔧 Final transceiver verification:");
-    transceivers = this.peerConnection.getTransceivers();
-
-    let hasIssues = false;
-
-    transceivers.forEach((transceiver, index) => {
-      const track = transceiver.sender.track;
-      const oldDirection = transceiver.direction;
-
-      // Force sendrecv
-      transceiver.direction = "sendrecv";
-
-      console.log(`      Transceiver ${index}:`);
-      console.log(`         Kind: ${track?.kind || "unknown"}`);
-      console.log(`         Track: ${track?.label || "none"}`);
-      console.log(`         Enabled: ${track?.enabled}`);
-      console.log(`         Direction: ${oldDirection} → sendrecv`);
-      console.log(
-        `         Current direction: ${transceiver.currentDirection || "none"}`
-      );
-
-      if (oldDirection !== "sendrecv" && oldDirection !== "recvonly") {
-        hasIssues = true;
-      }
+    // ✅ Final verification
+    console.log("\n   📊 Transceiver state:");
+    this.peerConnection.getTransceivers().forEach((t, i) => {
+      console.log(`   [${i}] ${t.sender.track?.kind || "?"}: dir=${t.direction}, current=${t.currentDirection || "none"}`);
     });
 
-    if (hasIssues) {
-      console.warn("⚠️ Fixed transceiver directions");
+    console.log("✅ Local stream added\n");
+  }
+
+  // ✅ CRITICAL FIX: Event listeners with proper track handling
+  setupEventListeners(
+    onRemoteStream: (stream: MediaStream) => void,
+    onIceCandidate: (candidate: RTCIceCandidate) => void
+  ): void {
+    if (!this.peerConnection) {
+      console.error("❌ No peer connection");
+      return;
     }
 
-    // ✅ CRITICAL NEW: Remove old negotiation handler if exists
-    if (this.negotiationHandler) {
-      this.peerConnection.removeEventListener(
-        "negotiationneeded",
-        this.negotiationHandler
-      );
-    }
+    console.log("\n🔧 Setting up event listeners (FIXED)");
 
-    // ✅ CRITICAL NEW: Monitor transceiver state AFTER negotiation completes
-    this.negotiationHandler = () => {
-      console.log("🔄 Negotiation needed - verifying transceivers");
-      const currentTransceivers = this.peerConnection!.getTransceivers();
+    this.callbackFired = false;
+    this.remoteStream = new MediaStream();
 
-      let fixedCount = 0;
-      currentTransceivers.forEach((t, i) => {
-        if (t.direction !== "sendrecv") {
-          console.warn(
-            `⚠️ Transceiver ${i} (${t.sender.track?.kind}) changed to ${t.direction}, forcing back to sendrecv`
-          );
-          t.direction = "sendrecv";
-          fixedCount++;
+    // ✅ CRITICAL: Track handler
+    const trackHandler = async (event: RTCTrackEvent) => {
+      console.log("\n📥 ===== TRACK RECEIVED =====");
+      console.log("   Kind:", event.track.kind);
+      console.log("   ID:", event.track.id);
+      console.log("   Label:", event.track.label);
+      console.log("   Enabled:", event.track.enabled);
+      console.log("   Muted:", event.track.muted);
+      console.log("   ReadyState:", event.track.readyState);
+
+      const track = event.track;
+      
+      // ✅ Force enable
+      track.enabled = true;
+
+      // ✅ Use stream from event or add to our stream
+      let targetStream: MediaStream;
+      
+      if (event.streams && event.streams.length > 0 && event.streams[0].active) {
+        targetStream = event.streams[0];
+        this.remoteStream = targetStream;
+        console.log("   Using event stream:", targetStream.id);
+      } else {
+        const existing = this.remoteStream!.getTracks().find((t) => t.id === track.id);
+        if (!existing) {
+          this.remoteStream!.addTrack(track);
+          console.log("   Added to remote stream");
         }
-      });
+        targetStream = this.remoteStream!;
+      }
 
-      if (fixedCount > 0) {
-        console.log(`   ✅ Fixed ${fixedCount} transceivers post-negotiation`);
+      // ✅ Monitor track
+      track.onmute = () => console.warn(`⚠️ ${track.kind} MUTED`);
+      track.onunmute = () => {
+        console.log(`✅ ${track.kind} UNMUTED`);
+        track.enabled = true;
+      };
+      track.onended = () => console.warn(`🛑 ${track.kind} ENDED`);
+
+      // ✅ Fix transceiver if needed
+      if (event.transceiver && event.transceiver.direction !== "sendrecv") {
+        try {
+          event.transceiver.direction = "sendrecv";
+          console.log("   Fixed transceiver direction");
+        } catch (err) {
+          console.warn("   Could not fix transceiver:", err);
+        }
+      }
+
+      // Check track counts
+      const audioTracks = targetStream.getAudioTracks();
+      const videoTracks = targetStream.getVideoTracks();
+      console.log(`   Tracks: audio=${audioTracks.length}, video=${videoTracks.length}`);
+
+      // ✅ Fire callback when both tracks ready
+      if (audioTracks.length > 0 && videoTracks.length > 0 && !this.callbackFired) {
+        this.callbackFired = true;
+        console.log("\n🎉 BOTH TRACKS READY - FIRING CALLBACK");
+
+        targetStream.getTracks().forEach((t) => (t.enabled = true));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        
+        onRemoteStream(targetStream);
+        console.log("✅ Callback fired\n");
       }
     };
 
-    this.peerConnection.addEventListener(
-      "negotiationneeded",
-      this.negotiationHandler
-    );
-
-    // Store cleanup handler
+    this.peerConnection.addEventListener("track", trackHandler);
     this.eventCleanupHandlers.push(() => {
-      if (this.negotiationHandler) {
-        this.peerConnection?.removeEventListener(
-          "negotiationneeded",
-          this.negotiationHandler
-        );
-        this.negotiationHandler = null;
-      }
+      this.peerConnection?.removeEventListener("track", trackHandler);
     });
 
-    console.log(
-      `\n✅ Stream setup complete with ${transceivers.length} transceivers + post-negotiation monitoring\n`
-    );
+    // ✅ ICE candidate handler
+    const iceHandler = (event: RTCPeerConnectionIceEvent) => {
+      if (event.candidate) {
+        const c = event.candidate.candidate;
+        let type = c.includes("typ host") ? "host" : c.includes("typ srflx") ? "srflx" : c.includes("typ relay") ? "relay" : "?";
+        console.log(`❄️ ICE: ${type}`);
+        onIceCandidate(event.candidate);
+      }
+    };
+
+    this.peerConnection.addEventListener("icecandidate", iceHandler);
+    this.eventCleanupHandlers.push(() => {
+      this.peerConnection?.removeEventListener("icecandidate", iceHandler);
+    });
+
+    // ✅ Connection state handler
+    const connHandler = () => {
+      const state = this.peerConnection?.connectionState;
+      console.log(`🔌 Connection: ${state}`);
+      if (state === "connected") {
+        setTimeout(() => this.logConnectionStats(), 2000);
+      }
+    };
+
+    this.peerConnection.addEventListener("connectionstatechange", connHandler);
+    this.eventCleanupHandlers.push(() => {
+      this.peerConnection?.removeEventListener("connectionstatechange", connHandler);
+    });
+
+    console.log("✅ Event listeners ready\n");
   }
-  // ✅ SDP validation helper
-  private validateSDP(sdp: string): string[] {
-    const issues: string[] = [];
 
-    if (!sdp.includes("m=audio")) {
-      issues.push("Missing audio media section");
-    }
-
-    if (!sdp.includes("m=video")) {
-      issues.push("Missing video media section");
-    }
-
-    const sendrecvCount = (sdp.match(/a=sendrecv/g) || []).length;
-    if (sendrecvCount < 2) {
-      issues.push(`Expected 2 sendrecv, found ${sendrecvCount}`);
-    }
-
-    if (sdp.includes("a=sendonly") || sdp.includes("a=recvonly")) {
-      issues.push("One-way media detected");
-    }
-
-    return issues;
-  }
-
-  // ✅ SDP fixing helper
-  private fixSDP(sdp: string): string {
-    // Replace sendonly/recvonly with sendrecv
-    sdp = sdp.replace(/a=sendonly/g, "a=sendrecv");
-    sdp = sdp.replace(/a=recvonly/g, "a=sendrecv");
-
-    console.log("🔧 SDP automatically fixed");
-    return sdp;
-  }
-  // ✅ FIXED: Enhanced offer creation with comprehensive validation
+  // ✅ CRITICAL FIX: Offer creation
   async createOffer(): Promise<RTCSessionDescriptionInit> {
     if (!this.peerConnection) {
-      throw new Error("Peer connection not initialized");
+      throw new Error("No peer connection");
     }
 
-    console.log("\n📝 Creating SDP Offer");
+    console.log("\n📝 Creating Offer (FIXED)");
 
-    // ✅ Pre-offer: Force ALL transceivers to sendrecv
-    const transceivers = this.peerConnection.getTransceivers();
-    console.log(`   Transceivers: ${transceivers.length}`);
-
-    transceivers.forEach((t, i) => {
+    // Force all transceivers to sendrecv
+    this.peerConnection.getTransceivers().forEach((t) => {
       if (t.direction !== "sendrecv") {
-        console.warn(`⚠️ Fixing transceiver ${i}: ${t.direction} → sendrecv`);
         t.direction = "sendrecv";
       }
     });
 
-    // ✅ Create offer with explicit constraints
     const offer = await this.peerConnection.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: true,
     });
 
-    // ✅ Validate SDP
+    // ✅ Fix SDP if needed
     if (offer.sdp) {
-      const issues = this.validateSDP(offer.sdp);
-      if (issues.length > 0) {
-        console.error("🚨 SDP Issues:", issues);
-        offer.sdp = this.fixSDP(offer.sdp);
-      }
+      offer.sdp = offer.sdp.replace(/a=sendonly/g, "a=sendrecv");
+      offer.sdp = offer.sdp.replace(/a=recvonly/g, "a=sendrecv");
     }
 
     await this.peerConnection.setLocalDescription(offer);
+    
     console.log("✅ Offer created");
+    console.log("   Has audio:", offer.sdp?.includes("m=audio"));
+    console.log("   Has video:", offer.sdp?.includes("m=video"));
+    
     return offer;
   }
 
-  // ✅ FIXED: Enhanced answer creation with validation
+  // ✅ CRITICAL FIX: Answer creation
   async createAnswer(): Promise<RTCSessionDescriptionInit> {
     if (!this.peerConnection) {
-      throw new Error("Peer connection not initialized");
+      throw new Error("No peer connection");
     }
 
-    console.log("\n📝 Creating SDP Answer (ENHANCED)");
+    console.log("\n📝 Creating Answer (FIXED)");
 
-    // ✅ Pre-answer validation and fixing
-    const transceivers = this.peerConnection.getTransceivers();
-    console.log(`   Pre-answer check: ${transceivers.length} transceivers`);
-
-    let fixCount = 0;
-    transceivers.forEach((t, i) => {
-      if (t.direction === "recvonly" && t.sender.track) {
+    // Force transceivers to sendrecv
+    this.peerConnection.getTransceivers().forEach((t, i) => {
+      if (t.sender.track) {
         t.direction = "sendrecv";
-        fixCount++;
-        console.log(`      Fixed transceiver ${i}: recvonly → sendrecv`);
-      } else if (t.direction !== "sendrecv" && t.direction !== "recvonly") {
-        t.direction = "sendrecv";
-        fixCount++;
-        console.log(`      Fixed transceiver ${i}: ${t.direction} → sendrecv`);
+        console.log(`   Transceiver ${i}: ${t.sender.track.kind} → sendrecv`);
       }
     });
 
-    if (fixCount > 0) {
-      console.log(`   ✅ Fixed ${fixCount} transceivers before answer`);
-    }
-
     const answer = await this.peerConnection.createAnswer();
 
-    // ✅ Validate and fix answer SDP
+    // ✅ Fix SDP
     if (answer.sdp) {
-      console.log("\n   📊 SDP Validation:");
-
-      const issues = this.validateSDP(answer.sdp);
-
-      if (issues.length > 0) {
-        console.error("🚨 Answer SDP Validation Failed:");
-        issues.forEach((issue) => console.error(`  - ${issue}`));
-
-        // Attempt to fix SDP
-        answer.sdp = this.fixSDP(answer.sdp);
-        console.log("   🔧 Answer SDP has been auto-fixed");
-      }
-
-      const hasAudio = answer.sdp.includes("m=audio");
-      const hasVideo = answer.sdp.includes("m=video");
-      const sendrecvCount = (answer.sdp.match(/a=sendrecv/g) || []).length;
-
-      console.log(`      Audio: ${hasAudio ? "✅" : "❌"}`);
-      console.log(`      Video: ${hasVideo ? "✅" : "❌"}`);
-      console.log(`      Sendrecv count: ${sendrecvCount}`);
-
-      if (!hasAudio || !hasVideo || sendrecvCount < 2) {
-        console.error("      🚨 ANSWER SDP VALIDATION FAILED!");
-      }
+      answer.sdp = answer.sdp.replace(/a=sendonly/g, "a=sendrecv");
+      answer.sdp = answer.sdp.replace(/a=recvonly/g, "a=sendrecv");
     }
 
     await this.peerConnection.setLocalDescription(answer);
-    console.log("✅ Answer created and set as local description");
+    
+    console.log("✅ Answer created");
     return answer;
   }
-  async setRemoteDescription(
-    description: RTCSessionDescriptionInit
-  ): Promise<void> {
+
+  // ✅ CRITICAL FIX: Remote description with ICE queue processing
+  async setRemoteDescription(description: RTCSessionDescriptionInit): Promise<void> {
     if (!this.peerConnection) {
-      throw new Error("Peer connection not initialized");
+      throw new Error("No peer connection");
     }
 
-    console.log("\n📥 Setting Remote Description (ENHANCED)");
+    console.log("\n📥 Setting Remote Description");
     console.log("   Type:", description.type);
-
-    // ✅ Validate incoming SDP
-    if (description.sdp) {
-      const hasAudio = description.sdp.includes("m=audio");
-      const hasVideo = description.sdp.includes("m=video");
-      const sendrecvCount = (description.sdp.match(/a=sendrecv/g) || []).length;
-
-      console.log("   📊 Remote SDP:");
-      console.log(`      Audio: ${hasAudio ? "✅" : "❌"}`);
-      console.log(`      Video: ${hasVideo ? "✅" : "❌"}`);
-      console.log(`      Sendrecv: ${sendrecvCount}`);
-
-      if (!hasAudio || !hasVideo) {
-        console.error("   🚨 REMOTE SDP MISSING MEDIA!");
-      }
-    }
 
     await this.peerConnection.setRemoteDescription(
       new RTCSessionDescription(description)
@@ -475,502 +388,47 @@ export class WebRTCService {
     this.remoteDescriptionSet = true;
     console.log("✅ Remote description set");
 
-    // ✅ Process any pending ICE candidates
+    // ✅ Process queued ICE candidates
     if (this.pendingIceCandidates.length > 0) {
-      console.log(
-        `📦 Processing ${this.pendingIceCandidates.length} pending ICE candidates`
-      );
+      console.log(`📦 Processing ${this.pendingIceCandidates.length} queued ICE candidates`);
+      
       for (const candidate of this.pendingIceCandidates) {
         try {
-          await this.peerConnection.addIceCandidate(
-            new RTCIceCandidate(candidate)
-          );
-        } catch (error) {
-          console.error("❌ Error adding pending ICE candidate:", error);
+          await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          console.log("   ✅ Added queued candidate");
+        } catch (err) {
+          console.error("   ❌ Failed to add candidate:", err);
         }
       }
+      
       this.pendingIceCandidates = [];
     }
   }
 
+  // ✅ CRITICAL FIX: ICE candidate with queuing
   async addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
     if (!this.peerConnection) {
-      console.warn("⚠️ Cannot add ICE candidate: no peer connection");
+      console.warn("⚠️ No peer connection for ICE candidate");
       return;
     }
 
     if (!candidate.candidate) {
-      console.log("📭 Empty ICE candidate (end-of-candidates)");
+      console.log("📭 End of candidates");
       return;
     }
 
-    // ✅ Queue candidates if remote description not set yet
+    // ✅ Queue if remote description not set
     if (!this.remoteDescriptionSet) {
       this.pendingIceCandidates.push(candidate);
-      console.log(
-        `📦 Queued ICE candidate (total: ${this.pendingIceCandidates.length})`
-      );
+      console.log(`📦 Queued ICE candidate (${this.pendingIceCandidates.length} total)`);
       return;
     }
 
     try {
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-
-      const candidateStr = candidate.candidate;
-      let type = "unknown";
-      if (candidateStr.includes("typ host")) type = "host";
-      else if (candidateStr.includes("typ srflx")) type = "srflx";
-      else if (candidateStr.includes("typ relay")) type = "relay";
-
-      console.log(`✅ ICE candidate added: ${type}`);
+      console.log("✅ ICE candidate added");
     } catch (error) {
-      console.error("❌ Failed to add ICE candidate:", error);
-    }
-  }
-  // ✅ ENHANCED: Comprehensive track verification with detailed diagnostics
-  private async verifyTrackReady(track: MediaStreamTrack): Promise<boolean> {
-    console.log(`🔍 Verifying ${track.kind} track:`, track.label);
-
-    // Check 1: Ready state
-    if (track.readyState !== "live") {
-      console.error(`  ❌ Track not live: ${track.readyState}`);
-      return false;
-    }
-
-    // Check 2: Enabled state
-    if (!track.enabled) {
-      console.warn(`  ⚠️ Track disabled, enabling...`);
-      track.enabled = true;
-    }
-
-    // Check 3: Muted state
-    if (track.muted) {
-      console.warn(`  ⚠️ Track muted (may unmute automatically)`);
-    }
-
-    // Check 4: Track settings
-    const settings = track.getSettings();
-    console.log(`  📊 Track settings:`, {
-      sampleRate: settings.sampleRate,
-      channelCount: settings.channelCount,
-      width: settings.width,
-      height: settings.height,
-      frameRate: settings.frameRate,
-    });
-
-    // Check 5: For audio, verify actual data flow
-    if (track.kind === "audio") {
-      try {
-        const AudioContext =
-          (window as any).AudioContext || (window as any).webkitAudioContext;
-
-        if (!AudioContext) {
-          console.warn(
-            "  ⚠️ AudioContext not available, skipping audio verification"
-          );
-          return true; // Optimistic
-        }
-
-        const ctx = new AudioContext();
-        const stream = new MediaStream([track]);
-        const analyser = ctx.createAnalyser();
-        const source = ctx.createMediaStreamSource(stream);
-
-        source.connect(analyser);
-        analyser.fftSize = 256;
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-        // Wait for audio data
-        const hasData = await new Promise<boolean>((resolve) => {
-          let checks = 0;
-          let maxLevel = 0;
-          let totalLevel = 0;
-
-          const checkLevel = () => {
-            analyser.getByteFrequencyData(dataArray);
-            const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
-            maxLevel = Math.max(maxLevel, avg);
-            totalLevel += avg;
-            checks++;
-
-            console.log(
-              `  🎤 Audio level check ${checks}/5: ${avg.toFixed(
-                2
-              )} (max: ${maxLevel.toFixed(2)})`
-            );
-
-            if (checks >= 5) {
-              ctx.close();
-              const avgLevel = totalLevel / checks;
-              const hasAudio = maxLevel > 0.5 || avgLevel > 0.3;
-
-              console.log(
-                `  ${hasAudio ? "✅" : "❌"} Audio ${
-                  hasAudio ? "DETECTED" : "SILENT"
-                } (max: ${maxLevel.toFixed(2)}, avg: ${avgLevel.toFixed(2)})`
-              );
-
-              if (!hasAudio) {
-                console.warn(
-                  "  ⚠️ Audio appears silent - this may be normal if no one is speaking"
-                );
-              }
-
-              resolve(hasAudio);
-            } else {
-              setTimeout(checkLevel, 200);
-            }
-          };
-
-          checkLevel();
-        });
-
-        return hasData;
-      } catch (err) {
-        console.error("  ❌ Audio verification error:", err);
-        return true; // Optimistic fallback
-      }
-    }
-
-    // For video, check dimensions
-    if (track.kind === "video") {
-      const settings = track.getSettings();
-      if (settings.width && settings.height) {
-        console.log(
-          `  ✅ Video: ${settings.width}x${settings.height} @ ${
-            settings.frameRate || "unknown"
-          }fps`
-        );
-
-        if (settings.width < 160 || settings.height < 120) {
-          console.warn(
-            `  ⚠️ Video resolution very low: ${settings.width}x${settings.height}`
-          );
-        }
-
-        return true;
-      } else {
-        console.warn("  ⚠️ Video has no dimensions yet");
-        return true; // Optimistic
-      }
-    }
-
-    return true;
-  }
-  // ✅ CRITICAL FIX: Enhanced remote stream handling with comprehensive verification
-  setupEventListeners(
-    onRemoteStream: (stream: MediaStream) => void,
-    onIceCandidate: (candidate: RTCIceCandidate) => void
-  ): void {
-    if (!this.peerConnection) {
-      console.error("❌ Cannot setup listeners");
-      return;
-    }
-
-    console.log("\n🔧 Setting up Event Listeners (FULLY ENHANCED)");
-
-    this.callbackFired = false;
-
-    // ✅ Create remote stream immediately
-    if (!this.remoteStream) {
-      this.remoteStream = new MediaStream();
-    }
-
-    // ✅ ENHANCED: Track handler with comprehensive verification
-    const trackHandler = async (event: RTCTrackEvent) => {
-      console.log("\n📥 ===== TRACK RECEIVED (ENHANCED) =====");
-      console.log("   Track kind:", event.track.kind);
-      console.log("   Track label:", event.track.label);
-      console.log("   Track ID:", event.track.id);
-      console.log("   Track enabled:", event.track.enabled);
-      console.log("   Track readyState:", event.track.readyState);
-      console.log("   Track muted:", event.track.muted);
-      console.log("   Streams count:", event.streams?.length || 0);
-
-      // ✅ CRITICAL: Force enable track IMMEDIATELY
-      event.track.enabled = true;
-
-      // ✅ Get track settings
-      const settings = event.track.getSettings();
-      console.log("   Track settings:", settings);
-
-      // ✅ CRITICAL: Verify and fix transceiver direction
-      if (event.transceiver) {
-        const oldDir = event.transceiver.direction;
-        const currentDir = event.transceiver.currentDirection;
-
-        console.log(
-          `   Transceiver direction: ${oldDir} (current: ${currentDir})`
-        );
-
-        if (oldDir !== "sendrecv" && oldDir !== "recvonly") {
-          console.warn(`⚠️ Fixing transceiver: ${oldDir} → sendrecv`);
-          event.transceiver.direction = "sendrecv";
-        }
-
-        // Log sender track info
-        if (event.transceiver.sender.track) {
-          console.log(
-            `   Sender track: ${event.transceiver.sender.track.label} (${event.transceiver.sender.track.kind})`
-          );
-        } else {
-          console.warn("   ⚠️ No sender track!");
-        }
-      }
-
-      // ✅ Get or create remote stream
-      if (event.streams && event.streams.length > 0) {
-        this.remoteStream = event.streams[0];
-        console.log(`   Using stream from event: ${this.remoteStream.id}`);
-      } else {
-        if (!this.remoteStream) {
-          this.remoteStream = new MediaStream();
-          console.log("   Created new remote stream");
-        }
-
-        // Check if track already exists
-        const exists = this.remoteStream
-          .getTracks()
-          .find((t) => t.id === event.track.id);
-        if (!exists) {
-          this.remoteStream.addTrack(event.track);
-          console.log(`   Added ${event.track.kind} track to remote stream`);
-        } else {
-          console.log(`   Track ${event.track.kind} already in stream`);
-        }
-      }
-
-      // ✅ Monitor track state changes
-      event.track.onmute = () => {
-        console.warn(`⚠️ Remote ${event.track.kind} MUTED`);
-      };
-
-      event.track.onunmute = () => {
-        console.log(`✅ Remote ${event.track.kind} UNMUTED`);
-      };
-
-      event.track.onended = () => {
-        console.warn(`🛑 Remote ${event.track.kind} ENDED`);
-      };
-
-      // ✅ Check current track counts
-      const audioTracks = this.remoteStream.getAudioTracks();
-      const videoTracks = this.remoteStream.getVideoTracks();
-
-      console.log(
-        `   Current remote stream: audio=${audioTracks.length}, video=${videoTracks.length}`
-      );
-
-      // ✅ Log all track details
-      this.remoteStream.getTracks().forEach((t, i) => {
-        console.log(`   Track ${i}: ${t.kind} - ${t.label}`);
-        console.log(
-          `      enabled=${t.enabled}, muted=${t.muted}, readyState=${t.readyState}`
-        );
-      });
-
-      // ✅ Fire callback when BOTH tracks present
-      if (
-        audioTracks.length > 0 &&
-        videoTracks.length > 0 &&
-        !this.callbackFired
-      ) {
-        this.callbackFired = true;
-
-        console.log("\n🎉 ===== BOTH TRACKS READY - FIRING CALLBACK =====");
-
-        // ✅ Force enable all tracks one more time
-        this.remoteStream.getTracks().forEach((t) => {
-          t.enabled = true;
-        });
-
-        // ✅ Verify stream is active
-        console.log("   Remote stream active:", this.remoteStream.active);
-        console.log("   Remote stream ID:", this.remoteStream.id);
-
-        // ✅ Small delay for stability
-        setTimeout(() => {
-          console.log("🚀 Executing onRemoteStream callback");
-
-          // ✅ Final verification before callback
-          const finalAudio = this.remoteStream!.getAudioTracks();
-          const finalVideo = this.remoteStream!.getVideoTracks();
-
-          console.log(
-            `   Final check: audio=${finalAudio.length}, video=${finalVideo.length}`
-          );
-
-          if (finalAudio.length === 0 || finalVideo.length === 0) {
-            console.error("❌ CRITICAL: Tracks disappeared before callback!");
-            return;
-          }
-
-          onRemoteStream(this.remoteStream!);
-          console.log("===== CALLBACK FIRED =====\n");
-        }, 100);
-      } else {
-        console.log(
-          `   Waiting for more tracks... (audio=${audioTracks.length}, video=${videoTracks.length})`
-        );
-      }
-    };
-
-    this.peerConnection.addEventListener("track", trackHandler);
-
-    // Store cleanup handler
-    this.eventCleanupHandlers.push(() => {
-      this.peerConnection?.removeEventListener("track", trackHandler);
-    });
-
-    // ✅ ICE candidate handler
-    const iceCandidateHandler = (event: RTCPeerConnectionIceEvent) => {
-      if (event.candidate) {
-        let type = "unknown";
-        if (event.candidate.candidate.includes("typ host")) type = "host";
-        else if (event.candidate.candidate.includes("typ srflx"))
-          type = "srflx";
-        else if (event.candidate.candidate.includes("typ relay"))
-          type = "relay";
-
-        console.log(`❄️ ICE candidate: ${type}`);
-        onIceCandidate(event.candidate);
-      }
-    };
-
-    this.peerConnection.addEventListener("icecandidate", iceCandidateHandler);
-
-    this.eventCleanupHandlers.push(() => {
-      this.peerConnection?.removeEventListener(
-        "icecandidate",
-        iceCandidateHandler
-      );
-    });
-
-    // ✅ ICE connection state handler
-    const iceConnectionHandler = () => {
-      const state = this.peerConnection?.iceConnectionState;
-      console.log(`🧊 ICE Connection State: ${state}`);
-
-      if (state === "connected") {
-        console.log("   ✅ Peer-to-peer connection established!");
-        setTimeout(() => this.logConnectionStats(), 2000);
-      } else if (state === "failed") {
-        console.error("   ❌ ICE connection failed!");
-      } else if (state === "disconnected") {
-        console.warn("   ⚠️ ICE connection disconnected");
-      }
-    };
-
-    this.peerConnection.addEventListener(
-      "iceconnectionstatechange",
-      iceConnectionHandler
-    );
-
-    this.eventCleanupHandlers.push(() => {
-      this.peerConnection?.removeEventListener(
-        "iceconnectionstatechange",
-        iceConnectionHandler
-      );
-    });
-
-    // ✅ Connection state handler
-    const connectionHandler = () => {
-      const state = this.peerConnection?.connectionState;
-      console.log(`🔌 Connection State: ${state}`);
-
-      if (state === "connected") {
-        console.log("   ✅ Peer connection fully established!");
-      } else if (state === "failed") {
-        console.error("   ❌ Connection failed!");
-      } else if (state === "disconnected") {
-        console.warn("   ⚠️ Connection disconnected");
-      }
-    };
-
-    this.peerConnection.addEventListener(
-      "connectionstatechange",
-      connectionHandler
-    );
-
-    this.eventCleanupHandlers.push(() => {
-      this.peerConnection?.removeEventListener(
-        "connectionstatechange",
-        connectionHandler
-      );
-    });
-
-    console.log("✅ Event listeners registered with proper cleanup handlers");
-  }
-  async getConnectionQuality(): Promise<ConnectionQuality> {
-    if (!this.peerConnection) {
-      return {
-        audio: false,
-        video: false,
-        quality: "none",
-        audioBytes: 0,
-        videoBytes: 0,
-        packetLoss: 0,
-      };
-    }
-
-    try {
-      const stats = await this.peerConnection.getStats();
-
-      let hasAudio = false;
-      let hasVideo = false;
-      let audioBytes = 0;
-      let videoBytes = 0;
-      let totalLost = 0;
-      let totalReceived = 0;
-
-      stats.forEach((report) => {
-        if (report.type === "inbound-rtp") {
-          if (report.kind === "audio") {
-            audioBytes = report.bytesReceived || 0;
-            hasAudio = audioBytes > 0;
-            totalLost += report.packetsLost || 0;
-            totalReceived += report.packetsReceived || 0;
-          } else if (report.kind === "video") {
-            videoBytes = report.bytesReceived || 0;
-            hasVideo = videoBytes > 0;
-            totalLost += report.packetsLost || 0;
-            totalReceived += report.packetsReceived || 0;
-          }
-        }
-      });
-
-      const lossRate = totalReceived > 0 ? totalLost / totalReceived : 0;
-
-      let quality: "good" | "poor" | "none";
-      if (!hasAudio && !hasVideo) {
-        quality = "none";
-      } else if (lossRate < 0.05) {
-        quality = "good";
-      } else if (lossRate < 0.15) {
-        quality = "poor";
-      } else {
-        quality = "none";
-      }
-
-      return {
-        audio: hasAudio,
-        video: hasVideo,
-        quality,
-        audioBytes,
-        videoBytes,
-        packetLoss: lossRate,
-      };
-    } catch (error) {
-      console.error("Error getting quality:", error);
-      return {
-        audio: false,
-        video: false,
-        quality: "none",
-        audioBytes: 0,
-        videoBytes: 0,
-        packetLoss: 0,
-      };
+      console.error("❌ ICE candidate error:", error);
     }
   }
 
@@ -980,235 +438,127 @@ export class WebRTCService {
     try {
       const stats = await this.peerConnection.getStats();
 
-      console.log("\n📊 ===== CONNECTION STATISTICS =====");
+      console.log("\n📊 ===== CONNECTION STATS =====");
 
       stats.forEach((report) => {
         if (report.type === "inbound-rtp") {
-          console.log(`\n${report.kind?.toUpperCase()} (Inbound):`);
-          console.log(`  Bytes Received: ${report.bytesReceived || 0}`);
-          console.log(`  Packets Received: ${report.packetsReceived || 0}`);
-          console.log(`  Packets Lost: ${report.packetsLost || 0}`);
-          console.log(`  Jitter: ${report.jitter || 0}`);
+          console.log(`${report.kind?.toUpperCase()} IN: ${report.bytesReceived || 0} bytes, ${report.packetsReceived || 0} pkts`);
         } else if (report.type === "outbound-rtp") {
-          console.log(`\n${report.kind?.toUpperCase()} (Outbound):`);
-          console.log(`  Bytes Sent: ${report.bytesSent || 0}`);
-          console.log(`  Packets Sent: ${report.packetsSent || 0}`);
-        } else if (
-          report.type === "candidate-pair" &&
-          report.state === "succeeded"
-        ) {
-          console.log(`\nCANDIDATE PAIR:`);
-          console.log(`  State: ${report.state}`);
-          console.log(`  Bytes Sent: ${report.bytesSent || 0}`);
-          console.log(`  Bytes Received: ${report.bytesReceived || 0}`);
-          console.log(
-            `  Round Trip Time: ${report.currentRoundTripTime || 0}ms`
-          );
+          console.log(`${report.kind?.toUpperCase()} OUT: ${report.bytesSent || 0} bytes, ${report.packetsSent || 0} pkts`);
         }
       });
 
-      console.log("\n===================================\n");
-    } catch (error) {
-      console.error("Error logging stats:", error);
+      console.log("==============================\n");
+    } catch (err) {
+      console.error("Stats error:", err);
     }
   }
-  async startScreenShare(
-    preferCurrentTab: boolean = true
-  ): Promise<MediaStream> {
+
+  async getConnectionQuality(): Promise<ConnectionQuality> {
+    if (!this.peerConnection) {
+      return { audio: false, video: false, quality: "none", audioBytes: 0, videoBytes: 0, packetLoss: 0 };
+    }
+
     try {
-      console.log("\n🖥️ Starting Screen Share");
+      const stats = await this.peerConnection.getStats();
+      let audioBytes = 0, videoBytes = 0, totalLost = 0, totalReceived = 0;
 
-      const displayMediaOptions: DisplayMediaStreamOptions = {
-        video: {
-          cursor: "always" as any,
-          displaySurface: preferCurrentTab ? "browser" : "monitor",
-        } as any,
-        audio: false,
-        preferCurrentTab: preferCurrentTab,
-      } as any;
-
-      this.screenStream = await navigator.mediaDevices.getDisplayMedia(
-        displayMediaOptions
-      );
-
-      const videoTrack = this.screenStream.getVideoTracks()[0];
-      console.log("   ✅ Screen track:", videoTrack.label);
-
-      if (this.peerConnection && this.localStream) {
-        const sender = this.peerConnection
-          .getSenders()
-          .find((s) => s.track?.kind === "video");
-
-        if (sender) {
-          await sender.replaceTrack(videoTrack);
-          console.log("   ✅ Video track replaced with screen");
+      stats.forEach((report) => {
+        if (report.type === "inbound-rtp") {
+          if (report.kind === "audio") {
+            audioBytes = report.bytesReceived || 0;
+            totalLost += report.packetsLost || 0;
+            totalReceived += report.packetsReceived || 0;
+          } else if (report.kind === "video") {
+            videoBytes = report.bytesReceived || 0;
+            totalLost += report.packetsLost || 0;
+            totalReceived += report.packetsReceived || 0;
+          }
         }
+      });
 
-        videoTrack.onended = () => {
-          console.log("🛑 Screen share ended by user");
-          this.stopScreenShare();
-        };
+      const lossRate = totalReceived > 0 ? totalLost / totalReceived : 0;
+      const hasAudio = audioBytes > 0;
+      const hasVideo = videoBytes > 0;
+
+      let quality: "good" | "poor" | "none" = "none";
+      if (hasAudio || hasVideo) {
+        quality = lossRate < 0.05 ? "good" : lossRate < 0.15 ? "poor" : "none";
       }
 
-      return this.screenStream;
-    } catch (error: any) {
-      console.error("❌ Screen share error:", error);
-      throw error;
+      return { audio: hasAudio, video: hasVideo, quality, audioBytes, videoBytes, packetLoss: lossRate };
+    } catch {
+      return { audio: false, video: false, quality: "none", audioBytes: 0, videoBytes: 0, packetLoss: 0 };
     }
+  }
+
+  toggleAudio(enabled: boolean): void {
+    this.localStream?.getAudioTracks().forEach((t) => (t.enabled = enabled));
+    console.log(`🎤 Audio: ${enabled}`);
+  }
+
+  toggleVideo(enabled: boolean): void {
+    this.localStream?.getVideoTracks().forEach((t) => (t.enabled = enabled));
+    console.log(`📹 Video: ${enabled}`);
+  }
+
+  getTrackStates() {
+    const audio = this.localStream?.getAudioTracks()[0];
+    const video = this.localStream?.getVideoTracks()[0];
+    return {
+      audioEnabled: audio?.enabled || false,
+      videoEnabled: video?.enabled || false,
+      audioMuted: audio?.muted || true,
+      videoMuted: video?.muted || true,
+    };
+  }
+
+  async startScreenShare(preferCurrentTab = true): Promise<MediaStream> {
+    const options: any = {
+      video: { cursor: "always", displaySurface: preferCurrentTab ? "browser" : "monitor" },
+      audio: false,
+      preferCurrentTab,
+    };
+
+    this.screenStream = await navigator.mediaDevices.getDisplayMedia(options);
+    const videoTrack = this.screenStream.getVideoTracks()[0];
+
+    if (this.peerConnection && this.localStream) {
+      const sender = this.peerConnection.getSenders().find((s) => s.track?.kind === "video");
+      if (sender) {
+        await sender.replaceTrack(videoTrack);
+      }
+
+      videoTrack.onended = () => this.stopScreenShare();
+    }
+
+    return this.screenStream;
   }
 
   async stopScreenShare(): Promise<void> {
-    console.log("\n🛑 Stopping Screen Share");
-
     if (this.screenStream) {
-      this.screenStream.getTracks().forEach((track) => track.stop());
+      this.screenStream.getTracks().forEach((t) => t.stop());
       this.screenStream = null;
     }
 
     if (this.peerConnection && this.originalVideoTrack) {
-      const sender = this.peerConnection
-        .getSenders()
-        .find((s) => s.track?.kind === "video");
-
-      if (sender) {
-        if (this.originalVideoTrack.readyState === "live") {
-          await sender.replaceTrack(this.originalVideoTrack);
-          console.log("   ✅ Restored original camera");
-        } else {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-          });
-          const newVideoTrack = stream.getVideoTracks()[0];
-          await sender.replaceTrack(newVideoTrack);
-          this.originalVideoTrack = newVideoTrack;
-
-          if (this.localStream) {
-            const oldTrack = this.localStream.getVideoTracks()[0];
-            if (oldTrack) {
-              this.localStream.removeTrack(oldTrack);
-              oldTrack.stop();
-            }
-            this.localStream.addTrack(newVideoTrack);
-          }
-          console.log("   ✅ Created new camera track");
-        }
+      const sender = this.peerConnection.getSenders().find((s) => s.track?.kind === "video");
+      if (sender && this.originalVideoTrack.readyState === "live") {
+        await sender.replaceTrack(this.originalVideoTrack);
       }
     }
-
-    console.log("✅ Screen share stopped");
   }
 
   isScreenSharing(): boolean {
     return this.screenStream !== null;
   }
-  toggleAudio(enabled: boolean): void {
-    if (!this.localStream) return;
-
-    console.log(`\n🎤 ${enabled ? "Enabling" : "Disabling"} Audio`);
-    this.localStream.getAudioTracks().forEach((track) => {
-      track.enabled = enabled;
-      console.log(`   ${track.label}: ${track.enabled}`);
-    });
-  }
-
-  toggleVideo(enabled: boolean): void {
-    if (!this.localStream) return;
-
-    console.log(`\n📹 ${enabled ? "Enabling" : "Disabling"} Video`);
-    this.localStream.getVideoTracks().forEach((track) => {
-      track.enabled = enabled;
-      console.log(`   ${track.label}: ${track.enabled}`);
-    });
-  }
-
-  getTrackStates(): {
-    audioEnabled: boolean;
-    videoEnabled: boolean;
-    audioMuted: boolean;
-    videoMuted: boolean;
-  } {
-    if (!this.localStream) {
-      return {
-        audioEnabled: false,
-        videoEnabled: false,
-        audioMuted: true,
-        videoMuted: true,
-      };
-    }
-
-    const audioTrack = this.localStream.getAudioTracks()[0];
-    const videoTrack = this.localStream.getVideoTracks()[0];
-
-    return {
-      audioEnabled: audioTrack?.enabled || false,
-      videoEnabled: videoTrack?.enabled || false,
-      audioMuted: audioTrack?.muted || true,
-      videoMuted: videoTrack?.muted || true,
-    };
-  }
-
-  getPeerConnection(): RTCPeerConnection | null {
-    return this.peerConnection;
-  }
-
-  //🆕 Get all transceivers with details
-  getTransceiverDetails(): Array<{
-    index: number;
-    kind: string;
-    direction: RTCRtpTransceiverDirection;
-    currentDirection: RTCRtpTransceiverDirection | null;
-    hasTrack: boolean;
-    trackLabel: string;
-    trackEnabled: boolean;
-  }> {
-    if (!this.peerConnection) return [];
-    return this.peerConnection.getTransceivers().map((t, index) => ({
-      index,
-      kind: t.receiver.track?.kind || "unknown",
-      direction: t.direction,
-      currentDirection: t.currentDirection,
-      hasTrack: !!t.sender.track,
-      trackLabel: t.sender.track?.label || "none",
-      trackEnabled: t.sender.track?.enabled || false,
-    }));
-  }
-  // 🆕 Force fix all transceivers (manual emergency fix)
-  forceFixTransceivers(): void {
-    if (!this.peerConnection) {
-      console.error("❌ No peer connection");
-      return;
-    }
-    console.log("\n🔧 EMERGENCY: Force fixing all transceivers");
-
-    const transceivers = this.peerConnection.getTransceivers();
-    let fixedCount = 0;
-
-    transceivers.forEach((t, i) => {
-      if (t.direction !== "sendrecv") {
-        console.warn(`⚠️ Fixing transceiver ${i}: ${t.direction} → sendrecv`);
-        t.direction = "sendrecv";
-        fixedCount++;
-      }
-    });
-
-    console.log(`✅ Fixed ${fixedCount} transceivers`);
-  }
 
   close(): void {
     console.log("\n🧹 Closing WebRTC Service");
 
-    if (this.localStream) {
-      this.localStream.getTracks().forEach((track) => {
-        track.stop();
-        console.log(`   Stopped local ${track.kind}`);
-      });
-      this.localStream = null;
-    }
-
-    if (this.screenStream) {
-      this.screenStream.getTracks().forEach((track) => track.stop());
-      this.screenStream = null;
-    }
+    this.localStream?.getTracks().forEach((t) => t.stop());
+    this.screenStream?.getTracks().forEach((t) => t.stop());
+    this.eventCleanupHandlers.forEach((fn) => fn());
 
     if (this.peerConnection) {
       this.peerConnection.ontrack = null;
@@ -1216,31 +566,20 @@ export class WebRTCService {
       this.peerConnection.oniceconnectionstatechange = null;
       this.peerConnection.onconnectionstatechange = null;
       this.peerConnection.onsignalingstatechange = null;
-      this.peerConnection.onnegotiationneeded = null;
-      this.peerConnection.onicegatheringstatechange = null;
-
       this.peerConnection.close();
-      this.peerConnection = null;
     }
 
-    if (this.audioContext && this.audioContext.state !== "closed") {
-      this.audioContext.close();
-      this.audioContext = null;
-      this.audioAnalyser = null;
-    }
-
-    // ✅ Execute all cleanup handlers
-    this.eventCleanupHandlers.forEach((cleanup) => cleanup());
-    this.eventCleanupHandlers = [];
-
+    this.peerConnection = null;
+    this.localStream = null;
     this.remoteStream = null;
+    this.screenStream = null;
     this.originalVideoTrack = null;
     this.pendingIceCandidates = [];
     this.remoteDescriptionSet = false;
     this.callbackFired = false;
-    this.negotiationHandler = null;
+    this.eventCleanupHandlers = [];
 
-    console.log("✅ WebRTC service closed\n");
+    console.log("✅ WebRTC closed\n");
   }
 
   destroy(): void {
@@ -1248,5 +587,4 @@ export class WebRTCService {
   }
 }
 
-// ✅ Export all types
 export type { AudioDiagnostics, ConnectionQuality, TrackInfo };

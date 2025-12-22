@@ -1195,28 +1195,118 @@ useEffect(() => {
   };
 }, [roomId, userInteracted]); 
 
-  // ✅ NEW: Diagnostic logging
-  // ✅ FIXED: Diagnostic logging with stable dependency
-  // ✅ FIXED: Diagnostic logging with stable dependency
-  useEffect(() => {
-    if (!webrtcServiceRef.current) return;
+// Socket event handlers - FIXED VERSION
+useEffect(() => {
+  if (!webrtcServiceRef.current) return;
 
-    const logInterval = setInterval(() => {
-      const pc = webrtcServiceRef.current?.getPeerConnection();
-      console.log("📊 WebRTC Status Check:", {
-        service: !!webrtcServiceRef.current,
-        peerConnection: !!pc,
-        connectionState: pc?.connectionState,
-        signalingState: pc?.signalingState,
-        iceConnectionState: pc?.iceConnectionState,
-        iceGatheringState: pc?.iceGatheringState,
-        transceivers: pc?.getTransceivers().length,
-        windowExposed: !!(window as any).peerConnection,
-      });
-    }, 3000);
+  let socket: any;
+  let cleanupFn: (() => void) | undefined;
 
-    return () => clearInterval(logInterval);
-  }, []); // ✅ Empty array - run once after mount
+  const setupHandlers = async () => {
+    try {
+      socket = await waitForSocket(15000);
+      console.log("✅ Socket ready for signaling:", socket.id);
+    } catch (err) {
+      console.error("❌ Socket timeout");
+      setError("Connection timeout");
+      return;
+    }
+
+    // ✅ CRITICAL FIX: Handle offer (for NON-initiator)
+    const handleOffer = async (data: { offer: RTCSessionDescriptionInit; from: string }) => {
+      console.log("\n📥 ===== RECEIVED OFFER =====");
+      console.log("   From:", data.from);
+
+      if (!webrtcServiceRef.current) {
+        console.error("❌ No WebRTC service");
+        return;
+      }
+
+      try {
+        // ✅ Set remote description FIRST
+        await webrtcServiceRef.current.setRemoteDescription(data.offer);
+        console.log("✅ Remote description (offer) set");
+
+        // ✅ Create and send answer
+        const answer = await webrtcServiceRef.current.createAnswer();
+        console.log("✅ Answer created, sending...");
+        
+        socket.emit("answer", roomId, answer);
+        console.log("📤 Answer sent");
+        console.log("===========================\n");
+      } catch (error) {
+        console.error("❌ Error handling offer:", error);
+        setError("Failed to process incoming call");
+      }
+    };
+
+    // ✅ CRITICAL FIX: Handle answer (for initiator)
+    const handleAnswer = async (data: { answer: RTCSessionDescriptionInit; from: string }) => {
+      console.log("\n📥 ===== RECEIVED ANSWER =====");
+      console.log("   From:", data.from);
+
+      if (!webrtcServiceRef.current) {
+        console.error("❌ No WebRTC service");
+        return;
+      }
+
+      try {
+        await webrtcServiceRef.current.setRemoteDescription(data.answer);
+        console.log("✅ Remote description (answer) set");
+        console.log("===========================\n");
+      } catch (error) {
+        console.error("❌ Error handling answer:", error);
+      }
+    };
+
+    // ✅ Handle ICE candidates
+    const handleIceCandidate = async (data: { candidate: RTCIceCandidateInit; from: string }) => {
+      if (!webrtcServiceRef.current) return;
+
+      if (data.candidate?.candidate) {
+        console.log("❄️ Received ICE from:", data.from);
+        try {
+          await webrtcServiceRef.current.addIceCandidate(data.candidate);
+        } catch (error) {
+          console.error("❌ ICE candidate error:", error);
+        }
+      }
+    };
+
+    // ✅ Handle call ended
+    const handleCallEnded = (data: { endedBy?: string; reason?: string }) => {
+      console.log("📴 Call ended by remote");
+      if (!callEndedRef.current) {
+        callEndedRef.current = true;
+        cleanup(false);
+        onEndCall();
+        setTimeout(() => router.push("/"), 300);
+      }
+    };
+
+    // ✅ Register all handlers
+    socket.on("offer", handleOffer);
+    socket.on("answer", handleAnswer);
+    socket.on("ice-candidate", handleIceCandidate);
+    socket.on("call-ended", handleCallEnded);
+
+    console.log("✅ Signaling handlers registered");
+
+    cleanupFn = () => {
+      socket.off("offer", handleOffer);
+      socket.off("answer", handleAnswer);
+      socket.off("ice-candidate", handleIceCandidate);
+      socket.off("call-ended", handleCallEnded);
+    };
+  };
+
+  setupHandlers();
+
+  return () => {
+    if (cleanupFn) cleanupFn();
+  };
+}, [roomId, onEndCall, router]);
+
 
   // ✅ NEW: Ensure window.peerConnection persists
   // ✅ FIXED: Ensure window objects persist - use state instead of ref
@@ -1304,289 +1394,174 @@ useEffect(() => {
     return () => clearInterval(monitor);
   }, [connectionStatus]);
   const initializeCall = async () => {
-    console.log("\n🎥 ===== INITIALIZING CALL (CHECKPOINT VERSION) =====");
+  console.log("\n🎥 ===== INITIALIZING CALL (FIXED) =====");
 
+  try {
+    setError(null);
+
+    if (!user?._id) {
+      throw new Error("User not authenticated");
+    }
+
+    // ✅ Socket setup
+    if (!isSocketConnected()) {
+      console.log("🔌 Initializing socket...");
+      initializeSocket(user._id);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    let socket;
     try {
-      setError(null);
+      socket = await waitForSocket(15000);
+      console.log("✅ Socket connected:", socket.id);
+    } catch (err) {
+      setError("Failed to connect. Please refresh.");
+      return;
+    }
 
-      // ✅ CHECKPOINT 1
-      console.log("✅ CHECKPOINT 1: Starting initialization");
+    // ✅ Create WebRTC service
+    console.log("🔧 Creating WebRTC service...");
+    webrtcServiceRef.current = new WebRTCService();
+    recordingServiceRef.current = new RecordingService();
 
-      if (!user?._id) {
-        throw new Error("User not authenticated");
-      }
-      console.log("✅ CHECKPOINT 2: User authenticated:", user._id);
-
-      // ✅ CHECKPOINT 3: Socket initialization
-      if (!isSocketConnected()) {
-        console.log("🔌 Socket not connected, initializing...");
-        try {
-          initializeSocket(user._id);
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-        } catch (err) {
-          console.error("❌ Failed to initialize socket:", err);
-        }
-      }
-      console.log("✅ CHECKPOINT 3: Socket initialized");
-
-      if (typeof window !== "undefined") {
-        window.onbeforeunload = () => "Call is connecting...";
-      }
-
-      // ✅ CHECKPOINT 4: Wait for socket
-      let socket;
-      try {
-        console.log("🔌 Waiting for socket connection...");
-        socket = await waitForSocket(15000);
-
-        if (!socket.connected) {
-          throw new Error("Socket failed to connect");
-        }
-
-        console.log("✅ CHECKPOINT 4: Socket connected:", socket.id);
-      } catch (err: any) {
-        console.error("❌ FAILED AT CHECKPOINT 4:", err.message);
-        setError("Failed to connect to server. Please refresh.");
-        return; // ❌ EXIT POINT
-      }
-
-      // Initialize services
-      console.log("🔧 Creating WebRTC service...");
-      webrtcServiceRef.current = new WebRTCService();
-      console.log("✅ WebRTC service created:", !!webrtcServiceRef.current);
-
-      recordingServiceRef.current = new RecordingService();
-      console.log("✅ Recording service created");
-
-      // ✅ CHECKPOINT 6: Get peer connection
-      const pc = webrtcServiceRef.current.getPeerConnection();
-      console.log("✅ CHECKPOINT 6: Peer connection:", {
-        exists: !!pc,
-        state: pc?.connectionState,
-        signalingState: pc?.signalingState,
+    // ✅ Get media stream
+    console.log("🎤 Getting media stream...");
+    let stream: MediaStream;
+    try {
+      stream = await ensureAudioNotMuted();
+      console.log("✅ Media acquired:", {
+        audio: stream.getAudioTracks().length,
+        video: stream.getVideoTracks().length,
       });
+    } catch (err: any) {
+      setError(err.message || "Camera/mic access failed");
+      return;
+    }
 
-      // ✅ CHECKPOINT 7: Get media stream
-      console.log("🎤 Acquiring media stream...");
-      let stream: MediaStream;
-      try {
-        stream = await ensureAudioNotMuted();
-        console.log("✅ CHECKPOINT 7: Media stream acquired:", {
-          id: stream.id,
-          audio: stream.getAudioTracks().length,
-          video: stream.getVideoTracks().length,
-        });
-      } catch (err: any) {
-        console.error("❌ FAILED AT CHECKPOINT 7:", err);
-        setError(err.message || "Failed to get camera/mic");
-        return; // ❌ EXIT POINT
-      }
+    // ✅ Set local stream
+    webrtcServiceRef.current.setLocalStream(stream);
 
-      if (!stream) {
-        console.error("❌ FAILED: Stream is null");
-        throw new Error("Failed to get media stream");
-      }
+    // ✅ Attach to local video
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+      localVideoRef.current.muted = true; // Local always muted
+      await localVideoRef.current.play().catch(console.error);
+      console.log("✅ Local video attached");
+    }
 
-      // ✅ CHECKPOINT 8: Set local stream
-      webrtcServiceRef.current.setLocalStream(stream);
-      console.log("✅ CHECKPOINT 8: Local stream set");
+    // ✅ Setup event listeners BEFORE adding tracks
+    console.log("🔧 Setting up event listeners...");
+    webrtcServiceRef.current.setupEventListeners(
+      async (remoteStream: MediaStream) => {
+        console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
 
-      // ✅ CHECKPOINT 9: Attach to local video
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-        await localVideoRef.current.play().catch(console.error);
-        console.log("✅ CHECKPOINT 9: Local video attached");
-      } else {
-        console.error("❌ CHECKPOINT 9 FAILED: No local video ref");
-      }
-
-      // Setup event listeners
-      // ✅ CHECKPOINT 10: Setup event listeners
-      console.log("🔧 Setting up event listeners...");
-      webrtcServiceRef.current.setupEventListeners(
-        async (remoteStream: MediaStream) => {
-          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
-
-          if (remoteStreamReceivedRef.current) {
-            console.log("⚠️ Already processed");
-            return;
-          }
-
-          remoteStreamReceivedRef.current = true;
-
-          if (!remoteStream || !remoteVideoRef.current) {
-            console.error("❌ Missing stream or video element");
-            return;
-          }
-
-          const audioTracks = remoteStream.getAudioTracks();
-          const videoTracks = remoteStream.getVideoTracks();
-
-          console.log(
-            `📊 Tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
-          );
-
-          if (audioTracks.length === 0 || videoTracks.length === 0) {
-            console.error("❌ MISSING TRACKS!");
-            setError("Remote stream missing tracks");
-            return;
-          }
-
-          // Force enable tracks
-          remoteStream.getTracks().forEach((track) => {
-            track.enabled = true;
-            console.log(`✅ Enabled ${track.kind}`);
-          });
-
-          await new Promise((resolve) => setTimeout(resolve, 300));
-
-          const videoEl = remoteVideoRef.current;
-
-          if (videoEl.srcObject) {
-            const oldStream = videoEl.srcObject as MediaStream;
-            oldStream.getTracks().forEach((t) => t.stop());
-          }
-
-          videoEl.srcObject = remoteStream;
-          videoEl.autoplay = true;
-          videoEl.playsInline = true;
-          videoEl.muted = false;
-          videoEl.volume = 1.0;
-
-          console.log("✅ Remote stream attached");
-
-          await new Promise<void>((resolve) => {
-            if (videoEl.readyState >= 2) {
-              resolve();
-            } else {
-              const handler = () => {
-                videoEl.removeEventListener("loadedmetadata", handler);
-                resolve();
-              };
-              videoEl.addEventListener("loadedmetadata", handler);
-              setTimeout(() => {
-                videoEl.removeEventListener("loadedmetadata", handler);
-                resolve();
-              }, 5000);
-            }
-          });
-
-          // Play video
-
-          try {
-            await videoEl.play();
-            console.log("✅ Video playing!");
-            setConnectionStatus("connected");
-            setShowPlayButton(false);
-            setError(null);
-          } catch (err: any) {
-            console.error("❌ Video play failed:", err.name);
-            if (err.name === "NotAllowedError") {
-              setShowPlayButton(true);
-              setError("Click play to start");
-            }
-          }
-
-          if (audioTracks.length > 0) {
-            await setupRemoteAudio(remoteStream);
-          }
-
-          console.log("===== SETUP COMPLETE =====\n");
-        },
-        (candidate: RTCIceCandidate) => {
-          const socket = getSocket();
-          socket.emit("ice-candidate", roomId, candidate);
+        if (remoteStreamReceivedRef.current) {
+          console.log("⚠️ Already processed");
+          return;
         }
-      );
-      console.log("✅ CHECKPOINT 10: Event listeners setup");
+        remoteStreamReceivedRef.current = true;
 
-      // ✅ CHECKPOINT 11: Add local stream
-      console.log("📤 Adding local stream...");
-      try {
-        await webrtcServiceRef.current.addLocalStreamToPeer();
-        console.log("✅ CHECKPOINT 11: Local stream added");
-      } catch (err: any) {
-        console.error("❌ FAILED AT CHECKPOINT 11:", err);
-        setError("Failed to setup peer connection");
-        return; // ❌ EXIT POINT
-      }
-
-      // ✅ CHECKPOINT 12: Join room
-      console.log("🚪 Joining room:", roomId);
-      socket.emit("join-room", roomId, user._id);
-      console.log("✅ CHECKPOINT 12: Room joined");
-
-      // ✅ CHECKPOINT 13: Create offer (if initiator)
-      if (isInitiator) {
-        console.log("📝 Waiting for both users...");
-
-        await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => resolve(), 10000);
-          const handleBothReady = () => {
-            clearTimeout(timeout);
-            socket.off("both-users-ready", handleBothReady);
-            resolve();
-          };
-          socket.on("both-users-ready", handleBothReady);
-        });
-        const offer = await webrtcServiceRef.current.createOffer();
-        socket.emit("offer", roomId, offer);
-        console.log("✅ CHECKPOINT 13: Offer sent");
-      } else {
-        console.log("✅ CHECKPOINT 13: Skipped (not initiator)");
-      }
-
-      // ✅ CHECKPOINT 14: CRITICAL - Expose to window
-      console.log("🔧 CHECKPOINT 14: Exposing to window...");
-      if (typeof window !== "undefined") {
-        const finalPc = webrtcServiceRef.current.getPeerConnection();
-
-        if (!finalPc) {
-          console.error("❌ CHECKPOINT 14 FAILED: Peer connection is null!");
+        if (!remoteStream || !remoteVideoRef.current) {
+          console.error("❌ Missing stream or video element");
           return;
         }
 
-        (window as any).peerConnection = finalPc;
-        (window as any).webrtcService = webrtcServiceRef.current;
-
-        (window as any).checkConnection = () => {
-          const currentPc = webrtcServiceRef.current?.getPeerConnection();
-          return {
-            hasService: !!webrtcServiceRef.current,
-            hasPeerConnection: !!currentPc,
-            connectionState: currentPc?.connectionState,
-            signalingState: currentPc?.signalingState,
-            iceConnectionState: currentPc?.iceConnectionState,
-            iceGatheringState: currentPc?.iceGatheringState,
-            transceivers: currentPc?.getTransceivers().length,
-            windowPeerConnection: !!(window as any).peerConnection,
-            windowWebrtcService: !!(window as any).webrtcService,
-          };
-        };
-
-        console.log("✅ CHECKPOINT 14: Window objects exposed");
-        console.log("   Run: window.checkConnection()");
-
-        // Immediate verification
-        console.log("🔍 Immediate verification:", {
-          peerConnection: !!(window as any).peerConnection,
-          webrtcService: !!(window as any).webrtcService,
-          checkConnection: typeof (window as any).checkConnection,
-          pcMatches: (window as any).peerConnection === finalPc,
-          serviceMatches:
-            (window as any).webrtcService === webrtcServiceRef.current,
+        // Force enable all tracks
+        remoteStream.getTracks().forEach((t) => {
+          t.enabled = true;
+          console.log(`✅ Enabled ${t.kind}: ${t.label}`);
         });
-      }
 
-      console.log("✅✅✅ CHECKPOINT 15: INITIALIZATION COMPLETE ✅✅✅\n");
-    } catch (error: any) {
-      console.error("❌❌❌ INITIALIZATION FAILED ❌❌❌");
-      console.error("Error:", error);
-      console.error("Stack:", error.stack);
-      setError(error.message || "Init failed");
+        // Attach to video element
+        remoteVideoRef.current.srcObject = remoteStream;
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
+
+        try {
+          await remoteVideoRef.current.play();
+          console.log("✅ Remote video playing");
+          setConnectionStatus("connected");
+          setShowPlayButton(false);
+          setError(null);
+        } catch (err: any) {
+          console.error("❌ Video play failed:", err.name);
+          if (err.name === "NotAllowedError") {
+            setShowPlayButton(true);
+            setError("Click play to start");
+          }
+        }
+
+        // Setup audio
+        if (remoteStream.getAudioTracks().length > 0) {
+          await setupRemoteAudio(remoteStream);
+        }
+
+        console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+      },
+      (candidate: RTCIceCandidate) => {
+        const socket = getSocket();
+        socket.emit("ice-candidate", roomId, candidate);
+      }
+    );
+
+    // ✅ Add local stream to peer connection
+    console.log("📤 Adding local stream to peer...");
+    await webrtcServiceRef.current.addLocalStreamToPeer();
+
+    // ✅ Join room
+    console.log("🚪 Joining room:", roomId);
+    socket.emit("join-room", roomId, user._id);
+
+    // ✅ CRITICAL: Handle signaling based on role
+    if (isInitiator) {
+      console.log("👑 I am INITIATOR - waiting for peer to join...");
+
+      // Wait for peer to be ready
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          console.log("⏰ Timeout waiting for peer, creating offer anyway");
+          resolve();
+        }, 10000);
+
+        socket.once("both-users-ready", () => {
+          console.log("✅ Both users ready!");
+          clearTimeout(timeout);
+          resolve();
+        });
+
+        socket.once("user-joined-room", (data: any) => {
+          console.log("✅ Peer joined room:", data);
+          clearTimeout(timeout);
+          setTimeout(resolve, 500); // Small delay
+        });
+      });
+
+      // Create and send offer
+      console.log("📝 Creating offer...");
+      const offer = await webrtcServiceRef.current.createOffer();
+      console.log("📤 Sending offer...");
+      socket.emit("offer", roomId, offer);
+      console.log("✅ Offer sent");
+    } else {
+      console.log("🙋 I am RECEIVER - waiting for offer...");
+      // Offer handler is in the useEffect above
     }
-  };
-  const cleanup = (emitEvent: boolean = true) => {
+
+    // ✅ Expose to window for debugging
+    if (typeof window !== "undefined") {
+      (window as any).peerConnection = webrtcServiceRef.current.getPeerConnection();
+      (window as any).webrtcService = webrtcServiceRef.current;
+    }
+
+    console.log("✅ Call initialization complete\n");
+  } catch (error: any) {
+    console.error("❌ Init failed:", error);
+    setError(error.message || "Initialization failed");
+  }
+};
+
+
+const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...", {
       emitEvent,
       callEnded: callEndedRef.current,
