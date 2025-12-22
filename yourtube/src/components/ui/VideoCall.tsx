@@ -1078,89 +1078,106 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
   // Main initialization - FORCED VERSION
   // Main initialization with DETAILED LOGGING
-  useEffect(() => {
-    console.log("🔄 ===== INIT EFFECT TRIGGERED =====");
-    console.log("   roomId:", roomId);
-    console.log("   userInteracted:", userInteracted);
-    console.log("   initializingRef.current:", initializingRef.current);
-    console.log("   initializedRef.current:", initializedRef.current);
-    console.log("   webrtcServiceRef.current:", !!webrtcServiceRef.current);
-    console.log("====================================\n");
+// ✅ NUCLEAR OPTION: Force initialization immediately
+useEffect(() => {
+  console.log("\n\n");
+  console.log("═══════════════════════════════════════════════════");
+  console.log("🔄 INIT EFFECT TRIGGERED");
+  console.log("   Time:", new Date().toISOString());
+  console.log("   roomId:", roomId);
+  console.log("   userInteracted:", userInteracted);
+  console.log("   initializingRef:", initializingRef.current);
+  console.log("   initializedRef:", initializedRef.current);
+  console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
+  console.log("═══════════════════════════════════════════════════\n");
 
-    if (!roomId) {
-      console.error("❌ BLOCKED: No room ID");
-      setError("Invalid room ID");
-      return;
-    }
+  // ✅ Block 1: Room validation
+  if (!roomId) {
+    console.error("❌ BLOCKED: No room ID");
+    setError("Invalid room ID");
+    return;
+  }
 
-    if (!userInteracted) {
-      console.log("⏳ BLOCKED: Waiting for user interaction...");
-      return;
-    }
+  // ✅ Block 2: User interaction check
+  if (!userInteracted) {
+    console.log("⏳ BLOCKED: Waiting for user interaction");
+    console.log("   This is NORMAL before clicking START CALL\n");
+    return;
+  }
 
-    if (initializingRef.current) {
-      console.warn("⚠️ BLOCKED: Already initializing");
-      return;
-    }
+  // ✅ Block 3: Already initializing?
+  if (initializingRef.current) {
+    console.warn("⚠️ BLOCKED: Already initializing");
+    return;
+  }
 
-    if (initializedRef.current) {
-      console.warn("⚠️ BLOCKED: Already initialized");
-      return;
-    }
+  // ✅ Block 4: Already initialized?
+  if (initializedRef.current) {
+    console.warn("⚠️ BLOCKED: Already initialized");
+    return;
+  }
 
-    if (webrtcServiceRef.current) {
-      console.warn("⚠️ BLOCKED: WebRTC service already exists");
-      return;
-    }
+  // ✅ Block 5: WebRTC already exists?
+  if (webrtcServiceRef.current) {
+    console.warn("⚠️ BLOCKED: WebRTC service already exists");
+    return;
+  }
 
-    console.log("✅ ALL CHECKS PASSED - STARTING INITIALIZATION\n");
-    initializingRef.current = true;
-    let mounted = true;
+  console.log("✅✅✅ ALL CHECKS PASSED - STARTING INITIALIZATION ✅✅✅\n");
+  
+  // ✅ Set flag immediately
+  initializingRef.current = true;
+  console.log("   Set initializingRef.current = true");
+  
+  let mounted = true;
 
-    const init = async () => {
-      try {
-        console.log("🎬 Calling initializeCall()...");
-        await initializeCall();
+  const init = async () => {
+    try {
+      console.log("\n🎬 ===== CALLING initializeCall() =====\n");
+      
+      await initializeCall();
 
-        if (mounted) {
-          initializedRef.current = true;
-          initializingRef.current = false;
-          setIsInitialized(true);
-          console.log("✅✅✅ INITIALIZATION COMPLETE ✅✅✅");
-          console.log("   webrtc:", !!webrtcServiceRef.current);
-          console.log("   localVideo:", !!localVideoRef.current);
-          console.log("   remoteVideo:", !!remoteVideoRef.current);
-          console.log(
-            "   peerConnection:",
-            !!webrtcServiceRef.current?.getPeerConnection()
-          );
-        }
-      } catch (error: any) {
-        console.error("❌❌❌ INIT ERROR ❌❌❌");
-        console.error("   Message:", error.message);
-        console.error("   Stack:", error.stack);
-        if (mounted) {
-          setError(error.message || "Init failed");
-          initializingRef.current = false;
-        }
+      if (mounted) {
+        console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
+        initializedRef.current = true;
+        initializingRef.current = false;
+        setIsInitialized(true);
+        
+        console.log("   Final state:");
+        console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
+        console.log("   - localVideoRef:", !!localVideoRef.current);
+        console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
+        console.log("   - peerConnection:", !!webrtcServiceRef.current?.getPeerConnection());
+        console.log("");
       }
-    };
-
-    init();
-
-    return () => {
-      console.log("🧹 Init effect cleanup");
-      mounted = false;
-      if (
-        initializedRef.current &&
-        !callEndedRef.current &&
-        webrtcServiceRef.current
-      ) {
-        console.log("   Cleaning up resources...");
-        cleanup(false);
+    } catch (error: any) {
+      console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
+      console.error("   Error name:", error.name);
+      console.error("   Error message:", error.message);
+      console.error("   Stack trace:");
+      console.error(error.stack);
+      console.error("");
+      
+      if (mounted) {
+        setError(error.message || "Initialization failed");
+        initializingRef.current = false;
       }
-    };
-  }, [roomId, userInteracted]);
+    }
+  };
+
+  // ✅ Start initialization
+  console.log("🚀 Starting init() function...\n");
+  init();
+
+  return () => {
+    console.log("🧹 Init effect cleanup triggered");
+    mounted = false;
+    if (initializedRef.current && !callEndedRef.current && webrtcServiceRef.current) {
+      console.log("   Cleaning up resources...");
+      cleanup(false);
+    }
+  };
+}, [roomId, userInteracted]);
 
   // ✅ NEW: Diagnostic logging
   // ✅ FIXED: Diagnostic logging with stable dependency
