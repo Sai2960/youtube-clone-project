@@ -314,6 +314,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const [userInteracted, setUserInteracted] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false); // ✅ ADD THIS
 
+  const [initError, setInitError] = useState<string | null>(null);
+  const [initStep, setInitStep] = useState<string>("idle");
+
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const webrtcServiceRef = useRef<WebRTCService | null>(null);
@@ -1002,10 +1005,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       cleanupPromise.then((fn) => fn && fn());
     };
   }, [roomId, isRecording, onEndCall, router]);
-
-  // Add this state at the top with other useState declarations
-  const [initError, setInitError] = useState<string | null>(null);
-  const [initStep, setInitStep] = useState<string>("idle");
 
   // Replace the initialization useEffect with this version:
   useEffect(() => {
@@ -1843,7 +1842,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .padStart(2, "0")}`;
   };
 
-  // ✅ FIXED: Single loading screen logic
+  // ✅ CORRECTED RETURN STATEMENT - Replace your entire return block with this:
+
+  // ✅ STEP 1: Show start button if no user interaction
   if (!userInteracted) {
     return (
       <div className="w-screen h-screen bg-black flex items-center justify-center">
@@ -1860,15 +1861,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           <button
             onClick={() => {
               console.log("🎬 ===== START CALL BUTTON CLICKED =====");
-              console.log("   Before - userInteracted:", userInteracted);
-              console.log("   roomId:", roomId);
-              console.log("   user:", user?._id);
-
               setUserInteracted(true);
-
-              console.log("   After - userInteracted set to TRUE");
-              console.log("   Init effect should trigger on next render");
-              console.log("=======================================\n");
             }}
             className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
           >
@@ -1879,61 +1872,76 @@ const VideoCall: React.FC<VideoCallProps> = ({
     );
   }
 
-  // ✅ Show initializing screen while waiting for WebRTC setup
+  // ✅ STEP 2: Show initialization screen
   if (userInteracted && !isInitialized) {
-    console.log("📊 Showing initialization screen...");
-    console.log("   userInteracted:", userInteracted);
-    console.log("   isInitialized:", isInitialized);
-    console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
-
     return (
       <div className="w-screen h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-2xl px-4">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <h1 className="text-white text-2xl font-bold mb-2">
-            Initializing Call...
+            {initError ? "Initialization Failed" : "Initializing Call..."}
           </h1>
-          <p className="text-gray-400">Setting up audio and video</p>
-          <p className="text-gray-500 text-sm mt-4">
-            Check console for progress
-          </p>
+          <p className="text-gray-400 mb-4">{initStep}</p>
 
-          {/* Debug info */}
-          <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg max-w-md mx-auto">
-            <p className="text-xs text-gray-400 font-mono">
+          {initError && (
+            <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-4">
+              <p className="text-red-300 text-sm">{initError}</p>
+            </div>
+          )}
+
+          {/* Debug panel */}
+          <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg">
+            <p className="text-xs text-gray-400 font-mono mb-1">
+              Step: {initStep}
+            </p>
+            <p className="text-xs text-gray-400 font-mono mb-1">
               userInteracted: {String(userInteracted)}
             </p>
-            <p className="text-xs text-gray-400 font-mono">
+            <p className="text-xs text-gray-400 font-mono mb-1">
               isInitialized: {String(isInitialized)}
             </p>
-            <p className="text-xs text-gray-400 font-mono">
+            <p className="text-xs text-gray-400 font-mono mb-1">
               webrtcService: {String(!!webrtcServiceRef.current)}
             </p>
+            <p className="text-xs text-gray-400 font-mono mb-1">
+              localVideoRef: {String(!!localVideoRef.current)}
+            </p>
+            <p className="text-xs text-gray-400 font-mono mb-1">
+              remoteVideoRef: {String(!!remoteVideoRef.current)}
+            </p>
             <p className="text-xs text-gray-400 font-mono">
-              initializing: {String(initializingRef.current)}
+              error: {initError || "none"}
             </p>
           </div>
+
+          {initError && (
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+            >
+              Retry
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
-  // ✅ Main call UI
+  // ✅ STEP 3: Main call UI (only ONE copy of everything)
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
-      {/* ✅ CRITICAL: ALWAYS render video elements */}
+      {/* Remote Video (Main) - SINGLE INSTANCE */}
       <video
         ref={remoteVideoRef}
         id="remote-video"
         autoPlay
         playsInline
         muted={false}
-        controls={false} // ✅ ADD: Hide controls
+        controls={false}
         className="w-full h-full object-cover absolute inset-0"
         style={{
           backgroundColor: "#000",
           objectFit: "cover",
-          visibility: isInitialized ? "visible" : "hidden", // ✅ CHANGED: Use visibility instead of opacity
         }}
         onLoadedMetadata={async (e) => {
           console.log("✅ Remote video metadata loaded");
@@ -1953,19 +1961,15 @@ const VideoCall: React.FC<VideoCallProps> = ({
         }}
       />
 
-      {/* Local video (PiP) */}
-      <div
-        className={`absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20 ${
-          !isInitialized ? "opacity-0" : "opacity-100"
-        }`}
-      >
+      {/* Local Video (PiP) - SINGLE INSTANCE */}
+      <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
         <video
           ref={localVideoRef}
           id="local-video"
           autoPlay
           playsInline
           muted
-          controls={false} // ✅ ADD: Hide controls
+          controls={false}
           className="w-full h-full object-cover"
           onLoadedMetadata={(e) => {
             console.log("✅ Local video metadata loaded");
@@ -1979,122 +1983,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
         )}
       </div>
 
-      {/* Show loading overlay instead of conditional rendering */}
-      {!userInteracted && (
-        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="mb-8">
-              <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                <Video className="w-12 h-12 text-white" />
-              </div>
-              <h1 className="text-white text-3xl font-bold mb-2">
-                Ready to join?
-              </h1>
-              <p className="text-gray-400 text-lg">Tap to start your call</p>
-            </div>
-            <button
-              onClick={() => {
-                console.log("🎬 ===== START CALL BUTTON CLICKED =====");
-                setUserInteracted(true);
-              }}
-              className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
-            >
-              🎥 START CALL
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Show loading/initializing overlays */}
-      {!userInteracted && (
-        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
-          {/* ... your existing START CALL button UI ... */}
-        </div>
-      )}
-
-      {userInteracted && !isInitialized && (
-        <div className="w-screen h-screen bg-black flex items-center justify-center">
-          <div className="text-center max-w-2xl px-4">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <h1 className="text-white text-2xl font-bold mb-2">
-              {initError ? "Initialization Failed" : "Initializing Call..."}
-            </h1>
-            <p className="text-gray-400 mb-4">{initStep}</p>
-
-            {initError && (
-              <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-4">
-                <p className="text-red-300 text-sm">{initError}</p>
-              </div>
-            )}
-
-            {/* Debug panel */}
-            <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg">
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                Step: {initStep}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                userInteracted: {String(userInteracted)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                isInitialized: {String(isInitialized)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                webrtcService: {String(!!webrtcServiceRef.current)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                localVideoRef: {String(!!localVideoRef.current)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                remoteVideoRef: {String(!!remoteVideoRef.current)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono">
-                error: {initError || "none"}
-              </p>
-            </div>
-
-            {initError && (
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-              >
-                Retry
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Remote Video (Main) - FIXED */}
-      {/* Remote Video (Main) - FIXED v2 */}
-      <video
-        ref={remoteVideoRef}
-        id="remote-video"
-        autoPlay
-        playsInline
-        muted={false} // ✅ FIX: Not muted for audio
-        className="w-full h-full object-cover absolute inset-0"
-        style={{
-          backgroundColor: "#000",
-          objectFit: "cover",
-        }}
-        onLoadedMetadata={async (e) => {
-          console.log("✅ Remote video metadata loaded");
-          const video = e.currentTarget;
-
-          try {
-            video.muted = false; // ✅ FIX: Keep unmuted
-            video.volume = 1.0;
-            await video.play();
-            console.log("✅ Remote video playing with audio");
-          } catch (err: any) {
-            console.error("❌ Autoplay blocked:", err.name);
-            setShowPlayButton(true);
-          }
-        }}
-        onPlay={() => {
-          console.log("▶️ Remote video onPlay fired");
-        }}
-      />
       {/* Connecting Overlay */}
       {connectionStatus === "connecting" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
@@ -2106,29 +1994,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         </div>
       )}
-      {/* Local Video (PiP) - FIXED */}
-      <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
-        <video
-          ref={localVideoRef}
-          id="local-video"
-          autoPlay
-          playsInline
-          muted // ✅ Local always muted (no {true})
-          className="w-full h-full object-cover"
-          onLoadedMetadata={(e) => {
-            console.log("✅ Local video metadata loaded");
-            e.currentTarget.play().catch(console.error);
-          }}
-          onError={(e) => {
-            console.error("❌ Local video error:", e.currentTarget.error);
-          }}
-        />
-        {!isVideoEnabled && (
-          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-            <VideoOff className="w-6 h-6 sm:w-12 sm:h-12 text-gray-400" />
-          </div>
-        )}
-      </div>
+
       {/* Top Bar */}
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 safe-area-top">
         <div className="flex items-center justify-between gap-2">
@@ -2152,7 +2018,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             </div>
           </div>
 
-          {/* Recording Indicator */}
           {isRecording && (
             <div className="flex items-center gap-1.5 sm:gap-3 bg-red-600/90 px-2.5 py-1.5 sm:px-6 sm:py-3 rounded-full animate-pulse flex-shrink-0">
               <Circle className="w-2.5 h-2.5 sm:w-4 sm:h-4 fill-white text-white" />
@@ -2163,6 +2028,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           )}
         </div>
       </div>
+
       {/* Play Button Overlay */}
       {showPlayButton && (
         <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
@@ -2177,16 +2043,17 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </button>
         </div>
       )}
+
       {/* Error Banner */}
       {error && !showPlayButton && (
         <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
           <p className="font-semibold">{error}</p>
         </div>
       )}
+
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 safe-area-bottom">
         <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
-          {/* Audio Toggle */}
           <button
             onClick={toggleAudio}
             className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
@@ -2202,7 +2069,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             )}
           </button>
 
-          {/* Video Toggle */}
           <button
             onClick={toggleVideo}
             className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
@@ -2218,7 +2084,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             )}
           </button>
 
-          {/* Screen Share */}
           <button
             onClick={toggleScreenShare}
             className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
@@ -2230,7 +2095,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             <MonitorUp className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
           </button>
 
-          {/* Recording */}
           <button
             onClick={isRecording ? stopRecording : startRecording}
             disabled={connectionStatus !== "connected"}
@@ -2247,7 +2111,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             />
           </button>
 
-          {/* Fullscreen */}
           <button
             onClick={toggleFullscreen}
             className="p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full bg-gray-700 hover:bg-gray-600 transition-all shadow-lg touch-manipulation"
@@ -2255,7 +2118,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
             <Maximize className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
           </button>
 
-          {/* End Call */}
           <button
             onClick={handleEndCall}
             disabled={isEndingCallRef.current}
@@ -2268,5 +2130,4 @@ const VideoCall: React.FC<VideoCallProps> = ({
     </div>
   );
 };
-
 export default VideoCall;
