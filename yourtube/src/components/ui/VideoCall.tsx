@@ -1006,174 +1006,182 @@ const VideoCall: React.FC<VideoCallProps> = ({
     };
   }, [roomId, isRecording, onEndCall, router]);
 
-  // Replace the initialization useEffect with this version:
   useEffect(() => {
-    console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
-    console.log("   roomId:", roomId);
-    console.log("   userInteracted:", userInteracted);
-    console.log("   initializedRef:", initializedRef.current);
-    console.log("   initializingRef:", initializingRef.current);
-    console.log("=====================================\n");
+  console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
+  console.log("   roomId:", roomId);
+  console.log("   userInteracted:", userInteracted);
+  console.log("   initializedRef:", initializedRef.current);
+  console.log("   initializingRef:", initializingRef.current);
+  console.log("=====================================\n");
 
-    // Validation checks
-    if (!roomId) {
-      console.error("❌ BLOCKED: No room ID");
-      setInitError("Invalid room ID");
-      return;
-    }
+  // Validation checks
+  if (!roomId) {
+    console.error("❌ BLOCKED: No room ID");
+    setInitError("Invalid room ID");
+    return;
+  }
 
-    if (!userInteracted) {
-      console.log("⏳ BLOCKED: Waiting for user interaction");
-      return;
-    }
+  if (!userInteracted) {
+    console.log("⏳ BLOCKED: Waiting for user interaction");
+    return;
+  }
 
-    if (initializingRef.current) {
-      console.warn("⚠️ BLOCKED: Already initializing");
-      return;
-    }
+  if (initializingRef.current) {
+    console.warn("⚠️ BLOCKED: Already initializing");
+    return;
+  }
 
-    if (initializedRef.current) {
-      console.warn("⚠️ BLOCKED: Already initialized");
-      return;
-    }
+  if (initializedRef.current) {
+    console.warn("⚠️ BLOCKED: Already initialized");
+    return;
+  }
 
-    if (webrtcServiceRef.current) {
-      console.warn("⚠️ BLOCKED: WebRTC already exists");
-      return;
-    }
+  if (webrtcServiceRef.current) {
+    console.warn("⚠️ BLOCKED: WebRTC already exists");
+    return;
+  }
 
-    console.log("✅ ALL CHECKS PASSED - STARTING INITIALIZATION\n");
+  console.log("✅ ALL CHECKS PASSED - STARTING INITIALIZATION\n");
 
-    initializingRef.current = true;
-    let mounted = true;
-    let observer: MutationObserver | null = null;
+  initializingRef.current = true;
+  let mounted = true;
+  let observer: MutationObserver | null = null;
 
-    const waitForVideoRefs = (): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        console.log("⏳ Waiting for video elements to mount...");
-        setInitStep("Waiting for video elements");
+  const waitForVideoRefs = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      console.log("⏳ Waiting for video elements to mount...");
+      setInitStep("Waiting for video elements");
 
-        const checkRefs = () => {
-          const localReady = !!localVideoRef.current;
-          const remoteReady = !!remoteVideoRef.current;
+      let checkCount = 0;
+      const maxChecks = 30; // 15 seconds total
 
-          console.log(`   Check: local=${localReady}, remote=${remoteReady}`);
+      const checkRefs = () => {
+        checkCount++;
+        const localReady = !!localVideoRef.current;
+        const remoteReady = !!remoteVideoRef.current;
 
-          if (localReady && remoteReady) {
-            console.log("✅ Video refs ready!");
-            if (observer) observer.disconnect();
-            resolve();
-            return true;
-          }
-          return false;
-        };
+        console.log(`   Check ${checkCount}: local=${localReady}, remote=${remoteReady}`);
 
-        // Check immediately
-        if (checkRefs()) return;
-
-        // Watch for DOM mutations
-        observer = new MutationObserver(() => {
-          checkRefs();
-        });
-
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-        });
-
-        // Timeout after 10 seconds
-        setTimeout(() => {
+        if (localReady && remoteReady) {
+          console.log("✅ Video refs ready!");
           if (observer) observer.disconnect();
-          const localReady = !!localVideoRef.current;
-          const remoteReady = !!remoteVideoRef.current;
+          clearInterval(checkInterval);
+          resolve();
+          return true;
+        }
+        
+        if (checkCount >= maxChecks) {
+          const msg = `Video elements failed to mount after ${checkCount} checks: local=${localReady}, remote=${remoteReady}`;
+          console.error("❌", msg);
+          if (observer) observer.disconnect();
+          clearInterval(checkInterval);
+          setInitError(msg);
+          reject(new Error(msg));
+          return false;
+        }
+        
+        return false;
+      };
 
-          if (!localReady || !remoteReady) {
-            const msg = `Video elements failed to mount: local=${localReady}, remote=${remoteReady}`;
-            console.error("❌", msg);
-            setInitError(msg);
-            reject(new Error(msg));
-          } else {
-            resolve();
-          }
-        }, 10000);
+      // Initial check
+      if (checkRefs()) return;
+
+      // Poll every 500ms
+      const checkInterval = setInterval(checkRefs, 500);
+
+      // Also watch DOM
+      observer = new MutationObserver(() => {
+        checkRefs();
       });
-    };
 
-    const init = async () => {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+    });
+  };
+
+  const init = async () => {
+    try {
+      setInitError(null);
+
+      // Step 1: Wait for video refs with better error handling
+      setInitStep("Waiting for video elements");
       try {
-        setInitError(null);
-
-        // Step 1: Wait for video refs
-        setInitStep("Waiting for video elements");
         await waitForVideoRefs();
         console.log("✅ Video refs ready");
+      } catch (refError: any) {
+        console.error("❌ Video ref wait failed:", refError.message);
+        throw new Error(`Video elements not found: ${refError.message}`);
+      }
 
-        // Step 2: Initialize call
-        setInitStep("Initializing WebRTC");
-        console.log("\n🎬 ===== CALLING initializeCall() =====\n");
-        await initializeCall();
+      // Step 2: Initialize call
+      setInitStep("Initializing WebRTC");
+      console.log("\n🎬 ===== CALLING initializeCall() =====\n");
+      await initializeCall();
 
-        // Step 3: Verify success
-        if (!mounted) {
-          console.log("⚠️ Component unmounted during init");
-          return;
-        }
+      // Step 3: Verify success
+      if (!mounted) {
+        console.log("⚠️ Component unmounted during init");
+        return;
+      }
 
-        if (!webrtcServiceRef.current) {
-          throw new Error("WebRTC service not created after initialization");
-        }
+      if (!webrtcServiceRef.current) {
+        throw new Error("WebRTC service not created after initialization");
+      }
 
-        if (!webrtcServiceRef.current.getPeerConnection()) {
-          throw new Error("Peer connection not created");
-        }
+      if (!webrtcServiceRef.current.getPeerConnection()) {
+        throw new Error("Peer connection not created");
+      }
 
-        console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
-        initializedRef.current = true;
+      console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
+      initializedRef.current = true;
+      initializingRef.current = false;
+      setIsInitialized(true);
+      setInitStep("Connected");
+
+      console.log("   Final state:");
+      console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
+      console.log("   - localVideoRef:", !!localVideoRef.current);
+      console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
+      console.log(
+        "   - peerConnection:",
+        !!webrtcServiceRef.current?.getPeerConnection()
+      );
+      console.log("");
+    } catch (error: any) {
+      console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
+      console.error("   Step:", initStep);
+      console.error("   Error:", error.message);
+      console.error("   Stack:", error.stack);
+
+      if (mounted) {
+        const errorMsg = error.message || "Initialization failed";
+        setError(errorMsg);
+        setInitError(errorMsg);
         initializingRef.current = false;
-        setIsInitialized(true);
-        setInitStep("Connected");
-
-        console.log("   Final state:");
-        console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
-        console.log("   - localVideoRef:", !!localVideoRef.current);
-        console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
-        console.log(
-          "   - peerConnection:",
-          !!webrtcServiceRef.current?.getPeerConnection()
-        );
-        console.log("");
-      } catch (error: any) {
-        console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
-        console.error("   Step:", initStep);
-        console.error("   Error:", error.message);
-        console.error("   Stack:", error.stack);
-
-        if (mounted) {
-          const errorMsg = error.message || "Initialization failed";
-          setError(errorMsg);
-          setInitError(errorMsg);
-          initializingRef.current = false;
-          setInitStep(`Failed: ${errorMsg}`);
-        }
+        setInitStep(`Failed: ${errorMsg}`);
       }
-    };
+    }
+  };
 
-    init();
+  init();
 
-    return () => {
-      console.log("🧹 Init effect cleanup");
-      mounted = false;
-      if (observer) observer.disconnect();
+  return () => {
+    console.log("🧹 Init effect cleanup");
+    mounted = false;
+    if (observer) observer.disconnect();
 
-      if (
-        initializedRef.current &&
-        !callEndedRef.current &&
-        webrtcServiceRef.current
-      ) {
-        cleanup(false);
-      }
-    };
-  }, [roomId, userInteracted]);
+    // Only cleanup if actually initialized
+    if (
+      initializedRef.current &&
+      !callEndedRef.current &&
+      webrtcServiceRef.current
+    ) {
+      cleanup(false);
+    }
+  };
+}, [roomId, userInteracted]); // Remove user dependency if causing issues
 
   // Socket event handlers - FIXED VERSION
   useEffect(() => {
