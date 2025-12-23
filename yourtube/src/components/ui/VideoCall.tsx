@@ -327,197 +327,107 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // ✅ CRITICAL FIX: Persistent audio element setup
-  // ✅ PRODUCTION-READY: Remote audio setup
-  // ✅ FIXED: Remote audio setup with proper video handling
+
+
+  // ✅ NEW: Force audio context resume on user interaction
+const ensureAudioContextResumed = async () => {
+  if (!audioContextRef.current) return;
+  
+  if (audioContextRef.current.state === "suspended") {
+    try {
+      await audioContextRef.current.resume();
+      console.log("✅ AudioContext resumed");
+    } catch (err) {
+      console.error("❌ Failed to resume AudioContext:", err);
+    }
+  }
+};
+  // ✅ FIXED: setupRemoteAudio function - Replace your existing one
   const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 Setting up remote audio/video");
+    console.log("🔊 Setting up remote audio (FIXED v2)");
 
     const audioTracks = stream.getAudioTracks();
     const videoTracks = stream.getVideoTracks();
 
     console.log(
-      `📊 Remote stream tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
+      `📊 Remote stream: audio=${audioTracks.length}, video=${videoTracks.length}`
     );
 
     if (audioTracks.length === 0) {
-      console.error("❌ No audio tracks in remote stream!");
+      console.error("❌ No audio tracks!");
       return;
     }
 
-    if (videoTracks.length === 0) {
-      console.error("❌ No video tracks in remote stream!");
-      return;
-    }
-
-    // ✅ Force enable ALL tracks
+    // ✅ Force enable all tracks
     stream.getTracks().forEach((track) => {
       track.enabled = true;
-      console.log(
-        `✅ Enabled ${track.kind}: ${track.label}, muted=${track.muted}, readyState=${track.readyState}`
-      );
+      console.log(`✅ Enabled ${track.kind}: ${track.label}`);
     });
 
-    // ✅ CRITICAL: Attach video track to video element FIRST
-    if (remoteVideoRef.current) {
-      console.log("📹 Attaching remote stream to video element...");
+  // ✅ CRITICAL: Attach FULL stream to video element (includes audio)
+if (remoteVideoRef.current) {
+  console.log("📹 Attaching stream to video element...");
 
-      // Clean old stream
-      if (remoteVideoRef.current.srcObject) {
-        const oldStream = remoteVideoRef.current.srcObject as MediaStream;
-        oldStream.getTracks().forEach((t) => t.stop());
-      }
+  // Clean old stream
+  if (remoteVideoRef.current.srcObject) {
+    const oldStream = remoteVideoRef.current.srcObject as MediaStream;
+    oldStream.getTracks().forEach((t) => t.stop());
+  }
 
-      remoteVideoRef.current.srcObject = stream;
-      remoteVideoRef.current.muted = false; // ✅ CRITICAL: Not muted for audio
-      remoteVideoRef.current.volume = 1.0;
+  remoteVideoRef.current.srcObject = stream;
+  remoteVideoRef.current.muted = false; // ✅ FIX: Don't mute
+  remoteVideoRef.current.volume = 1.0;
 
-      try {
-        await remoteVideoRef.current.play();
-        console.log("✅ Remote video element playing");
+  try {
+    await remoteVideoRef.current.play();
+    console.log("✅ Video playing with audio");
+
+        setConnectionStatus("connected");
+        setShowPlayButton(false);
+        setError(null);
       } catch (err: any) {
         console.error("❌ Video play failed:", err.name);
         if (err.name === "NotAllowedError") {
           setShowPlayButton(true);
           setError("Click play to start");
-          return;
         }
       }
     }
 
-    // ✅ Wait for video to stabilize
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    // Clean old audio element
+    // ✅ Create backup audio element for redundancy
     if (remoteAudioRef.current) {
       try {
         remoteAudioRef.current.pause();
         remoteAudioRef.current.srcObject = null;
         remoteAudioRef.current.remove();
       } catch (e) {
-        console.warn("Audio cleanup error:", e);
+        console.warn("Audio cleanup:", e);
       }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // ✅ Create separate audio element for audio-only playback
     const audioEl = document.createElement("audio");
-    audioEl.id = "remote-audio-element";
-    audioEl.autoplay = true;
-    audioEl.setAttribute("playsinline", "true");
-    audioEl.muted = false;
-    audioEl.volume = 1.0;
+audioEl.id = "remote-audio-backup";
+audioEl.autoplay = true;
+audioEl.setAttribute("playsinline", "true");
+audioEl.muted = false; // Keep this
+audioEl.volume = 1.0;
+audioEl.controls = false; // ✅ ADD: Hide controls
+    audioEl.style.cssText = "position:fixed;left:-9999px;width:1px;height:1px;";
 
-    audioEl.style.cssText =
-      "position:fixed;left:-9999px;width:1px;height:1px;pointer-events:none;";
-
-    const audioStream = new MediaStream(audioTracks);
-    audioEl.srcObject = audioStream;
+    const audioOnlyStream = new MediaStream(audioTracks);
+    audioEl.srcObject = audioOnlyStream;
 
     remoteAudioRef.current = audioEl;
     document.body.appendChild(audioEl);
 
-    // Event handlers
-    audioEl.onloadedmetadata = () => console.log("✅ Audio metadata loaded");
-    audioEl.oncanplay = () => console.log("✅ Audio can play");
-    audioEl.onplay = () => console.log("✅ Audio PLAYING");
-
-    audioEl.onpause = () => {
-      console.warn("⚠️ Audio paused unexpectedly");
-      if (!callEndedRef.current && audioEl.srcObject) {
-        setTimeout(() => {
-          audioEl.play().catch((err) => {
-            console.error("❌ Failed to resume audio:", err);
-          });
-        }, 100);
-      }
-    };
-
-    audioEl.onerror = (e) => {
-      console.error("❌ Audio error:", audioEl.error);
-    };
-
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    // ✅ Play audio with retry
-    let attempts = 0;
-    const maxAttempts = 5;
-
-    const attemptPlay = async (): Promise<boolean> => {
-      try {
-        audioEl.volume = 1.0;
-        audioEl.muted = false;
-
-        await audioEl.play();
-        console.log("✅ Audio playing successfully");
-        setShowPlayButton(false);
-        setError(null);
-
-        // ✅ ONLY create AudioContext AFTER successful play AND user interaction
-        if (userInteracted) {
-          try {
-            const AudioContextClass =
-              (window as any).AudioContext ||
-              (window as any).webkitAudioContext;
-
-            if (AudioContextClass && !audioContextRef.current) {
-              audioContextRef.current = new AudioContextClass({
-                latencyHint: "interactive",
-                sampleRate: 48000,
-              });
-
-              if (audioContextRef.current.state === "suspended") {
-                await audioContextRef.current.resume();
-              }
-
-              console.log(
-                "✅ AudioContext created:",
-                audioContextRef.current.state
-              );
-
-              const source =
-                audioContextRef.current.createMediaStreamSource(audioStream);
-              const gainNode = audioContextRef.current.createGain();
-
-              gainNode.gain.value = 2.0;
-
-              source.connect(gainNode);
-              gainNode.connect(audioContextRef.current.destination);
-
-              console.log("✅ Audio pipeline connected with 2x gain");
-            }
-          } catch (err) {
-            console.error("❌ AudioContext setup failed (non-critical):", err);
-          }
-        }
-
-        return true;
-      } catch (err: any) {
-        attempts++;
-        console.error(`❌ Play attempt ${attempts}/${maxAttempts}:`, err.name);
-
-        if (
-          err.name === "NotAllowedError" ||
-          err.name === "NotSupportedError"
-        ) {
-          setShowPlayButton(true);
-          setError("🔊 Click play to enable audio");
-          return false;
-        }
-
-        if (attempts < maxAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, attempts * 300));
-          return attemptPlay();
-        }
-
-        setShowPlayButton(true);
-        setError("⚠️ Audio requires interaction");
-        return false;
-      }
-    };
-
-    await attemptPlay();
+    try {
+      await audioEl.play();
+      console.log("✅ Backup audio element playing");
+    } catch (err: any) {
+      console.warn("⚠️ Backup audio autoplay blocked:", err.name);
+    }
   };
   // ✅ FIXED: Debug commands with proper async handling
   useEffect(() => {
@@ -1076,237 +986,259 @@ const VideoCall: React.FC<VideoCallProps> = ({
     };
   }, [roomId, isRecording, onEndCall, router]);
 
-// ✅ FIXED: Wait for video refs to be ready before initializing
-useEffect(() => {
-  console.log("\n\n");
-  console.log("═══════════════════════════════════════════════════");
-  console.log("🔄 INIT EFFECT TRIGGERED");
-  console.log("   Time:", new Date().toISOString());
-  console.log("   roomId:", roomId);
-  console.log("   userInteracted:", userInteracted);
-  console.log("   initializingRef:", initializingRef.current);
-  console.log("   initializedRef:", initializedRef.current);
-  console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
-  console.log("═══════════════════════════════════════════════════\n");
+  // ✅ FIXED: Wait for video refs to be ready before initializing
+  useEffect(() => {
+    console.log("\n\n");
+    console.log("═══════════════════════════════════════════════════");
+    console.log("🔄 INIT EFFECT TRIGGERED");
+    console.log("   Time:", new Date().toISOString());
+    console.log("   roomId:", roomId);
+    console.log("   userInteracted:", userInteracted);
+    console.log("   initializingRef:", initializingRef.current);
+    console.log("   initializedRef:", initializedRef.current);
+    console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
+    console.log("═══════════════════════════════════════════════════\n");
 
-  // ✅ Block 1: Room validation
-  if (!roomId) {
-    console.error("❌ BLOCKED: No room ID");
-    setError("Invalid room ID");
-    return;
-  }
-
-  // ✅ Block 2: User interaction check
-  if (!userInteracted) {
-    console.log("⏳ BLOCKED: Waiting for user interaction");
-    return;
-  }
-
-  // ✅ Block 3: Already initializing?
-  if (initializingRef.current) {
-    console.warn("⚠️ BLOCKED: Already initializing");
-    return;
-  }
-
-  // ✅ Block 4: Already initialized?
-  if (initializedRef.current) {
-    console.warn("⚠️ BLOCKED: Already initialized");
-    return;
-  }
-
-  // ✅ Block 5: WebRTC already exists?
-  if (webrtcServiceRef.current) {
-    console.warn("⚠️ BLOCKED: WebRTC service already exists");
-    return;
-  }
-
-  console.log("✅✅✅ ALL CHECKS PASSED - STARTING INITIALIZATION ✅✅✅\n");
-  
-  // ✅ Set flag immediately
-  initializingRef.current = true;
-  console.log("   Set initializingRef.current = true");
-  
-  let mounted = true;
-
-  const init = async () => {
-    try {
-      // ✅ CRITICAL: Wait for video refs to be ready
-      console.log("⏳ Waiting for video elements...");
-      let attempts = 0;
-      const maxAttempts = 50; // 5 seconds max
-      
-      while ((!localVideoRef.current || !remoteVideoRef.current) && attempts < maxAttempts) {
-        console.log(`   Attempt ${attempts + 1}/${maxAttempts}: local=${!!localVideoRef.current}, remote=${!!remoteVideoRef.current}`);
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-      }
-
-      if (!localVideoRef.current || !remoteVideoRef.current) {
-        throw new Error("Video elements failed to render after 5 seconds");
-      }
-
-      console.log("✅ Video elements ready!");
-      console.log("   localVideoRef:", !!localVideoRef.current);
-      console.log("   remoteVideoRef:", !!remoteVideoRef.current);
-
-      console.log("\n🎬 ===== CALLING initializeCall() =====\n");
-      
-      await initializeCall();
-
-      if (mounted) {
-        console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
-        initializedRef.current = true;
-        initializingRef.current = false;
-        setIsInitialized(true);
-        
-        console.log("   Final state:");
-        console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
-        console.log("   - localVideoRef:", !!localVideoRef.current);
-        console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
-        console.log("   - peerConnection:", !!webrtcServiceRef.current?.getPeerConnection());
-        console.log("");
-      }
-    } catch (error: any) {
-      console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
-      console.error("   Error name:", error.name);
-      console.error("   Error message:", error.message);
-      console.error("   Stack trace:");
-      console.error(error.stack);
-      console.error("");
-      
-      if (mounted) {
-        setError(error.message || "Initialization failed");
-        initializingRef.current = false;
-      }
-    }
-  };
-
-  // ✅ Start initialization
-  console.log("🚀 Starting init() function...\n");
-  init();
-
-  return () => {
-    console.log("🧹 Init effect cleanup triggered");
-    mounted = false;
-    if (initializedRef.current && !callEndedRef.current && webrtcServiceRef.current) {
-      console.log("   Cleaning up resources...");
-      cleanup(false);
-    }
-  };
-}, [roomId, userInteracted]); 
-
-// Socket event handlers - FIXED VERSION
-useEffect(() => {
-  if (!webrtcServiceRef.current) return;
-
-  let socket: any;
-  let cleanupFn: (() => void) | undefined;
-
-  const setupHandlers = async () => {
-    try {
-      socket = await waitForSocket(15000);
-      console.log("✅ Socket ready for signaling:", socket.id);
-    } catch (err) {
-      console.error("❌ Socket timeout");
-      setError("Connection timeout");
+    // ✅ Block 1: Room validation
+    if (!roomId) {
+      console.error("❌ BLOCKED: No room ID");
+      setError("Invalid room ID");
       return;
     }
 
-    // ✅ CRITICAL FIX: Handle offer (for NON-initiator)
-    const handleOffer = async (data: { offer: RTCSessionDescriptionInit; from: string }) => {
-      console.log("\n📥 ===== RECEIVED OFFER =====");
-      console.log("   From:", data.from);
+    // ✅ Block 2: User interaction check
+    if (!userInteracted) {
+      console.log("⏳ BLOCKED: Waiting for user interaction");
+      return;
+    }
 
-      if (!webrtcServiceRef.current) {
-        console.error("❌ No WebRTC service");
-        return;
-      }
+    // ✅ Block 3: Already initializing?
+    if (initializingRef.current) {
+      console.warn("⚠️ BLOCKED: Already initializing");
+      return;
+    }
 
+    // ✅ Block 4: Already initialized?
+    if (initializedRef.current) {
+      console.warn("⚠️ BLOCKED: Already initialized");
+      return;
+    }
+
+    // ✅ Block 5: WebRTC already exists?
+    if (webrtcServiceRef.current) {
+      console.warn("⚠️ BLOCKED: WebRTC service already exists");
+      return;
+    }
+
+    console.log("✅✅✅ ALL CHECKS PASSED - STARTING INITIALIZATION ✅✅✅\n");
+
+    // ✅ Set flag immediately
+    initializingRef.current = true;
+    console.log("   Set initializingRef.current = true");
+
+    let mounted = true;
+
+    const init = async () => {
       try {
-        // ✅ Set remote description FIRST
-        await webrtcServiceRef.current.setRemoteDescription(data.offer);
-        console.log("✅ Remote description (offer) set");
+        // ✅ CRITICAL: Wait for video refs to be ready
+        console.log("⏳ Waiting for video elements...");
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max
 
-        // ✅ Create and send answer
-        const answer = await webrtcServiceRef.current.createAnswer();
-        console.log("✅ Answer created, sending...");
-        
-        socket.emit("answer", roomId, answer);
-        console.log("📤 Answer sent");
-        console.log("===========================\n");
-      } catch (error) {
-        console.error("❌ Error handling offer:", error);
-        setError("Failed to process incoming call");
-      }
-    };
+        while (
+          (!localVideoRef.current || !remoteVideoRef.current) &&
+          attempts < maxAttempts
+        ) {
+          console.log(
+            `   Attempt ${
+              attempts + 1
+            }/${maxAttempts}: local=${!!localVideoRef.current}, remote=${!!remoteVideoRef.current}`
+          );
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          attempts++;
+        }
 
-    // ✅ CRITICAL FIX: Handle answer (for initiator)
-    const handleAnswer = async (data: { answer: RTCSessionDescriptionInit; from: string }) => {
-      console.log("\n📥 ===== RECEIVED ANSWER =====");
-      console.log("   From:", data.from);
+        if (!localVideoRef.current || !remoteVideoRef.current) {
+          throw new Error("Video elements failed to render after 5 seconds");
+        }
 
-      if (!webrtcServiceRef.current) {
-        console.error("❌ No WebRTC service");
-        return;
-      }
+        console.log("✅ Video elements ready!");
+        console.log("   localVideoRef:", !!localVideoRef.current);
+        console.log("   remoteVideoRef:", !!remoteVideoRef.current);
 
-      try {
-        await webrtcServiceRef.current.setRemoteDescription(data.answer);
-        console.log("✅ Remote description (answer) set");
-        console.log("===========================\n");
-      } catch (error) {
-        console.error("❌ Error handling answer:", error);
-      }
-    };
+        console.log("\n🎬 ===== CALLING initializeCall() =====\n");
 
-    // ✅ Handle ICE candidates
-    const handleIceCandidate = async (data: { candidate: RTCIceCandidateInit; from: string }) => {
-      if (!webrtcServiceRef.current) return;
+        await initializeCall();
 
-      if (data.candidate?.candidate) {
-        console.log("❄️ Received ICE from:", data.from);
-        try {
-          await webrtcServiceRef.current.addIceCandidate(data.candidate);
-        } catch (error) {
-          console.error("❌ ICE candidate error:", error);
+        if (mounted) {
+          console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
+          initializedRef.current = true;
+          initializingRef.current = false;
+          setIsInitialized(true);
+
+          console.log("   Final state:");
+          console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
+          console.log("   - localVideoRef:", !!localVideoRef.current);
+          console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
+          console.log(
+            "   - peerConnection:",
+            !!webrtcServiceRef.current?.getPeerConnection()
+          );
+          console.log("");
+        }
+      } catch (error: any) {
+        console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
+        console.error("   Error name:", error.name);
+        console.error("   Error message:", error.message);
+        console.error("   Stack trace:");
+        console.error(error.stack);
+        console.error("");
+
+        if (mounted) {
+          setError(error.message || "Initialization failed");
+          initializingRef.current = false;
         }
       }
     };
 
-    // ✅ Handle call ended
-    const handleCallEnded = (data: { endedBy?: string; reason?: string }) => {
-      console.log("📴 Call ended by remote");
-      if (!callEndedRef.current) {
-        callEndedRef.current = true;
+    // ✅ Start initialization
+    console.log("🚀 Starting init() function...\n");
+    init();
+
+    return () => {
+      console.log("🧹 Init effect cleanup triggered");
+      mounted = false;
+      if (
+        initializedRef.current &&
+        !callEndedRef.current &&
+        webrtcServiceRef.current
+      ) {
+        console.log("   Cleaning up resources...");
         cleanup(false);
-        onEndCall();
-        setTimeout(() => router.push("/"), 300);
       }
     };
+  }, [roomId, userInteracted]);
 
-    // ✅ Register all handlers
-    socket.on("offer", handleOffer);
-    socket.on("answer", handleAnswer);
-    socket.on("ice-candidate", handleIceCandidate);
-    socket.on("call-ended", handleCallEnded);
+  // Socket event handlers - FIXED VERSION
+  useEffect(() => {
+    if (!webrtcServiceRef.current) return;
 
-    console.log("✅ Signaling handlers registered");
+    let socket: any;
+    let cleanupFn: (() => void) | undefined;
 
-    cleanupFn = () => {
-      socket.off("offer", handleOffer);
-      socket.off("answer", handleAnswer);
-      socket.off("ice-candidate", handleIceCandidate);
-      socket.off("call-ended", handleCallEnded);
+    const setupHandlers = async () => {
+      try {
+        socket = await waitForSocket(15000);
+        console.log("✅ Socket ready for signaling:", socket.id);
+      } catch (err) {
+        console.error("❌ Socket timeout");
+        setError("Connection timeout");
+        return;
+      }
+
+      // ✅ CRITICAL FIX: Handle offer (for NON-initiator)
+      const handleOffer = async (data: {
+        offer: RTCSessionDescriptionInit;
+        from: string;
+      }) => {
+        console.log("\n📥 ===== RECEIVED OFFER =====");
+        console.log("   From:", data.from);
+
+        if (!webrtcServiceRef.current) {
+          console.error("❌ No WebRTC service");
+          return;
+        }
+
+        try {
+          // ✅ Set remote description FIRST
+          await webrtcServiceRef.current.setRemoteDescription(data.offer);
+          console.log("✅ Remote description (offer) set");
+
+          // ✅ Create and send answer
+          const answer = await webrtcServiceRef.current.createAnswer();
+          console.log("✅ Answer created, sending...");
+
+          socket.emit("answer", roomId, answer);
+          console.log("📤 Answer sent");
+          console.log("===========================\n");
+        } catch (error) {
+          console.error("❌ Error handling offer:", error);
+          setError("Failed to process incoming call");
+        }
+      };
+
+      // ✅ CRITICAL FIX: Handle answer (for initiator)
+      const handleAnswer = async (data: {
+        answer: RTCSessionDescriptionInit;
+        from: string;
+      }) => {
+        console.log("\n📥 ===== RECEIVED ANSWER =====");
+        console.log("   From:", data.from);
+
+        if (!webrtcServiceRef.current) {
+          console.error("❌ No WebRTC service");
+          return;
+        }
+
+        try {
+          await webrtcServiceRef.current.setRemoteDescription(data.answer);
+          console.log("✅ Remote description (answer) set");
+          console.log("===========================\n");
+        } catch (error) {
+          console.error("❌ Error handling answer:", error);
+        }
+      };
+
+      // ✅ Handle ICE candidates
+      const handleIceCandidate = async (data: {
+        candidate: RTCIceCandidateInit;
+        from: string;
+      }) => {
+        if (!webrtcServiceRef.current) return;
+
+        if (data.candidate?.candidate) {
+          console.log("❄️ Received ICE from:", data.from);
+          try {
+            await webrtcServiceRef.current.addIceCandidate(data.candidate);
+          } catch (error) {
+            console.error("❌ ICE candidate error:", error);
+          }
+        }
+      };
+
+      // ✅ Handle call ended
+      const handleCallEnded = (data: { endedBy?: string; reason?: string }) => {
+        console.log("📴 Call ended by remote");
+        if (!callEndedRef.current) {
+          callEndedRef.current = true;
+          cleanup(false);
+          onEndCall();
+          setTimeout(() => router.push("/"), 300);
+        }
+      };
+
+      // ✅ Register all handlers
+      socket.on("offer", handleOffer);
+      socket.on("answer", handleAnswer);
+      socket.on("ice-candidate", handleIceCandidate);
+      socket.on("call-ended", handleCallEnded);
+
+      console.log("✅ Signaling handlers registered");
+
+      cleanupFn = () => {
+        socket.off("offer", handleOffer);
+        socket.off("answer", handleAnswer);
+        socket.off("ice-candidate", handleIceCandidate);
+        socket.off("call-ended", handleCallEnded);
+      };
     };
-  };
 
-  setupHandlers();
+    setupHandlers();
 
-  return () => {
-    if (cleanupFn) cleanupFn();
-  };
-}, [roomId, onEndCall, router]);
-
+    return () => {
+      if (cleanupFn) cleanupFn();
+    };
+  }, [roomId, onEndCall, router]);
 
   // ✅ NEW: Ensure window.peerConnection persists
   // ✅ FIXED: Ensure window objects persist - use state instead of ref
@@ -1394,174 +1326,174 @@ useEffect(() => {
     return () => clearInterval(monitor);
   }, [connectionStatus]);
   const initializeCall = async () => {
-  console.log("\n🎥 ===== INITIALIZING CALL (FIXED) =====");
+    console.log("\n🎥 ===== INITIALIZING CALL (FIXED) =====");
 
-  try {
-    setError(null);
-
-    if (!user?._id) {
-      throw new Error("User not authenticated");
-    }
-
-    // ✅ Socket setup
-    if (!isSocketConnected()) {
-      console.log("🔌 Initializing socket...");
-      initializeSocket(user._id);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    }
-
-    let socket;
     try {
-      socket = await waitForSocket(15000);
-      console.log("✅ Socket connected:", socket.id);
-    } catch (err) {
-      setError("Failed to connect. Please refresh.");
-      return;
-    }
+      setError(null);
 
-    // ✅ Create WebRTC service
-    console.log("🔧 Creating WebRTC service...");
-    webrtcServiceRef.current = new WebRTCService();
-    recordingServiceRef.current = new RecordingService();
-
-    // ✅ Get media stream
-    console.log("🎤 Getting media stream...");
-    let stream: MediaStream;
-    try {
-      stream = await ensureAudioNotMuted();
-      console.log("✅ Media acquired:", {
-        audio: stream.getAudioTracks().length,
-        video: stream.getVideoTracks().length,
-      });
-    } catch (err: any) {
-      setError(err.message || "Camera/mic access failed");
-      return;
-    }
-
-    // ✅ Set local stream
-    webrtcServiceRef.current.setLocalStream(stream);
-
-    // ✅ Attach to local video
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-      localVideoRef.current.muted = true; // Local always muted
-      await localVideoRef.current.play().catch(console.error);
-      console.log("✅ Local video attached");
-    }
-
-    // ✅ Setup event listeners BEFORE adding tracks
-    console.log("🔧 Setting up event listeners...");
-    webrtcServiceRef.current.setupEventListeners(
-      async (remoteStream: MediaStream) => {
-        console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
-
-        if (remoteStreamReceivedRef.current) {
-          console.log("⚠️ Already processed");
-          return;
-        }
-        remoteStreamReceivedRef.current = true;
-
-        if (!remoteStream || !remoteVideoRef.current) {
-          console.error("❌ Missing stream or video element");
-          return;
-        }
-
-        // Force enable all tracks
-        remoteStream.getTracks().forEach((t) => {
-          t.enabled = true;
-          console.log(`✅ Enabled ${t.kind}: ${t.label}`);
-        });
-
-        // Attach to video element
-        remoteVideoRef.current.srcObject = remoteStream;
-        remoteVideoRef.current.muted = false;
-        remoteVideoRef.current.volume = 1.0;
-
-        try {
-          await remoteVideoRef.current.play();
-          console.log("✅ Remote video playing");
-          setConnectionStatus("connected");
-          setShowPlayButton(false);
-          setError(null);
-        } catch (err: any) {
-          console.error("❌ Video play failed:", err.name);
-          if (err.name === "NotAllowedError") {
-            setShowPlayButton(true);
-            setError("Click play to start");
-          }
-        }
-
-        // Setup audio
-        if (remoteStream.getAudioTracks().length > 0) {
-          await setupRemoteAudio(remoteStream);
-        }
-
-        console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-      },
-      (candidate: RTCIceCandidate) => {
-        const socket = getSocket();
-        socket.emit("ice-candidate", roomId, candidate);
+      if (!user?._id) {
+        throw new Error("User not authenticated");
       }
-    );
 
-    // ✅ Add local stream to peer connection
-    console.log("📤 Adding local stream to peer...");
-    await webrtcServiceRef.current.addLocalStreamToPeer();
+      // ✅ Socket setup
+      if (!isSocketConnected()) {
+        console.log("🔌 Initializing socket...");
+        initializeSocket(user._id);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
 
-    // ✅ Join room
-    console.log("🚪 Joining room:", roomId);
-    socket.emit("join-room", roomId, user._id);
+      let socket;
+      try {
+        socket = await waitForSocket(15000);
+        console.log("✅ Socket connected:", socket.id);
+      } catch (err) {
+        setError("Failed to connect. Please refresh.");
+        return;
+      }
 
-    // ✅ CRITICAL: Handle signaling based on role
-    if (isInitiator) {
-      console.log("👑 I am INITIATOR - waiting for peer to join...");
+      // ✅ Create WebRTC service
+      console.log("🔧 Creating WebRTC service...");
+      webrtcServiceRef.current = new WebRTCService();
+      recordingServiceRef.current = new RecordingService();
 
-      // Wait for peer to be ready
-      await new Promise<void>((resolve) => {
-        const timeout = setTimeout(() => {
-          console.log("⏰ Timeout waiting for peer, creating offer anyway");
-          resolve();
-        }, 10000);
+      // ✅ Get media stream
+      console.log("🎤 Getting media stream...");
+      let stream: MediaStream;
+      try {
+        stream = await ensureAudioNotMuted();
+        console.log("✅ Media acquired:", {
+          audio: stream.getAudioTracks().length,
+          video: stream.getVideoTracks().length,
+        });
+      } catch (err: any) {
+        setError(err.message || "Camera/mic access failed");
+        return;
+      }
 
-        socket.once("both-users-ready", () => {
-          console.log("✅ Both users ready!");
-          clearTimeout(timeout);
-          resolve();
+      // ✅ Set local stream
+      webrtcServiceRef.current.setLocalStream(stream);
+
+      // ✅ Attach to local video
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+        localVideoRef.current.muted = true; // Local always muted
+        await localVideoRef.current.play().catch(console.error);
+        console.log("✅ Local video attached");
+      }
+
+      // ✅ Setup event listeners BEFORE adding tracks
+      console.log("🔧 Setting up event listeners...");
+      webrtcServiceRef.current.setupEventListeners(
+        async (remoteStream: MediaStream) => {
+          console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
+
+          if (remoteStreamReceivedRef.current) {
+            console.log("⚠️ Already processed");
+            return;
+          }
+          remoteStreamReceivedRef.current = true;
+
+          if (!remoteStream || !remoteVideoRef.current) {
+            console.error("❌ Missing stream or video element");
+            return;
+          }
+
+          // Force enable all tracks
+          remoteStream.getTracks().forEach((t) => {
+            t.enabled = true;
+            console.log(`✅ Enabled ${t.kind}: ${t.label}`);
+          });
+
+          // Attach to video element
+          remoteVideoRef.current.srcObject = remoteStream;
+          remoteVideoRef.current.muted = false;
+          remoteVideoRef.current.volume = 1.0;
+
+          try {
+            await remoteVideoRef.current.play();
+            console.log("✅ Remote video playing");
+            setConnectionStatus("connected");
+            setShowPlayButton(false);
+            setError(null);
+          } catch (err: any) {
+            console.error("❌ Video play failed:", err.name);
+            if (err.name === "NotAllowedError") {
+              setShowPlayButton(true);
+              setError("Click play to start");
+            }
+          }
+
+          // Setup audio
+          if (remoteStream.getAudioTracks().length > 0) {
+            await setupRemoteAudio(remoteStream);
+          }
+
+          console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+        },
+        (candidate: RTCIceCandidate) => {
+          const socket = getSocket();
+          socket.emit("ice-candidate", roomId, candidate);
+        }
+      );
+
+      // ✅ Add local stream to peer connection
+      console.log("📤 Adding local stream to peer...");
+      await webrtcServiceRef.current.addLocalStreamToPeer();
+
+      // ✅ Join room
+      console.log("🚪 Joining room:", roomId);
+      socket.emit("join-room", roomId, user._id);
+
+      // ✅ CRITICAL: Handle signaling based on role
+      if (isInitiator) {
+        console.log("👑 I am INITIATOR - waiting for peer to join...");
+
+        // Wait for peer to be ready
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            console.log("⏰ Timeout waiting for peer, creating offer anyway");
+            resolve();
+          }, 10000);
+
+          socket.once("both-users-ready", () => {
+            console.log("✅ Both users ready!");
+            clearTimeout(timeout);
+            resolve();
+          });
+
+          socket.once("user-joined-room", (data: any) => {
+            console.log("✅ Peer joined room:", data);
+            clearTimeout(timeout);
+            setTimeout(resolve, 500); // Small delay
+          });
         });
 
-        socket.once("user-joined-room", (data: any) => {
-          console.log("✅ Peer joined room:", data);
-          clearTimeout(timeout);
-          setTimeout(resolve, 500); // Small delay
-        });
-      });
+        // Create and send offer
+        console.log("📝 Creating offer...");
+        const offer = await webrtcServiceRef.current.createOffer();
+        console.log("📤 Sending offer...");
+        socket.emit("offer", roomId, offer);
+        console.log("✅ Offer sent");
+      } else {
+        console.log("🙋 I am RECEIVER - waiting for offer...");
+        // Offer handler is in the useEffect above
+      }
 
-      // Create and send offer
-      console.log("📝 Creating offer...");
-      const offer = await webrtcServiceRef.current.createOffer();
-      console.log("📤 Sending offer...");
-      socket.emit("offer", roomId, offer);
-      console.log("✅ Offer sent");
-    } else {
-      console.log("🙋 I am RECEIVER - waiting for offer...");
-      // Offer handler is in the useEffect above
+      // ✅ Expose to window for debugging
+      if (typeof window !== "undefined") {
+        (window as any).peerConnection =
+          webrtcServiceRef.current.getPeerConnection();
+        (window as any).webrtcService = webrtcServiceRef.current;
+      }
+
+      console.log("✅ Call initialization complete\n");
+    } catch (error: any) {
+      console.error("❌ Init failed:", error);
+      setError(error.message || "Initialization failed");
     }
+  };
 
-    // ✅ Expose to window for debugging
-    if (typeof window !== "undefined") {
-      (window as any).peerConnection = webrtcServiceRef.current.getPeerConnection();
-      (window as any).webrtcService = webrtcServiceRef.current;
-    }
-
-    console.log("✅ Call initialization complete\n");
-  } catch (error: any) {
-    console.error("❌ Init failed:", error);
-    setError(error.message || "Initialization failed");
-  }
-};
-
-
-const cleanup = (emitEvent: boolean = true) => {
+  const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...", {
       emitEvent,
       callEnded: callEndedRef.current,
@@ -1794,48 +1726,41 @@ const cleanup = (emitEvent: boolean = true) => {
       router.push("/");
     }
   };
-  const handlePlayClick = async () => {
-    console.log("🎬 Manual play button clicked");
+const handlePlayClick = async () => {
+  console.log("🎬 Manual play button clicked");
 
-    try {
-      // Step 1: Resume AudioContext first
+  try {
+    // ✅ Step 1: Resume AudioContext first
+    await ensureAudioContextResumed();
+    
+    // ✅ Step 2: Play video unmuted
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.volume = 1.0;
+      await remoteVideoRef.current.play();
+      console.log("✅ Video playing with audio");
+    }
+
+      // ✅ Step 3: Play backup audio element
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.volume = 1.0;
+        await remoteAudioRef.current.play();
+        console.log("✅ Backup audio playing");
+      }
+
+      // ✅ Step 4: Resume AudioContext if exists
       if (audioContextRef.current?.state === "suspended") {
         await audioContextRef.current.resume();
         console.log("✅ AudioContext resumed");
       }
 
-      // Step 2: Resume remote audio element
-      if (remoteAudioRef.current) {
-        console.log("🔊 Resuming audio element...");
-        try {
-          remoteAudioRef.current.muted = false;
-          remoteAudioRef.current.volume = 1.0;
-          await remoteAudioRef.current.play();
-          console.log("✅ Audio element playing");
-        } catch (audioErr) {
-          console.error("❌ Audio play failed:", audioErr);
-        }
-      }
-
-      // Step 3: Resume video element
-      if (remoteVideoRef.current) {
-        console.log("📹 Resuming video element...");
-        try {
-          remoteVideoRef.current.muted = false;
-          remoteVideoRef.current.volume = 1.0;
-          await remoteVideoRef.current.play();
-          console.log("✅ Video element playing");
-          setConnectionStatus("connected");
-          setError(null);
-          setShowPlayButton(false);
-        } catch (videoErr) {
-          console.error("❌ Video play failed:", videoErr);
-          setError("⚠️ Playback failed - try again");
-        }
-      }
-    } catch (err) {
+      setConnectionStatus("connected");
+      setShowPlayButton(false);
+      setError(null);
+    } catch (err: any) {
       console.error("❌ Manual play failed:", err);
-      setError("⚠️ Could not start playback");
+      setError("⚠️ Could not start playback - try again");
     }
   };
 
@@ -1940,26 +1865,34 @@ const cleanup = (emitEvent: boolean = true) => {
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* Remote Video (Main) - FIXED */}
-      <video
-        ref={remoteVideoRef}
-        id="remote-video"
-        autoPlay
-        playsInline
-        muted={false} // ✅ Must be false for audio
-        className="w-full h-full object-cover absolute inset-0"
+      {/* Remote Video (Main) - FIXED v2 */}
+     <video
+  ref={remoteVideoRef}
+  id="remote-video"
+  autoPlay
+  playsInline
+  muted={false} // ✅ FIX: Not muted for audio
+  className="w-full h-full object-cover absolute inset-0"
         style={{
           backgroundColor: "#000",
           objectFit: "cover",
         }}
-        onLoadedMetadata={async (e) => {
-          console.log("✅ Remote video metadata loaded");
-          try {
-            await e.currentTarget.play();
-            console.log("✅ Remote video playing");
-          } catch (err) {
-            console.error("❌ Autoplay blocked:", err);
+      onLoadedMetadata={async (e) => {
+  console.log("✅ Remote video metadata loaded");
+  const video = e.currentTarget;
+
+  try {
+    video.muted = false; // ✅ FIX: Keep unmuted
+    video.volume = 1.0;
+    await video.play();
+    console.log("✅ Remote video playing with audio");
+          } catch (err: any) {
+            console.error("❌ Autoplay blocked:", err.name);
             setShowPlayButton(true);
           }
+        }}
+        onPlay={() => {
+          console.log("▶️ Remote video onPlay fired");
         }}
       />
       {/* Connecting Overlay */}
