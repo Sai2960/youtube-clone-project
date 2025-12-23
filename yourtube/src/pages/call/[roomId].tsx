@@ -1,10 +1,10 @@
 // pages/call/[roomId].tsx - COMPLETE CALL PAGE
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import VideoCall from '@/components/ui/VideoCall';
-import { useUser } from '@/lib/AuthContext';
-import Head from 'next/head';
-import initializeSocket from '@/lib/socket';
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import VideoCall from "@/components/ui/VideoCall";
+import { useUser } from "@/lib/AuthContext";
+import Head from "next/head";
+import initializeSocket from "@/lib/socket";
 
 const CallPage = () => {
   const router = useRouter();
@@ -24,7 +24,7 @@ const CallPage = () => {
       console.log("🔌 Initializing socket for call page");
       try {
         const socket = initializeSocket(user._id);
-        
+
         // Wait for connection
         const checkConnection = setInterval(() => {
           if (socket.connected) {
@@ -51,15 +51,15 @@ const CallPage = () => {
 
   useEffect(() => {
     // Check if we have all required data
-    if (mounted && roomId && typeof roomId === 'string' && socketReady) {
-      console.log('📞 Call page ready');
-      console.log('   Room ID:', roomId);
-      console.log('   Call ID:', callId);
-      console.log('   Remote Name:', remoteName);
-      console.log('   Is Initiator:', initiator === 'true');
-      console.log('   User:', user?._id);
-      console.log('   Socket Ready:', socketReady);
-      
+    if (mounted && roomId && typeof roomId === "string" && socketReady) {
+      console.log("📞 Call page ready");
+      console.log("   Room ID:", roomId);
+      console.log("   Call ID:", callId);
+      console.log("   Remote Name:", remoteName);
+      console.log("   Is Initiator:", initiator === "true");
+      console.log("   User:", user?._id);
+      console.log("   Socket Ready:", socketReady);
+
       setIsReady(true);
     }
   }, [mounted, roomId, callId, remoteName, initiator, user, socketReady]);
@@ -70,7 +70,10 @@ const CallPage = () => {
       <>
         <Head>
           <title>Preparing Call...</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+          />
         </Head>
         <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
           <div className="text-center text-white">
@@ -79,7 +82,9 @@ const CallPage = () => {
               {!socketReady ? "Connecting to server..." : "Preparing call..."}
             </p>
             <p className="text-sm text-gray-400 mt-2">
-              {!socketReady ? "Establishing connection" : "Setting up video and audio"}
+              {!socketReady
+                ? "Establishing connection"
+                : "Setting up video and audio"}
             </p>
           </div>
         </div>
@@ -87,15 +92,54 @@ const CallPage = () => {
     );
   }
 
-  function handleEndCall(): void {
-    throw new Error('Function not implemented.');
+  const handleEndCall = () => {
+    console.log("📞 Call ended, redirecting to home");
+
+    // Clear any call-related storage
+    try {
+      sessionStorage.removeItem("youtube_incoming_call");
+      localStorage.removeItem("youtube_incoming_call");
+    } catch (error) {
+      console.error("Error clearing storage:", error);
+    }
+
+    // Redirect to home
+    router.push("/");
+  };
+
+  // Validate user is authenticated
+  if (mounted && isReady && socketReady && !user?._id) {
+    return (
+      <>
+        <Head>
+          <title>Authentication Required</title>
+        </Head>
+        <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
+          <div className="text-center text-white max-w-md">
+            <p className="text-xl font-semibold mb-4">
+              Authentication Required
+            </p>
+            <p className="text-gray-400 mb-6">Please sign in to make calls</p>
+            <button
+              onClick={() => router.push("/")}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition"
+            >
+              Go to Home
+            </button>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (
     <>
       <Head>
-        <title>Video Call - {remoteName || 'Remote User'}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>Video Call - {remoteName || "Remote User"}</title>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
         <style>{`
           body {
             overflow: hidden;
@@ -104,14 +148,14 @@ const CallPage = () => {
           }
         `}</style>
       </Head>
-      
+
       <div className="fixed inset-0 bg-black z-[9999] overflow-hidden">
         <VideoCall
           roomId={roomId as string}
-          isInitiator={initiator === 'true'}
+          isInitiator={initiator === "true"}
           onEndCall={handleEndCall}
-          remotePeerName={(remoteName as string) || 'Remote User'}
-          callId={(callId as string) || ''}
+          remotePeerName={(remoteName as string) || "Remote User"}
+          callId={(callId as string) || ""}
         />
       </div>
     </>

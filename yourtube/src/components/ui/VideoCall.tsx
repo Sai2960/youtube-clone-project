@@ -1816,16 +1816,18 @@ const VideoCall = ({
       console.error("❌ Init failed:", error);
       setError(error.message || "Initialization failed");
     }
+  };
 
-    // ✅ Toggle audio
-    const toggleAudio = () => {
-      if (webrtcServiceRef.current) {
-        const newState = !isAudioEnabled;
-        webrtcServiceRef.current.toggleAudio(newState);
-        setIsAudioEnabled(newState);
-        console.log(`🎤 Local audio ${newState ? "enabled" : "disabled"}`);
-      }
-    };
+
+  // ✅ Toggle audio
+  const toggleAudio = () => {
+    if (webrtcServiceRef.current) {
+      const newState = !isAudioEnabled;
+      webrtcServiceRef.current.toggleAudio(newState);
+      setIsAudioEnabled(newState);
+      console.log(`🎤 Local audio ${newState ? "enabled" : "disabled"}`);
+    }
+  };
 
     // ✅ Toggle video
     const toggleVideo = () => {
@@ -2276,5 +2278,5 @@ const VideoCall = ({
       </div>
     );
   };
-};
+
 export default VideoCall;
