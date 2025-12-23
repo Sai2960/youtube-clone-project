@@ -1937,13 +1937,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
     );
   }
 
-  // ✅ CRITICAL FIX: Video elements ALWAYS rendered, overlays control visibility
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* ========================================
-        VIDEO ELEMENTS - ALWAYS RENDERED
-        ======================================== */}
-
+          VIDEO ELEMENTS - ALWAYS RENDERED
+          ======================================== */}
+      
       {/* Remote Video (Main) - ALWAYS IN DOM */}
       <video
         ref={remoteVideoRef}
@@ -1956,6 +1955,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         style={{
           backgroundColor: "#000",
           objectFit: "cover",
+          visibility: isInitialized ? "visible" : "hidden",
         }}
         onLoadedMetadata={async (e) => {
           console.log("✅ Remote video metadata loaded");
@@ -1976,7 +1976,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
       />
 
       {/* Local Video (PiP) - ALWAYS IN DOM */}
-      <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
+      <div
+        className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20"
+        style={{
+          visibility: isInitialized ? "visible" : "hidden",
+        }}
+      >
         <video
           ref={localVideoRef}
           id="local-video"
@@ -1998,8 +2003,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
       </div>
 
       {/* ========================================
-        CONDITIONAL OVERLAYS
-        ======================================== */}
+          CONDITIONAL OVERLAYS (z-50+)
+          ======================================== */}
 
       {/* OVERLAY 1: Start Call Button */}
       {!userInteracted && (
@@ -2043,7 +2048,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
               </div>
             )}
 
-            {/* Debug panel */}
             <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg">
               <p className="text-xs text-gray-400 font-mono mb-1">
                 Step: {initStep}
@@ -2092,7 +2096,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         </div>
       )}
 
-      {/* OVERLAY 4: Play Button (if autoplay blocked) */}
+      {/* OVERLAY 4: Play Button */}
       {isInitialized && showPlayButton && (
         <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
           <button
@@ -2108,8 +2112,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
       )}
 
       {/* ========================================
-        UI ELEMENTS (shown when initialized)
-        ======================================== */}
+          UI ELEMENTS (z-10)
+          ======================================== */}
 
       {/* Top Bar */}
       {isInitialized && (
@@ -2235,4 +2239,5 @@ const VideoCall: React.FC<VideoCallProps> = ({
     </div>
   );
 };
+
 export default VideoCall;
