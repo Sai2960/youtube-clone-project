@@ -1038,17 +1038,20 @@ const VideoCall: React.FC<VideoCallProps> = ({
     initializingRef.current = true;
     let mounted = true;
 
-    // ✅ FIX: Simple delay instead of waiting for refs
-    const init = async () => {
+const init = async () => {
       try {
         setInitError(null);
 
-        // ✅ Give React time to render video elements
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // ✅ Wait for video refs with timeout
+        let attempts = 0;
+        while ((!localVideoRef.current || !remoteVideoRef.current) && attempts < 20) {
+          console.log(`⏳ Waiting for video refs... attempt ${attempts + 1}`);
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          attempts++;
+        }
 
-        // ✅ Verify refs exist (they should now)
         if (!localVideoRef.current || !remoteVideoRef.current) {
-          throw new Error("Video elements not rendered after delay");
+          throw new Error("Video elements not rendered after 2 seconds");
         }
 
         console.log("✅ Video refs confirmed");
@@ -1767,85 +1770,13 @@ const VideoCall: React.FC<VideoCallProps> = ({
       .padStart(2, "0")}`;
   };
 
-  // ✅ FIXED: Single loading screen logic
-  if (!userInteracted) {
-    return (
-      <div className="w-screen h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="mb-8">
-            <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-              <Video className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-white text-3xl font-bold mb-2">
-              Ready to join?
-            </h1>
-            <p className="text-gray-400 text-lg">Tap to start your call</p>
-          </div>
-          <button
-            onClick={() => {
-              console.log("🎬 ===== START CALL BUTTON CLICKED =====");
-              console.log("   Before - userInteracted:", userInteracted);
-              console.log("   roomId:", roomId);
-              console.log("   user:", user?._id);
 
-              setUserInteracted(true);
-
-              console.log("   After - userInteracted set to TRUE");
-              console.log("   Init effect should trigger on next render");
-              console.log("=======================================\n");
-            }}
-            className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
-          >
-            🎥 START CALL
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ✅ Show initializing screen while waiting for WebRTC setup
-  if (userInteracted && !isInitialized) {
-    console.log("📊 Showing initialization screen...");
-    console.log("   userInteracted:", userInteracted);
-    console.log("   isInitialized:", isInitialized);
-    console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
-
-    return (
-      <div className="w-screen h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h1 className="text-white text-2xl font-bold mb-2">
-            Initializing Call...
-          </h1>
-          <p className="text-gray-400">Setting up audio and video</p>
-          <p className="text-gray-500 text-sm mt-4">
-            Check console for progress
-          </p>
-
-          {/* Debug info */}
-          <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg max-w-md mx-auto">
-            <p className="text-xs text-gray-400 font-mono">
-              userInteracted: {String(userInteracted)}
-            </p>
-            <p className="text-xs text-gray-400 font-mono">
-              isInitialized: {String(isInitialized)}
-            </p>
-            <p className="text-xs text-gray-400 font-mono">
-              webrtcService: {String(!!webrtcServiceRef.current)}
-            </p>
-            <p className="text-xs text-gray-400 font-mono">
-              initializing: {String(initializingRef.current)}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ✅ ALWAYS render the container and video elements
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* ✅ Video elements MUST always be in the DOM */}
+   {/* ✅ Video elements - ALWAYS in DOM from first render */}
       <video
         ref={remoteVideoRef}
         id="remote-video"
@@ -1855,7 +1786,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
         className="w-full h-full object-cover absolute inset-0"
         style={{
           backgroundColor: "#000",
-          visibility: isInitialized ? "visible" : "hidden", // Hide but keep in DOM
         }}
         onLoadedMetadata={async (e) => {
           console.log("✅ Remote video metadata loaded");
@@ -1873,12 +1803,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       />
 
       {/* Local video - ALWAYS in DOM */}
-      <div
-        className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20"
-        style={{
-          visibility: isInitialized ? "visible" : "hidden", // Hide but keep in DOM
-        }}
-      >
+      <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
         <video
           ref={localVideoRef}
           id="local-video"
@@ -1894,9 +1819,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
         )}
       </div>
 
-      {/* ✅ Overlays - show/hide with absolute positioning */}
-
-      {/* Start Call Overlay */}
+      {/* ✅ OVERLAY 1: Start Call Screen (highest z-index) */}
       {!userInteracted && (
         <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
           <div className="text-center">
@@ -1910,7 +1833,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
               <p className="text-gray-400 text-lg">Tap to start your call</p>
             </div>
             <button
-              onClick={() => setUserInteracted(true)}
+              onClick={() => {
+                console.log("🎬 ===== START CALL BUTTON CLICKED =====");
+                setUserInteracted(true);
+              }}
               className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
             >
               🎥 START CALL
@@ -1919,9 +1845,9 @@ const VideoCall: React.FC<VideoCallProps> = ({
         </div>
       )}
 
-      {/* Initializing Overlay */}
+      {/* ✅ OVERLAY 2: Initializing Screen */}
       {userInteracted && !isInitialized && (
-        <div className="absolute inset-0 bg-black/90 z-40 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/95 z-40 flex items-center justify-center">
           <div className="text-center max-w-md px-4">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <h1 className="text-white text-2xl font-bold mb-2">
@@ -1947,12 +1873,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 Step: {initStep}
               </p>
               <p className="text-xs text-gray-400 font-mono">
-                userInteracted: {String(userInteracted)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono">
-                isInitialized: {String(isInitialized)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono">
                 webrtcService: {String(!!webrtcServiceRef.current)}
               </p>
               <p className="text-xs text-gray-400 font-mono">
@@ -1965,6 +1885,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
           </div>
         </div>
       )}
+
 
       {/* Main UI - only visible when initialized */}
       {isInitialized && (
@@ -2099,6 +2020,6 @@ const VideoCall: React.FC<VideoCallProps> = ({
       )}
     </div>
   );
-};
+}
 
 export default VideoCall;
