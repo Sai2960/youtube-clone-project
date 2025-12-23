@@ -1006,174 +1006,96 @@ const VideoCall: React.FC<VideoCallProps> = ({
     };
   }, [roomId, isRecording, onEndCall, router]);
 
-  // Replace the initialization useEffect with this version:
   useEffect(() => {
-    console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
-    console.log("   roomId:", roomId);
-    console.log("   userInteracted:", userInteracted);
-    console.log("   initializedRef:", initializedRef.current);
-    console.log("   initializingRef:", initializingRef.current);
-    console.log("=====================================\n");
+  console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
+  console.log("   roomId:", roomId);
+  console.log("   userInteracted:", userInteracted);
+  console.log("=====================================\n");
 
-    // Validation checks
-    if (!roomId) {
-      console.error("❌ BLOCKED: No room ID");
-      setInitError("Invalid room ID");
-      return;
-    }
+  if (!roomId) {
+    console.error("❌ BLOCKED: No room ID");
+    setInitError("Invalid room ID");
+    return;
+  }
 
-    if (!userInteracted) {
-      console.log("⏳ BLOCKED: Waiting for user interaction");
-      return;
-    }
+  if (!userInteracted) {
+    console.log("⏳ BLOCKED: Waiting for user interaction");
+    return;
+  }
 
-    if (initializingRef.current) {
-      console.warn("⚠️ BLOCKED: Already initializing");
-      return;
-    }
+  if (initializingRef.current) {
+    console.warn("⚠️ BLOCKED: Already initializing");
+    return;
+  }
 
-    if (initializedRef.current) {
-      console.warn("⚠️ BLOCKED: Already initialized");
-      return;
-    }
+  if (initializedRef.current) {
+    console.warn("⚠️ BLOCKED: Already initialized");
+    return;
+  }
 
-    if (webrtcServiceRef.current) {
-      console.warn("⚠️ BLOCKED: WebRTC already exists");
-      return;
-    }
+  console.log("✅ ALL CHECKS PASSED - STARTING INITIALIZATION\n");
 
-    console.log("✅ ALL CHECKS PASSED - STARTING INITIALIZATION\n");
+  initializingRef.current = true;
+  let mounted = true;
 
-    initializingRef.current = true;
-    let mounted = true;
-    let observer: MutationObserver | null = null;
+  // ✅ FIX: Simple delay instead of waiting for refs
+  const init = async () => {
+    try {
+      setInitError(null);
+      
+      // ✅ Give React time to render video elements
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // ✅ Verify refs exist (they should now)
+      if (!localVideoRef.current || !remoteVideoRef.current) {
+        throw new Error("Video elements not rendered after delay");
+      }
+      
+      console.log("✅ Video refs confirmed");
+      
+      setInitStep("Initializing WebRTC");
+      await initializeCall();
 
-    const waitForVideoRefs = (): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        console.log("⏳ Waiting for video elements to mount...");
-        setInitStep("Waiting for video elements");
+      if (!mounted) {
+        console.log("⚠️ Component unmounted during init");
+        return;
+      }
 
-        const checkRefs = () => {
-          const localReady = !!localVideoRef.current;
-          const remoteReady = !!remoteVideoRef.current;
+      if (!webrtcServiceRef.current) {
+        throw new Error("WebRTC service not created");
+      }
 
-          console.log(`   Check: local=${localReady}, remote=${remoteReady}`);
+      console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
+      initializedRef.current = true;
+      initializingRef.current = false;
+      setIsInitialized(true);
+      setInitStep("Connected");
+      
+    } catch (error: any) {
+      console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
+      console.error("   Error:", error.message);
 
-          if (localReady && remoteReady) {
-            console.log("✅ Video refs ready!");
-            if (observer) observer.disconnect();
-            resolve();
-            return true;
-          }
-          return false;
-        };
-
-        // Check immediately
-        if (checkRefs()) return;
-
-        // Watch for DOM mutations
-        observer = new MutationObserver(() => {
-          checkRefs();
-        });
-
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-        });
-
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          if (observer) observer.disconnect();
-          const localReady = !!localVideoRef.current;
-          const remoteReady = !!remoteVideoRef.current;
-
-          if (!localReady || !remoteReady) {
-            const msg = `Video elements failed to mount: local=${localReady}, remote=${remoteReady}`;
-            console.error("❌", msg);
-            setInitError(msg);
-            reject(new Error(msg));
-          } else {
-            resolve();
-          }
-        }, 10000);
-      });
-    };
-
-    const init = async () => {
-      try {
-        setInitError(null);
-
-        // Step 1: Wait for video refs
-        setInitStep("Waiting for video elements");
-        await waitForVideoRefs();
-        console.log("✅ Video refs ready");
-
-        // Step 2: Initialize call
-        setInitStep("Initializing WebRTC");
-        console.log("\n🎬 ===== CALLING initializeCall() =====\n");
-        await initializeCall();
-
-        // Step 3: Verify success
-        if (!mounted) {
-          console.log("⚠️ Component unmounted during init");
-          return;
-        }
-
-        if (!webrtcServiceRef.current) {
-          throw new Error("WebRTC service not created after initialization");
-        }
-
-        if (!webrtcServiceRef.current.getPeerConnection()) {
-          throw new Error("Peer connection not created");
-        }
-
-        console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
-        initializedRef.current = true;
+      if (mounted) {
+        const errorMsg = error.message || "Initialization failed";
+        setError(errorMsg);
+        setInitError(errorMsg);
         initializingRef.current = false;
-        setIsInitialized(true);
-        setInitStep("Connected");
-
-        console.log("   Final state:");
-        console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
-        console.log("   - localVideoRef:", !!localVideoRef.current);
-        console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
-        console.log(
-          "   - peerConnection:",
-          !!webrtcServiceRef.current?.getPeerConnection()
-        );
-        console.log("");
-      } catch (error: any) {
-        console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
-        console.error("   Step:", initStep);
-        console.error("   Error:", error.message);
-        console.error("   Stack:", error.stack);
-
-        if (mounted) {
-          const errorMsg = error.message || "Initialization failed";
-          setError(errorMsg);
-          setInitError(errorMsg);
-          initializingRef.current = false;
-          setInitStep(`Failed: ${errorMsg}`);
-        }
+        setInitStep(`Failed: ${errorMsg}`);
       }
-    };
+    }
+  };
 
-    init();
+  init();
 
-    return () => {
-      console.log("🧹 Init effect cleanup");
-      mounted = false;
-      if (observer) observer.disconnect();
-
-      if (
-        initializedRef.current &&
-        !callEndedRef.current &&
-        webrtcServiceRef.current
-      ) {
-        cleanup(false);
-      }
-    };
-  }, [roomId, userInteracted]);
+  return () => {
+    console.log("🧹 Init effect cleanup");
+    mounted = false;
+    
+    if (initializedRef.current && !callEndedRef.current && webrtcServiceRef.current) {
+      cleanup(false);
+    }
+  };
+}, [roomId, userInteracted]);
 
   // Socket event handlers - FIXED VERSION
   useEffect(() => {
@@ -1917,355 +1839,160 @@ const VideoCall: React.FC<VideoCallProps> = ({
     );
   }
 
-  // ✅ Main call UI
-  return (
-    <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
-      {/* ✅ CRITICAL: ALWAYS render video elements */}
+return (
+  <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
+    {/* ✅ ALWAYS render video elements */}
+    <video
+      ref={remoteVideoRef}
+      id="remote-video"
+      autoPlay
+      playsInline
+      muted={false}
+      className="w-full h-full object-cover absolute inset-0"
+      style={{ backgroundColor: "#000" }}
+      onLoadedMetadata={async (e) => {
+        console.log("✅ Remote video metadata loaded");
+        const video = e.currentTarget;
+        try {
+          video.muted = false;
+          video.volume = 1.0;
+          await video.play();
+          console.log("✅ Remote video playing");
+        } catch (err: any) {
+          console.error("❌ Autoplay blocked:", err.name);
+          setShowPlayButton(true);
+        }
+      }}
+    />
+
+    {/* Local video - always rendered */}
+    <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
       <video
-        ref={remoteVideoRef}
-        id="remote-video"
+        ref={localVideoRef}
+        id="local-video"
         autoPlay
         playsInline
-        muted={false}
-        controls={false} // ✅ ADD: Hide controls
-        className="w-full h-full object-cover absolute inset-0"
-        style={{
-          backgroundColor: "#000",
-          objectFit: "cover",
-          visibility: isInitialized ? "visible" : "hidden", // ✅ CHANGED: Use visibility instead of opacity
-        }}
-        onLoadedMetadata={async (e) => {
-          console.log("✅ Remote video metadata loaded");
-          const video = e.currentTarget;
-          try {
-            video.muted = false;
-            video.volume = 1.0;
-            await video.play();
-            console.log("✅ Remote video playing with audio");
-          } catch (err: any) {
-            console.error("❌ Autoplay blocked:", err.name);
-            setShowPlayButton(true);
-          }
-        }}
-        onPlay={() => {
-          console.log("▶️ Remote video onPlay fired");
-        }}
+        muted
+        className="w-full h-full object-cover"
       />
+      {!isVideoEnabled && (
+        <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+          <VideoOff className="w-12 h-12 text-gray-400" />
+        </div>
+      )}
+    </div>
 
-      {/* Local video (PiP) */}
-      <div
-        className={`absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20 ${
-          !isInitialized ? "opacity-0" : "opacity-100"
-        }`}
-      >
-        <video
-          ref={localVideoRef}
-          id="local-video"
-          autoPlay
-          playsInline
-          muted
-          controls={false} // ✅ ADD: Hide controls
-          className="w-full h-full object-cover"
-          onLoadedMetadata={(e) => {
-            console.log("✅ Local video metadata loaded");
-            e.currentTarget.play().catch(console.error);
-          }}
-        />
-        {!isVideoEnabled && (
-          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-            <VideoOff className="w-6 h-6 sm:w-12 sm:h-12 text-gray-400" />
+    {/* Show start call overlay */}
+    {!userInteracted && (
+      <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-8">
+            <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
+              <Video className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-white text-3xl font-bold mb-2">Ready to join?</h1>
+            <p className="text-gray-400 text-lg">Tap to start your call</p>
           </div>
-        )}
+          <button
+            onClick={() => setUserInteracted(true)}
+            className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl"
+          >
+            🎥 START CALL
+          </button>
+        </div>
       </div>
+    )}
 
-      {/* Show loading overlay instead of conditional rendering */}
-      {!userInteracted && (
-        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="mb-8">
-              <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                <Video className="w-12 h-12 text-white" />
-              </div>
-              <h1 className="text-white text-3xl font-bold mb-2">
-                Ready to join?
-              </h1>
-              <p className="text-gray-400 text-lg">Tap to start your call</p>
-            </div>
-            <button
-              onClick={() => {
-                console.log("🎬 ===== START CALL BUTTON CLICKED =====");
-                setUserInteracted(true);
-              }}
-              className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
-            >
-              🎥 START CALL
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Show loading/initializing overlays */}
-      {!userInteracted && (
-        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
-          {/* ... your existing START CALL button UI ... */}
-        </div>
-      )}
-
-      {userInteracted && !isInitialized && (
-        <div className="w-screen h-screen bg-black flex items-center justify-center">
-          <div className="text-center max-w-2xl px-4">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <h1 className="text-white text-2xl font-bold mb-2">
-              {initError ? "Initialization Failed" : "Initializing Call..."}
-            </h1>
-            <p className="text-gray-400 mb-4">{initStep}</p>
-
-            {initError && (
-              <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-4">
-                <p className="text-red-300 text-sm">{initError}</p>
-              </div>
-            )}
-
-            {/* Debug panel */}
-            <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg">
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                Step: {initStep}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                userInteracted: {String(userInteracted)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                isInitialized: {String(isInitialized)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                webrtcService: {String(!!webrtcServiceRef.current)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                localVideoRef: {String(!!localVideoRef.current)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono mb-1">
-                remoteVideoRef: {String(!!remoteVideoRef.current)}
-              </p>
-              <p className="text-xs text-gray-400 font-mono">
-                error: {initError || "none"}
-              </p>
-            </div>
-
-            {initError && (
+    {/* Show initializing overlay */}
+    {userInteracted && !isInitialized && (
+      <div className="absolute inset-0 bg-black/90 z-40 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h1 className="text-white text-2xl font-bold mb-2">Initializing Call...</h1>
+          <p className="text-gray-400">{initStep}</p>
+          {initError && (
+            <div className="mt-4 bg-red-900/50 border border-red-500 rounded-lg p-4 max-w-md">
+              <p className="text-red-300 text-sm">{initError}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                className="mt-2 px-4 py-2 bg-blue-600 rounded"
               >
                 Retry
               </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Remote Video (Main) - FIXED */}
-      {/* Remote Video (Main) - FIXED v2 */}
-      <video
-        ref={remoteVideoRef}
-        id="remote-video"
-        autoPlay
-        playsInline
-        muted={false} // ✅ FIX: Not muted for audio
-        className="w-full h-full object-cover absolute inset-0"
-        style={{
-          backgroundColor: "#000",
-          objectFit: "cover",
-        }}
-        onLoadedMetadata={async (e) => {
-          console.log("✅ Remote video metadata loaded");
-          const video = e.currentTarget;
-
-          try {
-            video.muted = false; // ✅ FIX: Keep unmuted
-            video.volume = 1.0;
-            await video.play();
-            console.log("✅ Remote video playing with audio");
-          } catch (err: any) {
-            console.error("❌ Autoplay blocked:", err.name);
-            setShowPlayButton(true);
-          }
-        }}
-        onPlay={() => {
-          console.log("▶️ Remote video onPlay fired");
-        }}
-      />
-      {/* Connecting Overlay */}
-      {connectionStatus === "connecting" && (
-        <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
-          <div className="text-center px-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white text-base sm:text-xl">
-              Connecting to {remotePeerName}...
-            </p>
-          </div>
-        </div>
-      )}
-      {/* Local Video (PiP) - FIXED */}
-      <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20">
-        <video
-          ref={localVideoRef}
-          id="local-video"
-          autoPlay
-          playsInline
-          muted // ✅ Local always muted (no {true})
-          className="w-full h-full object-cover"
-          onLoadedMetadata={(e) => {
-            console.log("✅ Local video metadata loaded");
-            e.currentTarget.play().catch(console.error);
-          }}
-          onError={(e) => {
-            console.error("❌ Local video error:", e.currentTarget.error);
-          }}
-        />
-        {!isVideoEnabled && (
-          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-            <VideoOff className="w-6 h-6 sm:w-12 sm:h-12 text-gray-400" />
-          </div>
-        )}
-      </div>
-      {/* Top Bar */}
-      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 safe-area-top">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-white text-lg sm:text-2xl md:text-3xl font-bold truncate">
-              {remotePeerName}
-            </h2>
-            <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
-              <div
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  connectionStatus === "connected"
-                    ? "bg-green-500"
-                    : connectionStatus === "connecting"
-                    ? "bg-yellow-500 animate-pulse"
-                    : "bg-red-500"
-                }`}
-              />
-              <p className="text-gray-300 text-xs sm:text-sm capitalize">
-                {connectionStatus}
-              </p>
-            </div>
-          </div>
-
-          {/* Recording Indicator */}
-          {isRecording && (
-            <div className="flex items-center gap-1.5 sm:gap-3 bg-red-600/90 px-2.5 py-1.5 sm:px-6 sm:py-3 rounded-full animate-pulse flex-shrink-0">
-              <Circle className="w-2.5 h-2.5 sm:w-4 sm:h-4 fill-white text-white" />
-              <span className="text-white text-xs sm:text-lg font-bold">
-                {formatTime(recordingTime)}
-              </span>
             </div>
           )}
         </div>
       </div>
-      {/* Play Button Overlay */}
-      {showPlayButton && (
-        <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
-          <button
-            onClick={handlePlayClick}
-            className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
-          >
-            <Play
-              className="w-12 h-12 sm:w-16 sm:h-16 text-white"
-              fill="currentColor"
-            />
-          </button>
-        </div>
-      )}
-      {/* Error Banner */}
-      {error && !showPlayButton && (
-        <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-3 py-2 sm:px-6 sm:py-4 rounded-lg z-30 sm:max-w-md text-center shadow-2xl text-xs sm:text-base">
-          <p className="font-semibold">{error}</p>
-        </div>
-      )}
-      {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 safe-area-bottom">
-        <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 md:gap-4">
-          {/* Audio Toggle */}
-          <button
-            onClick={toggleAudio}
-            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
-              isAudioEnabled
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-          >
-            {isAudioEnabled ? (
-              <Mic className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-            ) : (
-              <MicOff className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+    )}
+
+    {/* Rest of UI - only show when initialized */}
+    {isInitialized && (
+      <>
+        {/* Top Bar */}
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-6 z-10">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-white text-2xl font-bold">{remotePeerName}</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <div className={`w-2 h-2 rounded-full ${connectionStatus === "connected" ? "bg-green-500" : "bg-yellow-500"}`} />
+                <p className="text-gray-300 text-sm">{connectionStatus}</p>
+              </div>
+            </div>
+            {isRecording && (
+              <div className="flex items-center gap-3 bg-red-600/90 px-6 py-3 rounded-full">
+                <Circle className="w-4 h-4 fill-white" />
+                <span className="text-white font-bold">{formatTime(recordingTime)}</span>
+              </div>
             )}
-          </button>
-
-          {/* Video Toggle */}
-          <button
-            onClick={toggleVideo}
-            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
-              isVideoEnabled
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-          >
-            {isVideoEnabled ? (
-              <Video className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-            ) : (
-              <VideoOff className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-            )}
-          </button>
-
-          {/* Screen Share */}
-          <button
-            onClick={toggleScreenShare}
-            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg touch-manipulation ${
-              isScreenSharing
-                ? "bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-400/50"
-                : "bg-gray-700 hover:bg-gray-600"
-            }`}
-          >
-            <MonitorUp className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-          </button>
-
-          {/* Recording */}
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={connectionStatus !== "connected"}
-            className={`p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full transition-all shadow-lg disabled:opacity-50 touch-manipulation ${
-              isRecording
-                ? "bg-red-600 hover:bg-red-700 ring-2 ring-red-400/50"
-                : "bg-gray-700 hover:bg-gray-600"
-            }`}
-          >
-            <Circle
-              className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white ${
-                isRecording ? "fill-white" : ""
-              }`}
-            />
-          </button>
-
-          {/* Fullscreen */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-2.5 xs:p-3 sm:p-4 md:p-5 rounded-full bg-gray-700 hover:bg-gray-600 transition-all shadow-lg touch-manipulation"
-          >
-            <Maximize className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-          </button>
-
-          {/* End Call */}
-          <button
-            onClick={handleEndCall}
-            disabled={isEndingCallRef.current}
-            className="p-3 xs:p-3.5 sm:p-5 md:p-6 rounded-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 transition-all shadow-xl ml-1 sm:ml-4 touch-manipulation"
-          >
-            <PhoneOff className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
-          </button>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-};
+
+        {/* Play button if needed */}
+        {showPlayButton && (
+          <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
+            <button
+              onClick={handlePlayClick}
+              className="p-12 rounded-full bg-green-600 hover:bg-green-700"
+            >
+              <Play className="w-16 h-16 text-white" fill="currentColor" />
+            </button>
+          </div>
+        )}
+
+        {/* Error banner */}
+        {error && !showPlayButton && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-red-600/95 text-white px-6 py-4 rounded-lg z-30">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Bottom Controls */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent p-8 z-20">
+          <div className="flex items-center justify-center gap-4">
+            <button onClick={toggleAudio} className={`p-4 rounded-full ${isAudioEnabled ? "bg-gray-700" : "bg-red-600"}`}>
+              {isAudioEnabled ? <Mic className="w-6 h-6 text-white" /> : <MicOff className="w-6 h-6 text-white" />}
+            </button>
+            <button onClick={toggleVideo} className={`p-4 rounded-full ${isVideoEnabled ? "bg-gray-700" : "bg-red-600"}`}>
+              {isVideoEnabled ? <Video className="w-6 h-6 text-white" /> : <VideoOff className="w-6 h-6 text-white" />}
+            </button>
+            <button onClick={toggleScreenShare} className={`p-4 rounded-full ${isScreenSharing ? "bg-blue-600" : "bg-gray-700"}`}>
+              <MonitorUp className="w-6 h-6 text-white" />
+            </button>
+            <button onClick={isRecording ? stopRecording : startRecording} disabled={connectionStatus !== "connected"} className={`p-4 rounded-full ${isRecording ? "bg-red-600" : "bg-gray-700"}`}>
+              <Circle className={`w-6 h-6 text-white ${isRecording ? "fill-white" : ""}`} />
+            </button>
+            <button onClick={toggleFullscreen} className="p-4 rounded-full bg-gray-700">
+              <Maximize className="w-6 h-6 text-white" />
+            </button>
+            <button onClick={handleEndCall} className="p-6 rounded-full bg-red-600 ml-4">
+              <PhoneOff className="w-8 h-8 text-white" />
+            </button>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+);
+}
 
 export default VideoCall;
