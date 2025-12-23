@@ -987,61 +987,71 @@ audioEl.controls = false; // ✅ ADD: Hide controls
   }, [roomId, isRecording, onEndCall, router]);
 
   // ✅ FIXED: Wait for video refs to be ready before initializing
-  useEffect(() => {
-    console.log("\n\n");
-    console.log("═══════════════════════════════════════════════════");
-    console.log("🔄 INIT EFFECT TRIGGERED");
-    console.log("   Time:", new Date().toISOString());
-    console.log("   roomId:", roomId);
-    console.log("   userInteracted:", userInteracted);
-    console.log("   initializingRef:", initializingRef.current);
-    console.log("   initializedRef:", initializedRef.current);
-    console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
-    console.log("═══════════════════════════════════════════════════\n");
+  // ✅ FIXED: Wait for video refs to be ready before initializing
+useEffect(() => {
+  console.log("\n\n");
+  console.log("═══════════════════════════════════════════════════");
+  console.log("🔄 INIT EFFECT TRIGGERED");
+  console.log("   Time:", new Date().toISOString());
+  console.log("   roomId:", roomId);
+  console.log("   userInteracted:", userInteracted);
+  console.log("   initializingRef:", initializingRef.current);
+  console.log("   initializedRef:", initializedRef.current);
+  console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
+  console.log("═══════════════════════════════════════════════════\n");
 
-    // ✅ Block 1: Room validation
-    if (!roomId) {
-      console.error("❌ BLOCKED: No room ID");
-      setError("Invalid room ID");
-      return;
-    }
+  // ✅ Block 1: Room validation
+  if (!roomId) {
+    console.error("❌ BLOCKED: No room ID");
+    setError("Invalid room ID");
+    return;
+  }
 
-    // ✅ Block 2: User interaction check
-    if (!userInteracted) {
-      console.log("⏳ BLOCKED: Waiting for user interaction");
-      return;
-    }
+  // ✅ Block 2: User interaction check
+  if (!userInteracted) {
+    console.log("⏳ BLOCKED: Waiting for user interaction");
+    return;
+  }
 
-    // ✅ Block 3: Already initializing?
-    if (initializingRef.current) {
-      console.warn("⚠️ BLOCKED: Already initializing");
-      return;
-    }
+  // ✅ Block 3: Already initializing?
+  if (initializingRef.current) {
+    console.warn("⚠️ BLOCKED: Already initializing");
+    return;
+  }
 
-    // ✅ Block 4: Already initialized?
-    if (initializedRef.current) {
-      console.warn("⚠️ BLOCKED: Already initialized");
-      return;
-    }
+  // ✅ Block 4: Already initialized?
+  if (initializedRef.current) {
+    console.warn("⚠️ BLOCKED: Already initialized");
+    return;
+  }
 
-    // ✅ Block 5: WebRTC already exists?
-    if (webrtcServiceRef.current) {
-      console.warn("⚠️ BLOCKED: WebRTC service already exists");
-      return;
-    }
+  // ✅ Block 5: WebRTC already exists?
+  if (webrtcServiceRef.current) {
+    console.warn("⚠️ BLOCKED: WebRTC service already exists");
+    return;
+  }
 
-    console.log("✅✅✅ ALL CHECKS PASSED - STARTING INITIALIZATION ✅✅✅\n");
+  console.log("✅✅✅ ALL CHECKS PASSED - STARTING INITIALIZATION ✅✅✅\n");
 
-    // ✅ Set flag immediately
-    initializingRef.current = true;
-    console.log("   Set initializingRef.current = true");
+  // ✅ Set flag immediately
+  initializingRef.current = true;
+  console.log("   Set initializingRef.current = true");
 
-    let mounted = true;
+  let mounted = true;
 
-    const init = async () => {
-      try {
-        // ✅ CRITICAL: Wait for video refs to be ready
-        console.log("⏳ Waiting for video elements...");
+  const init = async () => {
+    try {
+      // ✅ CRITICAL FIX: Use requestAnimationFrame to ensure DOM is ready
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      
+      console.log("⏳ Checking for video elements...");
+      console.log("   localVideoRef.current:", !!localVideoRef.current);
+      console.log("   remoteVideoRef.current:", !!remoteVideoRef.current);
+
+      // ✅ If refs still not ready, wait with polling
+      if (!localVideoRef.current || !remoteVideoRef.current) {
+        console.log("⏳ Video refs not ready, polling...");
         let attempts = 0;
         const maxAttempts = 50; // 5 seconds max
 
@@ -1050,9 +1060,7 @@ audioEl.controls = false; // ✅ ADD: Hide controls
           attempts < maxAttempts
         ) {
           console.log(
-            `   Attempt ${
-              attempts + 1
-            }/${maxAttempts}: local=${!!localVideoRef.current}, remote=${!!remoteVideoRef.current}`
+            `   Attempt ${attempts + 1}/${maxAttempts}: local=${!!localVideoRef.current}, remote=${!!remoteVideoRef.current}`
           );
           await new Promise((resolve) => setTimeout(resolve, 100));
           attempts++;
@@ -1061,63 +1069,64 @@ audioEl.controls = false; // ✅ ADD: Hide controls
         if (!localVideoRef.current || !remoteVideoRef.current) {
           throw new Error("Video elements failed to render after 5 seconds");
         }
-
-        console.log("✅ Video elements ready!");
-        console.log("   localVideoRef:", !!localVideoRef.current);
-        console.log("   remoteVideoRef:", !!remoteVideoRef.current);
-
-        console.log("\n🎬 ===== CALLING initializeCall() =====\n");
-
-        await initializeCall();
-
-        if (mounted) {
-          console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
-          initializedRef.current = true;
-          initializingRef.current = false;
-          setIsInitialized(true);
-
-          console.log("   Final state:");
-          console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
-          console.log("   - localVideoRef:", !!localVideoRef.current);
-          console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
-          console.log(
-            "   - peerConnection:",
-            !!webrtcServiceRef.current?.getPeerConnection()
-          );
-          console.log("");
-        }
-      } catch (error: any) {
-        console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
-        console.error("   Error name:", error.name);
-        console.error("   Error message:", error.message);
-        console.error("   Stack trace:");
-        console.error(error.stack);
-        console.error("");
-
-        if (mounted) {
-          setError(error.message || "Initialization failed");
-          initializingRef.current = false;
-        }
       }
-    };
 
-    // ✅ Start initialization
-    console.log("🚀 Starting init() function...\n");
-    init();
+      console.log("✅ Video elements ready!");
+      console.log("   localVideoRef:", !!localVideoRef.current);
+      console.log("   remoteVideoRef:", !!remoteVideoRef.current);
 
-    return () => {
-      console.log("🧹 Init effect cleanup triggered");
-      mounted = false;
-      if (
-        initializedRef.current &&
-        !callEndedRef.current &&
-        webrtcServiceRef.current
-      ) {
-        console.log("   Cleaning up resources...");
-        cleanup(false);
+      console.log("\n🎬 ===== CALLING initializeCall() =====\n");
+
+      await initializeCall();
+
+      if (mounted) {
+        console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
+        initializedRef.current = true;
+        initializingRef.current = false;
+        setIsInitialized(true);
+
+        console.log("   Final state:");
+        console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
+        console.log("   - localVideoRef:", !!localVideoRef.current);
+        console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
+        console.log(
+          "   - peerConnection:",
+          !!webrtcServiceRef.current?.getPeerConnection()
+        );
+        console.log("");
       }
-    };
-  }, [roomId, userInteracted]);
+    } catch (error: any) {
+      console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
+      console.error("   Error name:", error.name);
+      console.error("   Error message:", error.message);
+      console.error("   Stack trace:");
+      console.error(error.stack);
+      console.error("");
+
+      if (mounted) {
+        setError(error.message || "Initialization failed");
+        initializingRef.current = false;
+      }
+    }
+  };
+
+  // ✅ Start initialization
+  console.log("🚀 Starting init() function...\n");
+  init();
+
+  return () => {
+    console.log("🧹 Init effect cleanup triggered");
+    mounted = false;
+    if (
+      initializedRef.current &&
+      !callEndedRef.current &&
+      webrtcServiceRef.current
+    ) {
+      console.log("   Cleaning up resources...");
+      cleanup(false);
+    }
+  };
+}, [roomId, userInteracted]);
 
   // Socket event handlers - FIXED VERSION
   useEffect(() => {
@@ -1862,8 +1871,104 @@ const handlePlayClick = async () => {
   }
 
   // ✅ Main call UI
-  return (
-    <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
+return (
+  <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
+    {/* ✅ ALWAYS render video elements (hidden if not ready) */}
+    <video
+      ref={remoteVideoRef}
+      id="remote-video"
+      autoPlay
+      playsInline
+      muted={false}
+      className={`w-full h-full object-cover absolute inset-0 ${
+        !isInitialized ? 'opacity-0' : 'opacity-100'
+      }`}
+      style={{
+        backgroundColor: "#000",
+        objectFit: "cover",
+      }}
+      onLoadedMetadata={async (e) => {
+        console.log("✅ Remote video metadata loaded");
+        const video = e.currentTarget;
+        try {
+          video.muted = false;
+          video.volume = 1.0;
+          await video.play();
+          console.log("✅ Remote video playing with audio");
+        } catch (err: any) {
+          console.error("❌ Autoplay blocked:", err.name);
+          setShowPlayButton(true);
+        }
+      }}
+      onPlay={() => {
+        console.log("▶️ Remote video onPlay fired");
+      }}
+    />
+
+    <div className={`absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20 ${
+      !isInitialized ? 'opacity-0' : 'opacity-100'
+    }`}>
+      <video
+        ref={localVideoRef}
+        id="local-video"
+        autoPlay
+        playsInline
+        muted
+        className="w-full h-full object-cover"
+        onLoadedMetadata={(e) => {
+          console.log("✅ Local video metadata loaded");
+          e.currentTarget.play().catch(console.error);
+        }}
+        onError={(e) => {
+          console.error("❌ Local video error:", e.currentTarget.error);
+        }}
+      />
+      {!isVideoEnabled && (
+        <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+          <VideoOff className="w-6 h-6 sm:w-12 sm:h-12 text-gray-400" />
+        </div>
+      )}
+    </div>
+
+    {/* Show loading overlay instead of conditional rendering */}
+    {!userInteracted && (
+      <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-8">
+            <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
+              <Video className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-white text-3xl font-bold mb-2">
+              Ready to join?
+            </h1>
+            <p className="text-gray-400 text-lg">Tap to start your call</p>
+          </div>
+          <button
+            onClick={() => {
+              console.log("🎬 ===== START CALL BUTTON CLICKED =====");
+              setUserInteracted(true);
+            }}
+            className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
+          >
+            🎥 START CALL
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* Show initializing overlay */}
+    {userInteracted && !isInitialized && (
+      <div className="absolute inset-0 bg-black/90 z-40 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h1 className="text-white text-2xl font-bold mb-2">
+            Initializing Call...
+          </h1>
+          <p className="text-gray-400">Setting up audio and video</p>
+        </div>
+      </div>
+    )}
+
       {/* Remote Video (Main) - FIXED */}
       {/* Remote Video (Main) - FIXED v2 */}
      <video
