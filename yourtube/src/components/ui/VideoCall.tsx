@@ -327,61 +327,67 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-
-
   // ✅ NEW: Force audio context resume on user interaction
-const ensureAudioContextResumed = async () => {
-  if (!audioContextRef.current) return;
-  
-  if (audioContextRef.current.state === "suspended") {
-    try {
-      await audioContextRef.current.resume();
-      console.log("✅ AudioContext resumed");
-    } catch (err) {
-      console.error("❌ Failed to resume AudioContext:", err);
+  const ensureAudioContextResumed = async () => {
+    if (!audioContextRef.current) return;
+
+    if (audioContextRef.current.state === "suspended") {
+      try {
+        await audioContextRef.current.resume();
+        console.log("✅ AudioContext resumed");
+      } catch (err) {
+        console.error("❌ Failed to resume AudioContext:", err);
+      }
     }
-  }
-};
-  // ✅ FIXED: setupRemoteAudio function - Replace your existing one
+  };
   const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 Setting up remote audio (FIXED v2)");
+    console.log("🔊 ===== SETTING UP REMOTE AUDIO (FIXED) =====");
 
     const audioTracks = stream.getAudioTracks();
     const videoTracks = stream.getVideoTracks();
 
     console.log(
-      `📊 Remote stream: audio=${audioTracks.length}, video=${videoTracks.length}`
+      `📊 Remote stream tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
     );
 
     if (audioTracks.length === 0) {
-      console.error("❌ No audio tracks!");
+      console.error("❌ No audio tracks in remote stream!");
       return;
     }
 
-    // ✅ Force enable all tracks
+    // ✅ CRITICAL: Force enable ALL tracks
     stream.getTracks().forEach((track) => {
       track.enabled = true;
-      console.log(`✅ Enabled ${track.kind}: ${track.label}`);
+      console.log(`   ✅ Enabled ${track.kind}: ${track.label}`);
     });
 
-  // ✅ CRITICAL: Attach FULL stream to video element (includes audio)
-if (remoteVideoRef.current) {
-  console.log("📹 Attaching stream to video element...");
+    // ✅ STEP 1: Attach to video element (includes audio)
+    if (remoteVideoRef.current) {
+      console.log("📹 Attaching stream to video element...");
 
-  // Clean old stream
-  if (remoteVideoRef.current.srcObject) {
-    const oldStream = remoteVideoRef.current.srcObject as MediaStream;
-    oldStream.getTracks().forEach((t) => t.stop());
-  }
+      // Clean old stream
+      if (remoteVideoRef.current.srcObject) {
+        const oldStream = remoteVideoRef.current.srcObject as MediaStream;
+        oldStream.getTracks().forEach((t) => t.stop());
+      }
 
-  remoteVideoRef.current.srcObject = stream;
-  remoteVideoRef.current.muted = false; // ✅ FIX: Don't mute
-  remoteVideoRef.current.volume = 1.0;
+      remoteVideoRef.current.srcObject = stream;
+      remoteVideoRef.current.muted = false; // ✅ CRITICAL: Must be unmuted
+      remoteVideoRef.current.volume = 1.0;
 
-  try {
-    await remoteVideoRef.current.play();
-    console.log("✅ Video playing with audio");
+      // ✅ CRITICAL: Set audio output to default speakers
+      if ("setSinkId" in HTMLMediaElement.prototype) {
+        try {
+          await (remoteVideoRef.current as any).setSinkId("");
+          console.log("✅ Audio output set to default");
+        } catch (err) {
+          console.warn("⚠️ Could not set audio output:", err);
+        }
+      }
 
+      try {
+        await remoteVideoRef.current.play();
+        console.log("✅ Video playing with audio");
         setConnectionStatus("connected");
         setShowPlayButton(false);
         setError(null);
@@ -394,7 +400,7 @@ if (remoteVideoRef.current) {
       }
     }
 
-    // ✅ Create backup audio element for redundancy
+    // ✅ STEP 2: Create backup audio element
     if (remoteAudioRef.current) {
       try {
         remoteAudioRef.current.pause();
@@ -408,12 +414,12 @@ if (remoteVideoRef.current) {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     const audioEl = document.createElement("audio");
-audioEl.id = "remote-audio-backup";
-audioEl.autoplay = true;
-audioEl.setAttribute("playsinline", "true");
-audioEl.muted = false; // Keep this
-audioEl.volume = 1.0;
-audioEl.controls = false; // ✅ ADD: Hide controls
+    audioEl.id = "remote-audio-backup";
+    audioEl.autoplay = true;
+    audioEl.setAttribute("playsinline", "true");
+    audioEl.muted = false;
+    audioEl.volume = 1.0;
+    audioEl.controls = false;
     audioEl.style.cssText = "position:fixed;left:-9999px;width:1px;height:1px;";
 
     const audioOnlyStream = new MediaStream(audioTracks);
@@ -422,14 +428,25 @@ audioEl.controls = false; // ✅ ADD: Hide controls
     remoteAudioRef.current = audioEl;
     document.body.appendChild(audioEl);
 
+    // ✅ CRITICAL: Set audio output
+    if ("setSinkId" in HTMLMediaElement.prototype) {
+      try {
+        await (audioEl as any).setSinkId("");
+        console.log("✅ Backup audio output set");
+      } catch (err) {
+        console.warn("⚠️ Could not set backup audio output");
+      }
+    }
+
     try {
       await audioEl.play();
       console.log("✅ Backup audio element playing");
     } catch (err: any) {
       console.warn("⚠️ Backup audio autoplay blocked:", err.name);
     }
+
+    console.log("===== REMOTE AUDIO SETUP COMPLETE =====\n");
   };
-  // ✅ FIXED: Debug commands with proper async handling
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -986,147 +1003,150 @@ audioEl.controls = false; // ✅ ADD: Hide controls
     };
   }, [roomId, isRecording, onEndCall, router]);
 
-  // ✅ FIXED: Wait for video refs to be ready before initializing
-  // ✅ FIXED: Wait for video refs to be ready before initializing
-useEffect(() => {
-  console.log("\n\n");
-  console.log("═══════════════════════════════════════════════════");
-  console.log("🔄 INIT EFFECT TRIGGERED");
-  console.log("   Time:", new Date().toISOString());
-  console.log("   roomId:", roomId);
-  console.log("   userInteracted:", userInteracted);
-  console.log("   initializingRef:", initializingRef.current);
-  console.log("   initializedRef:", initializedRef.current);
-  console.log("   webrtcServiceRef:", !!webrtcServiceRef.current);
-  console.log("═══════════════════════════════════════════════════\n");
+  // ✅ CRITICAL FIX: Guaranteed ref readiness with MutationObserver
+  useEffect(() => {
+    console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
+    console.log("   roomId:", roomId);
+    console.log("   userInteracted:", userInteracted);
+    console.log("   initializedRef:", initializedRef.current);
+    console.log("   initializingRef:", initializingRef.current);
+    console.log("=====================================\n");
 
-  // ✅ Block 1: Room validation
-  if (!roomId) {
-    console.error("❌ BLOCKED: No room ID");
-    setError("Invalid room ID");
-    return;
-  }
+    // ✅ Validation checks
+    if (!roomId) {
+      console.error("❌ BLOCKED: No room ID");
+      setError("Invalid room ID");
+      return;
+    }
 
-  // ✅ Block 2: User interaction check
-  if (!userInteracted) {
-    console.log("⏳ BLOCKED: Waiting for user interaction");
-    return;
-  }
+    if (!userInteracted) {
+      console.log("⏳ BLOCKED: Waiting for user interaction");
+      return;
+    }
 
-  // ✅ Block 3: Already initializing?
-  if (initializingRef.current) {
-    console.warn("⚠️ BLOCKED: Already initializing");
-    return;
-  }
+    if (initializingRef.current) {
+      console.warn("⚠️ BLOCKED: Already initializing");
+      return;
+    }
 
-  // ✅ Block 4: Already initialized?
-  if (initializedRef.current) {
-    console.warn("⚠️ BLOCKED: Already initialized");
-    return;
-  }
+    if (initializedRef.current) {
+      console.warn("⚠️ BLOCKED: Already initialized");
+      return;
+    }
 
-  // ✅ Block 5: WebRTC already exists?
-  if (webrtcServiceRef.current) {
-    console.warn("⚠️ BLOCKED: WebRTC service already exists");
-    return;
-  }
+    if (webrtcServiceRef.current) {
+      console.warn("⚠️ BLOCKED: WebRTC already exists");
+      return;
+    }
 
-  console.log("✅✅✅ ALL CHECKS PASSED - STARTING INITIALIZATION ✅✅✅\n");
+    console.log("✅ ALL CHECKS PASSED - STARTING INITIALIZATION\n");
 
-  // ✅ Set flag immediately
-  initializingRef.current = true;
-  console.log("   Set initializingRef.current = true");
+    initializingRef.current = true;
+    let mounted = true;
+    let observer: MutationObserver | null = null;
 
-  let mounted = true;
+    const waitForVideoRefs = (): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        console.log("⏳ Waiting for video elements to mount...");
 
-  const init = async () => {
-    try {
-      // ✅ CRITICAL FIX: Use requestAnimationFrame to ensure DOM is ready
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      
-      console.log("⏳ Checking for video elements...");
-      console.log("   localVideoRef.current:", !!localVideoRef.current);
-      console.log("   remoteVideoRef.current:", !!remoteVideoRef.current);
+        // ✅ CRITICAL: Use MutationObserver to detect DOM changes
+        const checkRefs = () => {
+          const localReady = !!localVideoRef.current;
+          const remoteReady = !!remoteVideoRef.current;
 
-      // ✅ If refs still not ready, wait with polling
-      if (!localVideoRef.current || !remoteVideoRef.current) {
-        console.log("⏳ Video refs not ready, polling...");
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max
+          console.log(`   Check: local=${localReady}, remote=${remoteReady}`);
 
-        while (
-          (!localVideoRef.current || !remoteVideoRef.current) &&
-          attempts < maxAttempts
-        ) {
+          if (localReady && remoteReady) {
+            console.log("✅ Video refs ready!");
+            if (observer) observer.disconnect();
+            resolve();
+            return true;
+          }
+          return false;
+        };
+
+        // Check immediately
+        if (checkRefs()) return;
+
+        // ✅ Watch for DOM mutations
+        observer = new MutationObserver(() => {
+          checkRefs();
+        });
+
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+        });
+
+        // ✅ Timeout after 10 seconds
+        setTimeout(() => {
+          if (observer) observer.disconnect();
+          const localReady = !!localVideoRef.current;
+          const remoteReady = !!remoteVideoRef.current;
+
+          if (!localReady || !remoteReady) {
+            reject(
+              new Error("Video elements failed to mount within 10 seconds")
+            );
+          } else {
+            resolve();
+          }
+        }, 10000);
+      });
+    };
+
+    const init = async () => {
+      try {
+        // ✅ CRITICAL: Wait for video refs
+        await waitForVideoRefs();
+
+        console.log("\n🎬 ===== CALLING initializeCall() =====\n");
+        await initializeCall();
+
+        if (mounted) {
+          console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
+          initializedRef.current = true;
+          initializingRef.current = false;
+          setIsInitialized(true);
+
+          console.log("   Final state:");
+          console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
+          console.log("   - localVideoRef:", !!localVideoRef.current);
+          console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
           console.log(
-            `   Attempt ${attempts + 1}/${maxAttempts}: local=${!!localVideoRef.current}, remote=${!!remoteVideoRef.current}`
+            "   - peerConnection:",
+            !!webrtcServiceRef.current?.getPeerConnection()
           );
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          attempts++;
+          console.log("");
         }
+      } catch (error: any) {
+        console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
+        console.error("   Error:", error.message);
+        console.error("   Stack:", error.stack);
 
-        if (!localVideoRef.current || !remoteVideoRef.current) {
-          throw new Error("Video elements failed to render after 5 seconds");
+        if (mounted) {
+          setError(error.message || "Initialization failed");
+          initializingRef.current = false;
         }
       }
+    };
 
-      console.log("✅ Video elements ready!");
-      console.log("   localVideoRef:", !!localVideoRef.current);
-      console.log("   remoteVideoRef:", !!remoteVideoRef.current);
+    init();
 
-      console.log("\n🎬 ===== CALLING initializeCall() =====\n");
+    return () => {
+      console.log("🧹 Init effect cleanup");
+      mounted = false;
+      if (observer) observer.disconnect();
 
-      await initializeCall();
-
-      if (mounted) {
-        console.log("\n✅✅✅ INITIALIZATION SUCCEEDED ✅✅✅");
-        initializedRef.current = true;
-        initializingRef.current = false;
-        setIsInitialized(true);
-
-        console.log("   Final state:");
-        console.log("   - webrtcServiceRef:", !!webrtcServiceRef.current);
-        console.log("   - localVideoRef:", !!localVideoRef.current);
-        console.log("   - remoteVideoRef:", !!remoteVideoRef.current);
-        console.log(
-          "   - peerConnection:",
-          !!webrtcServiceRef.current?.getPeerConnection()
-        );
-        console.log("");
+      if (
+        initializedRef.current &&
+        !callEndedRef.current &&
+        webrtcServiceRef.current
+      ) {
+        cleanup(false);
       }
-    } catch (error: any) {
-      console.error("\n❌❌❌ INITIALIZATION FAILED ❌❌❌");
-      console.error("   Error name:", error.name);
-      console.error("   Error message:", error.message);
-      console.error("   Stack trace:");
-      console.error(error.stack);
-      console.error("");
-
-      if (mounted) {
-        setError(error.message || "Initialization failed");
-        initializingRef.current = false;
-      }
-    }
-  };
-
-  // ✅ Start initialization
-  console.log("🚀 Starting init() function...\n");
-  init();
-
-  return () => {
-    console.log("🧹 Init effect cleanup triggered");
-    mounted = false;
-    if (
-      initializedRef.current &&
-      !callEndedRef.current &&
-      webrtcServiceRef.current
-    ) {
-      console.log("   Cleaning up resources...");
-      cleanup(false);
-    }
-  };
-}, [roomId, userInteracted]);
+    };
+  }, [roomId, userInteracted]);
 
   // Socket event handlers - FIXED VERSION
   useEffect(() => {
@@ -1735,20 +1755,20 @@ useEffect(() => {
       router.push("/");
     }
   };
-const handlePlayClick = async () => {
-  console.log("🎬 Manual play button clicked");
+  const handlePlayClick = async () => {
+    console.log("🎬 Manual play button clicked");
 
-  try {
-    // ✅ Step 1: Resume AudioContext first
-    await ensureAudioContextResumed();
-    
-    // ✅ Step 2: Play video unmuted
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
-      await remoteVideoRef.current.play();
-      console.log("✅ Video playing with audio");
-    }
+    try {
+      // ✅ Step 1: Resume AudioContext first
+      await ensureAudioContextResumed();
+
+      // ✅ Step 2: Play video unmuted
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
+        await remoteVideoRef.current.play();
+        console.log("✅ Video playing with audio");
+      }
 
       // ✅ Step 3: Play backup audio element
       if (remoteAudioRef.current) {
@@ -1871,126 +1891,127 @@ const handlePlayClick = async () => {
   }
 
   // ✅ Main call UI
-return (
-  <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
-    {/* ✅ ALWAYS render video elements (hidden if not ready) */}
-    <video
-      ref={remoteVideoRef}
-      id="remote-video"
-      autoPlay
-      playsInline
-      muted={false}
-      className={`w-full h-full object-cover absolute inset-0 ${
-        !isInitialized ? 'opacity-0' : 'opacity-100'
-      }`}
-      style={{
-        backgroundColor: "#000",
-        objectFit: "cover",
-      }}
-      onLoadedMetadata={async (e) => {
-        console.log("✅ Remote video metadata loaded");
-        const video = e.currentTarget;
-        try {
-          video.muted = false;
-          video.volume = 1.0;
-          await video.play();
-          console.log("✅ Remote video playing with audio");
-        } catch (err: any) {
-          console.error("❌ Autoplay blocked:", err.name);
-          setShowPlayButton(true);
-        }
-      }}
-      onPlay={() => {
-        console.log("▶️ Remote video onPlay fired");
-      }}
-    />
-
-    <div className={`absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20 ${
-      !isInitialized ? 'opacity-0' : 'opacity-100'
-    }`}>
+  return (
+    <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
+      {/* ✅ CRITICAL: ALWAYS render video elements */}
       <video
-        ref={localVideoRef}
-        id="local-video"
+        ref={remoteVideoRef}
+        id="remote-video"
         autoPlay
         playsInline
-        muted
-        className="w-full h-full object-cover"
-        onLoadedMetadata={(e) => {
-          console.log("✅ Local video metadata loaded");
-          e.currentTarget.play().catch(console.error);
+        muted={false}
+        controls={false} // ✅ ADD: Hide controls
+        className="w-full h-full object-cover absolute inset-0"
+        style={{
+          backgroundColor: "#000",
+          objectFit: "cover",
+          visibility: isInitialized ? "visible" : "hidden", // ✅ CHANGED: Use visibility instead of opacity
         }}
-        onError={(e) => {
-          console.error("❌ Local video error:", e.currentTarget.error);
+        onLoadedMetadata={async (e) => {
+          console.log("✅ Remote video metadata loaded");
+          const video = e.currentTarget;
+          try {
+            video.muted = false;
+            video.volume = 1.0;
+            await video.play();
+            console.log("✅ Remote video playing with audio");
+          } catch (err: any) {
+            console.error("❌ Autoplay blocked:", err.name);
+            setShowPlayButton(true);
+          }
+        }}
+        onPlay={() => {
+          console.log("▶️ Remote video onPlay fired");
         }}
       />
-      {!isVideoEnabled && (
-        <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-          <VideoOff className="w-6 h-6 sm:w-12 sm:h-12 text-gray-400" />
+
+      {/* Local video (PiP) */}
+      <div
+        className={`absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 xs:w-40 xs:h-30 sm:w-64 sm:h-48 rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 border-white shadow-2xl bg-black z-20 ${
+          !isInitialized ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <video
+          ref={localVideoRef}
+          id="local-video"
+          autoPlay
+          playsInline
+          muted
+          controls={false} // ✅ ADD: Hide controls
+          className="w-full h-full object-cover"
+          onLoadedMetadata={(e) => {
+            console.log("✅ Local video metadata loaded");
+            e.currentTarget.play().catch(console.error);
+          }}
+        />
+        {!isVideoEnabled && (
+          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+            <VideoOff className="w-6 h-6 sm:w-12 sm:h-12 text-gray-400" />
+          </div>
+        )}
+      </div>
+
+      {/* Show loading overlay instead of conditional rendering */}
+      {!userInteracted && (
+        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="mb-8">
+              <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
+                <Video className="w-12 h-12 text-white" />
+              </div>
+              <h1 className="text-white text-3xl font-bold mb-2">
+                Ready to join?
+              </h1>
+              <p className="text-gray-400 text-lg">Tap to start your call</p>
+            </div>
+            <button
+              onClick={() => {
+                console.log("🎬 ===== START CALL BUTTON CLICKED =====");
+                setUserInteracted(true);
+              }}
+              className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
+            >
+              🎥 START CALL
+            </button>
+          </div>
         </div>
       )}
-    </div>
 
-    {/* Show loading overlay instead of conditional rendering */}
-    {!userInteracted && (
-      <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="mb-8">
-            <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-              <Video className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-white text-3xl font-bold mb-2">
-              Ready to join?
-            </h1>
-            <p className="text-gray-400 text-lg">Tap to start your call</p>
-          </div>
-          <button
-            onClick={() => {
-              console.log("🎬 ===== START CALL BUTTON CLICKED =====");
-              setUserInteracted(true);
-            }}
-            className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
-          >
-            🎥 START CALL
-          </button>
+      {/* Show loading/initializing overlays */}
+      {!userInteracted && (
+        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
+          {/* ... your existing START CALL button UI ... */}
         </div>
-      </div>
-    )}
+      )}
 
-    {/* Show initializing overlay */}
-    {userInteracted && !isInitialized && (
-      <div className="absolute inset-0 bg-black/90 z-40 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h1 className="text-white text-2xl font-bold mb-2">
-            Initializing Call...
-          </h1>
-          <p className="text-gray-400">Setting up audio and video</p>
+      {userInteracted && !isInitialized && (
+        <div className="absolute inset-0 bg-black/90 z-40 flex items-center justify-center">
+          {/* ... your existing initialization UI ... */}
         </div>
-      </div>
-    )}
+      )}
 
       {/* Remote Video (Main) - FIXED */}
       {/* Remote Video (Main) - FIXED v2 */}
-     <video
-  ref={remoteVideoRef}
-  id="remote-video"
-  autoPlay
-  playsInline
-  muted={false} // ✅ FIX: Not muted for audio
-  className="w-full h-full object-cover absolute inset-0"
+      <video
+        ref={remoteVideoRef}
+        id="remote-video"
+        autoPlay
+        playsInline
+        muted={false} // ✅ FIX: Not muted for audio
+        className="w-full h-full object-cover absolute inset-0"
         style={{
           backgroundColor: "#000",
           objectFit: "cover",
         }}
-      onLoadedMetadata={async (e) => {
-  console.log("✅ Remote video metadata loaded");
-  const video = e.currentTarget;
+        onLoadedMetadata={async (e) => {
+          console.log("✅ Remote video metadata loaded");
+          const video = e.currentTarget;
 
-  try {
-    video.muted = false; // ✅ FIX: Keep unmuted
-    video.volume = 1.0;
-    await video.play();
-    console.log("✅ Remote video playing with audio");
+          try {
+            video.muted = false; // ✅ FIX: Keep unmuted
+            video.volume = 1.0;
+            await video.play();
+            console.log("✅ Remote video playing with audio");
           } catch (err: any) {
             console.error("❌ Autoplay blocked:", err.name);
             setShowPlayButton(true);
