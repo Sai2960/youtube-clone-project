@@ -65,10 +65,29 @@ const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   return true;
 };
 
-// ✅ Intelligent microphone selection with webcam priority
-// ✅ Media acquisition
 const ensureAudioNotMuted = async (): Promise<MediaStream> => {
   console.log("🔧 Starting media acquisition...");
+
+  // ✅ CRITICAL: Stop any existing streams first
+  try {
+    const existingStreams = await navigator.mediaDevices.enumerateDevices();
+    // Release any held media
+    if (typeof window !== "undefined") {
+      const existingTracks = (window as any).__mediaStreamTracks;
+      if (existingTracks && Array.isArray(existingTracks)) {
+        existingTracks.forEach((track: MediaStreamTrack) => {
+          try {
+            track.stop();
+            console.log(`🛑 Stopped existing ${track.kind} track`);
+          } catch (e) {
+            // Ignore errors
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("⚠️ Could not check existing streams:", e);
+  }
 
   try {
     const permStream = await navigator.mediaDevices.getUserMedia({
@@ -199,8 +218,13 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       console.log("✅ Using fallback microphone");
       return fallbackStream;
     }
-
     console.log("✅ Media acquisition complete");
+
+    // ✅ Save tracks globally for cleanup
+    if (typeof window !== "undefined") {
+      (window as any).__mediaStreamTracks = stream.getTracks();
+    }
+
     return stream;
   } catch (err: any) {
     console.error("❌ Media access failed:", err);
@@ -1038,13 +1062,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
     initializingRef.current = true;
     let mounted = true;
 
-const init = async () => {
+    const init = async () => {
       try {
         setInitError(null);
 
         // ✅ Wait for video refs with timeout
         let attempts = 0;
-        while ((!localVideoRef.current || !remoteVideoRef.current) && attempts < 20) {
+        while (
+          (!localVideoRef.current || !remoteVideoRef.current) &&
+          attempts < 20
+        ) {
           console.log(`⏳ Waiting for video refs... attempt ${attempts + 1}`);
           await new Promise((resolve) => setTimeout(resolve, 100));
           attempts++;
@@ -1490,65 +1517,116 @@ const init = async () => {
       return;
     }
 
-    // ✅ NEW: Remove navigation blocker
+    // ✅ Remove navigation blocker
     if (typeof window !== "undefined") {
       window.onbeforeunload = null;
     }
 
+    // ✅ Stop recording
     if (isRecording && recordingServiceRef.current) {
-      recordingServiceRef.current.stopRecording();
+      try {
+        recordingServiceRef.current.stopRecording();
+      } catch (e) {
+        console.error("❌ Recording cleanup error:", e);
+      }
     }
 
+    // ✅ Clean up remote audio element
     if (remoteAudioRef.current) {
-      remoteAudioRef.current.pause();
-      if (remoteAudioRef.current.srcObject) {
-        const stream = remoteAudioRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => {
-          track.stop();
-          console.log(`🛑 Stopped ${track.kind} track`);
-        });
-      }
-      remoteAudioRef.current.srcObject = null;
-      remoteAudioRef.current.style.display = "none";
-
-      if (callEndedRef.current) {
+      try {
+        remoteAudioRef.current.pause();
+        if (remoteAudioRef.current.srcObject) {
+          const stream = remoteAudioRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach((track) => {
+            track.stop();
+            console.log(`🛑 Stopped remote ${track.kind} track`);
+          });
+        }
+        remoteAudioRef.current.srcObject = null;
         remoteAudioRef.current.remove();
         remoteAudioRef.current = null;
+      } catch (e) {
+        console.error("❌ Remote audio cleanup error:", e);
       }
     }
 
-    // Close AudioContext
+    // ✅ Close AudioContext
     if (audioContextRef.current && audioContextRef.current.state !== "closed") {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
+      try {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      } catch (e) {
+        console.error("❌ AudioContext cleanup error:", e);
+      }
     }
 
-    // Clean local video
+    // ✅ Clean local video - CRITICAL: Stop tracks properly
     if (localVideoRef.current?.srcObject) {
-      const stream = localVideoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      localVideoRef.current.srcObject = null;
+      try {
+        const stream = localVideoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => {
+          track.stop();
+          console.log(`🛑 Stopped local ${track.kind}: ${track.label}`);
+        });
+        localVideoRef.current.srcObject = null;
+        localVideoRef.current.pause();
+      } catch (e) {
+        console.error("❌ Local video cleanup error:", e);
+      }
     }
 
-    // Clean remote video
+    // ✅ Clean remote video
     if (remoteVideoRef.current?.srcObject) {
-      const stream = remoteVideoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      remoteVideoRef.current.srcObject = null;
+      try {
+        const stream = remoteVideoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => {
+          track.stop();
+          console.log(`🛑 Stopped remote ${track.kind}: ${track.label}`);
+        });
+        remoteVideoRef.current.srcObject = null;
+        remoteVideoRef.current.pause();
+      } catch (e) {
+        console.error("❌ Remote video cleanup error:", e);
+      }
     }
 
-    // Close WebRTC
+    // ✅ Clean global media tracks
+    if (typeof window !== "undefined" && (window as any).__mediaStreamTracks) {
+      try {
+        const tracks = (window as any).__mediaStreamTracks;
+        if (Array.isArray(tracks)) {
+          tracks.forEach((track: MediaStreamTrack) => {
+            try {
+              track.stop();
+              console.log(`🛑 Stopped global ${track.kind} track`);
+            } catch (e) {
+              // Ignore
+            }
+          });
+        }
+        delete (window as any).__mediaStreamTracks;
+      } catch (e) {
+        console.error("❌ Global tracks cleanup error:", e);
+      }
+    }
+
+    // ✅ Close WebRTC
     if (webrtcServiceRef.current) {
-      webrtcServiceRef.current.close();
-      webrtcServiceRef.current = null;
+      try {
+        webrtcServiceRef.current.close();
+        webrtcServiceRef.current = null;
+      } catch (e) {
+        console.error("❌ WebRTC cleanup error:", e);
+      }
     }
 
     // ✅ Clean up window exposure
     if (typeof window !== "undefined") {
       delete (window as any).peerConnection;
+      delete (window as any).webrtcService;
     }
 
-    // Emit end call
+    // ✅ Emit end call
     if (emitEvent && !callEndedRef.current) {
       try {
         const socket = getSocket();
@@ -1562,7 +1640,7 @@ const init = async () => {
     initializedRef.current = false;
     initializingRef.current = false;
     remoteStreamReceivedRef.current = false;
-    setIsInitialized(false); // ✅ ADD THIS
+    setIsInitialized(false);
 
     console.log("✅ Cleanup complete");
   };
@@ -1770,13 +1848,11 @@ const init = async () => {
       .padStart(2, "0")}`;
   };
 
-
-
   // ✅ ALWAYS render the container and video elements
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* ✅ Video elements MUST always be in the DOM */}
-   {/* ✅ Video elements - ALWAYS in DOM from first render */}
+      {/* ✅ Video elements - ALWAYS in DOM from first render */}
       <video
         ref={remoteVideoRef}
         id="remote-video"
@@ -1885,7 +1961,6 @@ const init = async () => {
           </div>
         </div>
       )}
-
 
       {/* Main UI - only visible when initialized */}
       {isInitialized && (
@@ -2020,6 +2095,6 @@ const init = async () => {
       )}
     </div>
   );
-}
+};
 
 export default VideoCall;
