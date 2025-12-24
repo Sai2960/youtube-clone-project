@@ -65,6 +65,7 @@ export const verifyToken = async (req, res, next) => {
     });
 
     // ✅ CRITICAL FIX: Fetch the actual user from database
+   // ✅ CRITICAL FIX: Fetch the actual user from database
     const userId = decoded.id || decoded._id || decoded.userId;
 
     if (!userId) {
@@ -75,10 +76,14 @@ export const verifyToken = async (req, res, next) => {
       });
     }
 
-    console.log("🔍 Looking up user:", userId);
+    // ✅ Convert to string if it's an ObjectId
+    const userIdString = typeof userId === 'object' ? userId.toString() : userId;
+
+    console.log("🔍 Looking up user:", userIdString);
+    console.log("🔍 User ID type:", typeof userIdString);
 
     // Fetch user from database
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userIdString).select("-password");
 
     if (!user) {
       console.log("❌ User not found in database");

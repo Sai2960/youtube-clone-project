@@ -981,10 +981,15 @@ export const getProfile = async (req, res) => {
       });
     }
 
-    console.log("👤 Profile request for user:", userId);
+    // ✅ Convert to string if needed
+    const userIdString =
+      typeof userId === "object" ? userId.toString() : userId;
+
+    console.log("👤 Profile request for user:", userIdString);
+    console.log("👤 User ID type:", typeof userIdString);
 
     // Fetch user from database
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userIdString).select("-password");
 
     if (!user) {
       return res.status(404).json({
