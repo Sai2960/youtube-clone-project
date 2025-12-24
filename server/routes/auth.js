@@ -953,6 +953,7 @@ router.get("/profile", verifyToken, async (req, res) => {
       req.user?.id || req.user?._id || req.user?.userId || req.userId;
 
     console.log("🆔 Extracted userId:", userId);
+    console.log("🆔 Type of userId:", typeof userId);
 
     // ✅ Check if userId exists BEFORE validation
     if (!userId) {
@@ -963,19 +964,25 @@ router.get("/profile", verifyToken, async (req, res) => {
       });
     }
 
+    // ✅ Convert to string if it's an object
+    const userIdString =
+      typeof userId === "object" ? userId.toString() : userId;
+
+    console.log("🆔 Converted userId to string:", userIdString);
+
     // ✅ NOW validate the ID format
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      console.error("❌ Invalid user ID format:", userId);
+    if (!mongoose.Types.ObjectId.isValid(userIdString)) {
+      console.error("❌ Invalid user ID format:", userIdString);
       return res.status(400).json({
         success: false,
         message: "Invalid ID format",
       });
     }
 
-    console.log("✅ Fetching user from database:", userId);
+    console.log("✅ Fetching user from database:", userIdString);
 
     // ✅ Fetch user from database
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userIdString).select("-password");
 
     if (!user) {
       console.error("❌ User not found in database:", userId);
