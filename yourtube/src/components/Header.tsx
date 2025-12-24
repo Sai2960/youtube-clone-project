@@ -32,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark');
   const [isMounted, setIsMounted] = useState(false);
   const [showSearchMobile, setShowSearchMobile] = useState(false);
-  const [avatarKey, setAvatarKey] = useState(Date.now()); // ✅ ADDED
+  const [avatarKey, setAvatarKey] = useState(Date.now()); // ✅ ADDED for avatar refresh
   const router = useRouter();
 
   useEffect(() => {
@@ -83,7 +83,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   if (!isMounted) {
     return null;
   }
-
   return (
     <>
       <header className="sticky top-0 z-50 flex items-center justify-between h-14 px-4 bg-youtube-primary border-b border-youtube">
@@ -145,7 +144,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <Mic className="w-5 h-5 text-youtube-primary" />
           </Button>
         </div>
-
         {/* Right Section */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button 
@@ -183,6 +181,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             </Button>
           </Link>
 
+          {/* ✅ FIXED: User Authentication Section with Login Redirect */}
           {user ? (
             <>
               <DropdownMenu>
@@ -255,17 +254,20 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               </DropdownMenu>
             </>
           ) : (
-            <Button
-              className="flex items-center gap-2 h-9 text-sm bg-transparent hover:bg-blue-500/10 text-primary border border-blue-500 px-3 rounded-full"
-              onClick={handlegooglesignin}
-            >
-              <User className="w-4 h-4" />
-              <span className="hidden sm:inline font-medium">Sign in</span>
-            </Button>
+            // ✅ FIXED: Added Login Button with Router Push
+            <div className="flex items-center gap-2">
+              <Button
+                className="flex items-center gap-2 h-9 text-sm bg-transparent hover:bg-blue-500/10 text-primary border border-blue-500 px-3 rounded-full"
+                onClick={() => router.push('/login')}
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline font-medium">Sign in</span>
+              </Button>
+            </div>
           )}
         </div>
       </header>
-
+      {/* Mobile Search Bar */}
       {showSearchMobile && (
         <div className="md:hidden bg-youtube-primary border-b border-youtube p-2 sticky top-14 z-40">
           <div className="flex items-center gap-2">
@@ -298,6 +300,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         </div>
       )}
 
+      {/* Channel Creation Dialog */}
       <Channeldialogue
         isopen={isdialogeopen}
         onclose={() => setisdialogeopen(false)}

@@ -18,6 +18,8 @@ import {
 import { VideoGridSkeleton } from "@/components/VideoSkeleton";
 // Line ~10 - ADD this import
 import { getThumbnailUrl as getThumbnailUrlHelper } from "@/lib/urlHelper";
+import ProtectedRoute from "@/components/ProtectedRoute"; // ✅ NEW IMPORT
+import { useUser } from "@/lib/AuthContext"; // ✅ NEW IMPORT
 
 interface Video {
   videoLink: string;
@@ -615,578 +617,582 @@ const Home: NextPage = () => {
   };
 
   return (
-    <>
-      <Head>
-        <title>YourTube - Home</title>
-      </Head>
-      {/* Connection Error Banner */}
-      {connectionError && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white px-4 py-3 text-center text-sm lg:text-base">
-          <div className="flex items-center justify-center gap-2">
-            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span className="font-semibold">{connectionError}</span>
-          </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-1 bg-white text-yellow-600 rounded font-semibold text-xs"
-          >
-            Retry Connection
-          </button>
-        </div>
-      )}
-
-      {/* Backend Loading Screen */}
-{!backendReady && !connectionError && (
-  <div className="fixed inset-0 z-40 bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
-    <div className="text-center px-4">
-      <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-        Loading YourTube
-      </h2>
-      <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
-        {backendCheckAttempts > 0 
-          ? `Waking up server... (${backendCheckAttempts}/5)` 
-          : 'Connecting to server...'}
-      </p>
-      <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">
-        Free tier servers may take 30-60 seconds to wake up
-      </p>
-    </div>
-  </div>
-)}
-
-      <div
-        ref={containerRef}
-        className="w-full bg-white dark:bg-gray-900 min-h-screen pb-16 lg:pb-0"
-        style={{
-          position: "relative",
-          width: "100%",
-          overflow: "visible",
-        }}
-      >
-        {/* Debug Info - Remove after testing */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="lg:hidden fixed top-2 right-2 z-50 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg">
-            Shorts: {shorts.length} | Loading: {loadingShorts ? "Y" : "N"}
-          </div>
-        )}
-
-        {/* Pull to Refresh Indicator */}
-        {pullDistance > 0 && (
-          <div
-            className="fixed top-0 left-0 right-0 flex justify-center items-center z-50 transition-all"
-            style={{ height: `${pullDistance}px` }}
-          >
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-3">
-              {refreshing ? (
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500" />
-              ) : (
-                <svg
-                  className="w-6 h-6 text-gray-900 dark:text-white transition-transform"
-                  style={{ transform: `rotate(${pullDistance * 3.6}deg)` }}
-                  fill="none"
-                  viewBox="0 0 24 24"
+    <ProtectedRoute requireAuth={true}>
+      <>
+        <Head>
+          <title>YourTube - Home</title>
+        </Head>
+        {/* Connection Error Banner */}
+        {connectionError && (
+          <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white px-4 py-3 text-center text-sm lg:text-base">
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
                   stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              )}
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span className="font-semibold">{connectionError}</span>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 px-4 py-1 bg-white text-yellow-600 rounded font-semibold text-xs"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
+
+        {/* Backend Loading Screen */}
+        {!backendReady && !connectionError && (
+          <div className="fixed inset-0 z-40 bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
+            <div className="text-center px-4">
+              <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Loading YourTube
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
+                {backendCheckAttempts > 0
+                  ? `Waking up server... (${backendCheckAttempts}/5)`
+                  : "Connecting to server..."}
+              </p>
+              <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">
+                Free tier servers may take 30-60 seconds to wake up
+              </p>
             </div>
           </div>
         )}
 
-        {/* Shorts Section - YouTube Style */}
-        {/* Shorts Section - YouTube Style */}
-        {/* Shorts Section - YouTube Style */}
-        {shorts.length > 0 && (
-          <section
-            className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
-            style={{
-              display: "block",
-              width: "100%",
-              minHeight: "200px",
-            }}
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3 px-4 mb-4 lg:px-6 bg-white dark:bg-gray-900">
-              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl shadow-md">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-4 h-4 fill-white lg:w-5 lg:h-5"
-                >
-                  <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
-                </svg>
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white lg:text-2xl">
-                Shorts
-              </h2>
+        <div
+          ref={containerRef}
+          className="w-full bg-white dark:bg-gray-900 min-h-screen pb-16 lg:pb-0"
+          style={{
+            position: "relative",
+            width: "100%",
+            overflow: "visible",
+          }}
+        >
+          {/* Debug Info - Remove after testing */}
+          {process.env.NODE_ENV === "development" && (
+            <div className="lg:hidden fixed top-2 right-2 z-50 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg">
+              Shorts: {shorts.length} | Loading: {loadingShorts ? "Y" : "N"}
             </div>
+          )}
 
-            {loadingShorts ? (
-              <div
-                className="overflow-x-hidden px-4 lg:px-6 bg-white dark:bg-gray-900"
-                style={{ display: "flex", gap: "12px" }}
-              >
-                {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex-shrink-0 w-[160px] lg:w-[200px]"
-                    style={{
-                      minWidth: "160px",
-                    }}
+          {/* Pull to Refresh Indicator */}
+          {pullDistance > 0 && (
+            <div
+              className="fixed top-0 left-0 right-0 flex justify-center items-center z-50 transition-all"
+              style={{ height: `${pullDistance}px` }}
+            >
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-3">
+                {refreshing ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500" />
+                ) : (
+                  <svg
+                    className="w-6 h-6 text-gray-900 dark:text-white transition-transform"
+                    style={{ transform: `rotate(${pullDistance * 3.6}deg)` }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <div
-                      className="bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-2"
-                      style={{ width: "100%", paddingBottom: "177.5%" }}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                     />
-                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-2" />
-                    <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton w-3/4" />
-                  </div>
-                ))}
+                  </svg>
+                )}
               </div>
-            ) : (
-              <div className="relative group/container">
-                {/* Desktop Navigation Buttons */}
-                <button
-                  onClick={() => scrollShorts("left")}
-                  className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
-                  aria-label="Scroll left"
-                >
-                  <ChevronRight
-                    size={20}
-                    className="rotate-180 text-gray-900 dark:text-white"
-                  />
-                </button>
+            </div>
+          )}
 
-                <button
-                  onClick={() => scrollShorts("right")}
-                  className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
-                  aria-label="Scroll right"
-                >
-                  <ChevronRight
-                    size={20}
-                    className="text-gray-900 dark:text-white"
-                  />
-                </button>
+          {/* Shorts Section - YouTube Style */}
+          {/* Shorts Section - YouTube Style */}
+          {/* Shorts Section - YouTube Style */}
+          {shorts.length > 0 && (
+            <section
+              className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
+              style={{
+                display: "block",
+                width: "100%",
+                minHeight: "200px",
+              }}
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3 px-4 mb-4 lg:px-6 bg-white dark:bg-gray-900">
+                <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl shadow-md">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-4 h-4 fill-white lg:w-5 lg:h-5"
+                  >
+                    <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white lg:text-2xl">
+                  Shorts
+                </h2>
+              </div>
 
-                {/* Shorts Container */}
+              {loadingShorts ? (
                 <div
-                  ref={shortsScrollRef}
-                  className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
-                  style={{
-                    display: "flex",
-                    gap: "12px",
-                    padding: "0 16px",
-                    scrollBehavior: "smooth",
-                    WebkitOverflowScrolling: "touch",
-                    touchAction: "pan-x",
-                  }}
-                  onTouchStart={handleShortsScrollTouchStart}
-                  onTouchMove={handleShortsScrollTouchMove}
-                  onTouchEnd={handleShortsScrollTouchEnd}
+                  className="overflow-x-hidden px-4 lg:px-6 bg-white dark:bg-gray-900"
+                  style={{ display: "flex", gap: "12px" }}
                 >
-                  {shorts.slice(0, 12).map((short, index) => {
-                    const shortAvatar = getShortAvatar(short);
-                    const shortChannelName = getShortChannelName(short);
-
-                    return (
+                  {[...Array(6)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex-shrink-0 w-[160px] lg:w-[200px]"
+                      style={{
+                        minWidth: "160px",
+                      }}
+                    >
                       <div
-                        key={short._id}
-                        onClick={(e) => {
-                          if (!(e.target as HTMLElement).closest(".no-click")) {
-                            handleShortClick(e, short._id, index);
-                          }
-                        }}
-                        className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
-                        style={{
-                          minWidth: "160px",
-                          userSelect: "none",
-                          WebkitTapHighlightColor: "transparent",
-                        }}
-                      >
-                        {/* Thumbnail Card */}
+                        className="bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-2"
+                        style={{ width: "100%", paddingBottom: "177.5%" }}
+                      />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-2" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton w-3/4" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="relative group/container">
+                  {/* Desktop Navigation Buttons */}
+                  <button
+                    onClick={() => scrollShorts("left")}
+                    className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
+                    aria-label="Scroll left"
+                  >
+                    <ChevronRight
+                      size={20}
+                      className="rotate-180 text-gray-900 dark:text-white"
+                    />
+                  </button>
+
+                  <button
+                    onClick={() => scrollShorts("right")}
+                    className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight
+                      size={20}
+                      className="text-gray-900 dark:text-white"
+                    />
+                  </button>
+
+                  {/* Shorts Container */}
+                  <div
+                    ref={shortsScrollRef}
+                    className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      padding: "0 16px",
+                      scrollBehavior: "smooth",
+                      WebkitOverflowScrolling: "touch",
+                      touchAction: "pan-x",
+                    }}
+                    onTouchStart={handleShortsScrollTouchStart}
+                    onTouchMove={handleShortsScrollTouchMove}
+                    onTouchEnd={handleShortsScrollTouchEnd}
+                  >
+                    {shorts.slice(0, 12).map((short, index) => {
+                      const shortAvatar = getShortAvatar(short);
+                      const shortChannelName = getShortChannelName(short);
+
+                      return (
                         <div
-                          className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
+                          key={short._id}
+                          onClick={(e) => {
+                            if (
+                              !(e.target as HTMLElement).closest(".no-click")
+                            ) {
+                              handleShortClick(e, short._id, index);
+                            }
+                          }}
+                          className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
                           style={{
-                            paddingBottom: "177.5%",
+                            minWidth: "160px",
+                            userSelect: "none",
+                            WebkitTapHighlightColor: "transparent",
                           }}
                         >
-                          <img
-                            src={short.thumbnailUrl}
-                            alt={short.title}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105"
-                            loading="lazy"
-                          />
-
-                          {/* Play Icon Overlay */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-300 bg-black/40 dark:bg-black/50 pointer-events-none">
-                            <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 group-hover/short:scale-100 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-300">
-                              <Play
-                                size={24}
-                                className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8"
-                                fill="currentColor"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Bottom Gradient */}
-                          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
-
-                          {/* Views Badge */}
-                          <div className="absolute bottom-3 left-3 bg-black/80 dark:bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg active:scale-105 transition-transform duration-150">
-                            <svg
-                              className="w-3.5 h-3.5 fill-white"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                            </svg>
-                            <span className="text-xs font-bold text-white whitespace-nowrap drop-shadow-md">
-                              {formatViewsShort(short.views)} views
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Title */}
-                        <h3
-                          className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
-                          style={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            wordBreak: "break-word",
-                            minHeight: "2.5rem",
-                            textShadow: "0 1px 2px rgba(0,0,0,0.1)",
-                          }}
-                        >
-                          {short.title}
-                        </h3>
-
-                        {/* Channel Info */}
-                        <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
-                          {/* Avatar */}
+                          {/* Thumbnail Card */}
                           <div
-                            className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              hapticFeedback.selection();
-                              router.push(`/channel/${short.userId?._id}`);
+                            className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
+                            style={{
+                              paddingBottom: "177.5%",
                             }}
                           >
                             <img
-                              src={getImageUrl(
-                                short.userId?.image || short.userId?.avatar,
-                                true
-                              )}
-                              alt={shortChannelName}
-                              className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                              src={short.thumbnailUrl}
+                              alt={short.title}
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105"
+                              loading="lazy"
+                            />
+
+                            {/* Play Icon Overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-300 bg-black/40 dark:bg-black/50 pointer-events-none">
+                              <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 group-hover/short:scale-100 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-300">
+                                <Play
+                                  size={24}
+                                  className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8"
+                                  fill="currentColor"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Bottom Gradient */}
+                            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+
+                            {/* Views Badge */}
+                            <div className="absolute bottom-3 left-3 bg-black/80 dark:bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg active:scale-105 transition-transform duration-150">
+                              <svg
+                                className="w-3.5 h-3.5 fill-white"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                              </svg>
+                              <span className="text-xs font-bold text-white whitespace-nowrap drop-shadow-md">
+                                {formatViewsShort(short.views)} views
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Title */}
+                          <h3
+                            className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              wordBreak: "break-word",
+                              minHeight: "2.5rem",
+                              textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            {short.title}
+                          </h3>
+
+                          {/* Channel Info */}
+                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
+                            {/* Avatar */}
+                            <div
+                              className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                hapticFeedback.selection();
+                                router.push(`/channel/${short.userId?._id}`);
+                              }}
+                            >
+                              <img
+                                src={getImageUrl(
+                                  short.userId?.image || short.userId?.avatar,
+                                  true
+                                )}
+                                alt={shortChannelName}
+                                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                                onError={(e) => {
+                                  e.currentTarget.src =
+                                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+                                }}
+                              />
+                            </div>
+
+                            {/* Channel Name */}
+                            <span
+                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
+                              style={{
+                                textShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                hapticFeedback.selection();
+                                router.push(`/channel/${short.userId?._id}`);
+                              }}
+                              title={shortChannelName}
+                            >
+                              {shortChannelName}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+          {/* Videos Section - FIXED MOBILE LAYOUT */}
+          <section className="px-3 py-4 lg:px-6">
+            {loadingVideos ? (
+              <div className="space-y-3 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="block">
+                    <div className="w-full aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg skeleton mb-3" />
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton" />
+                      <div className="flex gap-2 items-center">
+                        <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full skeleton" />
+                        <div className="flex-1 h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : videos.length > 0 ? (
+              <div className="space-y-4 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
+                {videos.slice(0, 12).map((video) => {
+                  const channelName =
+                    video.uploadedBy?.channelname ||
+                    video.uploadedBy?.name ||
+                    video?.videochanel ||
+                    "Unknown Channel";
+                  const channelInitial = channelName[0]?.toUpperCase() || "U";
+
+                  return (
+                    <div key={video._id} className="block group">
+                      {/* Video Thumbnail */}
+                      <Link href={`/watch/${video._id}`} className="block mb-3">
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
+                          <video
+                            src={getVideoUrl(video)}
+                            className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
+                            preload="metadata"
+                            poster={getThumbnailUrl(video)}
+                          />
+                          {video?.duration && (
+                            <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
+                              {video.duration}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+
+                      {/* ✅ FIXED: Video Info with proper mobile constraints */}
+                      <div className="flex gap-2.5 min-w-0">
+                        {/* Avatar - Fixed sizing */}
+                        <div
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            router.push(
+                              `/channel/${video.uploadedBy?._id || "unknown"}`
+                            );
+                          }}
+                          className="flex-shrink-0 cursor-pointer"
+                        >
+                          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
+                            {/* Fallback */}
+                            <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
+                              {channelInitial}
+                            </div>
+                            {/* Avatar Image */}
+                            <img
+                              key={`video-avatar-${video._id}-${
+                                imageKeys[video.uploadedBy?._id || ""] ||
+                                Date.now()
+                              }`}
+                              src={getImageUrl(video.uploadedBy?.image, true)}
+                              alt={channelName}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              crossOrigin="anonymous"
+                              loading="eager"
                               onError={(e) => {
-                                e.currentTarget.src =
-                                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+                                const target =
+                                  e.currentTarget as HTMLImageElement;
+                                target.style.opacity = "0";
+                                target.style.zIndex = "1";
+                              }}
+                              onLoad={(e) => {
+                                const target =
+                                  e.currentTarget as HTMLImageElement;
+                                target.style.opacity = "1";
+                                target.style.zIndex = "10";
                               }}
                             />
                           </div>
+                        </div>
 
-                          {/* Channel Name */}
-                          <span
-                            className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
-                            style={{
-                              textShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                            }}
+                        {/* Text Info - Proper truncation */}
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <Link href={`/watch/${video._id}`}>
+                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors">
+                              {video?.videotitle || "Untitled Video"}
+                            </h3>
+                          </Link>
+
+                          <p
                             onClick={(e) => {
-                              e.stopPropagation();
-                              hapticFeedback.selection();
-                              router.push(`/channel/${short.userId?._id}`);
+                              e.preventDefault();
+                              router.push(
+                                `/channel/${video.uploadedBy?._id || "unknown"}`
+                              );
                             }}
-                            title={shortChannelName}
+                            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
                           >
-                            {shortChannelName}
-                          </span>
+                            {channelName}
+                          </p>
+
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
+                            <span className="font-semibold truncate">
+                              {formatViews(video?.views)}
+                            </span>
+                            <span className="font-bold flex-shrink-0">•</span>
+                            <span className="truncate">
+                              {formatTimeAgo(video?.createdAt)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No videos available
+                </p>
               </div>
             )}
           </section>
-        )}
-        {/* Videos Section - FIXED MOBILE LAYOUT */}
-        <section className="px-3 py-4 lg:px-6">
-          {loadingVideos ? (
-            <div className="space-y-3 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="block">
-                  <div className="w-full aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg skeleton mb-3" />
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton" />
-                    <div className="flex gap-2 items-center">
-                      <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full skeleton" />
-                      <div className="flex-1 h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : videos.length > 0 ? (
-            <div className="space-y-4 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
-              {videos.slice(0, 12).map((video) => {
-                const channelName =
-                  video.uploadedBy?.channelname ||
-                  video.uploadedBy?.name ||
-                  video?.videochanel ||
-                  "Unknown Channel";
-                const channelInitial = channelName[0]?.toUpperCase() || "U";
 
-                return (
-                  <div key={video._id} className="block group">
-                    {/* Video Thumbnail */}
-                    <Link href={`/watch/${video._id}`} className="block mb-3">
-                      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
+          {/* More Videos Section */}
+          {videos.length > 12 && (
+            <section className="hidden lg:block px-6 pb-8">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                More Videos
+              </h2>
+              <div className="grid grid-cols-3 xl:grid-cols-4 gap-4">
+                {videos.slice(12).map((video) => (
+                  <Link
+                    key={video._id}
+                    href={`/watch/${video._id}`}
+                    className="block group cursor-pointer"
+                  >
+                    <div className="w-full">
+                      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3 shadow-sm">
                         <video
                           src={getVideoUrl(video)}
                           className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
                           preload="metadata"
                           poster={getThumbnailUrl(video)}
+                          onError={(e) => {
+                            console.error("❌ Video load failed:", video._id);
+                            const target = e.currentTarget;
+                            target.poster = "/placeholder-thumbnail.jpg";
+                          }}
                         />
                         {video?.duration && (
-                          <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
+                          <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-xs font-bold px-2 py-0.5 rounded">
                             {video.duration}
                           </div>
                         )}
                       </div>
-                    </Link>
 
-                    {/* ✅ FIXED: Video Info with proper mobile constraints */}
-                    <div className="flex gap-2.5 min-w-0">
-                      {/* Avatar - Fixed sizing */}
-                      <div
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(
-                            `/channel/${video.uploadedBy?._id || "unknown"}`
-                          );
-                        }}
-                        className="flex-shrink-0 cursor-pointer"
-                      >
-                        <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-                          {/* Fallback */}
-                          <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
-                            {channelInitial}
-                          </div>
-                          {/* Avatar Image */}
-                          <img
-                            key={`video-avatar-${video._id}-${
-                              imageKeys[video.uploadedBy?._id || ""] ||
-                              Date.now()
-                            }`}
-                            src={getImageUrl(video.uploadedBy?.image, true)}
-                            alt={channelName}
-                            className="absolute inset-0 w-full h-full object-cover"
-                            crossOrigin="anonymous"
-                            loading="eager"
-                            onError={(e) => {
-                              const target =
-                                e.currentTarget as HTMLImageElement;
-                              target.style.opacity = "0";
-                              target.style.zIndex = "1";
-                            }}
-                            onLoad={(e) => {
-                              const target =
-                                e.currentTarget as HTMLImageElement;
-                              target.style.opacity = "1";
-                              target.style.zIndex = "10";
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Text Info - Proper truncation */}
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <Link href={`/watch/${video._id}`}>
-                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors">
-                            {video?.videotitle || "Untitled Video"}
-                          </h3>
-                        </Link>
-
-                        <p
+                      <div className="flex gap-3">
+                        {/* ✅ FIXED: Channel Avatar - NO NESTED LINK */}
+                        <div
                           onClick={(e) => {
                             e.preventDefault();
+                            e.stopPropagation();
                             router.push(
                               `/channel/${video.uploadedBy?._id || "unknown"}`
                             );
                           }}
-                          className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                          className="flex-shrink-0 mt-0.5 cursor-pointer"
                         >
-                          {channelName}
-                        </p>
+                          <Avatar className="w-9 h-9 ring-2 ring-transparent hover:ring-blue-500 transition-all">
+                            <AvatarImage
+                              key={`more-video-${video._id}-avatar-${
+                                imageKeys[video.uploadedBy?._id || ""] ||
+                                Date.now()
+                              }`}
+                              src={getImageUrl(video.uploadedBy?.image, true)}
+                              alt={
+                                video.uploadedBy?.name ||
+                                video.videochanel ||
+                                "Channel"
+                              }
+                            />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
+                              {(video.uploadedBy?.channelname ||
+                                video.uploadedBy?.name ||
+                                video.videochanel)?.[0]?.toUpperCase() || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
 
-                        <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
-                          <span className="font-semibold truncate">
-                            {formatViews(video?.views)}
-                          </span>
-                          <span className="font-bold flex-shrink-0">•</span>
-                          <span className="truncate">
-                            {formatTimeAgo(video?.createdAt)}
-                          </span>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-[15px] leading-snug line-clamp-2 mb-1 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {video?.videotitle || "Untitled Video"}
+                          </h3>
+
+                          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 font-medium group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                            {video.uploadedBy?.channelname ||
+                              video.uploadedBy?.name ||
+                              video?.videochanel ||
+                              "Unknown Channel"}
+                          </p>
+
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500 font-medium">
+                            <span className="font-semibold">
+                              {formatViews(video?.views)}
+                            </span>
+                            <span className="font-bold">•</span>
+                            <span>{formatTimeAgo(video?.createdAt)}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">
-                No videos available
-              </p>
-            </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
-        </section>
+        </div>
 
-        {/* More Videos Section */}
-        {videos.length > 12 && (
-          <section className="hidden lg:block px-6 pb-8">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              More Videos
-            </h2>
-            <div className="grid grid-cols-3 xl:grid-cols-4 gap-4">
-              {videos.slice(12).map((video) => (
-                <Link
-                  key={video._id}
-                  href={`/watch/${video._id}`}
-                  className="block group cursor-pointer"
-                >
-                  <div className="w-full">
-                    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3 shadow-sm">
-                      <video
-                        src={getVideoUrl(video)}
-                        className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-                        preload="metadata"
-                        poster={getThumbnailUrl(video)}
-                        onError={(e) => {
-                          console.error("❌ Video load failed:", video._id);
-                          const target = e.currentTarget;
-                          target.poster = "/placeholder-thumbnail.jpg";
-                        }}
-                      />
-                      {video?.duration && (
-                        <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-xs font-bold px-2 py-0.5 rounded">
-                          {video.duration}
-                        </div>
-                      )}
-                    </div>
+        <MobileBottomNav />
 
-                    <div className="flex gap-3">
-                      {/* ✅ FIXED: Channel Avatar - NO NESTED LINK */}
-                      <div
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(
-                            `/channel/${video.uploadedBy?._id || "unknown"}`
-                          );
-                        }}
-                        className="flex-shrink-0 mt-0.5 cursor-pointer"
-                      >
-                        <Avatar className="w-9 h-9 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-                          <AvatarImage
-                            key={`more-video-${video._id}-avatar-${
-                              imageKeys[video.uploadedBy?._id || ""] ||
-                              Date.now()
-                            }`}
-                            src={getImageUrl(video.uploadedBy?.image, true)}
-                            alt={
-                              video.uploadedBy?.name ||
-                              video.videochanel ||
-                              "Channel"
-                            }
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
-                            {(video.uploadedBy?.channelname ||
-                              video.uploadedBy?.name ||
-                              video.videochanel)?.[0]?.toUpperCase() || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-[15px] leading-snug line-clamp-2 mb-1 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {video?.videotitle || "Untitled Video"}
-                        </h3>
-
-                        <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 font-medium group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                          {video.uploadedBy?.channelname ||
-                            video.uploadedBy?.name ||
-                            video?.videochanel ||
-                            "Unknown Channel"}
-                        </p>
-
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500 font-medium">
-                          <span className="font-semibold">
-                            {formatViews(video?.views)}
-                          </span>
-                          <span className="font-bold">•</span>
-                          <span>{formatTimeAgo(video?.createdAt)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
-
-      <MobileBottomNav />
-
-      {/* 🔥 COMBINED STYLES - SINGLE BLOCK AT THE END */}
-      <style jsx>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .skeleton {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-          0%,
-          100% {
-            opacity: 1;
+        {/* 🔥 COMBINED STYLES - SINGLE BLOCK AT THE END */}
+        <style jsx>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
           }
-          50% {
-            opacity: 0.5;
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
           }
-        }
-      `}</style>
-    </>
+          .skeleton {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+          @keyframes pulse {
+            0%,
+            100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
+          }
+        `}</style>
+      </>
+    </ProtectedRoute>
   );
 };
 

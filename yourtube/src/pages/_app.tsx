@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -13,12 +14,13 @@ import { initializeTheme, applyTheme, getStoredTheme } from "../lib/theme";
 import CallNotification from "@/components/ui/CallNotification";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import { initKeepAlive } from "@/lib/keepAlive";
-import initializeSocket from "@/lib/socket";
-import { Route } from "lucide-react";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "https://youtube-clone-project-q3pd.onrender.com";
+
+// Routes that don't require authentication
+const PUBLIC_ROUTES = ['/login', '/signup'];
 
 /**
  * Global state tracker to prevent duplicate initialization
@@ -30,12 +32,63 @@ const initializationState = {
   hasSetOverflow: false,
   hasClearedCache: false,
   hasInitializedAudioContext: false,
+  hasCheckedAuth: false,
 };
 function AppContent({ Component, pageProps }: AppProps) {
   const { user } = useUser();
   const router = useRouter();
   const [isThemeReady, setIsThemeReady] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  // ============================================================================
+  // 🔴 CRITICAL: AUTHENTICATION REDIRECT LOGIC
+  // ============================================================================
+  useEffect(() => {
+    if (typeof window === "undefined" || initializationState.hasCheckedAuth) {
+      return;
+    }
+
+    const checkAuthentication = () => {
+      const token = localStorage.getItem('token');
+      const isPublicRoute = PUBLIC_ROUTES.includes(router.pathname);
+      const isAuthPage = router.pathname === '/login' || router.pathname === '/signup';
+
+      console.log('🔐 Auth Check:', { 
+        hasToken: !!token, 
+        isPublicRoute, 
+        currentPath: router.pathname 
+      });
+
+      // If user has token but is on auth page, redirect to home
+      if (token && isAuthPage) {
+        const returnUrl = router.query.returnUrl as string;
+        const destination = returnUrl && returnUrl !== '/login' && returnUrl !== '/signup' 
+          ? returnUrl 
+          : '/';
+        
+        console.log('✅ User authenticated, redirecting to:', destination);
+        router.replace(destination);
+        return;
+      }
+
+      // If no token and trying to access protected route, redirect to login
+      if (!token && !isPublicRoute) {
+        console.log('⚠️ No token found, redirecting to login');
+        router.replace(`/login?returnUrl=${encodeURIComponent(router.asPath)}`);
+        return;
+      }
+
+      // Mark as checked and allow rendering
+      initializationState.hasCheckedAuth = true;
+      setIsAuthChecking(false);
+    };
+
+    // Small delay to ensure router is ready
+    const timeoutId = setTimeout(checkAuthentication, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [router.pathname, router.query.returnUrl]);
 
   // ============================================================================
   // 🔴 CRITICAL: PREVENT AUDIOCONTEXT CREATION BEFORE USER INTERACTION
@@ -56,7 +109,6 @@ function AppContent({ Component, pageProps }: AppProps) {
     if (originalAudioContext) {
       let userHasInteracted = false;
 
-      // Detect user interaction
       const markInteraction = () => {
         userHasInteracted = true;
         console.log("✅ User interaction detected globally");
@@ -75,7 +127,6 @@ function AppContent({ Component, pageProps }: AppProps) {
         passive: true,
       });
 
-      // Wrap AudioContext constructor
       const WrappedAudioContext = function (this: any, ...args: any[]) {
         if (!userHasInteracted) {
           console.warn(
@@ -114,7 +165,6 @@ function AppContent({ Component, pageProps }: AppProps) {
       try {
         console.log("🧹 Clearing all Android caches...");
 
-        // 1. Clear Service Worker cache
         if ("serviceWorker" in navigator) {
           const registrations =
             await navigator.serviceWorker.getRegistrations();
@@ -124,7 +174,6 @@ function AppContent({ Component, pageProps }: AppProps) {
           }
         }
 
-        // 2. Clear Cache Storage API
         if ("caches" in window) {
           const cacheNames = await caches.keys();
           await Promise.all(
@@ -136,7 +185,6 @@ function AppContent({ Component, pageProps }: AppProps) {
           console.log("✅ All cache storage cleared");
         }
 
-        // 3. Force page reload on Android if from cache
         const navigation = (performance as any).getEntriesByType?.(
           "navigation"
         )?.[0] as any;
@@ -160,7 +208,6 @@ function AppContent({ Component, pageProps }: AppProps) {
       if (document.visibilityState === "visible") {
         console.log("👁️ Page visible - dispatching refresh event");
 
-        // Dispatch custom event to force channel page refresh
         window.dispatchEvent(
           new CustomEvent("forceChannelRefresh", {
             detail: { timestamp: Date.now() },
@@ -195,7 +242,9 @@ function AppContent({ Component, pageProps }: AppProps) {
       window.removeEventListener("focus", handleFocus);
     };
   }, []);
-  // Determine which pages should hide the standard layout
+  // ============================================================================
+  // DETERMINE LAYOUT VISIBILITY
+  // ============================================================================
   const shouldHideLayout = useMemo(() => {
     const currentPath = router.pathname;
     const isShortsPage = currentPath.startsWith("/shorts");
@@ -205,7 +254,9 @@ function AppContent({ Component, pageProps }: AppProps) {
     return isShortsPage || isCallPage || isAuthPage;
   }, [router.pathname]);
 
-  // Memoized handlers for mobile sidebar
+  // ============================================================================
+  // MOBILE SIDEBAR HANDLERS
+  // ============================================================================
   const openMobileSidebar = useCallback(() => {
     setShowMobileSidebar(true);
   }, []);
@@ -326,6 +377,7 @@ function AppContent({ Component, pageProps }: AppProps) {
     initializationState.currentUserTheme = themeIdentifier;
     initializationState.hasCheckedLocation = true;
   }, [user?._id, user?.theme, isThemeReady]);
+
   // ============================================================================
   // MOBILE BOTTOM NAVIGATION SPACING
   // ============================================================================
@@ -434,9 +486,9 @@ function AppContent({ Component, pageProps }: AppProps) {
     }
   }, [router.pathname]);
   // ============================================================================
-  // LOADING SPINNER WHILE THEME INITIALIZES
+  // LOADING SPINNER WHILE THEME INITIALIZES OR AUTH CHECKS
   // ============================================================================
-  if (!isThemeReady) {
+  if (!isThemeReady || isAuthChecking) {
     const currentTheme =
       typeof window !== "undefined" ? getStoredTheme() : "dark";
     const backgroundColor = currentTheme === "dark" ? "#0f0f0f" : "#ffffff";
@@ -451,6 +503,12 @@ function AppContent({ Component, pageProps }: AppProps) {
           className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
           style={{ borderColor: spinnerBorderColor }}
         />
+        <p 
+          className="text-sm"
+          style={{ color: spinnerBorderColor }}
+        >
+          {!isThemeReady ? "Initializing..." : "Checking authentication..."}
+        </p>
       </div>
     );
   }
