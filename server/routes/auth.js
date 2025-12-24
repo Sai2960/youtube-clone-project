@@ -899,29 +899,50 @@ router.post(
 router.get("/profile", verifyToken, async (req, res) => {
   try {
     console.log("🔍 Profile endpoint hit");
-    console.log("📦 req.user:", req.user);
-    console.log("📦 req.userId:", req.userId);
+    console.log("📦 Full req.user:", JSON.stringify(req.user, null, 2));
+    console.log("📦 Full req.userId:", req.userId);
+    console.log("📦 req.user type:", typeof req.user);
+    console.log("📦 req.userId type:", typeof req.userId);
 
-    // ✅ Extract user ID - req.userId is already a string from middleware
-    const userId = req.userId;
+    // ✅ DEFENSIVE: Try multiple sources for user ID
+    let userId =
+      req.userId || req.user?.id || req.user?._id || req.user?.userId;
+
+    console.log("🆔 Extracted userId:", userId);
+    console.log("🆔 Type:", typeof userId);
 
     if (!userId) {
-      console.error("❌ No user ID found in request");
+      console.error("❌ No user ID found anywhere in request");
+      console.error("Available keys in req:", Object.keys(req));
       return res.status(401).json({
         success: false,
-        message: "User ID not found in token. Please log in again.",
+        message: "Authentication failed - no user ID in token",
       });
     }
 
-    console.log("🆔 Using userId:", userId);
-    console.log("🆔 Type:", typeof userId);
+    // ✅ Convert to string if it's an object
+    if (typeof userId === "object" && userId !== null) {
+      userId = userId.toString();
+    }
+
+    // ✅ Ensure it's a string
+    userId = String(userId);
+
+    console.log("🆔 Final userId after conversion:", userId);
+    console.log("🆔 Final type:", typeof userId);
+    console.log("🆔 Length:", userId.length);
 
     // ✅ Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       console.error("❌ Invalid ObjectId format:", userId);
       return res.status(400).json({
         success: false,
-        message: "Invalid user ID format. Please log in again.",
+        message: "Invalid user ID format",
+        debug: {
+          receivedId: userId,
+          type: typeof userId,
+          length: userId.length,
+        },
       });
     }
 
@@ -929,7 +950,7 @@ router.get("/profile", verifyToken, async (req, res) => {
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
-      console.error("❌ User not found:", userId);
+      console.error("❌ User not found in database:", userId);
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -973,10 +994,7 @@ router.get("/profile", verifyToken, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch profile",
-      error:
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : "Internal server error",
+      error: error.message,
     });
   }
 });
