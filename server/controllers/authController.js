@@ -965,3 +965,65 @@ export const verifyOTP = async (req, res) => {
     });
   }
 };
+/**
+ * Get current user profile
+ * Used to check authentication status and user details
+ */
+export const getProfile = async (req, res) => {
+  try {
+    // Get user ID from token (set by verifyToken middleware)
+    const userId = req.userId || req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    console.log("👤 Profile request for user:", userId);
+
+    // Fetch user from database
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    console.log("✅ Profile fetched:", {
+      email: user.email,
+      role: user.role,
+      isApproved: user.isApproved,
+      approvalStatus: user.approvalStatus,
+    });
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        _id: user._id,
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        channelname: user.channelname,
+        image: user.image,
+        bannerImage: user.bannerImage,
+        role: user.role,
+        isApproved: user.isApproved,
+        approvalStatus: user.approvalStatus,
+        currentPlan: user.currentPlan,
+        subscribers: user.subscribers,
+        theme: user.theme,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Profile fetch error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch profile",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};

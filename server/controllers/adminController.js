@@ -1,4 +1,5 @@
 import User from "../Modals/User.js";
+import mongoose from "mongoose";
 
 // Get all pending users
 export const getPendingUsers = async (req, res) => {
@@ -32,7 +33,16 @@ export const getPendingUsers = async (req, res) => {
 export const approveUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const adminId = req.user.id || req.user._id || req.userId;
+    
+    // ✅ FIX: Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    }
+
+    const adminId = req.user?.id || req.user?._id || req.userId;
 
     console.log("✅ Approving user:", userId, "by admin:", adminId);
 
@@ -75,6 +85,14 @@ export const rejectUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // ✅ FIX: Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    }
+
     console.log("❌ Rejecting user:", userId);
 
     const user = await User.findByIdAndUpdate(
@@ -114,7 +132,7 @@ export const getAllUsersWithStatus = async (req, res) => {
   try {
     const users = await User.find()
       .select(
-        "email name channelname image approvalStatus isApproved createdAt approvedAt"
+        "email name channelname image approvalStatus isApproved createdAt approvedAt role"
       )
       .sort({ createdAt: -1 });
 
