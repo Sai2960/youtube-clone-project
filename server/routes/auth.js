@@ -964,9 +964,8 @@ router.get("/profile", verifyToken, async (req, res) => {
       });
     }
 
-    // ✅ Convert to string if it's an object
-    const userIdString =
-      typeof userId === "object" ? userId.toString() : userId;
+    // ✅ Convert to string if it's an ObjectId instance
+    const userIdString = userId.toString ? userId.toString() : String(userId);
 
     console.log("🆔 Converted userId to string:", userIdString);
 

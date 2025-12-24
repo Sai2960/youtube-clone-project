@@ -965,10 +965,6 @@ export const verifyOTP = async (req, res) => {
     });
   }
 };
-/**
- * Get current user profile
- * Used to check authentication status and user details
- */
 export const getProfile = async (req, res) => {
   try {
     // Get user ID from token (set by verifyToken middleware)
@@ -982,8 +978,7 @@ export const getProfile = async (req, res) => {
     }
 
     // ✅ Convert to string if needed
-    const userIdString =
-      typeof userId === "object" ? userId.toString() : userId;
+    const userIdString = userId.toString ? userId.toString() : String(userId);
 
     console.log("👤 Profile request for user:", userIdString);
     console.log("👤 User ID type:", typeof userIdString);
