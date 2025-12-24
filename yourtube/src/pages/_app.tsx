@@ -14,6 +14,7 @@ import CallNotification from "@/components/ui/CallNotification";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import { initKeepAlive } from "@/lib/keepAlive";
 import initializeSocket from "@/lib/socket";
+import { Route } from "lucide-react";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
