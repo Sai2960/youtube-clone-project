@@ -899,40 +899,41 @@ router.post(
 router.get("/profile", verifyToken, async (req, res) => {
   try {
     console.log("🔍 Profile endpoint hit");
-    console.log("📦 Full req.user:", JSON.stringify(req.user, null, 2));
-    console.log("📦 Full req.userId:", req.userId);
-    console.log("📦 req.user type:", typeof req.user);
-    console.log("📦 req.userId type:", typeof req.userId);
+    console.log("📦 req.user:", JSON.stringify(req.user, null, 2));
+    console.log("📦 req.userId:", req.userId);
 
-    // ✅ DEFENSIVE: Try multiple sources for user ID
-    let userId =
-      req.userId || req.user?.id || req.user?._id || req.user?.userId;
+    // ✅ DEFENSIVE: Extract user ID from multiple possible sources
+    let userId = req.userId || req.user?.id || req.user?._id?.toString();
 
     console.log("🆔 Extracted userId:", userId);
     console.log("🆔 Type:", typeof userId);
 
     if (!userId) {
-      console.error("❌ No user ID found anywhere in request");
-      console.error("Available keys in req:", Object.keys(req));
+      console.error("❌ No user ID found in request");
       return res.status(401).json({
         success: false,
         message: "Authentication failed - no user ID in token",
       });
     }
 
-    // ✅ Convert to string if it's an object
+    // ✅ CRITICAL: Ensure it's a string, not an object
     if (typeof userId === "object" && userId !== null) {
-      userId = userId.toString();
+      if (userId.toString) {
+        userId = userId.toString();
+      } else if (userId._id) {
+        userId = userId._id.toString();
+      } else {
+        userId = String(userId);
+      }
     }
 
-    // ✅ Ensure it's a string
-    userId = String(userId);
+    // ✅ Final conversion to string
+    userId = String(userId).trim();
 
-    console.log("🆔 Final userId after conversion:", userId);
-    console.log("🆔 Final type:", typeof userId);
-    console.log("🆔 Length:", userId.length);
+    console.log("🆔 Final userId:", userId);
+    console.log("🆔 Final length:", userId.length);
 
-    // ✅ Validate ObjectId format
+    // ✅ Validate ObjectId format BEFORE querying
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       console.error("❌ Invalid ObjectId format:", userId);
       return res.status(400).json({
@@ -941,7 +942,6 @@ router.get("/profile", verifyToken, async (req, res) => {
         debug: {
           receivedId: userId,
           type: typeof userId,
-          length: userId.length,
         },
       });
     }
