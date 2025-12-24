@@ -942,89 +942,28 @@ router.post(
     }
   }
 );
-// ✅ GET USER PROFILE - FIXED VERSION
 router.get("/profile", verifyToken, async (req, res) => {
   try {
-    // ✅ Extract user ID from multiple possible sources set by verifyToken
-    const userId = req.user?.id || req.user?._id || req.userId;
+    console.log("🔍 Profile endpoint hit");
+    console.log("📦 req.user:", req.user);
+    console.log("📦 req.userId:", req.userId);
 
-    console.log("👤 Profile request - req.user:", req.user);
-    console.log("👤 Profile request - userId extracted:", userId);
+    // ✅ Extract user ID from ALL possible sources
+    const userId =
+      req.user?.id || req.user?._id || req.user?.userId || req.userId;
 
+    console.log("🆔 Extracted userId:", userId);
+
+    // ✅ Check if userId exists BEFORE validation
     if (!userId) {
       console.error("❌ No user ID found in request");
       return res.status(401).json({
         success: false,
-        message: "User ID not found in token",
+        message: "User ID not found in token. Please log in again.",
       });
-
-      // ==================== VERIFY TOKEN MIDDLEWARE (ENSURE THIS MATCHES) ====================
-
-      const verifyToken = (req, res, next) => {
-        try {
-          const authHeader = req.headers.authorization;
-
-          console.log("🔐 Auth header received:", authHeader ? "Yes" : "No");
-
-          if (!authHeader) {
-            return res.status(401).json({
-              success: false,
-              message: "No token provided",
-            });
-          }
-
-          const token = authHeader.startsWith("Bearer ")
-            ? authHeader.substring(7)
-            : authHeader;
-
-          console.log(
-            "🔑 Token extracted (first 20 chars):",
-            token.substring(0, 20)
-          );
-
-          const JWT_SECRET = getJWTSecret();
-          const decoded = jwt.verify(token, JWT_SECRET);
-
-          console.log("✅ Token decoded successfully:", {
-            id: decoded.id,
-            email: decoded.email,
-          });
-
-          // ✅ CRITICAL: Set ALL possible user ID fields for compatibility
-          req.user = {
-            id: decoded.id || decoded._id || decoded.userId,
-            _id: decoded.id || decoded._id || decoded.userId,
-            userId: decoded.id || decoded._id || decoded.userId,
-            email: decoded.email,
-            name: decoded.name,
-          };
-
-          // ✅ Also set req.userId for maximum compatibility
-          req.userId = req.user.id;
-
-          console.log("✅ req.user set:", {
-            id: req.user.id,
-            email: req.user.email,
-          });
-
-          next();
-        } catch (error) {
-          console.error("❌ Token verification failed:", error.message);
-          console.error("Error type:", error.name);
-
-          return res.status(401).json({
-            success: false,
-            message: "Invalid or expired token",
-            error:
-              process.env.NODE_ENV === "development"
-                ? error.message
-                : undefined,
-          });
-        }
-      };
     }
 
-    // ✅ Validate the ID format
+    // ✅ NOW validate the ID format
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       console.error("❌ Invalid user ID format:", userId);
       return res.status(400).json({
@@ -1033,27 +972,28 @@ router.get("/profile", verifyToken, async (req, res) => {
       });
     }
 
+    console.log("✅ Fetching user from database:", userId);
+
     // ✅ Fetch user from database
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
-      console.error("❌ User not found:", userId);
+      console.error("❌ User not found in database:", userId);
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
-    console.log("✅ Profile fetched successfully:", {
+    console.log("✅ User fetched successfully:", {
       id: user._id,
       email: user.email,
-      name: user.name,
       role: user.role,
       isApproved: user.isApproved,
-      approvalStatus: user.approvalStatus,
     });
 
-    res.status(200).json({
+    // ✅ Return complete user profile
+    return res.status(200).json({
       success: true,
       user: {
         _id: user._id,
@@ -1072,13 +1012,14 @@ router.get("/profile", verifyToken, async (req, res) => {
         subscribers: user.subscribers,
         theme: user.theme,
         preferredOtpMethod: user.preferredOtpMethod,
+        location: user.location,
       },
     });
   } catch (error) {
-    console.error("❌ Get profile error:", error);
+    console.error("❌ Profile endpoint error:", error);
     console.error("Stack trace:", error.stack);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch profile",
       error:
