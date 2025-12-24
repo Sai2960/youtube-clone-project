@@ -14,6 +14,7 @@ import {
   uploadChannelImage,
   deleteFromCloudinary,
 } from "../config/cloudinary.js";
+import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -979,14 +980,9 @@ router.get("/profile", verifyToken, async (req, res) => {
     console.log("📦 req.user:", req.user);
     console.log("📦 req.userId:", req.userId);
 
-    // ✅ Extract user ID from ALL possible sources
-    const userId =
-      req.user?.id || req.user?._id || req.user?.userId || req.userId;
+    // ✅ Extract user ID - req.userId is already a string from middleware
+    const userId = req.userId;
 
-    console.log("🆔 Extracted userId:", userId);
-    console.log("🆔 Type of userId:", typeof userId);
-
-    // ✅ Check if userId exists BEFORE validation
     if (!userId) {
       console.error("❌ No user ID found in request");
       return res.status(401).json({
@@ -995,27 +991,23 @@ router.get("/profile", verifyToken, async (req, res) => {
       });
     }
 
-    // ✅ Convert to string if it's an ObjectId instance
-    const userIdString = userId.toString ? userId.toString() : String(userId);
+    console.log("🆔 Using userId:", userId);
+    console.log("🆔 Type:", typeof userId);
 
-    console.log("🆔 Converted userId to string:", userIdString);
-
-    // ✅ NOW validate the ID format
-    if (!mongoose.Types.ObjectId.isValid(userIdString)) {
-      console.error("❌ Invalid user ID format:", userIdString);
+    // ✅ Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.error("❌ Invalid ObjectId format:", userId);
       return res.status(400).json({
         success: false,
-        message: "Invalid ID format",
+        message: "Invalid user ID format. Please log in again.",
       });
     }
 
-    console.log("✅ Fetching user from database:", userIdString);
-
     // ✅ Fetch user from database
-    const user = await User.findById(userIdString).select("-password");
+    const user = await User.findById(userId).select("-password");
 
     if (!user) {
-      console.error("❌ User not found in database:", userId);
+      console.error("❌ User not found:", userId);
       return res.status(404).json({
         success: false,
         message: "User not found",
