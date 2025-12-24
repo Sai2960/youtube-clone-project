@@ -943,34 +943,10 @@ router.post(
   }
 );
 
-// REPLACE THIS SECTION IN server/routes/auth.js (around line 565)
-// Find the section that starts with "// ✅ GET USER PROFILE"
-
-// ✅ GET USER PROFILE - FIXED
+// ✅ GET USER PROFILE
 router.get("/profile", verifyToken, async (req, res) => {
   try {
-    // ✅ FIX: Get user ID from multiple sources and validate
-    const userId = req.user?.id || req.user?._id || req.userId;
-
-    console.log("📱 Profile request for user:", userId);
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "User ID not found in token",
-      });
-    }
-
-    // ✅ FIX: Validate MongoDB ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID format",
-        userId: userId,
-      });
-    }
-
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(req.user.id).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -978,8 +954,6 @@ router.get("/profile", verifyToken, async (req, res) => {
         message: "User not found",
       });
     }
-
-    console.log("✅ Profile fetched for:", user.email);
 
     res.status(200).json({
       success: true,
@@ -995,18 +969,10 @@ router.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ GET PUBLIC USER PROFILE BY ID - FIXED
+// ✅ GET PUBLIC USER PROFILE BY ID
 router.get("/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-
-    // ✅ FIX: Validate MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID format",
-      });
-    }
 
     const user = await User.findById(userId).select("-password -email");
 
