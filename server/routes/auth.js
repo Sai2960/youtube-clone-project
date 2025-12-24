@@ -534,37 +534,6 @@ router.get("/channel/:id", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid ID format",
-      });
-    }
-
-    const user = await User.findById(id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      result: user,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
 // ==================== IMAGE UPLOAD ROUTES ====================
 
 // ✅ MAIN IMAGE UPLOAD ROUTE WITH CLOUDINARY
@@ -896,6 +865,7 @@ router.post(
     }
   }
 );
+// ✅ CRITICAL: Profile route MUST come BEFORE /:id route
 router.get("/profile", verifyToken, async (req, res) => {
   try {
     console.log("\n🔍 ===== PROFILE ENDPOINT =====");
@@ -903,7 +873,6 @@ router.get("/profile", verifyToken, async (req, res) => {
     console.log("📦 req.userId TYPE:", typeof req.userId);
     console.log("📦 req.user:", req.user);
 
-    // Get userId from middleware
     const userId = req.userId;
 
     if (!userId) {
@@ -915,10 +884,7 @@ router.get("/profile", verifyToken, async (req, res) => {
     }
 
     console.log("🔍 Validating userId:", userId);
-    console.log("🔍 Is string?", typeof userId === "string");
-    console.log("🔍 Length:", userId.length);
 
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       console.error("❌ Invalid ObjectId format:", userId);
       return res.status(400).json({
@@ -934,7 +900,6 @@ router.get("/profile", verifyToken, async (req, res) => {
 
     console.log("✅ ObjectId validation passed");
 
-    // Fetch user from database
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
@@ -980,6 +945,39 @@ router.get("/profile", verifyToken, async (req, res) => {
       success: false,
       message: "Failed to fetch profile",
       error: error.message,
+    });
+  }
+});
+
+// ✅ Generic user fetch by ID - MUST come AFTER /profile
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID format",
+      });
+    }
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      result: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 });
