@@ -157,7 +157,7 @@ const extractPublicId = (url) => {
 
 // ==================== MIDDLEWARE ====================
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -175,21 +175,52 @@ const verifyToken = (req, res, next) => {
     const JWT_SECRET = getJWTSecret();
     console.log("🔑 Verifying token...");
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log("✅ Token verified for user:", decoded.id);
+    console.log("✅ Token decoded:", decoded);
 
-    // ✅ CRITICAL FIX: Set ALL possible user ID fields
+    // ✅ Extract user ID and ENSURE it's a string
+    const userId = decoded.id || decoded._id || decoded.userId;
+    const userIdString = String(userId); // Force to string
+
+    console.log("🆔 User ID from token:", userIdString);
+    console.log("🆔 ID type:", typeof userIdString);
+    console.log("🆔 ID length:", userIdString.length);
+
+    // ✅ Validate it's a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userIdString)) {
+      console.error("❌ Invalid ObjectId format:", userIdString);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID in token",
+      });
+    }
+
+    // ✅ Fetch user from database to verify they exist
+    const user = await User.findById(userIdString).select("-password");
+
+    if (!user) {
+      console.error("❌ User not found:", userIdString);
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    console.log("✅ User found:", user.email);
+
+    // ✅ Set user data on request - ALL as strings
     req.user = {
-      id: decoded.id || decoded._id || decoded.userId,
-      _id: decoded.id || decoded._id || decoded.userId,
-      userId: decoded.id || decoded._id || decoded.userId,
-      email: decoded.email,
-      name: decoded.name,
+      id: userIdString,
+      _id: userIdString,
+      userId: userIdString,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      isApproved: user.isApproved,
     };
 
-    // ✅ ALSO set req.userId for compatibility
-    req.userId = req.user.id;
+    req.userId = userIdString;
 
-    console.log("✅ User set:", { id: req.user.id, email: req.user.email });
+    console.log("✅ User authenticated:", req.user.email);
 
     next();
   } catch (error) {
