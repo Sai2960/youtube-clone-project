@@ -6,7 +6,10 @@ export const verifyToken = async (req, res, next) => {
   console.log("\n🔐 ===== TOKEN VERIFICATION =====");
   console.log("   Path:", req.path);
   console.log("   Method:", req.method);
-  console.log("🔑 JWT_SECRET from env:", process.env.JWT_SECRET?.substring(0, 20) + "...");
+  console.log(
+    "🔑 JWT_SECRET from env:",
+    process.env.JWT_SECRET?.substring(0, 20) + "..."
+  );
   console.log("🔑 JWT_SECRET length:", process.env.JWT_SECRET?.length);
 
   try {
@@ -72,7 +75,7 @@ export const verifyToken = async (req, res, next) => {
       });
     }
 
-    console.log('🔍 Looking up user:', userId);
+    console.log("🔍 Looking up user:", userId);
 
     // Fetch user from database
     const user = await User.findById(userId).select("-password");
@@ -106,16 +109,18 @@ export const verifyToken = async (req, res, next) => {
       userName: req.user.name,
       userEmail: req.user.email,
     });
-    
+
     // ✅ CRITICAL: Verify it's set before calling next()
     if (!req.userId) {
-      console.error("❌ CRITICAL: req.userId is STILL undefined after setting!");
+      console.error(
+        "❌ CRITICAL: req.userId is STILL undefined after setting!"
+      );
       return res.status(500).json({
         success: false,
-        message: "Internal authentication error"
+        message: "Internal authentication error",
       });
     }
-    
+
     console.log("===== VERIFICATION COMPLETE =====\n");
     next();
   } catch (error) {
@@ -153,12 +158,56 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
+// ============ ADMIN CHECK MIDDLEWARE ============
+export const isAdmin = async (req, res, next) => {
+  try {
+    console.log("🔐 Admin check for user:", req.user?.id || req.userId);
+
+    const userId = req.user?.id || req.user?._id || req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.role !== "admin") {
+      console.log("❌ Access denied - Not an admin:", user.email);
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required",
+      });
+    }
+
+    console.log("✅ Admin verified:", user.email);
+    next();
+  } catch (error) {
+    console.error("❌ Admin check error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Authorization check failed",
+      error: error.message,
+    });
+  }
+};
+
 export const checkSubscription = async (req, res, next) => {
   console.log("\n💳 ===== SUBSCRIPTION CHECK =====");
-  
+
   try {
     // Get user ID from multiple possible sources
-    const userId = req.userId || req.user?._id || req.user?.id || req.user?.userId;
+    const userId =
+      req.userId || req.user?._id || req.user?.id || req.user?.userId;
 
     if (!userId) {
       console.log("❌ Invalid user in token");
@@ -204,7 +253,7 @@ export const checkSubscription = async (req, res, next) => {
     console.error("\n❌ ===== SUBSCRIPTION CHECK FAILED =====");
     console.error("❌ Subscription check error:", error);
     console.error("========================================\n");
-    
+
     res.status(500).json({
       success: false,
       message: "Subscription check failed",

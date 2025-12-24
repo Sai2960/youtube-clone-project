@@ -156,10 +156,36 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  isBanned: {
+isBanned: {
     type: Boolean,
     default: false
+  },
+  
+  // ============ ADMIN APPROVAL FIELDS ============
+  isApproved: {
+    type: Boolean,
+    default: false  // New users NOT approved by default
+  },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  approvedAt: {
+    type: Date,
+    default: null
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
   }
+  // ============================================
   
 }, { 
   timestamps: true 
