@@ -898,73 +898,49 @@ router.post(
 );
 router.get("/profile", verifyToken, async (req, res) => {
   try {
-    console.log("🔍 Profile endpoint hit");
-    console.log("📦 req.user:", JSON.stringify(req.user, null, 2));
+    console.log("\n🔍 ===== PROFILE REQUEST =====");
     console.log("📦 req.userId:", req.userId);
+    console.log("📦 req.userId type:", typeof req.userId);
+    console.log("📦 req.user:", JSON.stringify(req.user, null, 2));
 
-    // ✅ DEFENSIVE: Extract user ID from multiple possible sources
-    let userId = req.userId || req.user?.id || req.user?._id?.toString();
-
-    console.log("🆔 Extracted userId:", userId);
-    console.log("🆔 Type:", typeof userId);
+    // ✅ Get userId directly from middleware
+    const userId = req.userId;
 
     if (!userId) {
-      console.error("❌ No user ID found in request");
+      console.error("❌ CRITICAL: req.userId is undefined after middleware!");
+      console.error("   req.user:", req.user);
       return res.status(401).json({
         success: false,
-        message: "Authentication failed - no user ID in token",
+        message: "Authentication failed - no user ID",
       });
     }
 
-    // ✅ CRITICAL: Ensure it's a string, not an object
-    if (typeof userId === "object" && userId !== null) {
-      if (userId.toString) {
-        userId = userId.toString();
-      } else if (userId._id) {
-        userId = userId._id.toString();
-      } else {
-        userId = String(userId);
-      }
-    }
+    console.log("🆔 Using userId:", userId);
 
-    // ✅ Final conversion to string
-    userId = String(userId).trim();
-
-    console.log("🆔 Final userId:", userId);
-    console.log("🆔 Final length:", userId.length);
-
-    // ✅ Validate ObjectId format BEFORE querying
+    // ✅ Validate format
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       console.error("❌ Invalid ObjectId format:", userId);
       return res.status(400).json({
         success: false,
         message: "Invalid user ID format",
-        debug: {
-          receivedId: userId,
-          type: typeof userId,
-        },
+        debug: { userId, type: typeof userId },
       });
     }
 
-    // ✅ Fetch user from database
+    // ✅ Fetch user
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
-      console.error("❌ User not found in database:", userId);
+      console.error("❌ User not found:", userId);
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
-    console.log("✅ User fetched successfully:", {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-      isApproved: user.isApproved,
-    });
+    console.log("✅ User found:", user.email);
+    console.log("===== PROFILE SUCCESS =====\n");
 
-    // ✅ Return complete user profile
     return res.status(200).json({
       success: true,
       user: {
@@ -980,16 +956,14 @@ router.get("/profile", verifyToken, async (req, res) => {
         isApproved: user.isApproved,
         approvalStatus: user.approvalStatus,
         currentPlan: user.currentPlan,
-        watchTimeLimit: user.watchTimeLimit,
         subscribers: user.subscribers,
-        theme: user.theme,
-        preferredOtpMethod: user.preferredOtpMethod,
-        location: user.location,
       },
     });
   } catch (error) {
-    console.error("❌ Profile endpoint error:", error);
-    console.error("Stack trace:", error.stack);
+    console.error("\n❌ ===== PROFILE ERROR =====");
+    console.error("Error:", error);
+    console.error("Stack:", error.stack);
+    console.error("===== ERROR END =====\n");
 
     return res.status(500).json({
       success: false,

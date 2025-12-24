@@ -76,7 +76,7 @@ export const verifyToken = async (req, res, next) => {
     }
 
     // ✅ Convert to string if needed
-    const userIdString = userId.toString ? userId.toString() : String(userId);
+    let userIdString = userId.toString ? userId.toString() : String(userId);
 
     console.log("🔍 Looking up user:", userIdString);
     console.log("🔍 User ID type:", typeof userIdString);
@@ -97,21 +97,21 @@ export const verifyToken = async (req, res, next) => {
       email: user.email,
     });
 
-    // ✅ CRITICAL FIX: Set BOTH req.user AND req.userId SYNCHRONOUSLY
-    req.userId = user._id.toString();
+    // ✅ CRITICAL FIX: Update userIdString with actual user ID from database
+    userIdString = user._id.toString();
+
+    req.userId = userIdString;
     req.user = {
-      _id: user._id,
-      id: user._id.toString(),
+      _id: userIdString, // ✅ Store as string, not ObjectId
+      id: userIdString,
+      userId: userIdString,
       email: user.email,
       name: user.name,
       channelName: user.channelname || user.channelName,
     };
 
-    console.log("✅ Authentication complete:", {
-      userId: req.userId,
-      userName: req.user.name,
-      userEmail: req.user.email,
-    });
+    console.log("✅ req.userId SET TO:", req.userId);
+    console.log("✅ req.user SET TO:", JSON.stringify(req.user));
 
     // ✅ CRITICAL: Verify it's set before calling next()
     if (!req.userId) {
