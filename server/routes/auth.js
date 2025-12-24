@@ -898,40 +898,47 @@ router.post(
 );
 router.get("/profile", verifyToken, async (req, res) => {
   try {
-    console.log("\n🔍 ===== PROFILE REQUEST =====");
+    console.log("\n🔍 ===== PROFILE ENDPOINT =====");
     console.log("📦 req.userId:", req.userId);
-    console.log("📦 req.userId type:", typeof req.userId);
-    console.log("📦 req.user:", JSON.stringify(req.user, null, 2));
+    console.log("📦 req.userId TYPE:", typeof req.userId);
+    console.log("📦 req.user:", req.user);
 
-    // ✅ Get userId directly from middleware
+    // Get userId from middleware
     const userId = req.userId;
 
     if (!userId) {
-      console.error("❌ CRITICAL: req.userId is undefined after middleware!");
-      console.error("   req.user:", req.user);
+      console.error("❌ req.userId is undefined!");
       return res.status(401).json({
         success: false,
         message: "Authentication failed - no user ID",
       });
     }
 
-    console.log("🆔 Using userId:", userId);
+    console.log("🔍 Validating userId:", userId);
+    console.log("🔍 Is string?", typeof userId === "string");
+    console.log("🔍 Length:", userId.length);
 
-    // ✅ Validate format
+    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       console.error("❌ Invalid ObjectId format:", userId);
       return res.status(400).json({
         success: false,
-        message: "Invalid user ID format",
-        debug: { userId, type: typeof userId },
+        message: "Invalid ID format",
+        debug: {
+          userId: userId,
+          type: typeof userId,
+          length: userId?.length,
+        },
       });
     }
 
-    // ✅ Fetch user
+    console.log("✅ ObjectId validation passed");
+
+    // Fetch user from database
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
-      console.error("❌ User not found:", userId);
+      console.error("❌ User not found in database:", userId);
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -956,14 +963,18 @@ router.get("/profile", verifyToken, async (req, res) => {
         isApproved: user.isApproved,
         approvalStatus: user.approvalStatus,
         currentPlan: user.currentPlan,
+        watchTimeLimit: user.watchTimeLimit,
         subscribers: user.subscribers,
+        theme: user.theme,
+        preferredOtpMethod: user.preferredOtpMethod,
+        location: user.location,
       },
     });
   } catch (error) {
     console.error("\n❌ ===== PROFILE ERROR =====");
-    console.error("Error:", error);
+    console.error("Error:", error.message);
     console.error("Stack:", error.stack);
-    console.error("===== ERROR END =====\n");
+    console.error("===========================\n");
 
     return res.status(500).json({
       success: false,

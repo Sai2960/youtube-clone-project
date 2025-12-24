@@ -6,16 +6,10 @@ export const verifyToken = async (req, res, next) => {
   console.log("\n🔐 ===== TOKEN VERIFICATION =====");
   console.log("   Path:", req.path);
   console.log("   Method:", req.method);
-  console.log(
-    "🔑 JWT_SECRET from env:",
-    process.env.JWT_SECRET?.substring(0, 20) + "..."
-  );
-  console.log("🔑 JWT_SECRET length:", process.env.JWT_SECRET?.length);
 
   try {
     const authHeader = req.headers.authorization;
     console.log("📋 Auth header present:", !!authHeader);
-    console.log("   Auth Header:", authHeader ? "Present" : "Missing");
 
     if (!authHeader) {
       console.log("❌ No authorization header");
@@ -25,7 +19,7 @@ export const verifyToken = async (req, res, next) => {
       });
     }
 
-    // Extract token - support both "Bearer " prefix and direct token
+    // Extract token
     const token = authHeader.startsWith("Bearer ")
       ? authHeader.slice(7)
       : authHeader;
@@ -42,32 +36,21 @@ export const verifyToken = async (req, res, next) => {
       "🔍 Token received (first 20 chars):",
       token.substring(0, 20) + "..."
     );
-    console.log("   Token extracted:", token.substring(0, 20) + "...");
 
-    // ✅ CRITICAL: Use the SAME secret that was used to CREATE the token
+    // Verify token
     const JWT_SECRET = process.env.JWT_SECRET;
-
     if (!JWT_SECRET) {
       console.error("❌ JWT_SECRET not configured");
-      throw new Error("❌ JWT_SECRET environment variable is required");
+      throw new Error("JWT_SECRET environment variable is required");
     }
-    console.log("🔑 Verifying with JWT_SECRET");
 
-    // Verify token with JWT secret
     const decoded = jwt.verify(token, JWT_SECRET);
-
     console.log("✅ Token verified successfully");
-    console.log("✅ Token decoded:", {
-      id: decoded.id,
-      _id: decoded._id,
-      userId: decoded.userId,
-      email: decoded.email,
-    });
+    console.log("✅ Decoded token:", decoded);
 
-    // ✅ CRITICAL FIX: Fetch the actual user from database
-    const userId = decoded.id || decoded._id || decoded.userId;
-
-    if (!userId) {
+    // Extract user ID from token
+    const tokenUserId = decoded.id || decoded._id || decoded.userId;
+    if (!tokenUserId) {
       console.log("❌ No user ID in token");
       return res.status(401).json({
         success: false,
@@ -75,14 +58,10 @@ export const verifyToken = async (req, res, next) => {
       });
     }
 
-    // ✅ Convert to string if needed
-    let userIdString = userId.toString ? userId.toString() : String(userId);
-
-    console.log("🔍 Looking up user:", userIdString);
-    console.log("🔍 User ID type:", typeof userIdString);
+    console.log("🔍 Looking up user:", tokenUserId);
 
     // Fetch user from database
-    const user = await User.findById(userIdString).select("-password");
+    const user = await User.findById(tokenUserId).select("-password");
     if (!user) {
       console.log("❌ User not found in database");
       return res.status(401).json({
@@ -91,55 +70,38 @@ export const verifyToken = async (req, res, next) => {
       });
     }
 
-    console.log("✅ User found:", {
-      id: user._id.toString(),
-      name: user.name,
-      email: user.email,
-    });
+    console.log("✅ User found:", user.email);
 
-    // ✅ CRITICAL FIX: Update userIdString with actual user ID from database
-    userIdString = user._id.toString();
+    // ✅ CRITICAL: Set req.userId as a plain string
+    const finalUserId = user._id.toString();
 
-    req.userId = userIdString;
+    req.userId = finalUserId;
     req.user = {
-      _id: userIdString, // ✅ Store as string, not ObjectId
-      id: userIdString,
-      userId: userIdString,
+      _id: finalUserId,
+      id: finalUserId,
+      userId: finalUserId,
       email: user.email,
       name: user.name,
       channelName: user.channelname || user.channelName,
+      role: user.role,
+      isApproved: user.isApproved,
     };
 
-    console.log("✅ req.userId SET TO:", req.userId);
-    console.log("✅ req.user SET TO:", JSON.stringify(req.user));
-
-    // ✅ CRITICAL: Verify it's set before calling next()
-    if (!req.userId) {
-      console.error(
-        "❌ CRITICAL: req.userId is STILL undefined after setting!"
-      );
-      return res.status(500).json({
-        success: false,
-        message: "Internal authentication error",
-      });
-    }
-
+    console.log("✅ FINAL req.userId:", req.userId);
+    console.log("✅ FINAL req.userId TYPE:", typeof req.userId);
+    console.log("✅ FINAL req.user:", req.user);
     console.log("===== VERIFICATION COMPLETE =====\n");
+
     next();
   } catch (error) {
     console.error("\n❌ ===== TOKEN VERIFICATION FAILED =====");
-    console.error("❌ Token verification error:", error.message);
-    console.error("❌ Error name:", error.name);
-    console.error("   Error:", error.message);
+    console.error("Error:", error.message);
     console.error("========================================\n");
 
     if (error.name === "JsonWebTokenError") {
       return res.status(401).json({
         success: false,
         message: "Invalid token. Please login again.",
-        code: "INVALID_TOKEN",
-        error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     }
 
@@ -147,16 +109,12 @@ export const verifyToken = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: "Session expired. Please login again.",
-        code: "TOKEN_EXPIRED",
-        error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     }
 
     return res.status(401).json({
       success: false,
       message: "Authentication failed. Please login again.",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
