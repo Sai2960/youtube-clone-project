@@ -57,6 +57,10 @@ setInterval(() => {
 // EMAIL OTP - WITH DETAILED DEBUGGING
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// EMAIL OTP - USING RESEND SERVICE
+// ═══════════════════════════════════════════════════════════════
+
 const sendEmailOTP = async (req, res) => {
   const requestId = Math.random().toString(36).substring(7);
   
@@ -93,7 +97,7 @@ const sendEmailOTP = async (req, res) => {
     console.log("   OTP:", otp);
     console.log("   Expires:", new Date(otpExpiry).toLocaleString());
 
-    // Initialize Resend
+    // ✅ USE RESEND SERVICE
     const resend = await initResend();
 
     if (!resend) {
@@ -106,19 +110,22 @@ const sendEmailOTP = async (req, res) => {
       });
     }
 
-    // Prepare email
-    const emailData = {
-      from: "YouTube Clone <onboarding@resend.dev>",
-      to: [email],
-      subject: "🔐 Your Login OTP Code",
-      html: `
+    // Send email using Resend
+    console.log(`📤 SENDING EMAIL VIA RESEND [${requestId}]`);
+
+    try {
+      const emailResult = await resend.emails.send({
+        from: "YouTube Clone <onboarding@resend.dev>",
+        to: [email],
+        subject: "🔐 Your Login OTP Code",
+        html: `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f6f9fc;">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
     <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
         <tr>
           <td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px;text-align:center;border-radius:12px 12px 0 0;">
             <div style="font-size:48px;margin-bottom:16px;">🎬</div>
@@ -127,7 +134,7 @@ const sendEmailOTP = async (req, res) => {
         </tr>
         <tr>
           <td style="padding:40px;">
-            <p style="margin:0 0 24px;color:#4a5568;font-size:16px;">Your OTP is:</p>
+            <p style="margin:0 0 24px;color:#4a5568;font-size:16px;">Your OTP code is:</p>
             <table width="100%">
               <tr>
                 <td align="center" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;padding:32px;">
@@ -135,7 +142,13 @@ const sendEmailOTP = async (req, res) => {
                 </td>
               </tr>
             </table>
-            <p style="margin:24px 0 0;color:#718096;font-size:14px;">⏱️ Expires in 5 minutes</p>
+            <p style="margin:24px 0 0;color:#718096;font-size:14px;">⏱️ This code expires in 5 minutes</p>
+            <p style="margin:16px 0 0;color:#718096;font-size:13px;">If you didn't request this code, please ignore this email.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f7fafc;padding:20px;border-top:1px solid #e2e8f0;text-align:center;border-radius:0 0 12px 12px;">
+            <p style="margin:0;color:#a0aec0;font-size:12px;">© ${new Date().getFullYear()} YouTube Clone. All rights reserved.</p>
           </td>
         </tr>
       </table>
@@ -143,25 +156,16 @@ const sendEmailOTP = async (req, res) => {
   </table>
 </body>
 </html>
-      `.trim(),
-    };
-
-    console.log(`📤 ATTEMPTING TO SEND EMAIL [${requestId}]`);
-    console.log("   From:", emailData.from);
-    console.log("   To:", emailData.to);
-    console.log("   Subject:", emailData.subject);
-
-    try {
-      const emailResult = await resend.emails.send(emailData);
+        `.trim(),
+      });
 
       console.log("\n═══════════════════════════════════════");
-      console.log(`✅ RESEND API CALL SUCCESS [${requestId}]`);
-      console.log("   Response:", JSON.stringify(emailResult, null, 2));
+      console.log(`✅ RESEND API RESPONSE [${requestId}]`);
+      console.log(JSON.stringify(emailResult, null, 2));
       console.log("═══════════════════════════════════════\n");
 
-      // Check if email was actually sent
       if (emailResult.data?.id) {
-        console.log(`📬 EMAIL QUEUED FOR DELIVERY [${requestId}]`);
+        console.log(`📬 EMAIL SENT SUCCESSFULLY [${requestId}]`);
         console.log("   Email ID:", emailResult.data.id);
         
         return res.json({
@@ -171,43 +175,28 @@ const sendEmailOTP = async (req, res) => {
             otp, 
             email, 
             requestId,
-            emailId: emailResult.data.id,
-            hint: "Check spam folder if not received"
+            emailId: emailResult.data.id
           },
         });
       } else if (emailResult.error) {
-        console.error(`❌ RESEND RETURNED ERROR [${requestId}]`);
-        console.error("   Error:", JSON.stringify(emailResult.error, null, 2));
+        console.error(`❌ RESEND ERROR [${requestId}]`, emailResult.error);
         
         return res.json({
           success: true,
           message: "OTP generated (email delivery issue)",
           debug: { otp, email, requestId },
-          warning: `Resend error: ${emailResult.error.message}`,
-          hint: "Email may not be verified in Resend test mode",
+          error: emailResult.error.message,
         });
       }
 
     } catch (emailError) {
-      console.error("\n═══════════════════════════════════════");
-      console.error(`❌ EMAIL SENDING ERROR [${requestId}]`);
-      console.error("   Error Type:", emailError.constructor.name);
-      console.error("   Message:", emailError.message);
-      console.error("   Status:", emailError.statusCode);
-      console.error("   Full Error:", JSON.stringify(emailError, null, 2));
-      console.error("═══════════════════════════════════════\n");
-
-      // Return OTP anyway for testing
+      console.error(`❌ EMAIL SEND ERROR [${requestId}]`, emailError);
+      
       return res.json({
         success: true,
-        message: "OTP generated (email failed to send)",
+        message: "OTP generated (email failed)",
         debug: { otp, email, requestId },
-        error: {
-          type: emailError.constructor.name,
-          message: emailError.message,
-          statusCode: emailError.statusCode,
-        },
-        hint: "Use OTP from debug field - email delivery failed",
+        error: emailError.message,
       });
     }
 
@@ -217,11 +206,9 @@ const sendEmailOTP = async (req, res) => {
       success: false,
       error: "Failed to generate OTP",
       details: error.message,
-      requestId,
     });
   }
 };
-
 // ═══════════════════════════════════════════════════════════════
 // SMS OTP (unchanged)
 // ═══════════════════════════════════════════════════════════════
