@@ -1,7 +1,7 @@
-// server/controllers/otp.js - GMAIL SMTP VERSION (FREE FOREVER!)
+// server/controllers/otp.js - BREVO EMAIL (FREE FOREVER!)
 
 import twilio from "twilio";
-import { sendOTPEmail as sendGmailOTP } from "../utils/emailService.js";
+import fetch from "node-fetch";
 
 // ═══════════════════════════════════════════════════════════════
 // OTP STORAGE
@@ -29,7 +29,101 @@ setInterval(() => {
 }, 60000);
 
 // ═══════════════════════════════════════════════════════════════
-// EMAIL OTP - USING GMAIL SMTP (FREE FOREVER!) ✅
+// BREVO EMAIL SERVICE (FREE 300/day!) ✅
+// ═══════════════════════════════════════════════════════════════
+
+const sendBrevoEmail = async (to, otp) => {
+  const apiKey = process.env.BREVO_API_KEY;
+
+  if (!apiKey) {
+    console.error("❌ BREVO_API_KEY not configured");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "api-key": apiKey,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: "YouTube Clone",
+          email: "noreply@yourdomain.com", // Can be anything!
+        },
+        to: [{ email: to }],
+        subject: "🔐 Your Login OTP Code",
+        htmlContent: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f6f9fc;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px;text-align:center;border-radius:16px 16px 0 0;">
+            <div style="font-size:48px;margin-bottom:16px;">🎬</div>
+            <h1 style="margin:0;color:white;font-size:28px;font-weight:700;">YouTube Clone</h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Your verification code is ready</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;">
+            <p style="margin:0 0 24px;color:#1a1a1a;font-size:16px;">Hello! 👋</p>
+            <p style="margin:0 0 32px;color:#4a5568;font-size:15px;line-height:1.6;">
+              Here's your one-time password to sign in. This code expires in <strong>5 minutes</strong>.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;padding:32px;">
+                  <div style="font-size:48px;font-weight:700;color:#fff;letter-spacing:12px;font-family:'Courier New',monospace;text-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                    ${otp}
+                  </div>
+                </td>
+              </tr>
+            </table>
+            <div style="background:#f7fafc;border-left:4px solid #667eea;padding:16px 20px;border-radius:6px;margin-bottom:32px;">
+              <p style="margin:0;color:#2d3748;font-size:14px;">
+                <strong>⏱️ Quick Tip:</strong> Enter this code within 5 minutes to continue.
+              </p>
+            </div>
+            <p style="margin:0;color:#718096;font-size:13px;line-height:1.6;">
+              If you didn't request this code, please ignore this email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f7fafc;padding:20px;border-top:1px solid #e2e8f0;text-align:center;border-radius:0 0 16px 16px;">
+            <p style="margin:0;color:#a0aec0;font-size:12px;">© ${new Date().getFullYear()} YouTube Clone. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.messageId) {
+      return { success: true, messageId: data.messageId };
+    } else {
+      console.error("❌ Brevo error:", data);
+      return { success: false, error: data.message || "Email send failed" };
+    }
+  } catch (error) {
+    console.error("❌ Brevo send error:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// EMAIL OTP - USING BREVO (FREE 300/day!) ✅
 // ═══════════════════════════════════════════════════════════════
 
 const sendEmailOTP = async (req, res) => {
@@ -71,14 +165,14 @@ const sendEmailOTP = async (req, res) => {
     console.log("   OTP:", otp);
     console.log("   Expires:", new Date(otpExpiry).toLocaleString());
 
-    // ✅ Send OTP via Gmail SMTP (FREE FOREVER!)
-    console.log(`📤 SENDING EMAIL VIA GMAIL SMTP [${requestId}]`);
+    // ✅ Send OTP via Brevo (FREE 300/day!)
+    console.log(`📤 SENDING EMAIL VIA BREVO [${requestId}]`);
 
     try {
-      const emailResult = await sendGmailOTP(email, otp, 5);
+      const emailResult = await sendBrevoEmail(email, otp);
 
       console.log("\n═══════════════════════════════════════");
-      console.log(`✅ GMAIL SMTP RESPONSE [${requestId}]`);
+      console.log(`✅ BREVO RESPONSE [${requestId}]`);
       console.log("   Success:", emailResult.success);
       console.log("   Message ID:", emailResult.messageId);
       console.log("═══════════════════════════════════════\n");
@@ -97,7 +191,7 @@ const sendEmailOTP = async (req, res) => {
                   email,
                   requestId,
                   messageId: emailResult.messageId,
-                  provider: "Gmail SMTP",
+                  provider: "Brevo (Sendinblue)",
                 }
               : undefined,
         });
