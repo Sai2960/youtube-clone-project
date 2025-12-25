@@ -25,7 +25,7 @@ export default function LoginPage() {
 
   // State management
   const [step, setStep] = useState<"login" | "otp">("login");
-  const [otpMethod, setOtpMethod] = useState<"email" | "sms">("email");
+  const [otpMethod] = useState<"email" | "sms">("email");
   const [contact, setContact] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,14 +60,13 @@ export default function LoginPage() {
       const data = await checkLocationAndApplyTheme();
 
       if (data) {
-        setOtpMethod(data.otpMethod);
+        // ✅ Don't change OTP method - always use email
         setLocationInfo(data);
 
         console.log("✅ Location detected:", {
           state: data.location.state,
           city: data.location.city,
           theme: data.theme,
-          otpMethod: data.otpMethod,
           time: `${data.currentHour}:${String(data.currentMinute).padStart(
             2,
             "0"
@@ -77,8 +76,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("❌ Location check failed:", error);
-      console.log("⚠️ Falling back to email OTP");
-      setOtpMethod("email");
+      console.log("⚠️ Using email OTP");
     }
   };
 
@@ -467,22 +465,11 @@ export default function LoginPage() {
                     <div className="space-y-2 sm:space-y-3">
                       <div className="relative group">
                         <Input
-                          type={otpMethod === "email" ? "email" : "tel"}
-                          placeholder={
-                            otpMethod === "email"
-                              ? "Email address"
-                              : "Phone number"
-                          }
+                          type="email"
+                          placeholder="Email address"
                           value={contact}
-                          onChange={(e) => {
-                            if (otpMethod === "sms") {
-                              handlePhoneInput(e.target.value);
-                            } else {
-                              setContact(e.target.value);
-                            }
-                          }}
+                          onChange={(e) => setContact(e.target.value)}
                           className="h-12 sm:h-14 px-4 sm:px-5 text-sm sm:text-base border-2 border-gray-300 dark:border-gray-600 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 pr-12"
-                          maxLength={otpMethod === "sms" ? 10 : undefined}
                         />
                         {/* Input Icon */}
                         <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none">
