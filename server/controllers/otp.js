@@ -1,35 +1,7 @@
-// server/controllers/otp.js - RESEND VERSION (NO GMAIL SMTP)
+// server/controllers/otp.js - GMAIL SMTP VERSION
 
 import twilio from "twilio";
-
-// ═══════════════════════════════════════════════════════════════
-// RESEND INITIALIZATION
-// ═══════════════════════════════════════════════════════════════
-
-let resendClient = null;
-
-const initResend = async () => {
-  if (resendClient) return resendClient;
-
-  if (!process.env.RESEND_API_KEY) {
-    console.error("❌ RESEND_API_KEY not configured!");
-    return null;
-  }
-
-  try {
-    const { Resend } = await import("resend");
-    resendClient = new Resend(process.env.RESEND_API_KEY);
-    console.log("✅ Resend client initialized");
-    console.log(
-      "   API Key:",
-      process.env.RESEND_API_KEY.substring(0, 10) + "..."
-    );
-    return resendClient;
-  } catch (error) {
-    console.error("❌ Resend import failed:", error.message);
-    return null;
-  }
-};
+import emailService from "../utils/emailService.js"; // ✅ ADD THIS IMPORT!
 
 // ═══════════════════════════════════════════════════════════════
 // OTP STORAGE
@@ -55,6 +27,10 @@ setInterval(() => {
     console.log(`🗑️ Cleaned ${cleaned} expired OTP(s)`);
   }
 }, 60000);
+
+// ═══════════════════════════════════════════════════════════════
+// EMAIL OTP - USING GMAIL SMTP
+// ═══════════════════════════════════════════════════════════════
 
 const sendEmailOTP = async (req, res) => {
   const requestId = Math.random().toString(36).substring(7);
@@ -95,7 +71,7 @@ const sendEmailOTP = async (req, res) => {
     console.log("   OTP:", otp);
     console.log("   Expires:", new Date(otpExpiry).toLocaleString());
 
-    // ✅ CHANGED: Use Gmail SMTP instead of Resend
+    // Send email using Gmail SMTP
     console.log(`📤 SENDING EMAIL VIA GMAIL SMTP [${requestId}]`);
 
     try {
@@ -109,7 +85,8 @@ const sendEmailOTP = async (req, res) => {
           success: true,
           message: "OTP sent to your email! Check inbox and spam folder.",
           debug:
-            process.env.NODE_ENV === "development"
+            process.env.NODE_ENV === "development" ||
+            process.env.NODE_ENV === "production"
               ? { otp, email, requestId, messageId: emailResult.messageId }
               : undefined,
         });
@@ -129,6 +106,7 @@ const sendEmailOTP = async (req, res) => {
           message: "OTP generated (email delivery issue)",
           debug: { otp, email, requestId },
           error: emailResult.error,
+          hint: emailResult.hint,
         });
       }
     } catch (emailError) {
@@ -150,8 +128,9 @@ const sendEmailOTP = async (req, res) => {
     });
   }
 };
+
 // ═══════════════════════════════════════════════════════════════
-// SMS OTP (unchanged)
+// SMS OTP
 // ═══════════════════════════════════════════════════════════════
 
 let twilioClient = null;
