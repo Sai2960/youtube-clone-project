@@ -134,11 +134,13 @@ const handleSendOTP = async () => {
     return;
   }
 
+  // ✅ NO EMAIL RESTRICTIONS - Works for ANY email now!
+
   setLoading(true);
   try {
     console.log("📤 Sending OTP to:", contact);
     
-    // ✅ CRITICAL FIX: Direct fetch call
+    // ✅ Direct fetch call to backend
     const response = await fetch(`${API_URL}/api/otp/send-email-otp`, {
       method: "POST",
       headers: {
@@ -156,22 +158,21 @@ const handleSendOTP = async () => {
       setCountdown(60);
       setStep("otp");
 
-      // Show OTP in console for testing
+      // Show OTP in console for testing (development only)
       if (result.debug?.otp) {
         console.log("🔐 YOUR TEST OTP:", result.debug.otp);
-        toast.info(`Test OTP: ${result.debug.otp}`, { duration: 10000 });
       }
     } else {
       toast.error(result.error || "Failed to send OTP");
     }
   } catch (error: any) {
     console.error("❌ Error:", error);
-    toast.error("Failed to send OTP. Check console for details.");
+    toast.error("Failed to send OTP. Please try again.");
   } finally {
     setLoading(false);
   }
 };
-// Handle Verify OTP - DEBUGGING VERSION
+
 const handleVerifyOTP = async () => {
   if (!otp.trim()) {
     toast.error("Please enter OTP");
@@ -224,14 +225,19 @@ const handleVerifyOTP = async () => {
     localStorage.setItem("token", loginData.token);
     localStorage.setItem("user", JSON.stringify(loginData.user));
 
+    // ✅ FIX: Update AuthContext state manually
+    if (typeof window !== 'undefined') {
+      // Dispatch storage event to trigger AuthContext update
+      window.dispatchEvent(new Event('storage'));
+    }
+
     toast.success(`Welcome ${loginData.user.name}!`);
 
-    // Step 4: Force redirect to home page
+    // Step 4: Force page reload to trigger AuthContext
     console.log("🏠 Redirecting to home...");
     
-    // ✅ CRITICAL FIX: Use window.location for guaranteed redirect
     setTimeout(() => {
-      window.location.href = "/";
+      window.location.replace("/"); // Use replace instead of href
     }, 500);
 
   } catch (error: any) {
