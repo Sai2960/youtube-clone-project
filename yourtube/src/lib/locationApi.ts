@@ -1,8 +1,10 @@
-// youtube/src/lib/locationApi.ts - COMPLETE MERGED VERSION
-import axios from 'axios';
-import { applyTheme } from './theme';
+// youtube/src/lib/locationApi.ts - FIXED VERSION
+import axios from "axios";
+import { applyTheme } from "./theme";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://youtube-clone-project-q3pd.onrender.com";
 
 export interface LocationData {
   success: boolean;
@@ -17,8 +19,8 @@ export interface LocationData {
       longitude: number;
     };
   };
-  theme: 'light' | 'dark';
-  otpMethod: 'email' | 'sms';
+  theme: "light" | "dark";
+  otpMethod: "email" | "sms";
   isSouthIndia: boolean;
   currentHour: number;
   currentMinute: number;
@@ -32,93 +34,148 @@ export interface LocationData {
  */
 export async function checkLocationAndApplyTheme(): Promise<LocationData | null> {
   try {
-    console.log('🌍 Checking location and theme...');
-    
+    console.log("🌍 Checking location and theme...");
+
     const response = await axios.get<LocationData>(
       `${API_URL}/api/location/check-location`
     );
-    
+
     const data = response.data;
-    
-    console.log('✅ Location data received:', {
+
+    console.log("✅ Location data received:", {
       state: data.location.state,
       city: data.location.city,
       theme: data.theme,
       otpMethod: data.otpMethod,
       currentTime: `${data.currentHour}:${data.currentMinute}`,
       isMorningTime: data.isMorningTime,
-      isSouthIndia: data.isSouthIndia
+      isSouthIndia: data.isSouthIndia,
     });
-    
-    // ✅ Apply theme immediately
-    console.log('🎨 Applying location-based theme:', data.theme);
+
+    console.log("🎨 Applying location-based theme:", data.theme);
     applyTheme(data.theme);
-    
+
     return data;
-    
   } catch (error) {
-    console.error('❌ Location check failed:', error);
-    
-    // Fallback to dark theme
-    console.log('⚠️ Using fallback dark theme');
-    applyTheme('dark');
-    
+    console.error("❌ Location check failed:", error);
+    console.log("⚠️ Using fallback dark theme");
+    applyTheme("dark");
     return null;
   }
 }
 
 /**
- * 📧 Send OTP based on detected method
+ * 📧 Send OTP - FIXED VERSION
  */
 export async function sendOTP(
-  method: 'email' | 'sms', 
+  method: "email" | "sms",
   contact: string
-): Promise<{ success: boolean; message?: string; error?: string; debug?: any }> {
+): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+  debug?: any;
+}> {
   try {
-    const endpoint = method === 'email' 
-      ? '/api/otp/send-email-otp' 
-      : '/api/otp/send-sms-otp';
-    
-    const payload = method === 'email' 
-      ? { email: contact } 
-      : { phoneNumber: contact };
-    
-    console.log('📤 Sending OTP:', { endpoint, method, contact });
-    
-    const response = await axios.post(`${API_URL}${endpoint}`, payload);
-    
-    console.log('✅ OTP sent successfully');
-    
+    console.log("═══════════════════════════════════════");
+    console.log("📤 SEND OTP - LOCATIONAPI.TS");
+    console.log("   Method:", method);
+    console.log("   Contact:", contact);
+    console.log("   API URL:", API_URL);
+    console.log("═══════════════════════════════════════");
+
+    const endpoint =
+      method === "email"
+        ? `${API_URL}/api/otp/send-email-otp`
+        : `${API_URL}/api/otp/send-sms-otp`;
+
+    const payload =
+      method === "email" ? { email: contact } : { phoneNumber: contact };
+
+    console.log("📡 Making request to:", endpoint);
+    console.log("📦 Payload:", payload);
+
+    const response = await axios.post(endpoint, payload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      timeout: 30000, // 30 second timeout
+    });
+
+    console.log("═══════════════════════════════════════");
+    console.log("✅ OTP RESPONSE RECEIVED");
+    console.log("   Status:", response.status);
+    console.log("   Data:", response.data);
+    console.log("═══════════════════════════════════════");
+
     return response.data;
-    
   } catch (error: any) {
-    console.error('❌ Send OTP failed:', error.response?.data || error.message);
-    throw error;
+    console.log("═══════════════════════════════════════");
+    console.error("❌ SEND OTP ERROR - LOCATIONAPI.TS");
+    console.error("   Error Message:", error.message);
+    console.error("   Response Status:", error.response?.status);
+    console.error("   Response Data:", error.response?.data);
+    console.error("   Full Error:", error);
+    console.log("═══════════════════════════════════════");
+
+    return {
+      success: false,
+      error:
+        error.response?.data?.error || error.message || "Failed to send OTP",
+    };
   }
 }
 
 /**
- * 🔐 Verify OTP
+ * 🔐 Verify OTP - FIXED VERSION
  */
 export async function verifyOTP(
-  contact: string, 
+  contact: string,
   otp: string
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
-    console.log('🔐 Verifying OTP:', { contact, otp: otp.substring(0, 2) + '****' });
-    
-    const response = await axios.post(`${API_URL}/api/otp/verify-otp`, {
-      contact,
-      otp
-    });
-    
-    console.log('✅ OTP verified successfully');
-    
+    console.log("═══════════════════════════════════════");
+    console.log("🔐 VERIFY OTP - LOCATIONAPI.TS");
+    console.log("   Contact:", contact);
+    console.log("   OTP:", otp.substring(0, 2) + "****");
+    console.log("═══════════════════════════════════════");
+
+    const response = await axios.post(
+      `${API_URL}/api/otp/verify-otp`,
+      {
+        contact,
+        otp,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      }
+    );
+
+    console.log("═══════════════════════════════════════");
+    console.log("✅ VERIFY OTP RESPONSE");
+    console.log("   Status:", response.status);
+    console.log("   Data:", response.data);
+    console.log("═══════════════════════════════════════");
+
     return response.data;
-    
   } catch (error: any) {
-    console.error('❌ OTP verification failed:', error.response?.data || error.message);
-    throw error;
+    console.log("═══════════════════════════════════════");
+    console.error("❌ VERIFY OTP ERROR - LOCATIONAPI.TS");
+    console.error("   Error Message:", error.message);
+    console.error("   Response Status:", error.response?.status);
+    console.error("   Response Data:", error.response?.data);
+    console.log("═══════════════════════════════════════");
+
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        "OTP verification failed",
+    };
   }
 }
 
@@ -126,46 +183,42 @@ export async function verifyOTP(
  * 🧪 Test all location endpoints (for debugging)
  */
 export async function testLocationEndpoints() {
-  console.log('🧪 Testing location endpoints...\n');
-  
+  console.log("🧪 Testing location endpoints...\n");
+
   try {
-    // Test 1: Check location
-    console.log('Test 1: Current location');
+    console.log("Test 1: Current location");
     const location = await axios.get(`${API_URL}/api/location/check-location`);
-    console.log('✅ Result:', location.data);
-    
-    // Test 2: Tamil Nadu at 11 AM
-    console.log('\nTest 2: Tamil Nadu at 11 AM');
+    console.log("✅ Result:", location.data);
+
+    console.log("\nTest 2: Tamil Nadu at 11 AM");
     const tamilNadu = await axios.get(
       `${API_URL}/api/location/test-theme?state=Tamil Nadu&hour=11`
     );
-    console.log('✅ Result:', tamilNadu.data);
-    
-    // Test 3: Maharashtra at 11 AM
-    console.log('\nTest 3: Maharashtra at 11 AM');
+    console.log("✅ Result:", tamilNadu.data);
+
+    console.log("\nTest 3: Maharashtra at 11 AM");
     const maharashtra = await axios.get(
       `${API_URL}/api/location/test-theme?state=Maharashtra&hour=11`
     );
-    console.log('✅ Result:', maharashtra.data);
-    
-    // Test 4: Kerala at 3 PM
-    console.log('\nTest 4: Kerala at 3 PM (afternoon)');
+    console.log("✅ Result:", maharashtra.data);
+
+    console.log("\nTest 4: Kerala at 3 PM (afternoon)");
     const kerala = await axios.get(
       `${API_URL}/api/location/test-theme?state=Kerala&hour=15`
     );
-    console.log('✅ Result:', kerala.data);
-    
-    console.log('\n✅ All tests passed!');
-    
+    console.log("✅ Result:", kerala.data);
+
+    console.log("\n✅ All tests passed!");
+
     return true;
   } catch (error) {
-    console.error('❌ Test failed:', error);
+    console.error("❌ Test failed:", error);
     return false;
   }
 }
 
 // Export for use in browser console
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).testLocationEndpoints = testLocationEndpoints;
   (window as any).checkLocationAndApplyTheme = checkLocationAndApplyTheme;
 }
