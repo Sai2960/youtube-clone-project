@@ -436,28 +436,73 @@ export const UserProvider = ({ children }) => {
   }, [login, logout]);
 
   // ============================================================================
-  // STORAGE EVENT LISTENER
-  // ============================================================================
+// STORAGE EVENT LISTENER - ENHANCED FOR OTP
+// ============================================================================
 
-  useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key === "user" && event.newValue) {
-        try {
-          const updatedUser = JSON.parse(event.newValue);
-          setUser(updatedUser);
-        } catch (error) {
-          console.error("❌ Failed to parse synced user:", error);
-        }
-      } else if (event.key === "user" && !event.newValue) {
-        setUser(null);
-      } else if (event.key === "token") {
-        window.dispatchEvent(new Event("tokenUpdated"));
+useEffect(() => {
+  const handleStorageChange = (event) => {
+    console.log("💾 Storage event detected:", event?.key);
+    
+    // ✅ Handle user data changes
+    if (event?.key === "user" && event.newValue) {
+      try {
+        const updatedUser = JSON.parse(event.newValue);
+        console.log("✅ User synced from storage:", updatedUser.email);
+        setUser(updatedUser);
+      } catch (error) {
+        console.error("❌ Failed to parse synced user:", error);
       }
-    };
+    } 
+    // ✅ Handle user logout
+    else if (event?.key === "user" && !event.newValue) {
+      console.log("🚪 User cleared from storage");
+      setUser(null);
+    } 
+    // ✅ Handle token changes
+    else if (event?.key === "token") {
+      console.log("🔑 Token updated");
+      window.dispatchEvent(new Event("tokenUpdated"));
+    }
+    // ✅ NEW: Handle manual storage events (for OTP login)
+    else if (!event?.key) {
+      console.log("📢 Manual storage event - checking for user data");
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+      
+      if (token && userStr) {
+        try {
+          const userData = JSON.parse(userStr);
+          console.log("✅ Loading user from manual event:", userData.email);
+          setUser(userData);
+        } catch (error) {
+          console.error("❌ Failed to parse user from manual event:", error);
+        }
+      }
+    }
+  };
 
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  window.addEventListener("storage", handleStorageChange);
+  
+  // ✅ CRITICAL: Also check on mount
+  const checkStorageOnMount = () => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+    
+    if (token && userStr && !user) {
+      try {
+        const userData = JSON.parse(userStr);
+        console.log("✅ Found stored user on mount:", userData.email);
+        setUser(userData);
+      } catch (error) {
+        console.error("❌ Failed to parse stored user on mount:", error);
+      }
+    }
+  };
+  
+  checkStorageOnMount();
+  
+  return () => window.removeEventListener("storage", handleStorageChange);
+}, [user]); // ✅ Added dependency
 
   // ============================================================================
   // TOKEN UPDATED LISTENER
