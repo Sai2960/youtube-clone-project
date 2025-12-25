@@ -170,6 +170,99 @@ const sendEmailOTP = async (req, res) => {
   }
 };
 
+// ✅ FIXED: Send SMS OTP
+const sendSMSOTP = async (req, res) => {
+  try {
+    let { phoneNumber } = req.body;
+
+    console.log("📱 Send SMS OTP request for:", phoneNumber);
+
+    if (!phoneNumber) {
+      return res.status(400).json({
+        success: false,
+        error: "Phone number is required",
+      });
+    }
+
+    // Format to E.164
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    console.log("📞 Formatted:", formattedPhone);
+
+    const phoneRegex = /^\+[1-9]\d{1,14}$/;
+    if (!phoneRegex.test(formattedPhone)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid phone format. Use: 9876543210 or +919876543210",
+      });
+    }
+
+    const otp = generateOTP();
+    const otpExpiry = Date.now() + 300000;
+
+    // ✅ Store with BOTH formats FIRST
+    otpStore.set(phoneNumber, { otp, expiry: otpExpiry });
+    otpStore.set(formattedPhone, { otp, expiry: otpExpiry });
+    console.log(`✅ OTP stored for ${formattedPhone}: ${otp}`);
+
+    // ✅ Log OTP prominently
+    console.log("═══════════════════════════════════════");
+    console.log("📱 SMS OTP GENERATED");
+    console.log(`   Phone: ${phoneNumber}`);
+    console.log(`   Formatted: ${formattedPhone}`);
+    console.log(`   OTP: ${otp}`);
+    console.log(`   Valid until: ${new Date(otpExpiry).toLocaleString()}`);
+    console.log("═══════════════════════════════════════");
+
+    const client = initTwilioClient();
+
+    // If no Twilio, return success immediately
+    if (!client) {
+      console.log("⚠️ Twilio not configured - OTP logged above");
+      return res.json({
+        success: true,
+        message: "OTP generated successfully (check server console)",
+        debug: { phoneNumber, formattedPhone, otp },
+      });
+    }
+
+    // Try SMS in background
+    setImmediate(async () => {
+      try {
+        await client.messages.create({
+          body: `Your YouTube Clone OTP is: ${otp}. Valid for 5 minutes.`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: formattedPhone,
+        });
+        console.log("✅ SMS sent successfully to:", formattedPhone);
+      } catch (smsError) {
+        console.error("⚠️ SMS send error (OTP still valid):", smsError.message);
+      }
+    });
+
+    // Return success immediately with OTP in debug
+    return res.json({
+      success: true,
+      message: "OTP generated successfully",
+      debug: {
+        otp,
+        phoneNumber,
+        formattedPhone,
+        expiresIn: "5 minutes",
+      },
+    });
+  } catch (error) {
+    console.error("❌ SMS OTP error:", error);
+
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to generate OTP",
+        details: error.message,
+      });
+    }
+  }
+};
+
 // ✅ FIXED: Verify OTP
 const verifyOTP = async (req, res) => {
   try {
@@ -263,6 +356,7 @@ const getOTPStore = () => otpStore;
 
 export default {
   sendEmailOTP,
+  sendSMSOTP,
   verifyOTP,
   getOTPStore,
 };
