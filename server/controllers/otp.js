@@ -71,7 +71,7 @@ setInterval(() => {
   }
 }, 60000); // Run every 60 seconds
 // ═══════════════════════════════════════════════════════════════
-// EMAIL OTP - PRIMARY METHOD (RESEND INTEGRATION)
+// EMAIL OTP - PRIMARY METHOD (RESEND INTEGRATION) - FIXED
 // ═══════════════════════════════════════════════════════════════
 
 const sendEmailOTP = async (req, res) => {
@@ -81,6 +81,7 @@ const sendEmailOTP = async (req, res) => {
     console.log("═══════════════════════════════════════");
     console.log("📧 EMAIL OTP REQUEST");
     console.log("   Email:", email);
+    console.log("   Timestamp:", new Date().toISOString());
     console.log("═══════════════════════════════════════");
 
     if (!email) {
@@ -108,45 +109,113 @@ const sendEmailOTP = async (req, res) => {
     console.log("✅ OTP STORED");
     console.log("   Email:", email);
     console.log("   OTP:", otp);
-    console.log("   Total stored:", otpStore.size);
+    console.log("   Expires:", new Date(otpExpiry).toISOString());
 
-    // Send email in background (non-blocking)
-    const Resend = (await import("resend")).Resend;
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    // ✅ CRITICAL FIX: Import and use Resend properly
+    try {
+      const { Resend } = await import("resend");
 
-    resend.emails
-      .send({
-        from: "onboarding@resend.dev",
+      if (!process.env.RESEND_API_KEY) {
+        console.error("❌ RESEND_API_KEY not configured!");
+        console.log("⚠️ OTP generated but email cannot be sent");
+
+        return res.json({
+          success: true,
+          message: "OTP generated (email service not configured)",
+          debug: { otp, email }, // For testing
+          warning: "Email service not configured - check server logs",
+        });
+      }
+
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
+      console.log("📤 Sending email via Resend...");
+
+      const emailResult = await resend.emails.send({
+        from: "YouTube Clone <onboarding@resend.dev>",
         to: [email],
-        subject: "🔐 Your Login OTP",
+        subject: "🔐 Your Login OTP Code",
         html: `
-        <div style="font-family: Arial; max-width: 600px; margin: 0 auto; padding: 40px;">
-          <h1 style="color: #667eea;">Your OTP Code</h1>
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                      padding: 30px; border-radius: 10px; text-align: center; margin: 30px 0;">
-            <span style="font-size: 48px; font-weight: bold; color: white; letter-spacing: 10px;">
-              ${otp}
-            </span>
-          </div>
-          <p>This code expires in 5 minutes.</p>
-        </div>
-      `,
-      })
-      .then(() => {
-        console.log("✅ EMAIL SENT SUCCESSFULLY");
-      })
-      .catch((error) => {
-        console.error("⚠️ Email error:", error.message);
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f6f9fc;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width: 600px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; border-radius: 12px 12px 0 0;">
+              <div style="font-size: 48px; margin-bottom: 16px;">🎬</div>
+              <h1 style="margin: 0; color: white; font-size: 28px;">YouTube Clone</h1>
+              <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9);">Your verification code</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 24px; color: #4a5568; font-size: 16px;">
+                Your one-time password is:
+              </p>
+              <table width="100%" style="margin-bottom: 32px;">
+                <tr>
+                  <td align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 32px;">
+                    <div style="font-size: 48px; font-weight: bold; color: white; letter-spacing: 12px; font-family: monospace;">
+                      ${otp}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 0; color: #718096; font-size: 14px;">
+                ⏱️ This code expires in <strong>5 minutes</strong>.
+              </p>
+              <p style="margin: 16px 0 0; color: #a0aec0; font-size: 13px;">
+                If you didn't request this, please ignore this email.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f7fafc; padding: 24px; text-align: center; border-radius: 0 0 12px 12px;">
+              <p style="margin: 0; color: #a0aec0; font-size: 12px;">
+                © ${new Date().getFullYear()} YouTube Clone
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+        `,
       });
 
-    // Return success immediately (don't wait for email)
-    return res.json({
-      success: true,
-      message: "OTP generated successfully",
-      debug: { otp, email }, // For testing
-    });
+      console.log("═══════════════════════════════════════");
+      console.log("✅ EMAIL SENT SUCCESSFULLY");
+      console.log("   Email ID:", emailResult.data?.id);
+      console.log("   To:", email);
+      console.log("═══════════════════════════════════════");
+
+      return res.json({
+        success: true,
+        message: "OTP sent to your email!",
+        debug: { otp, email }, // For testing - remove in production
+      });
+    } catch (emailError) {
+      console.error("❌ EMAIL SENDING ERROR:", emailError);
+
+      // OTP is still stored, so return success
+      return res.json({
+        success: true,
+        message: "OTP generated",
+        debug: { otp, email },
+        warning: `Email error: ${emailError.message}`,
+      });
+    }
   } catch (error) {
-    console.error("❌ ERROR:", error);
+    console.error("❌ CRITICAL ERROR:", error);
     return res.status(500).json({
       success: false,
       error: "Failed to generate OTP",
