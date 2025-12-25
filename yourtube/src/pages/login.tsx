@@ -121,176 +121,197 @@ export default function LoginPage() {
   };
 
   // Handle Send OTP
-  const handleSendOTP = async () => {
-    if (!contact.trim()) {
-      toast.error(
-        `Please enter your ${otpMethod === "email" ? "email" : "phone number"}`
+// Handle Send OTP - DEBUGGING VERSION
+const handleSendOTP = async () => {
+  if (!contact.trim()) {
+    toast.error(
+      `Please enter your ${otpMethod === "email" ? "email" : "phone number"}`
+    );
+    return;
+  }
+
+  // Validate email
+  if (otpMethod === "email") {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(contact)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (contact.includes("test") || contact.includes("example")) {
+      toast.error("Please use a real email address (not test/example)");
+      return;
+    }
+  }
+
+  // Validate phone
+  if (otpMethod === "sms") {
+    const cleaned = contact.replace(/\D/g, "");
+    if (cleaned.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+  }
+
+  setLoading(true);
+  try {
+    // ✅ CRITICAL DEBUGGING
+    console.log("════════════════════════════════════════");
+    console.log("📤 SENDING OTP - FRONTEND DEBUG");
+    console.log("   Method:", otpMethod);
+    console.log("   Contact:", contact);
+    console.log("   Contact Length:", contact.length);
+    console.log("   Contact Trimmed:", contact.trim());
+    console.log("   API URL:", API_URL);
+    console.log("════════════════════════════════════════");
+
+    const result = await sendOTPApi(otpMethod, contact);
+
+    console.log("════════════════════════════════════════");
+    console.log("✅ OTP RESPONSE - FRONTEND DEBUG");
+    console.log("   Success:", result.success);
+    console.log("   Message:", result.message);
+    console.log("   Debug OTP:", result.debug?.otp);
+    console.log("   Email Sent:", result.debug?.emailSent);
+    console.log("   Email Error:", result.debug?.emailError);
+    console.log("════════════════════════════════════════");
+
+    if (result.success) {
+      toast.success(
+        `OTP sent to your ${otpMethod === "email" ? "email" : "phone"}!`
       );
+      setCountdown(60);
+      setStep("otp");
+
+      if (result.debug?.otp) {
+        console.log("🔐 YOUR OTP CODE:", result.debug.otp);
+        toast.info(`Test OTP: ${result.debug.otp}`, { duration: 10000 });
+      }
+    } else {
+      toast.error(result.error || "Failed to send OTP");
+    }
+  } catch (error: any) {
+    console.error("❌ Send OTP error:", error);
+    console.error("   Error Response:", error.response?.data);
+    const errorMsg =
+      error.response?.data?.error ||
+      error.response?.data?.details ||
+      "Failed to send OTP";
+    toast.error(errorMsg);
+  } finally {
+    setLoading(false);
+  }
+};
+// Handle Verify OTP - DEBUGGING VERSION
+const handleVerifyOTP = async () => {
+  if (!otp.trim()) {
+    toast.error("Please enter OTP");
+    return;
+  }
+
+  if (otp.length !== 6) {
+    toast.error("OTP must be 6 digits");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    console.log("════════════════════════════════════════");
+    console.log("🔐 VERIFYING OTP - FRONTEND DEBUG");
+    console.log("   Contact:", contact);
+    console.log("   OTP:", otp);
+    console.log("   API URL:", API_URL);
+    console.log("════════════════════════════════════════");
+
+    // Step 1: Verify OTP with backend
+    const verifyResult = await verifyOTPApi(contact, otp);
+
+    console.log("════════════════════════════════════════");
+    console.log("📋 VERIFY RESPONSE - FRONTEND DEBUG");
+    console.log("   Success:", verifyResult.success);
+    console.log("   Error:", verifyResult.error);
+    console.log("════════════════════════════════════════");
+
+    if (!verifyResult.success) {
+      toast.error(verifyResult.error || "Invalid OTP");
       return;
     }
 
-    // Validate email
-    if (otpMethod === "email") {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(contact)) {
-        toast.error("Please enter a valid email address");
-        return;
-      }
+    console.log("✅ OTP verified successfully");
+    toast.success("OTP verified! Logging you in...");
 
-      if (contact.includes("test") || contact.includes("example")) {
-        toast.error("Please use a real email address (not test/example)");
-        return;
-      }
-    }
+    // Step 2: Login/Create user with OTP
+    console.log("🔑 Step 2: Logging in user...");
 
-    // Validate phone
-    if (otpMethod === "sms") {
-      const cleaned = contact.replace(/\D/g, "");
-      if (cleaned.length !== 10) {
-        toast.error("Please enter a valid 10-digit phone number");
-        return;
-      }
-    }
+    const loginResponse = await fetch(`${API_URL}/auth/otp-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contact: contact,
+        contactType: otpMethod,
+      }),
+    });
 
-    setLoading(true);
-    try {
-      console.log("📤 Sending OTP via", otpMethod, "to:", contact);
+    const loginData = await loginResponse.json();
+    console.log("📦 Login response:", loginData);
 
-      const result = await sendOTPApi(otpMethod, contact);
-
-      if (result.success) {
-        toast.success(
-          `OTP sent to your ${otpMethod === "email" ? "email" : "phone"}!`
-        );
-        setCountdown(60);
-        setStep("otp");
-
-        if (result.debug?.otp && process.env.NODE_ENV === "development") {
-          console.log("🔐 TEST OTP:", result.debug.otp);
-          toast.info(`Test OTP: ${result.debug.otp}`, { duration: 10000 });
-        }
-      } else {
-        toast.error(result.error || "Failed to send OTP");
-      }
-    } catch (error: any) {
-      console.error("❌ Send OTP error:", error);
-      const errorMsg =
-        error.response?.data?.error ||
-        error.response?.data?.details ||
-        "Failed to send OTP";
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle Verify OTP
-  // ✅ COMPLETE REPLACEMENT for handleVerifyOTP function
-  const handleVerifyOTP = async () => {
-    if (!otp.trim()) {
-      toast.error("Please enter OTP");
+    if (!loginData.success) {
+      toast.error(loginData.error || "Login failed");
       return;
     }
 
-    if (otp.length !== 6) {
-      toast.error("OTP must be 6 digits");
+    if (!loginData.token) {
+      toast.error("No authentication token received");
       return;
     }
 
-    setLoading(true);
-    try {
-      console.log("🔐 Step 1: Verifying OTP...");
+    // Step 3: Store authentication data
+    console.log("💾 Step 3: Storing auth data...");
+    localStorage.setItem("token", loginData.token);
+    localStorage.setItem("user", JSON.stringify(loginData.user));
 
-      // Step 1: Verify OTP with backend
-      const verifyResult = await verifyOTPApi(contact, otp);
+    console.log("✅ User logged in:", loginData.user.name);
 
-      if (!verifyResult.success) {
-        toast.error(verifyResult.error || "Invalid OTP");
-        return;
-      }
-
-      console.log("✅ OTP verified successfully");
-      toast.success("OTP verified! Logging you in...");
-
-      // Step 2: Login/Create user with OTP
-      console.log("🔑 Step 2: Logging in user...");
-
-      const loginResponse = await fetch(`${API_URL}/auth/otp-login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contact: contact,
-          contactType: otpMethod, // 'email' or 'sms'
-        }),
+    // Check approval status
+    if (loginData.user.isApproved === false) {
+      toast.warning("⏳ Account Pending Approval", {
+        description:
+          "Your account is being reviewed by an administrator.",
+        duration: 8000,
       });
-
-      const loginData = await loginResponse.json();
-      console.log("📦 Login response:", loginData);
-
-      if (!loginData.success) {
-        toast.error(loginData.error || "Login failed");
-        return;
-      }
-
-      if (!loginData.token) {
-        toast.error("No authentication token received");
-        return;
-      }
-
-      // Step 3: Store authentication data
-      console.log("💾 Step 3: Storing auth data...");
-      localStorage.setItem("token", loginData.token);
-      localStorage.setItem("user", JSON.stringify(loginData.user));
-
-      console.log("✅ User logged in:", loginData.user.name);
-
-      // Check approval status
-      if (loginData.user.isApproved === false) {
-        toast.warning("⏳ Account Pending Approval", {
-          description:
-            "Your account is being reviewed by an administrator. You'll be notified once approved.",
-          duration: 8000,
-        });
-      } else {
-        toast.success(`Welcome ${loginData.user.name}!`, {
-          duration: 3000,
-          icon: "🎉",
-        });
-      }
-
-      // Step 4: Apply theme
-      if (locationInfo?.theme) {
-        console.log("🎨 Step 4: Applying theme:", locationInfo.theme);
-        await checkLocationAndApplyTheme();
-      }
-
-      // Step 5: Redirect to home or return URL
-      console.log("🏠 Step 5: Redirecting...");
-      const returnUrl = (router.query.returnUrl as string) || "/";
-
-      setTimeout(() => {
-        router.push(returnUrl);
-      }, 500);
-    } catch (error: any) {
-      console.error("❌ OTP verification/login error:", error);
-
-      // Better error messages
-      let errorMsg = "Something went wrong";
-
-      if (error.response?.data?.error) {
-        errorMsg = error.response.data.error;
-      } else if (error.message) {
-        errorMsg = error.message;
-      }
-
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
+    } else {
+      toast.success(`Welcome ${loginData.user.name}!`, {
+        duration: 3000,
+        icon: "🎉",
+      });
     }
-  };
 
+    // Step 4: Redirect
+    console.log("🏠 Step 4: Redirecting...");
+    const returnUrl = (router.query.returnUrl as string) || "/";
+
+    setTimeout(() => {
+      router.push(returnUrl);
+    }, 500);
+  } catch (error: any) {
+    console.error("❌ OTP verification/login error:", error);
+    console.error("   Error Response:", error.response?.data);
+
+    let errorMsg = "Something went wrong";
+
+    if (error.response?.data?.error) {
+      errorMsg = error.response.data.error;
+    } else if (error.message) {
+      errorMsg = error.message;
+    }
+
+    toast.error(errorMsg);
+  } finally {
+    setLoading(false);
+  }
+};
   // Handle phone input formatting
   const handlePhoneInput = (value: string) => {
     const cleaned = value.replace(/[^\d]/g, "");
