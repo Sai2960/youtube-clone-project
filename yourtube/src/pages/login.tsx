@@ -187,6 +187,7 @@ export default function LoginPage() {
   };
 
   // Handle Verify OTP
+  // ✅ COMPLETE REPLACEMENT for handleVerifyOTP function
   const handleVerifyOTP = async () => {
     if (!otp.trim()) {
       toast.error("Please enter OTP");
@@ -200,26 +201,92 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      console.log("🔐 Verifying OTP...");
+      console.log("🔐 Step 1: Verifying OTP...");
 
-      const result = await verifyOTPApi(contact, otp);
+      // Step 1: Verify OTP with backend
+      const verifyResult = await verifyOTPApi(contact, otp);
 
-      if (result.success) {
-        toast.success("OTP verified successfully!");
-
-        // Apply theme after OTP login
-        if (locationInfo?.theme) {
-          console.log("🎨 Applying theme after OTP login:", locationInfo.theme);
-          await checkLocationAndApplyTheme();
-        }
-
-        await handlegooglesignin();
-      } else {
-        toast.error(result.error || "Invalid OTP");
+      if (!verifyResult.success) {
+        toast.error(verifyResult.error || "Invalid OTP");
+        return;
       }
+
+      console.log("✅ OTP verified successfully");
+      toast.success("OTP verified! Logging you in...");
+
+      // Step 2: Login/Create user with OTP
+      console.log("🔑 Step 2: Logging in user...");
+
+      const loginResponse = await fetch(`${API_URL}/auth/otp-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contact: contact,
+          contactType: otpMethod, // 'email' or 'sms'
+        }),
+      });
+
+      const loginData = await loginResponse.json();
+      console.log("📦 Login response:", loginData);
+
+      if (!loginData.success) {
+        toast.error(loginData.error || "Login failed");
+        return;
+      }
+
+      if (!loginData.token) {
+        toast.error("No authentication token received");
+        return;
+      }
+
+      // Step 3: Store authentication data
+      console.log("💾 Step 3: Storing auth data...");
+      localStorage.setItem("token", loginData.token);
+      localStorage.setItem("user", JSON.stringify(loginData.user));
+
+      console.log("✅ User logged in:", loginData.user.name);
+
+      // Check approval status
+      if (loginData.user.isApproved === false) {
+        toast.warning("⏳ Account Pending Approval", {
+          description:
+            "Your account is being reviewed by an administrator. You'll be notified once approved.",
+          duration: 8000,
+        });
+      } else {
+        toast.success(`Welcome ${loginData.user.name}!`, {
+          duration: 3000,
+          icon: "🎉",
+        });
+      }
+
+      // Step 4: Apply theme
+      if (locationInfo?.theme) {
+        console.log("🎨 Step 4: Applying theme:", locationInfo.theme);
+        await checkLocationAndApplyTheme();
+      }
+
+      // Step 5: Redirect to home or return URL
+      console.log("🏠 Step 5: Redirecting...");
+      const returnUrl = (router.query.returnUrl as string) || "/";
+
+      setTimeout(() => {
+        router.push(returnUrl);
+      }, 500);
     } catch (error: any) {
-      console.error("❌ Verify OTP error:", error);
-      const errorMsg = error.response?.data?.error || "Invalid OTP";
+      console.error("❌ OTP verification/login error:", error);
+
+      // Better error messages
+      let errorMsg = "Something went wrong";
+
+      if (error.response?.data?.error) {
+        errorMsg = error.response.data.error;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+
       toast.error(errorMsg);
     } finally {
       setLoading(false);
