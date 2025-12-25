@@ -28,30 +28,40 @@ setInterval(() => {
   }
 }, 60000);
 
-// ═══════════════════════════════════════════════════════════════
-// BREVO EMAIL SERVICE (FREE 300/day!) ✅
-// ═══════════════════════════════════════════════════════════════
-
 const sendBrevoEmail = async (to, otp) => {
   const apiKey = process.env.BREVO_API_KEY;
 
+  // ✅ ENHANCED DEBUG LOGGING
+  console.log("🔑 BREVO API KEY CHECK:");
+  console.log("   Key exists:", !!apiKey);
+  console.log("   Key length:", apiKey?.length || 0);
+  console.log("   Key prefix:", apiKey?.substring(0, 10) + "..." || "NOT SET");
+
   if (!apiKey) {
-    console.error("❌ BREVO_API_KEY not configured");
+    console.error("❌ BREVO_API_KEY not configured in environment variables");
     return { success: false, error: "Email service not configured" };
   }
 
+  // ✅ VALIDATE KEY FORMAT
+  if (apiKey.length < 30) {
+    console.error("❌ BREVO_API_KEY appears invalid (too short)");
+    return { success: false, error: "Invalid API key configuration" };
+  }
+
   try {
+    console.log("📤 Making Brevo API request...");
+
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         accept: "application/json",
-        "api-key": apiKey,
+        "api-key": apiKey, // ✅ Ensure proper header name
         "content-type": "application/json",
       },
       body: JSON.stringify({
         sender: {
           name: "YouTube Clone",
-          email: "noreply@yourdomain.com", // Can be anything!
+          email: "noreply@yourdomain.com",
         },
         to: [{ email: to }],
         subject: "🔐 Your Login OTP Code",
@@ -110,14 +120,26 @@ const sendBrevoEmail = async (to, otp) => {
 
     const data = await response.json();
 
+    // ✅ ENHANCED ERROR LOGGING
+    console.log("📨 Brevo Response Status:", response.status);
+    console.log("📨 Brevo Response Data:", JSON.stringify(data, null, 2));
+
     if (response.ok && data.messageId) {
       return { success: true, messageId: data.messageId };
     } else {
-      console.error("❌ Brevo error:", data);
-      return { success: false, error: data.message || "Email send failed" };
+      console.error("❌ Brevo API Error Details:", {
+        status: response.status,
+        statusText: response.statusText,
+        data: data,
+      });
+      return {
+        success: false,
+        error: data.message || data.code || "Email send failed",
+        details: data,
+      };
     }
   } catch (error) {
-    console.error("❌ Brevo send error:", error);
+    console.error("❌ Brevo send exception:", error);
     return { success: false, error: error.message };
   }
 };
