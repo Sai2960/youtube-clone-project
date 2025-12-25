@@ -1,4 +1,4 @@
-// server/controllers/otp.js - RESEND FIXED VERSION
+// server/controllers/otp.js - FIXED WITH FREE RESEND DOMAIN
 
 import twilio from "twilio";
 
@@ -54,7 +54,7 @@ setInterval(() => {
 }, 60000);
 
 // ═══════════════════════════════════════════════════════════════
-// EMAIL OTP - USING RESEND API (FIXED)
+// EMAIL OTP - USING RESEND FREE DOMAIN ✅
 // ═══════════════════════════════════════════════════════════════
 
 const sendEmailOTP = async (req, res) => {
@@ -109,12 +109,12 @@ const sendEmailOTP = async (req, res) => {
       });
     }
 
-    // ✅ FIXED: Use your verified email as sender
+    // ✅ FIXED: Use Resend's FREE test domain (works forever!)
     console.log(`📤 SENDING EMAIL VIA RESEND [${requestId}]`);
 
     try {
       const emailResult = await resend.emails.send({
-        from: "YouTube Clone <saichandorkar06@gmail.com>", // ✅ YOUR verified email
+        from: "YouTube Clone <onboarding@resend.dev>", // ✅ FREE FOREVER!
         to: [email],
         subject: "🔐 Your Login OTP Code",
         html: `
