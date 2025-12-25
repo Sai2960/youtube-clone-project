@@ -1,9 +1,10 @@
-// server/controllers/otp.js - DETAILED DEBUG VERSION
+// server/controllers/otp.js - FIXED VERSION
 
 import twilio from "twilio";
+import { sendOTPEmail } from '../utils/emailService.js';  // ✅ CRITICAL IMPORT
 
 // ═══════════════════════════════════════════════════════════════
-// RESEND INITIALIZATION
+// RESEND INITIALIZATION (Not used with Gmail SMTP)
 // ═══════════════════════════════════════════════════════════════
 
 let resendClient = null;
@@ -20,10 +21,7 @@ const initResend = async () => {
     const { Resend } = await import("resend");
     resendClient = new Resend(process.env.RESEND_API_KEY);
     console.log("✅ Resend client initialized");
-    console.log(
-      "   API Key:",
-      process.env.RESEND_API_KEY.substring(0, 10) + "..."
-    );
+    console.log("   API Key:", process.env.RESEND_API_KEY.substring(0, 10) + "...");
     return resendClient;
   } catch (error) {
     console.error("❌ Resend import failed:", error.message);
@@ -55,6 +53,10 @@ setInterval(() => {
     console.log(`🗑️ Cleaned ${cleaned} expired OTP(s)`);
   }
 }, 60000);
+
+// ═══════════════════════════════════════════════════════════════
+// EMAIL OTP - USING GMAIL SMTP
+// ═══════════════════════════════════════════════════════════════
 
 const sendEmailOTP = async (req, res) => {
   const requestId = Math.random().toString(36).substring(7);
@@ -99,6 +101,7 @@ const sendEmailOTP = async (req, res) => {
     // Send OTP email using Gmail SMTP
     console.log(`📤 SENDING EMAIL VIA GMAIL SMTP [${requestId}]`);
 
+    // ✅ FIXED: Now calling the imported function
     const emailResult = await sendOTPEmail(email, otp, 5);
 
     if (emailResult.success) {
@@ -108,16 +111,14 @@ const sendEmailOTP = async (req, res) => {
       return res.json({
         success: true,
         message: "OTP sent to your email! Check your inbox and spam folder.",
-        // Remove debug in production for security
-        debug:
-          process.env.NODE_ENV === "development"
-            ? {
-                otp,
-                email,
-                requestId,
-                messageId: emailResult.messageId,
-              }
-            : undefined,
+        debug: process.env.NODE_ENV === "development"
+          ? {
+              otp,
+              email,
+              requestId,
+              messageId: emailResult.messageId,
+            }
+          : undefined,
       });
     } else if (emailResult.skipped) {
       console.log(`⚠️ Email service not configured [${requestId}]`);
@@ -126,8 +127,7 @@ const sendEmailOTP = async (req, res) => {
         success: true,
         message: "OTP generated (email service not configured)",
         debug: { otp, email, requestId },
-        warning:
-          "Configure EMAIL_USER and EMAIL_PASSWORD in environment variables",
+        warning: "Configure EMAIL_USER and EMAIL_PASSWORD in environment variables",
       });
     } else {
       console.error(`❌ Email send failed [${requestId}]:`, emailResult.error);
@@ -135,18 +135,14 @@ const sendEmailOTP = async (req, res) => {
       return res.json({
         success: true,
         message: "OTP generated successfully",
-        // Still return OTP in debug for development
-        debug:
-          process.env.NODE_ENV === "development"
-            ? {
-                otp,
-                email,
-                requestId,
-              }
-            : undefined,
-        warning: `Email delivery issue: ${
-          emailResult.hint || emailResult.error
-        }`,
+        debug: process.env.NODE_ENV === "development"
+          ? {
+              otp,
+              email,
+              requestId,
+            }
+          : undefined,
+        warning: `Email delivery issue: ${emailResult.hint || emailResult.error}`,
       });
     }
   } catch (error) {
@@ -154,11 +150,11 @@ const sendEmailOTP = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Failed to process OTP request",
-      details:
-        process.env.NODE_ENV === "development" ? error.message : undefined,
+      details: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
+
 // ═══════════════════════════════════════════════════════════════
 // SMS OTP (unchanged)
 // ═══════════════════════════════════════════════════════════════
@@ -171,10 +167,7 @@ const initTwilioClient = () => {
     return null;
   }
   try {
-    twilioClient = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
     return twilioClient;
   } catch (error) {
     return null;
@@ -193,9 +186,7 @@ const sendSMSOTP = async (req, res) => {
   try {
     let { phoneNumber } = req.body;
     if (!phoneNumber) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Phone number required" });
+      return res.status(400).json({ success: false, error: "Phone number required" });
     }
 
     const formattedPhone = formatPhoneNumber(phoneNumber);
@@ -241,7 +232,7 @@ const sendSMSOTP = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// VERIFY OTP (unchanged)
+// VERIFY OTP
 // ═══════════════════════════════════════════════════════════════
 
 const verifyOTP = async (req, res) => {
@@ -288,8 +279,7 @@ const verifyOTP = async (req, res) => {
 
     otpStore.delete(contact);
     if (/^\d{10}$/.test(contact)) otpStore.delete(`+91${contact}`);
-    if (contact.startsWith("+91"))
-      otpStore.delete(contact.replace(/^\+91/, ""));
+    if (contact.startsWith("+91")) otpStore.delete(contact.replace(/^\+91/, ""));
 
     console.log("✅ OTP VERIFIED:", contact);
 
