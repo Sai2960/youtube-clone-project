@@ -1,4 +1,4 @@
-// server/utils/emailService.js
+// server/utils/emailService.js - FIXED VERSION
 import nodemailer from "nodemailer";
 
 let transporter = null;
@@ -11,15 +11,18 @@ function initializeTransporter() {
     return transporter;
   }
 
+  // ✅ FIXED: Support both EMAIL_PASSWORD and EMAIL_PASS
+  const emailPass = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS;
+
   console.log('=== EMAIL CONFIGURATION ===');
   console.log('EMAIL_USER configured:', !!process.env.EMAIL_USER);
-  console.log('EMAIL_PASSWORD configured:', !!process.env.EMAIL_PASSWORD);
+  console.log('EMAIL_PASSWORD configured:', !!emailPass);
   console.log('Email user domain:', process.env.EMAIL_USER?.split('@')[1] || 'not set');
   console.log('===========================');
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+  if (!process.env.EMAIL_USER || !emailPass) {
     console.error('❌ Email credentials missing in environment variables');
-    console.log('📝 Please set EMAIL_USER and EMAIL_PASSWORD in Render Dashboard');
+    console.log('📝 Please set EMAIL_USER and EMAIL_PASSWORD (or EMAIL_PASS) in .env');
     console.log('   EMAIL_USER: your-email@gmail.com');
     console.log('   EMAIL_PASSWORD: your-gmail-app-password (16 characters)');
     isInitialized = true;
@@ -34,7 +37,7 @@ function initializeTransporter() {
       secure: false, // Use STARTTLS
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
+        pass: emailPass // ✅ FIXED: Use the variable
       },
       // ✅ CRITICAL: Connection pooling and timeouts
       pool: true, // Use pooled connections
@@ -69,7 +72,7 @@ function initializeTransporter() {
           console.log('💡 Check your Gmail App Password:');
           console.log('   1. Go to https://myaccount.google.com/apppasswords');
           console.log('   2. Generate a new App Password');
-          console.log('   3. Update EMAIL_PASSWORD in Render Dashboard');
+          console.log('   3. Update EMAIL_PASSWORD in .env or Render Dashboard');
         } else {
           console.log('✅ Email transporter verified and ready');
         }
@@ -165,15 +168,15 @@ export const sendOTPEmail = async (email, otp, expiryMinutes = 5) => {
   const mailOptions = {
     from: `"YouTube Clone" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: 'Your OTP for Login',
+    subject: 'Your OTP for Login - YouTube Clone',
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f5f5f5;">
-        <div style="background-color: white; padding: 30px; border-radius: 10px;">
-          <h2 style="color: #2563eb;">🔐 OTP Verification</h2>
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #2563eb; margin-top: 0;">🔐 OTP Verification</h2>
           <p style="font-size: 16px; color: #333;">
-            Your one-time password (OTP) is:
+            Your one-time password (OTP) for YouTube Clone login is:
           </p>
-          <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+          <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; border: 2px solid #2563eb;">
             <span style="font-size: 36px; font-weight: bold; color: #2563eb; letter-spacing: 8px;">
               ${otp}
             </span>
@@ -181,9 +184,12 @@ export const sendOTPEmail = async (email, otp, expiryMinutes = 5) => {
           <p style="font-size: 14px; color: #666;">
             ⏱️ This OTP expires in <strong>${expiryMinutes} minutes</strong>.
           </p>
+          <p style="font-size: 14px; color: #666;">
+            Please enter this code on the login page to continue.
+          </p>
           <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;">
           <p style="font-size: 12px; color: #999;">
-            If you didn't request this, please ignore this email.
+            If you didn't request this OTP, please ignore this email or contact support if you have concerns.
           </p>
         </div>
       </div>

@@ -75,6 +75,7 @@ setInterval(() => {
 }, 60000); // Check every 60 seconds
 
 // Send Email OTP
+// ✅ FIXED: Send Email OTP
 const sendEmailOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -107,50 +108,42 @@ const sendEmailOTP = async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = Date.now() + 300000; // 5 minutes
 
-    // ✅ CRITICAL: Store OTP FIRST (before any async operations)
+    // ✅ Store OTP FIRST
     otpStore.set(email, { otp, expiry: otpExpiry });
     console.log(`✅ OTP stored for ${email}: ${otp}`);
     console.log(`   Expiry: ${new Date(otpExpiry).toISOString()}`);
 
-    // ✅ Log OTP for development
+    // ✅ Log OTP prominently
     console.log("═══════════════════════════════════════");
-    console.log("📧 EMAIL OTP");
+    console.log("📧 EMAIL OTP GENERATED");
     console.log(`   Email: ${email}`);
     console.log(`   OTP: ${otp}`);
     console.log(`   Valid until: ${new Date(otpExpiry).toLocaleString()}`);
     console.log("═══════════════════════════════════════");
 
-    // ✅ NEW: Try to send email using the new emailService
+    // ✅ Try to send email in background (don't wait)
     setImmediate(async () => {
       try {
-        // Dynamically import the email service
-        const emailService = await import("../utils/emailService.js");
-
-        console.log("📧 Attempting to send OTP email...");
-        const result = await emailService.sendOTPEmail(email, otp, 5);
+        const { sendOTPEmail } = await import("../utils/emailService.js");
+        const result = await sendOTPEmail(email, otp, 5);
 
         if (result.success) {
           console.log("✅ OTP email sent successfully to:", email);
-          console.log("   Message ID:", result.messageId);
         } else if (result.skipped) {
           console.log(
-            "⚠️ Email service not configured - OTP logged to console only"
+            "⚠️ Email service not configured - OTP logged to console"
           );
         } else {
           console.error(
             "⚠️ Email send failed (OTP still valid):",
             result.error
           );
-          if (result.hint) {
-            console.log("💡", result.hint);
-          }
         }
       } catch (emailError) {
         console.error(
           "⚠️ Email send error (OTP still valid):",
           emailError.message
         );
-        console.log("📝 OTP is still valid and can be used for verification");
       }
     });
 
@@ -158,11 +151,11 @@ const sendEmailOTP = async (req, res) => {
     return res.json({
       success: true,
       message: "OTP generated successfully",
-      debug:
-        process.env.NODE_ENV === "development" ||
-        process.env.NODE_ENV === "production"
-          ? { otp, email }
-          : undefined,
+      debug: {
+        otp,
+        email,
+        expiresIn: "5 minutes",
+      },
     });
   } catch (error) {
     console.error("❌ Email OTP error:", error);
@@ -177,6 +170,7 @@ const sendEmailOTP = async (req, res) => {
   }
 };
 
+// ✅ FIXED: Send SMS OTP
 const sendSMSOTP = async (req, res) => {
   try {
     let { phoneNumber } = req.body;
@@ -190,7 +184,7 @@ const sendSMSOTP = async (req, res) => {
       });
     }
 
-    // ✅ Format to E.164
+    // Format to E.164
     const formattedPhone = formatPhoneNumber(phoneNumber);
     console.log("📞 Formatted:", formattedPhone);
 
@@ -205,14 +199,14 @@ const sendSMSOTP = async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = Date.now() + 300000;
 
-    // ✅ CRITICAL: Store with BOTH formats FIRST
+    // ✅ Store with BOTH formats FIRST
     otpStore.set(phoneNumber, { otp, expiry: otpExpiry });
     otpStore.set(formattedPhone, { otp, expiry: otpExpiry });
     console.log(`✅ OTP stored for ${formattedPhone}: ${otp}`);
 
-    // ✅ Log OTP
+    // ✅ Log OTP prominently
     console.log("═══════════════════════════════════════");
-    console.log("📱 SMS OTP");
+    console.log("📱 SMS OTP GENERATED");
     console.log(`   Phone: ${phoneNumber}`);
     console.log(`   Formatted: ${formattedPhone}`);
     console.log(`   OTP: ${otp}`);
@@ -221,7 +215,7 @@ const sendSMSOTP = async (req, res) => {
 
     const client = initTwilioClient();
 
-    // ✅ If no Twilio, return success immediately
+    // If no Twilio, return success immediately
     if (!client) {
       console.log("⚠️ Twilio not configured - OTP logged above");
       return res.json({
@@ -231,46 +225,30 @@ const sendSMSOTP = async (req, res) => {
       });
     }
 
-    // ✅ Try SMS in background (don't wait)
-    // ✅ Try to send email in background (don't wait for it)
+    // Try SMS in background
     setImmediate(async () => {
       try {
-        const { sendOTPEmail } = await import("../utils/emailService.js");
-
-        const result = await sendOTPEmail(email, otp, 5);
-
-        if (result.success) {
-          console.log("✅ OTP email sent successfully to:", email);
-        } else if (result.skipped) {
-          console.log(
-            "⚠️ Email service not configured - OTP logged to console"
-          );
-        } else {
-          console.error(
-            "⚠️ Email send failed (OTP still valid):",
-            result.error
-          );
-          if (result.hint) {
-            console.log("💡", result.hint);
-          }
-        }
-      } catch (emailError) {
-        console.error(
-          "⚠️ Email send error (OTP still valid):",
-          emailError.message
-        );
+        await client.messages.create({
+          body: `Your YouTube Clone OTP is: ${otp}. Valid for 5 minutes.`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: formattedPhone,
+        });
+        console.log("✅ SMS sent successfully to:", formattedPhone);
+      } catch (smsError) {
+        console.error("⚠️ SMS send error (OTP still valid):", smsError.message);
       }
     });
 
-    // ✅ FIXED: Return success immediately with OTP in debug for both dev and production
+    // Return success immediately with OTP in debug
     return res.json({
       success: true,
       message: "OTP generated successfully",
-      debug:
-        process.env.NODE_ENV === "development" ||
-        process.env.NODE_ENV === "production"
-          ? { otp, phoneNumber, formattedPhone } // ✅ CRITICAL: Include OTP for testing
-          : undefined,
+      debug: {
+        otp,
+        phoneNumber,
+        formattedPhone,
+        expiresIn: "5 minutes",
+      },
     });
   } catch (error) {
     console.error("❌ SMS OTP error:", error);
@@ -285,6 +263,7 @@ const sendSMSOTP = async (req, res) => {
   }
 };
 
+// ✅ FIXED: Verify OTP
 const verifyOTP = async (req, res) => {
   try {
     const { otp, contact } = req.body;
@@ -293,7 +272,6 @@ const verifyOTP = async (req, res) => {
     console.log("   OTP:", otp);
     console.log("   Contact:", contact);
     console.log("   Store size:", otpStore.size);
-    console.log("   Available keys:", Array.from(otpStore.keys()));
 
     if (!otp || !contact) {
       return res.status(400).json({
@@ -302,61 +280,28 @@ const verifyOTP = async (req, res) => {
       });
     }
 
-    // ✅ Try original contact first
+    // Try original contact first
     let storedData = otpStore.get(contact);
-    console.log(
-      `   Checking '${contact}':`,
-      storedData ? "Found" : "Not found"
-    );
 
-    // ✅ If phone number, try formatted versions
+    // If phone number, try formatted versions
     if (!storedData && /^\d{10}$/.test(contact)) {
-      const withPrefix = `+91${contact}`;
-      storedData = otpStore.get(withPrefix);
-      console.log(
-        `   Checking '${withPrefix}':`,
-        storedData ? "Found" : "Not found"
-      );
+      storedData = otpStore.get(`+91${contact}`);
     }
 
-    // ✅ Try without +91 prefix
+    // Try without +91 prefix
     if (!storedData && contact.startsWith("+91")) {
-      const without = contact.replace(/^\+91/, "");
-      storedData = otpStore.get(without);
-      console.log(
-        `   Checking '${without}':`,
-        storedData ? "Found" : "Not found"
-      );
-    }
-
-    // ✅ Try with +91 if it's a 10-digit number
-    if (!storedData && /^\d{10}$/.test(contact)) {
-      const withPlus91 = `+91${contact}`;
-      storedData = otpStore.get(withPlus91);
-      console.log(
-        `   Checking '${withPlus91}':`,
-        storedData ? "Found" : "Not found"
-      );
+      storedData = otpStore.get(contact.replace(/^\+91/, ""));
     }
 
     if (!storedData) {
       console.log(`❌ OTP not found for: ${contact}`);
-      console.log("   All stored keys:", Array.from(otpStore.keys()));
       return res.status(400).json({
         success: false,
-        error: "OTP not found. Please request new OTP.",
-        debug:
-          process.env.NODE_ENV === "development"
-            ? {
-                contact,
-                availableKeys: Array.from(otpStore.keys()),
-                storeSize: otpStore.size,
-              }
-            : undefined,
+        error: "OTP not found or expired. Please request a new OTP.",
       });
     }
 
-    // ✅ Check expiry
+    // Check expiry
     if (Date.now() > storedData.expiry) {
       console.log(`❌ OTP expired for: ${contact}`);
       otpStore.delete(contact);
@@ -366,25 +311,16 @@ const verifyOTP = async (req, res) => {
       });
     }
 
-    // ✅ Verify OTP
+    // Verify OTP
     if (storedData.otp !== otp) {
-      console.log(`❌ Invalid OTP`);
-      console.log(`   Provided: ${otp}`);
-      console.log(`   Expected: ${storedData.otp}`);
+      console.log(`❌ Invalid OTP - Expected: ${storedData.otp}, Got: ${otp}`);
       return res.status(400).json({
         success: false,
         error: "Invalid OTP",
-        debug:
-          process.env.NODE_ENV === "development"
-            ? {
-                provided: otp,
-                expected: storedData.otp,
-              }
-            : undefined,
       });
     }
 
-    // ✅ Delete all format variations
+    // Delete all format variations
     otpStore.delete(contact);
     if (/^\d{10}$/.test(contact)) {
       otpStore.delete(`+91${contact}`);
@@ -394,9 +330,8 @@ const verifyOTP = async (req, res) => {
     }
 
     console.log("═══════════════════════════════════════");
-    console.log("✅ OTP VERIFIED");
+    console.log("✅ OTP VERIFIED SUCCESSFULLY");
     console.log(`   Contact: ${contact}`);
-    console.log(`   Remaining OTPs: ${otpStore.size}`);
     console.log("═══════════════════════════════════════");
 
     res.json({
@@ -416,10 +351,12 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-// ✅ FIXED: Export otpStore getter for debugging/testing
+// ✅ CRITICAL: Export getOTPStore function
+const getOTPStore = () => otpStore;
+
 export default {
   sendEmailOTP,
   sendSMSOTP,
   verifyOTP,
-  getOTPStore: () => otpStore, // ✅ ADDED: Export OTP store for debugging
+  getOTPStore,
 };
