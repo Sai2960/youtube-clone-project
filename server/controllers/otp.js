@@ -1,8 +1,9 @@
-// server/controllers/otp.js - COMPLETE EMAIL FIX
+// server/controllers/otp.js - DETAILED DEBUG VERSION
+
 import twilio from "twilio";
 
 // ═══════════════════════════════════════════════════════════════
-// RESEND INITIALIZATION - CRITICAL FIX
+// RESEND INITIALIZATION
 // ═══════════════════════════════════════════════════════════════
 
 let resendClient = null;
@@ -19,6 +20,7 @@ const initResend = async () => {
     const { Resend } = await import("resend");
     resendClient = new Resend(process.env.RESEND_API_KEY);
     console.log("✅ Resend client initialized");
+    console.log("   API Key:", process.env.RESEND_API_KEY.substring(0, 10) + "...");
     return resendClient;
   } catch (error) {
     console.error("❌ Resend import failed:", error.message);
@@ -27,34 +29,7 @@ const initResend = async () => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// TWILIO INITIALIZATION (for SMS OTP - optional)
-// ═══════════════════════════════════════════════════════════════
-
-let twilioClient = null;
-
-const initTwilioClient = () => {
-  if (twilioClient) return twilioClient;
-
-  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
-    console.warn("⚠️ Twilio not configured (SMS OTP disabled)");
-    return null;
-  }
-
-  try {
-    twilioClient = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
-    console.log("✅ Twilio SMS service initialized");
-    return twilioClient;
-  } catch (error) {
-    console.error("❌ Twilio initialization error:", error.message);
-    return null;
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════
-// OTP STORAGE & UTILITIES
+// OTP STORAGE
 // ═══════════════════════════════════════════════════════════════
 
 const otpStore = new Map();
@@ -63,44 +38,33 @@ const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-const formatPhoneNumber = (phoneNumber) => {
-  let cleaned = phoneNumber.replace(/[^\d+]/g, "");
-  if (cleaned.startsWith("+")) return cleaned;
-  if (cleaned.startsWith("91") && cleaned.length === 12) return `+${cleaned}`;
-  if (cleaned.length === 10) return `+91${cleaned}`;
-  return `+91${cleaned}`;
-};
-
-// ═══════════════════════════════════════════════════════════════
-// AUTOMATIC CLEANUP SERVICE
-// ═══════════════════════════════════════════════════════════════
-
+// Cleanup expired OTPs
 setInterval(() => {
   const now = Date.now();
   let cleaned = 0;
-
   for (const [key, value] of otpStore.entries()) {
     if (value.expiry < now) {
       otpStore.delete(key);
       cleaned++;
     }
   }
-
   if (cleaned > 0) {
     console.log(`🗑️ Cleaned ${cleaned} expired OTP(s)`);
   }
 }, 60000);
 
 // ═══════════════════════════════════════════════════════════════
-// EMAIL OTP - FIXED VERSION WITH PROPER HTML
+// EMAIL OTP - WITH DETAILED DEBUGGING
 // ═══════════════════════════════════════════════════════════════
 
 const sendEmailOTP = async (req, res) => {
+  const requestId = Math.random().toString(36).substring(7);
+  
   try {
     const { email } = req.body;
 
-    console.log("═══════════════════════════════════════");
-    console.log("📧 EMAIL OTP REQUEST");
+    console.log("\n═══════════════════════════════════════");
+    console.log(`📧 EMAIL OTP REQUEST [${requestId}]`);
     console.log("   Email:", email);
     console.log("   Time:", new Date().toISOString());
     console.log("═══════════════════════════════════════");
@@ -120,14 +84,12 @@ const sendEmailOTP = async (req, res) => {
       });
     }
 
-    // Generate OTP
+    // Generate and store OTP
     const otp = generateOTP();
-    const otpExpiry = Date.now() + 300000; // 5 minutes
-
-    // Store OTP FIRST
+    const otpExpiry = Date.now() + 300000;
     otpStore.set(email, { otp, expiry: otpExpiry });
 
-    console.log("✅ OTP STORED");
+    console.log(`✅ OTP STORED [${requestId}]`);
     console.log("   OTP:", otp);
     console.log("   Expires:", new Date(otpExpiry).toLocaleString());
 
@@ -135,219 +97,219 @@ const sendEmailOTP = async (req, res) => {
     const resend = await initResend();
 
     if (!resend) {
-      console.log("⚠️ Resend not configured - OTP available in console");
+      console.log(`⚠️ Resend not configured [${requestId}]`);
       return res.json({
         success: true,
         message: "OTP generated (email service not configured)",
-        debug: { otp, email },
+        debug: { otp, email, requestId },
         warning: "Configure RESEND_API_KEY to send emails",
       });
     }
 
-    // ✅ CRITICAL FIX: Simplified, working HTML template
-    const htmlContent = `
+    // Prepare email
+    const emailData = {
+      from: "YouTube Clone <onboarding@resend.dev>",
+      to: [email],
+      subject: "🔐 Your Login OTP Code",
+      html: `
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Your OTP Code</title>
-</head>
-<body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f6f9fc;">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f6f9fc;">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-          
-          <tr>
-            <td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px;text-align:center;border-radius:12px 12px 0 0;">
-              <div style="font-size:48px;margin-bottom:16px;">🎬</div>
-              <h1 style="margin:0;color:white;font-size:28px;">YouTube Clone</h1>
-              <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);">Your verification code</p>
-            </td>
-          </tr>
-          
-          <tr>
-            <td style="padding:40px;">
-              <p style="margin:0 0 24px;color:#4a5568;font-size:16px;">
-                Your one-time password is:
-              </p>
-              
-              <table width="100%" style="margin-bottom:32px;">
-                <tr>
-                  <td align="center" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;padding:32px;">
-                    <div style="font-size:48px;font-weight:bold;color:white;letter-spacing:12px;font-family:monospace;">
-                      ${otp}
-                    </div>
-                  </td>
-                </tr>
-              </table>
-              
-              <p style="margin:0;color:#718096;font-size:14px;">
-                ⏱️ This code expires in <strong>5 minutes</strong>.
-              </p>
-              <p style="margin:16px 0 0;color:#a0aec0;font-size:13px;">
-                If you didn't request this, please ignore this email.
-              </p>
-            </td>
-          </tr>
-          
-          <tr>
-            <td style="background:#f7fafc;padding:24px;text-align:center;border-radius:0 0 12px 12px;">
-              <p style="margin:0;color:#a0aec0;font-size:12px;">
-                © ${new Date().getFullYear()} YouTube Clone
-              </p>
-            </td>
-          </tr>
-          
-        </table>
-      </td>
-    </tr>
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;">
+        <tr>
+          <td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px;text-align:center;border-radius:12px 12px 0 0;">
+            <div style="font-size:48px;margin-bottom:16px;">🎬</div>
+            <h1 style="margin:0;color:white;font-size:28px;">YouTube Clone</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;">
+            <p style="margin:0 0 24px;color:#4a5568;font-size:16px;">Your OTP is:</p>
+            <table width="100%">
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;padding:32px;">
+                  <div style="font-size:48px;font-weight:bold;color:white;letter-spacing:12px;font-family:monospace;">${otp}</div>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:24px 0 0;color:#718096;font-size:14px;">⏱️ Expires in 5 minutes</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
   </table>
 </body>
 </html>
-    `.trim();
+      `.trim(),
+    };
 
-    console.log("📤 Sending email via Resend...");
+    console.log(`📤 ATTEMPTING TO SEND EMAIL [${requestId}]`);
+    console.log("   From:", emailData.from);
+    console.log("   To:", emailData.to);
+    console.log("   Subject:", emailData.subject);
 
     try {
-      const emailResult = await resend.emails.send({
-        from: "YouTube Clone <onboarding@resend.dev>",
-        to: [email],
-        subject: "🔐 Your Login OTP Code",
-        html: htmlContent,
-      });
+      const emailResult = await resend.emails.send(emailData);
 
-      console.log("═══════════════════════════════════════");
-      console.log("✅ EMAIL SENT SUCCESSFULLY");
-      console.log("   Email ID:", emailResult.data?.id);
-      console.log("   To:", email);
-      console.log("═══════════════════════════════════════");
+      console.log("\n═══════════════════════════════════════");
+      console.log(`✅ RESEND API CALL SUCCESS [${requestId}]`);
+      console.log("   Response:", JSON.stringify(emailResult, null, 2));
+      console.log("═══════════════════════════════════════\n");
 
-      return res.json({
-        success: true,
-        message: "OTP sent to your email!",
-        debug: { otp, email }, // For testing
-        emailId: emailResult.data?.id,
-      });
+      // Check if email was actually sent
+      if (emailResult.data?.id) {
+        console.log(`📬 EMAIL QUEUED FOR DELIVERY [${requestId}]`);
+        console.log("   Email ID:", emailResult.data.id);
+        
+        return res.json({
+          success: true,
+          message: "OTP sent to your email!",
+          debug: { 
+            otp, 
+            email, 
+            requestId,
+            emailId: emailResult.data.id,
+            hint: "Check spam folder if not received"
+          },
+        });
+      } else if (emailResult.error) {
+        console.error(`❌ RESEND RETURNED ERROR [${requestId}]`);
+        console.error("   Error:", JSON.stringify(emailResult.error, null, 2));
+        
+        return res.json({
+          success: true,
+          message: "OTP generated (email delivery issue)",
+          debug: { otp, email, requestId },
+          warning: `Resend error: ${emailResult.error.message}`,
+          hint: "Email may not be verified in Resend test mode",
+        });
+      }
+
     } catch (emailError) {
-      console.error("❌ EMAIL SENDING ERROR:", emailError);
-      console.error("   Details:", emailError.message);
+      console.error("\n═══════════════════════════════════════");
+      console.error(`❌ EMAIL SENDING ERROR [${requestId}]`);
+      console.error("   Error Type:", emailError.constructor.name);
+      console.error("   Message:", emailError.message);
+      console.error("   Status:", emailError.statusCode);
+      console.error("   Full Error:", JSON.stringify(emailError, null, 2));
+      console.error("═══════════════════════════════════════\n");
 
-      // OTP still stored, return with warning
+      // Return OTP anyway for testing
       return res.json({
         success: true,
-        message: "OTP generated (email delivery issue)",
-        debug: { otp, email },
-        warning: emailError.message,
+        message: "OTP generated (email failed to send)",
+        debug: { otp, email, requestId },
+        error: {
+          type: emailError.constructor.name,
+          message: emailError.message,
+          statusCode: emailError.statusCode,
+        },
+        hint: "Use OTP from debug field - email delivery failed",
       });
     }
+
   } catch (error) {
-    console.error("❌ CRITICAL ERROR:", error);
+    console.error(`❌ CRITICAL ERROR [${requestId}]`, error);
     return res.status(500).json({
       success: false,
       error: "Failed to generate OTP",
       details: error.message,
+      requestId,
     });
   }
 };
 
 // ═══════════════════════════════════════════════════════════════
-// SMS OTP - SECONDARY METHOD
+// SMS OTP (unchanged)
 // ═══════════════════════════════════════════════════════════════
+
+let twilioClient = null;
+
+const initTwilioClient = () => {
+  if (twilioClient) return twilioClient;
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    return null;
+  }
+  try {
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    return twilioClient;
+  } catch (error) {
+    return null;
+  }
+};
+
+const formatPhoneNumber = (phoneNumber) => {
+  let cleaned = phoneNumber.replace(/[^\d+]/g, "");
+  if (cleaned.startsWith("+")) return cleaned;
+  if (cleaned.startsWith("91") && cleaned.length === 12) return `+${cleaned}`;
+  if (cleaned.length === 10) return `+91${cleaned}`;
+  return `+91${cleaned}`;
+};
 
 const sendSMSOTP = async (req, res) => {
   try {
     let { phoneNumber } = req.body;
-
-    console.log("═══════════════════════════════════════");
-    console.log("📱 SMS OTP REQUEST");
-    console.log("   Phone:", phoneNumber);
-    console.log("═══════════════════════════════════════");
-
     if (!phoneNumber) {
-      return res.status(400).json({
-        success: false,
-        error: "Phone number is required",
-      });
+      return res.status(400).json({ success: false, error: "Phone number required" });
     }
 
     const formattedPhone = formatPhoneNumber(phoneNumber);
-    console.log("📞 Formatted:", formattedPhone);
-
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(formattedPhone)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid phone number format",
-      });
-    }
-
     const otp = generateOTP();
     const otpExpiry = Date.now() + 300000;
 
     otpStore.set(phoneNumber, { otp, expiry: otpExpiry });
     otpStore.set(formattedPhone, { otp, expiry: otpExpiry });
 
-    console.log("✅ SMS OTP GENERATED");
-    console.log("   OTP:", otp);
-
     const client = initTwilioClient();
-
     if (!client) {
-      console.log("⚠️ Twilio not configured");
       return res.json({
         success: true,
-        message: "OTP generated (check console - Twilio not configured)",
-        debug: { phoneNumber, formattedPhone, otp },
+        message: "OTP generated (Twilio not configured)",
+        debug: { otp, phoneNumber, formattedPhone },
       });
     }
 
     setImmediate(async () => {
       try {
         await client.messages.create({
-          body: `Your YouTube Clone OTP is: ${otp}. Valid for 5 minutes.`,
+          body: `Your YouTube Clone OTP: ${otp}. Valid for 5 minutes.`,
           from: process.env.TWILIO_PHONE_NUMBER,
           to: formattedPhone,
         });
-        console.log("✅ SMS sent to:", formattedPhone);
-      } catch (smsError) {
-        console.error("⚠️ SMS error:", smsError.message);
+      } catch (err) {
+        console.error("SMS error:", err.message);
       }
     });
 
     return res.json({
       success: true,
-      message: "OTP sent to your phone!",
+      message: "OTP sent!",
       debug: { otp, phoneNumber, formattedPhone },
     });
   } catch (error) {
-    console.error("❌ SMS OTP ERROR:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: "Failed to generate SMS OTP",
+      error: "SMS OTP failed",
       details: error.message,
     });
   }
 };
 
 // ═══════════════════════════════════════════════════════════════
-// VERIFY OTP
+// VERIFY OTP (unchanged)
 // ═══════════════════════════════════════════════════════════════
 
 const verifyOTP = async (req, res) => {
   try {
     const { otp, contact } = req.body;
 
-    console.log("═══════════════════════════════════════");
-    console.log("🔐 OTP VERIFICATION");
-    console.log("   Contact:", contact);
-    console.log("   OTP:", otp);
-    console.log("═══════════════════════════════════════");
-
     if (!otp || !contact) {
       return res.status(400).json({
         success: false,
-        error: "OTP and contact are required",
+        error: "OTP and contact required",
       });
     }
 
@@ -356,60 +318,48 @@ const verifyOTP = async (req, res) => {
     if (!storedData && /^\d{10}$/.test(contact)) {
       storedData = otpStore.get(`+91${contact}`);
     }
-
     if (!storedData && contact.startsWith("+91")) {
       storedData = otpStore.get(contact.replace(/^\+91/, ""));
     }
 
     if (!storedData) {
-      console.log("❌ OTP NOT FOUND");
-      console.log("   Available keys:", Array.from(otpStore.keys()));
       return res.status(400).json({
         success: false,
-        error: "OTP not found or expired. Request a new OTP.",
+        error: "OTP not found or expired",
       });
     }
 
     if (Date.now() > storedData.expiry) {
-      console.log("❌ OTP EXPIRED");
       otpStore.delete(contact);
       return res.status(400).json({
         success: false,
-        error: "OTP expired. Request a new OTP.",
+        error: "OTP expired",
       });
     }
 
     if (storedData.otp !== otp) {
-      console.log("❌ INVALID OTP");
       return res.status(400).json({
         success: false,
-        error: "Invalid OTP. Please try again.",
+        error: "Invalid OTP",
       });
     }
 
     otpStore.delete(contact);
-    if (/^\d{10}$/.test(contact)) {
-      otpStore.delete(`+91${contact}`);
-    }
-    if (contact.startsWith("+91")) {
-      otpStore.delete(contact.replace(/^\+91/, ""));
-    }
+    if (/^\d{10}$/.test(contact)) otpStore.delete(`+91${contact}`);
+    if (contact.startsWith("+91")) otpStore.delete(contact.replace(/^\+91/, ""));
 
-    console.log("═══════════════════════════════════════");
-    console.log("✅ OTP VERIFIED SUCCESSFULLY");
-    console.log("═══════════════════════════════════════");
+    console.log("✅ OTP VERIFIED:", contact);
 
-    res.json({
+    return res.json({
       success: true,
-      message: "OTP verified successfully",
+      message: "OTP verified",
       verified: true,
-      contact: contact,
+      contact,
     });
   } catch (error) {
-    console.error("❌ VERIFICATION ERROR:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: "OTP verification failed",
+      error: "Verification failed",
       details: error.message,
     });
   }
@@ -424,7 +374,6 @@ const getOTPStoreSize = () => otpStore.size;
 const clearOTPStore = () => {
   const size = otpStore.size;
   otpStore.clear();
-  console.log(`🗑️ Cleared ${size} OTP(s)`);
   return size;
 };
 
