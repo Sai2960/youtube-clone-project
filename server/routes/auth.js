@@ -15,6 +15,7 @@ import {
   deleteFromCloudinary,
 } from "../config/cloudinary.js";
 import { verifyToken } from "../middleware/auth.js";
+import { login } from "../controllers/auth.js"; // Your existing login function
 
 const router = express.Router();
 
@@ -1528,6 +1529,119 @@ router.post("/verify-otp", async (req, res) => {
     res.status(500).json({
       success: false,
       error: "Failed to verify OTP",
+    });
+  }
+});
+// ADD THIS NEW ROUTE (after your existing routes)
+router.post("/otp-login", async (req, res) => {
+  try {
+    const { contact, contactType } = req.body;
+
+    console.log("🔐 OTP Login request:", { contact, contactType });
+
+    if (!contact || !contactType) {
+      return res.status(400).json({
+        success: false,
+        error: "Contact and contact type required",
+      });
+    }
+
+    // Import User model (use your existing import)
+    const User = (await import("../Modals/User.js")).default;
+
+    // Find or create user
+    let user;
+
+    if (contactType === "email") {
+      // Email login - find or create by email
+      user = await User.findOne({ email: contact });
+
+      if (!user) {
+        console.log("📝 Creating new user with email:", contact);
+        const username = contact.split("@")[0];
+
+        user = await User.create({
+          email: contact,
+          name: username,
+          channelname: `${username}_${Date.now()}`,
+          image: "https://github.com/shadcn.png",
+          joinedon: new Date(),
+          currentPlan: "FREE",
+          watchTimeLimit: 5,
+          isApproved: false, // ⚠️ Requires admin approval
+          approvalStatus: "pending",
+        });
+
+        console.log("✅ New user created:", user._id);
+      } else {
+        console.log("✅ Existing user found:", user._id);
+      }
+    } else {
+      // SMS login - find by phone or email with phone pattern
+      const phonePattern = `${contact}@phone.user`;
+      user = await User.findOne({
+        $or: [{ email: phonePattern }, { email: contact }],
+      });
+
+      if (!user) {
+        console.log("📝 Creating new user with phone:", contact);
+        user = await User.create({
+          email: `${contact}@phone.user`,
+          name: `User_${contact.substring(0, 4)}`,
+          channelname: `User_${Date.now()}`,
+          image: "https://github.com/shadcn.png",
+          joinedon: new Date(),
+          currentPlan: "FREE",
+          watchTimeLimit: 5,
+          isApproved: false, // ⚠️ Requires admin approval
+          approvalStatus: "pending",
+        });
+
+        console.log("✅ New user created:", user._id);
+      } else {
+        console.log("✅ Existing user found:", user._id);
+      }
+    }
+
+    // Generate JWT token using your existing function
+    const jwt = (await import("jsonwebtoken")).default;
+    const token = jwt.sign(
+      {
+        id: user._id.toString(),
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    console.log("✅ OTP Login successful");
+
+    // Update last login time
+    user.lastLoginTime = new Date();
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        channelname: user.channelname,
+        image: user.image,
+        currentPlan: user.currentPlan,
+        watchTimeLimit: user.watchTimeLimit,
+        isApproved: user.isApproved,
+        approvalStatus: user.approvalStatus,
+      },
+    });
+  } catch (error) {
+    console.error("❌ OTP Login error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Login failed",
+      details: error.message,
     });
   }
 });
