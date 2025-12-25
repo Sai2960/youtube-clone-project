@@ -7,6 +7,7 @@ import moment from "moment-timezone";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { sendWelcomeEmail } from "../utils/resendEmailService.js";
 
 // ? ES6 module path helpers
 const __filename = fileURLToPath(import.meta.url);
@@ -1024,6 +1025,101 @@ export const getProfile = async (req, res) => {
       success: false,
       message: "Failed to fetch profile",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+export const otpLogin = async (req, res) => {
+  try {
+    const { contact, contactType } = req.body; // 'email' or 'sms'
+
+    console.log("🔑 OTP Login request:", { contact, contactType });
+
+    if (!contact || !contactType) {
+      return res.status(400).json({
+        success: false,
+        error: "Contact and type required",
+      });
+    }
+
+    // Find or create user
+    let user;
+    const isEmail = contactType === "email";
+
+    if (isEmail) {
+      user = await User.findOne({ email: contact });
+    } else {
+      user = await User.findOne({ phoneNumber: contact });
+    }
+
+    let isNewUser = false;
+
+    // ✅ CREATE NEW USER if doesn't exist
+    if (!user) {
+      isNewUser = true;
+
+      const userData = {
+        name: isEmail ? contact.split("@")[0] : `User_${contact.slice(-4)}`,
+        email: isEmail ? contact : `${contact}@temp.com`,
+        phoneNumber: isEmail ? null : contact,
+        authMethod: "otp",
+        isApproved: true, // Auto-approve or set to false for manual approval
+      };
+
+      user = await User.create(userData);
+      console.log("✅ New user created:", user.name);
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET || "your-secret-key",
+      { expiresIn: "30d" }
+    );
+
+    // ✅ SEND WELCOME EMAIL to new users
+    if (isNewUser && isEmail) {
+      console.log("📧 Sending welcome email to new user...");
+
+      // Send in background (non-blocking)
+      sendWelcomeEmail(contact, user.name)
+        .then((result) => {
+          if (result.success) {
+            console.log("✅ Welcome email sent to:", contact);
+          } else {
+            console.log(
+              "⚠️ Welcome email failed (non-critical):",
+              result.error
+            );
+          }
+        })
+        .catch((err) => {
+          console.error("⚠️ Welcome email error:", err.message);
+        });
+    }
+
+    // Return response
+    res.json({
+      success: true,
+      message: isNewUser
+        ? "Account created successfully!"
+        : "Login successful!",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        profilePic: user.profilePic,
+        isApproved: user.isApproved,
+        isNewUser, // ✅ Frontend can show welcome message
+      },
+    });
+  } catch (error) {
+    console.error("❌ OTP login error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Login failed",
+      details: error.message,
     });
   }
 };
