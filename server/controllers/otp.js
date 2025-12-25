@@ -79,12 +79,10 @@ const sendEmailOTP = async (req, res) => {
     const { email } = req.body;
 
     console.log("═══════════════════════════════════════");
-    console.log("📧 EMAIL OTP REQUEST RECEIVED");
+    console.log("📧 EMAIL OTP REQUEST");
     console.log("   Email:", email);
-    console.log("   Timestamp:", new Date().toISOString());
     console.log("═══════════════════════════════════════");
 
-    // ✅ VALIDATION 1: Check if email provided
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -92,7 +90,6 @@ const sendEmailOTP = async (req, res) => {
       });
     }
 
-    // ✅ VALIDATION 2: Check email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -101,98 +98,60 @@ const sendEmailOTP = async (req, res) => {
       });
     }
 
-    // ✅ VALIDATION 3: Block test/example emails
-    const blockList = ["test@example.com", "example.com", "test@test.com"];
-    if (blockList.some((blocked) => email.toLowerCase().includes(blocked))) {
-      return res.status(400).json({
-        success: false,
-        error: "Please use a valid email address (not test/example emails)",
-      });
-    }
-
-    // ✅ STEP 1: Generate OTP and expiry time
+    // Generate OTP
     const otp = generateOTP();
-    const otpExpiry = Date.now() + 300000; // 5 minutes from now
+    const otpExpiry = Date.now() + 300000; // 5 minutes
 
-    // ✅ STEP 2: Store OTP FIRST (CRITICAL - must happen before email sending)
+    // Store OTP FIRST
     otpStore.set(email, { otp, expiry: otpExpiry });
 
-    console.log("═══════════════════════════════════════");
-    console.log("✅ OTP GENERATED & STORED SUCCESSFULLY");
+    console.log("✅ OTP STORED");
     console.log("   Email:", email);
     console.log("   OTP:", otp);
-    console.log("   Expires:", new Date(otpExpiry).toLocaleString());
-    console.log("   Total Stored OTPs:", otpStore.size);
-    console.log("═══════════════════════════════════════");
-    // ✅ STEP 3: Send email via Resend (non-blocking, runs in background)
-    // ✅ STEP 3: Send email via Resend (non-blocking, runs in background)
-    const emailPromise = (async () => {
-      try {
-        console.log("📧 Attempting to send email via Resend...");
+    console.log("   Total stored:", otpStore.size);
 
-        // ✅ Import from resendEmailService instead of emailService
-        const { sendOTPEmail } = await import("../utils/resendEmailService.js");
+    // Send email in background (non-blocking)
+    const Resend = (await import("resend")).Resend;
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
-        // ✅ Send OTP email
-        const result = await sendOTPEmail(email, otp, 5);
+    resend.emails
+      .send({
+        from: "onboarding@resend.dev",
+        to: [email],
+        subject: "🔐 Your Login OTP",
+        html: `
+        <div style="font-family: Arial; max-width: 600px; margin: 0 auto; padding: 40px;">
+          <h1 style="color: #667eea;">Your OTP Code</h1>
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                      padding: 30px; border-radius: 10px; text-align: center; margin: 30px 0;">
+            <span style="font-size: 48px; font-weight: bold; color: white; letter-spacing: 10px;">
+              ${otp}
+            </span>
+          </div>
+          <p>This code expires in 5 minutes.</p>
+        </div>
+      `,
+      })
+      .then(() => {
+        console.log("✅ EMAIL SENT SUCCESSFULLY");
+      })
+      .catch((error) => {
+        console.error("⚠️ Email error:", error.message);
+      });
 
-        if (result.success) {
-          console.log("✅ OTP EMAIL DELIVERED SUCCESSFULLY via Resend!");
-          console.log("   Email ID:", result.messageId || "N/A");
-        } else {
-          console.log(
-            "⚠️ Email delivery issue:",
-            result.error || result.reason || "Unknown error"
-          );
-          console.log("💡 OTP is still valid and stored in memory");
-        }
-
-        return result;
-      } catch (error) {
-        console.error(
-          "⚠️ Email sending error (OTP still valid):",
-          error.message
-        );
-
-        // Check if it's an import error
-        if (error.code === "ERR_MODULE_NOT_FOUND") {
-          console.log("💡 Resend not installed. Run: npm install resend");
-        }
-
-        return { success: false, error: error.message };
-      }
-    })();
-
-    // ✅ Don't await email - let it send in background
-    // This ensures fast API response regardless of email status
-    emailPromise.catch((err) => {
-      console.error("Background email error (non-critical):", err.message);
-    });
-    // ✅ STEP 4: Return immediate success response
-    // OTP is already stored, so user can verify even if email fails
+    // Return success immediately (don't wait for email)
     return res.json({
       success: true,
-      message: "OTP generated successfully. Check your email!",
-      debug: {
-        otp, // ⚠️ Only for development/testing - remove in production
-        email,
-        expiresIn: "5 minutes",
-        provider: "Resend Email Service",
-        timestamp: new Date().toISOString(),
-      },
+      message: "OTP generated successfully",
+      debug: { otp, email }, // For testing
     });
   } catch (error) {
-    console.error("❌ CRITICAL EMAIL OTP ERROR:", error);
-    console.error("   Stack:", error.stack);
-
-    // Only send error response if headers not already sent
-    if (!res.headersSent) {
-      res.status(500).json({
-        success: false,
-        error: "Failed to generate OTP",
-        details: error.message,
-      });
-    }
+    console.error("❌ ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to generate OTP",
+      details: error.message,
+    });
   }
 };
 // ═══════════════════════════════════════════════════════════════
