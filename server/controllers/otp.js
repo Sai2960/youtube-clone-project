@@ -1,10 +1,9 @@
-// server/controllers/otp.js - FIXED VERSION
+// server/controllers/otp.js - RESEND VERSION (NO GMAIL SMTP)
 
 import twilio from "twilio";
-import { sendOTPEmail } from '../utils/emailService.js';  // ✅ CRITICAL IMPORT
 
 // ═══════════════════════════════════════════════════════════════
-// RESEND INITIALIZATION (Not used with Gmail SMTP)
+// RESEND INITIALIZATION
 // ═══════════════════════════════════════════════════════════════
 
 let resendClient = null;
@@ -55,7 +54,7 @@ setInterval(() => {
 }, 60000);
 
 // ═══════════════════════════════════════════════════════════════
-// EMAIL OTP - USING GMAIL SMTP
+// EMAIL OTP - USING RESEND API
 // ═══════════════════════════════════════════════════════════════
 
 const sendEmailOTP = async (req, res) => {
@@ -70,7 +69,7 @@ const sendEmailOTP = async (req, res) => {
     console.log("   Time:", new Date().toISOString());
     console.log("═══════════════════════════════════════");
 
-    // Validate email presence
+    // Validate email
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -78,7 +77,6 @@ const sendEmailOTP = async (req, res) => {
       });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -98,51 +96,119 @@ const sendEmailOTP = async (req, res) => {
     console.log("   OTP:", otp);
     console.log("   Expires:", new Date(otpExpiry).toLocaleString());
 
-    // Send OTP email using Gmail SMTP
-    console.log(`📤 SENDING EMAIL VIA GMAIL SMTP [${requestId}]`);
+    // Initialize Resend
+    const resend = await initResend();
 
-    // ✅ FIXED: Now calling the imported function
-    const emailResult = await sendOTPEmail(email, otp, 5);
-
-    if (emailResult.success) {
-      console.log(`✅ EMAIL SENT SUCCESSFULLY [${requestId}]`);
-      console.log("   Message ID:", emailResult.messageId);
-
-      return res.json({
-        success: true,
-        message: "OTP sent to your email! Check your inbox and spam folder.",
-        debug: process.env.NODE_ENV === "development"
-          ? {
-              otp,
-              email,
-              requestId,
-              messageId: emailResult.messageId,
-            }
-          : undefined,
-      });
-    } else if (emailResult.skipped) {
-      console.log(`⚠️ Email service not configured [${requestId}]`);
-
+    if (!resend) {
+      console.log(`⚠️ Resend not configured [${requestId}]`);
       return res.json({
         success: true,
         message: "OTP generated (email service not configured)",
         debug: { otp, email, requestId },
-        warning: "Configure EMAIL_USER and EMAIL_PASSWORD in environment variables",
+        warning: "Configure RESEND_API_KEY to send emails",
       });
-    } else {
-      console.error(`❌ Email send failed [${requestId}]:`, emailResult.error);
+    }
+
+    // Send email using Resend
+    console.log(`📤 SENDING EMAIL VIA RESEND [${requestId}]`);
+
+    try {
+      const emailResult = await resend.emails.send({
+        from: "YouTube Clone <onboarding@resend.dev>",
+        to: [email],
+        subject: "🔐 Your Login OTP Code",
+        html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f6f9fc;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px;text-align:center;border-radius:16px 16px 0 0;">
+            <div style="font-size:48px;margin-bottom:16px;">🎬</div>
+            <h1 style="margin:0;color:white;font-size:28px;font-weight:700;">YouTube Clone</h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Your verification code is ready</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;">
+            <p style="margin:0 0 24px;color:#1a1a1a;font-size:16px;">Hello! 👋</p>
+            <p style="margin:0 0 32px;color:#4a5568;font-size:15px;line-height:1.6;">
+              Here's your one-time password to sign in. This code expires in <strong>5 minutes</strong>.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;padding:32px;">
+                  <div style="font-size:48px;font-weight:700;color:#fff;letter-spacing:12px;font-family:'Courier New',monospace;text-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                    ${otp}
+                  </div>
+                </td>
+              </tr>
+            </table>
+            <div style="background:#f7fafc;border-left:4px solid #667eea;padding:16px 20px;border-radius:6px;margin-bottom:32px;">
+              <p style="margin:0;color:#2d3748;font-size:14px;">
+                <strong>⏱️ Quick Tip:</strong> Enter this code within 5 minutes to continue.
+              </p>
+            </div>
+            <p style="margin:0;color:#718096;font-size:13px;line-height:1.6;">
+              If you didn't request this code, please ignore this email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f7fafc;padding:20px;border-top:1px solid #e2e8f0;text-align:center;border-radius:0 0 16px 16px;">
+            <p style="margin:0;color:#a0aec0;font-size:12px;">© ${new Date().getFullYear()} YouTube Clone. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+        `.trim(),
+      });
+
+      console.log("\n═══════════════════════════════════════");
+      console.log(`✅ RESEND API SUCCESS [${requestId}]`);
+      console.log("   Response:", JSON.stringify(emailResult, null, 2));
+      console.log("═══════════════════════════════════════\n");
+
+      if (emailResult.data?.id) {
+        console.log(`📬 EMAIL SENT SUCCESSFULLY [${requestId}]`);
+        console.log("   Email ID:", emailResult.data.id);
+
+        return res.json({
+          success: true,
+          message: "OTP sent to your email! Check inbox and spam folder.",
+          debug: process.env.NODE_ENV === "development"
+            ? {
+                otp,
+                email,
+                requestId,
+                emailId: emailResult.data.id,
+              }
+            : undefined,
+        });
+      } else if (emailResult.error) {
+        console.error(`❌ RESEND ERROR [${requestId}]`, emailResult.error);
+
+        return res.json({
+          success: true,
+          message: "OTP generated (email delivery issue)",
+          debug: { otp, email, requestId },
+          warning: `Resend error: ${emailResult.error.message}`,
+        });
+      }
+    } catch (emailError) {
+      console.error(`❌ EMAIL SEND ERROR [${requestId}]`, emailError);
 
       return res.json({
         success: true,
-        message: "OTP generated successfully",
-        debug: process.env.NODE_ENV === "development"
-          ? {
-              otp,
-              email,
-              requestId,
-            }
-          : undefined,
-        warning: `Email delivery issue: ${emailResult.hint || emailResult.error}`,
+        message: "OTP generated (email failed)",
+        debug: { otp, email, requestId },
+        error: emailError.message,
       });
     }
   } catch (error) {
