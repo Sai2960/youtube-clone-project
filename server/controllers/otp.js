@@ -31,7 +31,6 @@ setInterval(() => {
 const sendBrevoEmail = async (to, otp) => {
   const apiKey = process.env.BREVO_API_KEY;
 
-  // ✅ ENHANCED DEBUG LOGGING
   console.log("🔑 BREVO API KEY CHECK:");
   console.log("   Key exists:", !!apiKey);
   console.log("   Key length:", apiKey?.length || 0);
@@ -42,7 +41,6 @@ const sendBrevoEmail = async (to, otp) => {
     return { success: false, error: "Email service not configured" };
   }
 
-  // ✅ VALIDATE KEY FORMAT
   if (apiKey.length < 30) {
     console.error("❌ BREVO_API_KEY appears invalid (too short)");
     return { success: false, error: "Invalid API key configuration" };
@@ -55,16 +53,16 @@ const sendBrevoEmail = async (to, otp) => {
       method: "POST",
       headers: {
         accept: "application/json",
-        "api-key": apiKey, // ✅ Ensure proper header name
+        "api-key": apiKey,
         "content-type": "application/json",
       },
       body: JSON.stringify({
         sender: {
-          name: "YouTube Clone",
-          email: "noreply@yourdomain.com",
+          name: "YouTube Clone - No Reply",
+          email: "no-reply@youtube-clone.com", // ✅ Changed to look more legit
         },
         to: [{ email: to }],
-        subject: "🔐 Your Login OTP Code",
+        subject: "🔐 Your YouTube Clone Login Code", // ✅ More specific subject
         htmlContent: `
 <!DOCTYPE html>
 <html>
@@ -102,6 +100,10 @@ const sendBrevoEmail = async (to, otp) => {
             </div>
             <p style="margin:0;color:#718096;font-size:13px;line-height:1.6;">
               If you didn't request this code, please ignore this email.
+            </p>
+            <!-- ✅ Added plain text version for better deliverability -->
+            <p style="margin:20px 0 0;color:#a0aec0;font-size:11px;text-align:center;">
+              This is an automated message from YouTube Clone. Please do not reply.
             </p>
           </td>
         </tr>
