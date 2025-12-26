@@ -1048,44 +1048,6 @@ export default function LoginPage() {
             -webkit-overflow-scrolling: touch;
           }
 
-          /* Enhance backdrop blur for mobile */
-          :global(.backdrop-blur-3xl),
-          :global(.backdrop-blur-md),
-          :global(.backdrop-blur-sm) {
-            backdrop-filter: blur(24px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-          }
-
-          /* Input fields - better contrast on mobile */
-          :global(input.border-2) {
-            background-color: rgba(255, 255, 255, 0.95) !important;
-            border-width: 2px !important;
-          }
-
-          :global(.dark input.border-2) {
-            background-color: rgba(31, 41, 55, 0.95) !important;
-          }
-
-          /* Buttons - ensure full opacity on mobile */
-          :global(button.bg-gradient-to-r) {
-            backdrop-filter: none !important;
-          }
-
-          /* Touch target sizes for mobile */
-          :global(button),
-          :global(a) {
-            min-height: 44px;
-            min-width: 44px;
-          }
-
-          /* Prevent text size adjustment on mobile */
-          :global(body) {
-            -webkit-text-size-adjust: 100%;
-            -moz-text-size-adjust: 100%;
-            text-size-adjust: 100%;
-          }
-        }
-
         /* Tablet adjustments */
         @media (min-width: 641px) and (max-width: 1024px) {
           :global(.relative.bg-white\/90.dark\:bg-gray-900\/95) {
