@@ -386,7 +386,7 @@ export default function LoginPage() {
       </Head>
 
       {/* Premium Background with Animated Gradient Mesh */}
-      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e] pb-0">
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e]">
         {/* Animated Gradient Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Large Gradient Orb 1 */}
@@ -410,7 +410,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40 dark:opacity-20"></div>
 
         {/* Content Container */}
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-4 sm:py-12 pb-0">
+        <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
           <div className="w-full max-w-[440px] lg:max-w-[480px] pb-0">
             {/* Premium YouTube Logo Section */}
             <div className="text-center mb-8 sm:mb-10">
@@ -825,26 +825,38 @@ export default function LoginPage() {
 
       <style jsx>{`
         /* CRITICAL: Eliminate black space */
+        /* CRITICAL: Fix mobile viewport */
+        html,
+        body {
+          height: 100%;
+          margin: 0;
+          padding: 0;
+          overflow-x: hidden;
+        }
+
         .min-h-screen {
           min-height: 100vh;
           min-height: 100dvh;
-          padding-bottom: 0 !important;
-          margin-bottom: 0 !important;
+          display: flex;
+          flex-direction: column;
         }
 
+        /* iOS Safari fix */
         @supports (-webkit-touch-callout: none) {
           .min-h-screen {
             min-height: -webkit-fill-available;
           }
         }
 
-        /* Force no bottom space on mobile */
+        /* Mobile specific fixes */
         @media (max-width: 640px) {
-          .min-h-screen,
-          .min-h-screen > *,
-          .min-h-screen > * > * {
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
+          html {
+            height: -webkit-fill-available;
+          }
+
+          .min-h-screen {
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
           }
         }
 
