@@ -823,353 +823,433 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <style jsx>{`
-        /* Mobile viewport fix */
-        :global(html),
-        :global(body) {
-          height: 100%;
-          margin: 0;
-          padding: 0;
-          overflow-x: hidden;
-        }
+     <style jsx>{`
+  /* Mobile viewport fix */
+  :global(html),
+  :global(body) {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
 
-        :global(body) {
-          background: linear-gradient(
-            to bottom right,
-            rgb(248 250 252),
-            rgb(219 234 254),
-            rgb(224 231 255)
-          );
-        }
+  :global(body) {
+    background: linear-gradient(
+      to bottom right,
+      rgb(248 250 252),
+      rgb(219 234 254),
+      rgb(224 231 255)
+    );
+  }
 
-        :global(.dark body) {
-          background: linear-gradient(
-            to bottom right,
-            #0a0a0a,
-            #0f0f23,
-            #1a1a2e
-          );
-        }
+  :global(.dark body) {
+    background: linear-gradient(
+      to bottom right,
+      #0a0a0a,
+      #0f0f23,
+      #1a1a2e
+    );
+  }
 
-        .min-h-screen {
-          min-height: 100vh;
-          min-height: 100dvh;
-        }
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
 
-        /* iOS Safari fix */
-        @supports (-webkit-touch-callout: none) {
-          .min-h-screen {
-            min-height: -webkit-fill-available;
-          }
+  /* iOS Safari fix */
+  @supports (-webkit-touch-callout: none) {
+    .min-h-screen {
+      min-height: -webkit-fill-available;
+    }
 
-          :global(html) {
-            height: -webkit-fill-available;
-          }
-        }
+    :global(html) {
+      height: -webkit-fill-available;
+    }
+  }
 
-        /* Mobile specific fixes */
-        @media (max-width: 640px) {
-          .min-h-screen {
-            min-height: 100vh;
-            min-height: 100dvh;
-          }
-        }
+  /* Mobile specific fixes */
+  @media (max-width: 640px) {
+    .min-h-screen {
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+  }
 
-        @media (hover: none) and (pointer: coarse) {
-          :global(button),
-          :global(a) {
-            -webkit-tap-highlight-color: transparent;
-          }
-        }
+  @media (hover: none) and (pointer: coarse) {
+    :global(button),
+    :global(a) {
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
 
-        /* Animations */
-        @keyframes float {
-          0%,
-          100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(30px, -30px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-        }
+  /* Animations */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(30px, -30px) scale(1.1);
+    }
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+    }
+  }
 
-        @keyframes float-slow {
-          0%,
-          100% {
-            transform: translate(0, 0) scale(1);
-          }
-          50% {
-            transform: translate(-40px, 40px) scale(1.05);
-          }
-        }
+  @keyframes float-slow {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(-40px, 40px) scale(1.05);
+    }
+  }
 
-        @keyframes float-slower {
-          0%,
-          100% {
-            transform: translate(0, 0) scale(1);
-          }
-          50% {
-            transform: translate(50px, -50px) scale(1.08);
-          }
-        }
+  @keyframes float-slower {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(50px, -50px) scale(1.08);
+    }
+  }
 
-        @keyframes pulse-slow {
-          0%,
-          100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.5;
-            transform: scale(1.05);
-          }
-        }
+  @keyframes pulse-slow {
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.05);
+    }
+  }
 
-        @keyframes pulse-slower {
-          0%,
-          100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.6;
-            transform: scale(1.1);
-          }
-        }
+  @keyframes pulse-slower {
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.1);
+    }
+  }
 
-        @keyframes pulse-subtle {
-          0%,
-          100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.05);
-          }
-        }
+  @keyframes pulse-subtle {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
 
-        :global(.animate-float) {
-          animation: float 20s ease-in-out infinite;
-        }
-        :global(.animate-float-slow) {
-          animation: float-slow 25s ease-in-out infinite;
-        }
-        :global(.animate-float-slower) {
-          animation: float-slower 30s ease-in-out infinite;
-        }
-        :global(.animate-pulse-slow) {
-          animation: pulse-slow 8s ease-in-out infinite;
-        }
-        :global(.animate-pulse-slower) {
-          animation: pulse-slower 10s ease-in-out infinite;
-        }
-        :global(.animate-pulse-subtle) {
-          animation: pulse-subtle 2s ease-in-out infinite;
-        }
-        @supports (-webkit-touch-callout: none) {
-          :global(*) {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
+  :global(.animate-float) {
+    animation: float 20s ease-in-out infinite;
+  }
+  :global(.animate-float-slow) {
+    animation: float-slow 25s ease-in-out infinite;
+  }
+  :global(.animate-float-slower) {
+    animation: float-slower 30s ease-in-out infinite;
+  }
+  :global(.animate-pulse-slow) {
+    animation: pulse-slow 8s ease-in-out infinite;
+  }
+  :global(.animate-pulse-slower) {
+    animation: pulse-slower 10s ease-in-out infinite;
+  }
+  :global(.animate-pulse-subtle) {
+    animation: pulse-subtle 2s ease-in-out infinite;
+  }
 
-          :global(*::-webkit-scrollbar) {
-            display: none;
-            width: 0;
-            height: 0;
-          }
+  @supports (-webkit-touch-callout: none) {
+    :global(*) {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
 
-          :global(body) {
-            overflow-x: hidden;
-          }
-        }
+    :global(*::-webkit-scrollbar) {
+      display: none;
+      width: 0;
+      height: 0;
+    }
 
-        /* Touch device detection */
-        @media (hover: none) and (pointer: coarse) {
-          :global(*) {
-            scrollbar-width: none !important;
-            -ms-overflow-style: none !important;
-          }
+    :global(body) {
+      overflow-x: hidden;
+    }
+  }
 
-          :global(*::-webkit-scrollbar) {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-          }
-        }
+  /* Touch device detection */
+  @media (hover: none) and (pointer: coarse) {
+    :global(*) {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
 
-        @media (max-width: 640px) {
-          /* ========== COMPREHENSIVE SCROLLBAR HIDING ========== */
+    :global(*::-webkit-scrollbar) {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+  }
 
-          /* 1. Hide scrollbars globally for all elements */
-          :global(*) {
-            scrollbar-width: none !important;
-            -ms-overflow-style: none !important;
-            -webkit-overflow-scrolling: touch !important;
-          }
+  @media (max-width: 640px) {
+    /* ========== COMPREHENSIVE SCROLLBAR HIDING ========== */
 
-          :global(*::-webkit-scrollbar) {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-            background: transparent !important;
-            -webkit-appearance: none !important;
-          }
+    /* 1. Hide scrollbars globally for all elements */
+    :global(*) {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
 
-          /* 2. Target specific scroll containers */
-          :global(html),
-          :global(body),
-          :global(#__next),
-          :global([data-nextjs-scroll-focus-boundary]),
-          :global(.min-h-screen) {
-            scrollbar-width: none !important;
-            -ms-overflow-style: none !important;
-            overflow-x: hidden !important;
-          }
+    :global(*::-webkit-scrollbar) {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important;
+      -webkit-appearance: none !important;
+    }
 
-          :global(html::-webkit-scrollbar),
-          :global(body::-webkit-scrollbar),
-          :global(#__next::-webkit-scrollbar),
-          :global([data-nextjs-scroll-focus-boundary]::-webkit-scrollbar),
-          :global(.min-h-screen::-webkit-scrollbar) {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-            -webkit-appearance: none !important;
-          }
+    /* 2. Target specific scroll containers */
+    :global(html),
+    :global(body),
+    :global(#__next),
+    :global([data-nextjs-scroll-focus-boundary]),
+    :global(.min-h-screen) {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+      overflow-x: hidden !important;
+    }
 
-          /* 3. Ensure smooth scrolling without visible scrollbar */
-          :global(body) {
-            overflow-y: scroll !important;
-            overflow-x: hidden !important;
-          }
+    :global(html::-webkit-scrollbar),
+    :global(body::-webkit-scrollbar),
+    :global(#__next::-webkit-scrollbar),
+    :global([data-nextjs-scroll-focus-boundary]::-webkit-scrollbar),
+    :global(.min-h-screen::-webkit-scrollbar) {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      -webkit-appearance: none !important;
+    }
 
-          /* ========== INCREASE BACKGROUND GRADIENT ORBS OPACITY ========== */
-          /* Make animated gradient orbs MORE VISIBLE on mobile */
-          :global(.absolute.inset-0.overflow-hidden.pointer-events-none > div) {
-            opacity: 1 !important;
-          }
+    /* 3. Ensure smooth scrolling without visible scrollbar */
+    :global(body) {
+      overflow-y: scroll !important;
+      overflow-x: hidden !important;
+    }
 
-          /* Boost individual orb colors */
-          :global(.bg-gradient-to-br.from-blue-400\/40) {
-            background: linear-gradient(
-              to bottom right,
-              rgba(96, 165, 250, 0.6),
-              rgba(192, 132, 252, 0.5),
-              rgba(251, 113, 133, 0.4)
-            ) !important;
-          }
+    /* ========== MOBILE GRADIENT ORBS - FULL COVERAGE ========== */
+    /* Make animated gradient orbs MORE VISIBLE and BIGGER on mobile */
+    :global(.absolute.inset-0.overflow-hidden.pointer-events-none > div) {
+      opacity: 1 !important;
+    }
 
-          :global(.bg-gradient-to-tl.from-indigo-400\/40) {
-            background: linear-gradient(
-              to top left,
-              rgba(129, 140, 248, 0.6),
-              rgba(96, 165, 250, 0.5),
-              rgba(34, 211, 238, 0.4)
-            ) !important;
-          }
+    /* Top-left orb - PINK & PURPLE gradient (cover top half) */
+    :global(.absolute.-top-40.-left-40) {
+      top: -25% !important;
+      left: -25% !important;
+      width: 150vw !important;
+      height: 100vh !important;
+      background: radial-gradient(
+        ellipse at 30% 30%,
+        rgba(192, 132, 252, 0.4) 0%,
+        rgba(167, 139, 250, 0.35) 20%,
+        rgba(139, 92, 246, 0.25) 40%,
+        transparent 70%
+      ) !important;
+    }
 
-          /* ========== GLASSMORPHISM CARDS ========== */
-          /* Main login card - Premium glassmorphism */
-          :global(.relative.bg-white\/90.dark\:bg-gray-900\/95) {
-            background: rgba(255, 255, 255, 0.85) !important;
-            backdrop-filter: blur(40px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
-            border: 2px solid rgba(255, 255, 255, 0.3) !important;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
-              0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
-          }
+    /* Bottom-right orb - BLUE & CYAN gradient (cover bottom half) */
+    :global(.absolute.-bottom-40.-right-40) {
+      bottom: -25% !important;
+      right: -25% !important;
+      width: 150vw !important;
+      height: 100vh !important;
+      background: radial-gradient(
+        ellipse at 70% 70%,
+        rgba(96, 165, 250, 0.5) 0%,
+        rgba(59, 130, 246, 0.4) 20%,
+        rgba(37, 99, 235, 0.3) 40%,
+        transparent 70%
+      ) !important;
+    }
 
-          :global(.dark .relative.bg-white\/90.dark\:bg-gray-900\/95) {
-            background: rgba(17, 24, 39, 0.75) !important;
-            backdrop-filter: blur(40px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
-            border: 2px solid rgba(71, 85, 105, 0.4) !important;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
-              0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
-          }
+    /* Center overlay orb - INDIGO blend */
+    :global(.absolute.top-1\/3.right-1\/4) {
+      top: 20% !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: 100vw !important;
+      height: 70vh !important;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(99, 102, 241, 0.3) 0%,
+        rgba(79, 70, 229, 0.25) 25%,
+        rgba(67, 56, 202, 0.15) 50%,
+        transparent 70%
+      ) !important;
+    }
 
-          /* Location info card - Premium glassmorphism */
-          :global(.bg-gradient-to-br.from-indigo-50\/95) {
-            background: linear-gradient(
-              to bottom right,
-              rgba(238, 242, 255, 0.9),
-              rgba(224, 231, 255, 0.9),
-              rgba(237, 233, 254, 0.9)
-            ) !important;
-            backdrop-filter: blur(20px) saturate(150%) !important;
-            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-            border: 2px solid rgba(199, 210, 254, 0.6) !important;
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2),
-              0 0 0 1px rgba(255, 255, 255, 0.3) inset !important;
-          }
+    /* Left accent orb - PURPLE tint */
+    :global(.absolute.bottom-1\/3.left-1\/4) {
+      bottom: 25% !important;
+      left: -15% !important;
+      width: 70vw !important;
+      height: 60vh !important;
+      background: radial-gradient(
+        circle,
+        rgba(168, 85, 247, 0.35) 0%,
+        rgba(147, 51, 234, 0.25) 30%,
+        transparent 60%
+      ) !important;
+    }
 
-          :global(.dark .bg-gradient-to-br.from-indigo-50\/95) {
-            background: linear-gradient(
-              to bottom right,
-              rgba(30, 27, 75, 0.85),
-              rgba(23, 37, 84, 0.85),
-              rgba(46, 16, 101, 0.85)
-            ) !important;
-            backdrop-filter: blur(20px) saturate(150%) !important;
-            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-            border: 2px solid rgba(99, 102, 241, 0.5) !important;
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3),
-              0 0 0 1px rgba(99, 102, 241, 0.1) inset !important;
-          }
+    /* Right accent orb - BLUE/CYAN tint */
+    :global(.absolute.top-20.right-1\/3) {
+      top: 20% !important;
+      right: -15% !important;
+      width: 70vw !important;
+      height: 60vh !important;
+      background: radial-gradient(
+        circle,
+        rgba(34, 211, 238, 0.35) 0%,
+        rgba(6, 182, 212, 0.25) 30%,
+        transparent 60%
+      ) !important;
+    }
 
-          /* Keep subtle inner glow */
-          :global(.absolute.inset-0.rounded-3xl.bg-gradient-to-br) {
-            opacity: 0.5 !important;
-          }
+    /* Bottom accent orb - INDIGO/PURPLE blend */
+    :global(.absolute.bottom-32.left-1\/3) {
+      bottom: 10% !important;
+      left: 30% !important;
+      width: 60vw !important;
+      height: 50vh !important;
+      background: radial-gradient(
+        circle,
+        rgba(129, 140, 248, 0.3) 0%,
+        rgba(99, 102, 241, 0.2) 30%,
+        transparent 60%
+      ) !important;
+    }
 
-          /* ========== INPUT FIELDS ========== */
-          /* Input fields - Glassmorphism */
-          :global(input.border-2) {
-            background: rgba(255, 255, 255, 0.8) !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            border: 2px solid rgba(209, 213, 219, 0.5) !important;
-          }
+    /* Override default orb colors for seamless blending */
+    :global(.bg-gradient-to-br.from-blue-400\/40),
+    :global(.bg-gradient-to-tl.from-indigo-400\/40),
+    :global(.bg-gradient-to-br.from-purple-400\/30),
+    :global(.bg-gradient-to-tr.from-cyan-400\/30),
+    :global(.bg-gradient-to-br.from-yellow-400\/25),
+    :global(.bg-gradient-to-tl.from-rose-400\/25) {
+      background: transparent !important;
+    }
 
-          :global(.dark input.border-2) {
-            background: rgba(31, 41, 55, 0.8) !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            border: 2px solid rgba(75, 85, 99, 0.5) !important;
-          }
+    /* ========== GLASSMORPHISM CARDS ========== */
+    /* Main login card - Premium glassmorphism */
+    :global(.relative.bg-white\/90.dark\:bg-gray-900\/95) {
+      background: rgba(255, 255, 255, 0.85) !important;
+      backdrop-filter: blur(40px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+      border: 2px solid rgba(255, 255, 255, 0.3) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
+    }
 
-          /* ========== ENHANCE BACKGROUND CONTAINER ========== */
-          /* Make sure background gradient is vivid */
-          :global(.bg-gradient-to-br.from-slate-50) {
-            background: linear-gradient(
-              to bottom right,
-              rgb(248, 250, 252),
-              rgb(219, 234, 254),
-              rgb(224, 231, 255)
-            ) !important;
-          }
+    :global(.dark .relative.bg-white\/90.dark\:bg-gray-900\/95) {
+      background: rgba(17, 24, 39, 0.75) !important;
+      backdrop-filter: blur(40px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+      border: 2px solid rgba(71, 85, 105, 0.4) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+    }
 
-          :global(.dark .bg-gradient-to-br.from-slate-50) {
-            background: linear-gradient(
-              to bottom right,
-              rgb(10, 10, 10),
-              rgb(15, 15, 35),
-              rgb(26, 26, 46)
-            ) !important;
-          }
+    /* Location info card - Premium glassmorphism */
+    :global(.bg-gradient-to-br.from-indigo-50\/95) {
+      background: linear-gradient(
+        to bottom right,
+        rgba(238, 242, 255, 0.9),
+        rgba(224, 231, 255, 0.9),
+        rgba(237, 233, 254, 0.9)
+      ) !important;
+      backdrop-filter: blur(20px) saturate(150%) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+      border: 2px solid rgba(199, 210, 254, 0.6) !important;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.3) inset !important;
+    }
 
-          /* Ensure grid pattern is visible */
-          :global(.bg-\[url\(\'data\:image\/svg\+xml) {
-            opacity: 0.3 !important;
-          }
+    :global(.dark .bg-gradient-to-br.from-indigo-50\/95) {
+      background: linear-gradient(
+        to bottom right,
+        rgba(30, 27, 75, 0.85),
+        rgba(23, 37, 84, 0.85),
+        rgba(46, 16, 101, 0.85)
+      ) !important;
+      backdrop-filter: blur(20px) saturate(150%) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+      border: 2px solid rgba(99, 102, 241, 0.5) !important;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3),
+        0 0 0 1px rgba(99, 102, 241, 0.1) inset !important;
+    }
 
-          :global(.dark .bg-\[url\(\'data\:image\/svg\+xml) {
-            opacity: 0.15 !important;
-          }
-        }
-      `}</style>
+    /* Keep subtle inner glow */
+    :global(.absolute.inset-0.rounded-3xl.bg-gradient-to-br) {
+      opacity: 0.5 !important;
+    }
+
+    /* ========== INPUT FIELDS ========== */
+    /* Input fields - Glassmorphism */
+    :global(input.border-2) {
+      background: rgba(255, 255, 255, 0.8) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      border: 2px solid rgba(209, 213, 219, 0.5) !important;
+    }
+
+    :global(.dark input.border-2) {
+      background: rgba(31, 41, 55, 0.8) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      border: 2px solid rgba(75, 85, 99, 0.5) !important;
+    }
+
+    /* ========== ENHANCE BACKGROUND CONTAINER ========== */
+    /* Make sure background gradient is vivid */
+    :global(.bg-gradient-to-br.from-slate-50) {
+      background: linear-gradient(
+        to bottom right,
+        rgb(248, 250, 252),
+        rgb(219, 234, 254),
+        rgb(224, 231, 255)
+      ) !important;
+    }
+
+    :global(.dark .bg-gradient-to-br.from-slate-50) {
+      background: linear-gradient(
+        to bottom right,
+        rgb(10, 10, 10),
+        rgb(15, 15, 35),
+        rgb(26, 26, 46)
+      ) !important;
+    }
+
+    /* Ensure grid pattern is visible */
+    :global(.bg-\[url\(\'data\:image\/svg\+xml) {
+      opacity: 0.3 !important;
+    }
+
+    :global(.dark .bg-\[url\(\'data\:image\/svg\+xml) {
+      opacity: 0.15 !important;
+    }
+  }
+`}</style>
     </>
   );
 }
