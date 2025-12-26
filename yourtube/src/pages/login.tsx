@@ -439,11 +439,10 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Premium Login Card with Glassmorphism */}
-            <div className="relative bg-white/95 dark:bg-[#0f1729]/98 backdrop-blur-3xl rounded-3xl border border-gray-200/50 dark:border-gray-700/30 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-gray-900/5 dark:shadow-black/60">
-              {/* Subtle Inner Glow */}
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/50 via-white/20 to-transparent dark:from-gray-800/30 dark:via-gray-900/10 dark:to-transparent pointer-events-none"></div>
-
+           {/* Premium Login Card with Glassmorphism */}
+<div className="relative bg-white/95 dark:bg-[#0f1729]/98 backdrop-blur-3xl rounded-3xl border border-gray-200/50 dark:border-gray-700/30 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-gray-900/5 dark:shadow-black/60">
+  {/* Subtle Inner Glow */}
+  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/50 via-white/20 to-transparent dark:from-gray-800/30 dark:via-gray-900/10 dark:to-transparent pointer-events-none"></div>
               {/* Content */}
               <div className="relative z-10">
                 {/* Error Message */}
@@ -508,7 +507,7 @@ export default function LoginPage() {
                         <div className="w-full border-t-2 border-gray-200 dark:border-gray-700"></div>
                       </div>
                       <div className="relative flex justify-center">
-                        <span className="px-4 sm:px-5 py-1 sm:py-1.5 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <span className="px-4 sm:px-5 py-1 sm:py-1.5 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
                           or verify with OTP
                         </span>
                       </div>
@@ -516,7 +515,7 @@ export default function LoginPage() {
 
                     {/* Premium Location Info Card */}
                     {locationInfo && (
-                      <div className="relative group bg-gradient-to-br from-indigo-50/98 via-blue-50/98 to-purple-50/98 dark:from-[#1a1845]/95 dark:via-[#0f1f42]/95 dark:to-[#1e0f3d]/95 backdrop-blur-xl rounded-2xl p-4 sm:p-5 border-2 border-indigo-200/60 dark:border-indigo-800/40 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      <div className="relative group bg-gradient-to-br from-indigo-50/95 via-blue-50/95 to-purple-50/95 dark:from-indigo-950/80 dark:via-blue-950/80 dark:to-purple-950/80 backdrop-blur-md rounded-2xl p-4 sm:p-5 border-2 border-indigo-200/80 dark:border-indigo-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
                         {/* Animated Background Gradient */}
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/5 to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -551,7 +550,7 @@ export default function LoginPage() {
                           placeholder="Email address"
                           value={contact}
                           onChange={(e) => setContact(e.target.value)}
-                          className="h-12 sm:h-14 px-4 sm:px-5 text-sm sm:text-base border-2 border-gray-300 dark:border-gray-600 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-md text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 pr-12"
+                          className="h-12 sm:h-14 px-4 sm:px-5 text-sm sm:text-base border-2 border-gray-300 dark:border-gray-600 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 pr-12"
                         />
                         {/* Input Icon */}
                         <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none">
@@ -676,7 +675,7 @@ export default function LoginPage() {
                           setOtp(value);
                         }}
                         maxLength={6}
-                        className="h-16 sm:h-20 text-center text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em] font-bold border-2 border-gray-300 dark:border-gray-600 rounded-2xl bg-gradient-to-br from-gray-50/95 to-white/95 dark:from-gray-800/95 dark:to-gray-900/95 text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-400 focus:ring-4 focus:ring-green-500/20 transition-all shadow-inner backdrop-blur-md"
+                        className="h-16 sm:h-20 text-center text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em] font-bold border-2 border-gray-300 dark:border-gray-600 rounded-2xl bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-400 focus:ring-4 focus:ring-green-500/20 transition-all shadow-inner backdrop-blur-sm"
                       />
                       {otp.length > 0 && (
                         <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2">
@@ -748,26 +747,23 @@ export default function LoginPage() {
 
             {/* Premium Footer Links */}
             <div className="mt-8 sm:mt-10 flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
-              href="#" className="text-gray-700 dark:text-gray-300
-              hover:text-blue-600 dark:hover:text-blue-400 font-semibold
-              transition-colors"
               <a
                 href="#"
                 className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors"
               >
                 Help Center
               </a>
-              <span className="text-gray-500 dark:text-gray-500">•</span>
+              <span className="text-gray-400">•</span>
               <a
                 href="#"
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors"
+                className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors"
               >
                 Privacy Policy
               </a>
-              <span className="text-gray-500 dark:text-gray-500">•</span>
+              <span className="text-gray-400">•</span>
               <a
                 href="#"
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors"
+                className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors"
               >
                 Terms of Service
               </a>
