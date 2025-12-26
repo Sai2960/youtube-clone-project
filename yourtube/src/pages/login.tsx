@@ -373,6 +373,16 @@ export default function LoginPage() {
     <>
       <Head>
         <title>Sign in - YouTube</title>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#0f172a" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
       </Head>
 
       {/* Premium Background with Animated Gradient Mesh */}
@@ -400,8 +410,8 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40 dark:opacity-20"></div>
 
         {/* Content Container */}
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-6 sm:py-12">
-          <div className="w-full max-w-[440px] lg:max-w-[480px] pb-8 sm:pb-0">
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-4 sm:py-12 safe-area-inset">
+          <div className="w-full max-w-[440px] lg:max-w-[480px] pb-4 sm:pb-0">
             {/* Premium YouTube Logo Section */}
             <div className="text-center mb-8 sm:mb-10">
               <div className="inline-flex items-center justify-center gap-3 mb-6 sm:mb-8 group cursor-default">
@@ -814,37 +824,61 @@ export default function LoginPage() {
       </div>
 
       <style jsx>{`
-        /* Mobile-first responsive height handling */
+        /* CRITICAL: Mobile viewport fixes - NO BLACK SPACE */
         .min-h-screen {
           min-height: 100vh;
+          min-height: 100dvh; /* Modern browsers */
         }
 
-        @supports (height: 100dvh) {
-          .min-h-screen {
-            min-height: 100dvh;
-          }
-        }
-
-        /* iOS Safari fix */
+        /* iOS Safari specific fix */
         @supports (-webkit-touch-callout: none) {
           .min-h-screen {
             min-height: -webkit-fill-available;
           }
         }
 
-        /* Mobile-specific fixes - REMOVE BLACK SPACE */
+        /* Force full height on all screen sizes */
+        html,
+        body {
+          height: 100%;
+          overflow-x: hidden;
+        }
+
+        body {
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+
+        /* Ensure background container fills screen */
+        .min-h-screen {
+          position: relative;
+          width: 100%;
+        }
+
+        /* Mobile optimizations */
         @media (max-width: 640px) {
           .min-h-screen {
             min-height: 100vh !important;
+            min-height: 100dvh !important;
+            display: flex;
+            flex-direction: column;
           }
 
-          /* Ensure background covers entire viewport */
-          .min-h-screen > div {
-            min-height: 100vh !important;
+          /* Remove any bottom margins/padding */
+          .min-h-screen > * {
+            margin-bottom: 0 !important;
           }
         }
 
-        /* Animations */
+        /* Touch optimization */
+        @media (hover: none) and (pointer: coarse) {
+          button,
+          a {
+            -webkit-tap-highlight-color: transparent;
+          }
+        }
+
+        /* Animations - unchanged */
         @keyframes float {
           0%,
           100% {
@@ -915,23 +949,18 @@ export default function LoginPage() {
         .animate-float {
           animation: float 20s ease-in-out infinite;
         }
-
         .animate-float-slow {
           animation: float-slow 25s ease-in-out infinite;
         }
-
         .animate-float-slower {
           animation: float-slower 30s ease-in-out infinite;
         }
-
         .animate-pulse-slow {
           animation: pulse-slow 8s ease-in-out infinite;
         }
-
         .animate-pulse-slower {
           animation: pulse-slower 10s ease-in-out infinite;
         }
-
         .animate-pulse-subtle {
           animation: pulse-subtle 2s ease-in-out infinite;
         }

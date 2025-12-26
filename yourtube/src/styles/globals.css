@@ -11923,3 +11923,30 @@ button {
     overflow-x: auto !important;
   }
 }
+/* styles/globals.css */
+html, body, #__next {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+}
+
+/* iOS Safari notch/safe area support */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Disable pull-to-refresh on mobile */
+body {
+  overscroll-behavior-y: contain;
+}
