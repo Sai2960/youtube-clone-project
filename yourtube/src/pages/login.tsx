@@ -1044,6 +1044,7 @@ export default function LoginPage() {
             overflow-y: scroll !important;
             overflow-x: hidden !important;
           }
+
           /* ========== INCREASE BACKGROUND GRADIENT ORBS OPACITY ========== */
           /* Make animated gradient orbs MORE VISIBLE on mobile */
           :global(.absolute.inset-0.overflow-hidden.pointer-events-none > div) {
@@ -1123,12 +1124,15 @@ export default function LoginPage() {
             opacity: 0.5 !important;
           }
 
+          /* ========== INPUT FIELDS ========== */
+          /* Input fields - Glassmorphism */
           :global(input.border-2) {
             background: rgba(255, 255, 255, 0.8) !important;
             backdrop-filter: blur(12px) !important;
             -webkit-backdrop-filter: blur(12px) !important;
             border: 2px solid rgba(209, 213, 219, 0.5) !important;
           }
+
           :global(.dark input.border-2) {
             background: rgba(31, 41, 55, 0.8) !important;
             backdrop-filter: blur(12px) !important;
