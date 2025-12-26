@@ -386,7 +386,7 @@ export default function LoginPage() {
       </Head>
 
       {/* Premium Background with Animated Gradient Mesh */}
-      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e] pb-0">
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e]">
         {/* Animated Gradient Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Large Gradient Orb 1 */}
@@ -410,9 +410,8 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40 dark:opacity-20"></div>
 
         {/* Content Container */}
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-4 sm:py-12">
-          <div className="w-full max-w-[440px] lg:max-w-[480px] mb-0 pb-0 sm:pb-0">
-            {" "}
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-4 sm:py-12 safe-area-inset">
+          <div className="w-full max-w-[440px] lg:max-w-[480px] pb-4 sm:pb-0">
             {/* Premium YouTube Logo Section */}
             <div className="text-center mb-8 sm:mb-10">
               <div className="inline-flex items-center justify-center gap-3 mb-6 sm:mb-8 group cursor-default">
@@ -439,6 +438,7 @@ export default function LoginPage() {
                 Sign in to continue to YouTube
               </p>
             </div>
+
             {/* Premium Login Card with Glassmorphism */}
             <div className="relative bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl rounded-3xl border border-gray-200/60 dark:border-gray-700/60 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-gray-900/10 dark:shadow-black/40">
               {/* Subtle Inner Glow */}
@@ -745,8 +745,9 @@ export default function LoginPage() {
                 )}
               </div>
             </div>
+
             {/* Premium Footer Links */}
-            <div className="mt-6 mb-0 sm:mt-10 flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
+            <div className="mt-8 sm:mt-10 flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
               <a
                 href="#"
                 className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors"
@@ -768,6 +769,7 @@ export default function LoginPage() {
                 Terms of Service
               </a>
             </div>
+
             {/* Premium Debug Info */}
             {process.env.NODE_ENV === "development" && locationInfo && (
               <div className="mt-6 sm:mt-8 p-4 sm:p-5 bg-gradient-to-br from-amber-50/90 via-yellow-50/90 to-orange-50/90 dark:from-amber-950/50 dark:via-yellow-950/50 dark:to-orange-950/50 backdrop-blur-sm border-2 border-amber-200 dark:border-amber-800 rounded-2xl text-xs sm:text-sm shadow-lg">
@@ -822,78 +824,61 @@ export default function LoginPage() {
       </div>
 
       <style jsx>{`
-        /* CRITICAL: Eliminate ALL black space on mobile */
-        * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
-
+        /* CRITICAL: Mobile viewport fixes - NO BLACK SPACE */
         .min-h-screen {
           min-height: 100vh;
-          min-height: 100dvh;
-          margin: 0;
-          padding: 0;
+          min-height: 100dvh; /* Modern browsers */
         }
 
-        /* iOS Safari fix */
+        /* iOS Safari specific fix */
         @supports (-webkit-touch-callout: none) {
           .min-h-screen {
             min-height: -webkit-fill-available;
           }
         }
 
-        /* Mobile-specific fixes */
+        /* Force full height on all screen sizes */
+        html,
+        body {
+          height: 100%;
+          overflow-x: hidden;
+        }
+
+        body {
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+
+        /* Ensure background container fills screen */
+        .min-h-screen {
+          position: relative;
+          width: 100%;
+        }
+
+        /* Mobile optimizations */
         @media (max-width: 640px) {
           .min-h-screen {
             min-height: 100vh !important;
             min-height: 100dvh !important;
             display: flex;
             flex-direction: column;
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
           }
 
-          /* Force no bottom spacing */
+          /* Remove any bottom margins/padding */
           .min-h-screen > * {
             margin-bottom: 0 !important;
-            padding-bottom: 0 !important;
-          }
-
-          /* Ensure content fills available space */
-          .min-h-screen > div {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding-bottom: 0 !important;
           }
         }
 
-        /* Remove tap highlight on mobile */
+        /* Touch optimization */
         @media (hover: none) and (pointer: coarse) {
           button,
-          a,
-          input {
+          a {
             -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-          }
-
-          input {
-            -webkit-user-select: text;
-            user-select: text;
           }
         }
 
-        /* Prevent overscroll bounce on iOS */
-        body {
-          overscroll-behavior-y: none;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* Animations */
+        /* Animations - unchanged */
         @keyframes float {
           0%,
           100% {
