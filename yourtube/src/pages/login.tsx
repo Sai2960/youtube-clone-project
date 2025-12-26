@@ -968,11 +968,25 @@ export default function LoginPage() {
         :global(.animate-pulse-subtle) {
           animation: pulse-subtle 2s ease-in-out infinite;
         }
+        @supports (-webkit-touch-callout: none) {
+          :global(*) {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
 
-        /* ✅ FIXED: Mobile-specific card adjustments - solid backgrounds */
-        @media (max-width: 640px) {
-          /* ========== SCROLLBAR HIDING - HIGHEST PRIORITY ========== */
-          /* Target all possible scrollbar containers */
+          :global(*::-webkit-scrollbar) {
+            display: none;
+            width: 0;
+            height: 0;
+          }
+
+          :global(body) {
+            overflow-x: hidden;
+          }
+        }
+
+        /* Touch device detection */
+        @media (hover: none) and (pointer: coarse) {
           :global(*) {
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
@@ -982,24 +996,53 @@ export default function LoginPage() {
             display: none !important;
             width: 0 !important;
             height: 0 !important;
-            background: transparent !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          /* ========== COMPREHENSIVE SCROLLBAR HIDING ========== */
+
+          /* 1. Hide scrollbars globally for all elements */
+          :global(*) {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+            -webkit-overflow-scrolling: touch !important;
           }
 
+          :global(*::-webkit-scrollbar) {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+            -webkit-appearance: none !important;
+          }
+
+          /* 2. Target specific scroll containers */
           :global(html),
           :global(body),
           :global(#__next),
+          :global([data-nextjs-scroll-focus-boundary]),
           :global(.min-h-screen) {
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
+            overflow-x: hidden !important;
           }
 
           :global(html::-webkit-scrollbar),
           :global(body::-webkit-scrollbar),
           :global(#__next::-webkit-scrollbar),
+          :global([data-nextjs-scroll-focus-boundary]::-webkit-scrollbar),
           :global(.min-h-screen::-webkit-scrollbar) {
             display: none !important;
             width: 0 !important;
             height: 0 !important;
+            -webkit-appearance: none !important;
+          }
+
+          /* 3. Ensure smooth scrolling without visible scrollbar */
+          :global(body) {
+            overflow-y: scroll !important;
+            overflow-x: hidden !important;
           }
 
           /* Main login card - SOLID background to prevent scroll issues */
