@@ -814,12 +814,9 @@ export default function LoginPage() {
       </div>
 
       <style jsx>{`
-        /* Ensure full height on mobile devices */
-        @supports (-webkit-touch-callout: none) {
-          /* iOS specific */
-          .min-h-screen {
-            min-height: -webkit-fill-available;
-          }
+        /* Mobile-first responsive height handling */
+        .min-h-screen {
+          min-height: 100vh;
         }
 
         @supports (height: 100dvh) {
@@ -828,27 +825,26 @@ export default function LoginPage() {
           }
         }
 
-        /* Safe area padding for devices with notches/home indicators */
-        .pb-safe {
-          padding-bottom: max(2rem, env(safe-area-inset-bottom));
+        /* iOS Safari fix */
+        @supports (-webkit-touch-callout: none) {
+          .min-h-screen {
+            min-height: -webkit-fill-available;
+          }
         }
 
-        /* ✅ FIX: Remove black area on mobile */
+        /* Mobile-specific fixes - REMOVE BLACK SPACE */
         @media (max-width: 640px) {
           .min-h-screen {
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            min-height: 100dvh;
+            min-height: 100vh !important;
           }
 
-          /* Ensure content container fills screen */
+          /* Ensure background covers entire viewport */
           .min-h-screen > div {
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            min-height: 100dvh;
+            min-height: 100vh !important;
           }
         }
 
+        /* Animations */
         @keyframes float {
           0%,
           100% {
@@ -939,121 +935,6 @@ export default function LoginPage() {
         .animate-pulse-subtle {
           animation: pulse-subtle 2s ease-in-out infinite;
         }
-       /* Mobile-first responsive height handling */
-  .min-h-screen {
-    min-height: 100vh;
-  }
-
-  @supports (height: 100dvh) {
-    .min-h-screen {
-      min-height: 100dvh;
-    }
-  }
-
-  /* iOS Safari fix */
-  @supports (-webkit-touch-callout: none) {
-    .min-h-screen {
-      min-height: -webkit-fill-available;
-    }
-  }
-
-  /* Mobile-specific fixes - REMOVE BLACK SPACE */
-  @media (max-width: 640px) {
-    .min-h-screen {
-      min-height: 100vh !important;
-    }
-    
-    /* Ensure background covers entire viewport */
-    .min-h-screen > div {
-      min-height: 100vh !important;
-    }
-  }
-
-  /* Animations */
-  @keyframes float {
-    0%, 100% {
-      transform: translate(0, 0) scale(1);
-    }
-    33% {
-      transform: translate(30px, -30px) scale(1.1);
-    }
-    66% {
-      transform: translate(-20px, 20px) scale(0.9);
-    }
-  }
-
-  @keyframes float-slow {
-    0%, 100% {
-      transform: translate(0, 0) scale(1);
-    }
-    50% {
-      transform: translate(-40px, 40px) scale(1.05);
-    }
-  }
-
-  @keyframes float-slower {
-    0%, 100% {
-      transform: translate(0, 0) scale(1);
-    }
-    50% {
-      transform: translate(50px, -50px) scale(1.08);
-    }
-  }
-
-  @keyframes pulse-slow {
-    0%, 100% {
-      opacity: 0.3;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.5;
-      transform: scale(1.05);
-    }
-  }
-
-  @keyframes pulse-slower {
-    0%, 100% {
-      opacity: 0.3;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.6;
-      transform: scale(1.1);
-    }
-  }
-
-  @keyframes pulse-subtle {
-    0%, 100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.05);
-    }
-  }
-
-  .animate-float {
-    animation: float 20s ease-in-out infinite;
-  }
-
-  .animate-float-slow {
-    animation: float-slow 25s ease-in-out infinite;
-  }
-
-  .animate-float-slower {
-    animation: float-slower 30s ease-in-out infinite;
-  }
-
-  .animate-pulse-slow {
-    animation: pulse-slow 8s ease-in-out infinite;
-  }
-
-  .animate-pulse-slower {
-    animation: pulse-slower 10s ease-in-out infinite;
-  }
-
-  .animate-pulse-subtle {
-    animation: pulse-subtle 2s ease-in-out infinite;
-  }
       `}</style>
     </>
   );
