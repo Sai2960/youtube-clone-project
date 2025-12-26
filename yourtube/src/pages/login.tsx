@@ -516,7 +516,7 @@ export default function LoginPage() {
 
                     {/* Premium Location Info Card */}
                     {locationInfo && (
-                      <div className="relative group bg-gradient-to-br from-indigo-50/80 via-blue-50/80 to-purple-50/80 dark:from-indigo-950/40 dark:via-blue-950/40 dark:to-purple-950/40 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-indigo-200/60 dark:border-indigo-800/60 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                      <div className="relative group bg-gradient-to-br from-indigo-100/90 via-blue-100/90 to-purple-100/90 dark:from-indigo-900/60 dark:via-blue-900/60 dark:to-purple-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border-2 border-indigo-300/70 dark:border-indigo-700/70 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
                         {/* Animated Background Gradient */}
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/5 to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -972,3 +972,4 @@ export default function LoginPage() {
     </>
   );
 }
+
