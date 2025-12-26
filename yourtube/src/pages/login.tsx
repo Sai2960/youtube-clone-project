@@ -1046,28 +1046,30 @@ export default function LoginPage() {
           }
 
           /* Main login card - SOLID background to prevent scroll issues */
+          /* Main login card - SOLID background to prevent scroll issues */
           :global(.relative.bg-white\/90.dark\:bg-gray-900\/95) {
-            background: #ffffff !important;
-            border: 2px solid rgb(229, 231, 235) !important;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15),
-              0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
           }
 
           :global(.dark .relative.bg-white\/90.dark\:bg-gray-900\/95) {
-            background: rgb(15, 23, 42) !important;
+            background: rgba(17, 24, 39, 0.95) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
             border: 2px solid rgba(71, 85, 105, 0.6) !important;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5),
-              0 0 0 1px rgba(255, 255, 255, 0.05) !important;
           }
 
           /* Location info card - SOLID gradient background */
           :global(.bg-gradient-to-br.from-indigo-50\/95) {
             background: linear-gradient(
               to bottom right,
-              rgb(238, 242, 255),
-              rgb(224, 231, 255),
-              rgb(237, 233, 254)
+              rgba(238, 242, 255, 0.95),
+              rgba(224, 231, 255, 0.95),
+              rgba(237, 233, 254, 0.95)
             ) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
             border: 2.5px solid rgb(199, 210, 254) !important;
             box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15) !important;
           }
@@ -1075,35 +1077,31 @@ export default function LoginPage() {
           :global(.dark .bg-gradient-to-br.from-indigo-50\/95) {
             background: linear-gradient(
               to bottom right,
-              rgb(30, 27, 75),
-              rgb(23, 37, 84),
-              rgb(46, 16, 101)
+              rgba(30, 27, 75, 0.95),
+              rgba(23, 37, 84, 0.95),
+              rgba(46, 16, 101, 0.95)
             ) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
             border: 2.5px solid rgba(99, 102, 241, 0.5) !important;
             box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25) !important;
           }
 
           /* Remove inner glow gradient on mobile for better performance */
           :global(.absolute.inset-0.rounded-3xl.bg-gradient-to-br) {
-            display: none !important;
+            opacity: 0.3 !important;
           }
 
-          /* Remove backdrop blur on mobile */
-          :global(.backdrop-blur-3xl),
-          :global(.backdrop-blur-md),
-          :global(.backdrop-blur-sm) {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-          }
-
-          /* Input fields - SOLID backgrounds */
           :global(input.border-2) {
-            background: #ffffff !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
             border: 2px solid rgb(209, 213, 219) !important;
           }
-
           :global(.dark input.border-2) {
-            background: rgb(31, 41, 55) !important;
+            background: rgba(31, 41, 55, 0.9) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
             border: 2px solid rgb(75, 85, 99) !important;
           }
         }
