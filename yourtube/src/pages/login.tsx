@@ -971,6 +971,22 @@ export default function LoginPage() {
 
         /* ✅ FIXED: Mobile-specific card adjustments - solid backgrounds */
         @media (max-width: 640px) {
+          /* Hide scrollbar on mobile ONLY */
+          :global(html),
+          :global(body),
+          :global(.min-h-screen) {
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE and Edge */
+          }
+
+          :global(html::-webkit-scrollbar),
+          :global(body::-webkit-scrollbar),
+          :global(.min-h-screen::-webkit-scrollbar) {
+            display: none !important; /* Chrome, Safari, Opera */
+            width: 0 !important;
+            height: 0 !important;
+          }
+
           /* Main login card - SOLID background to prevent scroll issues */
           :global(.relative.bg-white\/90.dark\:bg-gray-900\/95) {
             background: #ffffff !important;
@@ -1032,57 +1048,7 @@ export default function LoginPage() {
             background: rgb(31, 41, 55) !important;
             border: 2px solid rgb(75, 85, 99) !important;
           }
-
-        /* Hide scrollbar on mobile only - keeps desktop scrollbar intact */
-:global(.min-h-screen) {
-  scrollbar-width: none; /* Firefox mobile */
-  -ms-overflow-style: none; /* IE and Edge mobile */
-}
-
-:global(.min-h-screen::-webkit-scrollbar) {
-  display: none; /* Chrome, Safari, Opera mobile */
-}
-
-/* Ensure body scrolling works properly on mobile without scrollbar */
-:global(body) {
-  scrollbar-width: none; /* Firefox mobile */
-  -ms-overflow-style: none; /* IE and Edge mobile */
-}
-
-:global(body::-webkit-scrollbar) {
-  display: none; /* Chrome, Safari, Opera mobile */
-}
-
-/* Re-enable scrollbar on desktop */
-@media (min-width: 641px) {
-  :global(.min-h-screen),
-  :global(body) {
-    scrollbar-width: auto !important;
-    -ms-overflow-style: auto !important;
-  }
-  
-  :global(.min-h-screen::-webkit-scrollbar),
-  :global(body::-webkit-scrollbar) {
-    display: block !important;
-    width: 8px;
-  }
-  
-  :global(.min-h-screen::-webkit-scrollbar-track),
-  :global(body::-webkit-scrollbar-track) {
-    background: transparent;
-  }
-  
-  :global(.min-h-screen::-webkit-scrollbar-thumb),
-  :global(body::-webkit-scrollbar-thumb) {
-    background: rgba(156, 163, 175, 0.5);
-    border-radius: 4px;
-  }
-  
-  :global(.dark .min-h-screen::-webkit-scrollbar-thumb),
-  :global(.dark body::-webkit-scrollbar-thumb) {
-    background: rgba(75, 85, 99, 0.5);
-  }
-}
+        }
       `}</style>
     </>
   );
