@@ -386,7 +386,7 @@ export default function LoginPage() {
       </Head>
 
       {/* Premium Background with Animated Gradient Mesh */}
-      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e] flex flex-col">
+      <div className="fixed inset-0 overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e]">
         {/* Animated Gradient Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Large Gradient Orb 1 */}
@@ -410,7 +410,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40 dark:opacity-20"></div>
 
         {/* Content Container */}
-        <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 sm:py-8 w-full">
+        <div className="relative z-10 min-h-full flex items-center justify-center px-4 py-8 sm:py-12">
           <div className="w-full max-w-[440px] lg:max-w-[480px]">
             {/* Premium YouTube Logo Section */}
             <div className="text-center mb-8 sm:mb-10">
@@ -824,62 +824,48 @@ export default function LoginPage() {
       </div>
 
       <style jsx>{`
-        /* Mobile viewport fix */
+        /* Global resets */
         :global(html),
-        :global(body) {
+        :global(body),
+        :global(#__next) {
           height: 100%;
           margin: 0;
           padding: 0;
-          overflow-x: hidden;
+          overflow: hidden;
         }
 
+        /* Ensure body fills viewport */
         :global(body) {
-          background: linear-gradient(
-            to bottom right,
-            rgb(248 250 252),
-            rgb(219 234 254),
-            rgb(224 231 255)
-          );
+          position: fixed;
+          width: 100%;
+          height: 100vh;
+          height: 100dvh;
         }
 
-        :global(.dark body) {
-          background: linear-gradient(
-            to bottom right,
-            #0a0a0a,
-            #0f0f23,
-            #1a1a2e
-          );
-        }
-
-        .min-h-screen {
-          min-height: 100vh;
-          min-height: 100dvh;
-        }
-
-        /* iOS Safari fix */
+        /* iOS Safari specific fixes */
         @supports (-webkit-touch-callout: none) {
-          .min-h-screen {
-            min-height: -webkit-fill-available;
-          }
-
           :global(html) {
             height: -webkit-fill-available;
           }
-        }
 
-        /* Mobile specific fixes */
-        @media (max-width: 640px) {
-          .min-h-screen {
-            min-height: 100vh;
-            min-height: 100dvh;
+          :global(body) {
+            height: -webkit-fill-available;
+            min-height: -webkit-fill-available;
           }
         }
 
+        /* Remove tap highlight on mobile */
         @media (hover: none) and (pointer: coarse) {
           :global(button),
           :global(a) {
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
           }
+        }
+
+        /* Smooth scrolling */
+        :global(*) {
+          -webkit-overflow-scrolling: touch;
         }
 
         /* Animations */
