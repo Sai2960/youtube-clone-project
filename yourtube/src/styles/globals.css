@@ -11923,3 +11923,90 @@ button {
     overflow-x: auto !important;
   }
 }
+/* Mobile-specific card adjustments */
+@media (max-width: 640px) {
+  /* Enhanced card background for mobile */
+  :global(.relative.bg-white\/95) {
+    background: rgba(255, 255, 255, 0.97) !important;
+    border-color: rgba(229, 231, 235, 0.4) !important;
+  }
+
+  :global(.dark .relative.bg-white\/95) {
+    background: rgba(15, 23, 41, 0.98) !important;
+    border-color: rgba(71, 85, 105, 0.25) !important;
+  }
+
+  /* Stronger backdrop blur on mobile */
+  :global(.backdrop-blur-3xl) {
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+  }
+
+  :global(.backdrop-blur-xl) {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  :global(.backdrop-blur-md) {
+    backdrop-filter: blur(12px) saturate(170%);
+    -webkit-backdrop-filter: blur(12px) saturate(170%);
+  }
+
+  /* Location info card mobile fix */
+  :global(.bg-gradient-to-br.from-indigo-50\/98) {
+    background: linear-gradient(
+      to bottom right,
+      rgba(238, 242, 255, 0.98),
+      rgba(224, 242, 254, 0.98),
+      rgba(243, 232, 255, 0.98)
+    ) !important;
+  }
+
+  :global(.dark .bg-gradient-to-br.from-indigo-50\/98) {
+    background: linear-gradient(
+      to bottom right,
+      rgba(26, 24, 69, 0.96),
+      rgba(15, 31, 66, 0.96),
+      rgba(30, 15, 61, 0.96)
+    ) !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+  }
+
+  /* Input fields mobile enhancement */
+  :global(input) {
+    background: rgba(255, 255, 255, 0.92) !important;
+  }
+
+  :global(.dark input) {
+    background: rgba(31, 41, 55, 0.92) !important;
+  }
+
+  /* Prevent text color issues */
+  :global(.text-gray-600) {
+    color: rgb(75 85 99) !important;
+  }
+
+  :global(.dark .text-gray-400) {
+    color: rgb(156 163 175) !important;
+  }
+
+  /* Card shadows on mobile */
+  :global(.shadow-2xl) {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  :global(.dark .shadow-2xl) {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+  }
+}
+
+/* Tablet specific fixes (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  :global(.relative.bg-white\/95) {
+    background: rgba(255, 255, 255, 0.93) !important;
+  }
+
+  :global(.dark .relative.bg-white\/95) {
+    background: rgba(15, 23, 41, 0.95) !important;
+  }
+}
