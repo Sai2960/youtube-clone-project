@@ -11923,90 +11923,62 @@ button {
     overflow-x: auto !important;
   }
 }
-/* Mobile-specific card adjustments */
+/* Replace the mobile-specific card adjustments section at the bottom */
+
+/* Mobile-specific card adjustments - CORRECTED VERSION */
 @media (max-width: 640px) {
-  /* Enhanced card background for mobile */
-  :global(.relative.bg-white\/95) {
-    background: rgba(255, 255, 255, 0.97) !important;
-    border-color: rgba(229, 231, 235, 0.4) !important;
+  /* Main login card - increased opacity for better visibility */
+  :global(.relative.bg-white\/90.dark\:bg-gray-900\/95) {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    border-width: 1.5px !important;
   }
-
-  :global(.dark .relative.bg-white\/95) {
-    background: rgba(15, 23, 41, 0.98) !important;
-    border-color: rgba(71, 85, 105, 0.25) !important;
+  
+  :global(.dark .relative.bg-white\/90.dark\:bg-gray-900\/95) {
+    background-color: rgba(15, 23, 42, 0.98) !important;
+    border-color: rgba(71, 85, 105, 0.5) !important;
   }
-
-  /* Stronger backdrop blur on mobile */
-  :global(.backdrop-blur-3xl) {
-    backdrop-filter: blur(28px) saturate(190%);
-    -webkit-backdrop-filter: blur(28px) saturate(190%);
-  }
-
-  :global(.backdrop-blur-xl) {
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-  }
-
-  :global(.backdrop-blur-md) {
-    backdrop-filter: blur(12px) saturate(170%);
-    -webkit-backdrop-filter: blur(12px) saturate(170%);
-  }
-
-  /* Location info card mobile fix */
-  :global(.bg-gradient-to-br.from-indigo-50\/98) {
+  
+  /* Location info card - matching blue gradient */
+  :global(.bg-gradient-to-br.from-indigo-50\/95) {
     background: linear-gradient(
       to bottom right,
       rgba(238, 242, 255, 0.98),
       rgba(224, 242, 254, 0.98),
       rgba(243, 232, 255, 0.98)
     ) !important;
+    border-width: 2px !important;
   }
-
-  :global(.dark .bg-gradient-to-br.from-indigo-50\/98) {
+  
+  :global(.dark .bg-gradient-to-br.from-indigo-50\/95) {
     background: linear-gradient(
       to bottom right,
-      rgba(26, 24, 69, 0.96),
-      rgba(15, 31, 66, 0.96),
-      rgba(30, 15, 61, 0.96)
+      rgba(30, 27, 75, 0.95),
+      rgba(23, 37, 84, 0.95),
+      rgba(46, 16, 101, 0.95)
     ) !important;
-    border-color: rgba(99, 102, 241, 0.3) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
   }
-
-  /* Input fields mobile enhancement */
-  :global(input) {
-    background: rgba(255, 255, 255, 0.92) !important;
+  
+  /* Enhance backdrop blur for mobile */
+  :global(.backdrop-blur-3xl),
+  :global(.backdrop-blur-md),
+  :global(.backdrop-blur-sm) {
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   }
-
-  :global(.dark input) {
-    background: rgba(31, 41, 55, 0.92) !important;
+  
+  /* Input fields - better contrast on mobile */
+  :global(input.border-2) {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-width: 2px !important;
   }
-
-  /* Prevent text color issues */
-  :global(.text-gray-600) {
-    color: rgb(75 85 99) !important;
+  
+  :global(.dark input.border-2) {
+    background-color: rgba(31, 41, 55, 0.95) !important;
   }
-
-  :global(.dark .text-gray-400) {
-    color: rgb(156 163 175) !important;
-  }
-
-  /* Card shadows on mobile */
-  :global(.shadow-2xl) {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08) !important;
-  }
-
-  :global(.dark .shadow-2xl) {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
-  }
-}
-
-/* Tablet specific fixes (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
-  :global(.relative.bg-white\/95) {
-    background: rgba(255, 255, 255, 0.93) !important;
-  }
-
-  :global(.dark .relative.bg-white\/95) {
-    background: rgba(15, 23, 41, 0.95) !important;
+  
+  /* Buttons - ensure full opacity on mobile */
+  :global(button.bg-gradient-to-r) {
+    backdrop-filter: none !important;
   }
 }
