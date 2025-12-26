@@ -375,9 +375,9 @@ export default function LoginPage() {
         <title>Sign in - YouTube</title>
       </Head>
 
-     {/* Premium Background with Animated Gradient Mesh */}
-      <div className="min-h-screen min-h-[100dvh] relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e]">
-          {/* Animated Gradient Orbs */}
+      {/* Premium Background with Animated Gradient Mesh */}
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e]">
+        {/* Animated Gradient Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Large Gradient Orb 1 */}
           <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-blue-400/30 via-purple-400/20 to-pink-400/10 dark:from-blue-600/20 dark:via-purple-600/15 dark:to-pink-600/10 rounded-full blur-3xl animate-float-slow"></div>
@@ -399,9 +399,9 @@ export default function LoginPage() {
         {/* Subtle Grid Pattern Overlay */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40 dark:opacity-20"></div>
 
-     {/* Content Container */}
-        <div className="relative z-10 min-h-screen min-h-[100dvh] flex items-center justify-center px-4 py-8 pb-safe sm:py-12">
-             <div className="w-full max-w-[440px] lg:max-w-[480px] pb-8 sm:pb-0">
+        {/* Content Container */}
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-6 sm:py-12">
+          <div className="w-full max-w-[440px] lg:max-w-[480px] pb-8 sm:pb-0">
             {/* Premium YouTube Logo Section */}
             <div className="text-center mb-8 sm:mb-10">
               <div className="inline-flex items-center justify-center gap-3 mb-6 sm:mb-8 group cursor-default">
@@ -813,7 +813,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-     <style jsx>{`
+      <style jsx>{`
         /* Ensure full height on mobile devices */
         @supports (-webkit-touch-callout: none) {
           /* iOS specific */
@@ -840,7 +840,7 @@ export default function LoginPage() {
             min-height: -webkit-fill-available;
             min-height: 100dvh;
           }
-          
+
           /* Ensure content container fills screen */
           .min-h-screen > div {
             min-height: 100vh;
@@ -936,6 +936,130 @@ export default function LoginPage() {
           animation: pulse-slower 10s ease-in-out infinite;
         }
 
+        .animate-pulse-subtle {
+          animation: pulse-subtle 2s ease-in-out infinite;
+        }
+        /* Mobile-first responsive height handling */
+        .min-h-screen {
+          min-height: 100vh;
+        }
+
+        @supports (height: 100dvh) {
+          .min-h-screen {
+            min-height: 100dvh;
+          }
+        }
+
+        /* iOS Safari fix */
+        @supports (-webkit-touch-callout: none) {
+          .min-h-screen {
+            min-height: -webkit-fill-available;
+          }
+        }
+
+        /* Mobile-specific fixes */
+        @media (max-width: 640px) {
+          .min-h-screen {
+            min-height: 100vh;
+            min-height: 100dvh;
+          }
+
+          /* Remove bottom padding on mobile to eliminate black space */
+          .pb-safe {
+            padding-bottom: 1.5rem;
+          }
+        }
+
+        /* Tablet and desktop */
+        @media (min-width: 641px) {
+          .pb-safe {
+            padding-bottom: max(2rem, env(safe-area-inset-bottom));
+          }
+        }
+
+        /* Animations */
+        @keyframes float {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(30px, -30px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+        }
+
+        @keyframes float-slow {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          50% {
+            transform: translate(-40px, 40px) scale(1.05);
+          }
+        }
+
+        @keyframes float-slower {
+          0%,
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+          50% {
+            transform: translate(50px, -50px) scale(1.08);
+          }
+        }
+
+        @keyframes pulse-slow {
+          0%,
+          100% {
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.5;
+            transform: scale(1.05);
+          }
+        }
+
+        @keyframes pulse-slower {
+          0%,
+          100% {
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.1);
+          }
+        }
+
+        @keyframes pulse-subtle {
+          0%,
+          100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+        }
+
+        .animate-float {
+          animation: float 20s ease-in-out infinite;
+        }
+        .animate-float-slow {
+          animation: float-slow 25s ease-in-out infinite;
+        }
+        .animate-float-slower {
+          animation: float-slower 30s ease-in-out infinite;
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 8s ease-in-out infinite;
+        }
+        .animate-pulse-slower {
+          animation: pulse-slower 10s ease-in-out infinite;
+        }
         .animate-pulse-subtle {
           animation: pulse-subtle 2s ease-in-out infinite;
         }
