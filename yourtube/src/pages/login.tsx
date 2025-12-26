@@ -390,20 +390,20 @@ export default function LoginPage() {
         {/* Animated Gradient Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Large Gradient Orb 1 */}
-          <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-blue-400/30 via-purple-400/20 to-pink-400/10 dark:from-blue-600/20 dark:via-purple-600/15 dark:to-pink-600/10 rounded-full blur-3xl animate-float-slow"></div>
+          <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-blue-400/40 via-purple-400/30 to-pink-400/20 dark:from-blue-600/30 dark:via-purple-600/25 dark:to-pink-600/20 rounded-full blur-3xl animate-float-slow"></div>
 
           {/* Large Gradient Orb 2 */}
-          <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-gradient-to-tl from-indigo-400/30 via-blue-400/20 to-cyan-400/10 dark:from-indigo-600/20 dark:via-blue-600/15 dark:to-cyan-600/10 rounded-full blur-3xl animate-float-slower"></div>
+          <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-gradient-to-tl from-indigo-400/40 via-blue-400/30 to-cyan-400/20 dark:from-indigo-600/30 dark:via-blue-600/25 dark:to-cyan-600/20 rounded-full blur-3xl animate-float-slower"></div>
 
           {/* Medium Orb 3 */}
-          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-gradient-to-br from-purple-400/20 via-pink-400/15 to-red-400/10 dark:from-purple-600/15 dark:via-pink-600/10 dark:to-red-600/8 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-gradient-to-br from-purple-400/30 via-pink-400/25 to-red-400/15 dark:from-purple-600/25 dark:via-pink-600/20 dark:to-red-600/15 rounded-full blur-3xl animate-float"></div>
 
           {/* Medium Orb 4 */}
-          <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-gradient-to-tr from-cyan-400/20 via-teal-400/15 to-emerald-400/10 dark:from-cyan-600/15 dark:via-teal-600/10 dark:to-emerald-600/8 rounded-full blur-3xl animate-float-slow"></div>
+          <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-gradient-to-tr from-cyan-400/30 via-teal-400/25 to-emerald-400/15 dark:from-cyan-600/25 dark:via-teal-600/20 dark:to-emerald-600/15 rounded-full blur-3xl animate-float-slow"></div>
 
           {/* Small Accent Orbs */}
-          <div className="absolute top-20 right-1/3 w-48 h-48 bg-gradient-to-br from-yellow-400/15 to-orange-400/10 dark:from-yellow-600/10 dark:to-orange-600/8 rounded-full blur-2xl animate-pulse-slow"></div>
-          <div className="absolute bottom-32 left-1/3 w-56 h-56 bg-gradient-to-tl from-rose-400/15 to-pink-400/10 dark:from-rose-600/10 dark:to-pink-600/8 rounded-full blur-2xl animate-pulse-slower"></div>
+          <div className="absolute top-20 right-1/3 w-48 h-48 bg-gradient-to-br from-yellow-400/25 to-orange-400/20 dark:from-yellow-600/20 dark:to-orange-600/15 rounded-full blur-2xl animate-pulse-slow"></div>
+          <div className="absolute bottom-32 left-1/3 w-56 h-56 bg-gradient-to-tl from-rose-400/25 to-pink-400/20 dark:from-rose-600/20 dark:to-pink-600/15 rounded-full blur-2xl animate-pulse-slower"></div>
         </div>
 
         {/* Subtle Grid Pattern Overlay */}
@@ -440,9 +440,9 @@ export default function LoginPage() {
             </div>
 
             {/* Premium Login Card with Glassmorphism */}
-            <div className="relative bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl rounded-3xl border border-gray-200/60 dark:border-gray-700/60 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-gray-900/10 dark:shadow-black/40">
+            <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl rounded-3xl border border-gray-200/70 dark:border-gray-700/70 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-gray-900/10 dark:shadow-black/40">
               {/* Subtle Inner Glow */}
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/50 via-transparent to-transparent dark:from-white/5 pointer-events-none"></div>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/60 via-transparent to-transparent dark:from-white/8 pointer-events-none"></div>
 
               {/* Content */}
               <div className="relative z-10">
