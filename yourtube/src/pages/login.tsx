@@ -375,9 +375,9 @@ export default function LoginPage() {
         <title>Sign in - YouTube</title>
       </Head>
 
-      {/* Premium Background with Animated Gradient Mesh */}
-      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e]">
-        {/* Animated Gradient Orbs */}
+     {/* Premium Background with Animated Gradient Mesh */}
+      <div className="min-h-screen min-h-[100dvh] relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-[#0a0a0a] dark:via-[#0f0f23] dark:to-[#1a1a2e]">
+          {/* Animated Gradient Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Large Gradient Orb 1 */}
           <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-blue-400/30 via-purple-400/20 to-pink-400/10 dark:from-blue-600/20 dark:via-purple-600/15 dark:to-pink-600/10 rounded-full blur-3xl animate-float-slow"></div>
@@ -399,9 +399,9 @@ export default function LoginPage() {
         {/* Subtle Grid Pattern Overlay */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40 dark:opacity-20"></div>
 
-        {/* Content Container */}
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8 pb-safe sm:py-12">
-          <div className="w-full max-w-[440px] lg:max-w-[480px] pb-8 sm:pb-0">
+     {/* Content Container */}
+        <div className="relative z-10 min-h-screen min-h-[100dvh] flex items-center justify-center px-4 py-8 pb-safe sm:py-12">
+             <div className="w-full max-w-[440px] lg:max-w-[480px] pb-8 sm:pb-0">
             {/* Premium YouTube Logo Section */}
             <div className="text-center mb-8 sm:mb-10">
               <div className="inline-flex items-center justify-center gap-3 mb-6 sm:mb-8 group cursor-default">
@@ -813,7 +813,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <style jsx>{`
+     <style jsx>{`
         /* Ensure full height on mobile devices */
         @supports (-webkit-touch-callout: none) {
           /* iOS specific */
@@ -823,7 +823,7 @@ export default function LoginPage() {
         }
 
         @supports (height: 100dvh) {
-          .min-h-\\[100dvh\\] {
+          .min-h-screen {
             min-height: 100dvh;
           }
         }
@@ -831,6 +831,22 @@ export default function LoginPage() {
         /* Safe area padding for devices with notches/home indicators */
         .pb-safe {
           padding-bottom: max(2rem, env(safe-area-inset-bottom));
+        }
+
+        /* ✅ FIX: Remove black area on mobile */
+        @media (max-width: 640px) {
+          .min-h-screen {
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            min-height: 100dvh;
+          }
+          
+          /* Ensure content container fills screen */
+          .min-h-screen > div {
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            min-height: 100dvh;
+          }
         }
 
         @keyframes float {
