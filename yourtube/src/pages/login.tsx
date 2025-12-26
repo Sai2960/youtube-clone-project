@@ -753,10 +753,7 @@ export default function LoginPage() {
 
               {/* Premium Debug Info */}
               {process.env.NODE_ENV === "development" && locationInfo && (
-                <div
-                  className="mt-6 sm:mt-8 p-4 sm:p-5 bg-gradient-to-br from-amber-50/90 via-yellow-50/90 to-orange-50/90 dark:from-amber-950/50 dark:via-yellow-950/50 dark:to-orange-950/50 backdrop-blur-
-                sm border-2 border-amber-200 dark:border-amber-800 rounded-2xl text-xs sm:text-sm shadow-lg"
-                >
+                <div className="mt-6 sm:mt-8 p-4 sm:p-5 bg-gradient-to-br from-amber-50/90 via-yellow-50/90 to-orange-50/90 dark:from-amber-950/50 dark:via-yellow-950/50 dark:to-orange-950/50 backdrop-blur-sm border-2 border-amber-200 dark:border-amber-800 rounded-2xl text-xs sm:text-sm shadow-lg">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-500 rounded-xl flex items-center justify-center shadow-md">
                       <span className="text-white font-bold text-sm sm:text-base">
@@ -804,120 +801,120 @@ export default function LoginPage() {
                 </div>
               )}
             </div>
-
-            <style jsx>{`
-              /* ✅ FIXED: Smooth animations */
-              @keyframes float {
-                0%,
-                100% {
-                  transform: translate(0, 0) scale(1);
-                }
-                33% {
-                  transform: translate(30px, -30px) scale(1.1);
-                }
-                66% {
-                  transform: translate(-20px, 20px) scale(0.9);
-                }
-              }
-
-              @keyframes float-slow {
-                0%,
-                100% {
-                  transform: translate(0, 0) scale(1);
-                }
-                50% {
-                  transform: translate(-40px, 40px) scale(1.05);
-                }
-              }
-
-              @keyframes float-slower {
-                0%,
-                100% {
-                  transform: translate(0, 0) scale(1);
-                }
-                50% {
-                  transform: translate(50px, -50px) scale(1.08);
-                }
-              }
-
-              @keyframes pulse-slow {
-                0%,
-                100% {
-                  opacity: 0.3;
-                  transform: scale(1);
-                }
-                50% {
-                  opacity: 0.5;
-                  transform: scale(1.05);
-                }
-              }
-
-              @keyframes pulse-slower {
-                0%,
-                100% {
-                  opacity: 0.3;
-                  transform: scale(1);
-                }
-                50% {
-                  opacity: 0.6;
-                  transform: scale(1.1);
-                }
-              }
-
-              @keyframes pulse-subtle {
-                0%,
-                100% {
-                  transform: scale(1);
-                }
-                50% {
-                  transform: scale(1.05);
-                }
-              }
-
-              .animate-float {
-                animation: float 20s ease-in-out infinite;
-              }
-
-              .animate-float-slow {
-                animation: float-slow 25s ease-in-out infinite;
-              }
-
-              .animate-float-slower {
-                animation: float-slower 30s ease-in-out infinite;
-              }
-
-              .animate-pulse-slow {
-                animation: pulse-slow 8s ease-in-out infinite;
-              }
-
-              .animate-pulse-slower {
-                animation: pulse-slower 10s ease-in-out infinite;
-              }
-
-              .animate-pulse-subtle {
-                animation: pulse-subtle 2s ease-in-out infinite;
-              }
-
-              /* ✅ FIXED: Smooth scrolling for all devices */
-              .overflow-y-auto {
-                -webkit-overflow-scrolling: touch;
-                scroll-behavior: smooth;
-              }
-
-              /* ✅ FIXED: Ensure proper height on all devices */
-              .h-screen {
-                height: 100vh;
-                height: 100dvh;
-              }
-
-              @supports (-webkit-touch-callout: none) {
-                .h-screen {
-                  height: -webkit-fill-available;
-                }
-              }
-            `}</style>
           </div>
         </div>
+
+        <style jsx>{`
+          /* ✅ FIXED: Smooth animations */
+          @keyframes float {
+            0%,
+            100% {
+              transform: translate(0, 0) scale(1);
+            }
+            33% {
+              transform: translate(30px, -30px) scale(1.1);
+            }
+            66% {
+              transform: translate(-20px, 20px) scale(0.9);
+            }
+          }
+
+          @keyframes float-slow {
+            0%,
+            100% {
+              transform: translate(0, 0) scale(1);
+            }
+            50% {
+              transform: translate(-40px, 40px) scale(1.05);
+            }
+          }
+
+          @keyframes float-slower {
+            0%,
+            100% {
+              transform: translate(0, 0) scale(1);
+            }
+            50% {
+              transform: translate(50px, -50px) scale(1.08);
+            }
+          }
+
+          @keyframes pulse-slow {
+            0%,
+            100% {
+              opacity: 0.3;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.5;
+              transform: scale(1.05);
+            }
+          }
+
+          @keyframes pulse-slower {
+            0%,
+            100% {
+              opacity: 0.3;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.6;
+              transform: scale(1.1);
+            }
+          }
+
+          @keyframes pulse-subtle {
+            0%,
+            100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.05);
+            }
+          }
+
+          .animate-float {
+            animation: float 20s ease-in-out infinite;
+          }
+
+          .animate-float-slow {
+            animation: float-slow 25s ease-in-out infinite;
+          }
+
+          .animate-float-slower {
+            animation: float-slower 30s ease-in-out infinite;
+          }
+
+          .animate-pulse-slow {
+            animation: pulse-slow 8s ease-in-out infinite;
+          }
+
+          .animate-pulse-slower {
+            animation: pulse-slower 10s ease-in-out infinite;
+          }
+
+          .animate-pulse-subtle {
+            animation: pulse-subtle 2s ease-in-out infinite;
+          }
+
+          /* ✅ FIXED: Smooth scrolling for all devices */
+          .overflow-y-auto {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+          }
+
+          /* ✅ FIXED: Ensure proper height on all devices */
+          .h-screen {
+            height: 100vh;
+            height: 100dvh;
+          }
+
+          @supports (-webkit-touch-callout: none) {
+            .h-screen {
+              height: -webkit-fill-available;
+            }
+          }
+        `}</style>
       </div>
     </>
   );
