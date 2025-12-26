@@ -161,17 +161,18 @@ const sendEmailOTP = async (req, res) => {
 
     console.log(`📬 Email Result:`, emailResult);
 
-    // ✅ ALWAYS return success with OTP for testing, even if email fails
+    // ✅ PREMIUM: Show OTP in response for testing (with extended visibility)
     return res.json({
       success: true,
       message: emailResult.success
         ? "OTP sent to your email!"
         : "OTP generated (email may be delayed)",
+      otp: otp, // ✅ Send OTP directly for premium display
+      email,
+      emailSent: emailResult.success,
+      expiresIn: 300, // 5 minutes in seconds
       debug: {
-        otp, // ✅ Always show OTP for testing
-        email,
         requestId,
-        emailSent: emailResult.success,
         messageId: emailResult.messageId,
         emailError: emailResult.error,
       },
