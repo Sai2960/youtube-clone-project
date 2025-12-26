@@ -20,7 +20,7 @@ const API_URL =
   "https://youtube-clone-project-q3pd.onrender.com";
 
 // Routes that don't require authentication
-const PUBLIC_ROUTES = ['/login', '/signup'];
+const PUBLIC_ROUTES = ["/login", "/signup"];
 
 /**
  * Global state tracker to prevent duplicate initialization
@@ -50,31 +50,33 @@ function AppContent({ Component, pageProps }: AppProps) {
     }
 
     const checkAuthentication = () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const isPublicRoute = PUBLIC_ROUTES.includes(router.pathname);
-      const isAuthPage = router.pathname === '/login' || router.pathname === '/signup';
+      const isAuthPage =
+        router.pathname === "/login" || router.pathname === "/signup";
 
-      console.log('🔐 Auth Check:', { 
-        hasToken: !!token, 
-        isPublicRoute, 
-        currentPath: router.pathname 
+      console.log("🔐 Auth Check:", {
+        hasToken: !!token,
+        isPublicRoute,
+        currentPath: router.pathname,
       });
 
       // If user has token but is on auth page, redirect to home
       if (token && isAuthPage) {
         const returnUrl = router.query.returnUrl as string;
-        const destination = returnUrl && returnUrl !== '/login' && returnUrl !== '/signup' 
-          ? returnUrl 
-          : '/';
-        
-        console.log('✅ User authenticated, redirecting to:', destination);
+        const destination =
+          returnUrl && returnUrl !== "/login" && returnUrl !== "/signup"
+            ? returnUrl
+            : "/";
+
+        console.log("✅ User authenticated, redirecting to:", destination);
         router.replace(destination);
         return;
       }
 
       // If no token and trying to access protected route, redirect to login
       if (!token && !isPublicRoute) {
-        console.log('⚠️ No token found, redirecting to login');
+        console.log("⚠️ No token found, redirecting to login");
         router.replace(`/login?returnUrl=${encodeURIComponent(router.asPath)}`);
         return;
       }
@@ -299,7 +301,14 @@ function AppContent({ Component, pageProps }: AppProps) {
     document.documentElement.style.maxWidth = "100vw";
 
     console.log("📐 Page overflow rules applied");
-
+    // ✅ CRITICAL: Remove background on login/signup pages
+    const isAuthPage =
+      router.pathname === "/login" || router.pathname === "/signup";
+    if (isAuthPage) {
+      document.body.style.background = "transparent";
+      document.documentElement.style.background = "transparent";
+      console.log("🎨 Auth page: Background cleared");
+    }
     return () => {
       document.body.style.overflowX = "";
       document.documentElement.style.overflowX = "";
@@ -503,10 +512,7 @@ function AppContent({ Component, pageProps }: AppProps) {
           className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
           style={{ borderColor: spinnerBorderColor }}
         />
-        <p 
-          className="text-sm"
-          style={{ color: spinnerBorderColor }}
-        >
+        <p className="text-sm" style={{ color: spinnerBorderColor }}>
           {!isThemeReady ? "Initializing..." : "Checking authentication..."}
         </p>
       </div>
@@ -554,7 +560,7 @@ function AppContent({ Component, pageProps }: AppProps) {
         <title>YouTube Clone</title>
       </Head>
 
-      <div className="flex flex-col h-screen overflow-hidden bg-youtube-primary">
+      <div className="flex flex-col h-screen overflow-hidden">
         <Header onMenuClick={openMobileSidebar} />
 
         <div className="flex flex-1 overflow-hidden">
