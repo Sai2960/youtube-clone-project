@@ -1014,7 +1014,7 @@ export default function LoginPage() {
             display: none !important;
           }
 
-          /* Enhanced backdrop blur - remove if causing issues */
+          /* Remove backdrop blur on mobile */
           :global(.backdrop-blur-3xl),
           :global(.backdrop-blur-md),
           :global(.backdrop-blur-sm) {
@@ -1033,30 +1033,32 @@ export default function LoginPage() {
             border: 2px solid rgb(75, 85, 99) !important;
           }
 
-          /* Ensure fixed positioning during scroll */
+          /* Hide scrollbar on mobile - main container */
           :global(.min-h-screen) {
             position: relative;
             overflow-x: hidden;
+            overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
           }
 
-          /* Fix for iOS Safari scrolling */
+          :global(.min-h-screen::-webkit-scrollbar) {
+            display: none; /* Chrome, Safari, Opera */
+          }
+
+          /* Hide scrollbar on mobile - body */
           :global(body) {
             position: fixed;
             width: 100%;
             overflow-y: scroll;
             -webkit-overflow-scrolling: touch;
-          }
-          }
-
-        /* Tablet adjustments */
-        @media (min-width: 641px) and (max-width: 1024px) {
-          :global(.relative.bg-white\/90.dark\:bg-gray-900\/95) {
-            background-color: rgba(255, 255, 255, 0.95) !important;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
           }
 
-          :global(.dark .relative.bg-white\/90.dark\:bg-gray-900\/95) {
-            background-color: rgba(15, 23, 42, 0.96) !important;
+          :global(body::-webkit-scrollbar) {
+            display: none; /* Chrome, Safari, Opera */
           }
         }
       `}</style>
