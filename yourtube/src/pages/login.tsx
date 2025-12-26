@@ -1033,34 +1033,56 @@ export default function LoginPage() {
             border: 2px solid rgb(75, 85, 99) !important;
           }
 
-          /* Hide scrollbar on mobile - main container */
-          :global(.min-h-screen) {
-            position: relative;
-            overflow-x: hidden;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
-          }
+        /* Hide scrollbar on mobile only - keeps desktop scrollbar intact */
+:global(.min-h-screen) {
+  scrollbar-width: none; /* Firefox mobile */
+  -ms-overflow-style: none; /* IE and Edge mobile */
+}
 
-          :global(.min-h-screen::-webkit-scrollbar) {
-            display: none; /* Chrome, Safari, Opera */
-          }
+:global(.min-h-screen::-webkit-scrollbar) {
+  display: none; /* Chrome, Safari, Opera mobile */
+}
 
-          /* Hide scrollbar on mobile - body */
-          :global(body) {
-            position: fixed;
-            width: 100%;
-            overflow-y: scroll;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
-          }
+/* Ensure body scrolling works properly on mobile without scrollbar */
+:global(body) {
+  scrollbar-width: none; /* Firefox mobile */
+  -ms-overflow-style: none; /* IE and Edge mobile */
+}
 
-          :global(body::-webkit-scrollbar) {
-            display: none; /* Chrome, Safari, Opera */
-          }
-        }
+:global(body::-webkit-scrollbar) {
+  display: none; /* Chrome, Safari, Opera mobile */
+}
+
+/* Re-enable scrollbar on desktop */
+@media (min-width: 641px) {
+  :global(.min-h-screen),
+  :global(body) {
+    scrollbar-width: auto !important;
+    -ms-overflow-style: auto !important;
+  }
+  
+  :global(.min-h-screen::-webkit-scrollbar),
+  :global(body::-webkit-scrollbar) {
+    display: block !important;
+    width: 8px;
+  }
+  
+  :global(.min-h-screen::-webkit-scrollbar-track),
+  :global(body::-webkit-scrollbar-track) {
+    background: transparent;
+  }
+  
+  :global(.min-h-screen::-webkit-scrollbar-thumb),
+  :global(body::-webkit-scrollbar-thumb) {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+  }
+  
+  :global(.dark .min-h-screen::-webkit-scrollbar-thumb),
+  :global(.dark body::-webkit-scrollbar-thumb) {
+    background: rgba(75, 85, 99, 0.5);
+  }
+}
       `}</style>
     </>
   );
