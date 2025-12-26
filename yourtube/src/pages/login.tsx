@@ -1047,6 +1047,7 @@ export default function LoginPage() {
             overflow-y: scroll;
             -webkit-overflow-scrolling: touch;
           }
+          }
 
         /* Tablet adjustments */
         @media (min-width: 641px) and (max-width: 1024px) {
