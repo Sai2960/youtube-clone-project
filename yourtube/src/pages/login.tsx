@@ -148,27 +148,71 @@ export default function LoginPage() {
       console.log("✅ Backend Response:", result);
 
       if (result.success) {
-        // Show OTP in toast for testing
-        if (result.debug?.otp) {
-          toast.success(`OTP Sent!`, {
-            description: `Your test OTP: ${result.debug.otp}\n\nCheck console for details.`,
-            duration: 10000,
-          });
+        setCountdown(60);
+        setStep("otp");
 
+        // ✅ PREMIUM: Show OTP in a persistent toast for 90 seconds
+        if (result.otp) {
+          toast.success(
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🔐</span>
+                <div>
+                  <p className="font-bold text-base">OTP Sent Successfully!</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Valid for 5 minutes
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-semibold">
+                  Your Verification Code:
+                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <code className="text-3xl font-bold tracking-[0.3em] text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900 px-4 py-2 rounded-lg border border-blue-300 dark:border-blue-700">
+                    {result.otp}
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(result.otp);
+                      toast.success("Copied to clipboard!", { duration: 2000 });
+                    }}
+                    className="flex-shrink-0 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <span className="text-amber-500 flex-shrink-0 mt-0.5">💡</span>
+                <p>
+                  Check your email or use the code above. This message will stay
+                  visible for 90 seconds.
+                </p>
+              </div>
+            </div>,
+            {
+              duration: 90000, // 90 seconds (1.5 minutes)
+              className:
+                "!bg-white dark:!bg-gray-900 !border-2 !border-blue-200 dark:!border-blue-800 !shadow-2xl !p-4 !rounded-2xl !min-w-[400px] !max-w-[500px]",
+            }
+          );
+
+          // Log for console visibility
           console.log("═══════════════════════════════════════");
-          console.log("🔐 YOUR OTP CODE:", result.debug.otp);
-          console.log("📧 Email:", result.debug.email);
-          console.log("✉️ Email Sent:", result.debug.emailSent);
-          if (result.debug.emailError) {
+          console.log("🔐 YOUR OTP CODE:", result.otp);
+          console.log("📧 Email:", result.email);
+          console.log("✉️ Email Sent:", result.emailSent);
+          console.log("⏱️ Expires in:", result.expiresIn, "seconds");
+          if (result.debug?.emailError) {
             console.log("⚠️ Email Error:", result.debug.emailError);
           }
           console.log("═══════════════════════════════════════");
         } else {
           toast.success("OTP sent to your email!");
         }
-
-        setCountdown(60);
-        setStep("otp");
       } else {
         toast.error(result.error || "Failed to send OTP");
         console.error("❌ Error:", result);
@@ -193,6 +237,18 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+    // ✅ PREMIUM: Show verifying toast
+    const verifyingToast = toast.loading(
+      <div className="flex items-center gap-3">
+        <div className="animate-spin h-5 w-5 border-3 border-blue-600 border-t-transparent rounded-full"></div>
+        <span className="font-semibold">Verifying your code...</span>
+      </div>,
+      {
+        className:
+          "!bg-white dark:!bg-gray-900 !border-2 !border-blue-200 dark:!border-blue-800",
+      }
+    );
+
     try {
       console.log("🔐 Verifying OTP...");
 
@@ -207,7 +263,11 @@ export default function LoginPage() {
       console.log("📋 Verify result:", verifyResult);
 
       if (!verifyResult.success) {
-        toast.error(verifyResult.error || "Invalid OTP");
+        toast.dismiss(verifyingToast);
+        toast.error(verifyResult.error || "Invalid OTP", {
+          className:
+            "!bg-white dark:!bg-gray-900 !border-2 !border-red-200 dark:!border-red-800",
+        });
         return;
       }
 
@@ -225,7 +285,11 @@ export default function LoginPage() {
       console.log("📦 Login data:", loginData);
 
       if (!loginData.success || !loginData.token) {
-        toast.error(loginData.error || "Login failed");
+        toast.dismiss(verifyingToast);
+        toast.error(loginData.error || "Login failed", {
+          className:
+            "!bg-white dark:!bg-gray-900 !border-2 !border-red-200 dark:!border-red-800",
+        });
         return;
       }
 
@@ -233,23 +297,68 @@ export default function LoginPage() {
       localStorage.setItem("token", loginData.token);
       localStorage.setItem("user", JSON.stringify(loginData.user));
 
-      // ✅ FIX: Update AuthContext state manually
+      // ✅ Update AuthContext state
       if (typeof window !== "undefined") {
-        // Dispatch storage event to trigger AuthContext update
         window.dispatchEvent(new Event("storage"));
       }
 
-      toast.success(`Welcome ${loginData.user.name}!`);
+      // ✅ PREMIUM: Show success message and wait before redirect
+      toast.dismiss(verifyingToast);
 
-      // Step 4: Force page reload to trigger AuthContext
-      console.log("🏠 Redirecting to home...");
+      toast.success(
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center">
+              <svg
+                className="w-7 h-7 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold text-lg">Login Successful!</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Welcome back, {loginData.user.name}
+              </p>
+            </div>
+          </div>
 
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 p-3 rounded-xl border border-green-200 dark:border-green-800">
+            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
+              <span>Redirecting to your homepage...</span>
+            </div>
+          </div>
+        </div>,
+        {
+          duration: 3000,
+          className:
+            "!bg-white dark:!bg-gray-900 !border-2 !border-green-200 dark:!border-green-800 !shadow-2xl !p-4 !rounded-2xl !min-w-[380px]",
+        }
+      );
+
+      console.log("✅ Login complete - waiting before redirect...");
+
+      // ✅ PREMIUM: Wait 2 seconds before redirect for better UX
       setTimeout(() => {
-        window.location.replace("/"); // Use replace instead of href
-      }, 500);
+        console.log("🏠 Redirecting to home...");
+        window.location.replace("/");
+      }, 2000);
     } catch (error: any) {
       console.error("❌ Error:", error);
-      toast.error("Verification failed. Check console.");
+      toast.dismiss(verifyingToast);
+      toast.error("Verification failed. Please try again.", {
+        className:
+          "!bg-white dark:!bg-gray-900 !border-2 !border-red-200 dark:!border-red-800",
+      });
     } finally {
       setLoading(false);
     }
