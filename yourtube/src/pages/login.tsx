@@ -1044,65 +1044,125 @@ export default function LoginPage() {
             overflow-y: scroll !important;
             overflow-x: hidden !important;
           }
+          /* ========== INCREASE BACKGROUND GRADIENT ORBS OPACITY ========== */
+          /* Make animated gradient orbs MORE VISIBLE on mobile */
+          :global(.absolute.inset-0.overflow-hidden.pointer-events-none > div) {
+            opacity: 1 !important;
+          }
 
-          /* Main login card - SOLID background to prevent scroll issues */
-          /* Main login card - SOLID background to prevent scroll issues */
+          /* Boost individual orb colors */
+          :global(.bg-gradient-to-br.from-blue-400\/40) {
+            background: linear-gradient(
+              to bottom right,
+              rgba(96, 165, 250, 0.6),
+              rgba(192, 132, 252, 0.5),
+              rgba(251, 113, 133, 0.4)
+            ) !important;
+          }
+
+          :global(.bg-gradient-to-tl.from-indigo-400\/40) {
+            background: linear-gradient(
+              to top left,
+              rgba(129, 140, 248, 0.6),
+              rgba(96, 165, 250, 0.5),
+              rgba(34, 211, 238, 0.4)
+            ) !important;
+          }
+
+          /* ========== GLASSMORPHISM CARDS ========== */
+          /* Main login card - Premium glassmorphism */
           :global(.relative.bg-white\/90.dark\:bg-gray-900\/95) {
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(24px) !important;
-            -webkit-backdrop-filter: blur(24px) !important;
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(40px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+            border: 2px solid rgba(255, 255, 255, 0.3) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
+              0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
           }
 
           :global(.dark .relative.bg-white\/90.dark\:bg-gray-900\/95) {
-            background: rgba(17, 24, 39, 0.95) !important;
-            backdrop-filter: blur(24px) !important;
-            -webkit-backdrop-filter: blur(24px) !important;
-            border: 2px solid rgba(71, 85, 105, 0.6) !important;
+            background: rgba(17, 24, 39, 0.75) !important;
+            backdrop-filter: blur(40px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+            border: 2px solid rgba(71, 85, 105, 0.4) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+              0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
           }
 
-          /* Location info card - SOLID gradient background */
+          /* Location info card - Premium glassmorphism */
           :global(.bg-gradient-to-br.from-indigo-50\/95) {
             background: linear-gradient(
               to bottom right,
-              rgba(238, 242, 255, 0.95),
-              rgba(224, 231, 255, 0.95),
-              rgba(237, 233, 254, 0.95)
+              rgba(238, 242, 255, 0.9),
+              rgba(224, 231, 255, 0.9),
+              rgba(237, 233, 254, 0.9)
             ) !important;
-            backdrop-filter: blur(16px) !important;
-            -webkit-backdrop-filter: blur(16px) !important;
-            border: 2.5px solid rgb(199, 210, 254) !important;
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15) !important;
+            backdrop-filter: blur(20px) saturate(150%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+            border: 2px solid rgba(199, 210, 254, 0.6) !important;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2),
+              0 0 0 1px rgba(255, 255, 255, 0.3) inset !important;
           }
 
           :global(.dark .bg-gradient-to-br.from-indigo-50\/95) {
             background: linear-gradient(
               to bottom right,
-              rgba(30, 27, 75, 0.95),
-              rgba(23, 37, 84, 0.95),
-              rgba(46, 16, 101, 0.95)
+              rgba(30, 27, 75, 0.85),
+              rgba(23, 37, 84, 0.85),
+              rgba(46, 16, 101, 0.85)
             ) !important;
-            backdrop-filter: blur(16px) !important;
-            -webkit-backdrop-filter: blur(16px) !important;
-            border: 2.5px solid rgba(99, 102, 241, 0.5) !important;
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25) !important;
+            backdrop-filter: blur(20px) saturate(150%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+            border: 2px solid rgba(99, 102, 241, 0.5) !important;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3),
+              0 0 0 1px rgba(99, 102, 241, 0.1) inset !important;
           }
 
-          /* Remove inner glow gradient on mobile for better performance */
+          /* Keep subtle inner glow */
           :global(.absolute.inset-0.rounded-3xl.bg-gradient-to-br) {
-            opacity: 0.3 !important;
+            opacity: 0.5 !important;
           }
 
           :global(input.border-2) {
-            background: rgba(255, 255, 255, 0.9) !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
-            border: 2px solid rgb(209, 213, 219) !important;
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 2px solid rgba(209, 213, 219, 0.5) !important;
           }
           :global(.dark input.border-2) {
-            background: rgba(31, 41, 55, 0.9) !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
-            border: 2px solid rgb(75, 85, 99) !important;
+            background: rgba(31, 41, 55, 0.8) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 2px solid rgba(75, 85, 99, 0.5) !important;
+          }
+
+          /* ========== ENHANCE BACKGROUND CONTAINER ========== */
+          /* Make sure background gradient is vivid */
+          :global(.bg-gradient-to-br.from-slate-50) {
+            background: linear-gradient(
+              to bottom right,
+              rgb(248, 250, 252),
+              rgb(219, 234, 254),
+              rgb(224, 231, 255)
+            ) !important;
+          }
+
+          :global(.dark .bg-gradient-to-br.from-slate-50) {
+            background: linear-gradient(
+              to bottom right,
+              rgb(10, 10, 10),
+              rgb(15, 15, 35),
+              rgb(26, 26, 46)
+            ) !important;
+          }
+
+          /* Ensure grid pattern is visible */
+          :global(.bg-\[url\(\'data\:image\/svg\+xml) {
+            opacity: 0.3 !important;
+          }
+
+          :global(.dark .bg-\[url\(\'data\:image\/svg\+xml) {
+            opacity: 0.15 !important;
           }
         }
       `}</style>
