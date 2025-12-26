@@ -971,18 +971,33 @@ export default function LoginPage() {
 
         /* ✅ FIXED: Mobile-specific card adjustments - solid backgrounds */
         @media (max-width: 640px) {
-          /* Hide scrollbar on mobile ONLY */
+          /* ========== SCROLLBAR HIDING - HIGHEST PRIORITY ========== */
+          /* Target all possible scrollbar containers */
+          :global(*) {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+          }
+
+          :global(*::-webkit-scrollbar) {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+          }
+
           :global(html),
           :global(body),
+          :global(#__next),
           :global(.min-h-screen) {
-            scrollbar-width: none !important; /* Firefox */
-            -ms-overflow-style: none !important; /* IE and Edge */
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
           }
 
           :global(html::-webkit-scrollbar),
           :global(body::-webkit-scrollbar),
+          :global(#__next::-webkit-scrollbar),
           :global(.min-h-screen::-webkit-scrollbar) {
-            display: none !important; /* Chrome, Safari, Opera */
+            display: none !important;
             width: 0 !important;
             height: 0 !important;
           }
