@@ -301,6 +301,7 @@ function AppContent({ Component, pageProps }: AppProps) {
     document.documentElement.style.maxWidth = "100vw";
 
     console.log("📐 Page overflow rules applied");
+
     // ✅ CRITICAL: Remove background on login/signup pages
     const isAuthPage =
       router.pathname === "/login" || router.pathname === "/signup";
@@ -309,6 +310,7 @@ function AppContent({ Component, pageProps }: AppProps) {
       document.documentElement.style.background = "transparent";
       console.log("🎨 Auth page: Background cleared");
     }
+
     return () => {
       document.body.style.overflowX = "";
       document.documentElement.style.overflowX = "";

@@ -409,9 +409,9 @@ export default function LoginPage() {
         {/* Subtle Grid Pattern Overlay */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40 dark:opacity-20"></div>
 
-      {/* Content Container */}
-<div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 sm:py-8 pb-16 sm:pb-20 w-full">
-  <div className="w-full max-w-[440px] lg:max-w-[480px]">
+        {/* Content Container */}
+        <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 sm:py-8 pb-16 sm:pb-20 w-full">
+          <div className="w-full max-w-[440px] lg:max-w-[480px]">
             {/* Premium YouTube Logo Section */}
             <div className="text-center mb-8 sm:mb-10">
               <div className="inline-flex items-center justify-center gap-3 mb-6 sm:mb-8 group cursor-default">
@@ -824,6 +824,13 @@ export default function LoginPage() {
       </div>
 
       <style jsx>{`
+        /* Force remove any parent backgrounds */
+        :global(body),
+        :global(#__next),
+        :global(main) {
+          background: transparent !important;
+        }
+
         /* Mobile viewport fix */
         :global(html),
         :global(body) {
@@ -972,4 +979,3 @@ export default function LoginPage() {
     </>
   );
 }
-
