@@ -409,9 +409,9 @@ export default function LoginPage() {
         {/* Subtle Grid Pattern Overlay */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40 dark:opacity-20"></div>
 
-        {/* Content Container */}
-        <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 sm:py-8 pb-16 sm:pb-20 w-full">
-          <div className="w-full max-w-[440px] lg:max-w-[480px]">
+      {/* Content Container */}
+<div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 sm:py-8 pb-16 sm:pb-20 w-full">
+  <div className="w-full max-w-[440px] lg:max-w-[480px]">
             {/* Premium YouTube Logo Section */}
             <div className="text-center mb-8 sm:mb-10">
               <div className="inline-flex items-center justify-center gap-3 mb-6 sm:mb-8 group cursor-default">
@@ -440,9 +440,10 @@ export default function LoginPage() {
             </div>
 
            {/* Premium Login Card with Glassmorphism */}
-<div className="relative bg-white/95 dark:bg-[#0f1729]/98 backdrop-blur-3xl rounded-3xl border border-gray-200/50 dark:border-gray-700/30 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-gray-900/5 dark:shadow-black/60">
+<div className="relative bg-white/90 dark:bg-gray-900/95 backdrop-blur-3xl rounded-3xl border border-gray-200/80 dark:border-gray-700/50 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-gray-900/10 dark:shadow-black/50">
   {/* Subtle Inner Glow */}
-  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/50 via-white/20 to-transparent dark:from-gray-800/30 dark:via-gray-900/10 dark:to-transparent pointer-events-none"></div>
+  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/70 via-white/30 to-transparent dark:from-gray-800/40 dark:via-gray-900/20 dark:to-transparent pointer-events-none"></div>
+  
               {/* Content */}
               <div className="relative z-10">
                 {/* Error Message */}
@@ -515,7 +516,7 @@ export default function LoginPage() {
 
                     {/* Premium Location Info Card */}
                     {locationInfo && (
-                      <div className="relative group bg-gradient-to-br from-indigo-50/95 via-blue-50/95 to-purple-50/95 dark:from-indigo-950/80 dark:via-blue-950/80 dark:to-purple-950/80 backdrop-blur-md rounded-2xl p-4 sm:p-5 border-2 border-indigo-200/80 dark:border-indigo-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+  <div className="relative group bg-gradient-to-br from-indigo-50/95 via-blue-50/95 to-purple-50/95 dark:from-indigo-950/80 dark:via-blue-950/80 dark:to-purple-950/80 backdrop-blur-md rounded-2xl p-4 sm:p-5 border-2 border-indigo-200/80 dark:border-indigo-800/60 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
                         {/* Animated Background Gradient */}
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/5 to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -968,54 +969,55 @@ export default function LoginPage() {
           animation: pulse-subtle 2s ease-in-out infinite;
         }
         /* Mobile-specific card adjustments */
-        @media (max-width: 640px) {
-          :global(.relative.bg-white\/90) {
-            background: rgba(255, 255, 255, 0.95) !important;
-          }
+@media (max-width: 640px) {
+  :global(.relative.bg-white\/90) {
+    background: rgba(255, 255, 255, 0.95) !important;
+  }
+  
+  :global(.dark .relative.bg-white\/90) {
+    background: rgba(17, 24, 39, 0.98) !important;
+  }
+  
+  /* Ensure consistent backdrop blur on mobile */
+  :global(.backdrop-blur-3xl) {
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+}
 
-          :global(.dark .relative.bg-white\/90) {
-            background: rgba(17, 24, 39, 0.98) !important;
-          }
-
-          /* Ensure consistent backdrop blur on mobile */
-          :global(.backdrop-blur-3xl) {
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-          }
-        }
-
-        /* Fix for blue box background matching */
-        @media (max-width: 640px) {
-          /* Login card container */
-          .relative.bg-white\/90.dark\:bg-gray-900\/95 {
-            background: rgba(255, 255, 255, 0.96) !important;
-          }
-
-          :global(.dark) .relative.bg-white\/90.dark\:bg-gray-900\/95 {
-            background: rgba(15, 23, 42, 0.97) !important;
-            border-color: rgba(71, 85, 105, 0.4) !important;
-          }
-
-          /* Location info card */
-          .bg-gradient-to-br.from-indigo-50\/95 {
-            background: linear-gradient(
-              to bottom right,
-              rgba(238, 242, 255, 0.97),
-              rgba(224, 242, 254, 0.97),
-              rgba(243, 232, 255, 0.97)
-            ) !important;
-          }
-
-          :global(.dark) .bg-gradient-to-br.from-indigo-50\/95 {
-            background: linear-gradient(
-              to bottom right,
-              rgba(30, 27, 75, 0.92),
-              rgba(23, 37, 84, 0.92),
-              rgba(46, 16, 101, 0.92)
-            ) !important;
-          }
-        }
+/* Fix for blue box background matching */
+@media (max-width: 640px) {
+  /* Login card container */
+  .relative.bg-white\/90.dark\:bg-gray-900\/95 {
+    background: rgba(255, 255, 255, 0.96) !important;
+  }
+  
+  :global(.dark) .relative.bg-white\/90.dark\:bg-gray-900\/95 {
+    background: rgba(15, 23, 42, 0.97) !important;
+    border-color: rgba(71, 85, 105, 0.4) !important;
+  }
+  
+  /* Location info card */
+  .bg-gradient-to-br.from-indigo-50\/95 {
+    background: linear-gradient(
+      to bottom right,
+      rgba(238, 242, 255, 0.97),
+      rgba(224, 242, 254, 0.97),
+      rgba(243, 232, 255, 0.97)
+    ) !important;
+  }
+  
+  :global(.dark) .bg-gradient-to-br.from-indigo-50\/95 {
+    background: linear-gradient(
+      to bottom right,
+      rgba(30, 27, 75, 0.92),
+      rgba(23, 37, 84, 0.92),
+      rgba(46, 16, 101, 0.92)
+    ) !important;
+  }
+}
       `}</style>
     </>
   );
 }
+
