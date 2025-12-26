@@ -119,134 +119,141 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+  const handleSendOTP = async () => {
+    if (!contact.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
 
-  // Handle Send OTP
-// Handle Send OTP - DEBUGGING VERSION
-const handleSendOTP = async () => {
-  if (!contact.trim()) {
-    toast.error("Please enter your email");
-    return;
-  }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(contact)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(contact)) {
-    toast.error("Please enter a valid email address");
-    return;
-  }
+    setLoading(true);
+    try {
+      console.log("📤 Sending OTP to:", contact);
 
-  // ✅ NO EMAIL RESTRICTIONS - Works for ANY email now!
+      const response = await fetch(`${API_URL}/api/otp/send-email-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: contact.trim() }),
+      });
 
-  setLoading(true);
-  try {
-    console.log("📤 Sending OTP to:", contact);
-    
-    // ✅ Direct fetch call to backend
-    const response = await fetch(`${API_URL}/api/otp/send-email-otp`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email: contact.trim() }),
-    });
+      const result = await response.json();
 
-    const result = await response.json();
-    
-    console.log("✅ Response:", result);
+      console.log("✅ Backend Response:", result);
 
-    if (result.success) {
-      toast.success("OTP sent to your email!");
-      setCountdown(60);
-      setStep("otp");
+      if (result.success) {
+        // Show OTP in toast for testing
+        if (result.debug?.otp) {
+          toast.success(`OTP Sent!`, {
+            description: `Your test OTP: ${result.debug.otp}\n\nCheck console for details.`,
+            duration: 10000,
+          });
 
-      // Show OTP in console for testing (development only)
-      if (result.debug?.otp) {
-        console.log("🔐 YOUR TEST OTP:", result.debug.otp);
+          console.log("═══════════════════════════════════════");
+          console.log("🔐 YOUR OTP CODE:", result.debug.otp);
+          console.log("📧 Email:", result.debug.email);
+          console.log("✉️ Email Sent:", result.debug.emailSent);
+          if (result.debug.emailError) {
+            console.log("⚠️ Email Error:", result.debug.emailError);
+          }
+          console.log("═══════════════════════════════════════");
+        } else {
+          toast.success("OTP sent to your email!");
+        }
+
+        setCountdown(60);
+        setStep("otp");
+      } else {
+        toast.error(result.error || "Failed to send OTP");
+        console.error("❌ Error:", result);
       }
-    } else {
-      toast.error(result.error || "Failed to send OTP");
+    } catch (error: any) {
+      console.error("❌ Network Error:", error);
+      toast.error("Network error. Check if backend is running.");
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    console.error("❌ Error:", error);
-    toast.error("Failed to send OTP. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-const handleVerifyOTP = async () => {
-  if (!otp.trim()) {
-    toast.error("Please enter OTP");
-    return;
-  }
-
-  if (otp.length !== 6) {
-    toast.error("OTP must be 6 digits");
-    return;
-  }
-
-  setLoading(true);
-  try {
-    console.log("🔐 Verifying OTP...");
-
-    // Step 1: Verify OTP
-    const verifyResponse = await fetch(`${API_URL}/api/otp/verify-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contact, otp }),
-    });
-
-    const verifyResult = await verifyResponse.json();
-    console.log("📋 Verify result:", verifyResult);
-
-    if (!verifyResult.success) {
-      toast.error(verifyResult.error || "Invalid OTP");
+  const handleVerifyOTP = async () => {
+    if (!otp.trim()) {
+      toast.error("Please enter OTP");
       return;
     }
 
-    // Step 2: Login/Create user
-    const loginResponse = await fetch(`${API_URL}/auth/otp-login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contact: contact,
-        contactType: otpMethod,
-      }),
-    });
-
-    const loginData = await loginResponse.json();
-    console.log("📦 Login data:", loginData);
-
-    if (!loginData.success || !loginData.token) {
-      toast.error(loginData.error || "Login failed");
+    if (otp.length !== 6) {
+      toast.error("OTP must be 6 digits");
       return;
     }
 
-    // Step 3: Store auth data
-    localStorage.setItem("token", loginData.token);
-    localStorage.setItem("user", JSON.stringify(loginData.user));
+    setLoading(true);
+    try {
+      console.log("🔐 Verifying OTP...");
 
-    // ✅ FIX: Update AuthContext state manually
-    if (typeof window !== 'undefined') {
-      // Dispatch storage event to trigger AuthContext update
-      window.dispatchEvent(new Event('storage'));
+      // Step 1: Verify OTP
+      const verifyResponse = await fetch(`${API_URL}/api/otp/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact, otp }),
+      });
+
+      const verifyResult = await verifyResponse.json();
+      console.log("📋 Verify result:", verifyResult);
+
+      if (!verifyResult.success) {
+        toast.error(verifyResult.error || "Invalid OTP");
+        return;
+      }
+
+      // Step 2: Login/Create user
+      const loginResponse = await fetch(`${API_URL}/auth/otp-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contact: contact,
+          contactType: otpMethod,
+        }),
+      });
+
+      const loginData = await loginResponse.json();
+      console.log("📦 Login data:", loginData);
+
+      if (!loginData.success || !loginData.token) {
+        toast.error(loginData.error || "Login failed");
+        return;
+      }
+
+      // Step 3: Store auth data
+      localStorage.setItem("token", loginData.token);
+      localStorage.setItem("user", JSON.stringify(loginData.user));
+
+      // ✅ FIX: Update AuthContext state manually
+      if (typeof window !== "undefined") {
+        // Dispatch storage event to trigger AuthContext update
+        window.dispatchEvent(new Event("storage"));
+      }
+
+      toast.success(`Welcome ${loginData.user.name}!`);
+
+      // Step 4: Force page reload to trigger AuthContext
+      console.log("🏠 Redirecting to home...");
+
+      setTimeout(() => {
+        window.location.replace("/"); // Use replace instead of href
+      }, 500);
+    } catch (error: any) {
+      console.error("❌ Error:", error);
+      toast.error("Verification failed. Check console.");
+    } finally {
+      setLoading(false);
     }
-
-    toast.success(`Welcome ${loginData.user.name}!`);
-
-    // Step 4: Force page reload to trigger AuthContext
-    console.log("🏠 Redirecting to home...");
-    
-    setTimeout(() => {
-      window.location.replace("/"); // Use replace instead of href
-    }, 500);
-
-  } catch (error: any) {
-    console.error("❌ Error:", error);
-    toast.error("Verification failed. Check console.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   // Handle phone input formatting
   const handlePhoneInput = (value: string) => {
     const cleaned = value.replace(/[^\d]/g, "");
