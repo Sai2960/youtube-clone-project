@@ -218,7 +218,26 @@ router.post(
   "/upload",
   (req, res, next) => {
     console.log("\n📤 ===== SINGLE UPLOAD REQUEST =====");
-    console.log("   File size:", req.headers["content-length"]);
+    console.log("   Content-Length:", req.headers["content-length"]);
+
+    // ✅ Pre-check file size from headers
+    const contentLength = parseInt(req.headers["content-length"] || "0");
+    const sizeMB = contentLength / (1024 * 1024);
+
+    console.log(`   Estimated size: ${sizeMB.toFixed(2)}MB`);
+
+    if (sizeMB > 95) {
+      console.log("❌ File too large - rejecting before Multer");
+      return res.status(413).json({
+        success: false,
+        message: `File size ${sizeMB.toFixed(
+          0
+        )}MB exceeds 95MB limit. Please use chunked upload.`,
+        shouldUseChunks: true,
+        fileSize: sizeMB,
+      });
+    }
+
     next();
   },
 
@@ -238,21 +257,26 @@ router.post(
 
   (err, req, res, next) => {
     if (err) {
-      console.error("❌ Multer error:", err);
+      console.error("❌ Multer/Cloudinary error:", err.message);
 
-      // ✅ Better error message for file size issues
-      if (err.message?.includes("File size too large")) {
+      // ✅ Handle all file size errors
+      if (
+        err.message?.includes("File size too large") ||
+        err.message?.includes("exceeds") ||
+        err.message?.includes("Maximum is")
+      ) {
         return res.status(413).json({
           success: false,
           message:
-            "File too large for single upload. Use chunked upload for files over 95MB.",
+            "File too large for direct upload. Please refresh and try again - the system will automatically split large files.",
           shouldUseChunks: true,
+          error: err.message,
         });
       }
 
       return res.status(400).json({
         success: false,
-        message: err.message,
+        message: err.message || "Upload failed",
       });
     }
     next();
@@ -272,11 +296,13 @@ router.post(
       const fileSizeMB = req.file.size / (1024 * 1024);
       console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
 
-      // ✅ SAFETY CHECK: Reject files > 95MB at backend too
+      // ✅ Final safety check
       if (fileSizeMB > 95) {
         return res.status(413).json({
           success: false,
-          message: "File too large. Use chunked upload for files over 95MB.",
+          message: `File size ${fileSizeMB.toFixed(
+            0
+          )}MB exceeds limit. Use chunked upload.`,
           shouldUseChunks: true,
           fileSize: fileSizeMB,
         });

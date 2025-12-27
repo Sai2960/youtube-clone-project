@@ -21,12 +21,22 @@ console.log("🎨 Cloudinary configured:", {
   has_api_secret: !!process.env.CLOUDINARY_API_SECRET,
 });
 
-// 🔥 OPTIMIZED: Video Storage with faster upload settings
 const videoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
+
+    // ✅ CRITICAL: Check file size BEFORE upload
+    const fileSizeMB = file.size / (1024 * 1024);
+
+    if (fileSizeMB > 95) {
+      throw new Error(
+        `File size ${fileSizeMB.toFixed(
+          0
+        )}MB exceeds 95MB limit. Use chunked upload.`
+      );
+    }
 
     return {
       folder: "youtube-clone/videos",
@@ -35,19 +45,15 @@ const videoStorage = new CloudinaryStorage({
       format: "mp4",
       allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
 
-      // ✅ CRITICAL: Use 'auto' for faster upload - Cloudinary processes AFTER upload completes
       chunk_size: 6000000, // 6MB chunks
       timeout: 900000, // 15 minutes
 
-      // ✅ CRITICAL: Use eager:false to avoid sync processing
-      eager_async: true, // Process transformations in background
+      eager_async: true, // Process in background
 
-      // ✅ CRITICAL: Preserve original quality during upload
-      // ✅ CRITICAL: Multi-quality upload with mobile optimization
       transformation: [
         {
           fetch_format: "mp4",
-          quality: "100", // Original quality preserved
+          quality: "100",
           video_codec: "h264",
           audio_codec: "aac",
           audio_frequency: 44100,
@@ -55,9 +61,7 @@ const videoStorage = new CloudinaryStorage({
         },
       ],
 
-      // ✅ Generate multiple quality versions on upload
       eager: [
-        // Mobile/3G (360p) - Fast loading
         {
           width: 640,
           height: 360,
@@ -68,7 +72,6 @@ const videoStorage = new CloudinaryStorage({
           bit_rate: "500k",
           format: "mp4",
         },
-        // Mobile/4G (480p) - Balanced
         {
           width: 854,
           height: 480,
@@ -79,7 +82,6 @@ const videoStorage = new CloudinaryStorage({
           bit_rate: "1m",
           format: "mp4",
         },
-        // Desktop/WiFi (720p) - Good quality
         {
           width: 1280,
           height: 720,
@@ -90,7 +92,6 @@ const videoStorage = new CloudinaryStorage({
           bit_rate: "2500k",
           format: "mp4",
         },
-        // Desktop/High-speed (1080p) - Full quality
         {
           width: 1920,
           height: 1080,
@@ -102,7 +103,7 @@ const videoStorage = new CloudinaryStorage({
           format: "mp4",
         },
       ],
-      eager_async: false, // ✅ Wait for all qualities to be ready
+      eager_async: false,
     };
   },
 });
@@ -181,11 +182,11 @@ const shortsThumbnailStorage = new CloudinaryStorage({
 
 // ==================== MULTER UPLOAD INSTANCES ====================
 
-// ✅ CRITICAL: Video uploader with increased limits and better error handling
+// ✅ CRITICAL: Update multer limits
 export const uploadVideo = multer({
   storage: videoStorage,
   limits: {
-    fileSize: 95 * 1024 * 1024, // ✅ 95MB limit per chunk
+    fileSize: 95 * 1024 * 1024, // ✅ 95MB hard limit
     fieldSize: 95 * 1024 * 1024,
     fields: 10,
     files: 1,
@@ -195,6 +196,7 @@ export const uploadVideo = multer({
       fieldname: file.fieldname,
       mimetype: file.mimetype,
       originalname: file.originalname,
+      size: file.size, // ✅ Log size
     });
 
     const allowedMimeTypes = [
@@ -225,7 +227,6 @@ export const uploadVideo = multer({
     }
   },
 });
-
 // Channel image uploader
 export const uploadChannelImage = multer({
   storage: channelImageStorage,
