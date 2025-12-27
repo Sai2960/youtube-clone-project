@@ -239,21 +239,23 @@ router.post(
     console.log("\n📤 ===== SINGLE UPLOAD REQUEST =====");
     console.log("   Content-Length:", req.headers["content-length"]);
 
-    // ✅ Pre-check file size from headers
+    // ✅ CRITICAL: Check size from header BEFORE multer processes
     const contentLength = parseInt(req.headers["content-length"] || "0");
     const sizeMB = contentLength / (1024 * 1024);
 
     console.log(`   Estimated size: ${sizeMB.toFixed(2)}MB`);
 
+    // ✅ Reject files over 95MB for direct upload
     if (sizeMB > 95) {
       console.log("❌ File too large - rejecting before Multer");
       return res.status(413).json({
         success: false,
         message: `File size ${sizeMB.toFixed(
           0
-        )}MB exceeds 95MB limit. Please use chunked upload.`,
+        )}MB exceeds 95MB limit for direct upload. Please use chunked upload or compress your video.`,
         shouldUseChunks: true,
         fileSize: sizeMB,
+        maxSize: 95,
       });
     }
 
@@ -272,13 +274,20 @@ router.post(
     next();
   },
 
+  // ✅ Add timeout for large uploads
+  (req, res, next) => {
+    req.setTimeout(900000); // 15 minutes
+    res.setTimeout(900000);
+    next();
+  },
+
   uploadVideo.single("file"),
 
   (err, req, res, next) => {
     if (err) {
       console.error("❌ Multer/Cloudinary error:", err.message);
 
-      // ✅ Handle all file size errors
+      // ✅ Handle Cloudinary size errors gracefully
       if (
         err.message?.includes("File size too large") ||
         err.message?.includes("exceeds") ||
@@ -287,8 +296,9 @@ router.post(
         return res.status(413).json({
           success: false,
           message:
-            "File too large for direct upload. Please refresh and try again - the system will automatically split large files.",
+            "File exceeds Cloudinary's 100MB limit. Please compress your video or use chunked upload.",
           shouldUseChunks: true,
+          cloudinaryLimit: 100,
           error: err.message,
         });
       }
@@ -315,7 +325,7 @@ router.post(
       const fileSizeMB = req.file.size / (1024 * 1024);
       console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
 
-      // ✅ Final safety check
+      // ✅ Final safety check (should never reach here if over 95MB)
       if (fileSizeMB > 95) {
         return res.status(413).json({
           success: false,

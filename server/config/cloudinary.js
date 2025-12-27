@@ -27,14 +27,17 @@ const videoStorage = new CloudinaryStorage({
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
 
-    // ✅ CRITICAL: Check file size BEFORE upload
+    // ✅ CRITICAL: Cloudinary free tier limit is 100MB
+    const MAX_SIZE_MB = 95; // Leave 5MB buffer
     const fileSizeMB = file.size / (1024 * 1024);
 
-    if (fileSizeMB > 95) {
+    console.log(`📦 Upload attempt: ${fileSizeMB.toFixed(2)}MB`);
+
+    if (fileSizeMB > MAX_SIZE_MB) {
       throw new Error(
         `File size ${fileSizeMB.toFixed(
           0
-        )}MB exceeds 95MB limit. Use chunked upload.`
+        )}MB exceeds ${MAX_SIZE_MB}MB limit for direct upload. Use chunked upload instead.`
       );
     }
 
@@ -45,33 +48,22 @@ const videoStorage = new CloudinaryStorage({
       format: "mp4",
       allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
 
-      chunk_size: 6000000, // 6MB chunks
+      chunk_size: 6000000, // 6MB chunks for network transfer
       timeout: 900000, // 15 minutes
-
-      eager_async: true, // Process in background
 
       transformation: [
         {
           fetch_format: "mp4",
-          quality: "100",
+          quality: "auto:good",
           video_codec: "h264",
           audio_codec: "aac",
           audio_frequency: 44100,
+          bit_rate: "1m",
           flags: "keep_iptc",
         },
       ],
 
       eager: [
-        {
-          width: 640,
-          height: 360,
-          crop: "limit",
-          quality: "auto:low",
-          video_codec: "h264",
-          audio_codec: "aac",
-          bit_rate: "500k",
-          format: "mp4",
-        },
         {
           width: 854,
           height: 480,
@@ -82,28 +74,8 @@ const videoStorage = new CloudinaryStorage({
           bit_rate: "1m",
           format: "mp4",
         },
-        {
-          width: 1280,
-          height: 720,
-          crop: "limit",
-          quality: "auto:good",
-          video_codec: "h264",
-          audio_codec: "aac",
-          bit_rate: "2500k",
-          format: "mp4",
-        },
-        {
-          width: 1920,
-          height: 1080,
-          crop: "limit",
-          quality: "100",
-          video_codec: "h264",
-          audio_codec: "aac",
-          bit_rate: "5m",
-          format: "mp4",
-        },
       ],
-      eager_async: false,
+      eager_async: true,
     };
   },
 });
@@ -187,7 +159,7 @@ export const uploadVideo = multer({
   storage: videoStorage,
   limits: {
     fileSize: 95 * 1024 * 1024, // ✅ 95MB hard limit
-    fieldSize: 95 * 1024 * 1024,
+    fieldSize: 10 * 1024 * 1024, // 10MB for metadata
     fields: 10,
     files: 1,
   },
@@ -196,8 +168,21 @@ export const uploadVideo = multer({
       fieldname: file.fieldname,
       mimetype: file.mimetype,
       originalname: file.originalname,
-      size: file.size, // ✅ Log size
+      size: file.size,
     });
+
+    // ✅ Check file size if available
+    if (file.size && file.size > 95 * 1024 * 1024) {
+      console.log("❌ File too large in fileFilter");
+      return cb(
+        new Error(
+          `File size ${(file.size / 1024 / 1024).toFixed(
+            0
+          )}MB exceeds 95MB limit`
+        ),
+        false
+      );
+    }
 
     const allowedMimeTypes = [
       "video/mp4",
