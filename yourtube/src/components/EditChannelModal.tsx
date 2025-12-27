@@ -61,8 +61,8 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
       return;
     }
 
@@ -370,7 +370,7 @@ const EditChannelModal: React.FC<EditChannelModalProps> = ({
                           {getRecommendedSize()}
                         </span>
                         <br />
-                        Format: JPG, PNG, or WebP • Max size: 5MB
+                        Format: JPG, PNG, or WebP • Max size: 10MB
                       </p>
                     </div>
                   </div>
