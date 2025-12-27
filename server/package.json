@@ -18,7 +18,9 @@
     "fix-delete-local-video": "node scripts/deleteLocalVideos.js",
     "fixCloudinaryUrls": "node scripts/fixCloudinaryUrls.js",
     "fixBrokenVideoUrls": "node scripts/fixBrokenVideoUrls.js",
-    "fix-thumbnails": "node scripts/fix-thumbnails.js"
+    "fix-thumbnails": "node scripts/fix-thumbnails.js",
+    "fix-quality": "node scripts/generateQualities.js"
+    
   },
   "keywords": [],
   "author": "",
