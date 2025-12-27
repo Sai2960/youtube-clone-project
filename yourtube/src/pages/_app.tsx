@@ -247,6 +247,7 @@ function AppContent({ Component, pageProps }: AppProps) {
   // ============================================================================
   // DETERMINE LAYOUT VISIBILITY
   // ============================================================================
+  // NEW - Add specific check for shorts upload:
   const shouldHideLayout = useMemo(() => {
     const currentPath = router.pathname;
     const isShortsPage = currentPath.startsWith("/shorts");
@@ -254,6 +255,15 @@ function AppContent({ Component, pageProps }: AppProps) {
     const isAuthPage = currentPath === "/login" || currentPath === "/signup";
 
     return isShortsPage || isCallPage || isAuthPage;
+  }, [router.pathname]);
+
+  const shouldShowMobileNav = useMemo(() => {
+    const currentPath = router.pathname;
+    const isShortsPage = currentPath.startsWith("/shorts");
+    const isCallPage = currentPath.startsWith("/call");
+    const isAuthPage = currentPath === "/login" || currentPath === "/signup";
+
+    return !isShortsPage && !isCallPage && !isAuthPage;
   }, [router.pathname]);
 
   // ============================================================================
@@ -576,7 +586,7 @@ function AppContent({ Component, pageProps }: AppProps) {
           </main>
         </div>
 
-        <MobileBottomNav />
+        {shouldShowMobileNav && <MobileBottomNav />}
         <Toaster />
         <CallNotification />
       </div>
