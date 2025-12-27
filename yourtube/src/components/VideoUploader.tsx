@@ -267,6 +267,16 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   };
 
   const handleUpload = async () => {
+    console.log("🔍 ===== UPLOAD HANDLER CALLED =====");
+    console.log("🔍 Video file:", videoFile?.name);
+    console.log("🔍 Video size:", videoFile?.size, "bytes");
+    console.log(
+      "🔍 Video sizeMB:",
+      (videoFile?.size || 0) / (1024 * 1024),
+      "MB"
+    );
+    console.log("🔍 Will calculate chunks...");
+
     if (!videoFile || !videoTitle.trim()) {
       toast.error("Please provide file and title");
       return;
@@ -291,13 +301,15 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         videochanel: channelName,
       };
 
-      // ✅ CRITICAL: Always use uploadLargeVideo (it handles both small and large files)
-      console.log("🚀 Starting upload via uploadLargeVideo...");
+      console.log("🚀 Calling uploadLargeVideo...");
+      console.log("📦 Expected behavior: Should detect 300MB needs chunking");
+
       const result = await uploadLargeVideo(
-        videoFile, // Use original file, let uploadLargeVideo handle chunking
+        videoFile,
         metadata,
         setUploadProgress
       );
+      console.log("✅ Upload result:", result);
 
       if (result.success) {
         setUploadComplete(true);
