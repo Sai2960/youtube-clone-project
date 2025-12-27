@@ -124,7 +124,7 @@ const ChannelHeader: React.FC<ChannelHeaderProps> = ({
       {/* ========================================== */}
       {/* BANNER - PURE IMAGE ONLY (NO OVERLAYS)    */}
       {/* ========================================== */}
-      <div className="relative w-full h-40 sm:h-48 md:h-56 lg:h-72 xl:h-80 2xl:h-96 overflow-hidden group">
+      <div className="relative w-full h-40 sm:h-48 md:h-64 lg:h-80 xl:h-96 2xl:h-[28rem] overflow-hidden group">
         {localChannel.bannerImage ? (
           <img
             key={`banner-${imageKey}`}
