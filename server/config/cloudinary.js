@@ -185,8 +185,8 @@ const shortsThumbnailStorage = new CloudinaryStorage({
 export const uploadVideo = multer({
   storage: videoStorage,
   limits: {
-    fileSize: 500 * 1024 * 1024, // ✅ 500MB limit
-    fieldSize: 500 * 1024 * 1024,
+    fileSize: 95 * 1024 * 1024, // ✅ 95MB limit per chunk
+    fieldSize: 95 * 1024 * 1024,
     fields: 10,
     files: 1,
   },

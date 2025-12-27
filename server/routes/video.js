@@ -89,9 +89,19 @@ router.post(
       });
     } catch (error) {
       console.error("❌ Chunk upload error:", error);
+
+      // ✅ BETTER ERROR MESSAGES
+      let errorMessage = "Failed to upload chunk";
+
+      if (error.message?.includes("File size too large")) {
+        errorMessage = "Chunk too large. Try reducing video quality.";
+      } else if (error.message?.includes("timeout")) {
+        errorMessage = "Upload timeout. Check your internet connection.";
+      }
+
       res.status(500).json({
         success: false,
-        message: "Failed to upload chunk",
+        message: errorMessage,
         error: error.message,
       });
     }
