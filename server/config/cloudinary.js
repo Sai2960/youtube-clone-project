@@ -1,8 +1,8 @@
 // server/config/cloudinary.js - COMPLETE MERGED & FIXED VERSION WITH AUDIO PRESERVATION
-import { v2 as cloudinary } from 'cloudinary';
-import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import dotenv from 'dotenv';
+import { v2 as cloudinary } from "cloudinary";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -12,13 +12,13 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
-  timeout: 600000 // 10 minutes
+  timeout: 600000, // 10 minutes
 });
 
-console.log('🎨 Cloudinary configured:', {
+console.log("🎨 Cloudinary configured:", {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   has_api_key: !!process.env.CLOUDINARY_API_KEY,
-  has_api_secret: !!process.env.CLOUDINARY_API_SECRET
+  has_api_secret: !!process.env.CLOUDINARY_API_SECRET,
 });
 
 // 🔥 OPTIMIZED: Video Storage with faster upload settings
@@ -27,67 +27,126 @@ const videoStorage = new CloudinaryStorage({
   params: async (req, file) => {
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
-    
+
     return {
-      folder: 'youtube-clone/videos',
-      resource_type: 'video',
+      folder: "youtube-clone/videos",
+      resource_type: "video",
       public_id: `file_${timestamp}_${randomStr}`,
-      format: 'mp4',
-      allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
-      
+      format: "mp4",
+      allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
+
       // ✅ CRITICAL: Use 'auto' for faster upload - Cloudinary processes AFTER upload completes
       chunk_size: 6000000, // 6MB chunks
-      timeout: 900000,     // 15 minutes
-      
+      timeout: 900000, // 15 minutes
+
       // ✅ CRITICAL: Use eager:false to avoid sync processing
-      eager_async: true,   // Process transformations in background
-      
-      // ✅ Minimal transformation during upload (process later)
-      transformation: [{
-        fetch_format: 'mp4',
-        quality: 'auto'
-        // Audio codec applied AFTER upload via URL transformation
-      }]
+      eager_async: true, // Process transformations in background
+
+      // ✅ CRITICAL: Preserve original quality during upload
+      // ✅ CRITICAL: Multi-quality upload with mobile optimization
+      transformation: [
+        {
+          fetch_format: "mp4",
+          quality: "100", // Original quality preserved
+          video_codec: "h264",
+          audio_codec: "aac",
+          audio_frequency: 44100,
+          flags: "keep_iptc",
+        },
+      ],
+
+      // ✅ Generate multiple quality versions on upload
+      eager: [
+        // Mobile/3G (360p) - Fast loading
+        {
+          width: 640,
+          height: 360,
+          crop: "limit",
+          quality: "auto:low",
+          video_codec: "h264",
+          audio_codec: "aac",
+          bit_rate: "500k",
+          format: "mp4",
+        },
+        // Mobile/4G (480p) - Balanced
+        {
+          width: 854,
+          height: 480,
+          crop: "limit",
+          quality: "auto:good",
+          video_codec: "h264",
+          audio_codec: "aac",
+          bit_rate: "1m",
+          format: "mp4",
+        },
+        // Desktop/WiFi (720p) - Good quality
+        {
+          width: 1280,
+          height: 720,
+          crop: "limit",
+          quality: "auto:good",
+          video_codec: "h264",
+          audio_codec: "aac",
+          bit_rate: "2500k",
+          format: "mp4",
+        },
+        // Desktop/High-speed (1080p) - Full quality
+        {
+          width: 1920,
+          height: 1080,
+          crop: "limit",
+          quality: "100",
+          video_codec: "h264",
+          audio_codec: "aac",
+          bit_rate: "5m",
+          format: "mp4",
+        },
+      ],
+      eager_async: false, // ✅ Wait for all qualities to be ready
     };
-  }
+  },
 });
 
 // Channel image storage
 const channelImageStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'youtube-clone/channel-images',
-    resource_type: 'image',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp'],
-    transformation: [{ width: 800, height: 800, crop: 'limit', quality: 'auto' }]
-  }
+    folder: "youtube-clone/channel-images",
+    resource_type: "image",
+    allowed_formats: ["jpg", "png", "jpeg", "gif", "webp"],
+    transformation: [
+      { width: 800, height: 800, crop: "limit", quality: "auto" },
+    ],
+  },
 });
 
 // Thumbnail storage
 const thumbnailStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'youtube-clone/thumbnails',
-    resource_type: 'image',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-    transformation: [{ width: 1280, height: 720, crop: 'limit', quality: 'auto' }]
-  }
+    folder: "youtube-clone/thumbnails",
+    resource_type: "image",
+    allowed_formats: ["jpg", "png", "jpeg", "webp"],
+    transformation: [
+      { width: 1280, height: 720, crop: "limit", quality: "auto" },
+    ],
+  },
 });
 
 // ✅ CRITICAL FIX: Shorts video storage with audio preservation
 const shortsVideoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    console.log('📤 Processing shorts video upload:', {
+    console.log("📤 Processing shorts video upload:", {
       originalname: file.originalname,
       mimetype: file.mimetype,
-      size: file.size
+      size: file.size,
     });
 
     return {
-      folder: 'youtube-clone/shorts/videos',
-      resource_type: 'auto', // ✅ Auto-detect resource type
-      allowed_formats: ['mp4', 'mov', 'webm'],
+      folder: "youtube-clone/shorts/videos",
+      resource_type: "auto", // ✅ Auto-detect resource type
+      allowed_formats: ["mp4", "mov", "webm"],
       chunk_size: 6000000,
       timeout: 600000,
       use_filename: true,
@@ -95,169 +154,198 @@ const shortsVideoStorage = new CloudinaryStorage({
       overwrite: false,
       // ✅ CRITICAL: Preserve audio for shorts videos
       transformation: [
-        { 
-          video_codec: 'auto',
-          audio_codec: 'aac',        // ✅ AAC audio codec
-          audio_frequency: 44100,    // ✅ Standard audio frequency
-          bit_rate: '500k',
-          quality: 'auto'
-        }
-      ]
+        {
+          video_codec: "auto",
+          audio_codec: "aac", // ✅ AAC audio codec
+          audio_frequency: 44100, // ✅ Standard audio frequency
+          bit_rate: "500k",
+          quality: "auto",
+        },
+      ],
     };
-  }
+  },
 });
 
 // Shorts thumbnail storage
 const shortsThumbnailStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'youtube-clone/shorts/thumbnails',
-    resource_type: 'image',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-    transformation: [{ width: 720, height: 1280, crop: 'limit', quality: 'auto' }]
-  }
+    folder: "youtube-clone/shorts/thumbnails",
+    resource_type: "image",
+    allowed_formats: ["jpg", "png", "jpeg", "webp"],
+    transformation: [
+      { width: 720, height: 1280, crop: "limit", quality: "auto" },
+    ],
+  },
 });
 
 // ==================== MULTER UPLOAD INSTANCES ====================
 
 // ✅ CRITICAL: Video uploader with increased limits and better error handling
-export const uploadVideo = multer({ 
+export const uploadVideo = multer({
   storage: videoStorage,
-  limits: { 
+  limits: {
     fileSize: 500 * 1024 * 1024, // ✅ 500MB limit
     fieldSize: 500 * 1024 * 1024,
     fields: 10,
-    files: 1
+    files: 1,
   },
   fileFilter: (req, file, cb) => {
-    console.log('🔍 File filter - Video:', {
+    console.log("🔍 File filter - Video:", {
       fieldname: file.fieldname,
       mimetype: file.mimetype,
-      originalname: file.originalname
+      originalname: file.originalname,
     });
 
     const allowedMimeTypes = [
-      'video/mp4',
-      'video/mpeg',
-      'video/quicktime',
-      'video/x-msvideo',
-      'video/x-matroska',
-      'video/webm',
-      'video/x-flv',
-      'video/x-ms-wmv'
+      "video/mp4",
+      "video/mpeg",
+      "video/quicktime",
+      "video/x-msvideo",
+      "video/x-matroska",
+      "video/webm",
+      "video/x-flv",
+      "video/x-ms-wmv",
     ];
 
-    if (allowedMimeTypes.includes(file.mimetype) || file.mimetype.startsWith('video/')) {
-      console.log('✅ Video file accepted');
+    if (
+      allowedMimeTypes.includes(file.mimetype) ||
+      file.mimetype.startsWith("video/")
+    ) {
+      console.log("✅ Video file accepted");
       cb(null, true);
     } else {
-      console.log('❌ Invalid video file type:', file.mimetype);
-      cb(new Error(`Invalid file type: ${file.mimetype}. Only video files allowed.`), false);
+      console.log("❌ Invalid video file type:", file.mimetype);
+      cb(
+        new Error(
+          `Invalid file type: ${file.mimetype}. Only video files allowed.`
+        ),
+        false
+      );
     }
-  }
+  },
 });
 
 // Channel image uploader
-export const uploadChannelImage = multer({ 
+export const uploadChannelImage = multer({
   storage: channelImageStorage,
-  limits: { 
-    fileSize: 10 * 1024 * 1024 // ✅ 10MB limit
+  limits: {
+    fileSize: 10 * 1024 * 1024, // ✅ 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    console.log('🔍 File filter - Channel Image:', {
+    console.log("🔍 File filter - Channel Image:", {
       fieldname: file.fieldname,
       mimetype: file.mimetype,
-      originalname: file.originalname
+      originalname: file.originalname,
     });
 
-    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+
     if (allowedMimeTypes.includes(file.mimetype)) {
-      console.log('✅ Channel image file accepted');
+      console.log("✅ Channel image file accepted");
       cb(null, true);
     } else {
-      console.log('❌ Invalid image file type:', file.mimetype);
-      cb(new Error('Only image files allowed for channel images'), false);
+      console.log("❌ Invalid image file type:", file.mimetype);
+      cb(new Error("Only image files allowed for channel images"), false);
     }
-  }
+  },
 });
 
 // Thumbnail uploader
-export const uploadThumbnail = multer({ 
+export const uploadThumbnail = multer({
   storage: thumbnailStorage,
-  limits: { 
-    fileSize: 10 * 1024 * 1024 // ✅ 10MB limit
+  limits: {
+    fileSize: 10 * 1024 * 1024, // ✅ 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    console.log('🔍 File filter - Thumbnail:', {
+    console.log("🔍 File filter - Thumbnail:", {
       fieldname: file.fieldname,
       mimetype: file.mimetype,
-      originalname: file.originalname
+      originalname: file.originalname,
     });
 
-    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+
     if (allowedMimeTypes.includes(file.mimetype)) {
-      console.log('✅ Thumbnail file accepted');
+      console.log("✅ Thumbnail file accepted");
       cb(null, true);
     } else {
-      console.log('❌ Invalid thumbnail file type:', file.mimetype);
-      cb(new Error('Only image files allowed for thumbnails'), false);
+      console.log("❌ Invalid thumbnail file type:", file.mimetype);
+      cb(new Error("Only image files allowed for thumbnails"), false);
     }
-  }
+  },
 });
 
 // Shorts video uploader
-export const uploadShortsVideo = multer({ 
+export const uploadShortsVideo = multer({
   storage: shortsVideoStorage,
-  limits: { 
+  limits: {
     fileSize: 100 * 1024 * 1024, // ✅ 100MB limit
     fieldSize: 100 * 1024 * 1024,
     fields: 10,
-    files: 1
+    files: 1,
   },
   fileFilter: (req, file, cb) => {
-    console.log('🔍 File filter - Shorts Video:', {
+    console.log("🔍 File filter - Shorts Video:", {
       fieldname: file.fieldname,
       mimetype: file.mimetype,
-      originalname: file.originalname
+      originalname: file.originalname,
     });
 
-    const allowedMimeTypes = ['video/mp4', 'video/quicktime', 'video/webm'];
-    
-    if (allowedMimeTypes.includes(file.mimetype) || file.mimetype.startsWith('video/')) {
-      console.log('✅ Shorts video file accepted');
+    const allowedMimeTypes = ["video/mp4", "video/quicktime", "video/webm"];
+
+    if (
+      allowedMimeTypes.includes(file.mimetype) ||
+      file.mimetype.startsWith("video/")
+    ) {
+      console.log("✅ Shorts video file accepted");
       cb(null, true);
     } else {
-      console.log('❌ Invalid shorts video file type:', file.mimetype);
-      cb(new Error('Only video files allowed for shorts'), false);
+      console.log("❌ Invalid shorts video file type:", file.mimetype);
+      cb(new Error("Only video files allowed for shorts"), false);
     }
-  }
+  },
 });
 
 // Shorts thumbnail uploader
-export const uploadShortsThumbnail = multer({ 
+export const uploadShortsThumbnail = multer({
   storage: shortsThumbnailStorage,
-  limits: { 
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: (req, file, cb) => {
-    console.log('🔍 File filter - Shorts Thumbnail:', {
+    console.log("🔍 File filter - Shorts Thumbnail:", {
       fieldname: file.fieldname,
       mimetype: file.mimetype,
-      originalname: file.originalname
+      originalname: file.originalname,
     });
 
-    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+
     if (allowedMimeTypes.includes(file.mimetype)) {
-      console.log('✅ Shorts thumbnail file accepted');
+      console.log("✅ Shorts thumbnail file accepted");
       cb(null, true);
     } else {
-      console.log('❌ Invalid shorts thumbnail file type:', file.mimetype);
-      cb(new Error('Only image files allowed for shorts thumbnails'), false);
+      console.log("❌ Invalid shorts thumbnail file type:", file.mimetype);
+      cb(new Error("Only image files allowed for shorts thumbnails"), false);
     }
-  }
+  },
 });
 
 // ==================== CLOUDINARY UTILITIES ====================
@@ -268,19 +356,22 @@ export const uploadShortsThumbnail = multer({
  * @param {string} resourceType - 'image' or 'video' (default: 'video')
  * @returns {Promise} - Cloudinary deletion result
  */
-export const deleteFromCloudinary = async (publicId, resourceType = 'video') => {
+export const deleteFromCloudinary = async (
+  publicId,
+  resourceType = "video"
+) => {
   try {
     console.log(`🗑️ Deleting ${resourceType} from Cloudinary:`, publicId);
-    
+
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: resourceType,
-      invalidate: true
+      invalidate: true,
     });
-    
-    console.log('✅ Cloudinary deletion result:', result);
+
+    console.log("✅ Cloudinary deletion result:", result);
     return result;
   } catch (error) {
-    console.error('❌ Cloudinary delete error:', error);
+    console.error("❌ Cloudinary delete error:", error);
     throw error;
   }
 };
@@ -291,18 +382,18 @@ export const deleteFromCloudinary = async (publicId, resourceType = 'video') => 
  * @returns {string|null} - Public ID or null
  */
 export const extractPublicId = (url) => {
-  if (!url || !url.includes('cloudinary.com')) return null;
-  
+  if (!url || !url.includes("cloudinary.com")) return null;
+
   try {
-    const parts = url.split('/upload/');
+    const parts = url.split("/upload/");
     if (parts.length > 1) {
-      const afterUpload = parts[1].split('/').slice(1).join('/');
-      return afterUpload.replace(/\.[^/.]+$/, ''); // Remove extension
+      const afterUpload = parts[1].split("/").slice(1).join("/");
+      return afterUpload.replace(/\.[^/.]+$/, ""); // Remove extension
     }
   } catch (error) {
-    console.error('Error extracting public ID:', error);
+    console.error("Error extracting public ID:", error);
   }
-  
+
   return null;
 };
 
@@ -313,22 +404,22 @@ export const extractPublicId = (url) => {
  */
 export const getVideoInfo = async (publicId) => {
   try {
-    console.log('📊 Fetching video info from Cloudinary:', publicId);
-    
+    console.log("📊 Fetching video info from Cloudinary:", publicId);
+
     const result = await cloudinary.api.resource(publicId, {
-      resource_type: 'video'
+      resource_type: "video",
     });
-    
-    console.log('✅ Video info retrieved:', {
+
+    console.log("✅ Video info retrieved:", {
       duration: result.duration,
       format: result.format,
       bytes: result.bytes,
-      hasAudio: result.audio ? true : false
+      hasAudio: result.audio ? true : false,
     });
-    
+
     return result;
   } catch (error) {
-    console.error('❌ Error fetching video info:', error);
+    console.error("❌ Error fetching video info:", error);
     throw error;
   }
 };
@@ -343,18 +434,18 @@ export const generateVideoThumbnail = (publicId, options = {}) => {
   const {
     width = 1280,
     height = 720,
-    crop = 'fill',
-    gravity = 'center',
-    quality = 'auto',
-    format = 'jpg'
+    crop = "fill",
+    gravity = "center",
+    quality = "auto",
+    format = "jpg",
   } = options;
 
   return cloudinary.url(publicId, {
-    resource_type: 'video',
+    resource_type: "video",
     transformation: [
       { width, height, crop, gravity, quality },
-      { fetch_format: format }
-    ]
+      { fetch_format: format },
+    ],
   });
 };
 
@@ -366,25 +457,25 @@ export const generateVideoThumbnail = (publicId, options = {}) => {
  */
 export const generateOptimizedVideoUrl = (publicId, options = {}) => {
   const {
-    quality = 'auto',
-    format = 'mp4',
-    audioCodec = 'aac',
+    quality = "auto",
+    format = "mp4",
+    audioCodec = "aac",
     audioFrequency = 44100,
-    bitRate = '500k'
+    bitRate = "500k",
   } = options;
 
   return cloudinary.url(publicId, {
-    resource_type: 'video',
+    resource_type: "video",
     transformation: [
       {
-        video_codec: 'auto',
+        video_codec: "auto",
         audio_codec: audioCodec,
         audio_frequency: audioFrequency,
         bit_rate: bitRate,
         quality: quality,
-        fetch_format: format
-      }
-    ]
+        fetch_format: format,
+      },
+    ],
   });
 };
 
@@ -397,17 +488,17 @@ export const verifyVideoAudio = async (publicId) => {
   try {
     const videoInfo = await getVideoInfo(publicId);
     const hasAudio = videoInfo.audio && videoInfo.audio.codec;
-    
-    console.log('🔊 Audio verification:', {
+
+    console.log("🔊 Audio verification:", {
       publicId,
       hasAudio,
       audioCodec: videoInfo.audio?.codec,
-      audioChannels: videoInfo.audio?.channels
+      audioChannels: videoInfo.audio?.channels,
     });
-    
+
     return hasAudio;
   } catch (error) {
-    console.error('❌ Error verifying video audio:', error);
+    console.error("❌ Error verifying video audio:", error);
     return false;
   }
 };
@@ -420,11 +511,11 @@ export const verifyVideoAudio = async (publicId) => {
  */
 export const uploadVideoWithAudio = async (filePath, options = {}) => {
   try {
-    console.log('🎬 Uploading video with audio preservation:', filePath);
-    
+    console.log("🎬 Uploading video with audio preservation:", filePath);
+
     const result = await cloudinary.uploader.upload(filePath, {
-      resource_type: 'auto',
-      folder: options.folder || 'youtube-clone/videos',
+      resource_type: "auto",
+      folder: options.folder || "youtube-clone/videos",
       use_filename: true,
       unique_filename: true,
       overwrite: false,
@@ -433,37 +524,37 @@ export const uploadVideoWithAudio = async (filePath, options = {}) => {
       // ✅ CRITICAL: Audio preservation settings
       transformation: [
         {
-          video_codec: 'auto',
-          audio_codec: 'aac',
+          video_codec: "auto",
+          audio_codec: "aac",
           audio_frequency: 44100,
-          bit_rate: '500k',
-          quality: 'auto'
-        }
+          bit_rate: "500k",
+          quality: "auto",
+        },
       ],
-      ...options
+      ...options,
     });
-    
+
     // ✅ Verify audio after upload
     const hasAudio = await verifyVideoAudio(result.public_id);
-    
-    console.log('✅ Video uploaded:', {
+
+    console.log("✅ Video uploaded:", {
       publicId: result.public_id,
       url: result.secure_url,
       format: result.format,
       duration: result.duration,
-      hasAudio
+      hasAudio,
     });
-    
+
     if (!hasAudio) {
-      console.warn('⚠️ WARNING: Uploaded video may not have audio track!');
+      console.warn("⚠️ WARNING: Uploaded video may not have audio track!");
     }
-    
+
     return {
       ...result,
-      hasAudio
+      hasAudio,
     };
   } catch (error) {
-    console.error('❌ Error uploading video with audio:', error);
+    console.error("❌ Error uploading video with audio:", error);
     throw error;
   }
 };

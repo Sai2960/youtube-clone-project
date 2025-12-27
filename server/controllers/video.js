@@ -275,11 +275,6 @@ const generateSampleComments = (videoTitle) => {
   return templates.sort(() => 0.5 - Math.random()).slice(0, numComments);
 };
 
-// ✅ CRITICAL FIX: Simplified uploadvideo controller
-// ✅ CRITICAL FIX: Simplified uploadvideo controller
-// REPLACE THE uploadvideo FUNCTION (around lines 183-290) with this:
-
-// 🔥 CRITICAL FIX: Lines 183-290
 export const uploadvideo = async (req, res) => {
   try {
     console.log("\n📤 ===== VIDEO UPLOAD STARTED =====");
@@ -293,43 +288,53 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    // ✅ CRITICAL: Log COMPLETE Cloudinary response
     console.log("🔍 Full Cloudinary Response:");
     console.log(JSON.stringify(req.file, null, 2));
 
-    // ✅ CRITICAL: Get the EXACT public_id from Cloudinary
     const publicId = req.file.public_id || req.file.filename;
-    
+
     if (!publicId) {
       console.error("❌ NO PUBLIC_ID RETURNED FROM CLOUDINARY!");
       return res.status(500).json({
         success: false,
         message: "Upload failed - Cloudinary did not return public_id",
-        debug: {
-          cloudinaryResponse: req.file,
-          keys: Object.keys(req.file)
-        }
       });
     }
 
     console.log("✅ Exact public_id from Cloudinary:", publicId);
-    console.log("✅ Secure URL from Cloudinary:", req.file.secure_url);
 
-    // ✅ CRITICAL: Use the EXACT public_id - DO NOT MODIFY IT
-    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dxuxxk0ss';
+    const CLOUDINARY_CLOUD_NAME =
+      process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
     const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-    
-    // ✅ Build video URL with transformations
-    // Format: https://res.cloudinary.com/cloud_name/video/upload/transformations/public_id.extension
-    const videoUrl = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
-    
-    // ✅ Build thumbnail URL (auto-generated from video)
-    const thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
 
-    console.log("✅ Final Video URL:", videoUrl);
-    console.log("✅ Final Thumbnail URL:", thumbnailUrl);
+    // ✅ BUILD ALL QUALITY URLS
+    const qualities = {
+      // Mobile 3G/Slow connection (360p)
+      mobile_low: `${baseUrl}/w_640,h_360,c_limit,q_auto:low,br_500k,vc_h264,ac_aac/${publicId}.mp4`,
 
-    // Get request data
+      // Mobile 4G (480p)
+      mobile: `${baseUrl}/w_854,h_480,c_limit,q_auto:good,br_1m,vc_h264,ac_aac/${publicId}.mp4`,
+
+      // Desktop/WiFi (720p)
+      sd: `${baseUrl}/w_1280,h_720,c_limit,q_auto:good,br_2500k,vc_h264,ac_aac/${publicId}.mp4`,
+
+      // Desktop High-speed (1080p)
+      hd: `${baseUrl}/w_1920,h_1080,c_limit,q_100,br_5m,vc_h264,ac_aac/${publicId}.mp4`,
+
+      // Original (fallback)
+      original: `${baseUrl}/q_100,vc_h264,ac_aac/${publicId}.mp4`,
+    };
+
+    // ✅ Default to mobile-friendly quality
+    const defaultVideoUrl = qualities.mobile;
+
+    // ✅ Thumbnails for different sizes
+    const thumbnails = {
+      small: `${baseUrl}/so_0,w_320,h_180,c_fill,q_auto:low/${publicId}.jpg`,
+      medium: `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`,
+      large: `${baseUrl}/so_0,w_1280,h_720,c_fill,q_100/${publicId}.jpg`,
+    };
+
     const { videotitle, videodescription, videochanel } = req.body;
     const uploadedBy = req.userId;
 
@@ -348,36 +353,43 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    const channelName = user?.channelname || videochanel || user?.name || "Unknown Channel";
+    const channelName =
+      user?.channelname || videochanel || user?.name || "Unknown Channel";
     const title = videotitle || req.file.originalname;
-    const autoDescription = videodescription?.trim() || 
+    const autoDescription =
+      videodescription?.trim() ||
       `Watch this amazing video about ${title}. Don't forget to like and subscribe!`;
 
     const views = Math.floor(Math.random() * 91) + 10;
     const likes = Math.floor(views * 0.075);
     const dislikes = Math.floor(views * 0.01);
 
-    // ✅ Create video document with EXACT URLs
+    // ✅ Create video document with ALL quality URLs
     const newVideo = new videofiles({
       videotitle: title,
       videodescription: autoDescription,
-      videofilename: publicId,  // ✅ Store complete public_id
-      
-      // ✅ ALL video URL fields = SAME URL with transformations
-      filepath: videoUrl,
-      videofile: videoUrl,
-      videoLink: videoUrl,
-      videoUrl: videoUrl,
-      
-      // ✅ ALL thumbnail fields = SAME thumbnail URL
-      thumbnail: thumbnailUrl,
-      videothumbnail: thumbnailUrl,
-      thumbnailUrl: thumbnailUrl,
-      videothumb: thumbnailUrl,
+      videofilename: publicId,
+
+      // ✅ Default URLs (mobile-friendly)
+      filepath: defaultVideoUrl,
+      videofile: defaultVideoUrl,
+      videoLink: defaultVideoUrl,
+      videoUrl: defaultVideoUrl,
+
+      // ✅ ALL QUALITY VERSIONS
+      qualities: qualities,
+
+      // ✅ ALL THUMBNAIL SIZES
+      thumbnail: thumbnails.medium,
+      videothumbnail: thumbnails.medium,
+      thumbnailUrl: thumbnails.medium,
+      thumbnails: thumbnails,
 
       filename: req.file.originalname,
       filetype: req.file.mimetype,
-      filesize: req.file.bytes ? `${(req.file.bytes / (1024 * 1024)).toFixed(2)} MB` : "Unknown",
+      filesize: req.file.bytes
+        ? `${(req.file.bytes / (1024 * 1024)).toFixed(2)} MB`
+        : "Unknown",
       videotype: req.file.mimetype,
       uploadedBy,
       user: uploadedBy,
@@ -392,12 +404,12 @@ export const uploadvideo = async (req, res) => {
 
     const savedVideo = await newVideo.save();
 
-    console.log("✅ Video saved to database:", {
+    console.log("✅ Video saved with multiple qualities:", {
       _id: savedVideo._id,
       title: savedVideo.videotitle,
       publicId: savedVideo.videofilename,
-      videoUrl: savedVideo.filepath,
-      thumbnailUrl: savedVideo.thumbnail,
+      defaultUrl: defaultVideoUrl,
+      hasQualities: !!savedVideo.qualities,
     });
 
     await savedVideo.populate({
@@ -419,28 +431,32 @@ export const uploadvideo = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Video uploaded successfully",
+      message: "Video uploaded successfully with multiple qualities",
       video: savedVideo,
-      videoUrl: videoUrl,
-      thumbnailUrl: thumbnailUrl,
+      videoUrl: defaultVideoUrl,
+      qualities: qualities,
+      thumbnails: thumbnails,
       publicId: publicId,
       cloudinaryData: {
         secure_url: req.file.secure_url,
         public_id: publicId,
         format: req.file.format,
         bytes: req.file.bytes,
-        duration: req.file.duration
-      }
+        duration: req.file.duration,
+      },
     });
   } catch (error) {
     console.error("\n❌ VIDEO UPLOAD ERROR:");
     console.error("   Message:", error.message);
     console.error("   Stack:", error.stack);
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to upload video",
-      error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -851,4 +867,3 @@ export const getRelatedVideos = async (req, res) => {
     });
   }
 };
-
