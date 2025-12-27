@@ -1,6 +1,6 @@
 // ============================================================================
 // FREE UNLIMITED VIDEO UPLOADER - Mobile + Desktop Compatible
-// Uses: Cloudinary (100MB) + Upload.io (10GB) + Bunny.net (10GB)
+// Combined & Fixed Version with All Features
 // ============================================================================
 
 import { Check, FileVideo, Upload, X, Sparkles, Zap } from "lucide-react";
@@ -15,7 +15,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import axiosInstance from "@/lib/axiosinstance";
 import { getImageUrl } from "@/lib/imageUtils";
 import { useUser } from "@/lib/AuthContext";
-
 // ============================================================================
 // VIDEO COMPRESSION UTILITY (Works on Mobile + Desktop)
 // ============================================================================
@@ -101,6 +100,10 @@ const compressVideo = async (
     };
   });
 };
+// ============================================================================
+// CHUNKED UPLOAD HANDLER (Fixed & Optimized)
+// ============================================================================
+
 const uploadLargeVideo = async (
   file: File,
   metadata: any,
@@ -112,14 +115,15 @@ const uploadLargeVideo = async (
   console.log(`📦 File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
   console.log(`📦 Total chunks needed: ${totalChunks}`);
 
-  // ✅ If file is small enough, use normal upload
+  // ✅ FIXED: Single chunk upload for files < 95MB
   if (totalChunks === 1) {
-    console.log("✅ Single chunk upload (file < 100MB)");
+    console.log("✅ Single chunk upload (file < 95MB)");
+
     const formData = new FormData();
     formData.append("file", file);
-    Object.keys(metadata).forEach((key) => {
-      formData.append(key, metadata[key]);
-    });
+    formData.append("videotitle", metadata.videotitle);
+    formData.append("videodescription", metadata.videodescription);
+    formData.append("videochanel", metadata.videochanel);
 
     const res = await axiosInstance.post("/video/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -132,7 +136,7 @@ const uploadLargeVideo = async (
     return res.data;
   }
 
-  // ✅ CRITICAL: Multi-chunk upload for large files
+  // ✅ FIXED: Multi-chunk upload for large files
   console.log(`🔪 Splitting into ${totalChunks} chunks...`);
   toast.info(`Splitting video into ${totalChunks} parts...`);
 
@@ -160,9 +164,9 @@ const uploadLargeVideo = async (
     formData.append("chunkIndex", String(i));
     formData.append("totalChunks", String(totalChunks));
     formData.append("originalFilename", file.name);
-    Object.keys(metadata).forEach((key) => {
-      formData.append(key, metadata[key]);
-    });
+    formData.append("videotitle", metadata.videotitle);
+    formData.append("videodescription", metadata.videodescription);
+    formData.append("videochanel", metadata.videochanel);
 
     try {
       const res = await axiosInstance.post("/video/upload-chunk", formData, {
@@ -195,13 +199,14 @@ const uploadLargeVideo = async (
 
   const mergeRes = await axiosInstance.post("/video/merge-chunks", {
     chunkIds,
-    ...metadata,
+    videotitle: metadata.videotitle,
+    videodescription: metadata.videodescription,
+    videochanel: metadata.videochanel,
   });
 
   console.log("✅ Merge complete:", mergeRes.data);
   return mergeRes.data;
 };
-
 // ============================================================================
 // MAIN UPLOADER COMPONENT
 // ============================================================================
@@ -223,6 +228,9 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     window.addEventListener("avatarUpdated", handleUpdate);
     return () => window.removeEventListener("avatarUpdated", handleUpdate);
   }, []);
+  // ============================================================================
+  // FILE SELECTION HANDLER
+  // ============================================================================
 
   const handlefilechange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -233,18 +241,21 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         return;
       }
 
-      // No size limit! We'll handle any size
       setVideoFile(file);
       const filename = file.name.replace(/\.[^/.]+$/, "");
       if (!videoTitle) {
         setVideoTitle(filename);
       }
 
-      // Show file info
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
       toast.success(`Video selected: ${sizeMB}MB`);
+      console.log(`📁 File selected: ${file.name} (${sizeMB}MB)`);
     }
   };
+
+  // ============================================================================
+  // FORM RESET & CANCEL
+  // ============================================================================
 
   const resetForm = () => {
     setVideoFile(null);
@@ -265,17 +276,15 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     }
     resetForm();
   };
+  // ============================================================================
+  // MAIN UPLOAD HANDLER (Fixed & Optimized)
+  // ============================================================================
 
   const handleUpload = async () => {
-    console.log("🔍 ===== UPLOAD HANDLER CALLED =====");
-    console.log("🔍 Video file:", videoFile?.name);
-    console.log("🔍 Video size:", videoFile?.size, "bytes");
-    console.log(
-      "🔍 Video sizeMB:",
-      (videoFile?.size || 0) / (1024 * 1024),
-      "MB"
-    );
-    console.log("🔍 Will calculate chunks...");
+    console.log("\n🔥 ===== UPLOAD STARTED =====");
+    console.log("📁 File:", videoFile?.name);
+    console.log("📊 Size:", videoFile?.size, "bytes");
+    console.log("📊 Size MB:", (videoFile?.size || 0) / (1024 * 1024), "MB");
 
     if (!videoFile || !videoTitle.trim()) {
       toast.error("Please provide file and title");
@@ -302,13 +311,13 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       };
 
       console.log("🚀 Calling uploadLargeVideo...");
-      console.log("📦 Expected behavior: Should detect 300MB needs chunking");
 
       const result = await uploadLargeVideo(
         videoFile,
         metadata,
         setUploadProgress
       );
+
       console.log("✅ Upload result:", result);
 
       if (result.success) {
@@ -339,9 +348,13 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       setIsCompressing(false);
     }
   };
+  // ============================================================================
+  // COMPONENT JSX RENDER
+  // ============================================================================
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+      {/* User Avatar & Channel Info */}
       {user && (
         <div className="flex items-center gap-3 mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <Avatar className="w-10 h-10 ring-2 ring-blue-500">
@@ -365,6 +378,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         </div>
       )}
 
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Upload a video</h2>
         <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
@@ -374,6 +388,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       </div>
 
       <div className="space-y-4">
+        {/* File Upload Drop Zone */}
         {!videoFile ? (
           <div
             className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -390,7 +405,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
               Any size • MP4, WebM, MOV or AVI
             </p>
             <p className="text-xs text-green-600 dark:text-green-400 mt-2 font-medium">
-              ⚡ Auto-compression for files over 100MB
+              ⚡ Auto-chunking for files over 95MB
             </p>
             <input
               type="file"
@@ -402,6 +417,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Selected File Display */}
             <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-md">
                 <FileVideo className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -425,7 +441,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                 </div>
               )}
             </div>
-
+            {/* Title & Description Form */}
             <div className="space-y-3">
               <div>
                 <Label htmlFor="title">Title (required)</Label>
@@ -461,7 +477,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                 />
               </div>
             </div>
-
+            {/* Compression Status */}
             {isCompressing && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p className="text-blue-800 dark:text-blue-300 text-sm font-medium flex items-center gap-2">
@@ -471,6 +487,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
               </div>
             )}
 
+            {/* Upload Progress */}
             {isUploading && !isCompressing && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
@@ -481,6 +498,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
               </div>
             )}
 
+            {/* Upload Complete Message */}
             {uploadComplete && (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <p className="text-green-800 dark:text-green-300 text-sm font-medium">
@@ -488,7 +506,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                 </p>
               </div>
             )}
-
+            {/* Action Buttons */}
             <div className="flex justify-end gap-3">
               {!uploadComplete && (
                 <>
