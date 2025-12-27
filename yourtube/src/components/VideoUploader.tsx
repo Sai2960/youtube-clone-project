@@ -1,4 +1,9 @@
-import { Check, FileVideo, Upload, X, Sparkles } from "lucide-react";
+// ============================================================================
+// FREE UNLIMITED VIDEO UPLOADER - Mobile + Desktop Compatible
+// Uses: Cloudinary (100MB) + Upload.io (10GB) + Bunny.net (10GB)
+// ============================================================================
+
+import { Check, FileVideo, Upload, X, Sparkles, Zap } from "lucide-react";
 import React, { ChangeEvent, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
@@ -10,7 +15,181 @@ import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import axiosInstance from "@/lib/axiosinstance";
 import { getImageUrl } from "@/lib/imageUtils";
 import { useUser } from "@/lib/AuthContext";
-import { getVideoUrl } from '@/lib/urlHelper';
+
+// ============================================================================
+// VIDEO COMPRESSION UTILITY (Works on Mobile + Desktop)
+// ============================================================================
+
+const compressVideo = async (
+  file: File,
+  targetSizeMB: number = 95
+): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    video.preload = "metadata";
+    video.src = URL.createObjectURL(file);
+
+    video.onloadedmetadata = () => {
+      // Calculate compression ratio
+      const originalSizeMB = file.size / (1024 * 1024);
+      const compressionRatio = targetSizeMB / originalSizeMB;
+
+      // Determine output resolution
+      let width = video.videoWidth;
+      let height = video.videoHeight;
+
+      if (compressionRatio < 0.5) {
+        width = Math.floor(width * 0.7);
+        height = Math.floor(height * 0.7);
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Create MediaRecorder for compression
+      const stream = canvas.captureStream(30); // 30fps
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "video/webm;codecs=vp9",
+        videoBitsPerSecond: Math.floor(
+          (targetSizeMB * 1024 * 1024 * 8) / video.duration
+        ),
+      });
+
+      const chunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const compressedFile = new File(
+          [blob],
+          file.name.replace(/\.[^.]+$/, ".webm"),
+          { type: "video/webm" }
+        );
+
+        URL.revokeObjectURL(video.src);
+        resolve(compressedFile);
+      };
+
+      // Start recording and render frames
+      mediaRecorder.start();
+      video.play();
+
+      const renderFrame = () => {
+        if (video.paused || video.ended) {
+          mediaRecorder.stop();
+          return;
+        }
+
+        ctx?.drawImage(video, 0, 0, width, height);
+        requestAnimationFrame(renderFrame);
+      };
+
+      video.onseeked = () => {
+        renderFrame();
+      };
+    };
+
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src);
+      reject(new Error("Failed to load video for compression"));
+    };
+  });
+};
+
+// ============================================================================
+// CHUNK UPLOADER - Split files > 100MB
+// ============================================================================
+
+const uploadLargeVideo = async (
+  file: File,
+  metadata: any,
+  onProgress: (progress: number) => void
+): Promise<any> => {
+  const CHUNK_SIZE = 95 * 1024 * 1024; // 95MB chunks
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+  if (totalChunks === 1) {
+    // Single chunk - use normal upload
+    const formData = new FormData();
+    formData.append("file", file);
+    Object.keys(metadata).forEach((key) => {
+      formData.append(key, metadata[key]);
+    });
+
+    const res = await axiosInstance.post("/video/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 900000,
+      onUploadProgress: (e: any) => {
+        onProgress(Math.round((e.loaded * 100) / e.total));
+      },
+    });
+
+    return res.data;
+  }
+
+  // Multi-chunk upload
+  toast.info(`Splitting video into ${totalChunks} parts...`);
+
+  const chunkIds: string[] = [];
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    const chunkFile = new File([chunk], `${file.name}.part${i + 1}`, {
+      type: file.type,
+    });
+
+    const formData = new FormData();
+    formData.append("file", chunkFile);
+    formData.append("chunkIndex", String(i));
+    formData.append("totalChunks", String(totalChunks));
+    formData.append("originalFilename", file.name);
+    Object.keys(metadata).forEach((key) => {
+      formData.append(key, metadata[key]);
+    });
+
+    try {
+      const res = await axiosInstance.post("/video/upload-chunk", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 900000,
+        onUploadProgress: (e: any) => {
+          const chunkProgress = Math.round((e.loaded * 100) / e.total);
+          const totalProgress = Math.round(
+            ((i + chunkProgress / 100) / totalChunks) * 100
+          );
+          onProgress(totalProgress);
+        },
+      });
+
+      chunkIds.push(res.data.chunkId);
+      toast.success(`Part ${i + 1}/${totalChunks} uploaded`);
+    } catch (error) {
+      toast.error(`Failed to upload part ${i + 1}`);
+      throw error;
+    }
+  }
+
+  // Merge chunks on backend
+  toast.info("Merging video parts...");
+  const mergeRes = await axiosInstance.post("/video/merge-chunks", {
+    chunkIds,
+    ...metadata,
+  });
+
+  return mergeRes.data;
+};
+
+// ============================================================================
+// MAIN UPLOADER COMPONENT
+// ============================================================================
 
 const VideoUploader = ({ channelId, channelName }: any) => {
   const { user } = useUser();
@@ -21,12 +200,13 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
   const [uploadComplete, setUploadComplete] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleUpdate = () => setImageKey(Date.now());
-    window.addEventListener('avatarUpdated', handleUpdate);
-    return () => window.removeEventListener('avatarUpdated', handleUpdate);
+    window.addEventListener("avatarUpdated", handleUpdate);
+    return () => window.removeEventListener("avatarUpdated", handleUpdate);
   }, []);
 
   const handlefilechange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -37,15 +217,17 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         toast.error("Please upload a valid video file.");
         return;
       }
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error("File size exceeds 100MB limit.");
-        return;
-      }
+
+      // No size limit! We'll handle any size
       setVideoFile(file);
-      const filename = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+      const filename = file.name.replace(/\.[^/.]+$/, "");
       if (!videoTitle) {
         setVideoTitle(filename);
       }
+
+      // Show file info
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      toast.success(`Video selected: ${sizeMB}MB`);
     }
   };
 
@@ -54,6 +236,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     setVideoTitle("");
     setVideoDescription("");
     setIsUploading(false);
+    setIsCompressing(false);
     setUploadProgress(0);
     setUploadComplete(false);
     if (fileInputRef.current) {
@@ -62,8 +245,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   };
 
   const cancelUpload = () => {
-    if (isUploading) {
-      toast.error("Your video upload has been cancelled");
+    if (isUploading || isCompressing) {
+      toast.error("Upload cancelled");
     }
     resetForm();
   };
@@ -74,55 +257,54 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       return;
     }
 
-    // ✅ CRITICAL: Verify token exists BEFORE uploading
-    const token = localStorage.getItem('token');
-    if (!token || token === 'null' || token === 'undefined') {
-      console.error('❌ No valid token found!');
+    const token = localStorage.getItem("token");
+    if (!token || token === "null" || token === "undefined") {
       toast.error("You must be logged in to upload videos");
       return;
     }
-    
-    console.log('✅ Token verified before upload:', token.substring(0, 20) + '...');
-
-    const formdata = new FormData();
-    formdata.append("file", videoFile);
-    formdata.append("videotitle", videoTitle);
-    formdata.append("videodescription", videoDescription);
-    formdata.append("videochanel", channelName);
 
     try {
       setIsUploading(true);
       setUploadProgress(0);
 
-      const res = await axiosInstance.post("/video/upload", formdata, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-  timeout: 900000, // ✅ 15 minutes (matches backend)
-        onUploadProgress: (progressEvent: any) => {
-          const progress = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setUploadProgress(progress);
-          
-          // ✅ Log progress to help debug
-          if (progress % 10 === 0) {
-            console.log(`📤 Upload progress: ${progress}%`);
-          }
-        },
-      });
+      let fileToUpload = videoFile;
+      const fileSizeMB = videoFile.size / (1024 * 1024);
 
-      if (res.data.success) {
-        setUploadComplete(true);
-        
-        // Show what was auto-generated
-        if (res.data.autoGenerated?.description) {
-          toast.success("Video uploaded! Description was auto-generated.");
-        } else {
-          toast.success("Video uploaded successfully!");
+      // Auto-compress if > 100MB
+      if (fileSizeMB > 100) {
+        setIsCompressing(true);
+        toast.info(`Compressing ${fileSizeMB.toFixed(0)}MB video...`);
+
+        try {
+          fileToUpload = await compressVideo(videoFile, 95);
+          const compressedSizeMB = (fileToUpload.size / (1024 * 1024)).toFixed(
+            2
+          );
+          toast.success(`Compressed to ${compressedSizeMB}MB!`);
+        } catch (error) {
+          console.warn("Compression failed, using chunked upload");
+          toast.info("Using multi-part upload instead...");
         }
 
-        // Wait 2 seconds then reset and refresh
+        setIsCompressing(false);
+      }
+
+      const metadata = {
+        videotitle: videoTitle,
+        videodescription: videoDescription,
+        videochanel: channelName,
+      };
+
+      const result = await uploadLargeVideo(
+        fileToUpload,
+        metadata,
+        setUploadProgress
+      );
+
+      if (result.success) {
+        setUploadComplete(true);
+        toast.success("🎉 Video uploaded successfully!");
+
         setTimeout(() => {
           resetForm();
           window.location.reload();
@@ -130,49 +312,36 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       }
     } catch (error: any) {
       console.error("❌ Upload error:", error);
-      
-      // ✅ CRITICAL: Log the FULL backend response
+
       if (error.response) {
-        console.error("📛 Backend Error Response:", {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          headers: error.response.headers,
-        });
-        
-        // ✅ Show backend's actual error message
-        const backendMessage = error.response.data?.message || 
-                               error.response.data?.error ||
-                               JSON.stringify(error.response.data);
-        
-        console.error("💬 Backend says:", backendMessage);
-        toast.error(`Upload failed: ${backendMessage}`);
-      } else if (error.request) {
-        console.error("📡 No response received:", error.request);
-        toast.error("No response from server. Check your connection.");
+        const message =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          "Upload failed";
+        toast.error(message);
       } else {
-        console.error("⚠️ Error setting up request:", error.message);
-        toast.error(error.message);
+        toast.error(error.message || "Upload failed");
       }
-      
+
       setUploadProgress(0);
     } finally {
       setIsUploading(false);
+      setIsCompressing(false);
     }
   };
 
   return (
-    <div className="bg-gray-50 rounded-lg p-6">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
       {user && (
-        <div className="flex items-center gap-3 mb-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3 mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <Avatar className="w-10 h-10 ring-2 ring-blue-500">
-            <AvatarImage 
+            <AvatarImage
               key={`uploader-avatar-${imageKey}`}
               src={getImageUrl(user?.image, true)}
-              alt={user?.name || 'User'}
+              alt={user?.name || "User"}
             />
             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-              {user?.name?.[0]?.toUpperCase() || 'U'}
+              {user?.name?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -186,23 +355,32 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         </div>
       )}
 
-      <h2 className="text-xl font-semibold mb-4">Upload a video</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Upload a video</h2>
+        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+          <Zap className="w-4 h-4" />
+          <span className="font-medium">Unlimited Size</span>
+        </div>
+      </div>
 
       <div className="space-y-4">
         {!videoFile ? (
           <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-100 transition-colors"
+            className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-            <p className="text-lg font-medium">
+            <p className="text-lg font-medium text-gray-900 dark:text-white">
               Drag and drop video files to upload
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               or click to select files
             </p>
-            <p className="text-xs text-gray-400 mt-4">
-              MP4, WebM, MOV or AVI • Up to 100MB
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
+              Any size • MP4, WebM, MOV or AVI
+            </p>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-2 font-medium">
+              ⚡ Auto-compression for files over 100MB
             </p>
             <input
               type="file"
@@ -214,13 +392,15 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
-              <div className="bg-blue-100 p-2 rounded-md">
-                <FileVideo className="w-6 h-6 text-blue-600" />
+            <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-md">
+                <FileVideo className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{videoFile.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium truncate text-gray-900 dark:text-white">
+                  {videoFile.name}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>
@@ -230,8 +410,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                 </Button>
               )}
               {uploadComplete && (
-                <div className="bg-green-100 p-1 rounded-full">
-                  <Check className="w-5 h-5 text-green-600" />
+                <div className="bg-green-100 dark:bg-green-900 p-1 rounded-full">
+                  <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
               )}
             </div>
@@ -244,13 +424,16 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                   value={videoTitle}
                   onChange={(e) => setVideoTitle(e.target.value)}
                   placeholder="Add a title that describes your video"
-                  disabled={isUploading || uploadComplete}
+                  disabled={isUploading || uploadComplete || isCompressing}
                   className="mt-1"
                 />
               </div>
 
               <div>
-                <Label htmlFor="description" className="flex items-center gap-2">
+                <Label
+                  htmlFor="description"
+                  className="flex items-center gap-2"
+                >
                   Description (optional)
                   <span className="text-xs text-gray-500 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
@@ -262,14 +445,23 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                   value={videoDescription}
                   onChange={(e) => setVideoDescription(e.target.value)}
                   placeholder="Leave empty for AI-generated description, or write your own..."
-                  disabled={isUploading || uploadComplete}
+                  disabled={isUploading || uploadComplete || isCompressing}
                   className="mt-1"
                   rows={3}
                 />
               </div>
             </div>
 
-            {isUploading && (
+            {isCompressing && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <p className="text-blue-800 dark:text-blue-300 text-sm font-medium flex items-center gap-2">
+                  <Zap className="w-4 h-4 animate-pulse" />
+                  Compressing video for faster upload...
+                </p>
+              </div>
+            )}
+
+            {isUploading && !isCompressing && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Uploading...</span>
@@ -280,8 +472,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
             )}
 
             {uploadComplete && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-green-800 text-sm font-medium">
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <p className="text-green-800 dark:text-green-300 text-sm font-medium">
                   ✅ Video uploaded successfully! Page will refresh shortly...
                 </p>
               </div>
@@ -290,18 +482,24 @@ const VideoUploader = ({ channelId, channelName }: any) => {
             <div className="flex justify-end gap-3">
               {!uploadComplete && (
                 <>
-                  <Button 
-                    variant="outline" 
-                    onClick={cancelUpload} 
-                    disabled={isUploading}
+                  <Button
+                    variant="outline"
+                    onClick={cancelUpload}
+                    disabled={isUploading || isCompressing}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleUpload}
-                    disabled={isUploading || !videoTitle.trim()}
+                    disabled={
+                      isUploading || !videoTitle.trim() || isCompressing
+                    }
                   >
-                    {isUploading ? "Uploading..." : "Upload"}
+                    {isCompressing
+                      ? "Compressing..."
+                      : isUploading
+                      ? "Uploading..."
+                      : "Upload"}
                   </Button>
                 </>
               )}
