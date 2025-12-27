@@ -67,12 +67,23 @@ export const getVideoURL = (filepath, quality = "auto") => {
     fileStr.includes("res.cloudinary.com") &&
     fileStr.includes("/video/upload/")
   ) {
-    // Remove version and ensure HTTPS
+    // ✅ CRITICAL FIX: Clean URL and extract public_id to rebuild with correct transformations
     let cleanUrl = fileStr
       .replace(/^http:\/\//, "https://")
       .replace(/:\d+/, "")
       .replace(/\/v\d+\//g, "/");
 
+    // ✅ Extract public_id and rebuild URL with quality transformations
+    const publicIdMatch = cleanUrl.match(/youtube-clone\/videos\/[^.?]+/i);
+
+    if (publicIdMatch) {
+      const publicId = publicIdMatch[0];
+      const rebuiltUrl = buildCloudinaryVideoUrl(publicId, quality);
+      console.log("✅ Rebuilt URL with quality:", rebuiltUrl.substring(0, 80));
+      return rebuiltUrl;
+    }
+
+    // ✅ Fallback: return cleaned URL
     console.log("✅ Cleaned URL:", cleanUrl.substring(0, 80));
     return cleanUrl;
   }
