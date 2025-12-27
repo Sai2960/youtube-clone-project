@@ -10,6 +10,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { fixMediaURL, getVideoUrl, getThumbnailUrl } from "@/lib/urlHelper";
 import ProtectedRoute from "@/components/ProtectedRoute"; // ✅ NEW - Authentication wrapper
 import AdaptiveVideoPlayer from "@/components/AdaptiveVideoPlayer";
+import EnhancedGestureVideoPlayer from "@/components/EnhancedGestureVideoPlayer";
 const WatchPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -425,7 +426,12 @@ const WatchPage = () => {
             <div className="flex-1 lg:max-w-[calc(100%-424px)] w-full overflow-x-hidden">
               {/* Video Player Container - Edge to edge on mobile */}
               <div className="w-full sticky top-0 z-20 bg-black md:relative md:rounded-xl md:overflow-hidden md:shadow-lg">
-                <AdaptiveVideoPlayer video={currentVideo} />
+                <EnhancedGestureVideoPlayer
+                  video={currentVideo}
+                  allVideos={allVideos}
+                  onShowComments={handleShowComments}
+                  onShare={handleOpenShareModal}
+                />{" "}
               </div>
 
               {/* Video Info - Add padding only here for mobile */}
