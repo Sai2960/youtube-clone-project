@@ -101,11 +101,6 @@ const compressVideo = async (
     };
   });
 };
-
-// ============================================================================
-// CHUNK UPLOADER - Split files > 100MB
-// ============================================================================
-
 const uploadLargeVideo = async (
   file: File,
   metadata: any,
@@ -114,8 +109,12 @@ const uploadLargeVideo = async (
   const CHUNK_SIZE = 95 * 1024 * 1024; // 95MB chunks
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
+  console.log(`📦 File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+  console.log(`📦 Total chunks needed: ${totalChunks}`);
+
   // ✅ If file is small enough, use normal upload
   if (totalChunks === 1) {
+    console.log("✅ Single chunk upload (file < 100MB)");
     const formData = new FormData();
     formData.append("file", file);
     Object.keys(metadata).forEach((key) => {
@@ -134,6 +133,7 @@ const uploadLargeVideo = async (
   }
 
   // ✅ CRITICAL: Multi-chunk upload for large files
+  console.log(`🔪 Splitting into ${totalChunks} chunks...`);
   toast.info(`Splitting video into ${totalChunks} parts...`);
 
   const chunkIds: string[] = [];
@@ -142,6 +142,14 @@ const uploadLargeVideo = async (
     const start = i * CHUNK_SIZE;
     const end = Math.min(start + CHUNK_SIZE, file.size);
     const chunk = file.slice(start, end);
+
+    console.log(
+      `📤 Uploading chunk ${i + 1}/${totalChunks} (${(
+        chunk.size /
+        1024 /
+        1024
+      ).toFixed(2)}MB)`
+    );
 
     const chunkFile = new File([chunk], `${file.name}.part${i + 1}`, {
       type: file.type,
@@ -157,8 +165,6 @@ const uploadLargeVideo = async (
     });
 
     try {
-      console.log(`📤 Uploading chunk ${i + 1}/${totalChunks}...`);
-
       const res = await axiosInstance.post("/video/upload-chunk", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: 900000,
@@ -172,6 +178,9 @@ const uploadLargeVideo = async (
       });
 
       chunkIds.push(res.data.chunkId);
+      console.log(
+        `✅ Chunk ${i + 1}/${totalChunks} uploaded: ${res.data.chunkId}`
+      );
       toast.success(`Part ${i + 1}/${totalChunks} uploaded`);
     } catch (error: any) {
       console.error(`❌ Chunk ${i + 1} failed:`, error);
@@ -181,7 +190,7 @@ const uploadLargeVideo = async (
   }
 
   // ✅ Merge all chunks
-  console.log("🔗 Merging chunks...", chunkIds);
+  console.log("🔗 Merging chunks:", chunkIds);
   toast.info("Merging video parts...");
 
   const mergeRes = await axiosInstance.post("/video/merge-chunks", {
@@ -189,6 +198,7 @@ const uploadLargeVideo = async (
     ...metadata,
   });
 
+  console.log("✅ Merge complete:", mergeRes.data);
   return mergeRes.data;
 };
 
@@ -272,29 +282,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       setIsUploading(true);
       setUploadProgress(0);
 
-      let fileToUpload = videoFile;
       const fileSizeMB = videoFile.size / (1024 * 1024);
-
-      // ✅ CRITICAL: Auto-compress if > 100MB
-      if (fileSizeMB > 100) {
-        setIsCompressing(true);
-        toast.info(`Compressing ${fileSizeMB.toFixed(0)}MB video...`);
-
-        try {
-          fileToUpload = await compressVideo(videoFile, 95);
-          const compressedSizeMB = (fileToUpload.size / (1024 * 1024)).toFixed(
-            2
-          );
-          toast.success(`Compressed to ${compressedSizeMB}MB!`);
-        } catch (error) {
-          console.warn("Compression failed, will use chunked upload");
-          toast.info("Using multi-part upload instead...");
-          // ✅ IMPORTANT: Keep original file if compression fails
-          fileToUpload = videoFile;
-        }
-
-        setIsCompressing(false);
-      }
+      console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
 
       const metadata = {
         videotitle: videoTitle,
@@ -302,9 +291,10 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         videochanel: channelName,
       };
 
-      // ✅ This calls uploadLargeVideo which handles chunking
+      // ✅ CRITICAL: Always use uploadLargeVideo (it handles both small and large files)
+      console.log("🚀 Starting upload via uploadLargeVideo...");
       const result = await uploadLargeVideo(
-        fileToUpload,
+        videoFile, // Use original file, let uploadLargeVideo handle chunking
         metadata,
         setUploadProgress
       );
