@@ -25,6 +25,162 @@ import { Button } from "./ui/button";
 import { getVideoUrl } from "@/lib/urlHelper";
 import { useSubscription } from "@/lib/SubscriptionContext";
 
+// ✅ NEW: Quality Selector Component
+const QualitySelector = ({
+  currentQuality,
+  onQualityChange,
+  availableQualities = [
+    "auto",
+    "1080p",
+    "720p",
+    "480p",
+    "360p",
+    "240p",
+    "144p",
+  ],
+}: {
+  currentQuality: string;
+  onQualityChange: (quality: string) => void;
+  availableQualities?: string[];
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setShowQualityMenu(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const qualityLabels: Record<string, string> = {
+    auto: "Auto",
+    "1080p": "1080p (Full HD)",
+    "720p": "720p (HD)",
+    "480p": "480p (SD)",
+    "360p": "360p",
+    "240p": "240p",
+    "144p": "144p",
+  };
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-white hover:bg-white/20 h-9 w-9"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+          setShowQualityMenu(false);
+        }}
+      >
+        <Settings className="w-5 h-5" />
+      </Button>
+
+      {isOpen && (
+        <div
+          className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden min-w-[240px] border border-white/10 z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {!showQualityMenu ? (
+            <button
+              onClick={() => setShowQualityMenu(true)}
+              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center justify-between"
+            >
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Quality</span>
+                <span className="text-xs text-gray-400">
+                  {qualityLabels[currentQuality] || currentQuality}
+                </span>
+              </div>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setShowQualityMenu(false)}
+                className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2 border-b border-white/10"
+              >
+                <svg
+                  className="w-4 h-4 rotate-180"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+                <span className="text-sm font-medium">Quality</span>
+              </button>
+
+              <div className="max-h-[300px] overflow-y-auto">
+                {availableQualities.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => {
+                      onQualityChange(q);
+                      setShowQualityMenu(false);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center justify-between ${
+                      currentQuality === q ? "bg-white/5" : ""
+                    }`}
+                  >
+                    <span className="text-sm text-white">
+                      {qualityLabels[q] || q}
+                    </span>
+                    {currentQuality === q && (
+                      <svg
+                        className="w-4 h-4 text-blue-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface GestureVideoPlayerProps {
   video: {
     [x: string]: any;
@@ -55,7 +211,6 @@ export default function GestureVideoPlayer({
   // ✅ Track loaded video ID to prevent duplicate loads
   const loadedVideoIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
-
   // Video state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -66,12 +221,15 @@ export default function GestureVideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [buffered, setBuffered] = useState(0);
+
   const [quality, setQuality] = useState<
-    "auto" | "1080p" | "720p" | "480p" | "360p"
+    "auto" | "1080p" | "720p" | "480p" | "360p" | "240p" | "144p"
   >("auto");
-  const [availableQualities] = useState<
-    Array<"auto" | "1080p" | "720p" | "480p" | "360p">
-  >(["auto", "1080p", "720p", "480p", "360p"]);
+
+  const availableQualities = useState<
+    Array<"auto" | "1080p" | "720p" | "480p" | "360p" | "240p" | "144p">
+  >(["auto", "1080p", "720p", "480p", "360p", "240p", "144p"])[0];
+
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -108,20 +266,19 @@ export default function GestureVideoPlayer({
   const { watchTimeLimit, currentPlan } = useSubscription();
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ✅ NEW: Change video quality dynamically
-  // ✅ UPDATED: Change video quality dynamically
+  // ✅ UPDATED: Enhanced quality change handler
   const handleQualityChange = async (
-    newQuality: "auto" | "1080p" | "720p" | "480p" | "360p"
+    newQuality: "auto" | "1080p" | "720p" | "480p" | "360p" | "240p" | "144p"
   ) => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !video) return;
 
     console.log("🎬 Changing quality to:", newQuality);
 
+    // Save current state
     const currentTime = videoRef.current.currentTime;
     const wasPlaying = !videoRef.current.paused;
 
-    // ✅ Use the updated getVideoUrl function with quality parameter
+    // Generate new URL with quality parameter
     const newVideoUrl = getVideoUrl(video, newQuality);
 
     if (!newVideoUrl) {
@@ -134,23 +291,35 @@ export default function GestureVideoPlayer({
 
     console.log("✅ New quality URL:", newVideoUrl.substring(0, 100));
 
+    // Pause video before changing source
+    videoRef.current.pause();
+
     // Update video source
     videoRef.current.src = newVideoUrl;
-    videoRef.current.currentTime = currentTime;
 
-    // Resume playback if it was playing
-    if (wasPlaying) {
-      try {
-        await videoRef.current.play();
-        setIsPlaying(true);
-      } catch (error) {
-        console.error("Error resuming playback:", error);
+    // Wait for video to load
+    const handleLoadedData = () => {
+      if (!videoRef.current) return;
+
+      // Restore playback position
+      videoRef.current.currentTime = currentTime;
+
+      // Resume playback if it was playing
+      if (wasPlaying) {
+        videoRef.current.play().catch((err) => {
+          console.error("Error resuming playback:", err);
+        });
       }
-    }
+
+      videoRef.current.removeEventListener("loadeddata", handleLoadedData);
+    };
+
+    videoRef.current.addEventListener("loadeddata", handleLoadedData, {
+      once: true,
+    });
+    videoRef.current.load();
 
     setQuality(newQuality);
-    setShowQualityMenu(false);
-
     console.log("✅ Quality changed to:", newQuality);
   };
 
@@ -189,7 +358,6 @@ export default function GestureVideoPlayer({
     }
     return filename;
   };
-
   useEffect(() => {
     const videoElement = videoRef.current;
 
@@ -238,7 +406,6 @@ export default function GestureVideoPlayer({
 
     return () => clearInterval(interval);
   }, [watchTimeLimit, isPlaying, currentPlan]);
-
   // 🔥 CRITICAL FIX: Optimized video loading with duplicate prevention
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -284,7 +451,7 @@ export default function GestureVideoPlayer({
 
     // Load new video after brief delay
     const loadTimer = setTimeout(() => {
-      // ✅ Use the getVideoUrl function instead
+      // ✅ Use the getVideoUrl function with quality parameter
       let properVideoUrl = null;
       const rawUrl =
         video?.filepath ||
@@ -292,6 +459,7 @@ export default function GestureVideoPlayer({
         video?.videoLink ||
         video?.video ||
         video?.videoUrl;
+
       console.log("🔍 Raw video data:", {
         videoId: video?._id,
         filepath: video?.filepath,
@@ -301,12 +469,15 @@ export default function GestureVideoPlayer({
       });
 
       if (rawUrl) {
-        // Use the imported getVideoUrl function
-        properVideoUrl = getVideoUrl({
-          filepath: rawUrl,
-          videofile: rawUrl,
-          videoLink: rawUrl,
-        });
+        // Use the imported getVideoUrl function with current quality
+        properVideoUrl = getVideoUrl(
+          {
+            filepath: rawUrl,
+            videofile: rawUrl,
+            videoLink: rawUrl,
+          },
+          quality
+        );
       }
 
       if (!properVideoUrl) {
@@ -352,10 +523,8 @@ export default function GestureVideoPlayer({
       clearTimeout(loadTimer);
       isLoadingRef.current = false;
     };
-  }, [video._id]); // ✅ ONLY video._id dependency
-
-  // Auto-hide controls
-  // ✅ REPLACE THIS SECTION (around line 145-165)
+  }, [video._id, quality]); // ✅ Added quality as dependency
+  // ✅ FIXED: Auto-hide controls on both mobile and desktop
   const resetControlsTimeout = () => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
@@ -445,7 +614,6 @@ export default function GestureVideoPlayer({
       isLoadingRef.current = false;
     };
   }, [tapTimer]);
-
   const showGestureIndicator = (
     type:
       | "forward"
@@ -586,7 +754,6 @@ export default function GestureVideoPlayer({
     if (volume < 0.5) return Volume1;
     return Volume2;
   };
-
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
 
@@ -699,7 +866,6 @@ export default function GestureVideoPlayer({
       router.push("/");
     }, 500);
   };
-
   const handleVideoClick = (
     e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
@@ -800,7 +966,6 @@ export default function GestureVideoPlayer({
   const VolumeIcon = getVolumeIcon();
 
   const videoUrl = getVideoUrl(video, quality);
-
   return (
     <div className="w-full space-y-0">
       <div
@@ -924,10 +1089,9 @@ export default function GestureVideoPlayer({
                 </div>
               </div>
             )}
-
             {/* Video Title Overlay */}
             <div
-              className={`video-controls absolute bottom-0 left-0 right-0 transition-opacity duration-300 z-20 ${
+              className={`video-controls absolute top-0 left-0 right-0 px-4 pt-4 transition-opacity duration-300 z-20 bg-gradient-to-b from-black/80 via-black/40 to-transparent ${
                 showControls ? "opacity-100" : "opacity-0"
               }`}
             >
@@ -1077,7 +1241,6 @@ export default function GestureVideoPlayer({
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </span>
                 </div>
-
                 {/* Right Controls */}
                 <div className="flex items-center gap-1 md:gap-2">
                   {onShare && (
@@ -1113,45 +1276,12 @@ export default function GestureVideoPlayer({
                         />
                       </Button>
 
-                      <div className="relative">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-white hover:bg-white/20 h-9 w-9"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowQualityMenu(!showQualityMenu);
-                          }}
-                        >
-                          <Settings
-                            className={`w-5 h-5 ${
-                              showQualityMenu ? "text-red-500" : ""
-                            }`}
-                          />
-                        </Button>
-                        {showQualityMenu && (
-                          <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-sm rounded-lg p-2 min-w-32">
-                            {(["auto", "1080p", "720p", "480p"] as const).map(
-                              (q) => (
-                                <button
-                                  key={q}
-                                  className={`w-full text-left px-3 py-2 text-sm text-white hover:bg-white/20 rounded ${
-                                    quality === q ? "bg-white/10" : ""
-                                  }`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setQuality(q);
-                                    setShowQualityMenu(false);
-                                  }}
-                                >
-                                  {q === "auto" ? "Auto" : q}
-                                  {quality === q && " ✓"}
-                                </button>
-                              )
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      {/* ✅ REPLACED: Use QualitySelector Component */}
+                      <QualitySelector
+                        currentQuality={quality}
+                        onQualityChange={handleQualityChange}
+                        availableQualities={availableQualities}
+                      />
 
                       <Button
                         variant="ghost"
@@ -1185,7 +1315,6 @@ export default function GestureVideoPlayer({
                 </div>
               </div>
             </div>
-
             {/* Gesture Guide Overlay - Desktop Only - Show on Hover */}
             {!isMobile && showGestureGuide && showControls && (
               <div className="absolute bottom-20 left-0 right-0 px-6 py-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-none z-[15]">
@@ -1245,7 +1374,6 @@ export default function GestureVideoPlayer({
                 </div>
               </div>
             )}
-
             {/* Video Error Overlay */}
             {videoError && (
               <div className="absolute inset-0 flex items-center justify-center bg-black z-30">
