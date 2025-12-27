@@ -28,26 +28,278 @@ import { getallvideo } from "../controllers/video.js";
 
 // ✅ CRITICAL FIX: Create router FIRST before using it
 const router = express.Router();
+// ✅ Store chunk metadata temporarily
+const chunkRegistry = new Map();
 
-router.get('/test', (req, res) => {
+// ============================================================================
+// ROUTE 1: Upload Individual Chunks
+// ============================================================================
+
+router.post(
+  "/upload-chunk",
+  verifyToken,
+  uploadVideo.single("file"),
+  async (req, res) => {
+    try {
+      console.log("\n📦 ===== CHUNK UPLOAD =====");
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No chunk uploaded",
+        });
+      }
+
+      const { chunkIndex, totalChunks, originalFilename } = req.body;
+      const chunkId = req.file.public_id || req.file.filename;
+
+      console.log(`📦 Chunk ${parseInt(chunkIndex) + 1}/${totalChunks}`);
+      console.log(`   Chunk ID: ${chunkId}`);
+      console.log(`   Original: ${originalFilename}`);
+
+      // Store chunk metadata
+      const sessionKey = `${req.userId}_${originalFilename}`;
+
+      if (!chunkRegistry.has(sessionKey)) {
+        chunkRegistry.set(sessionKey, {
+          chunks: [],
+          totalChunks: parseInt(totalChunks),
+          uploadedBy: req.userId,
+          originalFilename,
+        });
+      }
+
+      const session = chunkRegistry.get(sessionKey);
+      session.chunks[parseInt(chunkIndex)] = {
+        chunkId,
+        publicId: req.file.public_id,
+        url: req.file.secure_url,
+        index: parseInt(chunkIndex),
+      };
+
+      console.log(
+        `✅ Chunk ${parseInt(chunkIndex) + 1}/${totalChunks} uploaded`
+      );
+
+      res.status(200).json({
+        success: true,
+        chunkId,
+        chunkIndex: parseInt(chunkIndex),
+        message: `Chunk ${parseInt(chunkIndex) + 1}/${totalChunks} uploaded`,
+      });
+    } catch (error) {
+      console.error("❌ Chunk upload error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload chunk",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// ============================================================================
+// ROUTE 2: Merge All Chunks into Final Video
+// ============================================================================
+
+router.post("/merge-chunks", verifyToken, async (req, res) => {
+  try {
+    console.log("\n🔗 ===== MERGING CHUNKS =====");
+
+    const { chunkIds, videotitle, videodescription, videochanel } = req.body;
+    const uploadedBy = req.userId;
+
+    if (!chunkIds || chunkIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No chunks provided",
+      });
+    }
+
+    console.log(`   Merging ${chunkIds.length} chunks`);
+
+    // Get user info
+    const user = await User.findById(uploadedBy)
+      .select("name channelname")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const channelName =
+      user.channelname || videochanel || user.name || "Unknown";
+    const title = videotitle || "Untitled Video";
+    const autoDescription =
+      videodescription?.trim() ||
+      `Watch "${title}" - Don't forget to like and subscribe!`;
+
+    // ✅ Create video document with chunk references
+    const CLOUDINARY_CLOUD_NAME =
+      process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
+    const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+
+    // Use first chunk as primary video URL
+    const primaryChunk = chunkIds[0];
+    const videoUrl = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${primaryChunk}.mp4`;
+    const thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${primaryChunk}.jpg`;
+
+    const newVideo = new videofiles({
+      videotitle: title,
+      videodescription: autoDescription,
+      videofilename: primaryChunk,
+
+      // Primary URLs
+      filepath: videoUrl,
+      videofile: videoUrl,
+      videoLink: videoUrl,
+      videoUrl: videoUrl,
+
+      // Thumbnail
+      thumbnail: thumbnailUrl,
+      videothumbnail: thumbnailUrl,
+      thumbnailUrl: thumbnailUrl,
+
+      // Store ALL chunk IDs for multi-part playback
+      chunks: chunkIds,
+      isMultiPart: chunkIds.length > 1,
+
+      uploadedBy,
+      user: uploadedBy,
+      videochanel: channelName,
+      channelName: channelName,
+
+      views: 0,
+      Like: 0,
+      Dislike: 0,
+    });
+
+    await newVideo.save();
+
+    console.log("✅ Video merged and saved:", newVideo._id);
+
+    // Clear chunk registry
+    const sessionKey = `${uploadedBy}_${videotitle}`;
+    chunkRegistry.delete(sessionKey);
+
+    res.status(201).json({
+      success: true,
+      message: "Video uploaded successfully!",
+      video: {
+        _id: newVideo._id,
+        title: newVideo.videotitle,
+        url: videoUrl,
+        thumbnail: thumbnailUrl,
+        isMultiPart: newVideo.isMultiPart,
+        chunks: chunkIds.length,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Merge error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to merge chunks",
+      error: error.message,
+    });
+  }
+});
+// ============================================================================
+// ROUTE 3: Get Video with Multi-Part Streaming Support
+// ============================================================================
+
+router.get("/stream/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const video = await videofiles
+      .findById(id)
+      .select("filepath videofile chunks isMultiPart")
+      .lean();
+
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found",
+      });
+    }
+
+    // If multi-part video, return playlist
+    if (video.isMultiPart && video.chunks?.length > 0) {
+      const CLOUDINARY_CLOUD_NAME =
+        process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
+      const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+
+      const playlist = video.chunks.map((chunkId, index) => ({
+        url: `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${chunkId}.mp4`,
+        duration: null, // Cloudinary provides this in metadata
+        index,
+      }));
+
+      res.json({
+        success: true,
+        type: "multipart",
+        playlist,
+        totalParts: playlist.length,
+      });
+    } else {
+      // Single video
+      res.json({
+        success: true,
+        type: "single",
+        url: video.filepath || video.videofile,
+      });
+    }
+  } catch (error) {
+    console.error("Stream error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to stream video",
+    });
+  }
+});
+
+// ============================================================================
+// CLEANUP: Auto-delete orphaned chunks after 24 hours
+// ============================================================================
+
+setInterval(() => {
+  const now = Date.now();
+
+  for (const [key, session] of chunkRegistry.entries()) {
+    if (!session.lastAccess) {
+      session.lastAccess = now;
+    }
+
+    // Delete if inactive for 24 hours
+    if (now - session.lastAccess > 24 * 60 * 60 * 1000) {
+      console.log(`🗑️ Cleaning up orphaned chunks for: ${key}`);
+      chunkRegistry.delete(key);
+    }
+  }
+}, 60 * 60 * 1000); // Run every hour
+
+router.get("/test", (req, res) => {
   res.json({
     success: true,
-    message: 'Video routes are working!',
-    timestamp: new Date().toISOString()
+    message: "Video routes are working!",
+    timestamp: new Date().toISOString(),
   });
 });
 
 // ✅ DEBUG: Test token verification
-router.post('/test-auth', verifyToken, (req, res) => {
-  console.log('\n✅ TEST AUTH SUCCESS:');
-  console.log('   req.userId:', req.userId);
-  console.log('   req.user:', req.user);
-  
+router.post("/test-auth", verifyToken, (req, res) => {
+  console.log("\n✅ TEST AUTH SUCCESS:");
+  console.log("   req.userId:", req.userId);
+  console.log("   req.user:", req.user);
+
   res.json({
     success: true,
-    message: 'Authentication working!',
+    message: "Authentication working!",
     userId: req.userId,
-    user: req.user
+    user: req.user,
   });
 });
 
@@ -65,7 +317,7 @@ router.get("/", async (req, res) => {
       .populate({
         path: "uploadedBy",
         select: "name email channelname image",
-        options: { strictPopulate: false, lean: true }
+        options: { strictPopulate: false, lean: true },
       })
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -73,17 +325,26 @@ router.get("/", async (req, res) => {
       .lean()
       .hint({ createdAt: -1 }); // ✅ Use index hint for speed
 
-    const total = await videofiles.countDocuments({ visibility: { $ne: "private" } });
+    const total = await videofiles.countDocuments({
+      visibility: { $ne: "private" },
+    });
 
-    console.log(`📹 Retrieved ${videos.length} videos (NO CACHE, timestamp: ${Date.now()})`);
+    console.log(
+      `📹 Retrieved ${
+        videos.length
+      } videos (NO CACHE, timestamp: ${Date.now()})`
+    );
 
     // ✅ CRITICAL: Aggressive no-cache headers for mobile
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('Surrogate-Control', 'no-store');
-    res.setHeader('X-Accel-Expires', '0'); // Nginx
-    res.setHeader('ETag', `"${Date.now()}"`); // ✅ Force unique response
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("X-Accel-Expires", "0"); // Nginx
+    res.setHeader("ETag", `"${Date.now()}"`); // ✅ Force unique response
 
     res.status(200).json({
       success: true,
@@ -93,26 +354,23 @@ router.get("/", async (req, res) => {
       totalPages: Math.ceil(total / limit),
       total,
       count: videos.length,
-      timestamp: Date.now() // ✅ Help debug caching
+      timestamp: Date.now(), // ✅ Help debug caching
     });
   } catch (error) {
     console.error("❌ Get all videos error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch videos",
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 // Add this route to diagnose the issue
-router.get('/debug/check-last-video', async (req, res) => {
+router.get("/debug/check-last-video", async (req, res) => {
   try {
-    const lastVideo = await videofiles
-      .findOne()
-      .sort({ createdAt: -1 })
-      .lean();
-    
+    const lastVideo = await videofiles.findOne().sort({ createdAt: -1 }).lean();
+
     res.json({
       success: true,
       video: {
@@ -123,9 +381,9 @@ router.get('/debug/check-last-video', async (req, res) => {
           videofile: lastVideo?.videofile,
           videoLink: lastVideo?.videoLink,
         },
-        isCloudinary: lastVideo?.filepath?.includes('cloudinary.com'),
-        filename: lastVideo?.videofilename
-      }
+        isCloudinary: lastVideo?.filepath?.includes("cloudinary.com"),
+        filename: lastVideo?.videofilename,
+      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -133,43 +391,48 @@ router.get('/debug/check-last-video', async (req, res) => {
 });
 
 // ✅ DEBUG: Test what Cloudinary returns
-router.post("/test-upload", 
+router.post(
+  "/test-upload",
   verifyToken,
   uploadVideo.single("file"),
   (req, res) => {
     console.log("\n🧪 TEST UPLOAD:");
     console.log("   req.file:", JSON.stringify(req.file, null, 2));
-    
+
     res.json({
       success: true,
       file: req.file,
       cloudinaryUrl: req.file?.path,
-      message: "Check server logs for details"
+      message: "Check server logs for details",
     });
   }
 );
 
 router.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   // Allow all Vercel domains
   if (origin && /vercel\.app$/.test(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader("Access-Control-Allow-Origin", origin);
   } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader("Access-Control-Allow-Origin", "*");
   }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 
-    'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since'
+
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since"
   ); // ✅ ADDED if-none-match
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  
-  if (req.method === 'OPTIONS') {
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Max-Age", "86400");
+
+  if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
-  
+
   next();
 });
 // =================== HELPER FUNCTIONS ===================
@@ -256,84 +519,92 @@ const fileFilter = (req, file, cb) => {
 const localUpload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { 
+  limits: {
     fileSize: 500 * 1024 * 1024, // ✅ Increased to 500MB
     fieldSize: 500 * 1024 * 1024,
   },
 });
 // 🔥 CRITICAL FIX: Ensure verifyToken completes BEFORE Multer runs
-router.post("/upload",
+router.post(
+  "/upload",
   (req, res, next) => {
-    console.log('\n📤 ===== UPLOAD REQUEST RECEIVED =====');
+    console.log("\n📤 ===== UPLOAD REQUEST RECEIVED =====");
     next();
   },
-  
+
   verifyToken,
-  
+
   (req, res, next) => {
     if (!req.userId) {
       return res.status(401).json({
         success: false,
-        message: 'Authentication required'
+        message: "Authentication required",
       });
     }
     next();
   },
-  
+
   uploadVideo.single("file"),
-  
+
   (err, req, res, next) => {
     if (err) {
-      console.error('❌ Multer error:', err);
+      console.error("❌ Multer error:", err);
       return res.status(400).json({
         success: false,
-        message: err.message
+        message: err.message,
       });
     }
     next();
   },
-  
+
   // ✅ CRITICAL FIX: Optimized upload handler
   async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: "No file uploaded"
+          message: "No file uploaded",
         });
       }
 
       const publicId = req.file.public_id || req.file.filename;
-      
+
       if (!publicId) {
         return res.status(500).json({
           success: false,
-          message: "Upload failed - no public_id"
+          message: "Upload failed - no public_id",
         });
       }
 
       // ✅ CRITICAL: Build URLs with transformations (applied on-the-fly, not during upload)
-      const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dxuxxk0ss';
+      const CLOUDINARY_CLOUD_NAME =
+        process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
       const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-      
+
       // Video URL with audio transformations (applied when accessed, not now)
       const videoUrl = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto/${publicId}.mp4`;
-      
+
       // Thumbnail (auto-generated on first access)
       const thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto/${publicId}.jpg`;
 
       const { videotitle, videodescription, videochanel } = req.body;
       const uploadedBy = req.userId;
 
-      const user = await User.findById(uploadedBy).select('name channelname').lean();
-      
+      const user = await User.findById(uploadedBy)
+        .select("name channelname")
+        .lean();
+
       if (!user) {
-        return res.status(404).json({ success: false, message: "User not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
       }
 
-      const channelName = user.channelname || videochanel || user.name || "Unknown";
+      const channelName =
+        user.channelname || videochanel || user.name || "Unknown";
       const title = videotitle || req.file.originalname;
-      const autoDescription = videodescription?.trim() || 
+      const autoDescription =
+        videodescription?.trim() ||
         `Watch "${title}" - Don't forget to like and subscribe!`;
 
       // ✅ CRITICAL: Create video document ASYNCHRONOUSLY (don't wait for save)
@@ -341,38 +612,39 @@ router.post("/upload",
         videotitle: title,
         videodescription: autoDescription,
         videofilename: publicId,
-        
+
         filepath: videoUrl,
         videofile: videoUrl,
         videoLink: videoUrl,
         videoUrl: videoUrl,
-        
+
         thumbnail: thumbnailUrl,
         videothumbnail: thumbnailUrl,
         thumbnailUrl: thumbnailUrl,
-        
+
         filename: req.file.originalname,
         filetype: req.file.mimetype,
         filesize: `${(req.file.bytes / 1024 / 1024).toFixed(2)} MB`,
-        
+
         uploadedBy,
         user: uploadedBy,
         videochanel: channelName,
         channelName: channelName,
-        
+
         views: 0,
         Like: 0,
-        Dislike: 0
+        Dislike: 0,
       });
 
       // ✅ CRITICAL: Save asynchronously - don't block response
-      newVideo.save()
-        .then(() => console.log('✅ Video saved to DB'))
-        .catch(err => console.error('❌ DB save error:', err));
+      newVideo
+        .save()
+        .then(() => console.log("✅ Video saved to DB"))
+        .catch((err) => console.error("❌ DB save error:", err));
 
       // ✅ RESPOND IMMEDIATELY - Don't wait for DB save
-      console.log('✅ Upload complete - responding immediately');
-      
+      console.log("✅ Upload complete - responding immediately");
+
       res.status(201).json({
         success: true,
         message: "Video uploaded successfully!",
@@ -380,24 +652,21 @@ router.post("/upload",
           _id: newVideo._id,
           title: newVideo.videotitle,
           url: videoUrl,
-          thumbnail: thumbnailUrl
+          thumbnail: thumbnailUrl,
         },
         videoUrl,
         thumbnailUrl,
-        publicId
+        publicId,
       });
-
     } catch (error) {
-      console.error('❌ Upload error:', error);
+      console.error("❌ Upload error:", error);
       res.status(500).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   }
 );
-
-
 
 router.post(
   "/upload-thumbnail",
@@ -573,7 +842,8 @@ router.post("/createvideo", verifyToken, async (req, res) => {
   }
 });
 
-router.get("/getall", async (req, res) => {  try {
+router.get("/getall", async (req, res) => {
+  try {
     const { page = 1, limit = 50, sort = "createdAt" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -784,12 +1054,15 @@ router.get("/channel/:channelId", async (req, res) => {
     }
 
     // ✅ CRITICAL: Aggressive no-cache headers for mobile
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('Surrogate-Control', 'no-store');
-    res.setHeader('X-Accel-Expires', '0');
-    res.setHeader('ETag', `"${Date.now()}"`);
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("X-Accel-Expires", "0");
+    res.setHeader("ETag", `"${Date.now()}"`);
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -800,7 +1073,8 @@ router.get("/channel/:channelId", async (req, res) => {
         })
         .populate({
           path: "uploadedBy user",
-          select: "name email channelname channelName image avatar bannerImage subscribers",
+          select:
+            "name email channelname channelName image avatar bannerImage subscribers",
           options: { strictPopulate: false },
         })
         .sort({ createdAt: -1 })
@@ -813,7 +1087,9 @@ router.get("/channel/:channelId", async (req, res) => {
       }),
     ]);
 
-    console.log(`✅ Found ${videos.length} videos for channel (timestamp: ${Date.now()})`);
+    console.log(
+      `✅ Found ${videos.length} videos for channel (timestamp: ${Date.now()})`
+    );
 
     res.json({
       success: true,
@@ -890,12 +1166,12 @@ router.get("/stats/channel/:channelId", verifyToken, async (req, res) => {
 // =================== INDIVIDUAL VIDEO ROUTES ===================
 
 // ✅ Debug route - Add BEFORE other routes to prevent conflicts
-router.get('/debug/last-uploaded', async (req, res) => {
+router.get("/debug/last-uploaded", async (req, res) => {
   try {
     const lastVideo = await videofiles
       .findOne()
       .sort({ createdAt: -1 })
-      .select('_id videotitle videofile filepath createdAt')
+      .select("_id videotitle videofile filepath createdAt")
       .lean();
 
     res.json({
@@ -903,12 +1179,12 @@ router.get('/debug/last-uploaded', async (req, res) => {
       lastVideo: lastVideo,
       hasId: !!lastVideo?._id,
       idType: typeof lastVideo?._id,
-      idString: lastVideo?._id?.toString()
+      idString: lastVideo?._id?.toString(),
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -941,31 +1217,31 @@ router.get("/:id", async (req, res) => {
       .lean();
 
     if (!video) {
-  console.log("❌ Video not found in database");
-  return res.status(404).json({
-    success: false,
-    message: "Video not found",
-  });
-}
-
-// ✅ ADD THIS: Validate video URLs before sending
-const hasValidUrl = video.filepath || video.videofile || video.videoLink;
-if (!hasValidUrl) {
-  console.error('❌ Video has NO URLs:', {
-    id: video._id,
-    title: video.videotitle,
-    fields: Object.keys(video)
-  });
-  
-  return res.status(500).json({
-    success: false,
-    message: "Video data is corrupted - missing video URLs",
-    debug: {
-      id: video._id,
-      title: video.videotitle
+      console.log("❌ Video not found in database");
+      return res.status(404).json({
+        success: false,
+        message: "Video not found",
+      });
     }
-  });
-}
+
+    // ✅ ADD THIS: Validate video URLs before sending
+    const hasValidUrl = video.filepath || video.videofile || video.videoLink;
+    if (!hasValidUrl) {
+      console.error("❌ Video has NO URLs:", {
+        id: video._id,
+        title: video.videotitle,
+        fields: Object.keys(video),
+      });
+
+      return res.status(500).json({
+        success: false,
+        message: "Video data is corrupted - missing video URLs",
+        debug: {
+          id: video._id,
+          title: video.videotitle,
+        },
+      });
+    }
 
     // Increment views asynchronously
     videofiles.findByIdAndUpdate(id, { $inc: { views: 1 } }).exec();
@@ -1383,37 +1659,36 @@ router.get("/debug/info", verifyToken, async (req, res) => {
   }
 });
 // ✅ DEBUG ROUTE - Remove after testing
-router.get('/test-auth', verifyToken, (req, res) => {
-  console.log('\n🧪 TEST AUTH ROUTE:');
-  console.log('   req.userId:', req.userId);
-  console.log('   req.user:', req.user);
-  
+router.get("/test-auth", verifyToken, (req, res) => {
+  console.log("\n🧪 TEST AUTH ROUTE:");
+  console.log("   req.userId:", req.userId);
+  console.log("   req.user:", req.user);
+
   res.json({
     success: true,
-    message: 'Authentication working!',
+    message: "Authentication working!",
     userId: req.userId,
-    user: req.user
+    user: req.user,
   });
 });
-
 
 // Add these routes to routes/video.js (before export default router;)
 
 // ✅ Debug: Check specific video
 
 // ✅ Check specific video
-router.get('/debug/video/:id', async (req, res) => {
+router.get("/debug/video/:id", async (req, res) => {
   try {
     const video = await videofiles.findById(req.params.id);
-    
+
     if (!video) {
-      return res.status(404).json({ error: 'Video not found' });
+      return res.status(404).json({ error: "Video not found" });
     }
 
     const isValidUrl = (url) => {
-      return url && 
-             url.includes('cloudinary.com') && 
-             url.startsWith('https://');
+      return (
+        url && url.includes("cloudinary.com") && url.startsWith("https://")
+      );
     };
 
     res.json({
@@ -1422,23 +1697,25 @@ router.get('/debug/video/:id', async (req, res) => {
       urls: {
         filepath: {
           value: video.filepath,
-          valid: isValidUrl(video.filepath)
+          valid: isValidUrl(video.filepath),
         },
         videofile: {
           value: video.videofile,
-          valid: isValidUrl(video.videofile)
+          valid: isValidUrl(video.videofile),
         },
         videoLink: {
           value: video.videoLink,
-          valid: isValidUrl(video.videoLink)
-        }
+          valid: isValidUrl(video.videoLink),
+        },
       },
       filename: video.videofilename,
-      allValid: isValidUrl(video.filepath) && 
-                isValidUrl(video.videofile) && 
-                isValidUrl(video.videoLink),
-      allMatch: video.filepath === video.videofile && 
-                video.videofile === video.videoLink
+      allValid:
+        isValidUrl(video.filepath) &&
+        isValidUrl(video.videofile) &&
+        isValidUrl(video.videoLink),
+      allMatch:
+        video.filepath === video.videofile &&
+        video.videofile === video.videoLink,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1449,25 +1726,26 @@ router.get('/debug/video/:id', async (req, res) => {
 // Place these BEFORE "export default router;" line
 
 // ✅ 1. Check all videos status
-router.get('/admin/check-all-videos', async (req, res) => {
+router.get("/admin/check-all-videos", async (req, res) => {
   try {
     const videos = await videofiles
       .find({})
-      .select('_id videotitle filepath videofile videoLink videofilename')
+      .select("_id videotitle filepath videofile videoLink videofilename")
       .lean();
 
     const isValidUrl = (url) => {
-      return url && 
-             url.includes('cloudinary.com') && 
-             url.startsWith('https://');
+      return (
+        url && url.includes("cloudinary.com") && url.startsWith("https://")
+      );
     };
 
-    const analysis = videos.map(v => ({
+    const analysis = videos.map((v) => ({
       id: v._id,
       title: v.videotitle,
-      allFieldsValid: isValidUrl(v.filepath) && 
-                      isValidUrl(v.videofile) && 
-                      isValidUrl(v.videoLink),
+      allFieldsValid:
+        isValidUrl(v.filepath) &&
+        isValidUrl(v.videofile) &&
+        isValidUrl(v.videoLink),
       allFieldsMatch: v.filepath === v.videofile && v.videofile === v.videoLink,
       urls: {
         filepath: v.filepath?.substring(0, 60),
@@ -1475,33 +1753,35 @@ router.get('/admin/check-all-videos', async (req, res) => {
         videoLink: v.videoLink?.substring(0, 60),
       },
       status: {
-        filepath: isValidUrl(v.filepath) ? '✅' : '❌',
-        videofile: isValidUrl(v.videofile) ? '✅' : '❌',
-        videoLink: isValidUrl(v.videoLink) ? '✅' : '❌'
-      }
+        filepath: isValidUrl(v.filepath) ? "✅" : "❌",
+        videofile: isValidUrl(v.videofile) ? "✅" : "❌",
+        videoLink: isValidUrl(v.videoLink) ? "✅" : "❌",
+      },
     }));
 
     const summary = {
       total: videos.length,
-      valid: analysis.filter(v => v.allFieldsValid && v.allFieldsMatch).length,
-      invalid: analysis.filter(v => !v.allFieldsValid || !v.allFieldsMatch).length
+      valid: analysis.filter((v) => v.allFieldsValid && v.allFieldsMatch)
+        .length,
+      invalid: analysis.filter((v) => !v.allFieldsValid || !v.allFieldsMatch)
+        .length,
     };
 
     res.json({
       success: true,
       summary,
-      videos: analysis
+      videos: analysis,
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message,
     });
   }
 });
 
 // ✅ 2. Fix ALL broken video URLs (NO AUTH REQUIRED)
-router.post('/admin/fix-all-videos-now', async (req, res) => {
+router.post("/admin/fix-all-videos-now", async (req, res) => {
   try {
     const videos = await videofiles.find({});
     let fixed = 0;
@@ -1510,15 +1790,17 @@ router.post('/admin/fix-all-videos-now', async (req, res) => {
     const unfixableList = [];
     const fixedList = [];
 
-    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dxuxxk0ss';
+    const CLOUDINARY_CLOUD_NAME =
+      process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
     const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/youtube-clone/videos`;
 
-    console.log('\n🔧 ===== STARTING VIDEO URL FIX =====');
+    console.log("\n🔧 ===== STARTING VIDEO URL FIX =====");
     console.log(`   Total videos to check: ${videos.length}`);
 
     for (const video of videos) {
-      const isValid = (url) => url && url.includes('cloudinary.com') && url.startsWith('https://');
-      
+      const isValid = (url) =>
+        url && url.includes("cloudinary.com") && url.startsWith("https://");
+
       // Find ANY valid Cloudinary URL
       let correctUrl = null;
       if (isValid(video.filepath)) correctUrl = video.filepath;
@@ -1537,7 +1819,9 @@ router.post('/admin/fix-all-videos-now', async (req, res) => {
 
       // Try to extract from any existing path
       if (!correctUrl) {
-        const paths = [video.filepath, video.videofile, video.videoLink].filter(Boolean);
+        const paths = [video.filepath, video.videofile, video.videoLink].filter(
+          Boolean
+        );
         for (const path of paths) {
           const fileMatch = path.match(/file_[a-z0-9]+/i);
           if (fileMatch) {
@@ -1558,17 +1842,19 @@ router.post('/admin/fix-all-videos-now', async (req, res) => {
           paths: {
             filepath: video.filepath,
             videofile: video.videofile,
-            videoLink: video.videoLink
-          }
+            videoLink: video.videoLink,
+          },
         });
         console.log(`   ❌ Cannot fix: ${video.videotitle}`);
         continue;
       }
 
       // Check if already correct
-      if (video.filepath === correctUrl && 
-          video.videofile === correctUrl && 
-          video.videoLink === correctUrl) {
+      if (
+        video.filepath === correctUrl &&
+        video.videofile === correctUrl &&
+        video.videoLink === correctUrl
+      ) {
         alreadyGood++;
         continue;
       }
@@ -1578,17 +1864,17 @@ router.post('/admin/fix-all-videos-now', async (req, res) => {
       video.videofile = correctUrl;
       video.videoLink = correctUrl;
       await video.save();
-      
+
       fixed++;
       fixedList.push({
         id: video._id,
         title: video.videotitle,
-        url: correctUrl.substring(0, 60) + '...'
+        url: correctUrl.substring(0, 60) + "...",
       });
       console.log(`   ✅ Fixed: ${video.videotitle}`);
     }
 
-    console.log('\n✅ ===== FIX COMPLETE =====');
+    console.log("\n✅ ===== FIX COMPLETE =====");
     console.log(`   Total: ${videos.length}`);
     console.log(`   Fixed: ${fixed}`);
     console.log(`   Already Good: ${alreadyGood}`);
@@ -1600,36 +1886,36 @@ router.post('/admin/fix-all-videos-now', async (req, res) => {
         total: videos.length,
         fixed,
         alreadyGood,
-        unfixable
+        unfixable,
       },
       fixedVideos: fixedList.slice(0, 10), // First 10
-      unfixableVideos: unfixableList
+      unfixableVideos: unfixableList,
     });
   } catch (error) {
-    console.error('❌ Fix error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    console.error("❌ Fix error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
     });
   }
 });
 
 // ✅ 3. Check specific video by ID
-router.get('/admin/check-video/:id', async (req, res) => {
+router.get("/admin/check-video/:id", async (req, res) => {
   try {
     const video = await videofiles.findById(req.params.id);
-    
+
     if (!video) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        error: 'Video not found' 
+        error: "Video not found",
       });
     }
 
     const isValidUrl = (url) => {
-      return url && 
-             url.includes('cloudinary.com') && 
-             url.startsWith('https://');
+      return (
+        url && url.includes("cloudinary.com") && url.startsWith("https://")
+      );
     };
 
     res.json({
@@ -1640,50 +1926,54 @@ router.get('/admin/check-video/:id', async (req, res) => {
         urls: {
           filepath: {
             value: video.filepath,
-            valid: isValidUrl(video.filepath)
+            valid: isValidUrl(video.filepath),
           },
           videofile: {
             value: video.videofile,
-            valid: isValidUrl(video.videofile)
+            valid: isValidUrl(video.videofile),
           },
           videoLink: {
             value: video.videoLink,
-            valid: isValidUrl(video.videoLink)
-          }
+            valid: isValidUrl(video.videoLink),
+          },
         },
         filename: video.videofilename,
-        allValid: isValidUrl(video.filepath) && 
-                  isValidUrl(video.videofile) && 
-                  isValidUrl(video.videoLink),
-        allMatch: video.filepath === video.videofile && 
-                  video.videofile === video.videoLink
-      }
+        allValid:
+          isValidUrl(video.filepath) &&
+          isValidUrl(video.videofile) &&
+          isValidUrl(video.videoLink),
+        allMatch:
+          video.filepath === video.videofile &&
+          video.videofile === video.videoLink,
+      },
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: error.message 
+      error: error.message,
     });
   }
 });
 
 // ✅ 4. Fix single video by ID
-router.post('/admin/fix-video/:id', async (req, res) => {
+router.post("/admin/fix-video/:id", async (req, res) => {
   try {
     const video = await videofiles.findById(req.params.id);
-    
+
     if (!video) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        error: 'Video not found' 
+        error: "Video not found",
       });
     }
 
     const isValidUrl = (url) => {
-      return url && 
-             url.includes('cloudinary.com') && 
-             url.includes('/video/upload/') &&
-             url.startsWith('https://');
+      return (
+        url &&
+        url.includes("cloudinary.com") &&
+        url.includes("/video/upload/") &&
+        url.startsWith("https://")
+      );
     };
 
     // Find ANY valid URL
@@ -1696,22 +1986,23 @@ router.post('/admin/fix-video/:id', async (req, res) => {
     if (!correctUrl && video.videofilename) {
       const fileMatch = video.videofilename.match(/file_[a-z0-9]+/i);
       if (fileMatch) {
-        const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dxuxxk0ss';
+        const CLOUDINARY_CLOUD_NAME =
+          process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
         const fileId = fileMatch[0];
         correctUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/youtube-clone/videos/${fileId}.mp4`;
       }
     }
 
     if (!correctUrl) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'No valid Cloudinary URL found. Video needs to be re-uploaded.',
+        error: "No valid Cloudinary URL found. Video needs to be re-uploaded.",
         details: {
           filepath: video.filepath,
           videofile: video.videofile,
           videoLink: video.videoLink,
-          filename: video.videofilename
-        }
+          filename: video.videofilename,
+        },
       });
     }
 
@@ -1723,32 +2014,32 @@ router.post('/admin/fix-video/:id', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Video URLs fixed',
+      message: "Video URLs fixed",
       video: {
         id: video._id,
         title: video.videotitle,
-        url: correctUrl
-      }
+        url: correctUrl,
+      },
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: error.message 
+      error: error.message,
     });
   }
 });
 
 // ✅ 5. Quick stats
-router.get('/admin/video-stats', async (req, res) => {
+router.get("/admin/video-stats", async (req, res) => {
   try {
     const total = await videofiles.countDocuments();
-    
+
     const validVideos = await videofiles.countDocuments({
       $and: [
-        { filepath: { $regex: 'cloudinary.com' } },
-        { videofile: { $regex: 'cloudinary.com' } },
-        { videoLink: { $regex: 'cloudinary.com' } }
-      ]
+        { filepath: { $regex: "cloudinary.com" } },
+        { videofile: { $regex: "cloudinary.com" } },
+        { videoLink: { $regex: "cloudinary.com" } },
+      ],
     });
 
     const brokenVideos = total - validVideos;
@@ -1759,21 +2050,21 @@ router.get('/admin/video-stats', async (req, res) => {
         total,
         valid: validVideos,
         broken: brokenVideos,
-        healthPercentage: ((validVideos / total) * 100).toFixed(1) + '%'
-      }
+        healthPercentage: ((validVideos / total) * 100).toFixed(1) + "%",
+      },
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: error.message 
+      error: error.message,
     });
   }
 });
 // ✅ FIX EXISTING VIDEOS - Add audio codec to URLs
-router.post('/admin/fix-all-video-audio', async (req, res) => {
+router.post("/admin/fix-all-video-audio", async (req, res) => {
   try {
     const videos = await videofiles.find({
-      filepath: { $regex: 'cloudinary.com' }
+      filepath: { $regex: "cloudinary.com" },
     });
 
     let fixed = 0;
@@ -1781,32 +2072,36 @@ router.post('/admin/fix-all-video-audio', async (req, res) => {
 
     for (const video of videos) {
       let url = video.filepath;
-      
-      if (!url || !url.includes('/upload/')) continue;
+
+      if (!url || !url.includes("/upload/")) continue;
 
       // Check if already fixed
-      if (url.includes('f_mp4,vc_h264,ac_aac')) {
+      if (url.includes("f_mp4,vc_h264,ac_aac")) {
         continue;
       }
 
-      const urlParts = url.split('/upload/');
+      const urlParts = url.split("/upload/");
       if (urlParts.length === 2) {
         // Build new URL with audio
-        const newUrl = `${urlParts[0]}/upload/f_mp4,vc_h264,ac_aac,af_44100,br_1000k/${urlParts[1]}`.replace(/\.[^.]+$/, '.mp4');
-        
+        const newUrl =
+          `${urlParts[0]}/upload/f_mp4,vc_h264,ac_aac,af_44100,br_1000k/${urlParts[1]}`.replace(
+            /\.[^.]+$/,
+            ".mp4"
+          );
+
         video.filepath = newUrl;
         video.videofile = newUrl;
         video.videoLink = newUrl;
-        
+
         await video.save();
-        
+
         fixed++;
         results.push({
           id: video._id,
           title: video.videotitle,
-          newUrl: newUrl.substring(0, 80)
+          newUrl: newUrl.substring(0, 80),
         });
-        
+
         console.log(`✅ Fixed: ${video.videotitle}`);
       }
     }
@@ -1815,19 +2110,19 @@ router.post('/admin/fix-all-video-audio', async (req, res) => {
       success: true,
       fixed,
       total: videos.length,
-      results: results.slice(0, 10)
+      results: results.slice(0, 10),
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 // ✅ FIX ALL EXISTING VIDEOS - Add audio transformations
-router.post('/admin/fix-audio-all-videos', async (req, res) => {
+router.post("/admin/fix-audio-all-videos", async (req, res) => {
   try {
-    console.log('\n🔧 ===== FIXING ALL VIDEO AUDIO =====');
-    
+    console.log("\n🔧 ===== FIXING ALL VIDEO AUDIO =====");
+
     const videos = await videofiles.find({
-      filepath: { $regex: 'cloudinary.com' }
+      filepath: { $regex: "cloudinary.com" },
     });
 
     let fixed = 0;
@@ -1836,35 +2131,39 @@ router.post('/admin/fix-audio-all-videos', async (req, res) => {
 
     for (const video of videos) {
       let url = video.filepath;
-      
-      if (!url || !url.includes('/upload/')) continue;
+
+      if (!url || !url.includes("/upload/")) continue;
 
       // Check if already has audio transformations
-      if (url.includes('ac_aac')) {
+      if (url.includes("ac_aac")) {
         alreadyFixed++;
         continue;
       }
 
-      const urlParts = url.split('/upload/');
+      const urlParts = url.split("/upload/");
       if (urlParts.length === 2) {
         // ✅ Build URL with audio
-        const transforms = 'f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good';
-        const newUrl = `${urlParts[0]}/upload/${transforms}/${urlParts[1]}`.replace(/\.[^.]+$/, '.mp4');
-        
+        const transforms = "f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good";
+        const newUrl =
+          `${urlParts[0]}/upload/${transforms}/${urlParts[1]}`.replace(
+            /\.[^.]+$/,
+            ".mp4"
+          );
+
         // Update ALL video URL fields
         video.filepath = newUrl;
         video.videofile = newUrl;
         video.videoLink = newUrl;
-        
+
         await video.save();
-        
+
         fixed++;
         results.push({
           id: video._id,
           title: video.videotitle,
-          newUrl: newUrl.substring(0, 80)
+          newUrl: newUrl.substring(0, 80),
         });
-        
+
         console.log(`✅ Fixed: ${video.videotitle}`);
       }
     }
@@ -1876,10 +2175,10 @@ router.post('/admin/fix-audio-all-videos', async (req, res) => {
       fixed,
       alreadyFixed,
       total: videos.length,
-      results: results.slice(0, 10)
+      results: results.slice(0, 10),
     });
   } catch (error) {
-    console.error('❌ Fix error:', error);
+    console.error("❌ Fix error:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1887,48 +2186,48 @@ router.post('/admin/fix-audio-all-videos', async (req, res) => {
 // CACHE MANAGEMENT ROUTES (ADMIN/DEBUG)
 // ============================================================================
 
-router.get('/cache/stats', async (req, res) => {
+router.get("/cache/stats", async (req, res) => {
   try {
-    const { getCacheStats } = await import('../middleware/cache.js');
+    const { getCacheStats } = await import("../middleware/cache.js");
     const stats = getCacheStats();
-    
+
     res.json({
       success: true,
       cache: stats,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
 
-router.post('/cache/clear', async (req, res) => {
+router.post("/cache/clear", async (req, res) => {
   try {
-    const { clearCache } = await import('../middleware/cache.js');
+    const { clearCache } = await import("../middleware/cache.js");
     const cleared = clearCache();
-    
+
     res.json({
       success: true,
       message: `Cache cleared: ${cleared} entries removed`,
-      cleared
+      cleared,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
 // Fix thumbnails for all videos - IMPROVED VERSION
-router.post('/admin/fix-all-thumbnails-clean', async (req, res) => {
+router.post("/admin/fix-all-thumbnails-clean", async (req, res) => {
   try {
-    console.log('\n🖼️ ===== FIXING ALL THUMBNAILS (CLEAN VERSION) =====');
-    
+    console.log("\n🖼️ ===== FIXING ALL THUMBNAILS (CLEAN VERSION) =====");
+
     const videos = await videofiles.find({
-      filepath: { $regex: 'cloudinary.com' }
+      filepath: { $regex: "cloudinary.com" },
     });
 
     let fixed = 0;
@@ -1936,44 +2235,49 @@ router.post('/admin/fix-all-thumbnails-clean', async (req, res) => {
 
     for (const video of videos) {
       const videoUrl = video.filepath || video.videofile || video.videoLink;
-      
-      if (!videoUrl || !videoUrl.includes('/video/upload/')) continue;
+
+      if (!videoUrl || !videoUrl.includes("/video/upload/")) continue;
 
       try {
         // Extract cloud name and video path
-        const cloudinaryMatch = videoUrl.match(/https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/);
-        
+        const cloudinaryMatch = videoUrl.match(
+          /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/
+        );
+
         if (cloudinaryMatch) {
           const cloudName = cloudinaryMatch[1];
           let videoPath = cloudinaryMatch[2];
-          
+
           // Remove ALL transformation parameters
           videoPath = videoPath
-            .split('/')
-            .filter(segment => {
+            .split("/")
+            .filter((segment) => {
               // Only keep actual path segments
               return !segment.match(/^(f_|vc_|ac_|af_|br_|q_|w_|h_|c_|so_)/);
             })
-            .join('/');
-          
-          const thumbnailUrl = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${videoPath}`
-            .replace(/\.(mp4|mov|avi|mkv|webm)$/i, '.jpg');
-          
+            .join("/");
+
+          const thumbnailUrl =
+            `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${videoPath}`.replace(
+              /\.(mp4|mov|avi|mkv|webm)$/i,
+              ".jpg"
+            );
+
           // Update all thumbnail fields
           video.thumbnail = thumbnailUrl;
           video.videothumbnail = thumbnailUrl;
           video.thumbnailUrl = thumbnailUrl;
           video.videothumb = thumbnailUrl;
-          
+
           await video.save();
-          
+
           fixed++;
           results.push({
             id: video._id,
             title: video.videotitle,
-            thumbnail: thumbnailUrl.substring(0, 100)
+            thumbnail: thumbnailUrl.substring(0, 100),
           });
-          
+
           console.log(`✅ Fixed: ${video.videotitle}`);
         }
       } catch (error) {
@@ -1987,32 +2291,32 @@ router.post('/admin/fix-all-thumbnails-clean', async (req, res) => {
       success: true,
       fixed,
       total: videos.length,
-      results: results.slice(0, 10)
+      results: results.slice(0, 10),
     });
   } catch (error) {
-    console.error('❌ Fix error:', error);
+    console.error("❌ Fix error:", error);
     res.status(500).json({ error: error.message });
   }
 });
 // ✅ FIX ALL EXISTING VIDEOS - Regenerate proper URLs
 // ✅ FIX: Update existing videos to use correct public_id
-router.post('/admin/fix-video-urls-final', async (req, res) => {
+router.post("/admin/fix-video-urls-final", async (req, res) => {
   try {
-    console.log('\n🔧 ===== FIXING ALL VIDEO URLS =====');
-    
+    console.log("\n🔧 ===== FIXING ALL VIDEO URLS =====");
+
     const videos = await videofiles.find({
-      videofilename: { $exists: true, $ne: null }
+      videofilename: { $exists: true, $ne: null },
     });
 
     let fixed = 0;
     const results = [];
-    const CLOUDINARY_CLOUD_NAME = 'dxuxxk0ss';
+    const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
     const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
 
     for (const video of videos) {
       const publicId = video.videofilename;
-      
-      if (!publicId || !publicId.includes('youtube-clone/videos/')) {
+
+      if (!publicId || !publicId.includes("youtube-clone/videos/")) {
         console.log(`⚠️ Skipping ${video._id} - invalid public_id`);
         continue;
       }
@@ -2026,23 +2330,23 @@ router.post('/admin/fix-video-urls-final', async (req, res) => {
       video.videofile = videoUrl;
       video.videoLink = videoUrl;
       video.videoUrl = videoUrl;
-      
+
       video.thumbnail = thumbnailUrl;
       video.videothumbnail = thumbnailUrl;
       video.thumbnailUrl = thumbnailUrl;
       video.videothumb = thumbnailUrl;
 
       await video.save();
-      
+
       fixed++;
       results.push({
         id: video._id,
         title: video.videotitle,
         publicId: publicId,
-        videoUrl: videoUrl.substring(0, 80) + '...',
-        thumbnailUrl: thumbnailUrl.substring(0, 80) + '...'
+        videoUrl: videoUrl.substring(0, 80) + "...",
+        thumbnailUrl: thumbnailUrl.substring(0, 80) + "...",
       });
-      
+
       console.log(`✅ Fixed: ${video.videotitle}`);
     }
 
@@ -2052,92 +2356,93 @@ router.post('/admin/fix-video-urls-final', async (req, res) => {
       success: true,
       fixed,
       total: videos.length,
-      results: results.slice(0, 10)
+      results: results.slice(0, 10),
     });
   } catch (error) {
-    console.error('❌ Fix error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    console.error("❌ Fix error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
     });
   }
 });
 
 // ✅ DEBUG: Test Cloudinary upload directly
-router.post('/test-cloudinary-upload',
+router.post(
+  "/test-cloudinary-upload",
   verifyToken,
-  uploadVideo.single('file'),
+  uploadVideo.single("file"),
   async (req, res) => {
-    console.log('\n🧪 ===== CLOUDINARY UPLOAD TEST =====');
-    console.log('File received:', !!req.file);
-    
+    console.log("\n🧪 ===== CLOUDINARY UPLOAD TEST =====");
+    console.log("File received:", !!req.file);
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'No file uploaded'
+        message: "No file uploaded",
       });
     }
-    
-    console.log('Cloudinary Response:', JSON.stringify(req.file, null, 2));
-    
+
+    console.log("Cloudinary Response:", JSON.stringify(req.file, null, 2));
+
     // Try to verify on Cloudinary
     try {
-      const cloudinary = await import('../config/cloudinary.js');
+      const cloudinary = await import("../config/cloudinary.js");
       const publicId = req.file.public_id || req.file.filename;
-      
-      console.log('Verifying public_id:', publicId);
-      
+
+      console.log("Verifying public_id:", publicId);
+
       const videoInfo = await cloudinary.cloudinary.api.resource(publicId, {
-        resource_type: 'video'
+        resource_type: "video",
       });
-      
-      console.log('✅ Video found on Cloudinary:', videoInfo);
-      
+
+      console.log("✅ Video found on Cloudinary:", videoInfo);
+
       res.json({
         success: true,
-        message: 'Upload successful and verified!',
+        message: "Upload successful and verified!",
         cloudinaryResponse: req.file,
         verificationData: {
           public_id: videoInfo.public_id,
           url: videoInfo.secure_url,
           duration: videoInfo.duration,
           format: videoInfo.format,
-          bytes: videoInfo.bytes
-        }
+          bytes: videoInfo.bytes,
+        },
       });
     } catch (error) {
-      console.error('❌ Verification failed:', error);
-      
+      console.error("❌ Verification failed:", error);
+
       res.status(500).json({
         success: false,
-        message: 'Upload completed but verification failed',
+        message: "Upload completed but verification failed",
         error: error.message,
-        cloudinaryResponse: req.file
+        cloudinaryResponse: req.file,
       });
     }
   }
 );
 // ✅ NEW: Force refresh video counts
-router.get('/refresh/:id', async (req, res) => {
+router.get("/refresh/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid video ID'
+        message: "Invalid video ID",
       });
     }
 
     const video = await videofiles
       .findById(id)
-      .select('Like Dislike likes dislikes views')
+      .select("Like Dislike likes dislikes views")
       .lean();
 
     if (!video) {
       return res.status(404).json({
         success: false,
-        message: 'Video not found'
+        message: "Video not found",
       });
     }
 
@@ -2146,14 +2451,14 @@ router.get('/refresh/:id', async (req, res) => {
       counts: {
         likes: video.Like || video.likes || 0,
         dislikes: video.Dislike || video.dislikes || 0,
-        views: video.views || 0
-      }
+        views: video.views || 0,
+      },
     });
   } catch (error) {
-    console.error('Refresh error:', error);
+    console.error("Refresh error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to refresh counts'
+      message: "Failed to refresh counts",
     });
   }
 });

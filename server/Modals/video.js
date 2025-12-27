@@ -46,6 +46,42 @@ const videoSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // Array of chunk IDs for multi-part videos
+    chunks: [{
+      type: String
+    }],
+    
+    // Flag to indicate if video is split across multiple chunks
+    isMultiPart: {
+      type: Boolean,
+      default: false
+    },
+    
+    // Total original file size before splitting
+    originalFileSize: {
+      type: Number,
+      default: 0
+    },
+    
+    // Number of parts/chunks
+    totalParts: {
+      type: Number,
+      default: 1
+    },
+    
+    // Compression applied
+    compressionApplied: {
+      type: Boolean,
+      default: false
+    },
+    
+    // Original quality before compression
+    originalQuality: {
+      width: Number,
+      height: Number,
+      bitrate: String
+    },
+    
 
     // ✅ NEW: Multiple quality URLs for adaptive streaming
     qualities: {
@@ -226,6 +262,9 @@ videoSchema.index({ user: 1, createdAt: -1 });
 videoSchema.index({ views: -1 });
 videoSchema.index({ visibility: 1, createdAt: -1 });
 videoSchema.index({ videotitle: "text", videodescription: "text" });
+// ============= ADD INDEX FOR CHUNKED VIDEOS =============
+videoSchema.index({ isMultiPart: 1 });
+videoSchema.index({ chunks: 1 });
 
 // =================== PRE-SAVE MIDDLEWARE (ENHANCED) ===================
 videoSchema.pre("save", function (next) {
