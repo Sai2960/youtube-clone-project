@@ -51,11 +51,27 @@ router.post(
       }
 
       const { chunkIndex, totalChunks, originalFilename } = req.body;
+
+      // ✅ CRITICAL: Validate chunk size doesn't exceed Cloudinary limit
+      const chunkSizeMB = req.file.size / (1024 * 1024);
+
+      if (chunkSizeMB > 95) {
+        console.error(
+          `❌ Chunk ${chunkIndex} is ${chunkSizeMB.toFixed(2)}MB - TOO LARGE!`
+        );
+        return res.status(413).json({
+          success: false,
+          message: `Chunk size ${chunkSizeMB.toFixed(
+            0
+          )}MB exceeds 95MB limit. Please use smaller chunk sizes.`,
+        });
+      }
+
       const chunkId = req.file.public_id || req.file.filename;
 
       console.log(`📦 Chunk ${parseInt(chunkIndex) + 1}/${totalChunks}`);
       console.log(`   Chunk ID: ${chunkId}`);
-      console.log(`   Size: ${(req.file.size / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`   Size: ${chunkSizeMB.toFixed(2)}MB`);
 
       // Store chunk metadata
       const sessionKey = `${req.userId}_${originalFilename}`;
@@ -66,6 +82,7 @@ router.post(
           totalChunks: parseInt(totalChunks),
           uploadedBy: req.userId,
           originalFilename,
+          createdAt: Date.now(),
         });
       }
 
@@ -75,7 +92,9 @@ router.post(
         publicId: req.file.public_id,
         url: req.file.secure_url,
         index: parseInt(chunkIndex),
+        sizeMB: chunkSizeMB,
       };
+      session.lastAccess = Date.now();
 
       console.log(
         `✅ Chunk ${parseInt(chunkIndex) + 1}/${totalChunks} uploaded`
@@ -93,7 +112,7 @@ router.post(
       let errorMessage = "Failed to upload chunk";
 
       if (error.message?.includes("File size too large")) {
-        errorMessage = "Chunk exceeds 100MB limit. This shouldn't happen!";
+        errorMessage = "Chunk exceeds 95MB limit. Use smaller chunks.";
       } else if (error.message?.includes("timeout")) {
         errorMessage = "Upload timeout. Check your connection.";
       }
