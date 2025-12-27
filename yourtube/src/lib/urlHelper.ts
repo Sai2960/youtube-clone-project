@@ -31,11 +31,8 @@ const BACKEND_URL = getBackendURLInternal();
 const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
 
-const buildCloudinaryVideoUrl = (publicId, quality = "auto") => {
-  const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
-  const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-
-  // ✅ CRITICAL FIX: Use ONLY Cloudinary-supported transformations
+const buildCloudinaryVideoUrl = (publicId: string, quality: string): string => {
+  // ✅ CRITICAL FIX: Use Cloudinary's supported transformation format
   let transformation = "";
 
   switch (quality) {
@@ -61,6 +58,7 @@ const buildCloudinaryVideoUrl = (publicId, quality = "auto") => {
       transformation = "q_auto:good,vc_h264,ac_aac";
   }
 
+  // ✅ CRITICAL: Build URL with ONLY supported transformations
   return `${CLOUDINARY_BASE}/${transformation}/${publicId}.mp4`;
 };
 

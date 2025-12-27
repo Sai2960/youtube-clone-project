@@ -275,11 +275,18 @@ export default function GestureVideoPlayer({
 
     console.log("🎬 Changing quality to:", newQuality);
 
-    // Save current state
-    const currentTime = videoRef.current.currentTime;
+    // ✅ CRITICAL: Save state BEFORE changing
+    const savedTime = videoRef.current.currentTime;
     const wasPlaying = !videoRef.current.paused;
+    const savedVolume = videoRef.current.volume;
 
-    // ✅ CRITICAL FIX: Generate new URL with quality parameter
+    console.log("💾 Saved state:", {
+      time: savedTime,
+      playing: wasPlaying,
+      volume: savedVolume,
+    });
+
+    // ✅ Generate new URL with quality parameter
     const newVideoUrl = getVideoUrl(video, newQuality);
 
     if (!newVideoUrl) {
@@ -294,51 +301,91 @@ export default function GestureVideoPlayer({
     // Pause video before changing source
     videoRef.current.pause();
 
-    // ✅ CRITICAL FIX: Add cache buster to force reload
+    // ✅ Add cache buster to force reload
     const timestamp = Date.now();
     const separator = newVideoUrl.includes("?") ? "&" : "?";
     const finalUrl = `${newVideoUrl}${separator}t=${timestamp}`;
 
+    // ✅ CRITICAL: Create promise-based state restoration
+    const restorePlayback = new Promise<void>((resolve, reject) => {
+      if (!videoRef.current) {
+        reject(new Error("Video ref lost"));
+        return;
+      }
+
+      const video = videoRef.current;
+      let timeoutId: NodeJS.Timeout;
+
+      const handleLoadedData = () => {
+        console.log("✅ Video loaded, restoring playback");
+
+        // Restore time
+        video.currentTime = savedTime;
+        setCurrentTime(savedTime); // ✅ Update React state immediately
+
+        // Restore volume
+        video.volume = savedVolume;
+
+        // Resume playback if it was playing
+        if (wasPlaying) {
+          video
+            .play()
+            .then(() => {
+              console.log("✅ Playback resumed");
+              setIsPlaying(true);
+            })
+            .catch((err) => {
+              console.error("❌ Error resuming playback:", err);
+              setIsPlaying(false);
+            });
+        }
+
+        clearTimeout(timeoutId);
+        video.removeEventListener("loadeddata", handleLoadedData);
+        video.removeEventListener("error", handleError);
+        resolve();
+      };
+
+      const handleError = (e: Event) => {
+        console.error("❌ Failed to load quality:", newQuality, e);
+        clearTimeout(timeoutId);
+        video.removeEventListener("loadeddata", handleLoadedData);
+        video.removeEventListener("error", handleError);
+
+        // Fallback to 'auto' quality
+        if (newQuality !== "auto") {
+          console.log("🔄 Falling back to auto quality");
+          handleQualityChange("auto");
+        }
+
+        reject(new Error("Failed to load video"));
+      };
+
+      // Set timeout for loading
+      timeoutId = setTimeout(() => {
+        console.warn("⚠️ Quality change timeout");
+        video.removeEventListener("loadeddata", handleLoadedData);
+        video.removeEventListener("error", handleError);
+        reject(new Error("Timeout"));
+      }, 10000); // 10 second timeout
+
+      video.addEventListener("loadeddata", handleLoadedData, { once: true });
+      video.addEventListener("error", handleError, { once: true });
+    });
+
     // Update video source
     videoRef.current.src = finalUrl;
-
-    // Wait for video to load
-    const handleLoadedData = () => {
-      if (!videoRef.current) return;
-
-      // Restore playback position
-      videoRef.current.currentTime = currentTime;
-
-      // Resume playback if it was playing
-      if (wasPlaying) {
-        videoRef.current.play().catch((err) => {
-          console.error("Error resuming playback:", err);
-        });
-      }
-
-      videoRef.current.removeEventListener("loadeddata", handleLoadedData);
-    };
-    const handleError = () => {
-      console.error("❌ Failed to load quality:", newQuality);
-
-      // ✅ Fallback: Try 'auto' quality
-      if (newQuality !== "auto") {
-        console.log("🔄 Falling back to auto quality");
-        handleQualityChange("auto");
-      }
-
-      videoRef.current?.removeEventListener("error", handleError);
-    };
-
-    videoRef.current.addEventListener("loadeddata", handleLoadedData, {
-      once: true,
-    });
-    videoRef.current.addEventListener("error", handleError, { once: true });
-
     videoRef.current.load();
 
+    // Update quality state
     setQuality(newQuality);
-    console.log("✅ Quality changed to:", newQuality);
+
+    try {
+      await restorePlayback;
+      console.log("✅ Quality changed successfully to:", newQuality);
+    } catch (error) {
+      console.error("❌ Quality change failed:", error);
+    }
   };
 
   // Detect mobile device
@@ -455,6 +502,7 @@ export default function GestureVideoPlayer({
       videoElement.removeAttribute("src");
       videoElement.onloadedmetadata = null;
       videoElement.onerror = null;
+      videoElement.ontimeupdate = null; // ✅ Clean up time tracking too
       videoElement.load();
     };
 
@@ -494,6 +542,7 @@ export default function GestureVideoPlayer({
         console.log("✅ Video metadata loaded");
         setVideoError(null);
         setDuration(videoElement.duration);
+        setCurrentTime(0); // ✅ Reset time to 0
         isLoadingRef.current = false;
       };
 
@@ -504,10 +553,18 @@ export default function GestureVideoPlayer({
         loadedVideoIdRef.current = null; // Reset on error
       };
 
+      // ✅ CRITICAL: Add timeupdate listener to sync progress bar
+      const handleTimeUpdate = () => {
+        if (!videoElement) return;
+        setCurrentTime(videoElement.currentTime); // ✅ Keep React state in sync
+      };
+
       videoElement.addEventListener("loadedmetadata", handleLoadedMetadata, {
         once: true,
       });
       videoElement.addEventListener("error", handleError, { once: true });
+      videoElement.addEventListener("timeupdate", handleTimeUpdate); // ✅ Track time
+
       videoElement.load();
     }, 100);
 
@@ -515,8 +572,13 @@ export default function GestureVideoPlayer({
       console.log("🧹 Cleaning up video player");
       clearTimeout(loadTimer);
       isLoadingRef.current = false;
+
+      // ✅ Clean up timeupdate listener
+      if (videoElement) {
+        videoElement.removeEventListener("timeupdate", () => {});
+      }
     };
-  }, [video._id, quality]); // ✅ Added quality as dependency
+  }, [video._id, quality]); // ✅ Quality dependency
   // ✅ FIXED: Auto-hide controls on both mobile and desktop
   const resetControlsTimeout = () => {
     if (controlsTimeoutRef.current) {
@@ -564,13 +626,16 @@ export default function GestureVideoPlayer({
   }, [isPlaying, isMobile]);
 
   // Video time update
+  // ✅ CRITICAL: Enhanced time update tracking
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
+      const newTime = video.currentTime;
+      setCurrentTime(newTime); // ✅ Always update React state
 
+      // Update buffered progress
       if (video.buffered.length > 0) {
         const bufferedEnd = video.buffered.end(video.buffered.length - 1);
         setBuffered((bufferedEnd / video.duration) * 100);
@@ -580,21 +645,43 @@ export default function GestureVideoPlayer({
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
       setVideoError(null);
+      setCurrentTime(0); // ✅ Reset on new video
     };
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      console.log("▶️ Video playing");
+    };
 
+    const handlePause = () => {
+      setIsPlaying(false);
+      console.log("⏸️ Video paused");
+    };
+
+    const handleSeeking = () => {
+      console.log("⏩ Seeking to:", video.currentTime);
+    };
+
+    const handleSeeked = () => {
+      setCurrentTime(video.currentTime); // ✅ Update after seek completes
+      console.log("✅ Seeked to:", video.currentTime);
+    };
+
+    // ✅ Add all event listeners
     video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
+    video.addEventListener("seeking", handleSeeking);
+    video.addEventListener("seeked", handleSeeked);
 
     return () => {
       video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
       video.removeEventListener("play", handlePlay);
       video.removeEventListener("pause", handlePause);
+      video.removeEventListener("seeking", handleSeeking);
+      video.removeEventListener("seeked", handleSeeked);
     };
   }, []);
 
