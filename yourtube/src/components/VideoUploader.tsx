@@ -285,7 +285,9 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     console.log("\n🔥 ===== UPLOAD STARTED =====");
     console.log("📁 File:", videoFile?.name);
     console.log("📊 Size:", videoFile?.size, "bytes");
-    console.log("📊 Size MB:", (videoFile?.size || 0) / (1024 * 1024), "MB");
+
+    const fileSizeMB = videoFile.size / (1024 * 1024);
+    console.log("📊 Size MB:", fileSizeMB, "MB");
 
     if (!videoFile || !videoTitle.trim()) {
       toast.error("Please provide file and title");
@@ -302,18 +304,17 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       setIsUploading(true);
       setUploadProgress(0);
 
-      const fileSizeMB = videoFile.size / (1024 * 1024);
-      console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
-
       const metadata = {
         videotitle: videoTitle,
         videodescription: videoDescription,
         videochanel: channelName,
       };
 
-      // ✅ CRITICAL FIX: ALWAYS check file size BEFORE choosing upload method
+      // ✅ CRITICAL: Check size FIRST
+      console.log(`🔍 Checking file size: ${fileSizeMB.toFixed(2)}MB`);
+
       if (fileSizeMB > 90) {
-        console.log("🔪 File > 90MB - Using chunked upload");
+        console.log("✅ SIZE CHECK PASSED - Using chunked upload");
         toast.info(
           `File is ${fileSizeMB.toFixed(0)}MB - splitting into parts...`
         );
@@ -332,15 +333,20 @@ const VideoUploader = ({ channelId, channelName }: any) => {
             window.location.reload();
           }, 2000);
         }
+
+        // ✅ CRITICAL: Return early - don't continue to single upload
+        console.log("✅ Chunked upload complete - exiting");
+        return;
       } else {
-        // Single upload for files < 90MB
-        console.log("🚀 File < 90MB - Using single upload");
+        console.log("✅ SIZE CHECK - File small enough for single upload");
 
         const formData = new FormData();
         formData.append("file", videoFile);
         formData.append("videotitle", videoTitle);
         formData.append("videodescription", videoDescription);
         formData.append("videochanel", channelName);
+
+        console.log("🚀 Calling /video/upload endpoint");
 
         const res = await axiosInstance.post("/video/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" },
@@ -361,16 +367,15 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       }
     } catch (error: any) {
       console.error("❌ Upload error:", error);
+      console.error("❌ Error response:", error.response?.data);
 
-      // ✅ Better error messages
       let errorMessage = "Upload failed";
 
       if (
         error.response?.status === 413 ||
         error.response?.data?.shouldUseChunks
       ) {
-        errorMessage =
-          "File too large. Please try again with automatic splitting.";
+        errorMessage = "File too large. Please refresh the page and try again.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
@@ -383,8 +388,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       setIsUploading(false);
       setIsCompressing(false);
     }
-  };
-  // ============================================================================
+  }; // ============================================================================
   // COMPONENT JSX RENDER
   // ============================================================================
 
