@@ -109,7 +109,8 @@ const uploadLargeVideo = async (
   metadata: any,
   onProgress: (progress: number) => void
 ): Promise<any> => {
-  const CHUNK_SIZE = 95 * 1024 * 1024; // 95MB chunks
+  const CHUNK_SIZE = 90 * 1024 * 1024; // ✅ 90MB chunks (safe for Cloudinary 100MB limit)
+
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
   console.log(`📦 File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
@@ -310,38 +311,73 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         videochanel: channelName,
       };
 
-      console.log("🚀 Calling uploadLargeVideo...");
+      // ✅ CRITICAL FIX: ALWAYS check file size BEFORE choosing upload method
+      if (fileSizeMB > 90) {
+        console.log("🔪 File > 90MB - Using chunked upload");
+        toast.info(
+          `File is ${fileSizeMB.toFixed(0)}MB - splitting into parts...`
+        );
 
-      const result = await uploadLargeVideo(
-        videoFile,
-        metadata,
-        setUploadProgress
-      );
+        const result = await uploadLargeVideo(
+          videoFile,
+          metadata,
+          setUploadProgress
+        );
 
-      console.log("✅ Upload result:", result);
+        if (result.success) {
+          setUploadComplete(true);
+          toast.success("🎉 Video uploaded successfully!");
+          setTimeout(() => {
+            resetForm();
+            window.location.reload();
+          }, 2000);
+        }
+      } else {
+        // Single upload for files < 90MB
+        console.log("🚀 File < 90MB - Using single upload");
 
-      if (result.success) {
-        setUploadComplete(true);
-        toast.success("🎉 Video uploaded successfully!");
+        const formData = new FormData();
+        formData.append("file", videoFile);
+        formData.append("videotitle", videoTitle);
+        formData.append("videodescription", videoDescription);
+        formData.append("videochanel", channelName);
 
-        setTimeout(() => {
-          resetForm();
-          window.location.reload();
-        }, 2000);
+        const res = await axiosInstance.post("/video/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 900000,
+          onUploadProgress: (e: any) => {
+            setUploadProgress(Math.round((e.loaded * 100) / e.total));
+          },
+        });
+
+        if (res.data.success) {
+          setUploadComplete(true);
+          toast.success("🎉 Video uploaded successfully!");
+          setTimeout(() => {
+            resetForm();
+            window.location.reload();
+          }, 2000);
+        }
       }
     } catch (error: any) {
       console.error("❌ Upload error:", error);
 
-      if (error.response) {
-        const message =
-          error.response.data?.message ||
-          error.response.data?.error ||
-          "Upload failed";
-        toast.error(message);
-      } else {
-        toast.error(error.message || "Upload failed");
+      // ✅ Better error messages
+      let errorMessage = "Upload failed";
+
+      if (
+        error.response?.status === 413 ||
+        error.response?.data?.shouldUseChunks
+      ) {
+        errorMessage =
+          "File too large. Please try again with automatic splitting.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
+      toast.error(errorMessage);
       setUploadProgress(0);
     } finally {
       setIsUploading(false);
