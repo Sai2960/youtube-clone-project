@@ -114,8 +114,8 @@ const uploadLargeVideo = async (
   const CHUNK_SIZE = 95 * 1024 * 1024; // 95MB chunks
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
+  // ✅ If file is small enough, use normal upload
   if (totalChunks === 1) {
-    // Single chunk - use normal upload
     const formData = new FormData();
     formData.append("file", file);
     Object.keys(metadata).forEach((key) => {
@@ -133,7 +133,7 @@ const uploadLargeVideo = async (
     return res.data;
   }
 
-  // Multi-chunk upload
+  // ✅ CRITICAL: Multi-chunk upload for large files
   toast.info(`Splitting video into ${totalChunks} parts...`);
 
   const chunkIds: string[] = [];
@@ -157,6 +157,8 @@ const uploadLargeVideo = async (
     });
 
     try {
+      console.log(`📤 Uploading chunk ${i + 1}/${totalChunks}...`);
+
       const res = await axiosInstance.post("/video/upload-chunk", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: 900000,
@@ -171,14 +173,17 @@ const uploadLargeVideo = async (
 
       chunkIds.push(res.data.chunkId);
       toast.success(`Part ${i + 1}/${totalChunks} uploaded`);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(`❌ Chunk ${i + 1} failed:`, error);
       toast.error(`Failed to upload part ${i + 1}`);
       throw error;
     }
   }
 
-  // Merge chunks on backend
+  // ✅ Merge all chunks
+  console.log("🔗 Merging chunks...", chunkIds);
   toast.info("Merging video parts...");
+
   const mergeRes = await axiosInstance.post("/video/merge-chunks", {
     chunkIds,
     ...metadata,
@@ -270,7 +275,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       let fileToUpload = videoFile;
       const fileSizeMB = videoFile.size / (1024 * 1024);
 
-      // Auto-compress if > 100MB
+      // ✅ CRITICAL: Auto-compress if > 100MB
       if (fileSizeMB > 100) {
         setIsCompressing(true);
         toast.info(`Compressing ${fileSizeMB.toFixed(0)}MB video...`);
@@ -282,8 +287,10 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           );
           toast.success(`Compressed to ${compressedSizeMB}MB!`);
         } catch (error) {
-          console.warn("Compression failed, using chunked upload");
+          console.warn("Compression failed, will use chunked upload");
           toast.info("Using multi-part upload instead...");
+          // ✅ IMPORTANT: Keep original file if compression fails
+          fileToUpload = videoFile;
         }
 
         setIsCompressing(false);
@@ -295,6 +302,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         videochanel: channelName,
       };
 
+      // ✅ This calls uploadLargeVideo which handles chunking
       const result = await uploadLargeVideo(
         fileToUpload,
         metadata,
