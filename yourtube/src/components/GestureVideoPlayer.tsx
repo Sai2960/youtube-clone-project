@@ -236,6 +236,7 @@ export default function GestureVideoPlayer({
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   // Gesture state
+  
   const [lastTap, setLastTap] = useState(0);
   const [tapCount, setTapCount] = useState(0);
   const [tapTimer, setTapTimer] = useState<NodeJS.Timeout | null>(null);

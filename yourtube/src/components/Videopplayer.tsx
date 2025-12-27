@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/rules-of-hooks */
-// CompleteVideoPlayer.jsx - PART 1: Imports and Setup
+// CompleteVideoPlayer.jsx - Complete Fixed Version
 import React, { useState, useRef, useEffect } from "react";
 import {
   Play,
@@ -21,12 +20,12 @@ import {
   AlertCircle,
   RotateCcw,
 } from "lucide-react";
-import { getVideoUrl } from '@/lib/urlHelper';
+import { getVideoUrl } from "@/lib/urlHelper";
 
 interface CompleteVideoPlayerProps {
   videoId?: string;
   videoUrl?: string;
-  video?: any; 
+  video?: any;
 }
 
 // ✅ CSS for mobile touch events
@@ -46,37 +45,6 @@ const mobileStyles = `
   }
 `;
 
-
-// Add this with your other useState declarations
-const [isMobileDevice, setIsMobileDevice] = useState(false);
-const [touchStartX, setTouchStartX] = useState(0);
-const [touchStartY, setTouchStartY] = useState(0);
-
-// Add this useEffect after your other useEffects
-useEffect(() => {
-  const checkIfMobile = () => {
-    const userAgent = navigator.userAgent || navigator.vendor;
-    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const isSmallScreen = window.innerWidth < 768;
-    
-    const isMobile = isMobileUA || (isTouchDevice && isSmallScreen);
-    setIsMobileDevice(isMobile);
-    
-    console.log('📱 Device Detection:', {
-      isMobileUA,
-      isTouchDevice,
-      isSmallScreen,
-      result: isMobile
-    });
-  };
-
-  checkIfMobile();
-  window.addEventListener('resize', checkIfMobile);
-  
-  return () => window.removeEventListener('resize', checkIfMobile);
-}, []);
-
 // Mock subscription hook
 const useSubscription = () => {
   const [data] = useState({
@@ -93,62 +61,75 @@ const useSubscription = () => {
   };
 };
 
-export default function CompleteVideoPlayer({ videoId, videoUrl, video }: CompleteVideoPlayerProps) {
-  // ✅ ADD THIS ENTIRE BLOCK AFTER YOUR STATE DECLARATIONS
- // 🔥 CRITICAL FIX: Line 180-230
-// 🔥 FIXED: Line 180-230
-const getProperVideoUrl = (): string => {
-  console.log('🎬 getProperVideoUrl called');
+export default function CompleteVideoPlayer({
+  videoId,
+  videoUrl,
+  video,
+}: CompleteVideoPlayerProps) {
+  // ✅ CORRECT: All state inside component
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(0);
 
-  // ✅ CRITICAL: Get cloud name from env or use correct default
-  const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dxuxxk0ss';
-  const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-  
-  console.log('☁️ Using Cloudinary cloud name:', CLOUDINARY_CLOUD_NAME);
+  // ✅ CORRECT: getProperVideoUrl function inside component
+  const getProperVideoUrl = (): string => {
+    console.log("🎬 getProperVideoUrl called");
 
-  // ✅ Use the helper function from urlHelper
-  if (video) {
-    const url = getVideoUrl(video);
-    if (url) {
-      console.log('✅ Got URL from helper:', url.substring(0, 100));
-      return url;
+    const CLOUDINARY_CLOUD_NAME =
+      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
+    const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+
+    console.log("☁️ Using Cloudinary cloud name:", CLOUDINARY_CLOUD_NAME);
+
+    if (video) {
+      const url = getVideoUrl(video);
+      if (url) {
+        console.log("✅ Got URL from helper:", url.substring(0, 100));
+        return url;
+      }
     }
-  }
-  
-  // ✅ Process videoUrl prop
-  if (videoUrl) {
-    // Already proper Cloudinary URL
-    if (videoUrl.includes('cloudinary.com') && videoUrl.includes('/video/upload/')) {
-      console.log('✅ Using provided videoUrl:', videoUrl.substring(0, 100));
-      return videoUrl;
+
+    if (videoUrl) {
+      if (
+        videoUrl.includes("cloudinary.com") &&
+        videoUrl.includes("/video/upload/")
+      ) {
+        console.log("✅ Using provided videoUrl:", videoUrl.substring(0, 100));
+        return videoUrl;
+      }
+
+      const match = videoUrl.match(
+        /youtube-clone\/videos\/file_\d+_[a-z0-9]+/i
+      );
+      if (match) {
+        const publicId = match[0];
+        const reconstructed = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
+        console.log(
+          "🔧 Reconstructed from videoUrl:",
+          reconstructed.substring(0, 100)
+        );
+        return reconstructed;
+      }
     }
-    
-    // Try to extract public_id
-    const match = videoUrl.match(/youtube-clone\/videos\/file_\d+_[a-z0-9]+/i);
-    if (match) {
-      const publicId = match[0];
-      const reconstructed = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
-      console.log('🔧 Reconstructed from videoUrl:', reconstructed.substring(0, 100));
-      return reconstructed;
-    }
-  }
-  
-  console.warn('⚠️ Using fallback demo video');
-  return "https://www.w3schools.com/html/mov_bbb.mp4";
-};
 
-const finalVideoUrl = getProperVideoUrl();
+    console.warn("⚠️ Using fallback demo video");
+    return "https://www.w3schools.com/html/mov_bbb.mp4";
+  };
 
-console.log('🎥 FINAL VIDEO URL:', {
-  url: finalVideoUrl.substring(0, 100),
-  isCloudinary: finalVideoUrl.includes('cloudinary.com'),
-  hasPublicId: finalVideoUrl.includes('youtube-clone/videos/')
-});
-  const { watchTimeLimit, currentPlan, refreshSubscription } = useSubscription();
+  const finalVideoUrl = getProperVideoUrl();
 
-  const videoRef = useRef(null);
-  const containerRef = useRef(null);
-  const progressBarRef = useRef(null);
+  console.log("🎥 FINAL VIDEO URL:", {
+    url: finalVideoUrl.substring(0, 100),
+    isCloudinary: finalVideoUrl.includes("cloudinary.com"),
+    hasPublicId: finalVideoUrl.includes("youtube-clone/videos/"),
+  });
+
+  const { watchTimeLimit, currentPlan, refreshSubscription } =
+    useSubscription();
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
 
   // Player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -161,8 +142,6 @@ console.log('🎥 FINAL VIDEO URL:', {
   const [isBuffering, setIsBuffering] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [quality, setQuality] = useState("720p");
-
-  // ✅ NEW: Separate state for control visibility with auto-hide
   const [controlsVisible, setControlsVisible] = useState(true);
 
   // Mobile/Orientation state
@@ -186,51 +165,45 @@ console.log('🎥 FINAL VIDEO URL:', {
   const [isBlocked, setIsBlocked] = useState(false);
   const [remainingMinutes, setRemainingMinutes] = useState(watchTimeLimit);
 
-  const controlsTimeout = useRef(null);
-  const rotateHintTimeout = useRef(null);
-  const hideControlsTimer = useRef(null); // ✅ NEW: Timer for auto-hide
+  const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
+  const rotateHintTimeout = useRef<NodeJS.Timeout | null>(null);
+  const hideControlsTimer = useRef<NodeJS.Timeout | null>(null);
 
   const isUnlimited = watchTimeLimit === -1;
   const watchLimitInSeconds = watchTimeLimit * 60;
 
   const qualities = ["2160p", "1440p", "1080p", "720p", "480p", "360p", "240p"];
   const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-  // ✅ NEW: Auto-hide controls function
+  // ✅ Auto-hide controls function
   const resetHideTimer = () => {
-  // Clear existing timer
-  if (hideControlsTimer.current) {
-    clearTimeout(hideControlsTimer.current);
-  }
-
-  // Show controls
-  setControlsVisible(true);
-
-  // Only auto-hide if playing (WORKS FOR BOTH MOBILE AND DESKTOP)
-  if (isPlaying) {
-    hideControlsTimer.current = setTimeout(() => {
-      setControlsVisible(false);
-    }, 3000); // Hide after 3 seconds of inactivity
-  }
-};
-
-// ✅ NEW: Show controls and reset timer
-const showControlsTemporarily = () => {
-  resetHideTimer();
-};
-
-// ✅ NEW: Effect to manage auto-hide when play state changes
-useEffect(() => {
-  if (isPlaying) {
-    // Start auto-hide timer when playing
-    resetHideTimer();
-  } else {
-    // Keep controls visible when paused
-    setControlsVisible(true);
     if (hideControlsTimer.current) {
       clearTimeout(hideControlsTimer.current);
     }
-  }
-}, [isPlaying]); // ✅ FIX: Add isPlaying to dependency array
+
+    setControlsVisible(true);
+
+    if (isPlaying) {
+      hideControlsTimer.current = setTimeout(() => {
+        setControlsVisible(false);
+      }, 3000);
+    }
+  };
+
+  const showControlsTemporarily = () => {
+    resetHideTimer();
+  };
+
+  // ✅ Effect to manage auto-hide when play state changes
+  useEffect(() => {
+    if (isPlaying) {
+      resetHideTimer();
+    } else {
+      setControlsVisible(true);
+      if (hideControlsTimer.current) {
+        clearTimeout(hideControlsTimer.current);
+      }
+    }
+  }, [isPlaying]);
 
   // ✅ Clean up timers on unmount
   useEffect(() => {
@@ -246,68 +219,50 @@ useEffect(() => {
       }
     };
   }, []);
-  // ✅ UPDATED: Handle video click - toggle controls visibility
-  // ✅ UPDATED: Handle video click - toggle play/pause AND show controls
-  const handleVideoClick = async (e) => {
-    e.stopPropagation();
 
-    // On mobile, prioritize fullscreen behavior
-    if (isMobile && !isFullscreen) {
-      console.log("📱 Mobile video clicked, triggering fullscreen");
-      await enterFullscreen();
+  // ✅ Device detection
+  useEffect(() => {
+    const checkIfMobile = () => {
+      const userAgent = navigator.userAgent || (navigator as any).vendor;
+      const isMobileUA =
+        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+          userAgent.toLowerCase()
+        );
+      const isTouchDevice =
+        "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth < 768;
 
-      // Auto-play if not playing
-      if (!isPlaying && videoRef.current) {
-        try {
-          await videoRef.current.play();
-          setIsPlaying(true);
-        } catch (playError) {
-          console.warn("Auto-play failed:", playError);
-        }
-      }
-    } else {
-      // Desktop & Mobile in fullscreen: Toggle play/pause + show controls
-      togglePlay();
-      showControlsTemporarily(); // Show controls when clicking video
-    }
-  };
+      const isMobile = isMobileUA || (isTouchDevice && isSmallScreen);
+      setIsMobileDevice(isMobile);
 
-  // ✅ UPDATED: Container click handler - toggle play/pause only when clicking outside video
-  const handleContainerClick = (e) => {
-    const target = e.target;
-    
-    // Don't toggle play/pause if clicking on:
-    // - Buttons
-    // - Controls area
-    // - Video element itself (handled by handleVideoClick)
-    if (
-      target.closest('button') || 
-      target.closest('.controls-area') ||
-      target === videoRef.current
-    ) {
-      return;
-    }
+      console.log("📱 Device Detection:", {
+        isMobileUA,
+        isTouchDevice,
+        isSmallScreen,
+        result: isMobile,
+      });
+    };
 
-    // Toggle play/pause
-    togglePlay();
-  };
-  // ✅ Device Detection with proper type handling
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
+
+  // ✅ Enhanced device detection
   useEffect(() => {
     const checkDevice = () => {
       const userAgent = navigator.userAgent || "";
       const vendor = (navigator as any).vendor || "";
 
-      // Detect mobile
       const mobile =
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
           userAgent
         );
 
-      // Detect iOS specifically
       const iOS =
         /iPhone|iPad|iPod/.test(userAgent) && !(window as any).MSStream;
 
-      // Detect Android
       const android = /Android/i.test(userAgent);
 
       setIsMobile(mobile);
@@ -326,7 +281,7 @@ useEffect(() => {
     window.addEventListener("resize", checkDevice);
     return () => window.removeEventListener("resize", checkDevice);
   }, []);
-  // ✅ Orientation detection with proper types
+  // ✅ Orientation detection
   useEffect(() => {
     let orientationTimeout: NodeJS.Timeout;
 
@@ -335,7 +290,6 @@ useEffect(() => {
         clearTimeout(orientationTimeout);
       }
 
-      // Multiple methods to detect landscape
       const matchMediaLandscape = window.matchMedia(
         "(orientation: landscape)"
       ).matches;
@@ -356,7 +310,6 @@ useEffect(() => {
         orientation: (window as any).orientation,
       });
 
-      // ✅ AUTO-FULLSCREEN on landscape
       if (isCurrentlyLandscape && isMobile && isPlaying && !isFullscreen) {
         orientationTimeout = setTimeout(() => {
           console.log("🎬 Auto-entering fullscreen due to landscape rotation");
@@ -364,7 +317,6 @@ useEffect(() => {
         }, 300);
       }
 
-      // ✅ AUTO-EXIT fullscreen on portrait (Android only)
       if (!isCurrentlyLandscape && !isIOS && isFullscreen && isMobile) {
         orientationTimeout = setTimeout(() => {
           console.log("📱 Auto-exiting fullscreen due to portrait rotation");
@@ -378,7 +330,6 @@ useEffect(() => {
     window.addEventListener("orientationchange", handleOrientationChange);
     window.addEventListener("resize", handleOrientationChange);
 
-    // Modern Screen Orientation API
     if ((screen as any).orientation) {
       (screen as any).orientation.addEventListener(
         "change",
@@ -398,6 +349,7 @@ useEffect(() => {
       }
     };
   }, [isMobile, isPlaying, isFullscreen, isIOS]);
+
   // ✅ Enhanced fullscreen for iPhone Chrome
   const enterFullscreen = async () => {
     try {
@@ -416,9 +368,7 @@ useEffect(() => {
           : "Other",
       });
 
-      // ✅ PRIORITY 1: iOS Video Element Fullscreen (works in both Safari & Chrome)
       if (isIOS) {
-        // Try modern webkitEnterFullscreen first (preferred for iOS)
         if (typeof (video as any).webkitEnterFullscreen === "function") {
           try {
             (video as any).webkitEnterFullscreen();
@@ -432,7 +382,6 @@ useEffect(() => {
           }
         }
 
-        // Try webkitRequestFullscreen as fallback
         if (typeof (video as any).webkitRequestFullscreen === "function") {
           try {
             await (video as any).webkitRequestFullscreen();
@@ -446,7 +395,6 @@ useEffect(() => {
           }
         }
 
-        // ✅ iOS FALLBACK: CSS fullscreen simulation
         console.log(
           "⚠️ Native fullscreen not available on iOS, using CSS fallback"
         );
@@ -462,7 +410,6 @@ useEffect(() => {
         return;
       }
 
-      // ✅ PRIORITY 2: Standard Fullscreen API (Android & Desktop browsers)
       const elem = container as any;
 
       try {
@@ -490,7 +437,6 @@ useEffect(() => {
           throw new Error("No fullscreen API available");
         }
 
-        // ✅ Lock to landscape on Android (after successful fullscreen)
         if (
           !isIOS &&
           isMobile &&
@@ -511,10 +457,8 @@ useEffect(() => {
         return;
       } catch (fullscreenError) {
         console.warn("⚠️ Native fullscreen failed:", fullscreenError);
-        // Fall through to CSS fallback
       }
 
-      // ✅ FALLBACK: CSS-based fullscreen for all devices
       console.log("⚠️ Using CSS fallback for fullscreen");
       container.style.position = "fixed";
       container.style.top = "0";
@@ -528,7 +472,6 @@ useEffect(() => {
     } catch (error) {
       console.error("❌ Fullscreen error:", error);
 
-      // ✅ EMERGENCY FALLBACK: Last resort CSS fullscreen
       if (containerRef.current) {
         const container = containerRef.current;
         container.style.position = "fixed";
@@ -541,14 +484,12 @@ useEffect(() => {
         setIsFullscreen(true);
         console.log("✅ Emergency CSS fullscreen activated");
       } else {
-        // ✅ Show rotate hint if all else fails
         setShowRotateHint(true);
         if (rotateHintTimeout.current) clearTimeout(rotateHintTimeout.current);
         rotateHintTimeout.current = setTimeout(() => {
           setShowRotateHint(false);
         }, 5000);
 
-        // Alert user on non-iOS devices only
         if (!isIOS) {
           alert(
             "Fullscreen not supported. Please rotate your device manually."
@@ -563,7 +504,6 @@ useEffect(() => {
     try {
       console.log("⛶ Exiting fullscreen...");
 
-      // ✅ Clean up CSS fullscreen first (for iOS Chrome fallback)
       if (containerRef.current) {
         const container = containerRef.current;
         container.style.position = "";
@@ -589,7 +529,6 @@ useEffect(() => {
 
       setIsFullscreen(false);
 
-      // Unlock orientation on Android
       if (
         !isIOS &&
         (screen as any).orientation &&
@@ -606,7 +545,6 @@ useEffect(() => {
       console.log("✅ Fullscreen exited");
     } catch (error) {
       console.error("❌ Exit fullscreen error:", error);
-      // Ensure CSS cleanup even on error
       setIsFullscreen(false);
       if (containerRef.current) {
         containerRef.current.style.position = "";
@@ -620,12 +558,11 @@ useEffect(() => {
     }
   };
 
-  // ✅ Rotate to landscape with better iOS handling
+  // ✅ Rotate to landscape
   const rotateToLandscape = async () => {
     try {
       console.log("🔄 Rotate to landscape triggered");
 
-      // Start playing if not already
       if (!isPlaying && videoRef.current) {
         try {
           await videoRef.current.play();
@@ -636,14 +573,10 @@ useEffect(() => {
         }
       }
 
-      // Small delay to ensure play has started (important for iOS)
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      // Enter fullscreen
       await enterFullscreen();
 
-  
-      // Show hint for manual rotation if auto-rotation fails
       if (!isLandscape) {
         setShowRotateHint(true);
         if (rotateHintTimeout.current) clearTimeout(rotateHintTimeout.current);
@@ -669,14 +602,13 @@ useEffect(() => {
       await exitFullscreen();
     }
   };
-  // ✅ Fullscreen change detection with proper types
+  // ✅ Fullscreen change detection
   useEffect(() => {
     const handleFullscreenChange = () => {
       const doc = document as any;
       const video = videoRef.current as any;
       const container = containerRef.current;
 
-      // Check native fullscreen
       const isNativeFullscreen = !!(
         document.fullscreenElement ||
         doc.webkitFullscreenElement ||
@@ -686,7 +618,6 @@ useEffect(() => {
         (video && video.webkitDisplayingFullscreen)
       );
 
-      // Check CSS fullscreen (our fallback)
       const isCSSFullscreen =
         container &&
         container.style.position === "fixed" &&
@@ -701,7 +632,6 @@ useEffect(() => {
         total: isCurrentlyFullscreen,
       });
 
-      // Clean up CSS if native fullscreen ended
       if (!isNativeFullscreen && !isCSSFullscreen && container) {
         container.style.position = "";
         container.style.top = "";
@@ -712,7 +642,6 @@ useEffect(() => {
         document.body.style.overflow = "";
       }
 
-      // Unlock orientation when exiting fullscreen (Android)
       if (!isCurrentlyFullscreen && !isIOS) {
         if (
           (screen as any).orientation &&
@@ -727,13 +656,11 @@ useEffect(() => {
       }
     };
 
-    // Standard fullscreen events
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
     document.addEventListener("mozfullscreenchange", handleFullscreenChange);
     document.addEventListener("MSFullscreenChange", handleFullscreenChange);
 
-    // iOS specific events
     const video = videoRef.current;
     if (video) {
       (video as any).addEventListener(
@@ -750,7 +677,6 @@ useEffect(() => {
       );
     }
 
-    // ✅ Visibility change detection (for iOS Chrome)
     const handleVisibilityChange = () => {
       if (document.hidden && isFullscreen) {
         console.log("📱 App backgrounded, maintaining fullscreen state");
@@ -790,6 +716,7 @@ useEffect(() => {
       }
     };
   }, [isIOS, isFullscreen]);
+
   // Check if limit reached on mount
   useEffect(() => {
     if (!isUnlimited && watchTimeLimit <= 0) {
@@ -834,7 +761,7 @@ useEffect(() => {
     watchLimitInSeconds,
     refreshSubscription,
   ]);
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     if (isNaN(seconds)) return "0:00";
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -848,7 +775,7 @@ useEffect(() => {
     return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const formatMinutes = (minutes) => {
+  const formatMinutes = (minutes: number) => {
     if (minutes === -1) return "Unlimited";
     return `${minutes} min${minutes !== 1 ? "s" : ""}`;
   };
@@ -876,7 +803,7 @@ useEffect(() => {
     }
   };
 
-  const handleVolumeChange = (e) => {
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
     if (videoRef.current) {
@@ -897,24 +824,55 @@ useEffect(() => {
     }
   };
 
-  const handleProgressClick = (e) => {
+  // ✅ FIXED: Progress bar click with proper dragging support
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!videoRef.current || !progressBarRef.current || isBlocked) return;
 
+    e.stopPropagation();
+
     const rect = progressBarRef.current.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / rect.width;
-    const newTime = pos * duration;
+    const clickX = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+    const newTime = percentage * duration;
 
     videoRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   };
 
-  const skip = (seconds) => {
+  // ✅ ADD: Mouse drag support
+  const handleProgressMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    handleProgressClick(e);
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!videoRef.current || !progressBarRef.current) return;
+
+      const rect = progressBarRef.current.getBoundingClientRect();
+      const clickX = moveEvent.clientX - rect.left;
+      const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+      const newTime = percentage * duration;
+
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const skip = (seconds: number) => {
     if (videoRef.current && !isBlocked) {
       videoRef.current.currentTime += seconds;
     }
   };
 
-  const changeSpeed = (speed) => {
+  const changeSpeed = (speed: number) => {
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
       setPlaybackRate(speed);
@@ -922,13 +880,114 @@ useEffect(() => {
     }
   };
 
-  const changeQuality = (q) => {
+  const changeQuality = (q: string) => {
     setQuality(q);
     setShowQuality(false);
   };
+
+  // ✅ Handle video click
+  const handleVideoClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (isMobile && !isFullscreen) {
+      console.log("📱 Mobile video clicked, triggering fullscreen");
+      await enterFullscreen();
+
+      if (!isPlaying && videoRef.current) {
+        try {
+          await videoRef.current.play();
+          setIsPlaying(true);
+        } catch (playError) {
+          console.warn("Auto-play failed:", playError);
+        }
+      }
+    } else {
+      togglePlay();
+      showControlsTemporarily();
+    }
+  };
+
+  // ✅ Container click handler
+  const handleContainerClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+
+    if (
+      target.closest("button") ||
+      target.closest(".controls-area") ||
+      target === videoRef.current
+    ) {
+      return;
+    }
+
+    togglePlay();
+  };
+  // ✅ Touch handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobileDevice) return;
+
+    const touch = e.touches[0];
+    setTouchStartX(touch.clientX);
+    setTouchStartY(touch.clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobileDevice) return;
+
+    const touch = e.changedTouches[0];
+    const touchEndX = touch.clientX;
+    const touchEndY = touch.clientY;
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+      if (deltaX > 0) {
+        skip(10);
+        console.log("👉 Swipe right: +10s");
+      } else {
+        skip(-10);
+        console.log("👈 Swipe left: -10s");
+      }
+    }
+  };
+
+  const handleDoubleTap = (e: React.TouchEvent) => {
+    if (!isMobileDevice || !videoRef.current) return;
+
+    const rect = videoRef.current.getBoundingClientRect();
+    const tapX = e.changedTouches[0].clientX - rect.left;
+    const videoWidth = rect.width;
+
+    if (tapX < videoWidth / 3) {
+      skip(-10);
+      console.log("⏪ Double tap left: -10s");
+    } else if (tapX > (videoWidth * 2) / 3) {
+      skip(10);
+      console.log("⏩ Double tap right: +10s");
+    } else {
+      togglePlay();
+      console.log("⏯️ Double tap center: play/pause");
+    }
+  };
+
+  let lastTap = 0;
+  const handleTap = (e: React.TouchEvent) => {
+    if (!isMobileDevice) return;
+
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+
+    if (tapLength < 300 && tapLength > 0) {
+      handleDoubleTap(e);
+    }
+
+    lastTap = currentTime;
+  };
+
+  // ✅ Keyboard controls
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.target.tagName === "INPUT") return;
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === "INPUT") return;
 
       switch (e.key) {
         case " ":
@@ -974,150 +1033,73 @@ useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [isPlaying, volume]);
-  return 
-  
-  // Add these functions before your return statement
-const handleTouchStart = (e) => {
-  if (!isMobileDevice) return;
-  
-  const touch = e.touches[0];
-  setTouchStartX(touch.clientX);
-  setTouchStartY(touch.clientY);
-};
-
-const handleTouchEnd = (e) => {
-  if (!isMobileDevice) return;
-  
-  const touch = e.changedTouches[0];
-  const touchEndX = touch.clientX;
-  const touchEndY = touch.clientY;
-  
-  const deltaX = touchEndX - touchStartX;
-  const deltaY = touchEndY - touchStartY;
-  
-  // Check if it's a horizontal swipe (not vertical scroll)
-  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-    if (deltaX > 0) {
-      // Swipe right - skip forward
-      skip(10);
-      console.log('👉 Swipe right: +10s');
-    } else {
-      // Swipe left - skip backward
-      skip(-10);
-      console.log('👈 Swipe left: -10s');
-    }
-  }
-};
-
-
-const handleDoubleTap = (e) => {
-  if (!isMobileDevice) return;
-  
-  const rect = videoRef.current?.getBoundingClientRect();
-  if (!rect) return;
-  
-  const tapX = e.changedTouches[0].clientX - rect.left;
-  const videoWidth = rect.width;
-  
-  // Left third = -10s, Right third = +10s, Middle = play/pause
-  if (tapX < videoWidth / 3) {
-    skip(-10);
-    console.log('⏪ Double tap left: -10s');
-  } else if (tapX > (videoWidth * 2) / 3) {
-    skip(10);
-    console.log('⏩ Double tap right: +10s');
-  } else {
-    togglePlay();
-    console.log('⏯️ Double tap center: play/pause');
-  }
-};
-
-// Double tap detection
-let lastTap = 0;
-const handleTap = (e) => {
-  if (!isMobileDevice) return;
-  
-  const currentTime = new Date().getTime();
-  const tapLength = currentTime - lastTap;
-  
-  if (tapLength < 300 && tapLength > 0) {
-    // Double tap detected
-    handleDoubleTap(e);
-  }
-  
-  lastTap = currentTime;
-};
-  (
+  return (
     <div className="w-full max-w-6xl mx-auto bg-black">
       <style>{mobileStyles}</style>
-    <div
-  ref={containerRef}
-  className={`relative bg-black group ${
-    isMobile && isLandscape && isFullscreen 
-      ? 'fixed inset-0 z-50' 
-      : 'aspect-video'
-  }`}
-  onMouseMove={() => {
-    if (!isMobileDevice) showControlsTemporarily();
-  }}
-  onMouseLeave={() => {
-    if (!isMobileDevice && isPlaying) setControlsVisible(false);
-  }}
-  onTouchStart={(e) => {
-    if (isMobileDevice) {
-      handleTouchStart(e);
-      const target = e.target as HTMLElement;
-      // ✅ FIX: Show controls temporarily on touch
-      if (!target.closest('button') && !target.closest('.controls-area')) {
-        showControlsTemporarily();
-      }
-    }
-  }}
-  onTouchEnd={(e) => {
-    if (isMobileDevice) {
-      handleTouchEnd(e);
-      handleTap(e);
-      // ✅ FIX: Reset auto-hide timer after touch
-      if (isPlaying) {
-        showControlsTemporarily();
-      }
-    }
-  }}
-  onClick={handleContainerClick}
->
-      <video
-  ref={videoRef}
-  onClickCapture={(e) => {
-    e.stopPropagation();
-    handleVideoClick(e);
-  }}
-  onTouchStart={handleTouchStart}
-
-  onTouchEnd={(e) => {
-    handleTouchEnd(e);
-    handleTap(e);
-  }}
-  className="w-full h-full object-contain"
-  onTimeUpdate={handleTimeUpdate}
-  onLoadedMetadata={handleLoadedMetadata}
-  onWaiting={() => setIsBuffering(true)}
-  onCanPlay={() => setIsBuffering(false)}
-  onEnded={() => setIsPlaying(false)}
-  playsInline
-  webkit-playsinline="true"
-  x5-playsinline="true"
-  x5-video-player-type="h5-page"
-  x5-video-player-fullscreen="true"
-  x5-video-orientation="landscape|portrait"
-  preload="metadata"
-  poster="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1920&h=1080&fit=crop"
->
-<source
-  src={finalVideoUrl}
-  type="video/mp4"
-/>
-</video>
-
+      <div
+        ref={containerRef}
+        className={`relative bg-black group ${
+          isMobile && isLandscape && isFullscreen
+            ? "fixed inset-0 z-50"
+            : "aspect-video"
+        }`}
+        onMouseMove={() => {
+          if (!isMobileDevice) showControlsTemporarily();
+        }}
+        onMouseLeave={() => {
+          if (!isMobileDevice && isPlaying) setControlsVisible(false);
+        }}
+        onTouchStart={(e) => {
+          if (isMobileDevice) {
+            handleTouchStart(e);
+            const target = e.target as HTMLElement;
+            if (
+              !target.closest("button") &&
+              !target.closest(".controls-area")
+            ) {
+              showControlsTemporarily();
+            }
+          }
+        }}
+        onTouchEnd={(e) => {
+          if (isMobileDevice) {
+            handleTouchEnd(e);
+            handleTap(e);
+            if (isPlaying) {
+              showControlsTemporarily();
+            }
+          }
+        }}
+        onClick={handleContainerClick}
+      >
+        <video
+          ref={videoRef}
+          onClickCapture={(e) => {
+            e.stopPropagation();
+            handleVideoClick(e);
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={(e) => {
+            handleTouchEnd(e);
+            handleTap(e);
+          }}
+          className="w-full h-full object-contain"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onWaiting={() => setIsBuffering(true)}
+          onCanPlay={() => setIsBuffering(false)}
+          onEnded={() => setIsPlaying(false)}
+          playsInline
+          webkit-playsinline="true"
+          x5-playsinline="true"
+          x5-video-player-type="h5-page"
+          x5-video-player-fullscreen="true"
+          x5-video-orientation="landscape|portrait"
+          preload="metadata"
+          poster="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1920&h=1080&fit=crop"
+        >
+          <source src={finalVideoUrl} type="video/mp4" />
+        </video>
         {/* ✅ Rotation Hint Overlay */}
         {showRotateHint && isMobile && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-30 animate-in fade-in">
@@ -1137,7 +1119,6 @@ const handleTap = (e) => {
             </div>
           </div>
         )}
-
         {/* Watch Time Remaining Indicator */}
         {!isUnlimited && !isBlocked && controlsVisible && (
           <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2 z-30">
@@ -1147,14 +1128,12 @@ const handleTap = (e) => {
             </span>
           </div>
         )}
-
         {/* Buffering Indicator */}
         {isBuffering && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
             <Loader2 className="w-16 h-16 text-white animate-spin" />
           </div>
         )}
-
         {/* Center Play Button */}
         {!isPlaying && !isBuffering && !showUpgradeModal && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -1170,14 +1149,13 @@ const handleTap = (e) => {
             </button>
           </div>
         )}
-
         {/* Top Gradient */}
         <div
           className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-300 ${
             controlsVisible ? "opacity-100" : "opacity-0"
           }`}
         />
-        {/* ✅ UPDATED: Bottom Controls with controlsVisible state */}
+        {/* ✅ Bottom Controls with controlsVisible state */}
         <div
           className={`absolute bottom-0 left-0 right-0 transition-opacity duration-300 ${
             controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -1186,29 +1164,61 @@ const handleTap = (e) => {
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
         >
-          {/* Progress Bar */}
+          {/* ✅ FIXED Progress Bar with Drag Support */}
           <div
             ref={progressBarRef}
             className="relative h-2 bg-white/30 cursor-pointer group/progress hover:h-3 transition-all"
             onClick={handleProgressClick}
-            onMouseDown={() => setIsDragging(true)}
-            onMouseUp={() => setIsDragging(false)}
+            onMouseDown={handleProgressMouseDown}
+            onTouchStart={(e) => {
+              setIsDragging(true);
+              const touch = e.touches[0];
+              if (!progressBarRef.current || !videoRef.current) return;
+              const rect = progressBarRef.current.getBoundingClientRect();
+              const clickX = touch.clientX - rect.left;
+              const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+              const newTime = percentage * duration;
+              videoRef.current.currentTime = newTime;
+            }}
+            onTouchMove={(e) => {
+              if (!isDragging || !progressBarRef.current || !videoRef.current)
+                return;
+              const touch = e.touches[0];
+              const rect = progressBarRef.current.getBoundingClientRect();
+              const clickX = touch.clientX - rect.left;
+              const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+              const newTime = percentage * duration;
+              videoRef.current.currentTime = newTime;
+            }}
+            onTouchEnd={() => setIsDragging(false)}
           >
+            {/* Buffer indicator */}
+            <div
+              className="absolute top-0 left-0 h-full bg-white/50 transition-all"
+              style={{
+                width: `${
+                  videoRef.current?.buffered.length > 0
+                    ? (videoRef.current.buffered.end(0) / duration) * 100
+                    : 0
+                }%`,
+              }}
+            />
+
+            {/* Progress indicator */}
             <div
               className="absolute top-0 left-0 h-full bg-red-600 transition-all"
               style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
-            />
-            <div
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-red-600 rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg"
-              style={{
-                left: `${(currentTime / duration) * 100 || 0}%`,
-                marginLeft: "-8px",
-              }}
-            />
+            >
+              {/* Scrubber dot */}
+              <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 w-4 h-4 bg-red-600 rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg" />
+            </div>
           </div>
 
           {/* Controls Area */}
-          <div className="controls-area bg-gradient-to-t from-black via-black/95 to-transparent px-4 py-3" style={{ pointerEvents: 'auto' }}>
+          <div
+            className="controls-area bg-gradient-to-t from-black via-black/95 to-transparent px-4 py-3"
+            style={{ pointerEvents: "auto" }}
+          >
             <div className="flex items-center justify-between gap-4">
               {/* Left Controls */}
               <div className="flex items-center gap-2 md:gap-3">
@@ -1274,9 +1284,9 @@ const handleTap = (e) => {
                       value={volume}
                       onChange={handleVolumeChange}
                       className="w-full h-1 bg-white/30 rounded-full appearance-none cursor-pointer
-                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 
-                        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
-                        [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:scale-110"
+                    [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 
+                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
+                    [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:scale-110"
                     />
                   </div>
                 </div>
@@ -1285,33 +1295,39 @@ const handleTap = (e) => {
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </div>
               </div>
-
+              ## Part 9: Right Controls and Settings Menu ```typescript
               {/* Right Controls */}
-              <div className="flex items-center gap-2 md:gap-3" style={{ zIndex: 50, position: 'relative' }}>
-                
+              <div
+                className="flex items-center gap-2 md:gap-3"
+                style={{ zIndex: 50, position: "relative" }}
+              >
                 {/* Mobile Fullscreen Button */}
                 {isMobile && !isFullscreen && (
                   <button
                     onTouchStart={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log('🔴 Fullscreen button TOUCHED');
+                      console.log("🔴 Fullscreen button TOUCHED");
                       setUserInteracted(true);
                       await rotateToLandscape();
                     }}
                     onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log('🔴 Fullscreen button CLICKED');
+                      console.log("🔴 Fullscreen button CLICKED");
                       await rotateToLandscape();
                     }}
                     className="mobile-fullscreen-btn text-white hover:bg-red-700 p-2.5 rounded-full transition bg-red-600 shadow-lg animate-pulse relative"
-                    style={{ 
+                    style={{
                       zIndex: 9999,
-                      pointerEvents: 'auto',
-                      touchAction: 'manipulation'
+                      pointerEvents: "auto",
+                      touchAction: "manipulation",
                     }}
-                    title={isIOS ? "Watch fullscreen (rotate device)" : "Watch fullscreen"}
+                    title={
+                      isIOS
+                        ? "Watch fullscreen (rotate device)"
+                        : "Watch fullscreen"
+                    }
                   >
                     <Maximize className="w-5 h-5" />
                     {isIOS && (
@@ -1452,6 +1468,8 @@ const handleTap = (e) => {
             </div>
           </div>
         </div>
+        ``` ## Part 10: Keyboard Shortcuts, Upgrade Modal, and Video Info
+        ```typescript
         {/* Keyboard Shortcuts Hint */}
         {!isPlaying && !showUpgradeModal && !isMobile && (
           <div className="absolute bottom-20 left-4 text-white text-xs bg-black/80 backdrop-blur-md rounded-lg p-3 hidden md:block">
@@ -1522,124 +1540,93 @@ const handleTap = (e) => {
             </div>
           </div>
         )}
-      </div>
+        {/* Mobile Gesture Hints - Only show when paused and controls visible */}
+        {isMobileDevice && controlsVisible && !isPlaying && (
+          <div className="absolute inset-0 z-10 pointer-events-none">
+            {/* Left Gesture Hint */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center">
+              <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
+                <SkipBack className="w-6 h-6 text-white" />
+                <span className="text-white text-xs font-medium">
+                  Double tap -10s
+                </span>
+              </div>
+            </div>
 
-      {/* Video Info Section */}
+            {/* Center Gesture Hint */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center">
+              <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
+                <Play className="w-6 h-6 text-white" />
+                <span className="text-white text-xs font-medium">
+                  Tap to Play
+                </span>
+              </div>
+            </div>
+
+            {/* Right Gesture Hint */}
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center">
+              <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
+                <SkipForward className="w-6 h-6 text-white" />
+                <span className="text-white text-xs font-medium">
+                  Double tap +10s
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      ){/* Video Info Section */}
       <div className="bg-[#0f0f0f] text-white p-4">
         <h1 className="text-lg md:text-xl font-semibold mb-2">
           Demo Video - Enhanced Mobile Rotation {isIOS ? "(iOS)" : "(Android)"}
-          </h1>
-    <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
-      <span>@YourChannel</span>
-      <span>•</span>
-      <span>12K views</span>
-      <span>•</span>
-      <span>2 days ago</span>
-      {!isUnlimited && (
-        <>
+        </h1>
+        <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
+          <span>@YourChannel</span>
           <span>•</span>
-          <div className="flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            <span>
-              {currentPlan} Plan - {formatMinutes(remainingMinutes)} left
-            </span>
-          </div>
-        </>
-      )}
-
-      {isUnlimited && (
-        <>
+          <span>12K views</span>
           <span>•</span>
-          <div className="flex items-center gap-1 text-green-400">
-            <Crown className="w-3 h-3" />
-            <span>Premium - Unlimited</span>
-          </div>
-        </>
-      )}
-    </div>
-     {/* Gesture Hints - Mobile Only */}
-{isMobileDevice && controlsVisible && (
-  <>
-    {/* Left Gesture Hint */}
-    <div className="gesture-hint absolute left-0 top-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center pointer-events-none z-10">
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
-        <SkipBack className="w-6 h-6 text-white" />
-        <span className="text-white text-xs font-medium">-10s</span>
-      </div>
-    </div>
+          <span>2 days ago</span>
+          {!isUnlimited && (
+            <>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                <span>
+                  {currentPlan} Plan - {formatMinutes(remainingMinutes)} left
+                </span>
+              </div>
+            </>
+          )}
 
-    {/* Center Gesture Hint */}
-    <div className="gesture-hint absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center pointer-events-none z-10">
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
-        {isPlaying ? (
-          <Pause className="w-6 h-6 text-white" />
-        ) : (
-          <Play className="w-6 h-6 text-white" />
-        )}
-        <span className="text-white text-xs font-medium">Play/Pause</span>
-      </div>
-    </div>
-
-    {/* Right Gesture Hint */}
-    <div className="gesture-hint absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center pointer-events-none z-10">
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
-        <SkipForward className="w-6 h-6 text-white" />
-        <span className="text-white text-xs font-medium">+10s</span>
-      </div>
-    </div>
-  </>
-)}
-
-{/* Mobile Gesture Hint - Only show when paused and controls visible */}
-{isMobileDevice && controlsVisible && !isPlaying && (
-  <div className="absolute inset-0 z-10 pointer-events-none">
-    {/* Left Gesture Hint */}
-    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center">
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
-        <SkipBack className="w-6 h-6 text-white" />
-        <span className="text-white text-xs font-medium">Double tap -10s</span>
-      </div>
-    </div>
-
-    {/* Center Gesture Hint */}
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center">
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
-        <Play className="w-6 h-6 text-white" />
-        <span className="text-white text-xs font-medium">Tap to Play</span>
-      </div>
-    </div>
-
-    {/* Right Gesture Hint */}
-    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full flex items-center justify-center">
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 flex flex-col items-center gap-1">
-        <SkipForward className="w-6 h-6 text-white" />
-        <span className="text-white text-xs font-medium">Double tap +10s</span>
-      </div>
-    </div>
-  </div>
-)}
-
-
-    {isMobile && (
-      <div className="mt-3 p-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/40 rounded-lg">
-        <div className="flex items-start gap-2">
-          <RotateCcw className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm text-red-300 font-medium mb-1">
-              {isIOS ? "📱 iPhone Detected" : "📱 Android Device Detected"}
-            </p>
-            <p className="text-xs text-red-200">
-              {isIOS
-                ? "Tap the red fullscreen button or tap the video directly. On iPhone Chrome, the video will enter native fullscreen mode automatically."
-                : "Tap the red fullscreen button to auto-rotate to landscape mode, or rotate your device manually."}
-            </p>
-          </div>
+          {isUnlimited && (
+            <>
+              <span>•</span>
+              <div className="flex items-center gap-1 text-green-400">
+                <Crown className="w-3 h-3" />
+                <span>Premium - Unlimited</span>
+              </div>
+            </>
+          )}
         </div>
-      </div>
-    )}
-  </div>
-</div>
-  );
-};
 
-  
+        {isMobile && (
+          <div className="mt-3 p-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/40 rounded-lg">
+            <div className="flex items-start gap-2">
+              <RotateCcw className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-red-300 font-medium mb-1">
+                  {isIOS ? "📱 iPhone Detected" : "📱 Android Device Detected"}
+                </p>
+                <p className="text-xs text-red-200">
+                  {isIOS
+                    ? "Tap the red fullscreen button or tap the video directly. On iPhone Chrome, the video will enter native fullscreen mode automatically."
+                    : "Tap the red fullscreen button to auto-rotate to landscape mode, or rotate your device manually."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
