@@ -365,6 +365,8 @@ export const deleteFromCloudinary = async (
 /**
  * Extract public ID from Cloudinary URL
  * @param {string} url - Cloudinary URL
+ * 
+ *
  * @returns {string|null} - Public ID or null
  */
 export const extractPublicId = (url) => {
