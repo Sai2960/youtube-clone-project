@@ -236,7 +236,7 @@ export default function GestureVideoPlayer({
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   // Gesture state
-  
+
   const [lastTap, setLastTap] = useState(0);
   const [tapCount, setTapCount] = useState(0);
   const [tapTimer, setTapTimer] = useState<NodeJS.Timeout | null>(null);
@@ -279,7 +279,7 @@ export default function GestureVideoPlayer({
     const currentTime = videoRef.current.currentTime;
     const wasPlaying = !videoRef.current.paused;
 
-    // Generate new URL with quality parameter
+    // ✅ CRITICAL FIX: Generate new URL with quality parameter
     const newVideoUrl = getVideoUrl(video, newQuality);
 
     if (!newVideoUrl) {
@@ -291,12 +291,16 @@ export default function GestureVideoPlayer({
     }
 
     console.log("✅ New quality URL:", newVideoUrl.substring(0, 100));
-
     // Pause video before changing source
     videoRef.current.pause();
 
+    // ✅ CRITICAL FIX: Add cache buster to force reload
+    const timestamp = Date.now();
+    const separator = newVideoUrl.includes("?") ? "&" : "?";
+    const finalUrl = `${newVideoUrl}${separator}t=${timestamp}`;
+
     // Update video source
-    videoRef.current.src = newVideoUrl;
+    videoRef.current.src = finalUrl;
 
     // Wait for video to load
     const handleLoadedData = () => {
@@ -314,10 +318,23 @@ export default function GestureVideoPlayer({
 
       videoRef.current.removeEventListener("loadeddata", handleLoadedData);
     };
+    const handleError = () => {
+      console.error("❌ Failed to load quality:", newQuality);
+
+      // ✅ Fallback: Try 'auto' quality
+      if (newQuality !== "auto") {
+        console.log("🔄 Falling back to auto quality");
+        handleQualityChange("auto");
+      }
+
+      videoRef.current?.removeEventListener("error", handleError);
+    };
 
     videoRef.current.addEventListener("loadeddata", handleLoadedData, {
       once: true,
     });
+    videoRef.current.addEventListener("error", handleError, { once: true });
+
     videoRef.current.load();
 
     setQuality(newQuality);
@@ -453,33 +470,7 @@ export default function GestureVideoPlayer({
     // Load new video after brief delay
     const loadTimer = setTimeout(() => {
       // ✅ Use the getVideoUrl function with quality parameter
-      let properVideoUrl = null;
-      const rawUrl =
-        video?.filepath ||
-        video?.videofile ||
-        video?.videoLink ||
-        video?.video ||
-        video?.videoUrl;
-
-      console.log("🔍 Raw video data:", {
-        videoId: video?._id,
-        filepath: video?.filepath,
-        videofile: video?.videofile,
-        videoLink: video?.videoLink,
-        rawUrl: rawUrl,
-      });
-
-      if (rawUrl) {
-        // Use the imported getVideoUrl function with current quality
-        properVideoUrl = getVideoUrl(
-          {
-            filepath: rawUrl,
-            videofile: rawUrl,
-            videoLink: rawUrl,
-          },
-          quality
-        );
-      }
+      const properVideoUrl = getVideoUrl(video, quality);
 
       if (!properVideoUrl) {
         console.error("❌ Could not construct video URL");
@@ -488,9 +479,10 @@ export default function GestureVideoPlayer({
         return;
       }
 
+      // ✅ Add cache buster
       const timestamp = Date.now();
       const separator = properVideoUrl.includes("?") ? "&" : "?";
-      const videoUrl = `${properVideoUrl}${separator}cache=${timestamp}`;
+      const videoUrl = `${properVideoUrl}${separator}t=${timestamp}`;
 
       console.log("📺 Loading video from:", videoUrl);
 

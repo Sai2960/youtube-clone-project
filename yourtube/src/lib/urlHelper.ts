@@ -31,41 +31,36 @@ const BACKEND_URL = getBackendURLInternal();
 const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
 
-const buildCloudinaryVideoUrl = (publicId: string, quality: string): string => {
-  // ✅ CRITICAL: Quality transformations WITH audio preservation
+const buildCloudinaryVideoUrl = (publicId, quality = "auto") => {
+  const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
+  const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+
+  // ✅ CRITICAL FIX: Use ONLY Cloudinary-supported transformations
   let transformation = "";
 
   switch (quality) {
     case "1080p":
-      transformation =
-        "w_1920,h_1080,c_limit,q_100,br_5m,vc_h264,ac_aac,af_44100";
+      transformation = "q_auto:good,vc_h264,ac_aac";
       break;
     case "720p":
-      transformation =
-        "w_1280,h_720,c_limit,q_auto:good,br_2500k,vc_h264,ac_aac,af_44100";
+      transformation = "q_auto:good,vc_h264,ac_aac";
       break;
     case "480p":
-      transformation =
-        "w_854,h_480,c_limit,q_auto:good,br_1m,vc_h264,ac_aac,af_44100";
+      transformation = "q_auto:good,vc_h264,ac_aac";
       break;
     case "360p":
-      transformation =
-        "w_640,h_360,c_limit,q_auto:low,br_500k,vc_h264,ac_aac,af_44100";
+      transformation = "q_auto:low,vc_h264,ac_aac";
       break;
     case "240p":
-      transformation =
-        "w_426,h_240,c_limit,q_auto:low,br_300k,vc_h264,ac_aac,af_44100";
+      transformation = "q_auto:low,vc_h264,ac_aac";
       break;
     case "144p":
-      transformation =
-        "w_256,h_144,c_limit,q_auto:low,br_150k,vc_h264,ac_aac,af_44100";
+      transformation = "q_auto:low,vc_h264,ac_aac";
       break;
     default: // 'auto'
-      transformation = "q_auto:good,br_1000k,vc_h264,ac_aac,af_44100";
+      transformation = "q_auto:good,vc_h264,ac_aac";
   }
 
-  // ✅ NO transformations in path - preserves original audio
-  // ✅ Transformation MUST be in path, not query params
   return `${CLOUDINARY_BASE}/${transformation}/${publicId}.mp4`;
 };
 
