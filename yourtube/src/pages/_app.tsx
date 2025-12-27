@@ -454,24 +454,25 @@ function AppContent({ Component, pageProps }: AppProps) {
   // 🔴 CRITICAL: SHORTS PAGE VISIBILITY OVERRIDES
   // ============================================================================
   useEffect(() => {
-    if (router.pathname.startsWith("/shorts")) {
+    const isShortsPlayer =
+      router.pathname === "/shorts" || router.pathname === "/shorts/";
+    const isShortsUpload = router.pathname === "/shorts/upload";
+
+    if (isShortsPlayer && !isShortsUpload) {
       console.log("🎬 Applying shorts overrides...");
 
-      // ✅ CRITICAL: Override HTML element
       document.documentElement.style.position = "fixed";
       document.documentElement.style.inset = "0";
       document.documentElement.style.zIndex = "0";
       document.documentElement.style.pointerEvents = "none";
       document.documentElement.style.background = "transparent";
 
-      // ✅ CRITICAL: Override body stacking
       document.body.style.position = "fixed";
       document.body.style.inset = "0";
       document.body.style.zIndex = "0";
       document.body.style.pointerEvents = "none";
       document.body.style.background = "transparent";
 
-      // ✅ CRITICAL: Override #__next
       const nextDiv = document.getElementById("__next");
       if (nextDiv) {
         nextDiv.style.position = "fixed";
@@ -506,6 +507,63 @@ function AppContent({ Component, pageProps }: AppProps) {
       }
     }
   }, [router.pathname]);
+  // NEW - Add condition to exclude upload page:
+  useEffect(() => {
+    // ✅ CRITICAL: Only apply overrides to shorts PLAYER, not upload page
+    const isShortsPlayer =
+      router.pathname === "/shorts" || router.pathname === "/shorts/";
+    const isShortsUpload = router.pathname === "/shorts/upload";
+
+    if (isShortsPlayer && !isShortsUpload) {
+      console.log("🎬 Applying shorts player overrides...");
+
+      document.documentElement.style.position = "fixed";
+      document.documentElement.style.inset = "0";
+      document.documentElement.style.zIndex = "0";
+      document.documentElement.style.pointerEvents = "none";
+      document.documentElement.style.background = "transparent";
+
+      document.body.style.position = "fixed";
+      document.body.style.inset = "0";
+      document.body.style.zIndex = "0";
+      document.body.style.pointerEvents = "none";
+      document.body.style.background = "transparent";
+
+      const nextDiv = document.getElementById("__next");
+      if (nextDiv) {
+        nextDiv.style.position = "fixed";
+        nextDiv.style.inset = "0";
+        nextDiv.style.zIndex = "0";
+        nextDiv.style.pointerEvents = "none";
+        nextDiv.style.background = "transparent";
+      }
+
+      console.log("✅ Shorts player overrides applied");
+    } else {
+      // ✅ Reset when leaving shorts player OR on upload page
+      document.documentElement.style.position = "";
+      document.documentElement.style.inset = "";
+      document.documentElement.style.zIndex = "";
+      document.documentElement.style.pointerEvents = "";
+      document.documentElement.style.background = "";
+
+      document.body.style.position = "";
+      document.body.style.inset = "";
+      document.body.style.zIndex = "";
+      document.body.style.pointerEvents = "";
+      document.body.style.background = "";
+
+      const nextDiv = document.getElementById("__next");
+      if (nextDiv) {
+        nextDiv.style.position = "";
+        nextDiv.style.inset = "";
+        nextDiv.style.zIndex = "";
+        nextDiv.style.pointerEvents = "";
+        nextDiv.style.background = "";
+      }
+    }
+  }, [router.pathname]);
+
   // ============================================================================
   // LOADING SPINNER WHILE THEME INITIALIZES OR AUTH CHECKS
   // ============================================================================
