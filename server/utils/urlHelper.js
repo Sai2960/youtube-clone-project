@@ -9,11 +9,52 @@ const getBackendURL = () => {
 const BASE_URL = getBackendURL();
 
 /**
+ * ✅ NEW: Build Cloudinary URL with quality parameter
+ */
+const buildCloudinaryVideoUrl = (publicId, quality = "auto") => {
+  const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
+  const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+
+  let transformation = "";
+
+  switch (quality) {
+    case "1080p":
+      transformation =
+        "w_1920,h_1080,c_limit,q_100,br_5m,vc_h264,ac_aac,af_44100";
+      break;
+    case "720p":
+      transformation =
+        "w_1280,h_720,c_limit,q_auto:good,br_2500k,vc_h264,ac_aac,af_44100";
+      break;
+    case "480p":
+      transformation =
+        "w_854,h_480,c_limit,q_auto:good,br_1m,vc_h264,ac_aac,af_44100";
+      break;
+    case "360p":
+      transformation =
+        "w_640,h_360,c_limit,q_auto:low,br_500k,vc_h264,ac_aac,af_44100";
+      break;
+    case "240p":
+      transformation =
+        "w_426,h_240,c_limit,q_auto:low,br_300k,vc_h264,ac_aac,af_44100";
+      break;
+    case "144p":
+      transformation =
+        "w_256,h_144,c_limit,q_auto:low,br_150k,vc_h264,ac_aac,af_44100";
+      break;
+    default: // 'auto'
+      transformation = "q_auto:good,br_1000k,vc_h264,ac_aac,af_44100";
+  }
+
+  return `${CLOUDINARY_BASE}/${transformation}/${publicId}.mp4`;
+};
+
+/**
  * ✅ CRITICAL: Get proper Cloudinary video URL
  * Handles broken formats like "file_t1d4kf.mp4" and converts to full Cloudinary URL
  */
 // 🔥 CRITICAL FIX: Handle Cloudinary versions (Line 15-80)
-export const getVideoURL = (filepath) => {
+export const getVideoURL = (filepath, quality = "auto") => {
   if (!filepath) return null;
 
   const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
@@ -48,9 +89,12 @@ export const getVideoURL = (filepath) => {
   }
 
   if (publicId) {
-    // ✅ Build URL without transformation to preserve audio
-    const cleanUrl = `${CLOUDINARY_BASE}/${publicId}.mp4`;
-    console.log(`🔧 Reconstructed video URL: ${cleanUrl.substring(0, 80)}`);
+    // ✅ Build URL WITH quality transformation
+    const cleanUrl = buildCloudinaryVideoUrl(publicId, quality);
+    console.log(
+      `🔧 Reconstructed video URL (${quality}):`,
+      cleanUrl.substring(0, 80)
+    );
     return cleanUrl;
   }
 
