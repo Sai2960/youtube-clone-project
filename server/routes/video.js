@@ -55,7 +55,7 @@ router.post(
 
       console.log(`📦 Chunk ${parseInt(chunkIndex) + 1}/${totalChunks}`);
       console.log(`   Chunk ID: ${chunkId}`);
-      console.log(`   Original: ${originalFilename}`);
+      console.log(`   Size: ${(req.file.size / 1024 / 1024).toFixed(2)}MB`);
 
       // Store chunk metadata
       const sessionKey = `${req.userId}_${originalFilename}`;
@@ -90,13 +90,12 @@ router.post(
     } catch (error) {
       console.error("❌ Chunk upload error:", error);
 
-      // ✅ BETTER ERROR MESSAGES
       let errorMessage = "Failed to upload chunk";
 
       if (error.message?.includes("File size too large")) {
-        errorMessage = "Chunk too large. Try reducing video quality.";
+        errorMessage = "Chunk exceeds 100MB limit. This shouldn't happen!";
       } else if (error.message?.includes("timeout")) {
-        errorMessage = "Upload timeout. Check your internet connection.";
+        errorMessage = "Upload timeout. Check your connection.";
       }
 
       res.status(500).json({
@@ -107,9 +106,8 @@ router.post(
     }
   }
 );
-
 // ============================================================================
-// ROUTE 2: Merge All Chunks into Final Video
+// ROUTE 2: Merge All Chunks (MUST BE SECOND)
 // ============================================================================
 
 router.post("/merge-chunks", verifyToken, async (req, res) => {
@@ -147,7 +145,6 @@ router.post("/merge-chunks", verifyToken, async (req, res) => {
       videodescription?.trim() ||
       `Watch "${title}" - Don't forget to like and subscribe!`;
 
-    // ✅ Create video document with chunk references
     const CLOUDINARY_CLOUD_NAME =
       process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
     const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
@@ -216,6 +213,166 @@ router.post("/merge-chunks", verifyToken, async (req, res) => {
     });
   }
 });
+
+router.post(
+  "/upload",
+  (req, res, next) => {
+    console.log("\n📤 ===== SINGLE UPLOAD REQUEST =====");
+    console.log("   File size:", req.headers["content-length"]);
+    next();
+  },
+
+  verifyToken,
+
+  (req, res, next) => {
+    if (!req.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+    next();
+  },
+
+  uploadVideo.single("file"),
+
+  (err, req, res, next) => {
+    if (err) {
+      console.error("❌ Multer error:", err);
+
+      // ✅ Better error message for file size issues
+      if (err.message?.includes("File size too large")) {
+        return res.status(413).json({
+          success: false,
+          message:
+            "File too large for single upload. Use chunked upload for files over 95MB.",
+          shouldUseChunks: true,
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+    next();
+  },
+
+  async (req, res) => {
+    try {
+      console.log("\n📤 ===== PROCESSING SINGLE UPLOAD =====");
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded",
+        });
+      }
+
+      const fileSizeMB = req.file.size / (1024 * 1024);
+      console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
+
+      // ✅ SAFETY CHECK: Reject files > 95MB at backend too
+      if (fileSizeMB > 95) {
+        return res.status(413).json({
+          success: false,
+          message: "File too large. Use chunked upload for files over 95MB.",
+          shouldUseChunks: true,
+          fileSize: fileSizeMB,
+        });
+      }
+
+      const publicId = req.file.public_id || req.file.filename;
+
+      if (!publicId) {
+        return res.status(500).json({
+          success: false,
+          message: "Upload failed - no public_id",
+        });
+      }
+
+      const CLOUDINARY_CLOUD_NAME =
+        process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
+      const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+
+      const videoUrl = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
+      const thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+
+      const { videotitle, videodescription, videochanel } = req.body;
+      const uploadedBy = req.userId;
+
+      const user = await User.findById(uploadedBy)
+        .select("name channelname")
+        .lean();
+
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+
+      const channelName =
+        user.channelname || videochanel || user.name || "Unknown";
+      const title = videotitle || req.file.originalname;
+      const autoDescription =
+        videodescription?.trim() ||
+        `Watch "${title}" - Don't forget to like and subscribe!`;
+
+      const newVideo = new videofiles({
+        videotitle: title,
+        videodescription: autoDescription,
+        videofilename: publicId,
+
+        filepath: videoUrl,
+        videofile: videoUrl,
+        videoLink: videoUrl,
+        videoUrl: videoUrl,
+
+        thumbnail: thumbnailUrl,
+        videothumbnail: thumbnailUrl,
+        thumbnailUrl: thumbnailUrl,
+
+        filename: req.file.originalname,
+        filetype: req.file.mimetype,
+        filesize: `${fileSizeMB.toFixed(2)} MB`,
+
+        uploadedBy,
+        user: uploadedBy,
+        videochanel: channelName,
+        channelName: channelName,
+
+        views: 0,
+        Like: 0,
+        Dislike: 0,
+      });
+
+      await newVideo.save();
+
+      console.log("✅ Video saved:", newVideo._id);
+
+      res.status(201).json({
+        success: true,
+        message: "Video uploaded successfully!",
+        video: {
+          _id: newVideo._id,
+          title: newVideo.videotitle,
+          url: videoUrl,
+          thumbnail: thumbnailUrl,
+        },
+        videoUrl,
+        thumbnailUrl,
+        publicId,
+      });
+    } catch (error) {
+      console.error("❌ Upload error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+);
+
 // ============================================================================
 // ROUTE 3: Get Video with Multi-Part Streaming Support
 // ============================================================================
@@ -534,149 +691,6 @@ const localUpload = multer({
     fieldSize: 500 * 1024 * 1024,
   },
 });
-// 🔥 CRITICAL FIX: Ensure verifyToken completes BEFORE Multer runs
-router.post(
-  "/upload",
-  (req, res, next) => {
-    console.log("\n📤 ===== UPLOAD REQUEST RECEIVED =====");
-    next();
-  },
-
-  verifyToken,
-
-  (req, res, next) => {
-    if (!req.userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
-    }
-    next();
-  },
-
-  uploadVideo.single("file"),
-
-  (err, req, res, next) => {
-    if (err) {
-      console.error("❌ Multer error:", err);
-      return res.status(400).json({
-        success: false,
-        message: err.message,
-      });
-    }
-    next();
-  },
-
-  // ✅ CRITICAL FIX: Optimized upload handler
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: "No file uploaded",
-        });
-      }
-
-      const publicId = req.file.public_id || req.file.filename;
-
-      if (!publicId) {
-        return res.status(500).json({
-          success: false,
-          message: "Upload failed - no public_id",
-        });
-      }
-
-      // ✅ CRITICAL: Build URLs with transformations (applied on-the-fly, not during upload)
-      const CLOUDINARY_CLOUD_NAME =
-        process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
-      const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-
-      // Video URL with audio transformations (applied when accessed, not now)
-      const videoUrl = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto/${publicId}.mp4`;
-
-      // Thumbnail (auto-generated on first access)
-      const thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto/${publicId}.jpg`;
-
-      const { videotitle, videodescription, videochanel } = req.body;
-      const uploadedBy = req.userId;
-
-      const user = await User.findById(uploadedBy)
-        .select("name channelname")
-        .lean();
-
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
-
-      const channelName =
-        user.channelname || videochanel || user.name || "Unknown";
-      const title = videotitle || req.file.originalname;
-      const autoDescription =
-        videodescription?.trim() ||
-        `Watch "${title}" - Don't forget to like and subscribe!`;
-
-      // ✅ CRITICAL: Create video document ASYNCHRONOUSLY (don't wait for save)
-      const newVideo = new videofiles({
-        videotitle: title,
-        videodescription: autoDescription,
-        videofilename: publicId,
-
-        filepath: videoUrl,
-        videofile: videoUrl,
-        videoLink: videoUrl,
-        videoUrl: videoUrl,
-
-        thumbnail: thumbnailUrl,
-        videothumbnail: thumbnailUrl,
-        thumbnailUrl: thumbnailUrl,
-
-        filename: req.file.originalname,
-        filetype: req.file.mimetype,
-        filesize: `${(req.file.bytes / 1024 / 1024).toFixed(2)} MB`,
-
-        uploadedBy,
-        user: uploadedBy,
-        videochanel: channelName,
-        channelName: channelName,
-
-        views: 0,
-        Like: 0,
-        Dislike: 0,
-      });
-
-      // ✅ CRITICAL: Save asynchronously - don't block response
-      newVideo
-        .save()
-        .then(() => console.log("✅ Video saved to DB"))
-        .catch((err) => console.error("❌ DB save error:", err));
-
-      // ✅ RESPOND IMMEDIATELY - Don't wait for DB save
-      console.log("✅ Upload complete - responding immediately");
-
-      res.status(201).json({
-        success: true,
-        message: "Video uploaded successfully!",
-        video: {
-          _id: newVideo._id,
-          title: newVideo.videotitle,
-          url: videoUrl,
-          thumbnail: thumbnailUrl,
-        },
-        videoUrl,
-        thumbnailUrl,
-        publicId,
-      });
-    } catch (error) {
-      console.error("❌ Upload error:", error);
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
-    }
-  }
-);
 
 router.post(
   "/upload-thumbnail",
