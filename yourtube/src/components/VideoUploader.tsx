@@ -237,8 +237,25 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
+
       if (!file.type.startsWith("video/")) {
         toast.error("Please upload a valid video file.");
+        return;
+      }
+
+      // ✅ CRITICAL: Check size IMMEDIATELY
+      const sizeMB = file.size / (1024 * 1024);
+
+      if (sizeMB > 280) {
+        toast.error(
+          `File is ${sizeMB.toFixed(
+            0
+          )}MB. Maximum is 280MB. Please compress your video first.`,
+          { duration: 5000 }
+        );
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // Clear the input
+        }
         return;
       }
 
@@ -248,9 +265,17 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         setVideoTitle(filename);
       }
 
-      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      toast.success(`Video selected: ${sizeMB}MB`);
-      console.log(`📁 File selected: ${file.name} (${sizeMB}MB)`);
+      if (sizeMB > 90) {
+        toast.info(
+          `Large file detected (${sizeMB.toFixed(
+            0
+          )}MB). Will use chunked upload.`
+        );
+      } else {
+        toast.success(`Video selected: ${sizeMB.toFixed(2)}MB`);
+      }
+
+      console.log(`📁 File selected: ${file.name} (${sizeMB.toFixed(2)}MB)`);
     }
   };
 
@@ -281,86 +306,50 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   // MAIN UPLOAD HANDLER (Fixed & Optimized)
   // ============================================================================
 
-  const handleUpload = async () => {
-    console.log("\n🔥 ===== UPLOAD STARTED =====");
-    console.log("📁 File:", videoFile?.name);
-    console.log("📊 Size:", videoFile?.size, "bytes");
+const handleUpload = async () => {
+  console.log("\n🔥 ===== UPLOAD STARTED =====");
 
-    if (!videoFile || !videoTitle.trim()) {
-      toast.error("Please provide file and title");
-      return;
-    }
+  if (!videoFile || !videoTitle.trim()) {
+    toast.error("Please provide file and title");
+    return;
+  }
 
-    const token = localStorage.getItem("token");
-    if (!token || token === "null" || token === "undefined") {
-      toast.error("You must be logged in to upload videos");
-      return;
-    }
+  const token = localStorage.getItem("token");
+  if (!token || token === "null" || token === "undefined") {
+    toast.error("You must be logged in to upload videos");
+    return;
+  }
 
-    const fileSizeMB = videoFile.size / (1024 * 1024);
-    console.log("📊 Size MB:", fileSizeMB, "MB");
+  const fileSizeMB = videoFile.size / (1024 * 1024);
+  console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
 
-    // ✅ CRITICAL: Block files over 280MB (Cloudinary can't handle them even with chunking)
-    if (fileSizeMB > 280) {
-      toast.error(
-        `File is ${fileSizeMB.toFixed(
-          0
-        )}MB. Maximum supported size is 280MB. Please compress your video first.`
-      );
-      return;
-    }
+  // ✅ CRITICAL: Block oversized files
+  if (fileSizeMB > 280) {
+    toast.error(
+      `File is ${fileSizeMB.toFixed(0)}MB. Maximum is 280MB. Please compress your video.`,
+      { duration: 6000 }
+    );
+    return;
+  }
 
-    try {
-      setIsUploading(true);
-      setUploadProgress(0);
+  try {
+    setIsUploading(true);
+    setUploadProgress(0);
 
-      const metadata = {
-        videotitle: videoTitle,
-        videodescription: videoDescription,
-        videochanel: channelName,
-      };
+    const metadata = {
+      videotitle: videoTitle,
+      videodescription: videoDescription,
+      videochanel: channelName,
+    };
 
-      // ✅ Use chunked upload for files > 90MB
-      if (fileSizeMB > 90) {
-        console.log("✅ Using chunked upload for large file");
-        toast.info(
-          `File is ${fileSizeMB.toFixed(0)}MB - splitting into parts...`
-        );
+    // ✅ Use chunked upload for files > 90MB
+    if (fileSizeMB > 90) {
+      console.log("✅ Using chunked upload");
+      toast.info(`Splitting ${fileSizeMB.toFixed(0)}MB file into parts...`);
 
-        const result = await uploadLargeVideo(
-          videoFile,
-          metadata,
-          setUploadProgress
-        );
+      const result = await uploadLargeVideo(videoFile, metadata, setUploadProgress);
 
-        if (result.success) {
-          setUploadComplete(true);
-          toast.success("🎉 Video uploaded successfully!");
-          setTimeout(() => {
-            resetForm();
-            window.location.reload();
-          }, 2000);
-        }
-        return; // ✅ Exit early
-      }
-
-      // ✅ Single upload for smaller files
-      console.log("✅ Using single upload");
-      const formData = new FormData();
-      formData.append("file", videoFile);
-      formData.append("videotitle", videoTitle);
-      formData.append("videodescription", videoDescription);
-      formData.append("videochanel", channelName);
-
-      const res = await axiosInstance.post("/video/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 900000,
-        onUploadProgress: (e: any) => {
-          setUploadProgress(Math.round((e.loaded * 100) / e.total));
-        },
-      });
-
-      if (res.data.success) {
+      if (result.success) {
         setUploadComplete(true);
         toast.success("🎉 Video uploaded successfully!");
         setTimeout(() => {
@@ -368,30 +357,53 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           window.location.reload();
         }, 2000);
       }
-    } catch (error: any) {
-      console.error("❌ Upload error:", error);
-      console.error("❌ Error response:", error.response?.data);
-
-      let errorMessage = "Upload failed";
-
-      if (
-        error.response?.status === 413 ||
-        error.response?.data?.shouldUseChunks
-      ) {
-        errorMessage = "File too large. Please refresh and try again.";
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      toast.error(errorMessage);
-      setUploadProgress(0);
-    } finally {
-      setIsUploading(false);
-      setIsCompressing(false);
+      return;
     }
-  };
+
+    // ✅ Single upload for files ≤ 90MB
+    console.log("✅ Using single upload");
+    const formData = new FormData();
+    formData.append("file", videoFile);
+    formData.append("videotitle", videoTitle);
+    formData.append("videodescription", videoDescription);
+    formData.append("videochanel", channelName);
+
+    const res = await axiosInstance.post("/video/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 900000,
+      onUploadProgress: (e: any) => {
+        setUploadProgress(Math.round((e.loaded * 100) / e.total));
+      },
+    });
+
+    if (res.data.success) {
+      setUploadComplete(true);
+      toast.success("🎉 Video uploaded successfully!");
+      setTimeout(() => {
+        resetForm();
+        window.location.reload();
+      }, 2000);
+    }
+  } catch (error: any) {
+    console.error("❌ Upload error:", error);
+
+    let errorMessage = "Upload failed";
+
+    if (error.response?.status === 413) {
+      errorMessage = "File too large for direct upload. Please compress your video.";
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    toast.error(errorMessage, { duration: 5000 });
+    setUploadProgress(0);
+  } finally {
+    setIsUploading(false);
+    setIsCompressing(false);
+  }
+};
   // ============================================================================
   // COMPONENT JSX RENDER
   // ============================================================================
