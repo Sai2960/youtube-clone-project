@@ -104,53 +104,21 @@ export default function DeleteVideoButton({
     </>
   );
 
-  // MOBILE VARIANT - Fixed for both Light & Dark themes
+  // MOBILE VARIANT - Matches YouTube Mobile Pill Style
   if (variant === "mobile") {
     return (
       <>
         <button
-          className={`
-            flex items-center gap-2.5 transition-all duration-200 flex-shrink-0 active:scale-95 min-w-0
-            ${isDeleting ? "opacity-60 cursor-not-allowed" : "hover:opacity-80"}
-            text-red-600 dark:text-red-500 font-medium
-          `}
+          className={`flex items-center gap-2 px-3 py-1.5 bg-[#cc0000]/10 hover:bg-[#cc0000]/20 rounded-lg transition-all active:scale-95 flex-shrink-0 ${
+            className || ""
+          }`}
           onClick={() => setShowConfirm(true)}
           disabled={isDeleting}
-          aria-label="Delete video"
-          style={{
-            WebkitTapHighlightColor: "transparent",
-            userSelect: "none",
-          }}
         >
-          {isDeleting ? (
-            <>
-              <Loader2
-                className="w-6 h-6 animate-spin flex-shrink-0"
-                strokeWidth={2}
-                aria-hidden="true"
-              />
-              <span
-                className="text-sm whitespace-nowrap select-none"
-                style={{ lineHeight: "1" }}
-              >
-                Deleting...
-              </span>
-            </>
-          ) : (
-            <>
-              <Trash2
-                className="w-6 h-6 flex-shrink-0"
-                strokeWidth={2}
-                aria-hidden="true"
-              />
-              <span
-                className="text-sm whitespace-nowrap select-none"
-                style={{ lineHeight: "1" }}
-              >
-                Delete
-              </span>
-            </>
-          )}
+          <Trash2 className="w-5 h-5 text-[#ff0000]" strokeWidth={2} />
+          <span className="text-sm font-medium text-[#ff0000] whitespace-nowrap select-none">
+            Delete
+          </span>
         </button>
         <ConfirmModal />
       </>
@@ -175,32 +143,16 @@ export default function DeleteVideoButton({
     );
   }
 
-  // DEFAULT BUTTON VARIANT - Fixed styling
+  // DEFAULT BUTTON VARIANT
   return (
     <>
       <button
-        className={`
-          px-4 py-2 rounded-lg font-medium text-sm 
-          transition-all duration-200 flex items-center gap-2
-          text-red-600 dark:text-red-500
-          hover:bg-red-50 dark:hover:bg-red-950/30
-          active:scale-95
-          ${isDeleting ? "opacity-60 cursor-not-allowed" : ""}
-        `}
+        className="px-4 py-2 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 font-medium text-sm transition-all flex items-center gap-2"
         onClick={() => setShowConfirm(true)}
         disabled={isDeleting}
       >
-        {isDeleting ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Deleting...
-          </>
-        ) : (
-          <>
-            <Trash2 className="w-4 h-4" />
-            Delete Video
-          </>
-        )}
+        <Trash2 className="w-4 h-4" />
+        Delete Video
       </button>
       <ConfirmModal />
     </>
