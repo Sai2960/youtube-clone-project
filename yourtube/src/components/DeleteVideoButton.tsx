@@ -109,17 +109,17 @@ export default function DeleteVideoButton({
     return (
       <>
         <button
-          className={`flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 rounded-lg transition-all active:scale-95 flex-shrink-0 border border-red-200 dark:border-red-900/50 ${
+          className={`flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-all active:scale-95 flex-shrink-0 border border-red-200 dark:border-red-800/60 ${
             className || ""
           }`}
           onClick={() => setShowConfirm(true)}
           disabled={isDeleting}
         >
           <Trash2
-            className="w-5 h-5 text-red-700 dark:text-red-400"
+            className="w-5 h-5 text-red-700 dark:text-[#FF4444]"
             strokeWidth={2.5}
           />
-          <span className="text-sm font-semibold text-red-700 dark:text-red-400 whitespace-nowrap select-none">
+          <span className="text-sm font-semibold text-red-700 dark:text-[#FF4444] whitespace-nowrap select-none">
             Delete
           </span>
         </button>
@@ -133,7 +133,7 @@ export default function DeleteVideoButton({
     return (
       <>
         <button
-          className="px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-red-600 dark:text-red-500 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm"
+          className="px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-red-600 dark:text-[#FF4444] hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm"
           onClick={() => setShowConfirm(true)}
           disabled={isDeleting}
           title="Delete video"
@@ -150,7 +150,7 @@ export default function DeleteVideoButton({
   return (
     <>
       <button
-        className="px-4 py-2 rounded-lg text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-semibold text-sm transition-all flex items-center gap-2 border border-transparent hover:border-red-200 dark:hover:border-red-900/50"
+        className="px-4 py-2 rounded-lg text-red-700 dark:text-[#FF4444] hover:bg-red-50 dark:hover:bg-red-950/40 font-semibold text-sm transition-all flex items-center gap-2 border border-transparent hover:border-red-200 dark:hover:border-red-800/60"
         onClick={() => setShowConfirm(true)}
         disabled={isDeleting}
       >
