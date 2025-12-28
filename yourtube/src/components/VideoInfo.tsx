@@ -974,7 +974,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       </div>
       {/* Mobile Action Buttons - YouTube Flat Design */}
       <div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-neutral-800">
-        <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide pb-1">
+        <div
+          className="flex items-center gap-4 overflow-x-auto pb-1"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {/* Like Button - Standalone with count */}
           <button
             className={`flex items-center gap-2.5 transition-colors flex-shrink-0 ${
@@ -1082,15 +1085,25 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
       {/* Scrollbar styling */}
       <style jsx global>{`
-        .mobile-scroll-container::-webkit-scrollbar {
-          display: none;
+        .md\\:hidden .flex.items-center.gap-4::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
         }
 
-        .mobile-scroll-container {
+        .md\\:hidden .flex.items-center.gap-4 {
           -ms-overflow-style: none;
-          scrollbar-width: none;
+          scrollbar-width: none !important;
           scroll-behavior: smooth;
           -webkit-overflow-scrolling: touch;
+        }
+
+        /* Remove any dots/indicators on mobile */
+        @media (max-width: 768px) {
+          .overflow-x-auto::after,
+          .overflow-x-auto::before {
+            display: none !important;
+          }
         }
       `}</style>
       {/* Description */}
