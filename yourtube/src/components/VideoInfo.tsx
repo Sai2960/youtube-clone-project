@@ -971,98 +971,56 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-     {/* Mobile Action Buttons - Desktop Style Converted */}
-<div className="md:hidden px-3 py-3">
-  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-    {/* Like + Dislike Combined Button */}
-    <div className="flex items-center bg-[#272727] dark:bg-white/10 rounded-full overflow-hidden flex-shrink-0 h-9">
-      <button
-        className={`relative px-4 h-9 flex items-center gap-2 transition-all ${
-          isLiked ? "text-blue-500" : "text-white"
-        } hover:bg-white/10`}
-        onClick={handleLike}
-        disabled={!user}
-      >
-        <ThumbsUp
-          className="w-5 h-5"
-          fill={isLiked ? "currentColor" : "none"}
-          strokeWidth={2.5}
-        />
-        <span className="text-sm font-bold tabular-nums">{likes}</span>
-      </button>
-      <div className="w-px h-5 bg-white/20" />
-      <button
-        className={`relative px-4 h-9 transition-all ${
-          isDisliked ? "text-blue-500" : "text-white"
-        } hover:bg-white/10`}
-        onClick={handleDislike}
-        disabled={!user}
-      >
-        <ThumbsDown
-          className="w-5 h-5"
-          fill={isDisliked ? "currentColor" : "none"}
-          strokeWidth={2.5}
-        />
-      </button>
-    </div>
+  {/* 3. Mobile Action Buttons (Exact YouTube Specification) */}
+      <div className="md:hidden px-3 py-2">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide no-scrollbar">
+          {/* Like/Dislike Group */}
+          <div className="flex items-center bg-[#272727] rounded-full h-9 flex-shrink-0">
+            <button onClick={handleLike} className="flex items-center gap-2 px-4 h-full border-r border-white/10 active:bg-white/10">
+              <ThumbsUp size={18} fill={isLiked ? "white" : "none"} />
+              <span className="text-sm font-bold text-white">{likes}</span>
+            </button>
+            <button onClick={handleDislike} className="px-3 h-full active:bg-white/10">
+              <ThumbsDown size={18} fill={isDisliked ? "white" : "none"} />
+            </button>
+          </div>
 
-    {/* Share Button */}
-    <button
-      className="px-4 h-9 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap"
-      onClick={handleShare}
-    >
-      <Share2 className="w-5 h-5" strokeWidth={2.5} />
-      <span className="text-sm font-bold">Share</span>
-    </button>
+          {/* Share Button */}
+          <button onClick={handleShare} className="flex items-center gap-2 px-4 h-9 bg-[#272727] rounded-full text-white flex-shrink-0 active:bg-white/10">
+            <Share2 size={18} />
+            <span className="text-sm font-bold">Share</span>
+          </button>
 
-    {/* Download Button */}
-    {user && (
-      <button
-        className="px-4 h-9 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap"
-        onClick={handleDownload}
-      >
-        <Download className="w-5 h-5" strokeWidth={2.5} />
-        <span className="text-sm font-bold">Download</span>
-      </button>
-    )}
+          {/* Download Button */}
+          <button onClick={handleDownload} className="flex items-center gap-2 px-4 h-9 bg-[#272727] rounded-full text-white flex-shrink-0 active:bg-white/10">
+            <Download size={18} />
+            <span className="text-sm font-bold">Download</span>
+          </button>
 
-    {/* Save Button */}
-    {user && (
-      <button
-        className={`px-4 h-9 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap ${
-          isWatchLater ? "text-blue-500" : "text-white"
-        }`}
-        onClick={handleWatchLater}
-      >
-        <Bookmark className="w-5 h-5" fill={isWatchLater ? "currentColor" : "none"} strokeWidth={2.5} />
-        <span className="text-sm font-bold">Save</span>
-      </button>
-    )}
-
-    {/* Delete Button (Owner Only) */}
-    {user && isOwner && (
-      <button
-        className="px-4 h-9 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-red-500 hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap"
-        onClick={handleVideoDeleted}
-      >
-        <Trash2 className="w-5 h-5" strokeWidth={2.5} />
-        <span className="text-sm font-bold">Delete</span>
-      </button>
-    )}
-
-    {/* Three Dots Menu (Non-Owners) */}
-    {user && !isOwner && (
-      <div className="relative flex-shrink-0" ref={menuRef}>
-        <button
-          onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className="w-9 h-9 bg-[#272727] dark:bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-all"
-        >
-          <MoreVertical className="w-5 h-5" strokeWidth={2.5} />
-        </button>
+          {/* More Menu */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className="flex items-center justify-center w-9 h-9 bg-[#272727] rounded-full text-white flex-shrink-0"
+            >
+              <MoreVertical size={18} />
+            </button>
+            
+            {showMoreMenu && (
+              <div className="absolute right-0 bottom-12 w-48 bg-[#282828] rounded-xl shadow-xl z-50 py-2 border border-white/10">
+                <button onClick={handleWatchLater} className="flex items-center gap-3 w-full px-4 py-3 text-white hover:bg-white/10">
+                  <Bookmark size={20} /> <span className="text-sm">Save to Watch later</span>
+                </button>
+                {isOwner && (
+                  <button onClick={handleVideoDeleted} className="flex items-center gap-3 w-full px-4 py-3 text-red-500 hover:bg-white/10">
+                    <Trash2 size={20} /> <span className="text-sm">Delete video</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    )}
-  </div>
-</div>
 
       {/* Scrollbar styling */}
       <style jsx global>{`
