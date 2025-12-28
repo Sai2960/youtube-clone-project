@@ -972,76 +972,72 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       </div>
       {/* Mobile Action Buttons - YouTube Style Circular Icons */}
-      <div className="md:hidden bg-white dark:bg-[#0f0f0f] px-3 py-3">
-        <div className="flex items-center justify-between gap-2">
+      <div className="md:hidden bg-gray-50 dark:bg-[#0f0f0f] px-3 py-3 border-y border-gray-200 dark:border-neutral-800">
+        <div className="flex items-center justify-between gap-3">
           {/* Like Button */}
           <button
-            className="flex flex-col items-center justify-center gap-1 flex-1"
+            className="flex flex-col items-center justify-center gap-1.5 flex-1 group"
             onClick={handleLike}
             disabled={!user}
           >
             <div
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-2.5 rounded-full transition-all duration-200 shadow-sm ${
                 isLiked
-                  ? "bg-blue-100 dark:bg-blue-900/30"
-                  : "bg-gray-100 dark:bg-neutral-800"
+                  ? "bg-blue-500 dark:bg-blue-600"
+                  : "bg-white dark:bg-neutral-800 group-hover:bg-gray-100 dark:group-hover:bg-neutral-700"
               }`}
             >
               <ThumbsUp
-                className={`w-6 h-6 ${
-                  isLiked
-                    ? "text-blue-600 dark:text-blue-500"
-                    : "text-youtube-primary"
+                className={`w-5 h-5 ${
+                  isLiked ? "text-white" : "text-gray-700 dark:text-gray-200"
                 }`}
                 fill={isLiked ? "currentColor" : "none"}
                 strokeWidth={2}
               />
             </div>
-            <span className="text-xs font-medium text-youtube-primary">
+            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
               {likes}
             </span>
           </button>
 
           {/* Dislike Button */}
           <button
-            className="flex flex-col items-center justify-center gap-1 flex-1"
+            className="flex flex-col items-center justify-center gap-1.5 flex-1 group"
             onClick={handleDislike}
             disabled={!user}
           >
             <div
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-2.5 rounded-full transition-all duration-200 shadow-sm ${
                 isDisliked
-                  ? "bg-blue-100 dark:bg-blue-900/30"
-                  : "bg-gray-100 dark:bg-neutral-800"
+                  ? "bg-blue-500 dark:bg-blue-600"
+                  : "bg-white dark:bg-neutral-800 group-hover:bg-gray-100 dark:group-hover:bg-neutral-700"
               }`}
             >
               <ThumbsDown
-                className={`w-6 h-6 ${
-                  isDisliked
-                    ? "text-blue-600 dark:text-blue-500"
-                    : "text-youtube-primary"
+                className={`w-5 h-5 ${
+                  isDisliked ? "text-white" : "text-gray-700 dark:text-gray-200"
                 }`}
                 fill={isDisliked ? "currentColor" : "none"}
                 strokeWidth={2}
               />
             </div>
-            <span className="text-xs font-medium text-youtube-primary invisible">
+            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 invisible">
               0
             </span>
           </button>
 
           {/* Share Button */}
           <button
-            className="flex flex-col items-center justify-center gap-1 flex-1"
+            className="flex flex-col items-center justify-center gap-1.5 flex-1 group"
             onClick={handleShare}
           >
-            <div className="p-2 rounded-full bg-gray-100 dark:bg-neutral-800 transition-colors">
+            <div className="p-2.5 rounded-full bg-white dark:bg-neutral-800 group-hover:bg-gray-100 dark:group-hover:bg-neutral-700 transition-all duration-200 shadow-sm">
               <Share2
-                className="w-6 h-6 text-youtube-primary"
+                className="w-5 h-5 text-gray-700 dark:text-gray-200"
                 strokeWidth={2}
               />
             </div>
-            <span className="text-xs font-medium text-youtube-primary">
+            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
               Share
             </span>
           </button>
@@ -1049,16 +1045,16 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           {/* Download Button */}
           {user && (
             <button
-              className="flex flex-col items-center justify-center gap-1 flex-1"
+              className="flex flex-col items-center justify-center gap-1.5 flex-1 group"
               onClick={handleDownload}
             >
-              <div className="p-2 rounded-full bg-gray-100 dark:bg-neutral-800 transition-colors">
+              <div className="p-2.5 rounded-full bg-white dark:bg-neutral-800 group-hover:bg-gray-100 dark:group-hover:bg-neutral-700 transition-all duration-200 shadow-sm">
                 <Download
-                  className="w-6 h-6 text-youtube-primary"
+                  className="w-5 h-5 text-gray-700 dark:text-gray-200"
                   strokeWidth={2}
                 />
               </div>
-              <span className="text-xs font-medium text-youtube-primary">
+              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                 Download
               </span>
             </button>
@@ -1068,16 +1064,16 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           {user && (
             <div className="relative flex-1 flex justify-center" ref={menuRef}>
               <button
-                className="flex flex-col items-center justify-center gap-1"
+                className="flex flex-col items-center justify-center gap-1.5 group"
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
               >
-                <div className="p-2 rounded-full bg-gray-100 dark:bg-neutral-800 transition-colors">
+                <div className="p-2.5 rounded-full bg-white dark:bg-neutral-800 group-hover:bg-gray-100 dark:group-hover:bg-neutral-700 transition-all duration-200 shadow-sm">
                   <MoreVertical
-                    className="w-6 h-6 text-youtube-primary"
+                    className="w-5 h-5 text-gray-700 dark:text-gray-200"
                     strokeWidth={2}
                   />
                 </div>
-                <span className="text-xs font-medium text-youtube-primary invisible">
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 invisible">
                   More
                 </span>
               </button>
