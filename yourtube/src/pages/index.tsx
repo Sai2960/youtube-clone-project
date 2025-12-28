@@ -965,7 +965,7 @@ const Home: NextPage = () => {
                   const channelInitial = channelName[0]?.toUpperCase() || "U";
 
                   return (
-                    <div key={video._id} className="block group">
+                    <div key={video._id} className="block group w-full">
                       {/* Video Thumbnail */}
                       <Link href={`/watch/${video._id}`} className="block mb-3">
                         <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
@@ -983,9 +983,9 @@ const Home: NextPage = () => {
                         </div>
                       </Link>
 
-                      {/* ✅ FIXED: Video Info with proper mobile constraints */}
-                      <div className="flex gap-2.5 min-w-0">
-                        {/* Avatar - Fixed sizing */}
+                      {/* Video Info - FIXED for mobile */}
+                      <div className="flex gap-2.5 w-full overflow-hidden">
+                        {/* Avatar */}
                         <div
                           onClick={(e) => {
                             e.preventDefault();
@@ -997,11 +997,9 @@ const Home: NextPage = () => {
                           className="flex-shrink-0 cursor-pointer"
                         >
                           <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-                            {/* Fallback */}
                             <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
                               {channelInitial}
                             </div>
-                            {/* Avatar Image */}
                             <img
                               key={`video-avatar-${video._id}-${
                                 imageKeys[video.uploadedBy?._id || ""] ||
@@ -1028,10 +1026,10 @@ const Home: NextPage = () => {
                           </div>
                         </div>
 
-                        {/* Text Info - Proper truncation */}
-                        <div className="flex-1 min-w-0 overflow-hidden">
+                        {/* Text Info - FIXED overflow */}
+                        <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                           <Link href={`/watch/${video._id}`}>
-                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors">
+                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors break-words">
                               {video?.videotitle || "Untitled Video"}
                             </h3>
                           </Link>
@@ -1043,13 +1041,13 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer max-w-full"
                           >
                             {channelName}
                           </p>
 
-                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
-                            <span className="font-semibold truncate">
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium flex-wrap">
+                            <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
                             <span className="font-bold flex-shrink-0">•</span>
@@ -1071,100 +1069,6 @@ const Home: NextPage = () => {
               </div>
             )}
           </section>
-
-          {/* More Videos Section */}
-          {videos.length > 12 && (
-            <section className="hidden lg:block px-6 pb-8">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                More Videos
-              </h2>
-              <div className="grid grid-cols-3 xl:grid-cols-4 gap-4">
-                {videos.slice(12).map((video) => (
-                  <Link
-                    key={video._id}
-                    href={`/watch/${video._id}`}
-                    className="block group cursor-pointer"
-                  >
-                    <div className="w-full">
-                      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3 shadow-sm">
-                        <video
-                          src={getVideoUrl(video)}
-                          className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-                          preload="metadata"
-                          poster={getThumbnailUrl(video)}
-                          onError={(e) => {
-                            console.error("❌ Video load failed:", video._id);
-                            const target = e.currentTarget;
-                            target.poster = "/placeholder-thumbnail.jpg";
-                          }}
-                        />
-                        {video?.duration && (
-                          <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-xs font-bold px-2 py-0.5 rounded">
-                            {video.duration}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-3">
-                        {/* ✅ FIXED: Channel Avatar - NO NESTED LINK */}
-                        <div
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            router.push(
-                              `/channel/${video.uploadedBy?._id || "unknown"}`
-                            );
-                          }}
-                          className="flex-shrink-0 mt-0.5 cursor-pointer"
-                        >
-                          <Avatar className="w-9 h-9 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-                            <AvatarImage
-                              key={`more-video-${video._id}-avatar-${
-                                imageKeys[video.uploadedBy?._id || ""] ||
-                                Date.now()
-                              }`}
-                              src={getImageUrl(video.uploadedBy?.image, true)}
-                              alt={
-                                video.uploadedBy?.name ||
-                                video.videochanel ||
-                                "Channel"
-                              }
-                            />
-                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
-                              {(video.uploadedBy?.channelname ||
-                                video.uploadedBy?.name ||
-                                video.videochanel)?.[0]?.toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-[15px] leading-snug line-clamp-2 mb-1 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                            {video?.videotitle || "Untitled Video"}
-                          </h3>
-
-                          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1 font-medium group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                            {video.uploadedBy?.channelname ||
-                              video.uploadedBy?.name ||
-                              video?.videochanel ||
-                              "Unknown Channel"}
-                          </p>
-
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500 font-medium">
-                            <span className="font-semibold">
-                              {formatViews(video?.views)}
-                            </span>
-                            <span className="font-bold">•</span>
-                            <span>{formatTimeAgo(video?.createdAt)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
         </div>
 
         <MobileBottomNav />
