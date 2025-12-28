@@ -975,31 +975,31 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 <div className="md:hidden px-3 py-3">
   <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
     {/* Like + Dislike Combined Button */}
-    <div className="flex items-center bg-[#272727] dark:bg-white/10 rounded-full overflow-hidden flex-shrink-0">
+    <div className="flex items-center bg-[#3f3f3f] dark:bg-white/10 rounded-full overflow-hidden flex-shrink-0 shadow-sm">
       <button
-        className={`relative px-3.5 py-2 flex items-center gap-2 transition-all min-w-[70px] justify-center ${
+        className={`relative px-4 py-2.5 flex items-center gap-2 transition-all min-w-[75px] justify-center ${
           isLiked ? "text-blue-500" : "text-white"
-        } hover:bg-white/10`}
+        } hover:bg-white/10 active:bg-white/20`}
         onClick={handleLike}
         disabled={!user}
       >
         <ThumbsUp
-          className="w-[18px] h-[18px]"
+          className="w-5 h-5"
           fill={isLiked ? "currentColor" : "none"}
           strokeWidth={2.5}
         />
-        <span className="text-sm font-bold tabular-nums leading-none">{likes}</span>
+        <span className="text-[15px] font-bold tabular-nums">{likes}</span>
       </button>
-      <div className="w-[1px] h-6 bg-white/20" />
+      <div className="w-[1px] h-6 bg-white/30" />
       <button
-        className={`relative px-3.5 py-2 transition-all ${
+        className={`relative px-4 py-2.5 transition-all ${
           isDisliked ? "text-blue-500" : "text-white"
-        } hover:bg-white/10`}
+        } hover:bg-white/10 active:bg-white/20`}
         onClick={handleDislike}
         disabled={!user}
       >
         <ThumbsDown
-          className="w-[18px] h-[18px]"
+          className="w-5 h-5"
           fill={isDisliked ? "currentColor" : "none"}
           strokeWidth={2.5}
         />
@@ -1008,49 +1008,49 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
     {/* Share Button */}
     <button
-      className="px-4 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap"
+      className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center gap-2.5 text-white hover:bg-white/10 active:bg-white/20 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
       onClick={handleShare}
     >
-      <Share2 className="w-[18px] h-[18px]" strokeWidth={2.5} />
-      <span className="text-sm font-bold leading-none">Share</span>
+      <Share2 className="w-5 h-5" strokeWidth={2.5} />
+      <span className="text-[15px] font-bold">Share</span>
     </button>
 
     {/* Download Button */}
     {user && (
       <button
-        className="px-4 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap"
+        className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center gap-2.5 text-white hover:bg-white/10 active:bg-white/20 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
         onClick={handleDownload}
       >
-        <Download className="w-[18px] h-[18px]" strokeWidth={2.5} />
-        <span className="text-sm font-bold leading-none">Download</span>
+        <Download className="w-5 h-5" strokeWidth={2.5} />
+        <span className="text-[15px] font-bold">Download</span>
       </button>
     )}
 
     {/* Save Button */}
     {user && (
       <button
-        className={`px-4 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap ${
+        className={`px-5 py-2.5 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center gap-2.5 hover:bg-white/10 active:bg-white/20 transition-all flex-shrink-0 whitespace-nowrap shadow-sm ${
           isWatchLater ? "text-blue-500" : "text-white"
         }`}
         onClick={handleWatchLater}
       >
         <Bookmark 
-          className="w-[18px] h-[18px]" 
+          className="w-5 h-5" 
           fill={isWatchLater ? "currentColor" : "none"} 
           strokeWidth={2.5} 
         />
-        <span className="text-sm font-bold leading-none">Save</span>
+        <span className="text-[15px] font-bold">Save</span>
       </button>
     )}
 
-    {/* Delete Button (Owner Only) */}
+    {/* Delete Button (Owner Only) - RED LIKE DESKTOP */}
     {user && isOwner && (
       <button
-        className="px-4 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-red-500 hover:bg-red-500/10 transition-all flex-shrink-0 whitespace-nowrap"
+        className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center gap-2.5 text-[#ff4444] hover:bg-red-500/10 active:bg-red-500/20 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
         onClick={handleVideoDeleted}
       >
-        <Trash2 className="w-[18px] h-[18px]" strokeWidth={2.5} />
-        <span className="text-sm font-bold leading-none">Delete</span>
+        <Trash2 className="w-5 h-5" strokeWidth={2.5} />
+        <span className="text-[15px] font-bold">Delete</span>
       </button>
     )}
 
@@ -1059,7 +1059,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       <div className="relative flex-shrink-0" ref={menuRef}>
         <button
           onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className="w-10 h-10 bg-[#272727] dark:bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-all"
+          className="w-11 h-11 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/10 active:bg-white/20 transition-all shadow-sm"
         >
           <MoreVertical className="w-5 h-5" strokeWidth={2.5} />
         </button>
