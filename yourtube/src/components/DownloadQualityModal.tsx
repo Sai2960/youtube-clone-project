@@ -88,18 +88,12 @@ const DownloadQualityModal: React.FC<DownloadQualityModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
     } else {
       document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
     }
     
     return () => {
       document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
     };
   }, [isOpen]);
 
@@ -110,68 +104,63 @@ const DownloadQualityModal: React.FC<DownloadQualityModalProps> = ({
     onDownload(selectedQuality, rememberChoice);
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center"
-      onClick={handleBackdropClick}
-      style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0,
-        margin: 0,
-        padding: 0
+      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       
-      {/* Modal Container */}
+      {/* Modal - Uses vh units for reliable height */}
       <div 
-        className="relative w-full sm:max-w-md mx-auto flex flex-col bg-white dark:bg-neutral-900 sm:rounded-2xl rounded-t-2xl shadow-2xl border-t sm:border border-gray-200 dark:border-neutral-800 overflow-hidden"
-        style={{ 
-          maxHeight: '85vh',
-          marginBottom: '0'
+        className="relative w-full sm:w-auto sm:min-w-[420px] sm:max-w-md bg-white dark:bg-neutral-900 sm:rounded-2xl rounded-t-2xl shadow-2xl border-t sm:border border-gray-200 dark:border-neutral-800"
+        style={{
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-800/50">
+        {/* Header - FIXED HEIGHT */}
+        <div 
+          className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-800/50"
+          style={{ flexShrink: 0 }}
+        >
           <div className="flex-1 min-w-0 pr-3">
             <div className="flex items-center gap-2 mb-1">
               <Download className="w-5 h-5 text-blue-600 dark:text-blue-500 flex-shrink-0" strokeWidth={2.5} />
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">
                 Download Quality
               </h3>
             </div>
-            <p className="text-xs text-gray-600 dark:text-neutral-400 truncate">
+            <p className="text-xs text-gray-600 dark:text-neutral-400 line-clamp-1">
               {videoTitle}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
             disabled={downloading}
           >
             <X className="w-5 h-5 text-gray-500 dark:text-neutral-400" />
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ minHeight: 0 }}>
+        {/* SCROLLABLE CONTENT AREA */}
+        <div 
+          className="overflow-y-auto"
+          style={{
+            flex: '1 1 auto',
+            minHeight: 0,
+            maxHeight: 'calc(90vh - 200px)' // Account for header + footer
+          }}
+        >
           {/* Quality Options */}
           <div className="p-4 space-y-2">
             {qualityOptions.map((option) => {
@@ -183,8 +172,9 @@ const DownloadQualityModal: React.FC<DownloadQualityModalProps> = ({
                   key={option.quality}
                   onClick={() => !isLocked && setSelectedQuality(option.quality)}
                   disabled={isLocked || downloading}
+                  type="button"
                   className={`
-                    w-full p-3 rounded-xl border-2 transition-all duration-200 flex items-center justify-between
+                    w-full p-3 rounded-xl border-2 transition-all duration-200
                     ${isSelected 
                       ? 'border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/30' 
                       : 'border-gray-200 dark:border-neutral-700 hover:border-gray-300 dark:hover:border-neutral-600 bg-white dark:bg-neutral-800/50'
@@ -192,52 +182,54 @@ const DownloadQualityModal: React.FC<DownloadQualityModalProps> = ({
                     ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-[0.98]'}
                   `}
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {/* Radio */}
-                    <div className={`
-                      w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0
-                      ${isSelected 
-                        ? 'border-blue-600 dark:border-blue-500 bg-blue-600 dark:bg-blue-500' 
-                        : 'border-gray-300 dark:border-neutral-600'
-                      }
-                    `}>
-                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                    </div>
-
-                    {/* Info */}
-                    <div className="text-left flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold text-sm ${
-                          isSelected 
-                            ? 'text-gray-900 dark:text-white' 
-                            : 'text-gray-700 dark:text-neutral-200'
-                        }`}>
-                          {option.quality}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-neutral-400">
-                          {option.label}
-                        </span>
-                        {option.recommended && (
-                          <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                            Recommended
-                          </span>
-                        )}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1">
+                      {/* Radio */}
+                      <div className={`
+                        w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0
+                        ${isSelected 
+                          ? 'border-blue-600 dark:border-blue-500 bg-blue-600 dark:bg-blue-500' 
+                          : 'border-gray-300 dark:border-neutral-600'
+                        }
+                      `}>
+                        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-neutral-400">
-                        {option.size}
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Premium Badge */}
-                  {isLocked && (
-                    <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                      <Crown className="w-3 h-3 text-yellow-600 dark:text-yellow-500" />
-                      <span className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400">
-                        Premium
-                      </span>
+                      {/* Info */}
+                      <div className="text-left">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`font-semibold text-sm ${
+                            isSelected 
+                              ? 'text-gray-900 dark:text-white' 
+                              : 'text-gray-700 dark:text-neutral-200'
+                          }`}>
+                            {option.quality}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-neutral-400">
+                            {option.label}
+                          </span>
+                          {option.recommended && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                              Recommended
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-neutral-400 block mt-0.5">
+                          {option.size}
+                        </span>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Premium Badge */}
+                    {isLocked && (
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex-shrink-0">
+                        <Crown className="w-3 h-3 text-yellow-600 dark:text-yellow-500" />
+                        <span className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400">
+                          Premium
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -248,7 +240,7 @@ const DownloadQualityModal: React.FC<DownloadQualityModalProps> = ({
             <div className="mx-4 mb-3 p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
               <div className="flex gap-2">
                 <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700 dark:text-blue-300">
+                <p className="text-xs text-blue-700 dark:text-blue-300 leading-tight">
                   Upgrade to <span className="font-semibold">Premium</span> for HD quality
                 </p>
               </div>
@@ -265,18 +257,22 @@ const DownloadQualityModal: React.FC<DownloadQualityModalProps> = ({
                 className="w-4 h-4 rounded border-gray-300 dark:border-neutral-600 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
                 disabled={downloading}
               />
-              <span className="text-xs sm:text-sm text-gray-700 dark:text-neutral-300">
+              <span className="text-xs text-gray-700 dark:text-neutral-300">
                 Remember my choice
               </span>
             </label>
           </div>
         </div>
 
-        {/* Footer - Fixed */}
-        <div className="flex-shrink-0 p-4 space-y-2 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+        {/* Footer - FIXED HEIGHT */}
+        <div 
+          className="p-4 space-y-2 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
+          style={{ flexShrink: 0 }}
+        >
           <button
             onClick={handleDownload}
             disabled={downloading}
+            type="button"
             className="w-full py-3 px-6 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 disabled:cursor-not-allowed"
           >
             {downloading ? (
@@ -295,6 +291,7 @@ const DownloadQualityModal: React.FC<DownloadQualityModalProps> = ({
           <button
             onClick={onClose}
             disabled={downloading}
+            type="button"
             className="w-full py-2.5 px-6 rounded-xl font-medium text-sm text-gray-700 dark:text-neutral-300 bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors active:scale-[0.98] disabled:cursor-not-allowed"
           >
             Cancel
