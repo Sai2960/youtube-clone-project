@@ -980,7 +980,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         >
           {/* Like Button - Standalone with count */}
           <button
-            className={`relative flex items-center gap-2.5 transition-colors flex-shrink-0 ${
+            className={`relative flex items-center gap-2.5 transition-all duration-200 flex-shrink-0 ${
               isLiked
                 ? "text-[#065fd4] dark:text-[#3EA6FF]"
                 : "text-gray-700 dark:text-white"
@@ -989,23 +989,27 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             disabled={!user}
           >
             {likeRipple && (
-              <span className="absolute inset-0 mobile-like-ripple bg-blue-500/40 rounded-full pointer-events-none" />
+              <span className="absolute inset-0 mobile-like-ripple bg-[#065fd4]/50 dark:bg-[#3EA6FF]/50 rounded-full pointer-events-none z-0" />
             )}
             <ThumbsUp
-              className={`w-6 h-6 relative z-10 ${
+              className={`w-6 h-6 relative z-10 transition-all duration-200 ${
                 likeAnimation ? "mobile-like-animate" : ""
               }`}
               fill={isLiked ? "currentColor" : "none"}
               strokeWidth={2}
             />
-            <span className="text-sm font-medium tabular-nums whitespace-nowrap relative z-10">
+            <span
+              className={`text-sm font-medium tabular-nums whitespace-nowrap relative z-10 transition-all duration-200 ${
+                isLiked ? "text-[#065fd4] dark:text-[#3EA6FF]" : ""
+              }`}
+            >
               {likes}
             </span>
           </button>
 
           {/* Dislike Button - Standalone */}
           <button
-            className={`relative flex items-center transition-colors flex-shrink-0 ${
+            className={`relative flex items-center transition-all duration-200 flex-shrink-0 ${
               isDisliked
                 ? "text-red-600 dark:text-red-500"
                 : "text-gray-700 dark:text-white"
@@ -1014,10 +1018,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             disabled={!user}
           >
             {dislikeRipple && (
-              <span className="absolute inset-0 mobile-dislike-ripple bg-red-500/40 rounded-full pointer-events-none" />
+              <span className="absolute inset-0 mobile-dislike-ripple bg-red-600/50 dark:bg-red-500/50 rounded-full pointer-events-none z-0" />
             )}
             <ThumbsDown
-              className={`w-6 h-6 relative z-10 ${
+              className={`w-6 h-6 relative z-10 transition-all duration-200 ${
                 dislikeAnimation ? "mobile-dislike-animate" : ""
               }`}
               fill={isDisliked ? "currentColor" : "none"}
@@ -1121,7 +1125,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               transform: scale(1);
             }
             50% {
-              transform: scale(1.3);
+              transform: scale(1.4);
+              filter: drop-shadow(0 0 8px rgba(6, 95, 212, 0.6));
             }
             100% {
               transform: scale(1);
@@ -1133,7 +1138,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               transform: scale(1) rotate(0deg);
             }
             50% {
-              transform: scale(1.3) rotate(-10deg);
+              transform: scale(1.4) rotate(-15deg);
+              filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
             }
             100% {
               transform: scale(1) rotate(0deg);
@@ -1143,10 +1149,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           @keyframes mobile-like-ripple {
             0% {
               transform: scale(0);
-              opacity: 1;
+              opacity: 0.8;
+            }
+            50% {
+              opacity: 0.5;
             }
             100% {
-              transform: scale(2.5);
+              transform: scale(3);
               opacity: 0;
             }
           }
@@ -1154,28 +1163,32 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           @keyframes mobile-dislike-ripple {
             0% {
               transform: scale(0);
-              opacity: 1;
+              opacity: 0.8;
+            }
+            50% {
+              opacity: 0.5;
             }
             100% {
-              transform: scale(2.5);
+              transform: scale(3);
               opacity: 0;
             }
           }
 
           .mobile-like-animate {
-            animation: mobile-like-pulse 0.5s ease-in-out;
+            animation: mobile-like-pulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
           .mobile-dislike-animate {
-            animation: mobile-dislike-pulse 0.5s ease-in-out;
+            animation: mobile-dislike-pulse 0.6s
+              cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
           .mobile-like-ripple {
-            animation: mobile-like-ripple 0.6s ease-out forwards;
+            animation: mobile-like-ripple 0.7s ease-out forwards;
           }
 
           .mobile-dislike-ripple {
-            animation: mobile-dislike-ripple 0.6s ease-out forwards;
+            animation: mobile-dislike-ripple 0.7s ease-out forwards;
           }
         }
       `}</style>
