@@ -1092,7 +1092,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   />
                   
                   {/* Dropdown Menu */}
-                  <div className="absolute bottom-full mb-2 right-0 w-56 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom fade-in duration-200">
+                  <div className="fixed bottom-20 right-4 w-64 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom fade-in duration-200">
                     {/* Save to Watch Later */}
                     <button
                       onClick={handleWatchLater}
