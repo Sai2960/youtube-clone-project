@@ -971,89 +971,94 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-     {/* Mobile Action Buttons - YouTube Style Horizontal Row */}
-<div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f]">
-  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-    {/* Like Button */}
-    <button
-      onClick={handleLike}
-      disabled={!user}
-      className={`flex items-center gap-2 px-4 h-[38px] rounded-full transition-all flex-shrink-0 ${
-        isLiked
-          ? 'bg-blue-600 text-white'
-          : 'bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20'
-      }`}
-    >
-      <ThumbsUp className="w-5 h-5" fill={isLiked ? "currentColor" : "none"} strokeWidth={2} />
-      <span className="text-sm font-semibold tabular-nums">{likes}</span>
-    </button>
-
-    {/* Dislike Button */}
-    <button
-      onClick={handleDislike}
-      disabled={!user}
-      className={`flex items-center justify-center w-[38px] h-[38px] rounded-full transition-all flex-shrink-0 ${
-        isDisliked
-          ? 'bg-blue-600 text-white'
-          : 'bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20'
-      }`}
-    >
-      <ThumbsDown className="w-5 h-5" fill={isDisliked ? "currentColor" : "none"} strokeWidth={2} />
-    </button>
+     {/* Mobile Action Buttons - Desktop Style Converted */}
+<div className="md:hidden px-3 py-3">
+  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+    {/* Like + Dislike Combined Button */}
+    <div className="flex items-center bg-[#272727] dark:bg-white/10 rounded-full overflow-hidden flex-shrink-0">
+      <button
+        className={`relative px-3 py-2 flex items-center gap-1.5 transition-all ${
+          isLiked ? "text-blue-500" : "text-white"
+        } hover:bg-white/10`}
+        onClick={handleLike}
+        disabled={!user}
+      >
+        <ThumbsUp
+          className="w-5 h-5"
+          fill={isLiked ? "currentColor" : "none"}
+          strokeWidth={2}
+        />
+        <span className="text-sm font-medium tabular-nums">{likes}</span>
+      </button>
+      <div className="w-px h-6 bg-white/20" />
+      <button
+        className={`relative px-3 py-2 transition-all ${
+          isDisliked ? "text-blue-500" : "text-white"
+        } hover:bg-white/10`}
+        onClick={handleDislike}
+        disabled={!user}
+      >
+        <ThumbsDown
+          className="w-5 h-5"
+          fill={isDisliked ? "currentColor" : "none"}
+          strokeWidth={2}
+        />
+      </button>
+    </div>
 
     {/* Share Button */}
     <button
+      className="px-3 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0"
       onClick={handleShare}
-      className="flex items-center gap-2 px-4 h-[38px] rounded-full bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20 transition-all flex-shrink-0"
     >
       <Share2 className="w-5 h-5" strokeWidth={2} />
-      <span className="text-sm font-semibold">Share</span>
+      <span className="text-sm font-medium">Share</span>
     </button>
 
     {/* Download Button */}
     {user && (
       <button
+        className="px-3 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0"
         onClick={handleDownload}
-        className="flex items-center gap-2 px-4 h-[38px] rounded-full bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20 transition-all flex-shrink-0"
       >
         <Download className="w-5 h-5" strokeWidth={2} />
-        <span className="text-sm font-semibold">Download</span>
+        <span className="text-sm font-medium">Download</span>
       </button>
     )}
 
-    {/* Three-Dot Menu */}
+    {/* Save Button */}
     {user && (
+      <button
+        className={`px-3 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 hover:bg-white/10 transition-all flex-shrink-0 ${
+          isWatchLater ? "text-blue-500" : "text-white"
+        }`}
+        onClick={handleWatchLater}
+      >
+        <Bookmark className="w-5 h-5" fill={isWatchLater ? "currentColor" : "none"} strokeWidth={2} />
+        <span className="text-sm font-medium">Save</span>
+      </button>
+    )}
+
+    {/* Three Dots Menu (Delete for Owner) */}
+    {user && isOwner && (
+      <button
+        className="px-3 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0"
+        onClick={handleVideoDeleted}
+      >
+        <Trash2 className="w-5 h-5" strokeWidth={2} />
+        <span className="text-sm font-medium">Delete</span>
+      </button>
+    )}
+
+    {/* Three Dots for Non-Owners */}
+    {user && !isOwner && (
       <div className="relative flex-shrink-0" ref={menuRef}>
         <button
           onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className="flex items-center justify-center w-[38px] h-[38px] rounded-full bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20 transition-all"
+          className="px-3 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-all"
         >
           <MoreVertical className="w-5 h-5" strokeWidth={2} />
         </button>
-
-        {showMoreMenu && (
-          <>
-            <div className="fixed inset-0 z-[9998]" onClick={() => setShowMoreMenu(false)} />
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-900 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999]">
-              <button
-                onClick={handleWatchLater}
-                className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-900 dark:text-gray-100"
-              >
-                <span className="text-sm font-medium">
-                  {isWatchLater ? "Remove from Watch Later" : "Save"}
-                </span>
-              </button>
-              {isOwner && (
-                <button
-                  onClick={() => { setShowMoreMenu(false); handleVideoDeleted(); }}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800"
-                >
-                  <span className="text-sm font-medium text-red-600">Delete</span>
-                </button>
-              )}
-            </div>
-          </>
-        )}
       </div>
     )}
   </div>
