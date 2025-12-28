@@ -971,10 +971,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-  {/* Mobile Action Buttons - Final Premium Version */}
+  {/* Mobile Action Buttons - Consistent Grouped Design */}
 <div className="md:hidden px-3 py-3">
   <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-    {/* Like + Dislike Combined Button */}
+    {/* Like + Dislike Combined Button - Always Grouped */}
     <div className="flex items-center bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full overflow-hidden flex-shrink-0 shadow-md">
       <button
         className={`relative px-4 py-2.5 flex items-center gap-2.5 transition-all min-w-[80px] justify-center ${
@@ -988,11 +988,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           fill={isLiked ? "currentColor" : "none"}
           strokeWidth={2.5}
         />
+        {/* Always show like count */}
         <span className="text-base font-extrabold tabular-nums">{likes}</span>
       </button>
       <div className="w-[1.5px] h-6 bg-white/40" />
       <button
-        className={`relative px-4 py-2.5 transition-all ${
+        className={`relative px-4 py-2.5 transition-all min-w-[50px] justify-center flex items-center ${
           isDisliked ? "text-blue-500" : "text-white"
         } hover:bg-white/15 active:bg-white/25`}
         onClick={handleDislike}
