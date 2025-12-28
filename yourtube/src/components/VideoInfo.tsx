@@ -971,15 +971,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-      {/* Mobile Action Buttons - YouTube Flat Design */}
+{/* Mobile Action Buttons - YouTube Flat Design */}
       <div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-neutral-800">
         <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide pb-1">
           {/* Like Button - Standalone with count */}
           <button
             className={`flex items-center gap-2.5 transition-colors flex-shrink-0 ${
-              isLiked
-                ? "text-[#065fd4] dark:text-[#3EA6FF]"
-                : "text-gray-700 dark:text-white"
+              isLiked ? "text-[#065fd4] dark:text-[#3EA6FF]" : "text-gray-700 dark:text-white"
             } hover:text-gray-900 dark:hover:text-white/80 active:scale-95`}
             onClick={handleLike}
             disabled={!user}
@@ -989,17 +987,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               fill={isLiked ? "currentColor" : "none"}
               strokeWidth={2}
             />
-            <span className="text-sm font-medium tabular-nums whitespace-nowrap">
-              {likes}
-            </span>
+            <span className="text-sm font-medium tabular-nums whitespace-nowrap">{likes}</span>
           </button>
 
           {/* Dislike Button - Standalone */}
           <button
             className={`flex items-center transition-colors flex-shrink-0 ${
-              isDisliked
-                ? "text-[#065fd4] dark:text-[#3EA6FF]"
-                : "text-gray-700 dark:text-white"
+              isDisliked ? "text-[#065fd4] dark:text-[#3EA6FF]" : "text-gray-700 dark:text-white"
             } hover:text-gray-900 dark:hover:text-white/80 active:scale-95`}
             onClick={handleDislike}
             disabled={!user}
@@ -1027,9 +1021,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               onClick={handleDownload}
             >
               <Download className="w-6 h-6" strokeWidth={2} />
-              <span className="text-sm font-medium whitespace-nowrap">
-                Download
-              </span>
+              <span className="text-sm font-medium whitespace-nowrap">Download</span>
             </button>
           )}
 
@@ -1037,9 +1029,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           {user && (
             <button
               className={`flex items-center gap-2.5 transition-colors flex-shrink-0 active:scale-95 ${
-                isWatchLater
-                  ? "text-[#065fd4] dark:text-[#3EA6FF]"
-                  : "text-gray-700 dark:text-white"
+                isWatchLater ? "text-[#065fd4] dark:text-[#3EA6FF]" : "text-gray-700 dark:text-white"
               } hover:text-gray-900 dark:hover:text-white/80`}
               onClick={handleWatchLater}
             >
@@ -1048,22 +1038,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 fill={isWatchLater ? "currentColor" : "none"}
                 strokeWidth={2}
               />
-              <span className="text-sm font-medium whitespace-nowrap">
-                Save
-              </span>
+              <span className="text-sm font-medium whitespace-nowrap">Save</span>
             </button>
           )}
 
           {/* Delete Button (Owner Only) - Bright Red */}
           {user && isOwner && (
             <button
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#cc0000]/10 hover:bg-[#cc0000]/20 rounded-lg text-[#ff0000] transition-all flex-shrink-0 active:scale-95"
+              className="flex items-center gap-2.5 text-[#cc0000] hover:text-[#ff0000] transition-colors flex-shrink-0 active:scale-95"
               onClick={handleVideoDeleted}
             >
-              <Trash2 className="w-5 h-5" strokeWidth={2} />
-              <span className="text-sm font-medium whitespace-nowrap">
-                Delete
-              </span>
+              <Trash2 className="w-6 h-6" strokeWidth={2} />
+              <span className="text-sm font-medium whitespace-nowrap">Delete</span>
             </button>
           )}
 
