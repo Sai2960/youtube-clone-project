@@ -1071,8 +1071,6 @@ const Home: NextPage = () => {
           </section>
         </div>
 
-        <MobileBottomNav />
-
         {/* 🔥 COMBINED STYLES - SINGLE BLOCK AT THE END */}
         <style jsx>{`
           .scrollbar-hide::-webkit-scrollbar {
