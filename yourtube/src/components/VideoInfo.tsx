@@ -971,56 +971,102 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-  {/* 3. Mobile Action Buttons (Exact YouTube Specification) */}
-      <div className="md:hidden px-3 py-2">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide no-scrollbar">
-          {/* Like/Dislike Group */}
-          <div className="flex items-center bg-[#272727] rounded-full h-9 flex-shrink-0">
-            <button onClick={handleLike} className="flex items-center gap-2 px-4 h-full border-r border-white/10 active:bg-white/10">
-              <ThumbsUp size={18} fill={isLiked ? "white" : "none"} />
-              <span className="text-sm font-bold text-white">{likes}</span>
-            </button>
-            <button onClick={handleDislike} className="px-3 h-full active:bg-white/10">
-              <ThumbsDown size={18} fill={isDisliked ? "white" : "none"} />
-            </button>
-          </div>
+  {/* Mobile Action Buttons - Premium YouTube Style */}
+<div className="md:hidden px-3 py-3">
+  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+    {/* Like + Dislike Combined Button */}
+    <div className="flex items-center bg-[#272727] dark:bg-white/10 rounded-full overflow-hidden flex-shrink-0">
+      <button
+        className={`relative px-3.5 py-2 flex items-center gap-2 transition-all min-w-[70px] justify-center ${
+          isLiked ? "text-blue-500" : "text-white"
+        } hover:bg-white/10`}
+        onClick={handleLike}
+        disabled={!user}
+      >
+        <ThumbsUp
+          className="w-[18px] h-[18px]"
+          fill={isLiked ? "currentColor" : "none"}
+          strokeWidth={2.5}
+        />
+        <span className="text-sm font-bold tabular-nums leading-none">{likes}</span>
+      </button>
+      <div className="w-[1px] h-6 bg-white/20" />
+      <button
+        className={`relative px-3.5 py-2 transition-all ${
+          isDisliked ? "text-blue-500" : "text-white"
+        } hover:bg-white/10`}
+        onClick={handleDislike}
+        disabled={!user}
+      >
+        <ThumbsDown
+          className="w-[18px] h-[18px]"
+          fill={isDisliked ? "currentColor" : "none"}
+          strokeWidth={2.5}
+        />
+      </button>
+    </div>
 
-          {/* Share Button */}
-          <button onClick={handleShare} className="flex items-center gap-2 px-4 h-9 bg-[#272727] rounded-full text-white flex-shrink-0 active:bg-white/10">
-            <Share2 size={18} />
-            <span className="text-sm font-bold">Share</span>
-          </button>
+    {/* Share Button */}
+    <button
+      className="px-4 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap"
+      onClick={handleShare}
+    >
+      <Share2 className="w-[18px] h-[18px]" strokeWidth={2.5} />
+      <span className="text-sm font-bold leading-none">Share</span>
+    </button>
 
-          {/* Download Button */}
-          <button onClick={handleDownload} className="flex items-center gap-2 px-4 h-9 bg-[#272727] rounded-full text-white flex-shrink-0 active:bg-white/10">
-            <Download size={18} />
-            <span className="text-sm font-bold">Download</span>
-          </button>
+    {/* Download Button */}
+    {user && (
+      <button
+        className="px-4 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap"
+        onClick={handleDownload}
+      >
+        <Download className="w-[18px] h-[18px]" strokeWidth={2.5} />
+        <span className="text-sm font-bold leading-none">Download</span>
+      </button>
+    )}
 
-          {/* More Menu */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className="flex items-center justify-center w-9 h-9 bg-[#272727] rounded-full text-white flex-shrink-0"
-            >
-              <MoreVertical size={18} />
-            </button>
-            
-            {showMoreMenu && (
-              <div className="absolute right-0 bottom-12 w-48 bg-[#282828] rounded-xl shadow-xl z-50 py-2 border border-white/10">
-                <button onClick={handleWatchLater} className="flex items-center gap-3 w-full px-4 py-3 text-white hover:bg-white/10">
-                  <Bookmark size={20} /> <span className="text-sm">Save to Watch later</span>
-                </button>
-                {isOwner && (
-                  <button onClick={handleVideoDeleted} className="flex items-center gap-3 w-full px-4 py-3 text-red-500 hover:bg-white/10">
-                    <Trash2 size={20} /> <span className="text-sm">Delete video</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+    {/* Save Button */}
+    {user && (
+      <button
+        className={`px-4 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 hover:bg-white/10 transition-all flex-shrink-0 whitespace-nowrap ${
+          isWatchLater ? "text-blue-500" : "text-white"
+        }`}
+        onClick={handleWatchLater}
+      >
+        <Bookmark 
+          className="w-[18px] h-[18px]" 
+          fill={isWatchLater ? "currentColor" : "none"} 
+          strokeWidth={2.5} 
+        />
+        <span className="text-sm font-bold leading-none">Save</span>
+      </button>
+    )}
+
+    {/* Delete Button (Owner Only) */}
+    {user && isOwner && (
+      <button
+        className="px-4 py-2 bg-[#272727] dark:bg-white/10 rounded-full flex items-center gap-2 text-red-500 hover:bg-red-500/10 transition-all flex-shrink-0 whitespace-nowrap"
+        onClick={handleVideoDeleted}
+      >
+        <Trash2 className="w-[18px] h-[18px]" strokeWidth={2.5} />
+        <span className="text-sm font-bold leading-none">Delete</span>
+      </button>
+    )}
+
+    {/* Three Dots Menu (Non-Owners) */}
+    {user && !isOwner && (
+      <div className="relative flex-shrink-0" ref={menuRef}>
+        <button
+          onClick={() => setShowMoreMenu(!showMoreMenu)}
+          className="w-10 h-10 bg-[#272727] dark:bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-all"
+        >
+          <MoreVertical className="w-5 h-5" strokeWidth={2.5} />
+        </button>
       </div>
+    )}
+  </div>
+</div>
 
       {/* Scrollbar styling */}
       <style jsx global>{`
