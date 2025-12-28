@@ -57,6 +57,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [showSubscribeMenu, setShowSubscribeMenu] = useState(false);
   const [showUnsubscribeModal, setShowUnsubscribeModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notificationPreference, setNotificationPreference] = useState<
     "all" | "personalized" | "none"
   >("all");
@@ -971,13 +972,15 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-{/* Mobile Action Buttons - YouTube Flat Design */}
+      {/* Mobile Action Buttons - YouTube Flat Design */}
       <div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-neutral-800">
         <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide pb-1">
           {/* Like Button - Standalone with count */}
           <button
             className={`flex items-center gap-2.5 transition-colors flex-shrink-0 ${
-              isLiked ? "text-[#065fd4] dark:text-[#3EA6FF]" : "text-gray-700 dark:text-white"
+              isLiked
+                ? "text-[#065fd4] dark:text-[#3EA6FF]"
+                : "text-gray-700 dark:text-white"
             } hover:text-gray-900 dark:hover:text-white/80 active:scale-95`}
             onClick={handleLike}
             disabled={!user}
@@ -987,13 +990,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               fill={isLiked ? "currentColor" : "none"}
               strokeWidth={2}
             />
-            <span className="text-sm font-medium tabular-nums whitespace-nowrap">{likes}</span>
+            <span className="text-sm font-medium tabular-nums whitespace-nowrap">
+              {likes}
+            </span>
           </button>
 
           {/* Dislike Button - Standalone */}
           <button
             className={`flex items-center transition-colors flex-shrink-0 ${
-              isDisliked ? "text-[#065fd4] dark:text-[#3EA6FF]" : "text-gray-700 dark:text-white"
+              isDisliked
+                ? "text-[#065fd4] dark:text-[#3EA6FF]"
+                : "text-gray-700 dark:text-white"
             } hover:text-gray-900 dark:hover:text-white/80 active:scale-95`}
             onClick={handleDislike}
             disabled={!user}
@@ -1021,7 +1028,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               onClick={handleDownload}
             >
               <Download className="w-6 h-6" strokeWidth={2} />
-              <span className="text-sm font-medium whitespace-nowrap">Download</span>
+              <span className="text-sm font-medium whitespace-nowrap">
+                Download
+              </span>
             </button>
           )}
 
@@ -1029,7 +1038,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           {user && (
             <button
               className={`flex items-center gap-2.5 transition-colors flex-shrink-0 active:scale-95 ${
-                isWatchLater ? "text-[#065fd4] dark:text-[#3EA6FF]" : "text-gray-700 dark:text-white"
+                isWatchLater
+                  ? "text-[#065fd4] dark:text-[#3EA6FF]"
+                  : "text-gray-700 dark:text-white"
               } hover:text-gray-900 dark:hover:text-white/80`}
               onClick={handleWatchLater}
             >
@@ -1038,21 +1049,23 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 fill={isWatchLater ? "currentColor" : "none"}
                 strokeWidth={2}
               />
-              <span className="text-sm font-medium whitespace-nowrap">Save</span>
+              <span className="text-sm font-medium whitespace-nowrap">
+                Save
+              </span>
             </button>
           )}
 
-   
-{user && isOwner && (
-  <button
-    onClick={() => setShowMoreMenu(true)}
-    className="flex items-center gap-2.5 text-[#ff4444] dark:text-[#ff5555] hover:text-red-700 dark:hover:text-[#ff6666] transition-colors flex-shrink-0 active:scale-95"
-  >
-    <Trash2 className="w-6 h-6" strokeWidth={2} />
-    <span className="text-sm font-medium whitespace-nowrap">Delete</span>
-  </button>
-)}
-
+          {user && isOwner && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="flex items-center gap-2.5 text-[#ff5555] dark:text-[#ff5555] hover:text-[#ff3333] dark:hover:text-[#ff6666] transition-colors flex-shrink-0 active:scale-95"
+            >
+              <Trash2 className="w-6 h-6" strokeWidth={2} />
+              <span className="text-sm font-medium whitespace-nowrap">
+                Delete
+              </span>
+            </button>
+          )}
           {/* More Menu (Non-Owners) */}
           {user && !isOwner && (
             <div className="relative flex-shrink-0" ref={menuRef}>
@@ -1140,6 +1153,41 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               >
                 {isSubscribing ? "Unsubscribing..." : "Unsubscribe"}
               </Button>
+              {/* Delete Confirmation Modal */}
+              {showDeleteModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+                  <div
+                    className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+                    onClick={() => setShowDeleteModal(false)}
+                  />
+                  <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
+                      Delete Video?
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-neutral-400 text-center">
+                      Are you sure you want to delete "{video.videotitle}"? This
+                      action cannot be undone.
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <button
+                        onClick={() => setShowDeleteModal(false)}
+                        className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <DeleteVideoButton
+                        videoId={video._id}
+                        videoTitle={video.videotitle}
+                        onDeleted={() => {
+                          setShowDeleteModal(false);
+                          handleVideoDeleted();
+                        }}
+                        variant="modal"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

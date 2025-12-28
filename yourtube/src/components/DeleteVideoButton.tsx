@@ -7,7 +7,7 @@ interface DeleteVideoButtonProps {
   videoId: string;
   videoTitle: string;
   onDeleted?: () => void;
-  variant?: "button" | "icon" | "mobile";
+  variant?: "button" | "icon" | "mobile" | "modal";
   className?: string;
 }
 
@@ -103,13 +103,11 @@ export default function DeleteVideoButton({
       )}
     </>
   );
-
-// MOBILE VARIANT - Use bright red
-if (variant === "mobile") {
-  return (
-    <>
+  // MODAL VARIANT - For confirmation dialogs
+  if (variant === "modal") {
+    return (
       <button
-        className="px-4 py-2 rounded-lg bg-[#ff4444] hover:bg-[#ff3333] text-white font-medium text-sm transition-all active:scale-95 flex items-center gap-2"
+        className="px-6 py-2 rounded-lg bg-[#ff5555] hover:bg-[#ff3333] text-white font-medium text-sm transition-all active:scale-95 flex items-center gap-2"
         onClick={handleDelete}
         disabled={isDeleting}
       >
@@ -119,16 +117,12 @@ if (variant === "mobile") {
             Deleting...
           </>
         ) : (
-          <>
-            <Trash2 className="w-4 h-4" strokeWidth={2.5} />
-            Delete
-          </>
+          "Delete"
         )}
       </button>
-      <ConfirmModal />
-    </>
-  );
-}
+    );
+  }
+  // MOBILE VARIANT - Use bright red
 
   // ICON VARIANT - DESKTOP
   if (variant === "icon") {
