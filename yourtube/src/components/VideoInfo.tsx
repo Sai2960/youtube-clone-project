@@ -980,36 +980,46 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         >
           {/* Like Button - Standalone with count */}
           <button
-            className={`flex items-center gap-2.5 transition-colors flex-shrink-0 ${
+            className={`relative flex items-center gap-2.5 transition-colors flex-shrink-0 ${
               isLiked
                 ? "text-[#065fd4] dark:text-[#3EA6FF]"
                 : "text-gray-700 dark:text-white"
-            } hover:text-gray-900 dark:hover:text-white/80 active:scale-95`}
+            } hover:text-gray-900 dark:hover:text-white/80 active:scale-95 overflow-hidden`}
             onClick={handleLike}
             disabled={!user}
           >
+            {likeRipple && (
+              <span className="absolute inset-0 mobile-like-ripple bg-blue-500/40 rounded-full pointer-events-none" />
+            )}
             <ThumbsUp
-              className="w-6 h-6"
+              className={`w-6 h-6 relative z-10 ${
+                likeAnimation ? "mobile-like-animate" : ""
+              }`}
               fill={isLiked ? "currentColor" : "none"}
               strokeWidth={2}
             />
-            <span className="text-sm font-medium tabular-nums whitespace-nowrap">
+            <span className="text-sm font-medium tabular-nums whitespace-nowrap relative z-10">
               {likes}
             </span>
           </button>
 
           {/* Dislike Button - Standalone */}
           <button
-            className={`flex items-center transition-colors flex-shrink-0 ${
+            className={`relative flex items-center transition-colors flex-shrink-0 ${
               isDisliked
-                ? "text-[#065fd4] dark:text-[#3EA6FF]"
+                ? "text-red-600 dark:text-red-500"
                 : "text-gray-700 dark:text-white"
-            } hover:text-gray-900 dark:hover:text-white/80 active:scale-95`}
+            } hover:text-gray-900 dark:hover:text-white/80 active:scale-95 overflow-hidden`}
             onClick={handleDislike}
             disabled={!user}
           >
+            {dislikeRipple && (
+              <span className="absolute inset-0 mobile-dislike-ripple bg-red-500/40 rounded-full pointer-events-none" />
+            )}
             <ThumbsDown
-              className="w-6 h-6"
+              className={`w-6 h-6 relative z-10 ${
+                dislikeAnimation ? "mobile-dislike-animate" : ""
+              }`}
               fill={isDisliked ? "currentColor" : "none"}
               strokeWidth={2}
             />
@@ -1103,6 +1113,69 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           .overflow-x-auto::after,
           .overflow-x-auto::before {
             display: none !important;
+          }
+
+          /* Mobile-only Like/Dislike animations */
+          @keyframes mobile-like-pulse {
+            0% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.3);
+            }
+            100% {
+              transform: scale(1);
+            }
+          }
+
+          @keyframes mobile-dislike-pulse {
+            0% {
+              transform: scale(1) rotate(0deg);
+            }
+            50% {
+              transform: scale(1.3) rotate(-10deg);
+            }
+            100% {
+              transform: scale(1) rotate(0deg);
+            }
+          }
+
+          @keyframes mobile-like-ripple {
+            0% {
+              transform: scale(0);
+              opacity: 1;
+            }
+            100% {
+              transform: scale(2.5);
+              opacity: 0;
+            }
+          }
+
+          @keyframes mobile-dislike-ripple {
+            0% {
+              transform: scale(0);
+              opacity: 1;
+            }
+            100% {
+              transform: scale(2.5);
+              opacity: 0;
+            }
+          }
+
+          .mobile-like-animate {
+            animation: mobile-like-pulse 0.5s ease-in-out;
+          }
+
+          .mobile-dislike-animate {
+            animation: mobile-dislike-pulse 0.5s ease-in-out;
+          }
+
+          .mobile-like-ripple {
+            animation: mobile-like-ripple 0.6s ease-out forwards;
+          }
+
+          .mobile-dislike-ripple {
+            animation: mobile-dislike-ripple 0.6s ease-out forwards;
           }
         }
       `}</style>
