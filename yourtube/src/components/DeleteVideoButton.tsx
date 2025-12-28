@@ -104,29 +104,31 @@ export default function DeleteVideoButton({
     </>
   );
 
-  // MOBILE VARIANT - Matches YouTube Mobile Pill Style
-  if (variant === "mobile") {
-    return (
-      <>
-        <button
-          className={`flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-all active:scale-95 flex-shrink-0 border border-red-200 dark:border-red-800/60 ${
-            className || ""
-          }`}
-          onClick={() => setShowConfirm(true)}
-          disabled={isDeleting}
-        >
-          <Trash2
-            className="w-5 h-5 text-red-700 dark:text-[#FF4444]"
-            strokeWidth={2.5}
-          />
-          <span className="text-sm font-semibold text-red-700 dark:text-[#FF4444] whitespace-nowrap select-none">
+// MOBILE VARIANT - Use bright red
+if (variant === "mobile") {
+  return (
+    <>
+      <button
+        className="px-4 py-2 rounded-lg bg-[#ff4444] hover:bg-[#ff3333] text-white font-medium text-sm transition-all active:scale-95 flex items-center gap-2"
+        onClick={handleDelete}
+        disabled={isDeleting}
+      >
+        {isDeleting ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Deleting...
+          </>
+        ) : (
+          <>
+            <Trash2 className="w-4 h-4" strokeWidth={2.5} />
             Delete
-          </span>
-        </button>
-        <ConfirmModal />
-      </>
-    );
-  }
+          </>
+        )}
+      </button>
+      <ConfirmModal />
+    </>
+  );
+}
 
   // ICON VARIANT - DESKTOP
   if (variant === "icon") {

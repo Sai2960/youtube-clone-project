@@ -1043,16 +1043,15 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           )}
 
    
-          {user && isOwner && (
-            <div className="flex-shrink-0">
-              <DeleteVideoButton
-                videoId={video._id}
-                videoTitle={video.videotitle}
-                onDeleted={handleVideoDeleted}
-                variant="mobile"
-              />
-            </div>
-          )}
+{user && isOwner && (
+  <button
+    onClick={() => setShowMoreMenu(true)}
+    className="flex items-center gap-2.5 text-[#ff4444] dark:text-[#ff5555] hover:text-red-700 dark:hover:text-[#ff6666] transition-colors flex-shrink-0 active:scale-95"
+  >
+    <Trash2 className="w-6 h-6" strokeWidth={2} />
+    <span className="text-sm font-medium whitespace-nowrap">Delete</span>
+  </button>
+)}
 
           {/* More Menu (Non-Owners) */}
           {user && !isOwner && (
