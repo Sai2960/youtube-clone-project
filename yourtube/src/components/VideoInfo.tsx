@@ -971,7 +971,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-     {/* Mobile Action Buttons - YouTube Style Circular Icons */}
+      {/* Mobile Action Buttons - YouTube Style Circular Icons */}
       <div className="md:hidden bg-gray-50 dark:bg-[#0f0f0f] px-4 py-4 border-y border-gray-200 dark:border-neutral-800">
         <div className="flex items-center justify-between gap-4">
           {/* Like Button */}
@@ -989,9 +989,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             >
               <ThumbsUp
                 className={`w-6 h-6 ${
-                  isLiked
-                    ? "text-white"
-                    : "text-gray-700 dark:text-gray-200"
+                  isLiked ? "text-white" : "text-gray-700 dark:text-gray-200"
                 }`}
                 fill={isLiked ? "currentColor" : "none"}
                 strokeWidth={2}
@@ -1017,9 +1015,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             >
               <ThumbsDown
                 className={`w-6 h-6 ${
-                  isDisliked
-                    ? "text-white"
-                    : "text-gray-700 dark:text-gray-200"
+                  isDisliked ? "text-white" : "text-gray-700 dark:text-gray-200"
                 }`}
                 fill={isDisliked ? "currentColor" : "none"}
                 strokeWidth={2}
@@ -1082,54 +1078,64 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 </span>
               </button>
 
-              {/* More Menu Dropdown - Opens ABOVE button */}
+              {/* More Menu Dropdown - Bottom Sheet Style */}
               {showMoreMenu && (
                 <>
                   {/* Backdrop */}
                   <div
-                    className="fixed inset-0 bg-black/30 z-[9998]"
+                    className="fixed inset-0 bg-black/50 z-[9998]"
                     onClick={() => setShowMoreMenu(false)}
                   />
-                  
-                  {/* Dropdown Menu */}
-                  <div className="fixed bottom-20 right-4 w-64 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom fade-in duration-200">
-                    {/* Save to Watch Later */}
-                    <button
-                      onClick={handleWatchLater}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors"
-                    >
-                      <Bookmark
-                        className={`w-5 h-5 ${
-                          isWatchLater
-                            ? "text-blue-600 dark:text-blue-500"
-                            : "text-youtube-primary"
-                        }`}
-                        fill={isWatchLater ? "currentColor" : "none"}
-                        strokeWidth={2}
-                      />
-                      <span className="text-sm font-medium text-youtube-primary">
-                        {isWatchLater ? "Remove from Watch Later" : "Save to Watch Later"}
-                      </span>
-                    </button>
 
-                    {/* Delete Video (Owner Only) */}
-                    {isOwner && (
-                      <>
-                        <div className="border-t border-gray-200 dark:border-neutral-800 my-2" />
+                  {/* Bottom Sheet Menu */}
+                  <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 rounded-t-2xl shadow-2xl z-[9999] animate-in slide-in-from-bottom fade-in duration-200">
+                    {/* Handle Bar */}
+                    <div className="flex justify-center py-3">
+                      <div className="w-10 h-1 bg-gray-300 dark:bg-neutral-700 rounded-full" />
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="pb-6 px-2">
+                      {/* Save to Watch Later */}
+                      <button
+                        onClick={handleWatchLater}
+                        className="w-full px-4 py-4 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-4 transition-colors rounded-lg"
+                      >
+                        <Bookmark
+                          className={`w-6 h-6 ${
+                            isWatchLater
+                              ? "text-blue-600 dark:text-blue-500"
+                              : "text-gray-700 dark:text-gray-200"
+                          }`}
+                          fill={isWatchLater ? "currentColor" : "none"}
+                          strokeWidth={2}
+                        />
+                        <span className="text-base font-medium text-gray-900 dark:text-gray-100">
+                          {isWatchLater
+                            ? "Remove from Watch Later"
+                            : "Save to Watch Later"}
+                        </span>
+                      </button>
+
+                      {/* Delete Video (Owner Only) */}
+                      {isOwner && (
                         <button
                           onClick={() => {
                             setShowMoreMenu(false);
                             handleVideoDeleted();
                           }}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors"
+                          className="w-full px-4 py-4 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-4 transition-colors rounded-lg"
                         >
-                          <Trash2 className="w-5 h-5 text-red-600" strokeWidth={2} />
-                          <span className="text-sm font-medium text-red-600">
+                          <Trash2
+                            className="w-6 h-6 text-red-600"
+                            strokeWidth={2}
+                          />
+                          <span className="text-base font-medium text-red-600">
                             Delete Video
                           </span>
                         </button>
-                      </>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </>
               )}
