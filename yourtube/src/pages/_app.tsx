@@ -463,7 +463,7 @@ function AppContent({ Component, pageProps }: AppProps) {
 
       document.documentElement.style.position = "fixed";
       document.documentElement.style.inset = "0";
-      
+
       document.documentElement.style.zIndex = "0";
       document.documentElement.style.pointerEvents = "none";
       document.documentElement.style.background = "transparent";
@@ -617,7 +617,6 @@ function AppContent({ Component, pageProps }: AppProps) {
       </>
     );
   }
-
   // ============================================================================
   // MAIN APP LAYOUT WITH HEADER, SIDEBAR, AND CONTENT AREA
   // ============================================================================
@@ -644,11 +643,13 @@ function AppContent({ Component, pageProps }: AppProps) {
             <Component {...pageProps} />
           </main>
         </div>
-
-        {shouldShowMobileNav && <MobileBottomNav />}
-        <Toaster />
-        <CallNotification />
       </div>
+
+      {/* ✅ FIXED: Moved OUTSIDE the flex container */}
+      {shouldShowMobileNav && <MobileBottomNav />}
+
+      <Toaster />
+      <CallNotification />
     </>
   );
 }
