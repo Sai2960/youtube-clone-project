@@ -969,8 +969,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-      {/* Mobile Action Buttons - YouTube Style Pills with Text */}
-      <div className="md:hidden border-t border-youtube-tertiary dark:border-neutral-800 bg-white dark:bg-[#0f0f0f]">
+      {/* Mobile Action Buttons - Match Desktop Style */}
+      <div className="md:hidden border-t border-youtube dark:border-neutral-800 bg-white dark:bg-[#0f0f0f] py-2">
         <div
           ref={scrollContainerRef}
           className="overflow-x-auto overflow-y-hidden mobile-scroll-container"
@@ -980,55 +980,64 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             msOverflowStyle: "none",
           }}
         >
-          <div className="flex items-center gap-2 px-3 py-3 w-max">
-            {/* Like/Dislike Combined Pill */}
-            <div className="flex items-center bg-youtube-secondary dark:bg-neutral-800 rounded-full h-9 flex-shrink-0 overflow-hidden">
+          <div className="flex items-center gap-2 px-3 w-max">
+            {/* Like/Dislike Combined - Desktop Style */}
+            <div className="flex items-center bg-youtube-secondary dark:bg-neutral-800 rounded-full overflow-hidden shadow-sm h-9">
               <button
-                className={`flex items-center gap-2 px-3 h-full border-r border-youtube-tertiary dark:border-neutral-700 hover:bg-youtube-hover dark:hover:bg-neutral-700/50 rounded-l-full transition-all ${
+                className={`relative px-4 h-full flex items-center gap-2 transition-all duration-200 border-r border-youtube dark:border-neutral-700 ${
                   isLiked
                     ? "text-blue-600 dark:text-blue-500"
                     : "text-youtube-primary"
-                }`}
+                } ${
+                  likeAnimation ? "animate-like-bounce" : ""
+                } overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
                 onClick={handleLike}
                 disabled={!user}
               >
+                {likeRipple && (
+                  <span className="absolute inset-0 animate-ripple-effect bg-blue-500/30 rounded-full pointer-events-none" />
+                )}
                 <ThumbsUp
-                  className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`}
-                  strokeWidth={2}
+                  className="w-4 h-4 relative z-10"
+                  fill={isLiked ? "currentColor" : "none"}
+                  strokeWidth={2.5}
                 />
-                <span className="text-xs font-bold tabular-nums">{likes}</span>
+                <span className="text-xs font-semibold tabular-nums relative z-10">
+                  {likes}
+                </span>
               </button>
               <button
-                className={`px-3 h-full hover:bg-youtube-hover dark:hover:bg-neutral-700/50 rounded-r-full transition-all ${
+                className={`relative px-4 h-full transition-all duration-200 ${
                   isDisliked
                     ? "text-blue-600 dark:text-blue-500"
                     : "text-youtube-primary"
-                }`}
+                } ${
+                  dislikeAnimation ? "animate-dislike-bounce" : ""
+                } overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
                 onClick={handleDislike}
                 disabled={!user}
               >
+                {dislikeRipple && (
+                  <span className="absolute inset-0 animate-ripple-effect bg-blue-500/30 rounded-full pointer-events-none" />
+                )}
                 <ThumbsDown
-                  className={`w-4 h-4 ${isDisliked ? "fill-current" : ""}`}
-                  strokeWidth={2}
+                  className="w-4 h-4 relative z-10"
+                  fill={isDisliked ? "currentColor" : "none"}
+                  strokeWidth={2.5}
                 />
               </button>
             </div>
 
-            {/* Share Pill */}
+            {/* Share Button - Desktop Style */}
             <button
-              className="flex items-center gap-2 px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 flex-shrink-0"
+              className="px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-youtube-primary hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0"
               onClick={handleShare}
             >
-              <Share2
-                className="w-4 h-4 text-youtube-primary"
-                strokeWidth={2}
-              />
-              <span className="text-xs font-bold text-youtube-primary">
-                Share
-              </span>
+              <Share2 className="w-4 h-4" strokeWidth={2} />
+              <span className="text-xs font-semibold">Share</span>
             </button>
 
-            {/* Download Pill */}
+            {/* Download Button - Desktop Style */}
             {user && (
               <div className="flex-shrink-0">
                 <DownloadButton
@@ -1040,10 +1049,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </div>
             )}
 
-            {/* Save Pill */}
+            {/* Save Button - Desktop Style */}
             {user && (
               <button
-                className={`flex items-center gap-2 px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 flex-shrink-0 ${
+                className={`px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0 ${
                   isWatchLater
                     ? "text-blue-600 dark:text-blue-500"
                     : "text-youtube-primary"
@@ -1051,16 +1060,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 onClick={handleWatchLater}
               >
                 <Bookmark
-                  className={`w-4 h-4 ${isWatchLater ? "fill-current" : ""}`}
+                  className="w-4 h-4"
+                  fill={isWatchLater ? "currentColor" : "none"}
                   strokeWidth={2}
                 />
-                <span className="text-xs font-bold text-youtube-primary">
-                  Save
+                <span className="text-xs font-semibold">
+                  {isWatchLater ? "Saved" : "Save"}
                 </span>
               </button>
             )}
 
-            {/* Delete Pill */}
+            {/* Delete Button - Desktop Style (Owner Only) */}
             {isOwner && (
               <div className="flex-shrink-0">
                 <DeleteVideoButton

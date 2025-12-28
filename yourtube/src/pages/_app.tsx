@@ -463,6 +463,7 @@ function AppContent({ Component, pageProps }: AppProps) {
 
       document.documentElement.style.position = "fixed";
       document.documentElement.style.inset = "0";
+      
       document.documentElement.style.zIndex = "0";
       document.documentElement.style.pointerEvents = "none";
       document.documentElement.style.background = "transparent";
