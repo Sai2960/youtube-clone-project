@@ -1061,7 +1061,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           {user && isOwner && (
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-2.5 text-[#ff5555] dark:text-[#ff5555] hover:text-[#ff3333] dark:hover:text-[#ff6666] transition-colors flex-shrink-0 active:scale-95"
+              className="flex items-center gap-2.5 text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors flex-shrink-0 active:scale-95"
             >
               <Trash2 className="w-6 h-6" strokeWidth={2} />
               <span className="text-sm font-medium whitespace-nowrap">
