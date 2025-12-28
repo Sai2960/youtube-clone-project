@@ -971,35 +971,35 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-  {/* Mobile Action Buttons - Premium YouTube Style */}
+  {/* Mobile Action Buttons - Final Premium Version */}
 <div className="md:hidden px-3 py-3">
   <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
     {/* Like + Dislike Combined Button */}
-    <div className="flex items-center bg-[#3f3f3f] dark:bg-white/10 rounded-full overflow-hidden flex-shrink-0 shadow-sm">
+    <div className="flex items-center bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full overflow-hidden flex-shrink-0 shadow-md">
       <button
-        className={`relative px-4 py-2.5 flex items-center gap-2 transition-all min-w-[75px] justify-center ${
+        className={`relative px-4 py-2.5 flex items-center gap-2.5 transition-all min-w-[80px] justify-center ${
           isLiked ? "text-blue-500" : "text-white"
-        } hover:bg-white/10 active:bg-white/20`}
+        } hover:bg-white/15 active:bg-white/25`}
         onClick={handleLike}
         disabled={!user}
       >
         <ThumbsUp
-          className="w-5 h-5"
+          className="w-[22px] h-[22px]"
           fill={isLiked ? "currentColor" : "none"}
           strokeWidth={2.5}
         />
-        <span className="text-[15px] font-bold tabular-nums">{likes}</span>
+        <span className="text-base font-extrabold tabular-nums">{likes}</span>
       </button>
-      <div className="w-[1px] h-6 bg-white/30" />
+      <div className="w-[1.5px] h-6 bg-white/40" />
       <button
         className={`relative px-4 py-2.5 transition-all ${
           isDisliked ? "text-blue-500" : "text-white"
-        } hover:bg-white/10 active:bg-white/20`}
+        } hover:bg-white/15 active:bg-white/25`}
         onClick={handleDislike}
         disabled={!user}
       >
         <ThumbsDown
-          className="w-5 h-5"
+          className="w-[22px] h-[22px]"
           fill={isDisliked ? "currentColor" : "none"}
           strokeWidth={2.5}
         />
@@ -1008,49 +1008,49 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
     {/* Share Button */}
     <button
-      className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center gap-2.5 text-white hover:bg-white/10 active:bg-white/20 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
+      className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full flex items-center gap-2.5 text-white hover:bg-white/15 active:bg-white/25 transition-all flex-shrink-0 whitespace-nowrap shadow-md"
       onClick={handleShare}
     >
-      <Share2 className="w-5 h-5" strokeWidth={2.5} />
-      <span className="text-[15px] font-bold">Share</span>
+      <Share2 className="w-[22px] h-[22px]" strokeWidth={2.5} />
+      <span className="text-base font-extrabold">Share</span>
     </button>
 
     {/* Download Button */}
     {user && (
       <button
-        className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center gap-2.5 text-white hover:bg-white/10 active:bg-white/20 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
+        className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full flex items-center gap-2.5 text-white hover:bg-white/15 active:bg-white/25 transition-all flex-shrink-0 whitespace-nowrap shadow-md"
         onClick={handleDownload}
       >
-        <Download className="w-5 h-5" strokeWidth={2.5} />
-        <span className="text-[15px] font-bold">Download</span>
+        <Download className="w-[22px] h-[22px]" strokeWidth={2.5} />
+        <span className="text-base font-extrabold">Download</span>
       </button>
     )}
 
     {/* Save Button */}
     {user && (
       <button
-        className={`px-5 py-2.5 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center gap-2.5 hover:bg-white/10 active:bg-white/20 transition-all flex-shrink-0 whitespace-nowrap shadow-sm ${
+        className={`px-5 py-2.5 bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full flex items-center gap-2.5 hover:bg-white/15 active:bg-white/25 transition-all flex-shrink-0 whitespace-nowrap shadow-md ${
           isWatchLater ? "text-blue-500" : "text-white"
         }`}
         onClick={handleWatchLater}
       >
         <Bookmark 
-          className="w-5 h-5" 
+          className="w-[22px] h-[22px]" 
           fill={isWatchLater ? "currentColor" : "none"} 
           strokeWidth={2.5} 
         />
-        <span className="text-[15px] font-bold">Save</span>
+        <span className="text-base font-extrabold">Save</span>
       </button>
     )}
 
-    {/* Delete Button (Owner Only) - RED LIKE DESKTOP */}
+    {/* Delete Button (Owner Only) - BRIGHT RED */}
     {user && isOwner && (
       <button
-        className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center gap-2.5 text-[#ff4444] hover:bg-red-500/10 active:bg-red-500/20 transition-all flex-shrink-0 whitespace-nowrap shadow-sm"
+        className="px-5 py-2.5 bg-[#cc0000] hover:bg-[#ff0000] active:bg-[#990000] rounded-full flex items-center gap-2.5 text-white transition-all flex-shrink-0 whitespace-nowrap shadow-md"
         onClick={handleVideoDeleted}
       >
-        <Trash2 className="w-5 h-5" strokeWidth={2.5} />
-        <span className="text-[15px] font-bold">Delete</span>
+        <Trash2 className="w-[22px] h-[22px]" strokeWidth={2.5} />
+        <span className="text-base font-extrabold">Delete</span>
       </button>
     )}
 
@@ -1059,9 +1059,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       <div className="relative flex-shrink-0" ref={menuRef}>
         <button
           onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className="w-11 h-11 bg-[#3f3f3f] dark:bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/10 active:bg-white/20 transition-all shadow-sm"
+          className="w-11 h-11 bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full flex items-center justify-center text-white hover:bg-white/15 active:bg-white/25 transition-all shadow-md"
         >
-          <MoreVertical className="w-5 h-5" strokeWidth={2.5} />
+          <MoreVertical className="w-[22px] h-[22px]" strokeWidth={2.5} />
         </button>
       </div>
     )}
