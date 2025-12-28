@@ -956,7 +956,7 @@ const Home: NextPage = () => {
               </div>
             ) : videos.length > 0 ? (
               <div className="space-y-4 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
-                {videos.slice(0, 12).map((video) => {
+                {videos.map((video) => {
                   const channelName =
                     video.uploadedBy?.channelname ||
                     video.uploadedBy?.name ||
