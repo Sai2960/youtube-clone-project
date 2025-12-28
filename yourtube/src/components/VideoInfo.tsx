@@ -971,110 +971,93 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-      {/* Mobile Action Buttons - YouTube Style Horizontal Row */}
-      <div className="md:hidden px-3 py-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {/* Like Button */}
-          <button
-            onClick={handleLike}
-            disabled={!user}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition-all flex-shrink-0 ${
-              isLiked
-                ? "bg-blue-600 dark:bg-blue-600 text-white"
-                : "bg-[#2a2a2a] dark:bg-[#2a2a2a] text-white hover:bg-[#3a3a3a]"
-            }`}
-          >
-            <ThumbsUp
-              className="w-5 h-5"
-              fill={isLiked ? "currentColor" : "none"}
-              strokeWidth={2}
-            />
-            <span className="text-sm font-medium">{likes}</span>
-          </button>
+     {/* Mobile Action Buttons - YouTube Style Horizontal Row */}
+<div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f]">
+  <div className="flex items-center gap-3 overflow-x-auto pb-1">
+    {/* Like Button */}
+    <button
+      onClick={handleLike}
+      disabled={!user}
+      className={`flex items-center gap-2.5 px-5 py-3.5 rounded-full transition-all flex-shrink-0 ${
+        isLiked
+          ? 'bg-blue-600 text-white'
+          : 'bg-[#272727] text-white hover:bg-[#3a3a3a]'
+      }`}
+    >
+      <ThumbsUp className="w-6 h-6" fill={isLiked ? "currentColor" : "none"} strokeWidth={2} />
+      <span className="text-base font-bold tabular-nums">{likes}</span>
+    </button>
 
-          {/* Dislike Button */}
-          <button
-            onClick={handleDislike}
-            disabled={!user}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition-all flex-shrink-0 ${
-              isDisliked
-                ? "bg-blue-600 dark:bg-blue-600 text-white"
-                : "bg-[#2a2a2a] dark:bg-[#2a2a2a] text-white hover:bg-[#3a3a3a]"
-            }`}
-          >
-            <ThumbsDown
-              className="w-5 h-5"
-              fill={isDisliked ? "currentColor" : "none"}
-              strokeWidth={2}
-            />
-          </button>
+    {/* Dislike Button */}
+    <button
+      onClick={handleDislike}
+      disabled={!user}
+      className={`flex items-center justify-center w-14 h-14 rounded-full transition-all flex-shrink-0 ${
+        isDisliked
+          ? 'bg-blue-600 text-white'
+          : 'bg-[#272727] text-white hover:bg-[#3a3a3a]'
+      }`}
+    >
+      <ThumbsDown className="w-6 h-6" fill={isDisliked ? "currentColor" : "none"} strokeWidth={2} />
+    </button>
 
-          {/* Share Button */}
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#2a2a2a] dark:bg-[#2a2a2a] text-white hover:bg-[#3a3a3a] transition-all flex-shrink-0"
-          >
-            <Share2 className="w-5 h-5" strokeWidth={2} />
-            <span className="text-sm font-medium">Share</span>
-          </button>
+    {/* Share Button */}
+    <button
+      onClick={handleShare}
+      className="flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-[#272727] text-white hover:bg-[#3a3a3a] transition-all flex-shrink-0"
+    >
+      <Share2 className="w-6 h-6" strokeWidth={2} />
+      <span className="text-base font-semibold">Share</span>
+    </button>
 
-          {/* Download Button */}
-          {user && (
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#2a2a2a] dark:bg-[#2a2a2a] text-white hover:bg-[#3a3a3a] transition-all flex-shrink-0"
-            >
-              <Download className="w-5 h-5" strokeWidth={2} />
-              <span className="text-sm font-medium">Download</span>
-            </button>
-          )}
+    {/* Download Button */}
+    {user && (
+      <button
+        onClick={handleDownload}
+        className="flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-[#272727] text-white hover:bg-[#3a3a3a] transition-all flex-shrink-0"
+      >
+        <Download className="w-6 h-6" strokeWidth={2} />
+        <span className="text-base font-semibold">Download</span>
+      </button>
+    )}
 
-          {/* Three-Dot Menu */}
-          {user && (
-            <div className="relative flex-shrink-0" ref={menuRef}>
+    {/* Three-Dot Menu */}
+    {user && (
+      <div className="relative flex-shrink-0" ref={menuRef}>
+        <button
+          onClick={() => setShowMoreMenu(!showMoreMenu)}
+          className="flex items-center justify-center w-14 h-14 rounded-full bg-[#272727] text-white hover:bg-[#3a3a3a] transition-all"
+        >
+          <MoreVertical className="w-6 h-6" strokeWidth={2} />
+        </button>
+
+        {showMoreMenu && (
+          <>
+            <div className="fixed inset-0 z-[9998]" onClick={() => setShowMoreMenu(false)} />
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-900 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999]">
               <button
-                onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-[#2a2a2a] dark:bg-[#2a2a2a] text-white hover:bg-[#3a3a3a] transition-all"
+                onClick={handleWatchLater}
+                className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-900 dark:text-gray-100"
               >
-                <MoreVertical className="w-5 h-5" strokeWidth={2} />
+                <span className="text-base font-semibold">
+                  {isWatchLater ? "Remove from Watch Later" : "Save"}
+                </span>
               </button>
-
-              {/* Dropdown Menu */}
-              {showMoreMenu && (
-                <>
-                  <div
-                    className="fixed inset-0 z-[9998]"
-                    onClick={() => setShowMoreMenu(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-900 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999]">
-                    <button
-                      onClick={handleWatchLater}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors text-gray-900 dark:text-gray-100"
-                    >
-                      <span className="text-sm font-medium">
-                        {isWatchLater ? "Remove from Watch Later" : "Save"}
-                      </span>
-                    </button>
-                    {isOwner && (
-                      <button
-                        onClick={() => {
-                          setShowMoreMenu(false);
-                          handleVideoDeleted();
-                        }}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors"
-                      >
-                        <span className="text-sm font-medium text-red-600">
-                          Delete
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                </>
+              {isOwner && (
+                <button
+                  onClick={() => { setShowMoreMenu(false); handleVideoDeleted(); }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800"
+                >
+                  <span className="text-base font-semibold text-red-600">Delete</span>
+                </button>
               )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
+    )}
+  </div>
+</div>
 
       {/* Scrollbar styling */}
       <style jsx global>{`
