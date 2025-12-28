@@ -1,5 +1,3 @@
-// DownloadButton.tsx - FIXED WITH DESKTOP STYLE FOR MOBILE
-
 import React, { useState } from "react";
 import {
   Download,
@@ -11,7 +9,7 @@ import {
 } from "lucide-react";
 import { useSubscription } from "@/lib/SubscriptionContext";
 import { useUser } from "@/lib/AuthContext";
-import axiosInstance from "@/lib/axiosinstance";
+import DownloadQualityModal from "./DownloadQualityModal";
 
 interface DownloadButtonProps {
   videoId: string;
@@ -35,6 +33,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
     useSubscription();
 
   const [downloading, setDownloading] = useState(false);
+  const [showQualityModal, setShowQualityModal] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,91 +44,90 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
     (typeof remainingDownloads === "number" && remainingDownloads > 0) ||
     remainingDownloads === "unlimited";
 
-  const handleDownload = async () => {
-  if (!user) {
-    setShowUpgradePrompt(true);
-    return;
-  }
-
-  setError(null);
-  const permission = await checkDownloadPermission();
-  if (!permission.allowed) {
-    setShowUpgradePrompt(true);
-    return;
-  }
-
-  if (!isPremium && (quality === "720p" || quality === "1080p")) {
-    setShowUpgradePrompt(true);
-    return;
-  }
-
-  try {
-    setDownloading(true);
-    setDownloadSuccess(false);
-
-    console.log('📥 Starting download:', { videoId, quality, userId: user._id });
-
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://youtube-clone-project-q3pd.onrender.com';
-    
-    // ✅ Record download
-    const recordResponse = await fetch(`${backendUrl}/api/download/video/${videoId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({
-        userId: user._id,
-        quality: quality || '480p',
-      })
-    });
-
-    const data = await recordResponse.json();
-
-    // ✅ CRITICAL: Validate response
-if (!recordResponse.ok) {
-  const errorData = await recordResponse.json().catch(() => ({}));
-  throw new Error(errorData.message || `Server returned ${recordResponse.status}`);
-}
-
-    if (!data.success) {
-      throw new Error(data.message || 'Download authorization failed');
+  const handleButtonClick = async () => {
+    if (!user) {
+      setShowUpgradePrompt(true);
+      return;
     }
 
-    const { streamUrl, downloadFilename } = data.download;
-    const fullStreamUrl = `${backendUrl}${streamUrl}`;
-    
-    console.log('📥 Downloading original file:', fullStreamUrl);
+    const permission = await checkDownloadPermission();
+    if (!permission.allowed) {
+      setShowUpgradePrompt(true);
+      return;
+    }
 
-    // ✅ Trigger download
-    const link = document.createElement('a');
-    link.href = fullStreamUrl;
-    link.download = downloadFilename;
-    link.style.display = 'none';
-    
-    document.body.appendChild(link);
-    link.click();
-    
-    setTimeout(() => document.body.removeChild(link), 100);
+    // Open quality selector modal
+    setShowQualityModal(true);
+  };
 
-    setDownloadSuccess(true);
-    setTimeout(() => setDownloadSuccess(false), 3000);
-    await checkDownloadPermission();
-    
-  } catch (error: any) {
-    console.error('❌ Download error:', error);
-    setError(error.message || 'Download failed');
-    setTimeout(() => setError(null), 5000);
-  } finally {
-    setDownloading(false);
-  }
-};
+  const handleDownload = async (selectedQuality: string, rememberChoice: boolean) => {
+    setError(null);
+    setShowQualityModal(false);
 
+    try {
+      setDownloading(true);
+      setDownloadSuccess(false);
 
+      console.log('📥 Starting download:', { videoId, quality: selectedQuality, userId: user?._id });
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://youtube-clone-project-q3pd.onrender.com';
+      
+      // Record download
+      const recordResponse = await fetch(`${backendUrl}/api/download/video/${videoId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          userId: user?._id,
+          quality: selectedQuality,
+        })
+      });
+
+      if (!recordResponse.ok) {
+        const errorData = await recordResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server returned ${recordResponse.status}`);
+      }
+
+      const data = await recordResponse.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Download authorization failed');
+      }
+
+      const { streamUrl, downloadFilename } = data.download;
+      const fullStreamUrl = `${backendUrl}${streamUrl}`;
+      
+      console.log('📥 Downloading:', fullStreamUrl);
+
+      // Trigger download
+      const link = document.createElement('a');
+      link.href = fullStreamUrl;
+      link.download = downloadFilename;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => document.body.removeChild(link), 100);
+
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
+      await checkDownloadPermission();
+      
+    } catch (error: any) {
+      console.error('❌ Download error:', error);
+      setError(error.message || 'Download failed');
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handleUpgrade = () => (window.location.href = "/premium");
 
-  // Upgrade Modal - Shared
+  // Upgrade Modal
   const UpgradeModal = () => (
     <>
       {showUpgradePrompt && (
@@ -178,7 +176,7 @@ if (!recordResponse.ok) {
     </>
   );
 
-  // Error Toast - Shared
+  // Error Toast
   const ErrorToast = () => (
     <>
       {error && (
@@ -192,26 +190,35 @@ if (!recordResponse.ok) {
     </>
   );
 
-  // ⭐ MOBILE VARIANT - Desktop Style
+  // Success Toast
+  const SuccessToast = () => (
+    <>
+      {downloadSuccess && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[70000] animate-in slide-in-from-bottom duration-300">
+          <div className="bg-green-500 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-2 max-w-sm">
+            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="text-sm font-medium">Download started successfully!</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // Mobile Variant
   if (variant === "mobile") {
     return (
       <>
         <button
-          onClick={handleDownload}
+          onClick={handleButtonClick}
           disabled={downloading}
           className={`px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-youtube-primary active:bg-youtube-hover dark:active:bg-neutral-700 transition-all shadow-sm flex-shrink-0 ${
             downloading ? "opacity-75" : ""
-          } ${downloadSuccess ? "text-green-600 dark:text-green-500" : ""}`}
+          }`}
         >
           {downloading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" strokeWidth={2} />
               <span className="text-sm font-medium">Downloading</span>
-            </>
-          ) : downloadSuccess ? (
-            <>
-              <CheckCircle className="w-5 h-5" strokeWidth={2} />
-              <span className="text-sm font-medium">Downloaded</span>
             </>
           ) : (
             <>
@@ -220,34 +227,40 @@ if (!recordResponse.ok) {
             </>
           )}
         </button>
+        
+        <DownloadQualityModal
+          isOpen={showQualityModal}
+          onClose={() => setShowQualityModal(false)}
+          onDownload={handleDownload}
+          videoTitle={videoTitle}
+          isPremiumUser={isPremium}
+          downloading={downloading}
+        />
         <UpgradeModal />
         <ErrorToast />
+        <SuccessToast />
       </>
     );
   }
 
-  // ⭐ COMPACT VARIANT
+  // Compact Variant
   if (variant === "compact") {
     return (
       <>
         <button
-          onClick={handleDownload}
+          onClick={handleButtonClick}
           disabled={downloading}
-          className={`h-9 px-4 rounded-full flex items-center gap-2 flex-shrink-0 transition-all bg-youtube-secondary dark:bg-neutral-800 text-youtube-primary hover:bg-youtube-hover dark:hover:bg-neutral-700 active:scale-95 shadow-sm ${
-            downloading ? "opacity-75" : ""
-          } ${className}`}
+          className={`
+            h-9 px-4 rounded-full flex items-center gap-2 flex-shrink-0 transition-all 
+            bg-youtube-secondary dark:bg-neutral-800 text-youtube-primary 
+            hover:bg-youtube-hover dark:hover:bg-neutral-700 active:scale-95 shadow-sm 
+            ${downloading ? "opacity-75" : ""} ${className}
+          `}
         >
           {downloading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" strokeWidth={2} />
               <span className="text-sm font-medium">Downloading</span>
-            </>
-          ) : downloadSuccess ? (
-            <>
-              <CheckCircle className="w-5 h-5 text-green-600" strokeWidth={2} />
-              <span className="text-sm font-medium text-green-600">
-                Downloaded
-              </span>
             </>
           ) : (
             <>
@@ -256,17 +269,27 @@ if (!recordResponse.ok) {
             </>
           )}
         </button>
+        
+        <DownloadQualityModal
+          isOpen={showQualityModal}
+          onClose={() => setShowQualityModal(false)}
+          onDownload={handleDownload}
+          videoTitle={videoTitle}
+          isPremiumUser={isPremium}
+          downloading={downloading}
+        />
         <UpgradeModal />
         <ErrorToast />
+        <SuccessToast />
       </>
     );
   }
 
-  // ⭐ DEFAULT VARIANT
+  // Default Variant
   return (
     <div className="space-y-3">
       <button
-        onClick={handleDownload}
+        onClick={handleButtonClick}
         disabled={downloading || !canDownload}
         className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-semibold text-sm transition-all border-2 ${
           canDownload
@@ -279,11 +302,6 @@ if (!recordResponse.ok) {
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Downloading...</span>
           </>
-        ) : downloadSuccess ? (
-          <>
-            <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className="text-green-500">Downloaded!</span>
-          </>
         ) : !canDownload ? (
           <>
             <Lock className="w-5 h-5" />
@@ -292,12 +310,22 @@ if (!recordResponse.ok) {
         ) : (
           <>
             <Download className="w-5 h-5" />
-            <span>Download {quality}</span>
+            <span>Download Video</span>
           </>
         )}
       </button>
+      
+      <DownloadQualityModal
+        isOpen={showQualityModal}
+        onClose={() => setShowQualityModal(false)}
+        onDownload={handleDownload}
+        videoTitle={videoTitle}
+        isPremiumUser={isPremium}
+        downloading={downloading}
+      />
       <UpgradeModal />
       <ErrorToast />
+      <SuccessToast />
     </div>
   );
 };
