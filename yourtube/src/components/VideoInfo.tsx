@@ -971,103 +971,101 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-  {/* Mobile Action Buttons - Consistent Grouped Design */}
-<div className="md:hidden px-3 py-3">
-  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-    {/* Like + Dislike Combined Button - Always Grouped */}
-    <div className="flex items-center bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full overflow-hidden flex-shrink-0 shadow-md">
-      <button
-        className={`relative px-4 py-2.5 flex items-center gap-2.5 transition-all min-w-[80px] justify-center ${
-          isLiked ? "text-blue-500" : "text-white"
-        } hover:bg-white/15 active:bg-white/25`}
-        onClick={handleLike}
-        disabled={!user}
-      >
-        <ThumbsUp
-          className="w-[22px] h-[22px]"
-          fill={isLiked ? "currentColor" : "none"}
-          strokeWidth={2.5}
-        />
-        {/* Always show like count */}
-        <span className="text-base font-extrabold tabular-nums">{likes}</span>
-      </button>
-      <div className="w-[1.5px] h-6 bg-white/40" />
-      <button
-        className={`relative px-4 py-2.5 transition-all min-w-[50px] justify-center flex items-center ${
-          isDisliked ? "text-blue-500" : "text-white"
-        } hover:bg-white/15 active:bg-white/25`}
-        onClick={handleDislike}
-        disabled={!user}
-      >
-        <ThumbsDown
-          className="w-[22px] h-[22px]"
-          fill={isDisliked ? "currentColor" : "none"}
-          strokeWidth={2.5}
-        />
-      </button>
-    </div>
+      {/* Mobile Action Buttons - YouTube Flat Design */}
+      <div className="md:hidden px-3 py-2 bg-black dark:bg-[#0f0f0f]">
+        <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide">
+          {/* Like Button - Standalone with count */}
+          <button
+            className={`flex items-center gap-2 transition-colors ${
+              isLiked ? "text-[#3EA6FF]" : "text-white"
+            } hover:text-white/80`}
+            onClick={handleLike}
+            disabled={!user}
+          >
+            <ThumbsUp
+              className="w-6 h-6"
+              fill={isLiked ? "currentColor" : "none"}
+              strokeWidth={2}
+            />
+            <span className="text-sm font-medium tabular-nums">{likes}</span>
+          </button>
 
-    {/* Share Button */}
-    <button
-      className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full flex items-center gap-2.5 text-white hover:bg-white/15 active:bg-white/25 transition-all flex-shrink-0 whitespace-nowrap shadow-md"
-      onClick={handleShare}
-    >
-      <Share2 className="w-[22px] h-[22px]" strokeWidth={2.5} />
-      <span className="text-base font-extrabold">Share</span>
-    </button>
+          {/* Dislike Button - Standalone */}
+          <button
+            className={`transition-colors ${
+              isDisliked ? "text-[#3EA6FF]" : "text-white"
+            } hover:text-white/80`}
+            onClick={handleDislike}
+            disabled={!user}
+          >
+            <ThumbsDown
+              className="w-6 h-6"
+              fill={isDisliked ? "currentColor" : "none"}
+              strokeWidth={2}
+            />
+          </button>
 
-    {/* Download Button */}
-    {user && (
-      <button
-        className="px-5 py-2.5 bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full flex items-center gap-2.5 text-white hover:bg-white/15 active:bg-white/25 transition-all flex-shrink-0 whitespace-nowrap shadow-md"
-        onClick={handleDownload}
-      >
-        <Download className="w-[22px] h-[22px]" strokeWidth={2.5} />
-        <span className="text-base font-extrabold">Download</span>
-      </button>
-    )}
+          {/* Share Button */}
+          <button
+            className="flex items-center gap-2 text-white hover:text-white/80 transition-colors"
+            onClick={handleShare}
+          >
+            <Share2 className="w-5 h-5" strokeWidth={2} />
+            <span className="text-sm font-medium">Share</span>
+          </button>
 
-    {/* Save Button */}
-    {user && (
-      <button
-        className={`px-5 py-2.5 bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full flex items-center gap-2.5 hover:bg-white/15 active:bg-white/25 transition-all flex-shrink-0 whitespace-nowrap shadow-md ${
-          isWatchLater ? "text-blue-500" : "text-white"
-        }`}
-        onClick={handleWatchLater}
-      >
-        <Bookmark 
-          className="w-[22px] h-[22px]" 
-          fill={isWatchLater ? "currentColor" : "none"} 
-          strokeWidth={2.5} 
-        />
-        <span className="text-base font-extrabold">Save</span>
-      </button>
-    )}
+          {/* Download Button */}
+          {user && (
+            <button
+              className="flex items-center gap-2 text-white hover:text-white/80 transition-colors"
+              onClick={handleDownload}
+            >
+              <Download className="w-5 h-5" strokeWidth={2} />
+              <span className="text-sm font-medium">Download</span>
+            </button>
+          )}
 
-    {/* Delete Button (Owner Only) - BRIGHT RED */}
-    {user && isOwner && (
-      <button
-        className="px-5 py-2.5 bg-[#cc0000] hover:bg-[#ff0000] active:bg-[#990000] rounded-full flex items-center gap-2.5 text-white transition-all flex-shrink-0 whitespace-nowrap shadow-md"
-        onClick={handleVideoDeleted}
-      >
-        <Trash2 className="w-[22px] h-[22px]" strokeWidth={2.5} />
-        <span className="text-base font-extrabold">Delete</span>
-      </button>
-    )}
+          {/* Save Button */}
+          {user && (
+            <button
+              className={`flex items-center gap-2 transition-colors ${
+                isWatchLater ? "text-[#3EA6FF]" : "text-white"
+              } hover:text-white/80`}
+              onClick={handleWatchLater}
+            >
+              <Bookmark
+                className="w-5 h-5"
+                fill={isWatchLater ? "currentColor" : "none"}
+                strokeWidth={2}
+              />
+              <span className="text-sm font-medium">Save</span>
+            </button>
+          )}
 
-    {/* Three Dots Menu (Non-Owners) */}
-    {user && !isOwner && (
-      <div className="relative flex-shrink-0" ref={menuRef}>
-        <button
-          onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className="w-11 h-11 bg-[#3f3f3f] dark:bg-[#3f3f3f] rounded-full flex items-center justify-center text-white hover:bg-white/15 active:bg-white/25 transition-all shadow-md"
-        >
-          <MoreVertical className="w-[22px] h-[22px]" strokeWidth={2.5} />
-        </button>
+          {/* Delete Button (Owner Only) - Bright Red */}
+          {user && isOwner && (
+            <button
+              className="flex items-center gap-2 text-[#FF0000] hover:text-[#FF4444] transition-colors"
+              onClick={handleVideoDeleted}
+            >
+              <Trash2 className="w-5 h-5" strokeWidth={2} />
+              <span className="text-sm font-medium">Delete</span>
+            </button>
+          )}
+
+          {/* More Menu (Non-Owners) */}
+          {user && !isOwner && (
+            <div className="relative flex-shrink-0" ref={menuRef}>
+              <button
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                className="text-white hover:text-white/80 transition-colors"
+              >
+                <MoreVertical className="w-5 h-5" strokeWidth={2} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    )}
-  </div>
-</div>
 
       {/* Scrollbar styling */}
       <style jsx global>{`
