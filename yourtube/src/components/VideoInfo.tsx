@@ -973,51 +973,51 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       </div>
      {/* Mobile Action Buttons - YouTube Style Horizontal Row */}
 <div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f]">
-  <div className="flex items-center gap-3 overflow-x-auto pb-1">
+  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
     {/* Like Button */}
     <button
       onClick={handleLike}
       disabled={!user}
-      className={`flex items-center gap-2.5 px-5 py-3.5 rounded-full transition-all flex-shrink-0 ${
+      className={`flex items-center gap-2 px-4 h-[38px] rounded-full transition-all flex-shrink-0 ${
         isLiked
           ? 'bg-blue-600 text-white'
-          : 'bg-[#272727] text-white hover:bg-[#3a3a3a]'
+          : 'bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20'
       }`}
     >
-      <ThumbsUp className="w-6 h-6" fill={isLiked ? "currentColor" : "none"} strokeWidth={2} />
-      <span className="text-base font-bold tabular-nums">{likes}</span>
+      <ThumbsUp className="w-5 h-5" fill={isLiked ? "currentColor" : "none"} strokeWidth={2} />
+      <span className="text-sm font-semibold tabular-nums">{likes}</span>
     </button>
 
     {/* Dislike Button */}
     <button
       onClick={handleDislike}
       disabled={!user}
-      className={`flex items-center justify-center w-14 h-14 rounded-full transition-all flex-shrink-0 ${
+      className={`flex items-center justify-center w-[38px] h-[38px] rounded-full transition-all flex-shrink-0 ${
         isDisliked
           ? 'bg-blue-600 text-white'
-          : 'bg-[#272727] text-white hover:bg-[#3a3a3a]'
+          : 'bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20'
       }`}
     >
-      <ThumbsDown className="w-6 h-6" fill={isDisliked ? "currentColor" : "none"} strokeWidth={2} />
+      <ThumbsDown className="w-5 h-5" fill={isDisliked ? "currentColor" : "none"} strokeWidth={2} />
     </button>
 
     {/* Share Button */}
     <button
       onClick={handleShare}
-      className="flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-[#272727] text-white hover:bg-[#3a3a3a] transition-all flex-shrink-0"
+      className="flex items-center gap-2 px-4 h-[38px] rounded-full bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20 transition-all flex-shrink-0"
     >
-      <Share2 className="w-6 h-6" strokeWidth={2} />
-      <span className="text-base font-semibold">Share</span>
+      <Share2 className="w-5 h-5" strokeWidth={2} />
+      <span className="text-sm font-semibold">Share</span>
     </button>
 
     {/* Download Button */}
     {user && (
       <button
         onClick={handleDownload}
-        className="flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-[#272727] text-white hover:bg-[#3a3a3a] transition-all flex-shrink-0"
+        className="flex items-center gap-2 px-4 h-[38px] rounded-full bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20 transition-all flex-shrink-0"
       >
-        <Download className="w-6 h-6" strokeWidth={2} />
-        <span className="text-base font-semibold">Download</span>
+        <Download className="w-5 h-5" strokeWidth={2} />
+        <span className="text-sm font-semibold">Download</span>
       </button>
     )}
 
@@ -1026,9 +1026,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       <div className="relative flex-shrink-0" ref={menuRef}>
         <button
           onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className="flex items-center justify-center w-14 h-14 rounded-full bg-[#272727] text-white hover:bg-[#3a3a3a] transition-all"
+          className="flex items-center justify-center w-[38px] h-[38px] rounded-full bg-[#272727] dark:bg-white/10 text-white hover:bg-[#3f3f3f] dark:hover:bg-white/20 transition-all"
         >
-          <MoreVertical className="w-6 h-6" strokeWidth={2} />
+          <MoreVertical className="w-5 h-5" strokeWidth={2} />
         </button>
 
         {showMoreMenu && (
@@ -1039,7 +1039,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 onClick={handleWatchLater}
                 className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-900 dark:text-gray-100"
               >
-                <span className="text-base font-semibold">
+                <span className="text-sm font-medium">
                   {isWatchLater ? "Remove from Watch Later" : "Save"}
                 </span>
               </button>
@@ -1048,7 +1048,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   onClick={() => { setShowMoreMenu(false); handleVideoDeleted(); }}
                   className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800"
                 >
-                  <span className="text-base font-semibold text-red-600">Delete</span>
+                  <span className="text-sm font-medium text-red-600">Delete</span>
                 </button>
               )}
             </div>
