@@ -971,7 +971,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-      {/* Mobile Action Buttons - YouTube Style */}
+      {/* Mobile Action Buttons - YouTube Style Circular Icons */}
       <div className="md:hidden bg-white dark:bg-[#0f0f0f] px-3 py-3">
         <div className="flex items-center justify-between gap-2">
           {/* Like Button */}
@@ -981,11 +981,11 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             disabled={!user}
           >
             <div
-              className={`p-2 rounded-full ${
+              className={`p-2 rounded-full transition-colors ${
                 isLiked
                   ? "bg-blue-100 dark:bg-blue-900/30"
                   : "bg-gray-100 dark:bg-neutral-800"
-              } transition-colors`}
+              }`}
             >
               <ThumbsUp
                 className={`w-6 h-6 ${
@@ -1009,11 +1009,11 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             disabled={!user}
           >
             <div
-              className={`p-2 rounded-full ${
+              className={`p-2 rounded-full transition-colors ${
                 isDisliked
                   ? "bg-blue-100 dark:bg-blue-900/30"
                   : "bg-gray-100 dark:bg-neutral-800"
-              } transition-colors`}
+              }`}
             >
               <ThumbsDown
                 className={`w-6 h-6 ${
@@ -1046,7 +1046,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </span>
           </button>
 
-          {/* Download Button (replacing Ask) */}
+          {/* Download Button */}
           {user && (
             <button
               className="flex flex-col items-center justify-center gap-1 flex-1"
@@ -1082,14 +1082,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 </span>
               </button>
 
-              {/* More Menu Dropdown */}
+              {/* More Menu Dropdown - Opens ABOVE button */}
               {showMoreMenu && (
                 <>
+                  {/* Backdrop */}
                   <div
-                    className="fixed inset-0 z-[9998]"
+                    className="fixed inset-0 bg-black/30 z-[9998]"
                     onClick={() => setShowMoreMenu(false)}
                   />
-                  <div className="absolute bottom-full mb-2 right-0 w-48 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom fade-in duration-200">
+
+                  {/* Dropdown Menu */}
+                  <div className="absolute bottom-full mb-2 right-0 w-56 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom fade-in duration-200">
+                    {/* Save to Watch Later */}
                     <button
                       onClick={handleWatchLater}
                       className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors"
@@ -1097,7 +1101,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       <Bookmark
                         className={`w-5 h-5 ${
                           isWatchLater
-                            ? "text-blue-600"
+                            ? "text-blue-600 dark:text-blue-500"
                             : "text-youtube-primary"
                         }`}
                         fill={isWatchLater ? "currentColor" : "none"}
@@ -1110,15 +1114,22 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       </span>
                     </button>
 
+                    {/* Delete Video (Owner Only) */}
                     {isOwner && (
                       <>
-                        <div className="border-t border-gray-200 dark:border-neutral-800 my-2"></div>
+                        <div className="border-t border-gray-200 dark:border-neutral-800 my-2" />
                         <button
-                          onClick={handleVideoDeleted}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors text-red-600"
+                          onClick={() => {
+                            setShowMoreMenu(false);
+                            handleVideoDeleted();
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors"
                         >
-                          <Trash2 className="w-5 h-5" strokeWidth={2} />
-                          <span className="text-sm font-medium">
+                          <Trash2
+                            className="w-5 h-5 text-red-600"
+                            strokeWidth={2}
+                          />
+                          <span className="text-sm font-medium text-red-600">
                             Delete Video
                           </span>
                         </button>
