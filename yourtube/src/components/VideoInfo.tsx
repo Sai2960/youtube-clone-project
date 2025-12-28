@@ -1042,15 +1042,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </button>
           )}
 
-          {/* Delete Button (Owner Only) - Bright Red */}
+   {/* Delete Button (Owner Only) - Bright Red */}
           {user && isOwner && (
-            <button
-              className="flex items-center gap-2.5 text-[#cc0000] hover:text-[#ff0000] transition-colors flex-shrink-0 active:scale-95"
-              onClick={handleVideoDeleted}
-            >
-              <Trash2 className="w-6 h-6" strokeWidth={2} />
-              <span className="text-sm font-medium whitespace-nowrap">Delete</span>
-            </button>
+            <DeleteVideoButton
+              videoId={video._id}
+              videoTitle={video.videotitle}
+              onDeleted={handleVideoDeleted}
+              variant="mobile"
+            />
           )}
 
           {/* More Menu (Non-Owners) */}

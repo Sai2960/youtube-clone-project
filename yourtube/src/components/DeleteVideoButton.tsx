@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import { Trash2, Loader2, X } from "lucide-react";
 import axiosInstance from "@/lib/axiosinstance";
@@ -70,11 +69,12 @@ export default function DeleteVideoButton({
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <p className="text-sm text-gray-600 dark:text-neutral-400 mb-6">
-              Are you sure you want to delete &quot;{videoTitle}&quot;? This action cannot be undone.
+              Are you sure you want to delete &quot;{videoTitle}&quot;? This
+              action cannot be undone.
             </p>
-            
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
@@ -109,12 +109,16 @@ export default function DeleteVideoButton({
     return (
       <>
         <button
-          className={`flex items-center gap-2 px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 flex-shrink-0 ${className}`}
+          className={`flex items-center gap-2 px-3 py-1.5 bg-[#cc0000]/10 hover:bg-[#cc0000]/20 rounded-lg transition-all active:scale-95 flex-shrink-0 ${
+            className || ""
+          }`}
           onClick={() => setShowConfirm(true)}
           disabled={isDeleting}
         >
-          <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" strokeWidth={2} />
-          <span className="text-xs font-bold text-youtube-primary">Delete</span>
+          <Trash2 className="w-5 h-5 text-[#ff0000]" strokeWidth={2} />
+          <span className="text-sm font-medium text-[#ff0000] whitespace-nowrap select-none">
+            Delete
+          </span>
         </button>
         <ConfirmModal />
       </>
