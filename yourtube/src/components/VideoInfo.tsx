@@ -9,6 +9,9 @@ import {
   Bell,
   BellOff,
   Bookmark,
+  Download,
+  MoreVertical,
+  Trash2,
 } from "lucide-react";
 import { useUser } from "@/lib/AuthContext";
 import { useRouter } from "next/router";
@@ -58,14 +61,16 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     "all" | "personalized" | "none"
   >("all");
 
+  // Mobile more menu state
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
   const menuRef = useRef<HTMLDivElement>(null);
-  // ✅ IMPROVED: Extract user ID with detailed logging
+  // Helper functions
   const getUserId = () => {
     if (!user) {
       console.log("❌ No user logged in");
       return null;
     }
-
     const id = user._id || user.id;
     console.log("👤 Current User:", {
       id: id,
@@ -76,24 +81,22 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     return id;
   };
 
-  // ✅ IMPROVED: Extract video uploader ID with multiple fallbacks
   const getVideoUploaderId = () => {
     if (!video) {
       console.log("❌ No video data");
       return null;
     }
 
-    // Try all possible locations for the uploader ID
     const uploaderId =
-      video.uploadedBy?._id || // Most common: { uploadedBy: { _id: "..." } }
-      video.uploadedBy?.id || // Alternative: { uploadedBy: { id: "..." } }
-      video.uploadedBy || // Direct ID: { uploadedBy: "string-id" }
-      video.user?._id || // Alternative field: { user: { _id: "..." } }
-      video.user?.id || // Alternative field: { user: { id: "..." } }
-      video.user || // Direct ID: { user: "string-id" }
-      video.videoowner?._id || // Legacy field: { videoowner: { _id: "..." } }
-      video.videoowner?.id || // Legacy field: { videoowner: { id: "..." } }
-      video.videoowner; // Direct ID: { videoowner: "string-id" }
+      video.uploadedBy?._id ||
+      video.uploadedBy?.id ||
+      video.uploadedBy ||
+      video.user?._id ||
+      video.user?.id ||
+      video.user ||
+      video.videoowner?._id ||
+      video.videoowner?.id ||
+      video.videoowner;
 
     console.log("🎥 Video Uploader:", {
       uploaderId: uploaderId,
@@ -110,9 +113,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   const currentUserId = getUserId();
   const videoUploaderId = getVideoUploaderId();
 
-  // ✅ STRICT OWNERSHIP CHECK with detailed logging
   const isOwner = (() => {
-    // Early return if either ID is missing
     if (!currentUserId) {
       console.log("❌ isOwner = false: User not logged in");
       return false;
@@ -123,11 +124,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       return false;
     }
 
-    // Convert both to strings and trim whitespace
     const userId = String(currentUserId).trim();
     const uploaderId = String(videoUploaderId).trim();
-
-    // Perform comparison
     const match = userId === uploaderId;
 
     console.log("🔐 OWNERSHIP CHECK:", {
@@ -140,23 +138,28 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
     return match;
   })();
+  const handleChannelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const channelId = video?.uploadedBy?._id || video?.uploadedBy;
+    if (channelId) {
+      router.push(`/channel/${channelId}`);
+    }
+  };
 
-  // ✅ Refresh channel info on avatar update
+  // Avatar update listener
   useEffect(() => {
     const handleAvatarUpdate = () => {
       console.log("🔄 Avatar updated, refreshing video info");
       setImageKey(Date.now());
     };
-
     window.addEventListener("avatarUpdated", handleAvatarUpdate);
     return () =>
       window.removeEventListener("avatarUpdated", handleAvatarUpdate);
   }, []);
 
-  // ✅ NEW: Refetch reaction status on route change
+  // Refetch reaction status on route change
   useEffect(() => {
     const handleRouteChange = () => {
-      // Refetch reaction status when route changes
       if (user?._id && video?._id) {
         axiosInstance
           .get(`/like/${user._id}`)
@@ -197,19 +200,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     };
 
     router.events.on("routeChangeComplete", handleRouteChange);
-
     return () => {
       router.events.off("routeChangeComplete", handleRouteChange);
     };
   }, [router.events, user?._id, video?._id]);
-
-  const handleChannelClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const channelId = video?.uploadedBy?._id || video?.uploadedBy;
-    if (channelId) {
-      router.push(`/channel/${channelId}`);
-    }
-  };
   // Scroll indicator effect
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -252,38 +246,29 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     });
 
     resizeObserver.observe(container);
-
     return () => resizeObserver.disconnect();
   }, [user, isOwner]);
-
-  // Avatar update listener
-  useEffect(() => {
-    const handleUpdate = () => {
-      setImageKey(Date.now());
-    };
-    window.addEventListener("avatarUpdated", handleUpdate);
-    return () => window.removeEventListener("avatarUpdated", handleUpdate);
-  }, []);
 
   // Click outside menu handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowSubscribeMenu(false);
+        setShowMoreMenu(false);
       }
     };
-    if (showSubscribeMenu) {
+    if (showSubscribeMenu || showMoreMenu) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showSubscribeMenu]);
+  }, [showSubscribeMenu, showMoreMenu]);
 
   // Mobile menu body scroll lock
   useEffect(() => {
     if (
-      showSubscribeMenu &&
+      (showSubscribeMenu || showMoreMenu) &&
       typeof window !== "undefined" &&
       window.innerWidth < 768
     ) {
@@ -294,13 +279,11 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     return () => {
       document.body.classList.remove("notification-open");
     };
-  }, [showSubscribeMenu]);
-
-  // Fetch subscription status
+  }, [showSubscribeMenu, showMoreMenu]);
   // Fetch subscription status
   useEffect(() => {
     const fetchSubscriptionStatus = async () => {
-      if (!videoUploaderId) return; // ✅ Allow fetching even if not logged in
+      if (!videoUploaderId) return;
 
       try {
         const response = await axiosInstance.get(
@@ -320,14 +303,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         }
       } catch (error: any) {
         console.error("Error fetching subscription status:", error);
-        // ✅ Set to 0 on error instead of leaving undefined
         setSubscriberCount(0);
       }
     };
 
     fetchSubscriptionStatus();
 
-    // ✅ Refetch when user state changes
     const handleUserChange = () => {
       fetchSubscriptionStatus();
     };
@@ -337,9 +318,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     return () => {
       window.removeEventListener("userUpdated", handleUserChange);
     };
-  }, [videoUploaderId, user?._id]); // ✅ Add user._id to deps
+  }, [videoUploaderId, user?._id]);
 
-  // ✅ Refresh subscriber count when route changes
+  // Refresh subscriber count when route changes
   useEffect(() => {
     const handleRouteChange = () => {
       if (videoUploaderId) {
@@ -372,7 +353,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       }
 
       try {
-        // ✅ NEW: Fetch the user's specific reaction for THIS video
         const response = await axiosInstance.get(
           `/like/check/${video._id}/${user._id}`
         );
@@ -383,7 +363,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           setIsLiked(response.data.liked || false);
           setIsDisliked(response.data.disliked || false);
 
-          // Also update counts from the response
           if (response.data.video) {
             setLikes(response.data.video.Like || 0);
             setDislikes(response.data.video.Dislike || 0);
@@ -406,7 +385,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
     fetchReactionStatus();
 
-    // ✅ Refetch when user navigates back to the page
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         fetchReactionStatus();
@@ -419,6 +397,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [user?._id, video?._id, router.asPath]);
+
   // Update likes/dislikes counts
   useEffect(() => {
     if (video?._id) {
@@ -427,7 +406,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     }
   }, [video?._id, video?.Like, video?.Dislike]);
 
-  // ✅ DEBUG: Monitor like/dislike changes
+  // DEBUG: Monitor like/dislike changes
   useEffect(() => {
     console.log("📊 Like/Dislike State:", {
       videoId: video._id,
@@ -468,7 +447,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     };
     handleViews();
   }, [user, video?._id]);
-
   // Subscribe/Unsubscribe handler
   const handleSubscribe = async () => {
     if (!user) {
@@ -515,9 +493,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     e.stopPropagation();
     setShowSubscribeMenu(!showSubscribeMenu);
   };
-
   // Like button handler
-  // ✅ FIXED handleLike function
   const handleLike = async () => {
     if (!user?._id) {
       setError("Please log in to like videos");
@@ -532,7 +508,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       setLikeAnimation(true);
       setLikeRipple(true);
 
-      // ✅ Call API FIRST (not optimistic update)
       const res = await axiosInstance.post(`/like/video/${video._id}`, {
         userId: user._id,
         isLike: true,
@@ -540,7 +515,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
       console.log("✅ Server Response:", res.data);
 
-      // ✅ Update UI based on server response
       if (res.data.success) {
         setLikes(res.data.likes);
         setDislikes(res.data.dislikes);
@@ -566,7 +540,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     }
   };
 
-  // ✅ FIXED handleDislike function
+  // Dislike button handler
   const handleDislike = async () => {
     if (!user?._id) {
       setError("Please log in to dislike videos");
@@ -581,7 +555,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       setDislikeAnimation(true);
       setDislikeRipple(true);
 
-      // ✅ Call API FIRST (not optimistic update)
       const res = await axiosInstance.post(`/like/video/${video._id}`, {
         userId: user._id,
         isLike: false,
@@ -589,7 +562,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
       console.log("✅ Server Response:", res.data);
 
-      // ✅ Update UI based on server response
       if (res.data.success) {
         setLikes(res.data.likes);
         setDislikes(res.data.dislikes);
@@ -614,6 +586,32 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       setTimeout(() => setError(null), 3000);
     }
   };
+
+  // Download handler
+  const handleDownload = async () => {
+    if (!user?._id) {
+      setError("Please log in to download videos");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    try {
+      const response = await axiosInstance.get(`/video/download/${video._id}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${video.videotitle}.mp4`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error: any) {
+      console.error("Download error:", error);
+      setError("Failed to download video");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   // Watch later handler
   const handleWatchLater = async () => {
     if (!user?._id) {
@@ -628,6 +626,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       });
       if (res.data.success) {
         setIsWatchLater(res.data.watchlater);
+        setShowMoreMenu(false);
       }
     } catch (error: any) {
       setError(error.response?.data?.message || "Failed to save");
@@ -656,6 +655,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
   // Video deleted handler
   const handleVideoDeleted = () => {
+    setShowMoreMenu(false);
     window.location.href = "/";
   };
   return (
@@ -673,6 +673,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </span>
         </div>
       </div>
+
       {/* 2. Channel Row (Avatar, Name, Subscribe) */}
       <div className="px-3 py-2 md:px-0 md:pt-3">
         <div className="flex items-center justify-between md:border-b border-youtube dark:border-neutral-800 md:pb-3">
@@ -939,23 +940,24 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               />
             )}
 
-            <button
-              className={`px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm ${
-                isWatchLater
-                  ? "text-blue-600 dark:text-blue-500"
-                  : "text-youtube-primary"
-              }`}
-              onClick={handleWatchLater}
-              disabled={!user}
-            >
-              <Bookmark
-                className="w-5 h-5"
-                fill={isWatchLater ? "currentColor" : "none"}
-              />
-              <span className="text-sm font-medium">
-                {isWatchLater ? "Saved" : "Save"}
-              </span>
-            </button>
+            {user && (
+              <button
+                className={`px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm ${
+                  isWatchLater
+                    ? "text-blue-600 dark:text-blue-500"
+                    : "text-youtube-primary"
+                }`}
+                onClick={handleWatchLater}
+              >
+                <Bookmark
+                  className="w-5 h-5"
+                  fill={isWatchLater ? "currentColor" : "none"}
+                />
+                <span className="text-sm font-medium">
+                  {isWatchLater ? "Saved" : "Save"}
+                </span>
+              </button>
+            )}
 
             {isOwner && (
               <DeleteVideoButton
@@ -969,119 +971,164 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-      {/* Mobile Action Buttons - Match Desktop Style */}
-      <div className="md:hidden border-t border-youtube dark:border-neutral-800 bg-white dark:bg-[#0f0f0f] py-2">
-        <div
-          ref={scrollContainerRef}
-          className="overflow-x-auto overflow-y-hidden mobile-scroll-container"
-          style={{
-            WebkitOverflowScrolling: "touch",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-        >
-          <div className="flex items-center gap-2 px-3 w-max">
-            {/* Like/Dislike Combined - Desktop Style */}
-            <div className="flex items-center bg-youtube-secondary dark:bg-neutral-800 rounded-full overflow-hidden shadow-sm h-9">
-              <button
-                className={`relative px-4 h-full flex items-center gap-2 transition-all duration-200 border-r border-youtube dark:border-neutral-700 ${
+      {/* Mobile Action Buttons - YouTube Style */}
+      <div className="md:hidden bg-white dark:bg-[#0f0f0f] px-3 py-3">
+        <div className="flex items-center justify-between gap-2">
+          {/* Like Button */}
+          <button
+            className="flex flex-col items-center justify-center gap-1 flex-1"
+            onClick={handleLike}
+            disabled={!user}
+          >
+            <div
+              className={`p-2 rounded-full ${
+                isLiked
+                  ? "bg-blue-100 dark:bg-blue-900/30"
+                  : "bg-gray-100 dark:bg-neutral-800"
+              } transition-colors`}
+            >
+              <ThumbsUp
+                className={`w-6 h-6 ${
                   isLiked
                     ? "text-blue-600 dark:text-blue-500"
                     : "text-youtube-primary"
-                } ${
-                  likeAnimation ? "animate-like-bounce" : ""
-                } overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
-                onClick={handleLike}
-                disabled={!user}
-              >
-                {likeRipple && (
-                  <span className="absolute inset-0 animate-ripple-effect bg-blue-500/30 rounded-full pointer-events-none" />
-                )}
-                <ThumbsUp
-                  className="w-4 h-4 relative z-10"
-                  fill={isLiked ? "currentColor" : "none"}
-                  strokeWidth={2.5}
-                />
-                <span className="text-xs font-semibold tabular-nums relative z-10">
-                  {likes}
-                </span>
-              </button>
-              <button
-                className={`relative px-4 h-full transition-all duration-200 ${
+                }`}
+                fill={isLiked ? "currentColor" : "none"}
+                strokeWidth={2}
+              />
+            </div>
+            <span className="text-xs font-medium text-youtube-primary">
+              {likes}
+            </span>
+          </button>
+
+          {/* Dislike Button */}
+          <button
+            className="flex flex-col items-center justify-center gap-1 flex-1"
+            onClick={handleDislike}
+            disabled={!user}
+          >
+            <div
+              className={`p-2 rounded-full ${
+                isDisliked
+                  ? "bg-blue-100 dark:bg-blue-900/30"
+                  : "bg-gray-100 dark:bg-neutral-800"
+              } transition-colors`}
+            >
+              <ThumbsDown
+                className={`w-6 h-6 ${
                   isDisliked
                     ? "text-blue-600 dark:text-blue-500"
                     : "text-youtube-primary"
-                } ${
-                  dislikeAnimation ? "animate-dislike-bounce" : ""
-                } overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
-                onClick={handleDislike}
-                disabled={!user}
-              >
-                {dislikeRipple && (
-                  <span className="absolute inset-0 animate-ripple-effect bg-blue-500/30 rounded-full pointer-events-none" />
-                )}
-                <ThumbsDown
-                  className="w-4 h-4 relative z-10"
-                  fill={isDisliked ? "currentColor" : "none"}
-                  strokeWidth={2.5}
-                />
-              </button>
-            </div>
-
-            {/* Share Button - Desktop Style */}
-            <button
-              className="px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-youtube-primary hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0"
-              onClick={handleShare}
-            >
-              <Share2 className="w-4 h-4" strokeWidth={2} />
-              <span className="text-xs font-semibold">Share</span>
-            </button>
-
-            {/* Download Button - Desktop Style */}
-            {user && (
-              <div className="flex-shrink-0">
-                <DownloadButton
-                  videoId={video._id}
-                  videoTitle={video.videotitle}
-                  quality="480p"
-                  variant="mobile"
-                />
-              </div>
-            )}
-
-            {/* Save Button - Desktop Style */}
-            {user && (
-              <button
-                className={`px-4 h-9 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0 ${
-                  isWatchLater
-                    ? "text-blue-600 dark:text-blue-500"
-                    : "text-youtube-primary"
                 }`}
-                onClick={handleWatchLater}
-              >
-                <Bookmark
-                  className="w-4 h-4"
-                  fill={isWatchLater ? "currentColor" : "none"}
+                fill={isDisliked ? "currentColor" : "none"}
+                strokeWidth={2}
+              />
+            </div>
+            <span className="text-xs font-medium text-youtube-primary invisible">
+              0
+            </span>
+          </button>
+
+          {/* Share Button */}
+          <button
+            className="flex flex-col items-center justify-center gap-1 flex-1"
+            onClick={handleShare}
+          >
+            <div className="p-2 rounded-full bg-gray-100 dark:bg-neutral-800 transition-colors">
+              <Share2
+                className="w-6 h-6 text-youtube-primary"
+                strokeWidth={2}
+              />
+            </div>
+            <span className="text-xs font-medium text-youtube-primary">
+              Share
+            </span>
+          </button>
+
+          {/* Download Button (replacing Ask) */}
+          {user && (
+            <button
+              className="flex flex-col items-center justify-center gap-1 flex-1"
+              onClick={handleDownload}
+            >
+              <div className="p-2 rounded-full bg-gray-100 dark:bg-neutral-800 transition-colors">
+                <Download
+                  className="w-6 h-6 text-youtube-primary"
                   strokeWidth={2}
                 />
-                <span className="text-xs font-semibold">
-                  {isWatchLater ? "Saved" : "Save"}
+              </div>
+              <span className="text-xs font-medium text-youtube-primary">
+                Download
+              </span>
+            </button>
+          )}
+
+          {/* More Menu Button */}
+          {user && (
+            <div className="relative flex-1 flex justify-center" ref={menuRef}>
+              <button
+                className="flex flex-col items-center justify-center gap-1"
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+              >
+                <div className="p-2 rounded-full bg-gray-100 dark:bg-neutral-800 transition-colors">
+                  <MoreVertical
+                    className="w-6 h-6 text-youtube-primary"
+                    strokeWidth={2}
+                  />
+                </div>
+                <span className="text-xs font-medium text-youtube-primary invisible">
+                  More
                 </span>
               </button>
-            )}
 
-            {/* Delete Button - Desktop Style (Owner Only) */}
-            {isOwner && (
-              <div className="flex-shrink-0">
-                <DeleteVideoButton
-                  videoId={video._id}
-                  videoTitle={video.videotitle}
-                  onDeleted={handleVideoDeleted}
-                  variant="mobile"
-                />
-              </div>
-            )}
-          </div>
+              {/* More Menu Dropdown */}
+              {showMoreMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-[9998]"
+                    onClick={() => setShowMoreMenu(false)}
+                  />
+                  <div className="absolute bottom-full mb-2 right-0 w-48 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom fade-in duration-200">
+                    <button
+                      onClick={handleWatchLater}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors"
+                    >
+                      <Bookmark
+                        className={`w-5 h-5 ${
+                          isWatchLater
+                            ? "text-blue-600"
+                            : "text-youtube-primary"
+                        }`}
+                        fill={isWatchLater ? "currentColor" : "none"}
+                        strokeWidth={2}
+                      />
+                      <span className="text-sm font-medium text-youtube-primary">
+                        {isWatchLater
+                          ? "Remove from Watch Later"
+                          : "Save to Watch Later"}
+                      </span>
+                    </button>
+
+                    {isOwner && (
+                      <>
+                        <div className="border-t border-gray-200 dark:border-neutral-800 my-2"></div>
+                        <button
+                          onClick={handleVideoDeleted}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-3 transition-colors text-red-600"
+                        >
+                          <Trash2 className="w-5 h-5" strokeWidth={2} />
+                          <span className="text-sm font-medium">
+                            Delete Video
+                          </span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
