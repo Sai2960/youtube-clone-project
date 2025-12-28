@@ -104,19 +104,26 @@ export default function DeleteVideoButton({
     </>
   );
 
-  // MOBILE VARIANT - Matches YouTube Mobile Pill Style
+// MOBILE VARIANT - Clean YouTube Style
   if (variant === "mobile") {
     return (
       <>
         <button
-          className={`flex items-center gap-2 px-3 py-1.5 bg-[#cc0000]/10 hover:bg-[#cc0000]/20 rounded-lg transition-all active:scale-95 flex-shrink-0 ${
-            className || ""
-          }`}
+          className="flex items-center gap-2 text-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white/80 transition-colors flex-shrink-0 active:scale-95 min-w-0"
           onClick={() => setShowConfirm(true)}
           disabled={isDeleting}
+          aria-label="Delete video"
+          style={{ 
+            WebkitTapHighlightColor: 'transparent',
+            userSelect: 'none'
+          }}
         >
-          <Trash2 className="w-5 h-5 text-[#ff0000]" strokeWidth={2} />
-          <span className="text-sm font-medium text-[#ff0000] whitespace-nowrap select-none">
+          <Trash2 
+            className="w-6 h-6 text-red-600 dark:text-red-500 flex-shrink-0" 
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+          <span className="text-sm font-medium text-red-600 dark:text-red-500 whitespace-nowrap select-none" style={{ lineHeight: '1' }}>
             Delete
           </span>
         </button>
