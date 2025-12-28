@@ -189,12 +189,8 @@ export const downloadVideo = async (req, res) => {
     const { videoId } = req.params;
     const { userId, quality = "480p" } = req.body;
 
-    // Validate quality
-    const validQualities = ["1080p", "720p", "480p", "360p", "240p", "144p"];
-    const selectedQuality = validQualities.includes(quality) ? quality : "480p";
-
     console.log("=== DOWNLOAD VIDEO REQUEST ===");
-    console.log({ userId, videoId, quality: selectedQuality });
+    console.log({ userId, videoId, quality });
 
     // Validate IDs
     if (!mongoose.Types.ObjectId.isValid(userId)) {
