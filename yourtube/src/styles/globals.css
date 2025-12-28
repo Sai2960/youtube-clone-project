@@ -12039,3 +12039,25 @@ body:has(.download-modal-open) {
 [style*="z-index: 99999"] {
   z-index: 99999 !important;
 }
+/* Video player controls should be below modals */
+.controls-area {
+  z-index: 40 !important;
+}
+
+/* Download modal should be on top of everything */
+.download-quality-modal-wrapper {
+  z-index: 999999 !important;
+  position: fixed !important;
+}
+
+/* Ensure video player doesn't interfere */
+video {
+  position: relative;
+  z-index: 1;
+}
+
+/* Video container should not block modals */
+.video-container {
+  position: relative;
+  z-index: auto;
+}
