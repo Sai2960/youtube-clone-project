@@ -1,4 +1,4 @@
-// src/components/ui/MobileBottomNav.tsx - FIXED VERSION
+// src/components/ui/MobileBottomNav.tsx - COMPLETE MERGED VERSION
 
 import React from "react";
 import Link from "next/link";
@@ -9,7 +9,6 @@ import { useUser } from "@/lib/AuthContext";
 const MobileBottomNav: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
-
   const navItems = [
     {
       icon: Home,
@@ -33,7 +32,7 @@ const MobileBottomNav: React.FC = () => {
     {
       icon: Folder,
       label: "Subscriptions",
-      path: user ? "/subscriptions" : "/login",
+      path: "/subscriptions", // ✅ Direct path to subscriptions page (no login check)
       filled: false,
     },
     {
@@ -43,7 +42,6 @@ const MobileBottomNav: React.FC = () => {
       filled: false,
     },
   ];
-
   const isActive = (path: string) => {
     if (path === "/" && router.pathname === "/") return true;
     if (path !== "/" && router.pathname.startsWith(path)) return true;
@@ -56,7 +54,6 @@ const MobileBottomNav: React.FC = () => {
     }
     return false;
   };
-
   return (
     <>
       {/* Bottom Navigation - FIXED POSITIONING */}
@@ -95,7 +92,6 @@ const MobileBottomNav: React.FC = () => {
                 </Link>
               );
             }
-
             // Shorts icon special styling
             if (item.isShorts) {
               return (
@@ -124,7 +120,6 @@ const MobileBottomNav: React.FC = () => {
                 </Link>
               );
             }
-
             // Regular nav items
             const Icon = item.icon as any;
             return (
