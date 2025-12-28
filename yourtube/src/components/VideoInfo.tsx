@@ -1042,14 +1042,16 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </button>
           )}
 
-   {/* Delete Button (Owner Only) - Bright Red */}
+   
           {user && isOwner && (
-            <DeleteVideoButton
-              videoId={video._id}
-              videoTitle={video.videotitle}
-              onDeleted={handleVideoDeleted}
-              variant="mobile"
-            />
+            <div className="flex-shrink-0">
+              <DeleteVideoButton
+                videoId={video._id}
+                videoTitle={video.videotitle}
+                onDeleted={handleVideoDeleted}
+                variant="mobile"
+              />
+            </div>
           )}
 
           {/* More Menu (Non-Owners) */}

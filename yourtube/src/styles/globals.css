@@ -11982,3 +11982,25 @@ button {
     backdrop-filter: none !important;
   }
 }
+/* Prevent text selection artifacts on buttons */
+button {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Ensure icons don't cause layout shifts */
+button svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Prevent text rendering issues */
+button span {
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
