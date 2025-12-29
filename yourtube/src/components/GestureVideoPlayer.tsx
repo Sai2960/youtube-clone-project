@@ -226,12 +226,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             ref={menuRef}
             className="fixed left-0 right-0 bottom-0 z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300"
             style={{
-              background: "#282828",
+              background: "rgba(28, 28, 28, 0.98)",
+              backdropFilter: "blur(20px)",
               borderRadius: "16px 16px 0 0",
               maxHeight: "75vh",
               height: "auto",
               boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
             }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
@@ -241,12 +242,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <div
               className="sticky top-0 z-10"
               style={{
-                background: "#282828",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
+                background: "rgba(28, 28, 28, 0.98)",
+                backdropFilter: "blur(20px)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
               }}
             >
               <button
-                className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation"
+                className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation rounded-t-xl"
                 style={{
                   WebkitTapHighlightColor: "transparent",
                 }}
@@ -266,7 +268,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               className="overflow-y-auto overflow-x-hidden flex-1"
               style={{
                 WebkitOverflowScrolling: "touch",
-                background: "#282828",
+                background: "rgba(28, 28, 28, 0.98)",
                 paddingBottom: "max(env(safe-area-inset-bottom, 0px), 24px)",
               }}
             >
