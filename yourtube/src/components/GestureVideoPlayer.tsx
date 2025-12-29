@@ -190,11 +190,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         onTouchStart={(e) => {
           e.stopPropagation();
         }}
-        className="flex items-center justify-center h-10 w-10 text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation relative"
+        className="flex items-center justify-center text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation relative"
         style={{
           WebkitTapHighlightColor: "transparent",
-          minHeight: isMobile ? "44px" : "40px",
-          minWidth: isMobile ? "44px" : "40px",
+          minHeight: "40px",
+          minWidth: "40px",
+          height: "40px",
+          width: "40px",
           zIndex: 50,
         }}
         aria-label="Quality settings"
@@ -236,9 +238,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <div
               className="sticky top-0 z-10 flex items-center"
               style={{
-                background: "#212121",
+                background: "#282828",
                 borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                padding: "12px 16px",
+                padding: "16px 16px",
               }}
             >
               <button
@@ -290,10 +292,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     disabled={isChanging}
                     className="w-full flex items-center justify-between transition-colors touch-manipulation active:bg-[#3d3d3d]"
                     style={{
-                      minHeight: "48px",
-                      padding: "12px 16px",
+                      minHeight: "56px",
+                      padding: "16px 20px",
                       background: "transparent",
-                      borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
                       WebkitTapHighlightColor: "transparent",
                       opacity: isChanging ? 0.5 : 1,
                       cursor: isChanging ? "not-allowed" : "pointer",
@@ -301,11 +303,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     role="menuitemradio"
                     aria-checked={isActive}
                   >
-                    <div className="flex items-center gap-3 flex-1">
+                    <div className="flex items-center gap-3 flex-1 text-left">
                       <span
                         style={{
                           color: "#ffffff",
-                          fontSize: "14px",
+                          fontSize: "15px",
                           fontWeight: 400,
                           lineHeight: "20px",
                         }}
@@ -316,9 +318,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         <span
                           style={{
                             color: "#aaaaaa",
-                            fontSize: "12px",
+                            fontSize: "13px",
                             fontWeight: 400,
-                            lineHeight: "16px",
+                            lineHeight: "18px",
                           }}
                         >
                           {label.desc}
@@ -436,7 +438,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 <span className="text-sm font-semibold">Quality</span>
               </button>
 
-              <div className="overflow-y-auto" style={{ maxHeight: "50vh" }}>
+              <div
+                className="overflow-y-auto overflow-x-hidden"
+                style={{ maxHeight: "50vh" }}
+              >
                 {availableQualities.map((q) => (
                   <button
                     key={q}
@@ -1614,7 +1619,7 @@ export default function GestureVideoPlayer({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:bg-white/20 h-9 w-9 md:h-10 md:w-10 touch-manipulation"
+                    className="text-white hover:bg-white/20 h-10 w-10 touch-manipulation"
                     onClick={(e) => {
                       e.stopPropagation();
                       togglePlayPause();
@@ -1622,9 +1627,9 @@ export default function GestureVideoPlayer({
                     title="Play/Pause"
                   >
                     {isPlaying ? (
-                      <Pause className="w-4 h-4 md:w-5 md:h-5" />
+                      <Pause className="w-5 h-5" />
                     ) : (
-                      <Play className="w-4 h-4 md:w-5 md:h-5" />
+                      <Play className="w-5 h-5" />
                     )}
                   </Button>
 
@@ -1680,13 +1685,13 @@ export default function GestureVideoPlayer({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-white hover:bg-white/20 h-8 w-8"
+                        className="text-white hover:bg-white/20 h-10 w-10 touch-manipulation"
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowVolumeSlider(!showVolumeSlider);
                         }}
                       >
-                        <VolumeIcon className="w-4 h-4" />
+                        <VolumeIcon className="w-5 h-5" />
                       </Button>
                       {showVolumeSlider && (
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black/90 backdrop-blur-sm rounded-lg p-3 min-w-[40px] z-50 shadow-xl border border-white/10">
@@ -1729,14 +1734,14 @@ export default function GestureVideoPlayer({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-white hover:bg-white/20 h-9 w-9 md:h-10 md:w-10 touch-manipulation"
+                      className="text-white hover:bg-white/20 h-10 w-10 touch-manipulation"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleShareClick();
                       }}
                       title="Share video"
                     >
-                      <Share2 className="w-4 h-4 md:w-5 md:h-5" />
+                      <Share2 className="w-5 h-5" />
                     </Button>
                   )}
                   <QualitySelector
@@ -1750,14 +1755,14 @@ export default function GestureVideoPlayer({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:bg-white/20 h-8 w-8 md:h-9 md:w-9"
+                    className="text-white hover:bg-white/20 h-10 w-10 touch-manipulation"
                     onClick={(e) => {
                       e.stopPropagation();
                       togglePiP();
                     }}
                     title="Picture in Picture"
                   >
-                    <PictureInPicture className="w-4 h-4 md:w-5 md:h-5" />
+                    <PictureInPicture className="w-5 h-5" />
                   </Button>
 
                   {/* Subtitles - Desktop only */}
@@ -1783,7 +1788,7 @@ export default function GestureVideoPlayer({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:bg-white/20 h-9 w-9 md:h-10 md:w-10 touch-manipulation"
+                    className="text-white hover:bg-white/20 h-10 w-10 touch-manipulation"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleFullscreen();
@@ -1791,9 +1796,9 @@ export default function GestureVideoPlayer({
                     title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
                   >
                     {isFullscreen ? (
-                      <Minimize className="w-4 h-4 md:w-5 md:h-5" />
+                      <Minimize className="w-5 h-5" />
                     ) : (
-                      <Maximize className="w-4 h-4 md:w-5 md:h-5" />
+                      <Maximize className="w-5 h-5" />
                     )}
                   </Button>
                 </div>
