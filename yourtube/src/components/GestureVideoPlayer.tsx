@@ -138,9 +138,13 @@ const QualitySelector = ({
 
       {isOpen && (
         <div
-          className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden min-w-[200px] md:min-w-[240px] border border-white/10 z-50 max-h-[70vh] overflow-y-auto"
+          className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden min-w-[180px] md:min-w-[240px] border border-white/10 z-[60]"
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
+          style={{
+            maxHeight: isMobileView ? "50vh" : "70vh",
+            overflowY: "auto",
+          }}
         >
           {!showQualityMenu ? (
             <button
@@ -189,7 +193,13 @@ const QualitySelector = ({
                 <span className="text-sm font-medium">Quality</span>
               </button>
 
-              <div className="max-h-[300px] overflow-y-auto">
+              <div
+                className="overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
+                style={{
+                  maxHeight: isMobileView ? "40vh" : "300px",
+                }}
+              >
+                {" "}
                 {availableQualities.map((q) => (
                   <button
                     key={q}
