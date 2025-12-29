@@ -22,7 +22,7 @@ import {
   Check,
   ChevronLeft,
 } from "lucide-react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/router"; 
 import { Button } from "./ui/button";
 import { getVideoUrl } from "@/lib/urlHelper";
 import { useSubscription } from "@/lib/SubscriptionContext";
@@ -103,10 +103,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     };
 
     document.addEventListener("mousedown", handleClickOutside, true);
-    document.addEventListener("touchstart", handleClickOutside, {
-      capture: true,
-      passive: false,
-    });
+    document.addEventListener("touchstart", handleClickOutside, true);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside, true);
@@ -217,12 +214,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               background: "rgba(0, 0, 0, 0.7)",
             }}
             onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              closeMenu();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
               e.stopPropagation();
               closeMenu();
             }}
@@ -273,13 +264,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   marginLeft: "-12px",
                 }}
                 onClick={(e) => {
-                  e.preventDefault();
                   e.stopPropagation();
                   closeMenu();
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
                 }}
                 aria-label="Close quality selector"
               >
@@ -313,12 +299,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   <button
                     key={quality}
                     onClick={(e) => {
-                      e.preventDefault();
                       e.stopPropagation();
                       handleQualitySelect(quality);
                     }}
                     disabled={isChanging}
-                    className="w-full flex items-center justify-between transition-colors touch-manipulation"
+                    className="w-full flex items-center justify-between transition-colors touch-manipulation active:bg-[#353535]"
                     style={{
                       minHeight: "56px",
                       padding: "16px 20px",
@@ -327,18 +312,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       WebkitTapHighlightColor: "transparent",
                       opacity: isChanging ? 0.5 : 1,
                       cursor: isChanging ? "not-allowed" : "pointer",
-                    }}
-                    onTouchStart={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!isChanging) {
-                        e.currentTarget.style.background = "#353535";
-                      }
-                    }}
-                    onTouchEnd={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      e.currentTarget.style.background = "#2a2a2a";
                     }}
                     role="menuitemradio"
                     aria-checked={isActive}
