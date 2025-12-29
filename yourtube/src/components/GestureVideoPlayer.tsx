@@ -226,11 +226,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             ref={menuRef}
             className="fixed left-0 right-0 bottom-0 z-[9999] flex flex-col animate-in slide-in-from-bottom duration-300"
             style={{
-              background: "#323232",
-              borderRadius: "12px 12px 0 0",
-              maxHeight: "70vh",
+              background: "#282828",
+              borderRadius: "16px 16px 0 0",
+              maxHeight: "85vh",
               boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
             }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
@@ -240,17 +240,18 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <div
               className="sticky top-0 z-10 flex items-center"
               style={{
-                background: "#323232",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.28)",
-                padding: "16px 20px",
+                background: "#282828",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
+                padding: "14px 16px",
               }}
             >
               <button
-                className="flex items-center justify-center touch-manipulation -ml-2"
+                className="flex items-center justify-center touch-manipulation"
                 style={{
-                  minWidth: "40px",
-                  minHeight: "40px",
+                  minWidth: "44px",
+                  minHeight: "44px",
                   WebkitTapHighlightColor: "transparent",
+                  marginRight: "8px",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -261,13 +262,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 <ChevronLeft className="w-6 h-6 text-white" />
               </button>
               <h3
-                className="font-medium flex-1 text-center"
+                className="font-medium flex-1"
                 style={{
                   color: "#ffffff",
-                  fontSize: "20px",
-                  fontWeight: 700,
-                  letterSpacing: "0.2px",
-                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.9)",
+                  fontSize: "18px",
+                  fontWeight: 500,
+                  letterSpacing: "0.1px",
                 }}
               >
                 Quality
@@ -279,9 +279,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               className="overflow-y-auto overflow-x-hidden flex-1"
               style={{
                 WebkitOverflowScrolling: "touch",
-                background: "#323232",
-                paddingBottom: "20px",
-                paddingTop: "8px",
+                background: "#282828",
+                paddingBottom: "env(safe-area-inset-bottom, 20px)",
               }}
             >
               {availableQualities.map((quality) => {
@@ -297,38 +296,38 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     }}
                     onTouchStart={(e) => {
                       if (!isChanging) {
-                        e.currentTarget.style.transform = "scale(0.98)";
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
                       }
                     }}
                     onTouchEnd={(e) => {
-                      e.currentTarget.style.transform = "scale(1)";
+                      e.currentTarget.style.background = isActive
+                        ? "rgba(255, 255, 255, 0.05)"
+                        : "transparent";
                     }}
                     disabled={isChanging}
-                    className="w-full flex items-center justify-between transition-colors touch-manipulation active:bg-[#3d3d3d]"
+                    className="w-full flex items-center justify-between transition-colors touch-manipulation"
                     style={{
-                      minHeight: "64px",
-                      padding: "20px 24px",
+                      minHeight: "56px",
+                      padding: "14px 20px",
                       background: isActive
-                        ? "rgba(255, 255, 255, 0.14)"
+                        ? "rgba(255, 255, 255, 0.05)"
                         : "transparent",
-                      borderBottom: "1px solid rgba(255, 255, 255, 0.22)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
                       WebkitTapHighlightColor: "transparent",
                       opacity: isChanging ? 0.5 : 1,
                       cursor: isChanging ? "not-allowed" : "pointer",
-                      transition:
-                        "background-color 0.15s ease, transform 0.1s ease",
+                      transition: "background-color 0.2s ease",
                     }}
                     role="menuitemradio"
                     aria-checked={isActive}
                   >
-                    <div className="flex items-center gap-3 flex-1 text-left">
+                    <div className="flex items-center gap-2 flex-1 text-left">
                       <span
                         style={{
-                          color: "#ffffff",
-                          fontSize: "18px",
-                          fontWeight: isActive ? 600 : 400,
-                          lineHeight: "24px",
-                          textShadow: "0 1px 3px rgba(0, 0, 0, 0.4)",
+                          color: isActive ? "#ffffff" : "#e0e0e0",
+                          fontSize: "16px",
+                          fontWeight: isActive ? 500 : 400,
+                          lineHeight: "22px",
                         }}
                       >
                         {label.full}
@@ -336,11 +335,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       {quality === "auto" && (
                         <span
                           style={{
-                            color: "#aaaaaa",
-                            fontSize: "14px",
+                            color: "#909090",
+                            fontSize: "13px",
                             fontWeight: 400,
                             lineHeight: "18px",
-                            marginLeft: "8px",
                           }}
                         >
                           {label.desc}
@@ -353,9 +351,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         className="flex-shrink-0"
                         style={{
                           color: "#ff0000",
-                          width: "24px",
-                          height: "24px",
-                          strokeWidth: 3,
+                          width: "20px",
+                          height: "20px",
+                          strokeWidth: 2.5,
                         }}
                       />
                     )}
@@ -364,9 +362,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       <div
                         className="rounded-full animate-spin flex-shrink-0"
                         style={{
-                          width: "24px",
-                          height: "24px",
-                          border: "3px solid rgba(255, 255, 255, 0.3)",
+                          width: "20px",
+                          height: "20px",
+                          border: "2.5px solid rgba(255, 255, 255, 0.3)",
                           borderTopColor: "#ff0000",
                         }}
                       />
