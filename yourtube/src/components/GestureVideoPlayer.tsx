@@ -151,41 +151,34 @@ const QualitySelector = ({
 
   // ✅ CLOSE ON OUTSIDE CLICK
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isMobile || !isOpen) return;
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node;
 
-      const clickedOutsideMenu =
-        menuRef.current && !menuRef.current.contains(target);
-      const clickedOutsideButton =
-        buttonRef.current && !buttonRef.current.contains(target);
-      const clickedBackdrop =
-        backdropRef.current && backdropRef.current.contains(target);
+      // Check if click is OUTSIDE both menu AND button
+      const clickedMenu = menuRef.current?.contains(target);
+      const clickedButton = buttonRef.current?.contains(target);
+      const clickedBackdrop = backdropRef.current?.contains(target);
 
-      if ((clickedOutsideMenu && clickedOutsideButton) || clickedBackdrop) {
+      if (!clickedMenu && !clickedButton) {
         console.log("👆 Clicked outside - closing menu");
         closeMenu();
       }
     };
 
-    const options = { capture: true, passive: true };
-    document.addEventListener("mousedown", handleClickOutside, options);
-    document.addEventListener("touchstart", handleClickOutside, options as any);
+    // Use capture phase
+    document.addEventListener("mousedown", handleClickOutside, true);
+    document.addEventListener("touchstart", handleClickOutside, {
+      capture: true,
+      passive: true,
+    });
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside,
-        options as any
-      );
-      document.removeEventListener(
-        "touchstart",
-        handleClickOutside,
-        options as any
-      );
+      document.removeEventListener("mousedown", handleClickOutside, true);
+      document.removeEventListener("touchstart", handleClickOutside, true);
     };
-  }, [isOpen]);
+  }, [isMobile, isOpen]);
 
   // ✅ CLOSE ON ESCAPE KEY
   useEffect(() => {

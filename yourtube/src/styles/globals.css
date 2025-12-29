@@ -12309,3 +12309,70 @@ button span {
 /* ================================
    END OF MOBILE FIXES
    ================================ */
+
+   /* =================== MOBILE QUALITY SELECTOR - CRITICAL FIXES =================== */
+
+@media (max-width: 768px) {
+  /* Ensure fixed positioning works */
+  .fixed {
+    position: fixed !important;
+  }
+  
+  /* Quality menu z-index enforcement */
+  [role="dialog"][aria-label*="quality" i] {
+    z-index: 9999 !important;
+  }
+  
+  /* Backdrop z-index */
+  .fixed.inset-0.bg-black\/60 {
+    z-index: 9998 !important;
+  }
+  
+  /* Prevent body scroll when menu open */
+  body:has([role="dialog"][aria-label*="quality" i]) {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+  }
+  
+  /* Smooth scrolling for options */
+  [role="dialog"] .overflow-y-auto {
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+  }
+  
+  /* Touch targets */
+  [role="menuitemradio"] {
+    min-height: 56px !important;
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation !important;
+  }
+  
+  /* Animations */
+  @keyframes slideUpFadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+  
+  [role="dialog"][aria-label*="quality" i] {
+    animation: slideUpFadeIn 250ms ease-out;
+  }
+  
+  /* Backdrop animation */
+  .fixed.inset-0.bg-black\/60 {
+    animation: fadeIn 200ms ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* =================== END MOBILE QUALITY SELECTOR FIXES =================== */
