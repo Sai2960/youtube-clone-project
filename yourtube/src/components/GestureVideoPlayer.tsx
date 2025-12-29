@@ -19,11 +19,45 @@ import {
   Subtitles,
   PictureInPicture,
   Share2,
+  Check,
 } from "lucide-react";
 import { useRouter } from "next/router";
 import { Button } from "./ui/button";
 import { getVideoUrl } from "@/lib/urlHelper";
 import { useSubscription } from "@/lib/SubscriptionContext";
+
+// Quality type definition
+type QualityType =
+  | "auto"
+  | "1080p"
+  | "720p"
+  | "480p"
+  | "360p"
+  | "240p"
+  | "144p";
+
+// Quality labels with descriptions
+const qualityLabels: Record<
+  QualityType,
+  { full: string; short: string; desc: string }
+> = {
+  auto: { full: "Auto", short: "Auto", desc: "Recommended" },
+  "1080p": { full: "1080p", short: "1080p", desc: "Full HD" },
+  "720p": { full: "720p", short: "720p", desc: "HD" },
+  "480p": { full: "480p", short: "480p", desc: "SD" },
+  "360p": { full: "360p", short: "360p", desc: "Low" },
+  "240p": { full: "240p", short: "240p", desc: "Data Saver" },
+  "144p": { full: "144p", short: "144p", desc: "Minimum" },
+};
+// ================================
+// MOBILE-OPTIMIZED QUALITY SELECTOR
+// ================================
+
+interface QualitySelectorProps {
+  currentQuality: QualityType;
+  onQualityChange: (quality: QualityType) => void;
+  availableQualities?: QualityType[];
+}
 
 const QualitySelector = ({
   currentQuality,
@@ -37,146 +71,336 @@ const QualitySelector = ({
     "240p",
     "144p",
   ],
-}: {
-  currentQuality: string;
-  onQualityChange: (quality: string) => void;
-  availableQualities?: string[];
-}) => {
+}: QualitySelectorProps) => {
+  // STATE MANAGEMENT
   const [isOpen, setIsOpen] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null); // ✅ ADD THIS
-
   const [isMobileView, setIsMobileView] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [isChanging, setIsChanging] = useState(false);
 
-  // ✅ FIX 1: Better mobile detection
-useEffect(() => {
-  const checkMobile = () => {
-    // More reliable mobile detection
-    const mobile = 
-      window.innerWidth <= 768 || 
-      'ontouchstart' in window || 
-      navigator.maxTouchPoints > 0 ||
-      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
-    setIsMobileView(mobile);
-    console.log('📱 Mobile detected:', mobile); // Debug log
-  };
-  
-  checkMobile();
-  window.addEventListener('resize', checkMobile);
-  window.addEventListener('orientationchange', checkMobile); // ✅ Added
-  
-  return () => {
-    window.removeEventListener('resize', checkMobile);
-    window.removeEventListener('orientationchange', checkMobile);
-  };
-}, []);
+  // REFS
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
 
-  // ✅ FIX 2: Close menu on outside click
-useEffect(() => {
-  if (!isOpen) return; // Exit early if menu is closed
-  
-  const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-    const target = event.target as Node;
-    
-    // ✅ Check if click is OUTSIDE both menu AND button
-    const clickedOutsideMenu = menuRef.current && !menuRef.current.contains(target);
-    const clickedOutsideButton = buttonRef.current && !buttonRef.current.contains(target);
-    
-    if (clickedOutsideMenu && clickedOutsideButton) {
-      console.log('👆 Clicked outside - closing menu');
-      setIsOpen(false);
-      setShowQualityMenu(false);
+  // ✅ MOBILE DETECTION
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile =
+        window.innerWidth <= 768 ||
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0 ||
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      setIsMobileView(mobile);
+      console.log("📱 Mobile detected:", mobile);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    window.addEventListener("orientationchange", checkMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+      window.removeEventListener("orientationchange", checkMobile);
+    };
+  }, []);
+
+  // ✅ THEME DETECTION
+  useEffect(() => {
+    const detectTheme = () => {
+      const isDark =
+        document.documentElement.classList.contains("dark") ||
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      setTheme(isDark ? "dark" : "light");
+    };
+
+    detectTheme();
+
+    const observer = new MutationObserver(detectTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // ✅ PREVENT BODY SCROLL ON MOBILE WHEN MENU OPEN
+  useEffect(() => {
+    if (isMobileView && isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+
+      console.log("🔒 Body scroll locked");
+
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        window.scrollTo(0, scrollY);
+        console.log("🔓 Body scroll unlocked");
+      };
+    }
+  }, [isMobileView, isOpen]);
+
+  // ✅ CLOSE ON OUTSIDE CLICK
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+
+      const clickedOutsideMenu =
+        menuRef.current && !menuRef.current.contains(target);
+      const clickedOutsideButton =
+        buttonRef.current && !buttonRef.current.contains(target);
+      const clickedBackdrop =
+        backdropRef.current && backdropRef.current.contains(target);
+
+      if ((clickedOutsideMenu && clickedOutsideButton) || clickedBackdrop) {
+        console.log("👆 Clicked outside - closing menu");
+        closeMenu();
+      }
+    };
+
+    const options = { capture: true, passive: true };
+    document.addEventListener("mousedown", handleClickOutside, options);
+    document.addEventListener("touchstart", handleClickOutside, options as any);
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside,
+        options as any
+      );
+      document.removeEventListener(
+        "touchstart",
+        handleClickOutside,
+        options as any
+      );
+    };
+  }, [isOpen]);
+
+  // ✅ CLOSE ON ESCAPE KEY
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeMenu();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen]);
+
+  // MENU FUNCTIONS
+  const openMenu = () => {
+    setIsOpen(true);
+    setShowQualityMenu(false);
+    console.log("✅ Menu opened");
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+    setShowQualityMenu(false);
+    console.log("❌ Menu closed");
+  };
+
+  const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
     }
   };
 
-  // ✅ Use capture phase to handle events BEFORE they bubble
-  // This prevents other handlers from interfering
-  document.addEventListener('mousedown', handleClickOutside, { capture: true });
-  document.addEventListener('touchstart', handleClickOutside, { capture: true, passive: true });
+  // ✅ HANDLE QUALITY CHANGE
+  const handleQualitySelect = async (quality: QualityType) => {
+    if (quality === currentQuality || isChanging) return;
 
-  return () => {
-    document.removeEventListener('mousedown', handleClickOutside, { capture: true });
-    document.removeEventListener('touchstart', handleClickOutside, { capture: true });
-  };
-}, [isOpen]); // ✅ Only depends on isOpen
+    console.log("🎬 Quality change:", currentQuality, "→", quality);
 
-  // ✅ FIX 3: Enhanced quality labels with mobile-friendly text
-  const qualityLabels: Record<string, { full: string; short: string }> = {
-    auto: { full: "Auto (Recommended)", short: "Auto" },
-    "1080p": { full: "1080p (Full HD)", short: "1080p" },
-    "720p": { full: "720p (HD)", short: "720p" },
-    "480p": { full: "480p (SD)", short: "480p" },
-    "360p": { full: "360p (Lower)", short: "360p" },
-    "240p": { full: "240p (Data Saver)", short: "240p" },
-    "144p": { full: "144p (Minimum)", short: "144p" },
+    setIsChanging(true);
+
+    try {
+      await onQualityChange(quality);
+      console.log("✅ Quality changed successfully");
+    } catch (error) {
+      console.error("❌ Quality change failed:", error);
+    } finally {
+      setIsChanging(false);
+      closeMenu();
+    }
   };
 
   return (
-    <div className="relative" ref={menuRef}>
-      {/* ✅ FIX 4: Better button with touch feedback */}
-   <button
-  ref={buttonRef} // ✅ ADD THIS
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('⚙️ Settings button clicked');
-    setIsOpen(!isOpen);
-    setShowQualityMenu(false);
-  }}
-  onTouchEnd={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('👆 Settings button touched');
-    setIsOpen(!isOpen);
-    setShowQualityMenu(false);
-  }}
-  className="flex items-center justify-center h-10 w-10 min-h-[44px] min-w-[44px]
-             text-white hover:bg-white/20 active:bg-white/30 rounded-full
-             transition-all duration-150 touch-manipulation"
-  style={{ WebkitTapHighlightColor: 'transparent' }}
-  aria-label="Quality settings"
->
-  <Settings className="w-5 h-5" />
-</button>
+    <div
+      className="relative"
+      style={{ zIndex: isMobileView && isOpen ? 9999 : "auto" }}
+    >
+      {/* Settings Button */}
+      <button
+        ref={buttonRef}
+        onClick={toggleMenu}
+        onTouchEnd={toggleMenu}
+        className="flex items-center justify-center h-10 w-10 min-h-[44px] min-w-[44px]
+                   text-white hover:bg-white/20 active:bg-white/30 rounded-full
+                   transition-all duration-150 touch-manipulation"
+        style={{ WebkitTapHighlightColor: "transparent" }}
+        aria-label="Quality settings"
+        aria-expanded={isOpen}
+      >
+        <Settings className="w-5 h-5" />
+      </button>
 
-      {/* ✅ FIX 5: Mobile-optimized menu */}
-     {isOpen && (
-  <div
-    className={`
-      absolute ${isMobileView ? "bottom-full right-0 mb-2" : "bottom-full right-0 mb-2"}
-      bg-white dark:bg-black/98 backdrop-blur-xl rounded-xl shadow-2xl
-      border border-gray-200 dark:border-white/20 z-[9999]
-      ${isMobileView ? "min-w-[200px] w-[200px] max-w-[200px]" : "min-w-[260px]"}
-    `}
-      onClick={(e) => e.stopPropagation()}
-    onTouchStart={(e) => e.stopPropagation()}
-    style={{
-      maxHeight: isMobileView ? "50vh" : "70vh",
-      overflowY: "auto",
-      WebkitOverflowScrolling: "touch",
-      right: isMobileView ? "0" : undefined,
-      left: isMobileView ? "auto" : undefined,
-    }}
+      {/* MOBILE VIEW */}
+      {isMobileView && isOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            ref={backdropRef}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+            onClick={closeMenu}
+            onTouchStart={closeMenu}
+            style={{
+              touchAction: "none",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          />
+
+          {/* Bottom Sheet Menu */}
+          <div
+            ref={menuRef}
+            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 
+                       rounded-t-3xl shadow-2xl z-[9999] max-h-[80vh] overflow-hidden
+                       animate-in slide-in-from-bottom duration-300"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label="Video quality selector"
+            style={{
+              touchAction: "pan-y",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {/* Handle Bar */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-12 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Video Quality
+              </h3>
+              <button
+                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+                onClick={closeMenu}
+                onTouchEnd={closeMenu}
+                aria-label="Close"
+              >
+                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            {/* Options List */}
+            <div className="overflow-y-auto max-h-[calc(80vh-120px)] overscroll-contain">
+              {availableQualities.map((quality) => {
+                const isActive = quality === currentQuality;
+                const label = qualityLabels[quality];
+
+                return (
+                  <button
+                    key={quality}
+                    onClick={() => handleQualitySelect(quality)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      handleQualitySelect(quality);
+                    }}
+                    disabled={isChanging}
+                    className={`
+                      w-full px-6 py-4 flex items-center justify-between
+                      transition-colors touch-manipulation
+                      ${
+                        isActive
+                          ? "bg-red-50 dark:bg-red-900/20"
+                          : "hover:bg-gray-50 dark:hover:bg-zinc-800/50 active:bg-gray-100 dark:active:bg-zinc-800"
+                      }
+                      ${
+                        isChanging
+                          ? "opacity-50 cursor-not-allowed"
+                          : "cursor-pointer"
+                      }
+                    `}
+                    style={{
+                      minHeight: "60px",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                    role="menuitemradio"
+                    aria-checked={isActive}
+                  >
+                    <div className="flex flex-col items-start gap-1">
+                      <span
+                        className={`text-base font-semibold ${
+                          isActive
+                            ? "text-red-600 dark:text-red-500"
+                            : "text-gray-900 dark:text-white"
+                        }`}
+                      >
+                        {label.full}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {label.desc}
+                      </span>
+                    </div>
+
+                    {isActive && !isChanging && (
+                      <Check className="w-6 h-6 text-red-600 dark:text-red-500 flex-shrink-0" />
+                    )}
+
+                    {isChanging && isActive && (
+                      <div className="w-6 h-6 border-3 border-red-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* DESKTOP VIEW */}
+      {!isMobileView && isOpen && (
+        <div
+          ref={menuRef}
+          className="absolute bottom-full right-0 mb-2
+                     bg-white dark:bg-black/98 backdrop-blur-xl rounded-xl shadow-2xl
+                     border border-gray-200 dark:border-white/20 min-w-[260px] z-50"
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
           {!showQualityMenu ? (
-            // ✅ FIX 6: Main menu with better spacing
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-                setShowQualityMenu(true);
-              }}
               className="w-full px-4 py-4 text-left
-             text-gray-900 dark:text-white 
-             hover:bg-gray-100 dark:hover:bg-white/10 
-             active:bg-gray-200 dark:active:bg-white/15
-             transition-colors flex items-center justify-between
-             touch-manipulation"
+                         text-gray-900 dark:text-white 
+                         hover:bg-gray-100 dark:hover:bg-white/10 
+                         active:bg-gray-200 dark:active:bg-white/15
+                         transition-colors flex items-center justify-between
+                         rounded-xl"
             >
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-semibold">Quality</span>
@@ -200,25 +424,25 @@ useEffect(() => {
             </button>
           ) : (
             <>
-              {/* ✅ FIX 7: Back button with better touch target */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowQualityMenu(false);
                 }}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                  setShowQualityMenu(false);
-                }}
                 className="w-full px-4 py-4 text-left
-             text-gray-900 dark:text-white 
-             hover:bg-gray-100 dark:hover:bg-white/10 
-             active:bg-gray-200 dark:active:bg-white/15
-             transition-colors flex items-center gap-3
-             border-b border-gray-200 dark:border-white/10 touch-manipulation
-             sticky top-0 bg-white dark:bg-black/98 backdrop-blur-xl z-10"
+                           text-gray-900 dark:text-white 
+                           hover:bg-gray-100 dark:hover:bg-white/10 
+                           transition-colors flex items-center gap-3
+                           border-b border-gray-200 dark:border-white/10
+                           sticky top-0 bg-white dark:bg-black/98 backdrop-blur-xl z-10
+                           rounded-t-xl"
               >
-                <svg className="w-5 h-5 rotate-180 text-gray-600 dark:text-gray-300">
+                <svg
+                  className="w-5 h-5 rotate-180 text-gray-600 dark:text-gray-300"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -229,55 +453,43 @@ useEffect(() => {
                 <span className="text-sm font-semibold">Quality</span>
               </button>
 
-              {/* ✅ FIX 8: Quality options with better touch targets */}
               <div className="overflow-y-auto max-h-[50vh]">
                 {availableQualities.map((q) => (
                   <button
                     key={q}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onQualityChange(q);
-                      setShowQualityMenu(false);
-                      setIsOpen(false);
+                      handleQualitySelect(q);
                     }}
-                    onTouchStart={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onQualityChange(q);
-                      setShowQualityMenu(false);
-                      setIsOpen(false);
-                    }}
+                    disabled={isChanging}
                     className={`
-    w-full px-5 py-4 text-left
-    hover:bg-gray-100 dark:hover:bg-white/10 
-    active:bg-gray-200 dark:active:bg-white/15
-    transition-colors flex items-center justify-between
-    touch-manipulation
-    ${currentQuality === q ? "bg-gray-100 dark:bg-white/5" : ""}
-  `}
+                      w-full px-5 py-4 text-left
+                      hover:bg-gray-100 dark:hover:bg-white/10 
+                      active:bg-gray-200 dark:active:bg-white/15
+                      transition-colors flex items-center justify-between
+                      ${
+                        currentQuality === q
+                          ? "bg-gray-100 dark:bg-white/5"
+                          : ""
+                      }
+                      ${isChanging ? "opacity-50 cursor-not-allowed" : ""}
+                    `}
                   >
                     <div className="flex flex-col gap-0.5">
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {qualityLabels[q]?.short || q}
                       </span>
-                      {isMobileView && q === "auto" && (
+                      {q === "auto" && (
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           Recommended
                         </span>
                       )}
                     </div>
-                    {currentQuality === q && (
-                      <svg
-                        className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                    {currentQuality === q && !isChanging && (
+                      <Check className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0" />
+                    )}
+                    {isChanging && currentQuality === q && (
+                      <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                     )}
                   </button>
                 ))}
@@ -289,7 +501,6 @@ useEffect(() => {
     </div>
   );
 };
-
 interface GestureVideoPlayerProps {
   video: {
     [x: string]: any;
@@ -310,17 +521,22 @@ export default function GestureVideoPlayer({
   onShowComments,
   onShare,
 }: GestureVideoPlayerProps) {
+  // ================================
+  // REFS
+  // ================================
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-
-  const [showGestureGuide, setShowGestureGuide] = useState(false);
-
-  // ✅ Track loaded video ID to prevent duplicate loads
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadedVideoIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
-  // Video state
+  const watchTimeCheckInterval = useRef<NodeJS.Timeout | null>(null);
+
+  const router = useRouter();
+
+  // ================================
+  // VIDEO STATE
+  // ================================
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -330,22 +546,22 @@ export default function GestureVideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [buffered, setBuffered] = useState(0);
+  const [quality, setQuality] = useState<QualityType>("auto");
+  const [isChangingQuality, setIsChangingQuality] = useState(false);
 
-  const [quality, setQuality] = useState<
-    "auto" | "1080p" | "720p" | "480p" | "360p" | "240p" | "144p"
-  >("auto");
-
-  const availableQualities = useState<
-    Array<"auto" | "1080p" | "720p" | "480p" | "360p" | "240p" | "144p">
-  >(["auto", "1080p", "720p", "480p", "360p", "240p", "144p"])[0];
-
+  // ================================
+  // UI STATE
+  // ================================
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [showGestureGuide, setShowGestureGuide] = useState(false);
+  const [showGestureHint, setShowGestureHint] = useState(true);
 
-  // Gesture state
-
+  // ================================
+  // GESTURE STATE
+  // ================================
   const [lastTap, setLastTap] = useState(0);
   const [tapCount, setTapCount] = useState(0);
   const [tapTimer, setTapTimer] = useState<NodeJS.Timeout | null>(null);
@@ -363,30 +579,133 @@ export default function GestureVideoPlayer({
     position: "left" | "center" | "right";
   } | null>(null);
 
-  // Mobile gesture state
+  // ================================
+  // MOBILE GESTURE STATE
+  // ================================
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [seeking, setSeeking] = useState(false);
   const [showVolumeIndicator, setShowVolumeIndicator] = useState(false);
-  const [showGestureHint, setShowGestureHint] = useState(true);
+
+  // ================================
+  // SUBSCRIPTION STATE
+  // ================================
   const [watchTimeExceeded, setWatchTimeExceeded] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [watchedMinutes, setWatchedMinutes] = useState(0);
-  const watchTimeCheckInterval = useRef<NodeJS.Timeout | null>(null);
   const { watchTimeLimit, currentPlan } = useSubscription();
-  const [isChangingQuality, setIsChangingQuality] = useState(false);
 
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // ✅ UPDATED: Enhanced quality change handler
-  const handleQualityChange = async (
-    newQuality: "auto" | "1080p" | "720p" | "480p" | "360p" | "240p" | "144p"
-  ) => {
+  // Available qualities
+  const availableQualities: QualityType[] = [
+    "auto",
+    "1080p",
+    "720p",
+    "480p",
+    "360p",
+    "240p",
+    "144p",
+  ];
+  // ================================
+  // MOBILE DETECTION
+  // ================================
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // ================================
+  // HIDE GESTURE HINT AFTER 3 SECONDS
+  // ================================
+  useEffect(() => {
+    if (isMobile && showGestureHint) {
+      const timer = setTimeout(() => {
+        setShowGestureHint(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isMobile, showGestureHint]);
+  // ================================
+  // GET VIDEO FILENAME
+  // ================================
+  const getVideoFilename = () => {
+    let filename = null;
+    if (video?.filepath) {
+      filename = video.filepath.split(/[\\/]/).pop();
+    } else if (video?.videofilename) {
+      filename = video.videofilename;
+    } else if (video?.filename) {
+      filename = video.filename;
+    }
+    return filename;
+  };
+  // ================================
+  // WATCH TIME LIMIT CHECK
+  // ================================
+  useEffect(() => {
+    const videoElement = videoRef.current;
+
+    // Skip check if unlimited (-1) or not playing
+    if (!videoElement || !isPlaying || watchTimeLimit === -1) {
+      console.log("⏭️ Skipping watch limit check:", {
+        hasVideo: !!videoElement,
+        watchTimeLimit,
+        isPlaying,
+        isUnlimited: watchTimeLimit === -1,
+      });
+      return;
+    }
+
+    // Skip if watchTimeLimit is invalid
+    if (watchTimeLimit <= 0) {
+      console.log("⏭️ Invalid watch limit, skipping:", watchTimeLimit);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const minutesWatched = Math.floor(videoElement.currentTime / 60);
+
+      console.log("⏰ Watch time check:", {
+        minutesWatched,
+        watchTimeLimit,
+        currentPlan,
+        willBlock: minutesWatched >= watchTimeLimit,
+      });
+
+      // Only check if watchTimeLimit is a positive number
+      if (watchTimeLimit > 0 && minutesWatched >= watchTimeLimit) {
+        console.log("🛑 Watch limit reached:", {
+          minutesWatched,
+          watchTimeLimit,
+          currentPlan,
+        });
+
+        videoElement.pause();
+        setIsPlaying(false);
+        setWatchTimeExceeded(true);
+        setShowUpgradePrompt(true);
+        clearInterval(interval);
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [watchTimeLimit, isPlaying, currentPlan]);
+  // ================================
+  // ENHANCED QUALITY CHANGE HANDLER
+  // ================================
+  const handleQualityChange = async (newQuality: QualityType) => {
     if (!videoRef.current || !video) return;
 
     console.log("🎬 Changing quality to:", newQuality);
-    setIsChangingQuality(true); // ✅ ADD THIS
+    setIsChangingQuality(true);
 
-    // ✅ CRITICAL: Save state BEFORE changing
+    // Save state BEFORE changing
     const savedTime = videoRef.current.currentTime;
     const wasPlaying = !videoRef.current.paused;
     const savedVolume = videoRef.current.volume;
@@ -397,7 +716,7 @@ export default function GestureVideoPlayer({
       volume: savedVolume,
     });
 
-    // ✅ Generate new URL with quality parameter
+    // Generate new URL with quality parameter
     const newVideoUrl = getVideoUrl(video, newQuality);
 
     if (!newVideoUrl) {
@@ -405,19 +724,21 @@ export default function GestureVideoPlayer({
         "❌ Could not generate video URL with quality:",
         newQuality
       );
+      setIsChangingQuality(false);
       return;
     }
 
     console.log("✅ New quality URL:", newVideoUrl.substring(0, 100));
+
     // Pause video before changing source
     videoRef.current.pause();
 
-    // ✅ Add cache buster to force reload
+    // Add cache buster to force reload
     const timestamp = Date.now();
     const separator = newVideoUrl.includes("?") ? "&" : "?";
     const finalUrl = `${newVideoUrl}${separator}t=${timestamp}`;
 
-    // ✅ CRITICAL: Create promise-based state restoration
+    // Create promise-based state restoration
     const restorePlayback = new Promise<void>((resolve, reject) => {
       if (!videoRef.current) {
         reject(new Error("Video ref lost"));
@@ -432,7 +753,7 @@ export default function GestureVideoPlayer({
 
         // Restore time
         video.currentTime = savedTime;
-        setCurrentTime(savedTime); // ✅ Update React state immediately
+        setCurrentTime(savedTime);
 
         // Restore volume
         video.volume = savedVolume;
@@ -497,99 +818,17 @@ export default function GestureVideoPlayer({
     } catch (error) {
       console.error("❌ Quality change failed:", error);
     } finally {
-      setIsChangingQuality(false); // ✅ ADD THIS
+      setIsChangingQuality(false);
     }
   };
-
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Hide gesture hint after 3 seconds
-  useEffect(() => {
-    if (isMobile && showGestureHint) {
-      const timer = setTimeout(() => {
-        setShowGestureHint(false);
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isMobile, showGestureHint]);
-
-  // Get video filename
-  const getVideoFilename = () => {
-    let filename = null;
-    if (video?.filepath) {
-      filename = video.filepath.split(/[\\/]/).pop();
-    } else if (video?.videofilename) {
-      filename = video.videofilename;
-    } else if (video?.filename) {
-      filename = video.filename;
-    }
-    return filename;
-  };
-  useEffect(() => {
-    const videoElement = videoRef.current;
-
-    // ✅ CRITICAL FIX: Skip check if unlimited (-1) or not playing
-    if (!videoElement || !isPlaying || watchTimeLimit === -1) {
-      console.log("⏭️ Skipping watch limit check:", {
-        hasVideo: !!videoElement,
-        watchTimeLimit,
-        isPlaying,
-        isUnlimited: watchTimeLimit === -1,
-      });
-      return;
-    }
-
-    // ✅ CRITICAL FIX: Also skip if watchTimeLimit is invalid
-    if (watchTimeLimit <= 0) {
-      console.log("⏭️ Invalid watch limit, skipping:", watchTimeLimit);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      const minutesWatched = Math.floor(videoElement.currentTime / 60);
-
-      console.log("⏰ Watch time check:", {
-        minutesWatched,
-        watchTimeLimit,
-        currentPlan,
-        willBlock: minutesWatched >= watchTimeLimit,
-      });
-
-      // ✅ Only check if watchTimeLimit is a positive number
-      if (watchTimeLimit > 0 && minutesWatched >= watchTimeLimit) {
-        console.log("🛑 Watch limit reached:", {
-          minutesWatched,
-          watchTimeLimit,
-          currentPlan,
-        });
-
-        videoElement.pause();
-        setIsPlaying(false);
-        setWatchTimeExceeded(true);
-        setShowUpgradePrompt(true);
-        clearInterval(interval);
-      }
-    }, 10000); // Check every 10 seconds
-
-    return () => clearInterval(interval);
-  }, [watchTimeLimit, isPlaying, currentPlan]);
-  // 🔥 CRITICAL FIX: Optimized video loading with duplicate prevention
+  // ================================
+  // OPTIMIZED VIDEO LOADING WITH DUPLICATE PREVENTION
+  // ================================
   useEffect(() => {
     const videoElement = videoRef.current;
     const currentVideoId = video._id;
 
-    // ✅ Prevent duplicate loads
+    // Prevent duplicate loads
     if (
       !videoElement ||
       !currentVideoId ||
@@ -615,7 +854,7 @@ export default function GestureVideoPlayer({
       videoElement.removeAttribute("src");
       videoElement.onloadedmetadata = null;
       videoElement.onerror = null;
-      videoElement.ontimeupdate = null; // ✅ Clean up time tracking too
+      videoElement.ontimeupdate = null;
       videoElement.load();
     };
 
@@ -630,7 +869,7 @@ export default function GestureVideoPlayer({
 
     // Load new video after brief delay
     const loadTimer = setTimeout(() => {
-      // ✅ Use the getVideoUrl function with quality parameter
+      // Use the getVideoUrl function with quality parameter
       const properVideoUrl = getVideoUrl(video, quality);
 
       if (!properVideoUrl) {
@@ -640,7 +879,7 @@ export default function GestureVideoPlayer({
         return;
       }
 
-      // ✅ Add cache buster
+      // Add cache buster
       const timestamp = Date.now();
       const separator = properVideoUrl.includes("?") ? "&" : "?";
       const videoUrl = `${properVideoUrl}${separator}t=${timestamp}`;
@@ -649,13 +888,13 @@ export default function GestureVideoPlayer({
 
       // Set source
       videoElement.src = videoUrl;
-      loadedVideoIdRef.current = currentVideoId; // ✅ Mark as loaded
+      loadedVideoIdRef.current = currentVideoId;
 
       const handleLoadedMetadata = () => {
         console.log("✅ Video metadata loaded");
         setVideoError(null);
         setDuration(videoElement.duration);
-        setCurrentTime(0); // ✅ Reset time to 0
+        setCurrentTime(0);
         isLoadingRef.current = false;
       };
 
@@ -663,20 +902,19 @@ export default function GestureVideoPlayer({
         console.error("❌ Video load error:", e);
         setVideoError("Failed to load video");
         isLoadingRef.current = false;
-        loadedVideoIdRef.current = null; // Reset on error
+        loadedVideoIdRef.current = null;
       };
 
-      // ✅ CRITICAL: Add timeupdate listener to sync progress bar
       const handleTimeUpdate = () => {
         if (!videoElement) return;
-        setCurrentTime(videoElement.currentTime); // ✅ Keep React state in sync
+        setCurrentTime(videoElement.currentTime);
       };
 
       videoElement.addEventListener("loadedmetadata", handleLoadedMetadata, {
         once: true,
       });
       videoElement.addEventListener("error", handleError, { once: true });
-      videoElement.addEventListener("timeupdate", handleTimeUpdate); // ✅ Track time
+      videoElement.addEventListener("timeupdate", handleTimeUpdate);
 
       videoElement.load();
     }, 100);
@@ -686,22 +924,22 @@ export default function GestureVideoPlayer({
       clearTimeout(loadTimer);
       isLoadingRef.current = false;
 
-      // ✅ Clean up timeupdate listener
       if (videoElement) {
         videoElement.removeEventListener("timeupdate", () => {});
       }
     };
-  }, [video._id, quality]); // ✅ Quality dependency
-  // ✅ FIXED: Auto-hide controls on both mobile and desktop
+  }, [video._id, quality]);
+  // ================================
+  // AUTO-HIDE CONTROLS (MOBILE & DESKTOP)
+  // ================================
   const resetControlsTimeout = () => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
     setShowControls(true);
 
-    // ✅ FIX: Auto-hide on BOTH mobile and desktop when playing
+    // Auto-hide on BOTH mobile and desktop when playing
     if (isPlaying) {
-      // Longer timeout on mobile for better UX
       const hideDelay = isMobile ? 4000 : 3000;
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
@@ -739,16 +977,16 @@ export default function GestureVideoPlayer({
       }
     };
   }, [isPlaying, isMobile]);
-
-  // Video time update
-  // ✅ CRITICAL: Enhanced time update tracking
+  // ================================
+  // ENHANCED TIME UPDATE TRACKING
+  // ================================
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
       const newTime = video.currentTime;
-      setCurrentTime(newTime); // ✅ Always update React state
+      setCurrentTime(newTime);
 
       // Update buffered progress
       if (video.buffered.length > 0) {
@@ -760,7 +998,7 @@ export default function GestureVideoPlayer({
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
       setVideoError(null);
-      setCurrentTime(0); // ✅ Reset on new video
+      setCurrentTime(0);
     };
 
     const handlePlay = () => {
@@ -778,11 +1016,11 @@ export default function GestureVideoPlayer({
     };
 
     const handleSeeked = () => {
-      setCurrentTime(video.currentTime); // ✅ Update after seek completes
+      setCurrentTime(video.currentTime);
       console.log("✅ Seeked to:", video.currentTime);
     };
 
-    // ✅ Add all event listeners
+    // Add all event listeners
     video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
     video.addEventListener("play", handlePlay);
@@ -800,7 +1038,9 @@ export default function GestureVideoPlayer({
     };
   }, []);
 
-  // Cleanup on unmount
+  // ================================
+  // CLEANUP ON UNMOUNT
+  // ================================
   useEffect(() => {
     return () => {
       if (tapTimer) clearTimeout(tapTimer);
@@ -809,6 +1049,9 @@ export default function GestureVideoPlayer({
       isLoadingRef.current = false;
     };
   }, [tapTimer]);
+  // ================================
+  // GESTURE INDICATOR
+  // ================================
   const showGestureIndicator = (
     type:
       | "forward"
@@ -827,10 +1070,13 @@ export default function GestureVideoPlayer({
     }, 800);
   };
 
+  // ================================
+  // TOGGLE PLAY/PAUSE
+  // ================================
   const togglePlayPause = () => {
     if (!videoRef.current) return;
 
-    // ✅ Block play if watch time exceeded
+    // Block play if watch time exceeded
     if (watchTimeExceeded) {
       setShowUpgradePrompt(true);
       return;
@@ -852,6 +1098,9 @@ export default function GestureVideoPlayer({
     }
   };
 
+  // ================================
+  // VOLUME CONTROL
+  // ================================
   const handleVolumeChange = (newVolume: number) => {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
     setVolume(clampedVolume);
@@ -880,6 +1129,9 @@ export default function GestureVideoPlayer({
     }
   };
 
+  // ================================
+  // SEEK CONTROL
+  // ================================
   const handleSeek = (time: number) => {
     if (!videoRef.current) return;
     videoRef.current.currentTime = time;
@@ -897,6 +1149,9 @@ export default function GestureVideoPlayer({
     handleSeek(newTime);
   };
 
+  // ================================
+  // FULLSCREEN CONTROL
+  // ================================
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
 
@@ -909,6 +1164,9 @@ export default function GestureVideoPlayer({
     }
   };
 
+  // ================================
+  // PICTURE-IN-PICTURE
+  // ================================
   const togglePiP = async () => {
     if (!videoRef.current) return;
 
@@ -917,7 +1175,6 @@ export default function GestureVideoPlayer({
         await document.exitPictureInPicture();
         console.log("✅ Exited Picture-in-Picture");
       } else {
-        // Check if PiP is supported
         if (!document.pictureInPictureEnabled) {
           console.warn("⚠️ Picture-in-Picture not supported");
           alert("Picture-in-Picture is not supported on this browser");
@@ -930,7 +1187,6 @@ export default function GestureVideoPlayer({
     } catch (error: any) {
       console.error("❌ PiP error:", error);
 
-      // User-friendly error messages
       if (error.name === "NotAllowedError") {
         console.warn("PiP permission denied");
       } else if (error.name === "NotSupportedError") {
@@ -939,12 +1195,18 @@ export default function GestureVideoPlayer({
     }
   };
 
+  // ================================
+  // SHARE HANDLER
+  // ================================
   const handleShareClick = () => {
     if (onShare && videoRef.current) {
       onShare(videoRef.current.currentTime);
     }
   };
 
+  // ================================
+  // FORMAT TIME
+  // ================================
   const formatTime = (seconds: number) => {
     if (isNaN(seconds)) return "0:00";
 
@@ -960,11 +1222,17 @@ export default function GestureVideoPlayer({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // ================================
+  // GET VOLUME ICON
+  // ================================
   const getVolumeIcon = () => {
     if (isMuted || volume === 0) return VolumeX;
     if (volume < 0.5) return Volume1;
     return Volume2;
   };
+  // ================================
+  // TOUCH GESTURE HANDLERS
+  // ================================
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
 
@@ -1014,6 +1282,9 @@ export default function GestureVideoPlayer({
     setShowVolumeIndicator(false);
   };
 
+  // ================================
+  // TAP GESTURE HANDLERS
+  // ================================
   const handleSingleTapCenter = () => {
     if (!videoRef.current) return;
 
@@ -1077,6 +1348,10 @@ export default function GestureVideoPlayer({
       router.push("/");
     }, 500);
   };
+
+  // ================================
+  // VIDEO CLICK HANDLER (TAP DETECTION)
+  // ================================
   const handleVideoClick = (
     e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
@@ -1156,6 +1431,9 @@ export default function GestureVideoPlayer({
     }
   };
 
+  // ================================
+  // VIDEO ERROR HANDLER
+  // ================================
   const handleVideoError = (e: any) => {
     console.error("❌ Video playback error:", e);
     const videoElement = videoRef.current;
@@ -1175,7 +1453,6 @@ export default function GestureVideoPlayer({
   };
 
   const VolumeIcon = getVolumeIcon();
-
   const videoUrl = getVideoUrl(video, quality);
   return (
     <div className="w-full space-y-0">
