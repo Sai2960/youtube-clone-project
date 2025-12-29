@@ -99,8 +99,8 @@ const QualitySelector = ({
       <Button
         variant="ghost"
         size="icon"
-        className="text-white hover:bg-white/20 active:bg-white/30 h-9 w-9 md:h-10 md:w-10 
-                   touch-manipulation transition-all duration-150"
+        className="text-white hover:bg-white/20 active:bg-white/30 h-10 w-10 
+             touch-manipulation transition-all duration-150 min-h-[44px] min-w-[44px]"
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
@@ -118,11 +118,11 @@ const QualitySelector = ({
       {isOpen && (
         <div
           className={`
-            absolute bottom-full right-0 mb-2
-            bg-black/98 backdrop-blur-xl rounded-xl shadow-2xl
-            border border-white/20 z-[60]
-            ${isMobileView ? "min-w-[220px] max-w-[280px]" : "min-w-[260px]"}
-          `}
+      absolute bottom-full right-0 mb-2
+      bg-white dark:bg-black/98 backdrop-blur-xl rounded-xl shadow-2xl
+      border border-gray-200 dark:border-white/20 z-[9999]
+      ${isMobileView ? "min-w-[240px] max-w-[300px]" : "min-w-[260px]"}
+    `}
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           style={{
@@ -134,21 +134,29 @@ const QualitySelector = ({
           {!showQualityMenu ? (
             // ✅ FIX 6: Main menu with better spacing
             <button
-              onClick={() => setShowQualityMenu(true)}
-              onTouchStart={() => setShowQualityMenu(true)}
-              className="w-full px-4 py-4 text-left text-white 
-                         hover:bg-white/10 active:bg-white/15
-                         transition-colors flex items-center justify-between
-                         touch-manipulation"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowQualityMenu(true);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                setShowQualityMenu(true);
+              }}
+              className="w-full px-4 py-4 text-left
+             text-gray-900 dark:text-white 
+             hover:bg-gray-100 dark:hover:bg-white/10 
+             active:bg-gray-200 dark:active:bg-white/15
+             transition-colors flex items-center justify-between
+             touch-manipulation"
             >
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-semibold">Quality</span>
-                <span className="text-xs text-gray-300">
+                <span className="text-xs text-gray-600 dark:text-gray-300">
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
               <svg
-                className="w-5 h-5 text-gray-400"
+                className="w-5 h-5 text-gray-500 dark:text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -165,20 +173,23 @@ const QualitySelector = ({
             <>
               {/* ✅ FIX 7: Back button with better touch target */}
               <button
-                onClick={() => setShowQualityMenu(false)}
-                onTouchStart={() => setShowQualityMenu(false)}
-                className="w-full px-4 py-4 text-left text-white 
-                           hover:bg-white/10 active:bg-white/15
-                           transition-colors flex items-center gap-3
-                           border-b border-white/10 touch-manipulation
-                           sticky top-0 bg-black/98 backdrop-blur-xl z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowQualityMenu(false);
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  setShowQualityMenu(false);
+                }}
+                className="w-full px-4 py-4 text-left
+             text-gray-900 dark:text-white 
+             hover:bg-gray-100 dark:hover:bg-white/10 
+             active:bg-gray-200 dark:active:bg-white/15
+             transition-colors flex items-center gap-3
+             border-b border-gray-200 dark:border-white/10 touch-manipulation
+             sticky top-0 bg-white dark:bg-black/98 backdrop-blur-xl z-10"
               >
-                <svg
-                  className="w-5 h-5 rotate-180 text-gray-300"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                <svg className="w-5 h-5 rotate-180 text-gray-600 dark:text-gray-300">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -194,38 +205,41 @@ const QualitySelector = ({
                 {availableQualities.map((q) => (
                   <button
                     key={q}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onQualityChange(q);
                       setShowQualityMenu(false);
                       setIsOpen(false);
                     }}
                     onTouchStart={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       onQualityChange(q);
                       setShowQualityMenu(false);
                       setIsOpen(false);
                     }}
                     className={`
-                      w-full px-4 py-4 text-left
-                      hover:bg-white/10 active:bg-white/15
-                      transition-colors flex items-center justify-between
-                      touch-manipulation
-                      ${currentQuality === q ? "bg-white/5" : ""}
-                    `}
+    w-full px-5 py-4 text-left
+    hover:bg-gray-100 dark:hover:bg-white/10 
+    active:bg-gray-200 dark:active:bg-white/15
+    transition-colors flex items-center justify-between
+    touch-manipulation
+    ${currentQuality === q ? "bg-gray-100 dark:bg-white/5" : ""}
+  `}
                   >
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium text-white">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {qualityLabels[q]?.short || q}
                       </span>
                       {isMobileView && q === "auto" && (
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           Recommended
                         </span>
                       )}
                     </div>
                     {currentQuality === q && (
                       <svg
-                        className="w-5 h-5 text-red-500 flex-shrink-0"
+                        className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
