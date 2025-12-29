@@ -105,7 +105,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     document.addEventListener("mousedown", handleClickOutside, true);
     document.addEventListener("touchstart", handleClickOutside, {
       capture: true,
-      passive: true,
+      passive: false,
     });
 
     return () => {
@@ -300,11 +300,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       cursor: isChanging ? "not-allowed" : "pointer",
                     }}
                     onTouchStart={(e) => {
+                      e.preventDefault();
                       if (!isChanging) {
                         e.currentTarget.style.background = "#353535";
                       }
                     }}
                     onTouchEnd={(e) => {
+                      e.preventDefault();
                       e.currentTarget.style.background = "#2a2a2a";
                     }}
                     role="menuitemradio"
