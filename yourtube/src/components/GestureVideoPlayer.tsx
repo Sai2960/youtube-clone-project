@@ -45,56 +45,26 @@ const QualitySelector = ({
   const [isOpen, setIsOpen] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  // Detect mobile for better UI
   const [isMobileView, setIsMobileView] = useState(false);
 
-  // ✅ Add global styles for better mobile interaction
+  // ✅ FIX 1: Better mobile detection
   useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-      .touch-manipulation {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-        touch-action: manipulation;
-      }
-      
-      /* Better scrollbar for quality menu */
-      .overflow-y-auto::-webkit-scrollbar {
-        width: 6px;
-      }
-      
-      .overflow-y-auto::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-      }
-      
-      .overflow-y-auto::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
-      }
-      
-      .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
+    const checkMobile = () => {
+      const mobile =
+        window.innerWidth < 768 ||
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0;
+      setIsMobileView(mobile);
     };
-  }, []);
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobileView(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // ✅ FIX 2: Close menu on outside click
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setShowQualityMenu(false);
@@ -103,62 +73,82 @@ const QualitySelector = ({
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [isOpen]);
 
-  const qualityLabels: Record<string, string> = {
-    auto: "Auto",
-    "1080p": "1080p (Full HD)",
-    "720p": "720p (HD)",
-    "480p": "480p (SD)",
-    "360p": "360p",
-    "240p": "240p",
-    "144p": "144p",
+  // ✅ FIX 3: Enhanced quality labels with mobile-friendly text
+  const qualityLabels: Record<string, { full: string; short: string }> = {
+    auto: { full: "Auto (Recommended)", short: "Auto" },
+    "1080p": { full: "1080p (Full HD)", short: "1080p" },
+    "720p": { full: "720p (HD)", short: "720p" },
+    "480p": { full: "480p (SD)", short: "480p" },
+    "360p": { full: "360p (Lower)", short: "360p" },
+    "240p": { full: "240p (Data Saver)", short: "240p" },
+    "144p": { full: "144p (Minimum)", short: "144p" },
   };
 
   return (
     <div className="relative" ref={menuRef}>
+      {/* ✅ FIX 4: Better button with touch feedback */}
       <Button
         variant="ghost"
         size="icon"
-        className="text-white hover:bg-white/20 h-8 w-8 md:h-9 md:w-9"
+        className="text-white hover:bg-white/20 active:bg-white/30 h-9 w-9 md:h-10 md:w-10 
+                   touch-manipulation transition-all duration-150"
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
           setShowQualityMenu(false);
         }}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+        }}
         title="Quality Settings"
       >
-        <Settings className="w-4 h-4 md:w-5 md:h-5" />
+        <Settings className="w-5 h-5 md:w-5 md:h-5" />
       </Button>
 
+      {/* ✅ FIX 5: Mobile-optimized menu */}
       {isOpen && (
         <div
-          className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden min-w-[180px] md:min-w-[240px] border border-white/10 z-[60]"
+          className={`
+            absolute bottom-full right-0 mb-2
+            bg-black/98 backdrop-blur-xl rounded-xl shadow-2xl
+            border border-white/20 z-[60]
+            ${isMobileView ? "min-w-[220px] max-w-[280px]" : "min-w-[260px]"}
+          `}
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           style={{
-            maxHeight: isMobileView ? "50vh" : "70vh",
+            maxHeight: isMobileView ? "60vh" : "70vh",
             overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {!showQualityMenu ? (
+            // ✅ FIX 6: Main menu with better spacing
             <button
               onClick={() => setShowQualityMenu(true)}
-              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center justify-between"
+              onTouchStart={() => setShowQualityMenu(true)}
+              className="w-full px-4 py-4 text-left text-white 
+                         hover:bg-white/10 active:bg-white/15
+                         transition-colors flex items-center justify-between
+                         touch-manipulation"
             >
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Quality</span>
-                <span className="text-xs text-gray-400">
-                  {qualityLabels[currentQuality] || currentQuality}
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-semibold">Quality</span>
+                <span className="text-xs text-gray-300">
+                  {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
               <svg
-                className="w-4 h-4"
+                className="w-5 h-5 text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -173,12 +163,18 @@ const QualitySelector = ({
             </button>
           ) : (
             <>
+              {/* ✅ FIX 7: Back button with better touch target */}
               <button
                 onClick={() => setShowQualityMenu(false)}
-                className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2 border-b border-white/10"
+                onTouchStart={() => setShowQualityMenu(false)}
+                className="w-full px-4 py-4 text-left text-white 
+                           hover:bg-white/10 active:bg-white/15
+                           transition-colors flex items-center gap-3
+                           border-b border-white/10 touch-manipulation
+                           sticky top-0 bg-black/98 backdrop-blur-xl z-10"
               >
                 <svg
-                  className="w-4 h-4 rotate-180"
+                  className="w-5 h-5 rotate-180 text-gray-300"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -190,16 +186,11 @@ const QualitySelector = ({
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
-                <span className="text-sm font-medium">Quality</span>
+                <span className="text-sm font-semibold">Quality</span>
               </button>
 
-              <div
-                className="overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
-                style={{
-                  maxHeight: isMobileView ? "40vh" : "300px",
-                }}
-              >
-                {" "}
+              {/* ✅ FIX 8: Quality options with better touch targets */}
+              <div className="overflow-y-auto max-h-[50vh]">
                 {availableQualities.map((q) => (
                   <button
                     key={q}
@@ -208,16 +199,33 @@ const QualitySelector = ({
                       setShowQualityMenu(false);
                       setIsOpen(false);
                     }}
-                    className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center justify-between ${
-                      currentQuality === q ? "bg-white/5" : ""
-                    }`}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      onQualityChange(q);
+                      setShowQualityMenu(false);
+                      setIsOpen(false);
+                    }}
+                    className={`
+                      w-full px-4 py-4 text-left
+                      hover:bg-white/10 active:bg-white/15
+                      transition-colors flex items-center justify-between
+                      touch-manipulation
+                      ${currentQuality === q ? "bg-white/5" : ""}
+                    `}
                   >
-                    <span className="text-sm text-white">
-                      {qualityLabels[q] || q}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium text-white">
+                        {qualityLabels[q]?.short || q}
+                      </span>
+                      {isMobileView && q === "auto" && (
+                        <span className="text-xs text-gray-400">
+                          Recommended
+                        </span>
+                      )}
+                    </div>
                     {currentQuality === q && (
                       <svg
-                        className="w-4 h-4 text-blue-500"
+                        className="w-5 h-5 text-red-500 flex-shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
