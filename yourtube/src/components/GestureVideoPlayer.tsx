@@ -55,6 +55,10 @@ const qualityLabels: Record<
 // MOBILE-OPTIMIZED QUALITY SELECTOR
 // ================================
 
+// ================================
+// MOBILE-OPTIMIZED QUALITY SELECTOR - FIXED VERSION
+// ================================
+
 interface QualitySelectorProps {
   currentQuality: QualityType;
   onQualityChange: (quality: QualityType) => void;
@@ -75,86 +79,18 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     "144p",
   ],
   isMobile,
-}: QualitySelectorProps & { isMobile: boolean }) => {
-  // STATE MANAGEMENT
+}) => {
+  // ✅ REMOVED DUPLICATE: isMobileView (use isMobile prop instead)
   const [isOpen, setIsOpen] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [isChanging, setIsChanging] = useState(false);
 
-  // REFS
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const backdropRef = useRef<HTMLDivElement>(null);
 
-  // ✅ MOBILE DETECTION
+  // ✅ FIX: Close on outside click (works for both mobile and desktop)
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile =
-        window.innerWidth <= 768 ||
-        "ontouchstart" in window ||
-        navigator.maxTouchPoints > 0 ||
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-      setIsMobileView(mobile);
-      console.log("📱 Mobile detected:", mobile);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    window.addEventListener("orientationchange", checkMobile);
-
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-      window.removeEventListener("orientationchange", checkMobile);
-    };
-  }, []);
-
-  // ✅ THEME DETECTION
-  useEffect(() => {
-    const detectTheme = () => {
-      const isDark =
-        document.documentElement.classList.contains("dark") ||
-        window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-      setTheme(isDark ? "dark" : "light");
-    };
-
-    detectTheme();
-
-    const observer = new MutationObserver(detectTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  // ✅ PREVENT BODY SCROLL ON MOBILE WHEN MENU OPEN
-  useEffect(() => {
-    if (isMobileView && isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
-
-      console.log("🔒 Body scroll locked");
-
-      return () => {
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.width = "";
-        window.scrollTo(0, scrollY);
-        console.log("🔓 Body scroll unlocked");
-      };
-    }
-  }, [isMobileView, isOpen]);
-
-  // ✅ CLOSE ON OUTSIDE CLICK
-  useEffect(() => {
-    if (!isMobile || !isOpen) return;
+    if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node;
@@ -178,7 +114,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     };
   }, [isOpen]);
 
-  // ✅ CLOSE ON ESCAPE KEY
+  // ✅ FIX: Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
 
@@ -191,6 +127,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen]);
+
+  // ✅ FIX: Prevent body scroll ONLY on mobile
   useEffect(() => {
     if (isMobile && isOpen) {
       const scrollY = window.scrollY;
@@ -209,23 +147,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     }
   }, [isMobile, isOpen]);
 
-  // MENU FUNCTIONS
   const openMenu = () => {
     setIsOpen(true);
     setShowQualityMenu(false);
-    console.log("✅ Menu opened");
   };
 
   const closeMenu = () => {
     setIsOpen(false);
     setShowQualityMenu(false);
-    console.log("❌ Menu closed");
   };
 
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (isOpen) {
       closeMenu();
     } else {
@@ -233,7 +167,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     }
   };
 
-  // ✅ HANDLE QUALITY CHANGE
   const handleQualitySelect = async (quality: QualityType) => {
     if (quality === currentQuality || isChanging) return;
 
@@ -254,8 +187,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       <button
         ref={buttonRef}
         onClick={toggleMenu}
-        onTouchEnd={toggleMenu}
-        className="flex items-center justify-center h-10 w-10 text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150"
+        className="flex items-center justify-center h-10 w-10 text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation"
         style={{
           WebkitTapHighlightColor: "transparent",
           minHeight: isMobile ? "44px" : "40px",
@@ -267,22 +199,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         <Settings className="w-5 h-5" />
       </button>
 
-      {/* MOBILE VIEW */}
+      {/* ✅ MOBILE VIEW - Bottom Sheet */}
       {isMobile && isOpen && (
         <>
           {/* Backdrop */}
           <div
-            ref={backdropRef}
             className="fixed inset-0 z-[9998]"
             style={{
               background: "rgba(0, 0, 0, 0.7)",
               backdropFilter: "blur(4px)",
             }}
             onClick={closeMenu}
-            onTouchStart={closeMenu}
           />
 
-          {/* Menu - Bottom Sheet Style */}
+          {/* Bottom Sheet Menu */}
           <div
             ref={menuRef}
             className="fixed left-0 right-0 bottom-0 z-[9999] flex flex-col"
@@ -294,11 +224,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.5)",
             }}
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
             role="dialog"
             aria-label="Video quality selector"
           >
-            {/* Handle bar */}
+            {/* Handle Bar */}
             <div className="flex justify-center pt-3 pb-2">
               <div
                 style={{
@@ -310,6 +239,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               />
             </div>
 
+            {/* Header */}
             <div
               className="sticky top-0 z-10 px-5 py-4 flex items-center justify-between"
               style={{
@@ -327,14 +257,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   WebkitTapHighlightColor: "transparent",
                 }}
                 onClick={closeMenu}
-                onTouchEnd={closeMenu}
                 aria-label="Close"
               >
-                <ChevronLeft className="w-5 h-5 text-white rotate-180" />
+                <X className="w-5 h-5 text-white" />
               </button>
             </div>
 
-            {/* Options List */}
+            {/* Quality Options */}
             <div
               className="overflow-y-auto overflow-x-hidden"
               style={{
@@ -350,10 +279,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   <button
                     key={quality}
                     onClick={() => handleQualitySelect(quality)}
-                    onTouchEnd={(e) => {
-                      e.preventDefault();
-                      handleQualitySelect(quality);
-                    }}
                     disabled={isChanging}
                     className="w-full flex items-center justify-between transition-colors"
                     style={{
@@ -419,7 +344,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         </>
       )}
 
-      {/* DESKTOP VIEW */}
+      {/* ✅ DESKTOP VIEW - Dropdown Menu */}
       {!isMobile && isOpen && (
         <div
           ref={menuRef}
