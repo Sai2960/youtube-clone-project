@@ -210,7 +210,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[9998] animate-in fade-in duration-200"
+            className="fixed inset-0 z-[99998] animate-in fade-in duration-200"
             style={{
               background: "rgba(0, 0, 0, 0.90)",
               backdropFilter: "blur(4px)",
@@ -224,11 +224,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           {/* Bottom Sheet Menu */}
           <div
             ref={menuRef}
-            className="fixed left-0 right-0 bottom-0 z-[9999] flex flex-col animate-in slide-in-from-bottom duration-300"
+            className="fixed left-0 right-0 bottom-0 z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300"
             style={{
               background: "#282828",
               borderRadius: "16px 16px 0 0",
-              maxHeight: "80vh",
+              maxHeight: "75vh",
               height: "auto",
               boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
               border: "1px solid rgba(255, 255, 255, 0.1)",
