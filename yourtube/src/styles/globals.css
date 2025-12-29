@@ -12376,3 +12376,29 @@ button span {
 }
 
 /* =================== END MOBILE QUALITY SELECTOR FIXES =================== */
+/* Ensure smooth scrolling on iOS */
+.quality-options-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+  .quality-selector-button {
+    min-height: 60px;
+    min-width: 60px;
+  }
+}
+
+/* Prevent text selection during taps */
+.quality-selector * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Better focus states for accessibility */
+.quality-option:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -2px;
+}
