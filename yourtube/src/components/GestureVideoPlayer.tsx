@@ -267,7 +267,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               style={{
                 WebkitOverflowScrolling: "touch",
                 background: "#282828",
-                paddingTop: "4px",
                 paddingBottom: "max(env(safe-area-inset-bottom, 0px), 24px)",
               }}
             >
@@ -293,29 +292,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         : "transparent";
                     }}
                     disabled={isChanging}
-                    className="w-full flex items-center justify-between transition-colors touch-manipulation"
+                    className="w-full px-5 py-4 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
                     style={{
-                      minHeight: "56px",
-                      padding: "14px 20px",
                       background: isActive
                         ? "rgba(255, 255, 255, 0.05)"
                         : "transparent",
-                      borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
                       WebkitTapHighlightColor: "transparent",
                       opacity: isChanging ? 0.5 : 1,
                       cursor: isChanging ? "not-allowed" : "pointer",
-                      transition: "background-color 0.2s ease",
                     }}
                     role="menuitemradio"
                     aria-checked={isActive}
                   >
-                    <div className="flex flex-col gap-0.5 flex-1 text-left">
-                      <span
-                        className="text-sm font-medium"
-                        style={{
-                          color: isActive ? "#ffffff" : "#e0e0e0",
-                        }}
-                      >
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium text-white">
                         {label.full}
                       </span>
                       {quality === "auto" && (
@@ -327,27 +317,18 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         </span>
                       )}
                     </div>
-
                     {isActive && !isChanging && (
                       <Check
-                        className="flex-shrink-0"
-                        style={{
-                          color: "#ff0000",
-                          width: "20px",
-                          height: "20px",
-                          strokeWidth: 2.5,
-                        }}
+                        className="w-5 h-5 flex-shrink-0"
+                        style={{ color: "#ff0000" }}
                       />
                     )}
-
                     {isChanging && isActive && (
                       <div
-                        className="rounded-full animate-spin flex-shrink-0"
+                        className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
                         style={{
-                          width: "20px",
-                          height: "20px",
-                          border: "2.5px solid rgba(255, 255, 255, 0.3)",
-                          borderTopColor: "#ff0000",
+                          border: "2px solid #ff0000",
+                          borderTopColor: "transparent",
                         }}
                       />
                     )}
