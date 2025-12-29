@@ -1472,7 +1472,6 @@ export default function GestureVideoPlayer({
         onTouchEnd={handleTouchEnd}
         onMouseEnter={() => !isMobile && setShowGestureGuide(true)}
         onMouseLeave={() => !isMobile && setShowGestureGuide(false)}
-        style={{ touchAction: 'none' }}
       >
         {videoUrl ? (
           <>
