@@ -45,42 +45,62 @@ const QualitySelector = ({
   const [isOpen, setIsOpen] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null); // ✅ ADD THIS
+
   const [isMobileView, setIsMobileView] = useState(false);
 
   // ✅ FIX 1: Better mobile detection
-  useEffect(() => {
-    const checkMobile = () => {
-      const mobile =
-        window.innerWidth < 768 ||
-        "ontouchstart" in window ||
-        navigator.maxTouchPoints > 0;
-      setIsMobileView(mobile);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+useEffect(() => {
+  const checkMobile = () => {
+    // More reliable mobile detection
+    const mobile = 
+      window.innerWidth <= 768 || 
+      'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0 ||
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    setIsMobileView(mobile);
+    console.log('📱 Mobile detected:', mobile); // Debug log
+  };
+  
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+  window.addEventListener('orientationchange', checkMobile); // ✅ Added
+  
+  return () => {
+    window.removeEventListener('resize', checkMobile);
+    window.removeEventListener('orientationchange', checkMobile);
+  };
+}, []);
 
   // ✅ FIX 2: Close menu on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setShowQualityMenu(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
+useEffect(() => {
+  if (!isOpen) return; // Exit early if menu is closed
+  
+  const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+    const target = event.target as Node;
+    
+    // ✅ Check if click is OUTSIDE both menu AND button
+    const clickedOutsideMenu = menuRef.current && !menuRef.current.contains(target);
+    const clickedOutsideButton = buttonRef.current && !buttonRef.current.contains(target);
+    
+    if (clickedOutsideMenu && clickedOutsideButton) {
+      console.log('👆 Clicked outside - closing menu');
+      setIsOpen(false);
+      setShowQualityMenu(false);
     }
+  };
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [isOpen]);
+  // ✅ Use capture phase to handle events BEFORE they bubble
+  // This prevents other handlers from interfering
+  document.addEventListener('mousedown', handleClickOutside, { capture: true });
+  document.addEventListener('touchstart', handleClickOutside, { capture: true, passive: true });
+
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside, { capture: true });
+    document.removeEventListener('touchstart', handleClickOutside, { capture: true });
+  };
+}, [isOpen]); // ✅ Only depends on isOpen
 
   // ✅ FIX 3: Enhanced quality labels with mobile-friendly text
   const qualityLabels: Record<string, { full: string; short: string }> = {
@@ -96,23 +116,30 @@ const QualitySelector = ({
   return (
     <div className="relative" ref={menuRef}>
       {/* ✅ FIX 4: Better button with touch feedback */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="text-white hover:bg-white/20 active:bg-white/30 h-10 w-10 
-             touch-manipulation transition-all duration-150 min-h-[44px] min-w-[44px]"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-          setShowQualityMenu(false);
-        }}
-        onTouchStart={(e) => {
-          e.stopPropagation();
-        }}
-        title="Quality Settings"
-      >
-        <Settings className="w-5 h-5 md:w-5 md:h-5" />
-      </Button>
+   <button
+  ref={buttonRef} // ✅ ADD THIS
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('⚙️ Settings button clicked');
+    setIsOpen(!isOpen);
+    setShowQualityMenu(false);
+  }}
+  onTouchEnd={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('👆 Settings button touched');
+    setIsOpen(!isOpen);
+    setShowQualityMenu(false);
+  }}
+  className="flex items-center justify-center h-10 w-10 min-h-[44px] min-w-[44px]
+             text-white hover:bg-white/20 active:bg-white/30 rounded-full
+             transition-all duration-150 touch-manipulation"
+  style={{ WebkitTapHighlightColor: 'transparent' }}
+  aria-label="Quality settings"
+>
+  <Settings className="w-5 h-5" />
+</button>
 
       {/* ✅ FIX 5: Mobile-optimized menu */}
      {isOpen && (
