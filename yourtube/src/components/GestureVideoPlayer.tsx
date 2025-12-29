@@ -155,7 +155,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   };
 
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     
     // Prevent opening if already transitioning
@@ -1265,7 +1264,7 @@ export default function GestureVideoPlayer({
       Math.abs(deltaY) > Math.abs(deltaX) &&
       Math.abs(deltaY) > 10
     ) {
-      e.preventDefault();
+      // Volume control gesture detected
       const volumeChange = deltaY / 200;
       const newVolume = Math.max(0, Math.min(1, volume + volumeChange));
       handleVolumeChange(newVolume);
@@ -1273,7 +1272,7 @@ export default function GestureVideoPlayer({
     }
 
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) {
-      e.preventDefault();
+      // Seek gesture detected
       setSeeking(true);
       const seekAmount = (deltaX / screenWidth) * duration;
       const newTime = Math.max(0, Math.min(duration, currentTime - seekAmount));
@@ -1473,6 +1472,7 @@ export default function GestureVideoPlayer({
         onTouchEnd={handleTouchEnd}
         onMouseEnter={() => !isMobile && setShowGestureGuide(true)}
         onMouseLeave={() => !isMobile && setShowGestureGuide(false)}
+        style={{ touchAction: 'none' }}
       >
         {videoUrl ? (
           <>
