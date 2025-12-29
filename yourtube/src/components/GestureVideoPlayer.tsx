@@ -239,20 +239,16 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           >
             {/* Header */}
             <div
-              className="sticky top-0 z-10 flex items-center"
+              className="sticky top-0 z-10"
               style={{
                 background: "#282828",
                 borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
-                padding: "14px 16px",
               }}
             >
               <button
-                className="flex items-center justify-center touch-manipulation"
+                className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation"
                 style={{
-                  minWidth: "44px",
-                  minHeight: "44px",
                   WebkitTapHighlightColor: "transparent",
-                  marginRight: "8px",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -260,19 +256,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 }}
                 aria-label="Close quality selector"
               >
-                <ChevronLeft className="w-6 h-6 text-white" />
+                <ChevronLeft className="w-5 h-5" style={{ color: "rgba(255, 255, 255, 0.9)" }} />
+                <span className="text-sm font-semibold">Quality</span>
               </button>
-              <h3
-                className="font-medium flex-1"
-                style={{
-                  color: "#ffffff",
-                  fontSize: "18px",
-                  fontWeight: 500,
-                  letterSpacing: "0.1px",
-                }}
-              >
-                Quality
-              </h3>
             </div>
 
             {/* Quality Options */}
@@ -323,25 +309,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     role="menuitemradio"
                     aria-checked={isActive}
                   >
-                    <div className="flex items-center gap-2 flex-1 text-left">
+                    <div className="flex flex-col gap-0.5 flex-1 text-left">
                       <span
+                        className="text-sm font-medium"
                         style={{
                           color: isActive ? "#ffffff" : "#e0e0e0",
-                          fontSize: "16px",
-                          fontWeight: isActive ? 500 : 400,
-                          lineHeight: "22px",
                         }}
                       >
                         {label.full}
                       </span>
                       {quality === "auto" && (
                         <span
-                          style={{
-                            color: "#909090",
-                            fontSize: "13px",
-                            fontWeight: 400,
-                            lineHeight: "18px",
-                          }}
+                          className="text-xs"
+                          style={{ color: "rgba(255, 255, 255, 0.6)" }}
                         >
                           {label.desc}
                         </span>
