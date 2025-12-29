@@ -248,7 +248,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               }}
             >
               <button
-                className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation rounded-t-xl"
+                className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation"
                 style={{
                   WebkitTapHighlightColor: "transparent",
                 }}
