@@ -238,7 +238,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <div
               className="sticky top-0 z-10 flex items-center"
               style={{
-                background: "#282828",
+                background: "#212121", // ✅ CORRECT COLOR
                 borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
                 padding: "16px 16px",
               }}
