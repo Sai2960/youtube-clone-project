@@ -186,20 +186,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   };
 
   return (
-    <div className="relative" style={{ zIndex: isOpen ? 9999 : "auto" }}>
+    <div className="relative" style={{ zIndex: isOpen ? 9999 : 50 }}>
       {/* Settings Button */}
       <button
         ref={buttonRef}
         onClick={toggleMenu}
-        onTouchEnd={(e) => {
-          e.preventDefault();
+        onTouchStart={(e) => {
           e.stopPropagation();
         }}
-        className="flex items-center justify-center h-10 w-10 text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation"
+        className="flex items-center justify-center h-10 w-10 text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation relative"
         style={{
           WebkitTapHighlightColor: "transparent",
           minHeight: isMobile ? "44px" : "40px",
           minWidth: isMobile ? "44px" : "40px",
+          zIndex: 50,
         }}
         aria-label="Quality settings"
         aria-expanded={isOpen}
