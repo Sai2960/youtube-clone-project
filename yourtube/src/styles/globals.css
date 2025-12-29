@@ -12376,29 +12376,37 @@ button span {
 }
 
 /* =================== END MOBILE QUALITY SELECTOR FIXES =================== */
-/* Ensure smooth scrolling on iOS */
-.quality-options-scroll {
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
+/* Force better text rendering on mobile */
+.quality-selector-mobile * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Better touch targets for mobile */
-@media (max-width: 768px) {
-  .quality-selector-button {
-    min-height: 60px;
-    min-width: 60px;
+/* Ensure quality selector is always on top */
+.quality-selector-mobile {
+  isolation: isolate;
+  z-index: 9999 !important;
+}
+
+/* Better touch feedback */
+.quality-option-button:active {
+  transform: scale(0.98);
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Smooth animations */
+@keyframes slideUpMobile {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
-/* Prevent text selection during taps */
-.quality-selector * {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Better focus states for accessibility */
-.quality-option:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: -2px;
+.mobile-quality-sheet {
+  animation: slideUpMobile 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

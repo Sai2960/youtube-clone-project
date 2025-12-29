@@ -212,7 +212,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           <div
             className="fixed inset-0 z-[9998] animate-in fade-in duration-200"
             style={{
-              background: "rgba(0, 0, 0, 0.85)",
+              background: "rgba(0, 0, 0, 0.90)",
+              backdropFilter: "blur(4px)",
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -225,10 +226,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             ref={menuRef}
             className="fixed left-0 right-0 bottom-0 z-[9999] flex flex-col animate-in slide-in-from-bottom duration-300"
             style={{
-              background: "#282828",
+              background: "#2f2f2f",
               borderRadius: "12px 12px 0 0",
               maxHeight: "65vh",
-              boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.8)",
+              boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
             }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
@@ -238,9 +240,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <div
               className="sticky top-0 z-10 flex items-center"
               style={{
-                background: "#282828",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
-                padding: "12px 16px",
+                background: "#2f2f2f",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.25)",
+                padding: "14px 16px",
               }}
             >
               <button
@@ -259,12 +261,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 <ChevronLeft className="w-6 h-6 text-white" />
               </button>
               <h3
-                className="font-medium flex-1"
+                className="font-medium flex-1 text-center"
                 style={{
                   color: "#ffffff",
-                  fontSize: "18px",
-                  fontWeight: 600,
-                  letterSpacing: "0.5px",
+                  fontSize: "19px",
+                  fontWeight: 700,
+                  letterSpacing: "0.3px",
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
                 }}
               >
                 Quality
@@ -276,8 +279,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               className="overflow-y-auto overflow-x-hidden flex-1"
               style={{
                 WebkitOverflowScrolling: "touch",
-                background: "#282828",
-                paddingBottom: "8px",
+                background: "#2f2f2f",
+                paddingBottom: "16px",
+                paddingTop: "4px",
               }}
             >
               {availableQualities.map((quality) => {
@@ -294,15 +298,16 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     disabled={isChanging}
                     className="w-full flex items-center justify-between transition-colors touch-manipulation active:bg-[#3d3d3d]"
                     style={{
-                      minHeight: "60px",
-                      padding: "18px 24px",
+                      minHeight: "62px",
+                      padding: "20px 24px",
                       background: isActive
-                        ? "rgba(255, 255, 255, 0.08)"
+                        ? "rgba(255, 255, 255, 0.12)"
                         : "transparent",
-                      borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
                       WebkitTapHighlightColor: "transparent",
                       opacity: isChanging ? 0.5 : 1,
                       cursor: isChanging ? "not-allowed" : "pointer",
+                      transition: "background-color 0.2s ease",
                     }}
                     role="menuitemradio"
                     aria-checked={isActive}
@@ -310,10 +315,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     <div className="flex items-center gap-3 flex-1 text-left">
                       <span
                         style={{
-                          color: isActive ? "#ffffff" : "#f1f1f1",
-                          fontSize: "16px",
-                          fontWeight: isActive ? 500 : 400,
-                          lineHeight: "22px",
+                          color: "#ffffff",
+                          fontSize: "17px",
+                          fontWeight: isActive ? 600 : 400,
+                          lineHeight: "24px",
+                          textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
                         }}
                       >
                         {label.full}
