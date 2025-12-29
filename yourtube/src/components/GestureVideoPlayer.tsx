@@ -20,12 +20,14 @@ import {
   PictureInPicture,
   Share2,
   Check,
+  ChevronLeft,
 } from "lucide-react";
 import { useRouter } from "next/router";
 import { Button } from "./ui/button";
 import { getVideoUrl } from "@/lib/urlHelper";
 import { useSubscription } from "@/lib/SubscriptionContext";
 
+// Quality type definition
 // Quality type definition
 type QualityType =
   | "auto"
@@ -57,9 +59,10 @@ interface QualitySelectorProps {
   currentQuality: QualityType;
   onQualityChange: (quality: QualityType) => void;
   availableQualities?: QualityType[];
+  isMobile: boolean;
 }
 
-const QualitySelector = ({
+const QualitySelector: React.FC<QualitySelectorProps> = ({
   currentQuality,
   onQualityChange,
   availableQualities = [
@@ -155,19 +158,14 @@ const QualitySelector = ({
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node;
-
-      // Check if click is OUTSIDE both menu AND button
       const clickedMenu = menuRef.current?.contains(target);
       const clickedButton = buttonRef.current?.contains(target);
-      const clickedBackdrop = backdropRef.current?.contains(target);
 
       if (!clickedMenu && !clickedButton) {
-        console.log("👆 Clicked outside - closing menu");
         closeMenu();
       }
     };
 
-    // Use capture phase
     document.addEventListener("mousedown", handleClickOutside, true);
     document.addEventListener("touchstart", handleClickOutside, {
       capture: true,
@@ -178,7 +176,7 @@ const QualitySelector = ({
       document.removeEventListener("mousedown", handleClickOutside, true);
       document.removeEventListener("touchstart", handleClickOutside, true);
     };
-  }, [isMobile, isOpen]);
+  }, [isOpen]);
 
   // ✅ CLOSE ON ESCAPE KEY
   useEffect(() => {
@@ -193,6 +191,23 @@ const QualitySelector = ({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen]);
+  useEffect(() => {
+    if (isMobile && isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isMobile, isOpen]);
 
   // MENU FUNCTIONS
   const openMenu = () => {
@@ -222,15 +237,11 @@ const QualitySelector = ({
   const handleQualitySelect = async (quality: QualityType) => {
     if (quality === currentQuality || isChanging) return;
 
-    console.log("🎬 Quality change:", currentQuality, "→", quality);
-
     setIsChanging(true);
-
     try {
       await onQualityChange(quality);
-      console.log("✅ Quality changed successfully");
     } catch (error) {
-      console.error("❌ Quality change failed:", error);
+      console.error("Quality change failed:", error);
     } finally {
       setIsChanging(false);
       closeMenu();
@@ -238,19 +249,18 @@ const QualitySelector = ({
   };
 
   return (
-    <div
-      className="relative"
-      style={{ zIndex: isMobileView && isOpen ? 9999 : "auto" }}
-    >
+    <div className="relative" style={{ zIndex: isOpen ? 9999 : "auto" }}>
       {/* Settings Button */}
       <button
         ref={buttonRef}
         onClick={toggleMenu}
         onTouchEnd={toggleMenu}
-        className="flex items-center justify-center h-10 w-10 min-h-[44px] min-w-[44px]
-                   text-white hover:bg-white/20 active:bg-white/30 rounded-full
-                   transition-all duration-150 touch-manipulation"
-        style={{ WebkitTapHighlightColor: "transparent" }}
+        className="flex items-center justify-center h-10 w-10 text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150"
+        style={{
+          WebkitTapHighlightColor: "transparent",
+          minHeight: isMobile ? "44px" : "40px",
+          minWidth: isMobile ? "44px" : "40px",
+        }}
         aria-label="Quality settings"
         aria-expanded={isOpen}
       >
@@ -263,49 +273,64 @@ const QualitySelector = ({
           {/* Backdrop */}
           <div
             ref={backdropRef}
-            className="fixed inset-0 bg-black/60 z-[9998]"
-            style={{ backdropFilter: "blur(4px)" }}
+            className="fixed inset-0 z-[9998]"
+            style={{
+              background: "rgba(0, 0, 0, 0.7)",
+              backdropFilter: "blur(4px)",
+            }}
             onClick={closeMenu}
             onTouchStart={closeMenu}
           />
 
-          {/* Menu */}
+          {/* Menu - Bottom Sheet Style */}
           <div
             ref={menuRef}
-            data-theme={theme}
-            className="fixed left-1/2 -translate-x-1/2 bottom-20 z-[9999]
-                 w-[90vw] max-w-[320px] max-h-[60vh]
-                 bg-black/98 dark:bg-black/98 light:bg-white/98
-                 backdrop-blur-xl rounded-2xl shadow-2xl
-                 border border-white/15 dark:border-white/15 light:border-black/10
-                 flex flex-col overflow-hidden"
+            className="fixed left-0 right-0 bottom-0 z-[9999] flex flex-col"
+            style={{
+              background: "rgba(28, 28, 28, 0.98)",
+              backdropFilter: "blur(20px)",
+              borderRadius: "16px 16px 0 0",
+              maxHeight: "70vh",
+              boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.5)",
+            }}
             onClick={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
             role="dialog"
             aria-label="Video quality selector"
           >
-            {/* Header with Close Button */}
+            {/* Handle bar */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div
+                style={{
+                  width: "40px",
+                  height: "4px",
+                  background: "rgba(255, 255, 255, 0.3)",
+                  borderRadius: "2px",
+                }}
+              />
+            </div>
+
             <div
-              className="sticky top-0 z-10 bg-inherit
-                      px-4 py-4 border-b border-white/10 dark:border-white/10 light:border-black/8
-                      flex items-center justify-between"
-              style={{ paddingTop: "max(16px, env(safe-area-inset-top))" }}
+              className="sticky top-0 z-10 px-5 py-4 flex items-center justify-between"
+              style={{
+                background: "rgba(28, 28, 28, 0.98)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              }}
             >
-              <h3 className="text-lg font-semibold text-white dark:text-white light:text-black">
-                Quality
-              </h3>
+              <h3 className="text-lg font-semibold text-white">Quality</h3>
               <button
-                className="min-w-[44px] min-h-[44px] w-11 h-11
-                     flex items-center justify-center
-                     rounded-full bg-white/10 dark:bg-white/10 light:bg-black/8
-                     active:scale-95 active:bg-white/20 dark:active:bg-white/20 light:active:bg-black/12
-                     transition-all touch-manipulation"
-                style={{ WebkitTapHighlightColor: "transparent" }}
+                className="flex items-center justify-center rounded-full"
+                style={{
+                  minWidth: "44px",
+                  minHeight: "44px",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  WebkitTapHighlightColor: "transparent",
+                }}
                 onClick={closeMenu}
                 onTouchEnd={closeMenu}
                 aria-label="Close"
               >
-                <X className="w-5 h-5 text-white dark:text-white light:text-black" />
+                <ChevronLeft className="w-5 h-5 text-white rotate-180" />
               </button>
             </div>
 
@@ -314,16 +339,12 @@ const QualitySelector = ({
               className="overflow-y-auto overflow-x-hidden"
               style={{
                 WebkitOverflowScrolling: "touch",
-                paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+                paddingBottom: "max(20px, env(safe-area-inset-bottom))",
               }}
             >
               {availableQualities.map((quality) => {
                 const isActive = quality === currentQuality;
-                const label = qualityLabels[quality] || {
-                  full: quality,
-                  short: quality,
-                  desc: "",
-                };
+                const label = qualityLabels[quality];
 
                 return (
                   <button
@@ -334,42 +355,61 @@ const QualitySelector = ({
                       handleQualitySelect(quality);
                     }}
                     disabled={isChanging}
-                    className={`
-                w-full min-h-[56px] px-5 py-4
-                flex items-center justify-between
-                bg-transparent hover:bg-white/10 active:bg-white/15
-                dark:hover:bg-white/10 dark:active:bg-white/15
-                light:hover:bg-black/5 light:active:bg-black/8
-                transition-colors touch-manipulation
-                ${
-                  isActive
-                    ? "bg-red-600/15 dark:bg-red-600/15 light:bg-red-600/10"
-                    : ""
-                }
-                ${isChanging ? "opacity-50 cursor-not-allowed" : ""}
-                border-b border-white/5 dark:border-white/5 light:border-black/5 last:border-b-0
-              `}
-                    style={{ WebkitTapHighlightColor: "transparent" }}
+                    className="w-full flex items-center justify-between transition-colors"
+                    style={{
+                      minHeight: "64px",
+                      padding: "16px 20px",
+                      background: isActive
+                        ? "rgba(255, 0, 0, 0.15)"
+                        : "transparent",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+                      WebkitTapHighlightColor: "transparent",
+                      opacity: isChanging ? 0.5 : 1,
+                      cursor: isChanging ? "not-allowed" : "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive && !isChanging) {
+                        e.currentTarget.style.background =
+                          "rgba(255, 255, 255, 0.08)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = "transparent";
+                      }
+                    }}
                     role="menuitemradio"
                     aria-checked={isActive}
                   >
                     <div className="flex flex-col gap-1 flex-1 text-left">
-                      <span className="text-base font-medium text-white dark:text-white light:text-black">
+                      <span className="text-base font-medium text-white">
                         {label.full}
                       </span>
                       {label.desc && (
-                        <span className="text-sm text-white/70 dark:text-white/70 light:text-black/60">
+                        <span
+                          className="text-sm"
+                          style={{ color: "rgba(255, 255, 255, 0.7)" }}
+                        >
                           {label.desc}
                         </span>
                       )}
                     </div>
 
                     {isActive && !isChanging && (
-                      <Check className="w-6 h-6 text-red-600 dark:text-red-500 flex-shrink-0" />
+                      <Check
+                        className="w-6 h-6 flex-shrink-0"
+                        style={{ color: "#ff0000" }}
+                      />
                     )}
 
                     {isChanging && isActive && (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <div
+                        className="w-5 h-5 rounded-full animate-spin"
+                        style={{
+                          border: "2px solid rgba(255, 255, 255, 0.3)",
+                          borderTopColor: "#fff",
+                        }}
+                      />
                     )}
                   </button>
                 );
@@ -380,14 +420,19 @@ const QualitySelector = ({
       )}
 
       {/* DESKTOP VIEW */}
-      {!isMobileView && isOpen && (
+      {!isMobile && isOpen && (
         <div
           ref={menuRef}
-          className="absolute bottom-full right-0 mb-2
-                     bg-white dark:bg-black/98 backdrop-blur-xl rounded-xl shadow-2xl
-                     border border-gray-200 dark:border-white/20 min-w-[260px] z-50"
+          className="absolute right-0 rounded-xl shadow-2xl"
+          style={{
+            bottom: "calc(100% + 8px)",
+            background: "rgba(28, 28, 28, 0.98)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            minWidth: "260px",
+            zIndex: 9999,
+          }}
           onClick={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
         >
           {!showQualityMenu ? (
             <button
@@ -395,21 +440,20 @@ const QualitySelector = ({
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
-              className="w-full px-4 py-4 text-left
-                         text-gray-900 dark:text-white 
-                         hover:bg-gray-100 dark:hover:bg-white/10 
-                         active:bg-gray-200 dark:active:bg-white/15
-                         transition-colors flex items-center justify-between
-                         rounded-xl"
+              className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl"
             >
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-semibold">Quality</span>
-                <span className="text-xs text-gray-600 dark:text-gray-300">
+                <span
+                  className="text-xs"
+                  style={{ color: "rgba(255, 255, 255, 0.7)" }}
+                >
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
               <svg
-                className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                className="w-5 h-5"
+                style={{ color: "rgba(255, 255, 255, 0.7)" }}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -429,16 +473,17 @@ const QualitySelector = ({
                   e.stopPropagation();
                   setShowQualityMenu(false);
                 }}
-                className="w-full px-4 py-4 text-left
-                           text-gray-900 dark:text-white 
-                           hover:bg-gray-100 dark:hover:bg-white/10 
-                           transition-colors flex items-center gap-3
-                           border-b border-gray-200 dark:border-white/10
-                           sticky top-0 bg-white dark:bg-black/98 backdrop-blur-xl z-10
-                           rounded-t-xl"
+                className="w-full px-4 py-4 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 sticky top-0 rounded-t-xl"
+                style={{
+                  background: "rgba(28, 28, 28, 0.98)",
+                  backdropFilter: "blur(20px)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                  zIndex: 10,
+                }}
               >
                 <svg
-                  className="w-5 h-5 rotate-180 text-gray-600 dark:text-gray-300"
+                  className="w-5 h-5 rotate-180"
+                  style={{ color: "rgba(255, 255, 255, 0.9)" }}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -453,7 +498,7 @@ const QualitySelector = ({
                 <span className="text-sm font-semibold">Quality</span>
               </button>
 
-              <div className="overflow-y-auto max-h-[50vh]">
+              <div className="overflow-y-auto" style={{ maxHeight: "50vh" }}>
                 {availableQualities.map((q) => (
                   <button
                     key={q}
@@ -462,34 +507,43 @@ const QualitySelector = ({
                       handleQualitySelect(q);
                     }}
                     disabled={isChanging}
-                    className={`
-                      w-full px-5 py-4 text-left
-                      hover:bg-gray-100 dark:hover:bg-white/10 
-                      active:bg-gray-200 dark:active:bg-white/15
-                      transition-colors flex items-center justify-between
-                      ${
+                    className="w-full px-5 py-4 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between"
+                    style={{
+                      background:
                         currentQuality === q
-                          ? "bg-gray-100 dark:bg-white/5"
-                          : ""
-                      }
-                      ${isChanging ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
+                          ? "rgba(255, 255, 255, 0.05)"
+                          : "transparent",
+                      opacity: isChanging ? 0.5 : 1,
+                      cursor: isChanging ? "not-allowed" : "pointer",
+                    }}
                   >
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      <span className="text-sm font-medium text-white">
                         {qualityLabels[q]?.short || q}
                       </span>
                       {q === "auto" && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span
+                          className="text-xs"
+                          style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                        >
                           Recommended
                         </span>
                       )}
                     </div>
                     {currentQuality === q && !isChanging && (
-                      <Check className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0" />
+                      <Check
+                        className="w-5 h-5 flex-shrink-0"
+                        style={{ color: "#ff0000" }}
+                      />
                     )}
                     {isChanging && currentQuality === q && (
-                      <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                      <div
+                        className="w-5 h-5 rounded-full animate-spin"
+                        style={{
+                          border: "2px solid #ff0000",
+                          borderTopColor: "transparent",
+                        }}
+                      />
                     )}
                   </button>
                 ))}
@@ -501,6 +555,7 @@ const QualitySelector = ({
     </div>
   );
 };
+
 interface GestureVideoPlayerProps {
   video: {
     [x: string]: any;
