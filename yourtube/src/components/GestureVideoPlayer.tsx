@@ -25,7 +25,6 @@ import { Button } from "./ui/button";
 import { getVideoUrl } from "@/lib/urlHelper";
 import { useSubscription } from "@/lib/SubscriptionContext";
 
-// ✅ NEW: Quality Selector Component
 const QualitySelector = ({
   currentQuality,
   onQualityChange,
@@ -46,6 +45,53 @@ const QualitySelector = ({
   const [isOpen, setIsOpen] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Detect mobile for better UI
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  // ✅ Add global styles for better mobile interaction
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      .touch-manipulation {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: manipulation;
+      }
+      
+      /* Better scrollbar for quality menu */
+      .overflow-y-auto::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .overflow-y-auto::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      
+      .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+      }
+      
+      .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobileView(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,20 +125,22 @@ const QualitySelector = ({
       <Button
         variant="ghost"
         size="icon"
-        className="text-white hover:bg-white/20 h-9 w-9"
+        className="text-white hover:bg-white/20 h-8 w-8 md:h-9 md:w-9"
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
           setShowQualityMenu(false);
         }}
+        title="Quality Settings"
       >
-        <Settings className="w-5 h-5" />
+        <Settings className="w-4 h-4 md:w-5 md:h-5" />
       </Button>
 
       {isOpen && (
         <div
-          className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden min-w-[240px] border border-white/10 z-50"
+          className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden min-w-[200px] md:min-w-[240px] border border-white/10 z-50 max-h-[70vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
           {!showQualityMenu ? (
             <button
@@ -265,6 +313,7 @@ export default function GestureVideoPlayer({
   const [watchedMinutes, setWatchedMinutes] = useState(0);
   const watchTimeCheckInterval = useRef<NodeJS.Timeout | null>(null);
   const { watchTimeLimit, currentPlan } = useSubscription();
+  const [isChangingQuality, setIsChangingQuality] = useState(false);
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // ✅ UPDATED: Enhanced quality change handler
@@ -274,6 +323,7 @@ export default function GestureVideoPlayer({
     if (!videoRef.current || !video) return;
 
     console.log("🎬 Changing quality to:", newQuality);
+    setIsChangingQuality(true); // ✅ ADD THIS
 
     // ✅ CRITICAL: Save state BEFORE changing
     const savedTime = videoRef.current.currentTime;
@@ -385,6 +435,8 @@ export default function GestureVideoPlayer({
       console.log("✅ Quality changed successfully to:", newQuality);
     } catch (error) {
       console.error("❌ Quality change failed:", error);
+    } finally {
+      setIsChangingQuality(false); // ✅ ADD THIS
     }
   };
 
@@ -588,9 +640,11 @@ export default function GestureVideoPlayer({
 
     // ✅ FIX: Auto-hide on BOTH mobile and desktop when playing
     if (isPlaying) {
+      // Longer timeout on mobile for better UX
+      const hideDelay = isMobile ? 4000 : 3000;
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
-      }, 3000); // Hide after 3 seconds
+      }, hideDelay);
     }
   };
 
@@ -800,11 +854,27 @@ export default function GestureVideoPlayer({
     try {
       if (document.pictureInPictureElement) {
         await document.exitPictureInPicture();
+        console.log("✅ Exited Picture-in-Picture");
       } else {
+        // Check if PiP is supported
+        if (!document.pictureInPictureEnabled) {
+          console.warn("⚠️ Picture-in-Picture not supported");
+          alert("Picture-in-Picture is not supported on this browser");
+          return;
+        }
+
         await videoRef.current.requestPictureInPicture();
+        console.log("✅ Entered Picture-in-Picture");
       }
-    } catch (error) {
-      console.error("PiP error:", error);
+    } catch (error: any) {
+      console.error("❌ PiP error:", error);
+
+      // User-friendly error messages
+      if (error.name === "NotAllowedError") {
+        console.warn("PiP permission denied");
+      } else if (error.name === "NotSupportedError") {
+        alert("Picture-in-Picture is not supported on this device");
+      }
     }
   };
 
@@ -1213,11 +1283,12 @@ export default function GestureVideoPlayer({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:bg-white/20 h-8 w-8 md:h-9 md:w-9"
+                    className="text-white hover:bg-white/20 h-9 w-9 md:h-10 md:w-10 touch-manipulation"
                     onClick={(e) => {
                       e.stopPropagation();
                       togglePlayPause();
                     }}
+                    title="Play/Pause"
                   >
                     {isPlaying ? (
                       <Pause className="w-4 h-4 md:w-5 md:h-5" />
@@ -1287,7 +1358,7 @@ export default function GestureVideoPlayer({
                         <VolumeIcon className="w-4 h-4" />
                       </Button>
                       {showVolumeSlider && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black/90 backdrop-blur-sm rounded-lg p-3 min-w-[40px]">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black/90 backdrop-blur-sm rounded-lg p-3 min-w-[40px] z-50 shadow-xl border border-white/10">
                           <div className="flex flex-col items-center gap-2">
                             <input
                               type="range"
@@ -1327,7 +1398,7 @@ export default function GestureVideoPlayer({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-white hover:bg-white/20 h-8 w-8 md:h-9 md:w-9"
+                      className="text-white hover:bg-white/20 h-9 w-9 md:h-10 md:w-10 touch-manipulation"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleShareClick();
@@ -1337,54 +1408,56 @@ export default function GestureVideoPlayer({
                       <Share2 className="w-4 h-4 md:w-5 md:h-5" />
                     </Button>
                   )}
+                  {/* Quality Selector - Now visible on mobile */}
+                  <QualitySelector
+                    currentQuality={quality}
+                    onQualityChange={handleQualityChange}
+                    availableQualities={availableQualities}
+                  />
 
-                  {!isMobile && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-white hover:bg-white/20 h-9 w-9"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCaptionsEnabled(!captionsEnabled);
-                        }}
-                      >
-                        <Subtitles
-                          className={`w-5 h-5 ${
-                            captionsEnabled ? "text-red-500" : ""
-                          }`}
-                        />
-                      </Button>
-
-                      {/* ✅ REPLACED: Use QualitySelector Component */}
-                      <QualitySelector
-                        currentQuality={quality}
-                        onQualityChange={handleQualityChange}
-                        availableQualities={availableQualities}
-                      />
-
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-white hover:bg-white/20 h-9 w-9"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePiP();
-                        }}
-                      >
-                        <PictureInPicture className="w-5 h-5" />
-                      </Button>
-                    </>
-                  )}
-
+                  {/* Picture-in-Picture - Now visible on mobile */}
                   <Button
                     variant="ghost"
                     size="icon"
                     className="text-white hover:bg-white/20 h-8 w-8 md:h-9 md:w-9"
                     onClick={(e) => {
                       e.stopPropagation();
+                      togglePiP();
+                    }}
+                    title="Picture in Picture"
+                  >
+                    <PictureInPicture className="w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
+
+                  {/* Subtitles - Desktop only */}
+                  {!isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/20 h-9 w-9"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCaptionsEnabled(!captionsEnabled);
+                      }}
+                      title="Subtitles"
+                    >
+                      <Subtitles
+                        className={`w-5 h-5 ${
+                          captionsEnabled ? "text-red-500" : ""
+                        }`}
+                      />
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 h-9 w-9 md:h-10 md:w-10 touch-manipulation"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       toggleFullscreen();
                     }}
+                    title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
                   >
                     {isFullscreen ? (
                       <Minimize className="w-4 h-4 md:w-5 md:h-5" />

@@ -1609,6 +1609,18 @@ export default function CompleteVideoPlayer({
           )}
         </div>
 
+        {/* Quality Change Loading Indicator */}
+        {changeQuality && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-40 pointer-events-none">
+            <div className="bg-black/80 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center gap-2">
+              <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <span className="text-white text-sm font-medium">
+                Changing Quality...
+              </span>
+            </div>
+          </div>
+        )}
+
         {isMobile && (
           <div className="mt-3 p-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/40 rounded-lg">
             <div className="flex items-start gap-2">
