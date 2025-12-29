@@ -71,7 +71,8 @@ const QualitySelector = ({
     "240p",
     "144p",
   ],
-}: QualitySelectorProps) => {
+  isMobile,
+}: QualitySelectorProps & { isMobile: boolean }) => {
   // STATE MANAGEMENT
   const [isOpen, setIsOpen] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
@@ -264,60 +265,72 @@ const QualitySelector = ({
       </button>
 
       {/* MOBILE VIEW */}
-      {isMobileView && isOpen && (
+      {isMobile && isOpen && (
         <>
           {/* Backdrop */}
           <div
             ref={backdropRef}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+            className="fixed inset-0 bg-black/60 z-[9998]"
+            style={{ backdropFilter: "blur(4px)" }}
             onClick={closeMenu}
             onTouchStart={closeMenu}
-            style={{
-              touchAction: "none",
-              WebkitTapHighlightColor: "transparent",
-            }}
           />
 
-          {/* Bottom Sheet Menu */}
+          {/* Menu */}
           <div
             ref={menuRef}
-            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 
-                       rounded-t-3xl shadow-2xl z-[9999] max-h-[80vh] overflow-hidden
-                       animate-in slide-in-from-bottom duration-300"
+            data-theme={theme}
+            className="fixed left-1/2 -translate-x-1/2 bottom-20 z-[9999]
+                 w-[90vw] max-w-[320px] max-h-[60vh]
+                 bg-black/98 dark:bg-black/98 light:bg-white/98
+                 backdrop-blur-xl rounded-2xl shadow-2xl
+                 border border-white/15 dark:border-white/15 light:border-black/10
+                 flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
             role="dialog"
             aria-label="Video quality selector"
-            style={{
-              touchAction: "pan-y",
-              WebkitOverflowScrolling: "touch",
-            }}
           >
-            {/* Handle Bar */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-12 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full" />
-            </div>
-
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-zinc-800">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                Video Quality
+            {/* Header with Close Button */}
+            <div
+              className="sticky top-0 z-10 bg-inherit
+                      px-4 py-4 border-b border-white/10 dark:border-white/10 light:border-black/8
+                      flex items-center justify-between"
+              style={{ paddingTop: "max(16px, env(safe-area-inset-top))" }}
+            >
+              <h3 className="text-lg font-semibold text-white dark:text-white light:text-black">
+                Quality
               </h3>
               <button
-                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+                className="min-w-[44px] min-h-[44px] w-11 h-11
+                     flex items-center justify-center
+                     rounded-full bg-white/10 dark:bg-white/10 light:bg-black/8
+                     active:scale-95 active:bg-white/20 dark:active:bg-white/20 light:active:bg-black/12
+                     transition-all touch-manipulation"
+                style={{ WebkitTapHighlightColor: "transparent" }}
                 onClick={closeMenu}
                 onTouchEnd={closeMenu}
                 aria-label="Close"
               >
-                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <X className="w-5 h-5 text-white dark:text-white light:text-black" />
               </button>
             </div>
 
             {/* Options List */}
-            <div className="overflow-y-auto max-h-[calc(80vh-120px)] overscroll-contain">
+            <div
+              className="overflow-y-auto overflow-x-hidden"
+              style={{
+                WebkitOverflowScrolling: "touch",
+                paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+              }}
+            >
               {availableQualities.map((quality) => {
                 const isActive = quality === currentQuality;
-                const label = qualityLabels[quality];
+                const label = qualityLabels[quality] || {
+                  full: quality,
+                  short: quality,
+                  desc: "",
+                };
 
                 return (
                   <button
@@ -329,39 +342,33 @@ const QualitySelector = ({
                     }}
                     disabled={isChanging}
                     className={`
-                      w-full px-6 py-4 flex items-center justify-between
-                      transition-colors touch-manipulation
-                      ${
-                        isActive
-                          ? "bg-red-50 dark:bg-red-900/20"
-                          : "hover:bg-gray-50 dark:hover:bg-zinc-800/50 active:bg-gray-100 dark:active:bg-zinc-800"
-                      }
-                      ${
-                        isChanging
-                          ? "opacity-50 cursor-not-allowed"
-                          : "cursor-pointer"
-                      }
-                    `}
-                    style={{
-                      minHeight: "60px",
-                      WebkitTapHighlightColor: "transparent",
-                    }}
+                w-full min-h-[56px] px-5 py-4
+                flex items-center justify-between
+                bg-transparent hover:bg-white/10 active:bg-white/15
+                dark:hover:bg-white/10 dark:active:bg-white/15
+                light:hover:bg-black/5 light:active:bg-black/8
+                transition-colors touch-manipulation
+                ${
+                  isActive
+                    ? "bg-red-600/15 dark:bg-red-600/15 light:bg-red-600/10"
+                    : ""
+                }
+                ${isChanging ? "opacity-50 cursor-not-allowed" : ""}
+                border-b border-white/5 dark:border-white/5 light:border-black/5 last:border-b-0
+              `}
+                    style={{ WebkitTapHighlightColor: "transparent" }}
                     role="menuitemradio"
                     aria-checked={isActive}
                   >
-                    <div className="flex flex-col items-start gap-1">
-                      <span
-                        className={`text-base font-semibold ${
-                          isActive
-                            ? "text-red-600 dark:text-red-500"
-                            : "text-gray-900 dark:text-white"
-                        }`}
-                      >
+                    <div className="flex flex-col gap-1 flex-1 text-left">
+                      <span className="text-base font-medium text-white dark:text-white light:text-black">
                         {label.full}
                       </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {label.desc}
-                      </span>
+                      {label.desc && (
+                        <span className="text-sm text-white/70 dark:text-white/70 light:text-black/60">
+                          {label.desc}
+                        </span>
+                      )}
                     </div>
 
                     {isActive && !isChanging && (
@@ -369,7 +376,7 @@ const QualitySelector = ({
                     )}
 
                     {isChanging && isActive && (
-                      <div className="w-6 h-6 border-3 border-red-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     )}
                   </button>
                 );
@@ -1746,11 +1753,11 @@ export default function GestureVideoPlayer({
                       <Share2 className="w-4 h-4 md:w-5 md:h-5" />
                     </Button>
                   )}
-                  {/* Quality Selector - Now visible on mobile */}
                   <QualitySelector
                     currentQuality={quality}
                     onQualityChange={handleQualityChange}
                     availableQualities={availableQualities}
+                    isMobile={isMobile}
                   />
 
                   {/* Picture-in-Picture - Now visible on mobile */}
