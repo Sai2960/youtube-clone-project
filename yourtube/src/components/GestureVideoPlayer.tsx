@@ -22,7 +22,7 @@ import {
   Check,
   ChevronLeft,
 } from "lucide-react";
-import { useRouter } from "next/router"; 
+import { useRouter } from "next/router";
 import { Button } from "./ui/button";
 import { getVideoUrl } from "@/lib/urlHelper";
 import { useSubscription } from "@/lib/SubscriptionContext";
@@ -156,10 +156,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
-    
+
     // Prevent opening if already transitioning
     if (isChanging) return;
-    
+
     if (isOpen) {
       closeMenu();
     } else {
@@ -208,9 +208,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[9998] animate-in fade-in duration-300"
+            className="fixed inset-0 z-[9998] animate-in fade-in duration-200"
             style={{
-              background: "rgba(0, 0, 0, 0.7)",
+              background: "rgba(0, 0, 0, 0.85)",
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -223,44 +223,30 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             ref={menuRef}
             className="fixed left-0 right-0 bottom-0 z-[9999] flex flex-col animate-in slide-in-from-bottom duration-300"
             style={{
-              background: "#1f1f1f",
-              borderRadius: "16px 16px 0 0",
-              height: "65vh",
-              maxHeight: "65vh",
-              boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.5)",
+              background: "#212121",
+              borderRadius: "12px 12px 0 0",
+              maxHeight: "50vh",
+              boxShadow: "0 -2px 16px rgba(0, 0, 0, 0.6)",
             }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-label="Video quality selector"
           >
-            {/* Handle Bar */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div
-                style={{
-                  width: "40px",
-                  height: "4px",
-                  background: "rgba(255, 255, 255, 0.3)",
-                  borderRadius: "2px",
-                }}
-              />
-            </div>
-
             {/* Header */}
             <div
-              className="sticky top-0 z-10 flex items-center gap-3"
+              className="sticky top-0 z-10 flex items-center"
               style={{
-                background: "#1f1f1f",
+                background: "#212121",
                 borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                padding: "16px 20px",
+                padding: "12px 16px",
               }}
             >
               <button
-                className="flex items-center justify-center touch-manipulation"
+                className="flex items-center justify-center touch-manipulation -ml-2"
                 style={{
-                  minWidth: "48px",
-                  minHeight: "48px",
+                  minWidth: "40px",
+                  minHeight: "40px",
                   WebkitTapHighlightColor: "transparent",
-                  marginLeft: "-12px",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -271,7 +257,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 <ChevronLeft className="w-6 h-6 text-white" />
               </button>
               <h3
-                className="font-medium"
+                className="font-medium flex-1"
                 style={{
                   color: "#ffffff",
                   fontSize: "16px",
@@ -287,7 +273,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               className="overflow-y-auto overflow-x-hidden flex-1"
               style={{
                 WebkitOverflowScrolling: "touch",
-                background: "#1f1f1f",
+                background: "#212121",
               }}
             >
               {availableQualities.map((quality) => {
@@ -302,12 +288,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       handleQualitySelect(quality);
                     }}
                     disabled={isChanging}
-                    className="w-full flex items-center justify-between transition-colors touch-manipulation active:bg-[#353535]"
+                    className="w-full flex items-center justify-between transition-colors touch-manipulation active:bg-[#3d3d3d]"
                     style={{
-                      minHeight: "56px",
-                      padding: "16px 20px",
-                      background: "#2a2a2a",
-                      borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                      minHeight: "48px",
+                      padding: "12px 16px",
+                      background: "transparent",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
                       WebkitTapHighlightColor: "transparent",
                       opacity: isChanging ? 0.5 : 1,
                       cursor: isChanging ? "not-allowed" : "pointer",
@@ -315,11 +301,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     role="menuitemradio"
                     aria-checked={isActive}
                   >
-                    <div className="flex flex-col gap-1 flex-1 text-left">
+                    <div className="flex items-center gap-3 flex-1">
                       <span
                         style={{
                           color: "#ffffff",
-                          fontSize: "15px",
+                          fontSize: "14px",
                           fontWeight: 400,
                           lineHeight: "20px",
                         }}
@@ -329,10 +315,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       {quality === "auto" && (
                         <span
                           style={{
-                            color: "#888888",
-                            fontSize: "13px",
+                            color: "#aaaaaa",
+                            fontSize: "12px",
                             fontWeight: 400,
-                            lineHeight: "18px",
+                            lineHeight: "16px",
                           }}
                         >
                           {label.desc}
