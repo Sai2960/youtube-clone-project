@@ -99,8 +99,9 @@ const QualitySelector = ({
       <Button
         variant="ghost"
         size="icon"
-        className="text-white hover:bg-white/20 active:bg-white/30 h-10 w-10 
-             touch-manipulation transition-all duration-150 min-h-[44px] min-w-[44px]"
+        className="text-white hover:bg-white/20 active:bg-white/30 
+       touch-manipulation transition-all duration-150 
+       h-8 w-8 md:h-10 md:w-10 min-h-[40px] min-w-[40px]"
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
@@ -118,17 +119,23 @@ const QualitySelector = ({
       {isOpen && (
         <div
           className={`
-      absolute bottom-full right-0 mb-2
+      absolute ${
+        isMobileView ? "bottom-full right-0 mb-2" : "bottom-full right-0 mb-2"
+      }
       bg-white dark:bg-black/98 backdrop-blur-xl rounded-xl shadow-2xl
       border border-gray-200 dark:border-white/20 z-[9999]
-      ${isMobileView ? "min-w-[240px] max-w-[300px]" : "min-w-[260px]"}
+      ${
+        isMobileView ? "min-w-[200px] w-[200px] max-w-[200px]" : "min-w-[260px]"
+      }
     `}
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           style={{
-            maxHeight: isMobileView ? "60vh" : "70vh",
+            maxHeight: isMobileView ? "50vh" : "70vh",
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
+            right: isMobileView ? "0" : undefined,
+            left: isMobileView ? "auto" : undefined,
           }}
         >
           {!showQualityMenu ? (
@@ -142,7 +149,7 @@ const QualitySelector = ({
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
-              className="w-full px-4 py-4 text-left
+              className="w-full text-left
              text-gray-900 dark:text-white 
              hover:bg-gray-100 dark:hover:bg-white/10 
              active:bg-gray-200 dark:active:bg-white/15
@@ -219,12 +226,8 @@ const QualitySelector = ({
                       setIsOpen(false);
                     }}
                     className={`
-    w-full px-5 py-4 text-left
-    hover:bg-gray-100 dark:hover:bg-white/10 
-    active:bg-gray-200 dark:active:bg-white/15
-    transition-colors flex items-center justify-between
-    touch-manipulation
-    ${currentQuality === q ? "bg-gray-100 dark:bg-white/5" : ""}
+    w-full text-left
+    ${isMobileView ? "px-3 py-3" : "px-5 py-4"}
   `}
                   >
                     <div className="flex flex-col gap-0.5">
