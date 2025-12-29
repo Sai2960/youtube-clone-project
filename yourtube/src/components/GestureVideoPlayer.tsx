@@ -160,6 +160,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Prevent opening if already transitioning
+    if (isChanging) return;
+    
     if (isOpen) {
       closeMenu();
     } else {
@@ -187,6 +191,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       <button
         ref={buttonRef}
         onClick={toggleMenu}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         className="flex items-center justify-center h-10 w-10 text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation"
         style={{
           WebkitTapHighlightColor: "transparent",
@@ -208,7 +216,16 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             style={{
               background: "rgba(0, 0, 0, 0.7)",
             }}
-            onClick={closeMenu}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+            }}
           />
 
           {/* Bottom Sheet Menu */}
@@ -255,7 +272,15 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   WebkitTapHighlightColor: "transparent",
                   marginLeft: "-12px",
                 }}
-                onClick={closeMenu}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  closeMenu();
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
                 aria-label="Close quality selector"
               >
                 <ChevronLeft className="w-6 h-6 text-white" />
@@ -287,7 +312,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 return (
                   <button
                     key={quality}
-                    onClick={() => handleQualitySelect(quality)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleQualitySelect(quality);
+                    }}
                     disabled={isChanging}
                     className="w-full flex items-center justify-between transition-colors touch-manipulation"
                     style={{
@@ -301,12 +330,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     }}
                     onTouchStart={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       if (!isChanging) {
                         e.currentTarget.style.background = "#353535";
                       }
                     }}
                     onTouchEnd={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       e.currentTarget.style.background = "#2a2a2a";
                     }}
                     role="menuitemradio"
