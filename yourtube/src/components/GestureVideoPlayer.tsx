@@ -228,7 +228,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             style={{
               background: "#282828",
               borderRadius: "16px 16px 0 0",
-              maxHeight: "85vh",
+              maxHeight: "80vh",
+              height: "auto",
               boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
               border: "1px solid rgba(255, 255, 255, 0.1)",
             }}
@@ -280,7 +281,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               style={{
                 WebkitOverflowScrolling: "touch",
                 background: "#282828",
-                paddingBottom: "env(safe-area-inset-bottom, 20px)",
+                paddingTop: "4px",
+                paddingBottom: "max(env(safe-area-inset-bottom, 0px), 24px)",
               }}
             >
               {availableQualities.map((quality) => {
