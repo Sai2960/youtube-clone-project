@@ -224,194 +224,84 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       {/* ✅ MOBILE VIEW - Bottom Sheet */}
       {isMobile && isOpen && (
         <div
+          ref={menuRef}
+          className="absolute rounded-lg shadow-2xl"
           style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 999999,
-            isolation: "isolate",
-            pointerEvents: "none",
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
+            bottom: "calc(100% + 8px)",
+            right: 0,
+            left: "auto",
+            background: "rgba(28, 28, 28, 0.98)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            width: "120px",
+            maxHeight: "min(300px, 60vh)",
+            zIndex: 99999,
+            boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.7)",
+            overflow: "hidden",
           }}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
           <div
+            className="overflow-y-auto"
             style={{
-              pointerEvents: "auto",
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-end",
+              maxHeight: "min(300px, 60vh)",
+              overscrollBehavior: "contain",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
             }}
           >
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-[99998] animate-in fade-in duration-200"
-              style={{
-                touchAction: "none",
-                backgroundColor: "rgba(0, 0, 0, 0.75)",
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                closeMenu();
-              }}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                closeMenu();
-              }}
-            />
+            {availableQualities.map((quality, index) => {
+              const isActive = quality === currentQuality;
+              const label = qualityLabels[quality];
 
-            {/* Bottom Sheet Menu */}
-            <div
-              ref={menuRef}
-              className="relative z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300"
-              style={{
-                background: "rgba(28, 28, 28, 0.98)",
-                backdropFilter: "blur(20px)",
-                borderRadius: "16px 16px 0 0",
-                maxHeight: "min(65vh, calc(100vh - 100px))",
-                height: "auto",
-                boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                touchAction: "none",
-                willChange: "transform",
-                transform: "translateZ(0)",
-                marginBottom: "0",
-                paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-label="Video quality selector"
-            >
-              {/* Header */}
-              <div
-                className="sticky top-0 z-10"
-                style={{
-                  background: "rgba(28, 28, 28, 0.98)",
-                  backdropFilter: "blur(20px)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                }}
-              >
+              return (
                 <button
-                  className="w-full px-5 py-3.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation"
-                  style={{
-                    WebkitTapHighlightColor: "transparent",
-                    minHeight: "56px",
-                    background: "rgba(22, 22, 22, 1)",
-                  }}
+                  key={quality}
                   onClick={(e) => {
                     e.stopPropagation();
-                    closeMenu();
+                    handleQualitySelect(quality);
                   }}
-                  aria-label="Close quality selector"
+                  disabled={isChanging}
+                  className="w-full px-3 py-2.5 text-left hover:bg-white/10 active:bg-white/20 transition-colors flex items-center justify-between touch-manipulation"
+                  style={{
+                    background: isActive
+                      ? "rgba(255, 255, 255, 0.1)"
+                      : "transparent",
+                    WebkitTapHighlightColor: "transparent",
+                    opacity: isChanging ? 0.5 : 1,
+                    cursor: isChanging ? "not-allowed" : "pointer",
+                    minHeight: "42px",
+                    borderBottom:
+                      index < availableQualities.length - 1
+                        ? "1px solid rgba(255, 255, 255, 0.06)"
+                        : "none",
+                  }}
+                  role="menuitemradio"
+                  aria-checked={isActive}
                 >
-                  <ChevronLeft
-                    className="w-5 h-5"
-                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
-                  />
-                  <span className="text-sm font-semibold tracking-tight">
-                    Quality
+                  <span className="text-sm font-medium text-white">
+                    {label.short}
                   </span>
-                </button>
-              </div>
-
-              {/* Quality Options */}
-              <div
-                className="overflow-y-auto overflow-x-hidden flex-1"
-                style={{
-                  WebkitOverflowScrolling: "touch",
-                  background: "rgba(15, 15, 15, 0.98)",
-                  paddingBottom: "8px",
-                  paddingTop: "4px",
-                  overscrollBehavior: "contain",
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                  maxHeight: "calc(70vh - 60px)",
-                }}
-              >
-                {availableQualities.map((quality) => {
-                  const isActive = quality === currentQuality;
-                  const label = qualityLabels[quality];
-
-                  return (
-                    <button
-                      key={quality}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleQualitySelect(quality);
-                      }}
-                      onTouchStart={(e) => {
-                        if (!isChanging) {
-                          e.currentTarget.style.background =
-                            "rgba(255, 255, 255, 0.18)";
-                        }
-                      }}
-                      onTouchEnd={(e) => {
-                        e.currentTarget.style.background = isActive
-                          ? "rgba(255, 255, 255, 0.12)"
-                          : "transparent";
-                      }}
-                      disabled={isChanging}
-                      className="w-full px-5 py-4 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                  {isActive && !isChanging && (
+                    <Check
+                      className="w-4 h-4 flex-shrink-0"
+                      style={{ color: "#ff0000", strokeWidth: 2.5 }}
+                    />
+                  )}
+                  {isChanging && isActive && (
+                    <div
+                      className="w-4 h-4 rounded-full animate-spin flex-shrink-0"
                       style={{
-                        background: isActive
-                          ? "rgba(255, 255, 255, 0.12)"
-                          : "transparent",
-                        WebkitTapHighlightColor: "transparent",
-                        opacity: isChanging ? 0.5 : 1,
-                        cursor: isChanging ? "not-allowed" : "pointer",
-                        minHeight: "56px",
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                        border: "2px solid #ff0000",
+                        borderTopColor: "transparent",
                       }}
-                      role="menuitemradio"
-                      aria-checked={isActive}
-                    >
-                      <div className="flex items-baseline gap-2.5">
-                        <span className="text-base font-normal text-white tracking-wide">
-                          {label.full}
-                        </span>
-                        {quality === "auto" && (
-                          <span
-                            className="text-xs font-normal"
-                            style={{ color: "rgba(255, 255, 255, 0.65)" }}
-                          >
-                            {label.desc}
-                          </span>
-                        )}
-                      </div>
-                      {isActive && !isChanging && (
-                        <Check
-                          className="w-[22px] h-[22px] flex-shrink-0"
-                          style={{
-                            color: "#ff0000",
-                            strokeWidth: 3,
-                            filter: "drop-shadow(0 0 2px rgba(255, 0, 0, 0.5))",
-                          }}
-                        />
-                      )}
-                      {isChanging && isActive && (
-                        <div
-                          className="w-4 h-4 rounded-full animate-spin flex-shrink-0"
-                          style={{
-                            border: "2px solid #ff0000",
-                            borderTopColor: "transparent",
-                          }}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
