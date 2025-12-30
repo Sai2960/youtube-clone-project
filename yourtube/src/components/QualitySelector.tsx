@@ -163,24 +163,24 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   // Calculate menu position for mobile
   // Calculate menu position for mobile
-const getMenuPosition = () => {
-  if (!buttonRef.current) return {};
+  const getMenuPosition = () => {
+    if (!buttonRef.current) return {};
 
-  const rect = buttonRef.current.getBoundingClientRect();
-  const viewportHeight = window.innerHeight;
-  const viewportWidth = window.innerWidth;
-  
-  // Calculate position: align menu's right edge with button's right edge
-  const menuWidth = 160;
-  const rightEdge = viewportWidth - rect.right; // Distance from screen right to button right
-  
-  return {
-    bottom: viewportHeight - rect.top + 16,
-    right: Math.max(8, rightEdge), // At least 8px from screen edge
-    top: "auto",
-    left: "auto",
+    const rect = buttonRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    // Position menu ABOVE the button, aligned to the right edge
+    const menuWidth = 160;
+    const rightEdge = viewportWidth - rect.right;
+
+    return {
+      bottom: viewportHeight - rect.top + 8, // 8px gap above button
+      right: Math.max(8, rightEdge),
+      top: "auto",
+      left: "auto",
+    };
   };
-};
 
   return (
     <div
@@ -235,8 +235,7 @@ const getMenuPosition = () => {
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
             width: "160px",
-            maxHeight: "min(50vh, 240px)",
-            marginBottom: "8px", // ADD THIS LINE
+            maxHeight: "min(50vh, 280px)", // Increase max height
             zIndex: 999999,
             boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.9)",
             overflow: "visible",
@@ -315,8 +314,8 @@ const getMenuPosition = () => {
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   flex: 1,
-                  maxHeight: "min(35vh, 180px)",
-                  minHeight: "80px",
+                  maxHeight: "min(40vh, 220px)", // Increase from 180px to 220px
+                  minHeight: "120px", // Increase from 80px
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
