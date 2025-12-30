@@ -1,5 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Settings, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { createPortal } from "react-dom";
+
 
 // Quality type definition
 type QualityType =
@@ -222,7 +224,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       </button>
 
       {/* MOBILE VIEW - Two-step menu like desktop */}
-      {isMobile && isOpen && (
+     {/* MOBILE VIEW - Two-step menu like desktop */}
+      {isMobile && isOpen && createPortal(
         <div
           ref={menuRef}
           className="rounded-xl shadow-2xl"
@@ -318,7 +321,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   flex: 1,
-                  maxHeight: "min(45vh, 260px)", // More space for scrolling
+                  maxHeight: "min(45vh, 260px)",
                   minHeight: "140px",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
@@ -392,7 +395,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               </div>
             </>
           )}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* DESKTOP VIEW - Two-step dropdown menu */}
