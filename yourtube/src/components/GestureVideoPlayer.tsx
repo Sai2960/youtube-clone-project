@@ -229,9 +229,21 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             zIndex: 999999,
             isolation: "isolate",
             pointerEvents: "none",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
           }}
         >
-          <div style={{ pointerEvents: "auto" }}>
+          <div
+            style={{
+              pointerEvents: "auto",
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
+            }}
+          >
             {/* Backdrop */}
             <div
               className="fixed inset-0 z-[99998] animate-in fade-in duration-200"
@@ -258,22 +270,22 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             />
 
             {/* Bottom Sheet Menu */}
-            {/* Bottom Sheet Menu */}
             <div
               ref={menuRef}
-              className="fixed left-0 right-0 z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300"
+              className="relative z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300"
               style={{
-                bottom: "env(safe-area-inset-bottom, 0px)",
                 background: "rgba(28, 28, 28, 0.98)",
                 backdropFilter: "blur(20px)",
                 borderRadius: "16px 16px 0 0",
-                maxHeight: "70vh",
+                maxHeight: "min(70vh, calc(100vh - 80px))",
                 height: "auto",
                 boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
                 border: "1px solid rgba(255, 255, 255, 0.15)",
                 touchAction: "none",
                 willChange: "transform",
                 transform: "translateZ(0)",
+                marginBottom: "0",
+                paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)",
               }}
               onClick={(e) => e.stopPropagation()}
               role="dialog"
@@ -314,11 +326,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 style={{
                   WebkitOverflowScrolling: "touch",
                   background: "rgba(28, 28, 28, 0.98)",
-                  paddingBottom: "max(env(safe-area-inset-bottom, 0px), 24px)",
+                  paddingBottom: "16px",
                   paddingTop: "8px",
                   overscrollBehavior: "contain",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
+                  maxHeight: "calc(70vh - 60px)",
                 }}
               >
                 {availableQualities.map((quality) => {

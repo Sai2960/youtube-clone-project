@@ -12438,3 +12438,40 @@ button span {
     }
   }
 }
+/* Mobile Quality Menu Critical Fixes */
+@media (max-width: 768px) {
+  /* Ensure menu container respects viewport */
+  [aria-label="Video quality selector"] {
+    max-height: min(70vh, calc(100vh - 80px)) !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Force proper positioning */
+  .video-controls {
+    z-index: 20 !important;
+  }
+  
+  /* Prevent menu from being cut off */
+  body:has([aria-label="Video quality selector"]) {
+    overflow: hidden !important;
+  }
+  
+  /* Smooth scroll for options */
+  [role="menuitemradio"] {
+    scroll-margin-top: 8px;
+    scroll-margin-bottom: 8px;
+  }
+  
+  /* Ensure minimum visible options */
+  [aria-label="Video quality selector"] > div:last-child {
+    min-height: 200px;
+    max-height: calc(70vh - 60px);
+  }
+}
+
+/* Hide scrollbar but keep functionality */
+@media (max-width: 768px) {
+  [aria-label="Video quality selector"] *::-webkit-scrollbar {
+    display: none;
+  }
+}
