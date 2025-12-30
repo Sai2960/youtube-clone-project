@@ -184,6 +184,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   };
 
   // Render menu content
+// Render menu content
   const renderMenu = () => {
     if (!isOpen) return null;
 
@@ -208,13 +209,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           display: "flex",
           flexDirection: "column",
           borderRadius: "12px",
-          position: menuPosition.position as React.CSSProperties["position"], // Ensure valid Position type
+          position: menuPosition.position as React.CSSProperties["position"],
         }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
       >
         {!showQualityMenu ? (
-          /* Step 1: Settings menu showing "Quality" button */
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -244,9 +244,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             />
           </button>
         ) : (
-          /* Step 2: Quality options with back button */
           <>
-            {/* Back button header */}
             <div
               className="px-4 py-2 sticky top-0 rounded-t-xl"
               style={{
@@ -278,7 +276,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               </button>
             </div>
 
-            {/* Quality options list */}
             <div
               className="overflow-y-auto overflow-x-hidden"
               style={{
@@ -359,11 +356,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       </div>
     );
 
-    // Render in portal for mobile, inline for desktop
+    // Always use portal to avoid z-index issues
     if (typeof document !== "undefined") {
       return createPortal(menuContent, document.body);
     }
-    return null;
+    return menuContent;
   };
 
   return (
@@ -378,7 +375,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           pointerEvents: "auto",
         }}
       >
-        {/* Settings Button */}
         <button
           ref={buttonRef}
           onClick={(e) => {
@@ -406,8 +402,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           <Settings className={isMobile ? "w-6 h-6" : "w-5 h-5"} />
         </button>
       </div>
-
-      {/* Render menu via portal */}
       {renderMenu()}
     </>
   );
