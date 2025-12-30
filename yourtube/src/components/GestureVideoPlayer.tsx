@@ -232,14 +232,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             display: "flex",
             alignItems: "flex-end",
             justifyContent: "center",
-            height: "100dvh", // ✅ REPLACED
           }}
         >
           <div
             style={{
               pointerEvents: "auto",
               width: "100%",
-              height: "100dvh",
+              height: "100%",
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-end",
@@ -278,9 +277,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 background: "rgba(28, 28, 28, 0.98)",
                 backdropFilter: "blur(20px)",
                 borderRadius: "16px 16px 0 0",
-                maxHeight: "min(80dvh, calc(100dvh - 96px))", // ✅ REPLACED
+                maxHeight: "min(65vh, calc(100vh - 100px))",
                 height: "auto",
-
                 boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
                 border: "1px solid rgba(255, 255, 255, 0.15)",
                 touchAction: "none",
@@ -336,7 +334,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   overscrollBehavior: "contain",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
-                  maxHeight: "calc(80dvh - 112px)", // ✅ REPLACED
+                  maxHeight: "calc(70vh - 60px)",
                 }}
               >
                 {availableQualities.map((quality) => {
