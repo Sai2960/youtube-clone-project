@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "react";
 import { Settings, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
 
-
 // Quality type definition
 type QualityType =
   | "auto"
@@ -165,41 +164,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   // Calculate menu position for mobile
   // Calculate menu position for mobile
-const getMenuPosition = () => {
-    if (!buttonRef.current) return {};
-
-    const rect = buttonRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    
-    const menuHeight = 320;
-    const spaceAbove = rect.top;
-    const spaceBelow = viewportHeight - rect.bottom;
-
-    // Position above button, aligned to its right edge
-    if (spaceAbove > menuHeight || spaceAbove > spaceBelow) {
-      return {
-        bottom: viewportHeight - rect.top + 12,
-        right: 16, // Fixed distance from right edge
-        top: "auto",
-        left: "auto",
-      };
-    } else {
-      return {
-        top: rect.bottom + 12,
-        right: 16, // Fixed distance from right edge
-        bottom: "auto",
-        left: "auto",
-      };
-    }
-  };
 
   return (
     <div
       className="relative"
       data-quality-selector="true"
       style={{
-        zIndex: 2147483647,
-        isolation: "auto",
+        zIndex: 100,
         position: "relative",
         pointerEvents: "auto",
       }}
@@ -234,13 +205,14 @@ const getMenuPosition = () => {
       </button>
 
       {/* MOBILE VIEW - Two-step menu like desktop */}
-   {isMobile && isOpen && createPortal(
+      {isMobile && isOpen && (
         <div
           ref={menuRef}
           className="rounded-xl shadow-2xl"
           style={{
-            position: "fixed",
-            ...getMenuPosition(),
+            position: "absolute",
+            bottom: "calc(100% + 12px)",
+            right: 0,
             background: "rgba(20, 20, 20, 0.98)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
@@ -406,8 +378,7 @@ const getMenuPosition = () => {
               </div>
             </>
           )}
-        </div>,
-        document.body
+        </div>
       )}
 
       {/* DESKTOP VIEW - Two-step dropdown menu */}
