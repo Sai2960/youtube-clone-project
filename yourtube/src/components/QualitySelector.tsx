@@ -24,6 +24,7 @@ const qualityLabels: Record<
   "240p": { full: "240p", short: "240p", desc: "Data Saver" },
   "144p": { full: "144p", short: "144p", desc: "Minimum" },
 };
+
 interface QualitySelectorProps {
   currentQuality: QualityType;
   onQualityChange: (quality: QualityType) => void;
@@ -115,13 +116,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside, true);
     document.addEventListener("touchstart", handleClickOutside, {
       passive: true,
     });
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside, true);
       document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [isOpen]);
@@ -139,6 +140,34 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen]);
+
+  // Prevent body scroll on mobile when menu is open
+  useEffect(() => {
+    if (isMobile && isOpen) {
+      const scrollY = window.scrollY;
+      const originalOverflow = document.body.style.overflow;
+      const originalPosition = document.body.style.position;
+
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+
+      return () => {
+        document.body.style.position = originalPosition;
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
+        document.body.style.overflow = originalOverflow;
+        document.body.style.touchAction = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isMobile, isOpen]);
 
   const openMenu = () => {
     console.log("📖 Opening quality menu");
@@ -184,7 +213,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   };
 
   // Render menu content
-// Render menu content
   const renderMenu = () => {
     if (!isOpen) return null;
 
@@ -201,6 +229,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           WebkitBackdropFilter: "blur(20px)",
           border: "1px solid rgba(255, 255, 255, 0.15)",
           width: isMobile ? "240px" : "200px",
+          minWidth: isMobile ? "240px" : "200px",
           maxHeight: "min(55vh, 320px)",
           zIndex: 9999999,
           boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
@@ -213,13 +242,18 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
         {!showQualityMenu ? (
+          // Step 1: Settings menu showing "Quality" button
           <button
             onClick={(e) => {
               e.stopPropagation();
               console.log("📱 Quality menu button clicked");
               setShowQualityMenu(true);
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
             }}
             className="w-full px-5 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
             style={{
@@ -244,7 +278,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             />
           </button>
         ) : (
+          // Step 2: Quality options with back button
           <>
+            {/* Back button header */}
             <div
               className="px-4 py-2 sticky top-0 rounded-t-xl"
               style={{
@@ -276,6 +312,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               </button>
             </div>
 
+            {/* Quality options list */}
             <div
               className="overflow-y-auto overflow-x-hidden"
               style={{
@@ -302,6 +339,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       if (!isChanging) {
                         handleQualitySelect(q);
                       }
+                    }}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
                     }}
                     disabled={isChanging}
                     className="w-full px-5 py-2.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
