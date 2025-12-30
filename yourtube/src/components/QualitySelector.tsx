@@ -120,13 +120,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   const openMenu = () => {
     console.log("📖 Opening quality menu");
     setIsOpen(true);
-    setShowQualityMenu(false);
+    setShowQualityMenu(false); // KEEP THIS - reset to first step
   };
 
   const closeMenu = () => {
     console.log("📕 Closing quality menu");
     setIsOpen(false);
-    setShowQualityMenu(false);
+    setShowQualityMenu(false); // KEEP THIS
   };
 
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
@@ -251,7 +251,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.12)",
-            width: "220px",
+            width: "200px",
             maxHeight: `calc(100vh - 32px)`,
             zIndex: 999999,
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.8)",
@@ -265,7 +265,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           onPointerDown={(e) => e.stopPropagation()}
         >
           {!showQualityMenu ? (
-            /* Step 1: Settings menu with Quality option */
+            /* Step 1: Settings menu showing "Quality" button */
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -275,7 +275,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               onPointerDown={(e) => {
                 e.stopPropagation();
               }}
-              className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
+              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
               style={{
                 minHeight: "56px",
                 WebkitTapHighlightColor: "transparent",
@@ -299,33 +299,39 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             /* Step 2: Quality options with back button */
             <>
               {/* Back button header */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowQualityMenu(false);
-                }}
-                className="w-full px-4 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-2 sticky top-0 rounded-t-xl touch-manipulation"
+              <div
+                className="px-4 py-3 sticky top-0 rounded-t-xl"
                 style={{
                   background: "rgba(28, 28, 28, 1)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
                   zIndex: 10,
-                  minHeight: "48px",
-                  WebkitTapHighlightColor: "transparent",
                 }}
               >
-                <ChevronLeft
-                  className="w-5 h-5"
-                  style={{ color: "rgba(255, 255, 255, 0.9)" }}
-                />
-                <span className="text-sm font-semibold">Quality</span>
-              </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowQualityMenu(false);
+                  }}
+                  className="w-full text-left flex items-center gap-2 text-white hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation rounded"
+                  style={{
+                    minHeight: "32px",
+                    WebkitTapHighlightColor: "transparent",
+                  }}
+                >
+                  <ChevronLeft
+                    className="w-5 h-5"
+                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
+                  />
+                  <span className="text-sm font-semibold">Quality</span>
+                </button>
+              </div>
 
               {/* Quality options list */}
               <div
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   flex: 1,
-                  maxHeight: `calc(100vh - 280px)`,
+                  maxHeight: `calc(100vh - 180px)`,
                   minHeight: "120px",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
@@ -355,7 +361,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                           : "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
-                        minHeight: "48px",
+                        minHeight: "52px",
                         WebkitTapHighlightColor: "transparent",
                       }}
                       role="menuitemradio"
@@ -363,7 +369,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     >
                       <div className="flex flex-col gap-0.5">
                         <span className="text-sm font-medium text-white">
-                          {label.short}
+                          {label.full}
                         </span>
                         {q === "auto" && (
                           <span
@@ -377,14 +383,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       {isActive && !isChanging && (
                         <Check
                           className="w-5 h-5 flex-shrink-0"
-                          style={{ color: "#ff0000", strokeWidth: 2.5 }}
+                          style={{ color: "#ef4444", strokeWidth: 2.5 }}
                         />
                       )}
                       {isChanging && isActive && (
                         <div
                           className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
                           style={{
-                            border: "2px solid #ff0000",
+                            border: "2px solid #ef4444",
                             borderTopColor: "transparent",
                           }}
                         />
@@ -398,8 +404,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         </div>
       )}
 
-      {/* DESKTOP VIEW - Dropdown Menu */}
-      {/* DESKTOP VIEW - Dropdown Menu */}
+      {/* DESKTOP VIEW - Two-step dropdown menu */}
       {!isMobile && isOpen && (
         <div
           ref={menuRef}
@@ -415,17 +420,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             width: "200px",
             zIndex: 999999,
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
+            overflow: "hidden",
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {!showQualityMenu ? (
+            /* Step 1: Settings menu showing "Quality" button */
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
               className="w-full px-4 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl"
-              style={{ minHeight: "52px" }}
+              style={{ minHeight: "56px" }}
             >
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-medium">Quality</span>
@@ -442,83 +449,93 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               />
             </button>
           ) : (
+            /* Step 2: Quality options with back button */
             <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowQualityMenu(false);
-                }}
-                className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2 sticky top-0 rounded-t-xl"
+              {/* Back button header */}
+              <div
+                className="px-4 py-3 sticky top-0 rounded-t-xl"
                 style={{
                   background: "rgba(28, 28, 28, 1)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
                   zIndex: 10,
-                  minHeight: "48px",
                 }}
               >
-                <ChevronLeft
-                  className="w-5 h-5"
-                  style={{ color: "rgba(255, 255, 255, 0.9)" }}
-                />
-                <span className="text-sm font-semibold">Quality</span>
-              </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowQualityMenu(false);
+                  }}
+                  className="w-full text-left flex items-center gap-2 text-white hover:bg-white/10 transition-colors rounded"
+                  style={{ minHeight: "32px" }}
+                >
+                  <ChevronLeft
+                    className="w-5 h-5"
+                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
+                  />
+                  <span className="text-sm font-semibold">Quality</span>
+                </button>
+              </div>
 
+              {/* Quality options */}
               <div
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   maxHeight: "min(50vh, 350px)",
-                  overflowX: "hidden",
                 }}
               >
-                {availableQualities.map((q) => (
-                  <button
-                    key={q}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQualitySelect(q);
-                    }}
-                    disabled={isChanging}
-                    className="w-full px-4 py-3 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between"
-                    style={{
-                      background:
-                        currentQuality === q
+                {availableQualities.map((q) => {
+                  const isActive = q === currentQuality;
+                  const label = qualityLabels[q];
+
+                  return (
+                    <button
+                      key={q}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleQualitySelect(q);
+                      }}
+                      disabled={isChanging}
+                      className="w-full px-4 py-3 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between"
+                      style={{
+                        background: isActive
                           ? "rgba(255, 255, 255, 0.08)"
                           : "transparent",
-                      opacity: isChanging ? 0.5 : 1,
-                      cursor: isChanging ? "not-allowed" : "pointer",
-                      minHeight: "44px",
-                    }}
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium text-white">
-                        {qualityLabels[q]?.short || q}
-                      </span>
-                      {q === "auto" && (
-                        <span
-                          className="text-xs"
-                          style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                        >
-                          Recommended
+                        opacity: isChanging ? 0.5 : 1,
+                        cursor: isChanging ? "not-allowed" : "pointer",
+                        minHeight: "52px",
+                      }}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium text-white">
+                          {label.full}
                         </span>
+                        {q === "auto" && (
+                          <span
+                            className="text-xs"
+                            style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                          >
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      {isActive && !isChanging && (
+                        <Check
+                          className="w-5 h-5 flex-shrink-0"
+                          style={{ color: "#ef4444", strokeWidth: 2.5 }}
+                        />
                       )}
-                    </div>
-                    {currentQuality === q && !isChanging && (
-                      <Check
-                        className="w-5 h-5 flex-shrink-0"
-                        style={{ color: "#ff0000" }}
-                      />
-                    )}
-                    {isChanging && currentQuality === q && (
-                      <div
-                        className="w-5 h-5 rounded-full animate-spin"
-                        style={{
-                          border: "2px solid #ff0000",
-                          borderTopColor: "transparent",
-                        }}
-                      />
-                    )}
-                  </button>
-                ))}
+                      {isChanging && isActive && (
+                        <div
+                          className="w-5 h-5 rounded-full animate-spin"
+                          style={{
+                            border: "2px solid #ef4444",
+                            borderTopColor: "transparent",
+                          }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}
