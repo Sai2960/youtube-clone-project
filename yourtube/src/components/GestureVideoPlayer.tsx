@@ -277,7 +277,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 background: "rgba(28, 28, 28, 0.98)",
                 backdropFilter: "blur(20px)",
                 borderRadius: "16px 16px 0 0",
-                maxHeight: "min(70vh, calc(100vh - 80px))",
+                maxHeight: "min(65vh, calc(100vh - 100px))",
                 height: "auto",
                 boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
                 border: "1px solid rgba(255, 255, 255, 0.15)",
@@ -301,10 +301,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 }}
               >
                 <button
-                  className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation"
+                  className="w-full px-5 py-3.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation"
                   style={{
                     WebkitTapHighlightColor: "transparent",
-                    minHeight: "52px",
+                    minHeight: "56px",
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -316,7 +316,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     className="w-5 h-5"
                     style={{ color: "rgba(255, 255, 255, 0.9)" }}
                   />
-                  <span className="text-sm font-semibold">Quality</span>
+                  <span className="text-sm font-semibold tracking-tight">
+                    Quality
+                  </span>
                 </button>
               </div>
 
@@ -326,8 +328,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 style={{
                   WebkitOverflowScrolling: "touch",
                   background: "rgba(28, 28, 28, 0.98)",
-                  paddingBottom: "16px",
-                  paddingTop: "8px",
+                  paddingBottom: "8px",
+                  paddingTop: "4px",
                   overscrollBehavior: "contain",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -357,7 +359,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                           : "transparent";
                       }}
                       disabled={isChanging}
-                      className="w-full px-5 py-4 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                      className="w-full px-5 py-3.5 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
                       style={{
                         background: isActive
                           ? "rgba(255, 255, 255, 0.05)"
@@ -365,18 +367,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         WebkitTapHighlightColor: "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
+                        minHeight: "52px",
                       }}
                       role="menuitemradio"
                       aria-checked={isActive}
                     >
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-white">
+                      <div className="flex items-center gap-0">
+                        <span className="text-[15px] font-normal text-white tracking-tight">
                           {label.full}
                         </span>
                         {quality === "auto" && (
                           <span
-                            className="text-xs"
-                            style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                            className="text-xs ml-2"
+                            style={{ color: "rgba(255, 255, 255, 0.5)" }}
                           >
                             {label.desc}
                           </span>
@@ -385,12 +388,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       {isActive && !isChanging && (
                         <Check
                           className="w-5 h-5 flex-shrink-0"
-                          style={{ color: "#ff0000" }}
+                          style={{ color: "#ff0000", strokeWidth: 2.5 }}
                         />
                       )}
                       {isChanging && isActive && (
                         <div
-                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
+                          className="w-4 h-4 rounded-full animate-spin flex-shrink-0"
                           style={{
                             border: "2px solid #ff0000",
                             borderTopColor: "transparent",
