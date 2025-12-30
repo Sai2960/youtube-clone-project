@@ -168,11 +168,15 @@ const getMenuPosition = () => {
 
   const rect = buttonRef.current.getBoundingClientRect();
   const viewportHeight = window.innerHeight;
-
-  // Position menu above the controls bar, aligned to right edge of button
+  const viewportWidth = window.innerWidth;
+  
+  // Calculate position: align menu's right edge with button's right edge
+  const menuWidth = 160;
+  const rightEdge = viewportWidth - rect.right; // Distance from screen right to button right
+  
   return {
     bottom: viewportHeight - rect.top + 16,
-right: Math.max(8, window.innerWidth - rect.left - 160 - 8),
+    right: Math.max(8, rightEdge), // At least 8px from screen edge
     top: "auto",
     left: "auto",
   };
