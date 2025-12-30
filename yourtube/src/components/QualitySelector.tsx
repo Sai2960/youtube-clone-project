@@ -233,8 +233,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
-            width: "180px", // Slightly wider like YouTube
-            maxHeight: "min(55vh, 320px)", // More height for all options
+            width: "220px", // ← INCREASED WIDTH
+            maxHeight: "min(55vh, 320px)",
             zIndex: 999999,
             boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
             overflow: "visible",
@@ -257,7 +257,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               onPointerDown={(e) => {
                 e.stopPropagation();
               }}
-              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
+              className="w-full px-5 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
               style={{
                 minHeight: "56px",
                 WebkitTapHighlightColor: "transparent",
@@ -338,7 +338,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         e.stopPropagation();
                       }}
                       disabled={isChanging}
-                      className="w-full px-3 py-2 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                      className="w-full px-4 py-2.5 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
                       style={{
                         background: isActive
                           ? "rgba(255, 255, 255, 0.1)"
