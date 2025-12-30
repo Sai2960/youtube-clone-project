@@ -11,11 +11,7 @@ type QualityType =
   | "240p"
   | "144p";
 
-// Quality labels with descriptions
-const qualityLabels: Record<
-  QualityType,
-  { full: string; short: string; desc: string }
-> = {
+const qualityLabels: Record<QualityType, { full: string; short: string; desc: string }> = {
   auto: { full: "Auto", short: "Auto", desc: "Recommended" },
   "1080p": { full: "1080p", short: "1080p", desc: "Full HD" },
   "720p": { full: "720p", short: "720p", desc: "HD" },
@@ -119,20 +115,22 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   }, [isMobile, isOpen]);
 
   const openMenu = () => {
+    console.log("📖 Opening quality menu");
     setIsOpen(true);
     setShowQualityMenu(false);
   };
 
   const closeMenu = () => {
+    console.log("📕 Closing quality menu");
     setIsOpen(false);
     setShowQualityMenu(false);
   };
 
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
-    e.preventDefault();
     if (isChanging) return;
 
+    console.log("🔄 Toggle menu - currently open:", isOpen);
     if (isOpen) {
       closeMenu();
     } else {
@@ -143,6 +141,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   const handleQualitySelect = async (quality: QualityType) => {
     if (quality === currentQuality || isChanging) return;
 
+    console.log("✅ Selecting quality:", quality);
     setIsChanging(true);
     try {
       await onQualityChange(quality);
@@ -176,8 +175,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       className="relative"
       data-quality-selector="true"
       style={{
-        zIndex: 100000, // Increased z-index
-
+        zIndex: 100000,
         isolation: "isolate",
         position: "relative",
         pointerEvents: "auto",
@@ -188,6 +186,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         ref={buttonRef}
         onClick={(e) => {
           e.stopPropagation();
+          console.log("🎯 Settings button clicked!");
           if (!isChanging) {
             toggleMenu(e);
           }
@@ -199,10 +198,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           minWidth: isMobile ? "48px" : "40px",
           height: isMobile ? "48px" : "40px",
           width: isMobile ? "48px" : "40px",
-          zIndex: 100000,
+          zIndex: 100001,
           pointerEvents: "auto",
           position: "relative",
-          touchAction: "manipulation", // ADD THIS
+          touchAction: "manipulation",
         }}
         aria-label="Quality settings"
         aria-expanded={isOpen}
@@ -229,27 +228,26 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             zIndex: 999999,
             boxShadow: "0 4px 24px rgba(0, 0, 0, 0.7)",
             overflow: "hidden",
-            pointerEvents: "auto", // Add this
+            pointerEvents: "auto",
           }}
-          onClick={(e) => {
-            e.stopPropagation();
-            // Don't call preventDefault - let normal click behavior work
-          }}
-          onPointerDown={(e) => {
-            // Use onPointerDown instead of onTouchStart for better compatibility
-            e.stopPropagation();
-          }}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
         >
           {!showQualityMenu ? (
             /* Step 1: Settings menu with Quality option */
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                e.preventDefault(); // ✅ OK here - onClick is not passive
+                console.log("📱 Quality menu button clicked");
                 setShowQualityMenu(true);
               }}
               onPointerDown={(e) => {
                 e.stopPropagation();
+              }}
+              className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
+              style={{
+                minHeight: "56px",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               <div className="flex flex-col gap-0.5">
@@ -310,7 +308,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       key={q}
                       onClick={(e) => {
                         e.stopPropagation();
-                        e.preventDefault();
                         handleQualitySelect(q);
                       }}
                       onPointerDown={(e) => {
@@ -382,7 +379,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             border: "1px solid rgba(255, 255, 255, 0.12)",
             width: "200px",
             maxWidth: "calc(100vw - 48px)",
-            zIndex: 9999,
+            zIndex: 999999,
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
           }}
           onClick={(e) => e.stopPropagation()}
