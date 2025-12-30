@@ -163,21 +163,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   // Calculate menu position for mobile
   // Calculate menu position for mobile
-  const getMenuPosition = () => {
-    if (!buttonRef.current) return {};
+const getMenuPosition = () => {
+  if (!buttonRef.current) return {};
 
-    const rect = buttonRef.current.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
+  const rect = buttonRef.current.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
 
-    // Position menu above the controls bar with more space
-    return {
-      bottom: viewportHeight - rect.top + 16,
-      right: 12,
-      top: "auto",
-      left: "auto",
-    };
+  // Position menu above the controls bar, aligned to right edge of button
+  return {
+    bottom: viewportHeight - rect.top + 16,
+    right: window.innerWidth - rect.right,
+    top: "auto",
+    left: "auto",
   };
+};
 
   return (
     <div
