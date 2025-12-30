@@ -12410,3 +12410,31 @@ button span {
 .mobile-quality-sheet {
   animation: slideUpMobile 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* Mobile Quality Selector Critical Fixes */
+@media (max-width: 768px) {
+  /* Force quality menu to render on top */
+  [aria-label="Video quality selector"] {
+    position: fixed !important;
+    z-index: 999999 !important;
+    isolation: isolate !important;
+  }
+  
+  /* Ensure backdrop renders correctly */
+  [aria-label="Video quality selector"] ~ div:first-of-type {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 999998 !important;
+  }
+  
+  /* Prevent video controls from interfering */
+  .video-controls {
+    z-index: 20 !important;
+  }
+  
+  /* Smooth animations */
+  @supports (animation-timeline: scroll()) {
+    [aria-label="Video quality selector"] {
+      animation-timeline: scroll();
+    }
+  }
+}
