@@ -1121,9 +1121,10 @@ export default function GestureVideoPlayer({
 
             {/* Video Controls */}
             <div
-              className={`video-controls absolute bottom-0 left-0 right-0 transition-opacity duration-300 z-20 ${
+              className={`video-controls absolute bottom-0 left-0 right-0 transition-opacity duration-300 ${
                 showControls || isMobile ? "opacity-100" : "opacity-0"
               }`}
+              style={{ zIndex: 20 }} // Add inline style
             >
               {/* Progress Bar */}
               <div className="px-2 md:px-4 pb-2">
@@ -1264,7 +1265,12 @@ export default function GestureVideoPlayer({
                 {/* Right Controls */}
                 <div
                   className="flex items-center gap-1 md:gap-2"
-                  style={{ position: "relative", overflow: "visible" }}
+                  style={{
+                    position: "relative",
+                    overflow: "visible",
+                    zIndex: 50, // Add this
+                    isolation: "isolate", // Add this
+                  }}
                 >
                   {onShare && (
                     <Button
@@ -1280,12 +1286,20 @@ export default function GestureVideoPlayer({
                       <Share2 className="w-5 h-5" />
                     </Button>
                   )}
-                  <QualitySelector
-                    currentQuality={quality}
-                    onQualityChange={handleQualityChange}
-                    availableQualities={availableQualities}
-                    isMobile={isMobile}
-                  />
+                  <div
+                    style={{
+                      position: "relative",
+                      zIndex: 100000,
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    <QualitySelector
+                      currentQuality={quality}
+                      onQualityChange={handleQualityChange}
+                      availableQualities={availableQualities}
+                      isMobile={isMobile}
+                    />
+                  </div>
 
                   {/* Picture-in-Picture - Now visible on mobile */}
                   <Button

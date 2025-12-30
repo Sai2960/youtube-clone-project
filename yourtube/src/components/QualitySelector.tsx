@@ -161,7 +161,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     const menuHeight = showQualityMenu ? 380 : 60;
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
-    
+
     if (spaceAbove > menuHeight + 8) {
       return { bottom: window.innerHeight - rect.top + 8, top: "auto" };
     } else if (spaceBelow > menuHeight + 8) {
@@ -175,7 +175,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     <div
       className="relative"
       style={{
-        zIndex: isOpen ? 99999 : 100,
+        zIndex: 100000, // Increased z-index
         isolation: "isolate",
         position: "relative",
         pointerEvents: "auto",
@@ -194,12 +194,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         className="flex items-center justify-center text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation relative"
         style={{
           WebkitTapHighlightColor: "transparent",
-          minHeight: isMobile ? "44px" : "40px",
-          minWidth: isMobile ? "44px" : "40px",
-          height: isMobile ? "44px" : "40px",
-          width: isMobile ? "44px" : "40px",
-          zIndex: 100,
+          minHeight: isMobile ? "48px" : "40px", // Increased touch target
+          minWidth: isMobile ? "48px" : "40px",
+          height: isMobile ? "48px" : "40px",
+          width: isMobile ? "48px" : "40px",
+          zIndex: 100000, // Increased z-index
           pointerEvents: "auto",
+          position: "relative",
         }}
         aria-label="Quality settings"
         aria-expanded={isOpen}
@@ -226,6 +227,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             zIndex: 999999,
             boxShadow: "0 4px 24px rgba(0, 0, 0, 0.7)",
             overflow: "hidden",
+            pointerEvents: "auto", // Add this
           }}
           onClick={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
@@ -238,7 +240,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 setShowQualityMenu(true);
               }}
               className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
-              style={{ 
+              style={{
                 minHeight: "56px",
                 WebkitTapHighlightColor: "transparent",
               }}
@@ -252,8 +254,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
-              <ChevronRight 
-                className="w-5 h-5" 
+              <ChevronRight
+                className="w-5 h-5"
                 style={{ color: "rgba(255, 255, 255, 0.7)" }}
               />
             </button>
