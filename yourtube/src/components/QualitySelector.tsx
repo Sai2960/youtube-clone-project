@@ -244,14 +244,7 @@ const getMenuPosition = () => {
           className="rounded-xl shadow-2xl"
           style={{
             position: "fixed",
-            bottom: buttonRef.current 
-              ? `${window.innerHeight - buttonRef.current.getBoundingClientRect().top + 8}px`
-              : "auto",
-            right: buttonRef.current
-              ? `${window.innerWidth - buttonRef.current.getBoundingClientRect().right}px`
-              : "12px",
-            top: "auto",
-            left: "auto",
+            ...getMenuPosition(),
             background: "rgba(20, 20, 20, 0.98)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
@@ -266,10 +259,6 @@ const getMenuPosition = () => {
             display: "flex",
             flexDirection: "column",
             borderRadius: "12px",
-            transform: buttonRef.current && 
-                       buttonRef.current.getBoundingClientRect().top < 350
-              ? `translateY(calc(-100% - ${buttonRef.current.getBoundingClientRect().height}px - 16px))`
-              : "none",
           }}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
