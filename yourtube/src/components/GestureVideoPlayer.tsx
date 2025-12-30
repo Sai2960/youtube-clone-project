@@ -220,182 +220,190 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         <Settings className={isMobile ? "w-6 h-6" : "w-5 h-5"} />
       </button>
 
-     {/* ✅ MOBILE VIEW - Bottom Sheet */}
+      {/* ✅ MOBILE VIEW - Bottom Sheet */}
       {isMobile && isOpen && (
-        <>
-          {/* Backdrop - Full Screen */}
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 999999,
+            isolation: "isolate",
+            pointerEvents: "none",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+          }}
+        >
           <div
-            className="fixed inset-0 z-[999998]"
             style={{
-              backgroundColor: "rgba(0, 0, 0, 0.75)",
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
-              touchAction: "none",
+              pointerEvents: "auto",
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
             }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              closeMenu();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              closeMenu();
-            }}
-          />
-
-          {/* Bottom Sheet Menu - Centered & Fully Visible */}
-          <div
-            ref={menuRef}
-            className="fixed left-4 right-4 bottom-4 z-[999999] flex flex-col"
-            style={{
-              background: "rgba(28, 28, 28, 0.98)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              borderRadius: "16px",
-              maxHeight: "calc(85vh - 32px)",
-              height: "auto",
-              boxShadow: "0 8px 40px rgba(0, 0, 0, 0.95)",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              touchAction: "none",
-              transform: "translateZ(0)",
-              willChange: "transform",
-              animation: "slideUpFadeIn 300ms ease-out",
-            }}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-label="Video quality selector"
           >
-            {/* Header with Close Button */}
+            {/* Backdrop */}
             <div
-              className="flex items-center justify-between px-5 py-4"
+              className="fixed inset-0 z-[99998] animate-in fade-in duration-200"
               style={{
-                borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                flexShrink: 0,
+                touchAction: "none",
+                backgroundColor: "rgba(0, 0, 0, 0.75)",
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
               }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeMenu();
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeMenu();
+              }}
+            />
+
+            {/* Bottom Sheet Menu */}
+            <div
+              ref={menuRef}
+              className="relative z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300"
+              style={{
+                background: "rgba(28, 28, 28, 0.98)",
+                backdropFilter: "blur(20px)",
+                borderRadius: "16px 16px 0 0",
+                maxHeight: "min(70vh, calc(100vh - 80px))",
+                height: "auto",
+                boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                touchAction: "none",
+                willChange: "transform",
+                transform: "translateZ(0)",
+                marginBottom: "0",
+                paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-label="Video quality selector"
             >
-              <div className="flex items-center gap-3">
+              {/* Header */}
+              <div
+                className="sticky top-0 z-10"
+                style={{
+                  background: "rgba(28, 28, 28, 0.98)",
+                  backdropFilter: "blur(20px)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                }}
+              >
                 <button
+                  className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation"
+                  style={{
+                    WebkitTapHighlightColor: "transparent",
+                    minHeight: "52px",
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     closeMenu();
                   }}
-                  className="flex items-center justify-center"
-                  style={{
-                    minWidth: "32px",
-                    minHeight: "32px",
-                    WebkitTapHighlightColor: "transparent",
-                  }}
                   aria-label="Close quality selector"
                 >
                   <ChevronLeft
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     style={{ color: "rgba(255, 255, 255, 0.9)" }}
                   />
+                  <span className="text-sm font-semibold">Quality</span>
                 </button>
-                <span className="text-base font-semibold text-white">
-                  Quality
-                </span>
+              </div>
+
+              {/* Quality Options */}
+              <div
+                className="overflow-y-auto overflow-x-hidden flex-1"
+                style={{
+                  WebkitOverflowScrolling: "touch",
+                  background: "rgba(28, 28, 28, 0.98)",
+                  paddingBottom: "16px",
+                  paddingTop: "8px",
+                  overscrollBehavior: "contain",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  maxHeight: "calc(70vh - 60px)",
+                }}
+              >
+                {availableQualities.map((quality) => {
+                  const isActive = quality === currentQuality;
+                  const label = qualityLabels[quality];
+
+                  return (
+                    <button
+                      key={quality}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleQualitySelect(quality);
+                      }}
+                      onTouchStart={(e) => {
+                        if (!isChanging) {
+                          e.currentTarget.style.background =
+                            "rgba(255, 255, 255, 0.08)";
+                        }
+                      }}
+                      onTouchEnd={(e) => {
+                        e.currentTarget.style.background = isActive
+                          ? "rgba(255, 255, 255, 0.05)"
+                          : "transparent";
+                      }}
+                      disabled={isChanging}
+                      className="w-full px-5 py-4 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                      style={{
+                        background: isActive
+                          ? "rgba(255, 255, 255, 0.05)"
+                          : "transparent",
+                        WebkitTapHighlightColor: "transparent",
+                        opacity: isChanging ? 0.5 : 1,
+                        cursor: isChanging ? "not-allowed" : "pointer",
+                      }}
+                      role="menuitemradio"
+                      aria-checked={isActive}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium text-white">
+                          {label.full}
+                        </span>
+                        {quality === "auto" && (
+                          <span
+                            className="text-xs"
+                            style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                          >
+                            {label.desc}
+                          </span>
+                        )}
+                      </div>
+                      {isActive && !isChanging && (
+                        <Check
+                          className="w-5 h-5 flex-shrink-0"
+                          style={{ color: "#ff0000" }}
+                        />
+                      )}
+                      {isChanging && isActive && (
+                        <div
+                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
+                          style={{
+                            border: "2px solid #ff0000",
+                            borderTopColor: "transparent",
+                          }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Quality Options - Scrollable */}
-            <div
-              className="overflow-y-auto overflow-x-hidden"
-              style={{
-                WebkitOverflowScrolling: "touch",
-                overscrollBehavior: "contain",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-                maxHeight: "calc(85vh - 100px)",
-                paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)",
-              }}
-            >
-              {availableQualities.map((quality) => {
-                const isActive = quality === currentQuality;
-                const label = qualityLabels[quality];
-
-                return (
-                  <button
-                    key={quality}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQualitySelect(quality);
-                    }}
-                    onTouchStart={(e) => {
-                      if (!isChanging) {
-                        e.currentTarget.style.background =
-                          "rgba(255, 255, 255, 0.08)";
-                      }
-                    }}
-                    onTouchEnd={(e) => {
-                      e.currentTarget.style.background = isActive
-                        ? "rgba(255, 255, 255, 0.05)"
-                        : "transparent";
-                    }}
-                    disabled={isChanging}
-                    className="w-full px-6 py-4 text-left transition-colors flex items-center justify-between touch-manipulation"
-                    style={{
-                      background: isActive
-                        ? "rgba(255, 255, 255, 0.05)"
-                        : "transparent",
-                      WebkitTapHighlightColor: "transparent",
-                      opacity: isChanging ? 0.5 : 1,
-                      cursor: isChanging ? "not-allowed" : "pointer",
-                      minHeight: "60px",
-                      borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-                    }}
-                    role="menuitemradio"
-                    aria-checked={isActive}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-base font-medium text-white">
-                        {label.full}
-                      </span>
-                      {quality === "auto" && (
-                        <span
-                          className="text-sm"
-                          style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                        >
-                          {label.desc}
-                        </span>
-                      )}
-                    </div>
-                    {isActive && !isChanging && (
-                      <Check
-                        className="w-6 h-6 flex-shrink-0"
-                        style={{ color: "#ff0000" }}
-                      />
-                    )}
-                    {isChanging && isActive && (
-                      <div
-                        className="w-6 h-6 rounded-full animate-spin flex-shrink-0"
-                        style={{
-                          border: "2px solid #ff0000",
-                          borderTopColor: "transparent",
-                        }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
           </div>
-
-          {/* Animation Keyframes */}
-          <style jsx>{`
-            @keyframes slideUpFadeIn {
-              from {
-                opacity: 0;
-                transform: translateY(20px) translateZ(0);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0) translateZ(0);
-              }
-            }
-          `}</style>
-        </>
+        </div>
       )}
       {/* ✅ DESKTOP VIEW - Dropdown Menu */}
       {!isMobile && isOpen && (
