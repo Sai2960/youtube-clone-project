@@ -233,7 +233,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
-            width: "220px", // ← INCREASED WIDTH
+            width: "240px",
             maxHeight: "min(55vh, 320px)",
             zIndex: 999999,
             boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
@@ -282,7 +282,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <>
               {/* Back button header */}
               <div
-                className="px-3 py-2 sticky top-0 rounded-t-xl"
+                className="px-4 py-2 sticky top-0 rounded-t-xl"
                 style={{
                   background: "rgba(20, 20, 20, 1)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
@@ -338,7 +338,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         e.stopPropagation();
                       }}
                       disabled={isChanging}
-                      className="w-full px-4 py-2.5 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                      className="w-full px-5 py-2.5 text-left..."
                       style={{
                         background: isActive
                           ? "rgba(255, 255, 255, 0.1)"
