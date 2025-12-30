@@ -234,14 +234,15 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
             width: "240px",
+            minWidth: "240px", // ← ADD THIS
             maxHeight: "min(55vh, 320px)",
             zIndex: 999999,
             boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
-            overflow: "visible",
+            overflow: "hidden", // ← CHANGE from "visible" to "hidden"
             pointerEvents: "auto",
             display: "flex",
             flexDirection: "column",
-            borderRadius: "12px", // Slightly more rounded
+            borderRadius: "12px",
           }}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
@@ -264,7 +265,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               }}
             >
               <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium">Quality</span>
+                <span className="text-sm font-medium whitespace-nowrap">
+                  Quality
+                </span>
                 <span
                   className="text-xs"
                   style={{ color: "rgba(255, 255, 255, 0.6)" }}
@@ -304,7 +307,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     className="w-5 h-5"
                     style={{ color: "rgba(255, 255, 255, 0.9)" }}
                   />
-                  <span className="text-sm font-semibold">Quality</span>
+                  <span className="text-sm font-semibold whitespace-nowrap">
+                    Quality
+                  </span>
                 </button>
               </div>
 
@@ -338,7 +343,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         e.stopPropagation();
                       }}
                       disabled={isChanging}
-                      className="w-full px-5 py-2.5 text-left..."
+                      className="w-full px-5 py-2.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
                       style={{
                         background: isActive
                           ? "rgba(255, 255, 255, 0.1)"
@@ -351,10 +356,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       role="menuitemradio"
                       aria-checked={isActive}
                     >
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-white">
-                          {label.full}
-                        </span>
+                      <div className="flex items-center justify-between w-full gap-3">
+                        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                          <span className="text-sm font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                            {label.full}
+                          </span>
+                        </div>
                         {q === "auto" && (
                           <span
                             className="text-xs"
