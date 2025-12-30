@@ -167,14 +167,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     if (!buttonRef.current) return {};
 
     const rect = buttonRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
-    // Menu should appear above the button on mobile (like YouTube)
+    // Position menu above the controls bar, aligned to the right of the button
     return {
-      bottom: viewportHeight - rect.top + 8,
-      right: viewportWidth - rect.right,
+      bottom: window.innerHeight - rect.top + 4,
+      right: Math.max(8, viewportWidth - rect.right - 8),
       top: "auto",
+      left: "auto",
     };
   };
 
@@ -219,7 +219,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       </button>
 
       {/* MOBILE VIEW - Two-step menu like desktop */}
-      {/* MOBILE VIEW - Two-step menu like desktop */}
       {isMobile && isOpen && (
         <div
           ref={menuRef}
@@ -227,19 +226,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           style={{
             position: "fixed",
             ...getMenuPosition(),
-            background: "rgba(28, 28, 28, 0.98)",
+            background: "rgba(20, 20, 20, 0.98)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
-            width: "180px",
-            maxHeight: "min(70vh, 400px)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            width: "160px",
+            maxHeight: "min(60vh, 320px)",
             zIndex: 999999,
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.8)",
-            overflow: "hidden",
+            boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.9)",
+            overflow: "visible",
             pointerEvents: "auto",
             display: "flex",
             flexDirection: "column",
-            borderRadius: "12px",
+            borderRadius: "10px",
           }}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
@@ -280,9 +279,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <>
               {/* Back button header */}
               <div
-                className="px-4 py-3 sticky top-0 rounded-t-xl"
+                className="px-3 py-2 sticky top-0 rounded-t-xl"
                 style={{
-                  background: "rgba(28, 28, 28, 1)",
+                  background: "rgba(20, 20, 20, 1)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
                   zIndex: 10,
                 }}
@@ -307,17 +306,17 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               </div>
 
               {/* Quality options list */}
-              {/* Quality options list */}
               <div
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   flex: 1,
-                  maxHeight: "min(50vh, 300px)",
-                  minHeight: "100px",
+                  maxHeight: "min(45vh, 250px)",
+                  minHeight: "80px",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
+                  paddingBottom: "4px",
                 }}
               >
                 {availableQualities.map((q) => {
@@ -335,14 +334,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         e.stopPropagation();
                       }}
                       disabled={isChanging}
-                      className="w-full px-3 py-2.5 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                      className="w-full px-3 py-2 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
                       style={{
                         background: isActive
-                          ? "rgba(255, 255, 255, 0.08)"
+                          ? "rgba(255, 255, 255, 0.1)"
                           : "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
-                        minHeight: "44px",
+                        minHeight: "40px",
                         WebkitTapHighlightColor: "transparent",
                       }}
                       role="menuitemradio"
