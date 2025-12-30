@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { Settings, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
 
+
 // Quality type definition
 type QualityType =
   | "auto"
@@ -164,21 +165,35 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   // Calculate menu position for mobile
   // Calculate menu position for mobile
-  const getMenuPosition = () => {
-    if (!buttonRef.current) return { bottom: "60px", right: "12px" };
+const getMenuPosition = () => {
+    if (!buttonRef.current) return {};
 
     const rect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
-    // Simple: always position above button, aligned to its right edge
-    const bottomGap = viewportHeight - rect.top + 8;
-    const rightGap = viewportWidth - rect.right;
+    // Calculate position relative to viewport (for portal)
+    // Position menu ABOVE and ALIGNED to right side like YouTube
+    const menuHeight = 320; // approximate max height
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
 
-    return {
-      bottom: `${bottomGap}px`,
-      right: `${rightGap}px`,
-    };
+    // Position above button if there's space, otherwise below
+    if (spaceAbove > menuHeight || spaceAbove > spaceBelow) {
+      return {
+        bottom: viewportHeight - rect.top + 12, // 12px gap above button
+        right: viewportWidth - rect.right, // Align to button's right edge
+        top: "auto",
+        left: "auto",
+      };
+    } else {
+      return {
+        top: rect.bottom + 12, // 12px gap below button
+        right: viewportWidth - rect.right, // Align to button's right edge
+        bottom: "auto",
+        left: "auto",
+      };
+    }
   };
 
   return (
@@ -222,201 +237,191 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       </button>
 
       {/* MOBILE VIEW - Two-step menu like desktop */}
-      {/* MOBILE VIEW - Two-step menu like desktop */}
-      {isMobile &&
-        isOpen &&
-        createPortal(
-          <div
-            ref={menuRef}
-            className="rounded-xl shadow-2xl"
-            style={{
-              position: "fixed",
-              bottom: buttonRef.current
-                ? `${
-                    window.innerHeight -
-                    buttonRef.current.getBoundingClientRect().top +
-                    8
-                  }px`
-                : "60px",
-              right: buttonRef.current
-                ? `${
-                    window.innerWidth -
-                    buttonRef.current.getBoundingClientRect().right
-                  }px`
-                : "12px",
-              background: "rgba(20, 20, 20, 0.98)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              width: "240px",
-              minWidth: "240px",
-              maxHeight: "min(55vh, 320px)",
-              zIndex: 2147483647,
-              boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
-              overflow: "visible",
-              pointerEvents: "auto",
-              display: "flex",
-              flexDirection: "column",
-              borderRadius: "12px",
-              transform:
-                buttonRef.current &&
-                buttonRef.current.getBoundingClientRect().top < 350
-                  ? `translateY(calc(-100% - ${
-                      buttonRef.current.getBoundingClientRect().height
-                    }px - 16px))`
-                  : "none",
-            }}
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            {!showQualityMenu ? (
-              /* Step 1: Settings menu showing "Quality" button */
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log("📱 Quality menu button clicked");
-                  setShowQualityMenu(true);
-                }}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                }}
-                className="w-full px-5 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
+     {/* MOBILE VIEW - Two-step menu like desktop */}
+      {isMobile && isOpen && createPortal(
+        <div
+          ref={menuRef}
+          className="rounded-xl shadow-2xl"
+          style={{
+            position: "fixed",
+            bottom: buttonRef.current 
+              ? `${window.innerHeight - buttonRef.current.getBoundingClientRect().top + 8}px`
+              : "auto",
+            right: buttonRef.current
+              ? `${window.innerWidth - buttonRef.current.getBoundingClientRect().right}px`
+              : "12px",
+            top: "auto",
+            left: "auto",
+            background: "rgba(20, 20, 20, 0.98)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            width: "240px",
+            minWidth: "240px",
+            maxHeight: "min(55vh, 320px)",
+            zIndex: 2147483647,
+            boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
+            overflow: "visible",
+            pointerEvents: "auto",
+            display: "flex",
+            flexDirection: "column",
+            borderRadius: "12px",
+            transform: buttonRef.current && 
+                       buttonRef.current.getBoundingClientRect().top < 350
+              ? `translateY(calc(-100% - ${buttonRef.current.getBoundingClientRect().height}px - 16px))`
+              : "none",
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {!showQualityMenu ? (
+            /* Step 1: Settings menu showing "Quality" button */
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log("📱 Quality menu button clicked");
+                setShowQualityMenu(true);
+              }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+              }}
+              className="w-full px-5 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
+              style={{
+                minHeight: "56px",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium whitespace-nowrap">
+                  Quality
+                </span>
+                <span
+                  className="text-xs"
+                  style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                >
+                  {qualityLabels[currentQuality]?.short || currentQuality}
+                </span>
+              </div>
+              <ChevronRight
+                className="w-5 h-5"
+                style={{ color: "rgba(255, 255, 255, 0.7)" }}
+              />
+            </button>
+          ) : (
+            /* Step 2: Quality options with back button */
+            <>
+              {/* Back button header */}
+              <div
+                className="px-4 py-2 sticky top-0 rounded-t-xl"
                 style={{
-                  minHeight: "56px",
-                  WebkitTapHighlightColor: "transparent",
+                  background: "rgba(20, 20, 20, 1)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                  zIndex: 10,
                 }}
               >
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-medium whitespace-nowrap">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowQualityMenu(false);
+                  }}
+                  className="w-full text-left flex items-center gap-2 text-white hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation rounded"
+                  style={{
+                    minHeight: "28px",
+                    WebkitTapHighlightColor: "transparent",
+                  }}
+                >
+                  <ChevronLeft
+                    className="w-5 h-5"
+                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
+                  />
+                  <span className="text-sm font-semibold whitespace-nowrap">
                     Quality
                   </span>
-                  <span
-                    className="text-xs"
-                    style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                  >
-                    {qualityLabels[currentQuality]?.short || currentQuality}
-                  </span>
-                </div>
-                <ChevronRight
-                  className="w-5 h-5"
-                  style={{ color: "rgba(255, 255, 255, 0.7)" }}
-                />
-              </button>
-            ) : (
-              /* Step 2: Quality options with back button */
-              <>
-                {/* Back button header */}
-                <div
-                  className="px-4 py-2 sticky top-0 rounded-t-xl"
-                  style={{
-                    background: "rgba(20, 20, 20, 1)",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                    zIndex: 10,
-                  }}
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowQualityMenu(false);
-                    }}
-                    className="w-full text-left flex items-center gap-2 text-white hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation rounded"
-                    style={{
-                      minHeight: "28px",
-                      WebkitTapHighlightColor: "transparent",
-                    }}
-                  >
-                    <ChevronLeft
-                      className="w-5 h-5"
-                      style={{ color: "rgba(255, 255, 255, 0.9)" }}
-                    />
-                    <span className="text-sm font-semibold whitespace-nowrap">
-                      Quality
-                    </span>
-                  </button>
-                </div>
+                </button>
+              </div>
 
-                {/* Quality options list */}
-                <div
-                  className="overflow-y-auto overflow-x-hidden"
-                  style={{
-                    flex: 1,
-                    maxHeight: "min(45vh, 260px)",
-                    minHeight: "140px",
-                    overscrollBehavior: "contain",
-                    WebkitOverflowScrolling: "touch",
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                    paddingBottom: "8px",
-                    paddingTop: "4px",
-                  }}
-                >
-                  {availableQualities.map((q) => {
-                    const isActive = q === currentQuality;
-                    const label = qualityLabels[q];
+              {/* Quality options list */}
+              <div
+                className="overflow-y-auto overflow-x-hidden"
+                style={{
+                  flex: 1,
+                  maxHeight: "min(45vh, 260px)",
+                  minHeight: "140px",
+                  overscrollBehavior: "contain",
+                  WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  paddingBottom: "8px",
+                  paddingTop: "4px",
+                }}
+              >
+                {availableQualities.map((q) => {
+                  const isActive = q === currentQuality;
+                  const label = qualityLabels[q];
 
-                    return (
-                      <button
-                        key={q}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQualitySelect(q);
-                        }}
-                        onPointerDown={(e) => {
-                          e.stopPropagation();
-                        }}
-                        disabled={isChanging}
-                        className="w-full px-5 py-2.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
-                        style={{
-                          background: isActive
-                            ? "rgba(255, 255, 255, 0.1)"
-                            : "transparent",
-                          opacity: isChanging ? 0.5 : 1,
-                          cursor: isChanging ? "not-allowed" : "pointer",
-                          minHeight: "36px",
-                          WebkitTapHighlightColor: "transparent",
-                        }}
-                        role="menuitemradio"
-                        aria-checked={isActive}
-                      >
-                        <div className="flex items-center justify-between w-full gap-3">
-                          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                            <span className="text-sm font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis">
-                              {label.full}
-                            </span>
-                          </div>
-                          {q === "auto" && (
-                            <span
-                              className="text-xs"
-                              style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                            >
-                              Recommended
-                            </span>
-                          )}
+                  return (
+                    <button
+                      key={q}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleQualitySelect(q);
+                      }}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                      }}
+                      disabled={isChanging}
+                      className="w-full px-5 py-2.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                      style={{
+                        background: isActive
+                          ? "rgba(255, 255, 255, 0.1)"
+                          : "transparent",
+                        opacity: isChanging ? 0.5 : 1,
+                        cursor: isChanging ? "not-allowed" : "pointer",
+                        minHeight: "36px",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                      role="menuitemradio"
+                      aria-checked={isActive}
+                    >
+                      <div className="flex items-center justify-between w-full gap-3">
+                        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                          <span className="text-sm font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                            {label.full}
+                          </span>
                         </div>
-                        {isActive && !isChanging && (
-                          <Check
-                            className="w-5 h-5 flex-shrink-0"
-                            style={{ color: "#ef4444", strokeWidth: 2.5 }}
-                          />
+                        {q === "auto" && (
+                          <span
+                            className="text-xs"
+                            style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                          >
+                            Recommended
+                          </span>
                         )}
-                        {isChanging && isActive && (
-                          <div
-                            className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
-                            style={{
-                              border: "2px solid #ef4444",
-                              borderTopColor: "transparent",
-                            }}
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>,
-          document.body
-        )}
+                      </div>
+                      {isActive && !isChanging && (
+                        <Check
+                          className="w-5 h-5 flex-shrink-0"
+                          style={{ color: "#ef4444", strokeWidth: 2.5 }}
+                        />
+                      )}
+                      {isChanging && isActive && (
+                        <div
+                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
+                          style={{
+                            border: "2px solid #ef4444",
+                            borderTopColor: "transparent",
+                          }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>,
+        document.body
+      )}
 
       {/* DESKTOP VIEW - Two-step dropdown menu */}
       {!isMobile && isOpen && (
