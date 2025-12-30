@@ -368,28 +368,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       )}
 
       {/* DESKTOP VIEW - Dropdown Menu */}
+      {/* DESKTOP VIEW - Dropdown Menu */}
       {!isMobile && isOpen && (
         <div
           ref={menuRef}
-          className="absolute rounded-xl shadow-2xl"
+          className="rounded-xl shadow-2xl"
           style={{
-            position: "fixed",
-            bottom: "auto",
-            top: buttonRef.current
-              ? `${buttonRef.current.getBoundingClientRect().top - 8}px`
-              : "auto",
-            right: buttonRef.current
-              ? `${
-                  window.innerWidth -
-                  buttonRef.current.getBoundingClientRect().right
-                }px`
-              : "16px",
-            transform: "translateY(-100%)",
+            position: "absolute",
+            bottom: "calc(100% + 8px)",
+            right: 0,
+            left: "auto",
             background: "rgba(28, 28, 28, 0.98)",
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.12)",
             width: "200px",
-            maxWidth: "calc(100vw - 48px)",
             zIndex: 999999,
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
           }}
