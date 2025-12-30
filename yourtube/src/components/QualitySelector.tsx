@@ -174,15 +174,17 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   return (
     <div
       className="relative"
+      data-quality-selector="true"
       style={{
         zIndex: 100000, // Increased z-index
+        
         isolation: "isolate",
         position: "relative",
         pointerEvents: "auto",
       }}
     >
       {/* Settings Button */}
-      <button
+     <button
         ref={buttonRef}
         onClick={toggleMenu}
         onTouchEnd={(e) => {
@@ -190,7 +192,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           e.preventDefault();
           toggleMenu(e);
         }}
-        onTouchStart={(e) => e.stopPropagation()}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+          e.preventDefault();  // ADD preventDefault here too
+        }}
         className="flex items-center justify-center text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation relative"
         style={{
           WebkitTapHighlightColor: "transparent",
