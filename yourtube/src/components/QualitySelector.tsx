@@ -172,7 +172,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
     // Position menu above the controls bar with more space
     return {
-      bottom: Math.max(80, viewportHeight - rect.top + 12),
+      bottom: viewportHeight - rect.top + 16,
       right: Math.max(12, viewportWidth - rect.right),
       top: "auto",
       left: "auto",
@@ -232,7 +232,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
             width: "160px",
-            maxHeight: "min(55vh, 280px)",
+            maxHeight: "min(50vh, 240px)",
             marginBottom: "8px", // ADD THIS LINE
             zIndex: 999999,
             boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.9)",
@@ -295,7 +295,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   }}
                   className="w-full text-left flex items-center gap-2 text-white hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation rounded"
                   style={{
-                    minHeight: "32px",
+                    minHeight: "28px",
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
@@ -312,7 +312,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   flex: 1,
-                  maxHeight: "min(40vh, 220px)",
+                  maxHeight: "min(35vh, 180px)",
                   minHeight: "80px",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
@@ -343,7 +343,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                           : "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
-                        minHeight: "40px",
+                        minHeight: "36px",
                         WebkitTapHighlightColor: "transparent",
                       }}
                       role="menuitemradio"
