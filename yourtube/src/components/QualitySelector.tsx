@@ -130,6 +130,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     if (isChanging) return;
 
     if (isOpen) {
@@ -174,15 +175,21 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     <div
       className="relative"
       style={{
-        zIndex: isOpen ? 99999 : 50,
-        isolation: isOpen ? "isolate" : "auto",
+        zIndex: isOpen ? 99999 : 100,
+        isolation: "isolate",
         position: "relative",
+        pointerEvents: "auto",
       }}
     >
       {/* Settings Button */}
       <button
         ref={buttonRef}
         onClick={toggleMenu}
+        onTouchEnd={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          toggleMenu(e);
+        }}
         onTouchStart={(e) => e.stopPropagation()}
         className="flex items-center justify-center text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation relative"
         style={{
@@ -191,7 +198,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           minWidth: isMobile ? "44px" : "40px",
           height: isMobile ? "44px" : "40px",
           width: isMobile ? "44px" : "40px",
-          zIndex: 50,
+          zIndex: 100,
+          pointerEvents: "auto",
         }}
         aria-label="Quality settings"
         aria-expanded={isOpen}
