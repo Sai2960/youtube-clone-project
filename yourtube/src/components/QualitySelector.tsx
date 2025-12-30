@@ -164,7 +164,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   // Calculate menu position for mobile
   // Calculate menu position for mobile
   const getMenuPosition = () => {
-    if (!buttonRef.current) return {};
+    if (!buttonRef.current || !isMobile) return {};
 
     const rect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
@@ -174,10 +174,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     const menuWidth = 160;
 
     return {
-      bottom: viewportHeight - rect.top + 12, // 12px gap above button
-      right: 12, // Fixed 12px from right edge (like YouTube)
+      position: "fixed" as const,
+      bottom: `${viewportHeight - rect.top + 12}px`,
+      right: "12px",
       top: "auto",
       left: "auto",
+      zIndex: 999999,
     };
   };
 
@@ -223,6 +225,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
       {/* MOBILE VIEW - Two-step menu like desktop */}
       {isMobile && isOpen && (
+        // REPLACE LINES 267-280 WITH:
         <div
           ref={menuRef}
           className="rounded-xl shadow-2xl"
@@ -234,29 +237,45 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
             width: "240px",
-            minWidth: "240px", // ← ADD THIS
+            minWidth: "240px",
             maxHeight: "min(55vh, 320px)",
             zIndex: 999999,
             boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
-            overflow: "hidden", // ← CHANGE from "visible" to "hidden"
+            overflow: "hidden",
             pointerEvents: "auto",
             display: "flex",
             flexDirection: "column",
             borderRadius: "12px",
           }}
-          onClick={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
         >
           {!showQualityMenu ? (
             /* Step 1: Settings menu showing "Quality" button */
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 console.log("📱 Quality menu button clicked");
                 setShowQualityMenu(true);
               }}
               onPointerDown={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
               }}
               className="w-full px-5 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
               style={{
@@ -333,14 +352,23 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   const label = qualityLabels[q];
 
                   return (
+                    // REPLACE LINES 386-403 WITH:
                     <button
                       key={q}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleQualitySelect(q);
+                        e.preventDefault();
+                        if (!isChanging) {
+                          handleQualitySelect(q);
+                        }
                       }}
                       onPointerDown={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
                       }}
                       disabled={isChanging}
                       className="w-full px-5 py-2.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
