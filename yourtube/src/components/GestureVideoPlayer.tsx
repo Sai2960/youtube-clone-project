@@ -881,7 +881,7 @@ export default function GestureVideoPlayer({
   // ================================
   // VIDEO CLICK HANDLER (TAP DETECTION)
   // ================================
-    const handleVideoClick = (
+  const handleVideoClick = (
     e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
     // CRITICAL FIX: Check if click/touch is on video controls OR settings button
@@ -891,6 +891,7 @@ export default function GestureVideoPlayer({
       target.closest("button[aria-label='Quality settings']") ||
       target.closest("[data-quality-selector]")
     ) {
+      e.stopPropagation(); // ADD THIS
       return;
     }
 

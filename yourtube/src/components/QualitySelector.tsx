@@ -177,35 +177,32 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       data-quality-selector="true"
       style={{
         zIndex: 100000, // Increased z-index
-        
+
         isolation: "isolate",
         position: "relative",
         pointerEvents: "auto",
       }}
     >
       {/* Settings Button */}
-     <button
+      <button
         ref={buttonRef}
-        onClick={toggleMenu}
-        onTouchEnd={(e) => {
+        onClick={(e) => {
           e.stopPropagation();
-          e.preventDefault();
-          toggleMenu(e);
-        }}
-        onTouchStart={(e) => {
-          e.stopPropagation();
-          e.preventDefault();  // ADD preventDefault here too
+          if (!isChanging) {
+            toggleMenu(e);
+          }
         }}
         className="flex items-center justify-center text-white hover:bg-white/20 active:bg-white/30 rounded-full transition-all duration-150 touch-manipulation relative"
         style={{
           WebkitTapHighlightColor: "transparent",
-          minHeight: isMobile ? "48px" : "40px", // Increased touch target
+          minHeight: isMobile ? "48px" : "40px",
           minWidth: isMobile ? "48px" : "40px",
           height: isMobile ? "48px" : "40px",
           width: isMobile ? "48px" : "40px",
-          zIndex: 100000, // Increased z-index
+          zIndex: 100000,
           pointerEvents: "auto",
           position: "relative",
+          touchAction: "manipulation", // ADD THIS
         }}
         aria-label="Quality settings"
         aria-expanded={isOpen}
@@ -234,20 +231,25 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             overflow: "hidden",
             pointerEvents: "auto", // Add this
           }}
-          onClick={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            // Don't call preventDefault - let normal click behavior work
+          }}
+          onPointerDown={(e) => {
+            // Use onPointerDown instead of onTouchStart for better compatibility
+            e.stopPropagation();
+          }}
         >
           {!showQualityMenu ? (
             /* Step 1: Settings menu with Quality option */
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault(); // ✅ OK here - onClick is not passive
                 setShowQualityMenu(true);
               }}
-              className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
-              style={{
-                minHeight: "56px",
-                WebkitTapHighlightColor: "transparent",
+              onPointerDown={(e) => {
+                e.stopPropagation();
               }}
             >
               <div className="flex flex-col gap-0.5">
@@ -308,7 +310,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       key={q}
                       onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         handleQualitySelect(q);
+                      }}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
                       }}
                       disabled={isChanging}
                       className="w-full px-4 py-3 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
