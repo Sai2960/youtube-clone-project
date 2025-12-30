@@ -11,7 +11,10 @@ type QualityType =
   | "240p"
   | "144p";
 
-const qualityLabels: Record<QualityType, { full: string; short: string; desc: string }> = {
+const qualityLabels: Record<
+  QualityType,
+  { full: string; short: string; desc: string }
+> = {
   auto: { full: "Auto", short: "Auto", desc: "Recommended" },
   "1080p": { full: "1080p", short: "1080p", desc: "Full HD" },
   "720p": { full: "720p", short: "720p", desc: "HD" },
@@ -370,10 +373,18 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           ref={menuRef}
           className="absolute rounded-xl shadow-2xl"
           style={{
-            bottom: "calc(100% + 8px)",
-            right: "0",
-            left: "auto",
-            transform: "translateX(0)",
+            position: "fixed",
+            bottom: "auto",
+            top: buttonRef.current
+              ? `${buttonRef.current.getBoundingClientRect().top - 8}px`
+              : "auto",
+            right: buttonRef.current
+              ? `${
+                  window.innerWidth -
+                  buttonRef.current.getBoundingClientRect().right
+                }px`
+              : "16px",
+            transform: "translateY(-100%)",
             background: "rgba(28, 28, 28, 0.98)",
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.12)",

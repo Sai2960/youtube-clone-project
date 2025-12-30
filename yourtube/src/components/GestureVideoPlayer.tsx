@@ -996,7 +996,7 @@ export default function GestureVideoPlayer({
       <div
         ref={containerRef}
         className="relative w-full aspect-video bg-black md:rounded-xl cursor-pointer select-none md:shadow-lg group"
-        style={{ overflow: "hidden", overflowX: "hidden" }}
+        style={{ overflow: "visible" }}
         onClick={handleVideoClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
