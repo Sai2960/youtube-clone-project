@@ -162,22 +162,26 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   };
 
   // Calculate menu position for mobile
-  // Calculate menu position for mobile
   const getMenuPosition = () => {
     if (!buttonRef.current) return {};
 
     const rect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
+    const menuWidth = 180; // Matching the width in style
 
-    // Position menu ABOVE and ALIGNED to right side like YouTube
-    const menuWidth = 160;
+    // Center horizontally over the button
+    let left = rect.left + rect.width / 2 - menuWidth / 2;
+
+    // Clamp to screen edges (12px padding)
+    if (left < 12) left = 12;
+    if (left + menuWidth > viewportWidth - 12) left = viewportWidth - menuWidth - 12;
 
     return {
       bottom: viewportHeight - rect.top + 12, // 12px gap above button
-      right: 12, // Fixed 12px from right edge (like YouTube)
+      left: left,
       top: "auto",
-      left: "auto",
+      right: "auto",
     };
   };
 
