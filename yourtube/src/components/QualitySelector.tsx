@@ -172,7 +172,7 @@ const getMenuPosition = () => {
   // Position menu above the controls bar, aligned to right edge of button
   return {
     bottom: viewportHeight - rect.top + 16,
-    right: window.innerWidth - rect.right,
+right: Math.max(8, window.innerWidth - rect.right),
     top: "auto",
     left: "auto",
   };
