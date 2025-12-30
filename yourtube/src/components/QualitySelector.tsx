@@ -211,7 +211,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           className="rounded-xl shadow-2xl"
           style={{
             position: "absolute",
-            bottom: "calc(100% + 12px)",
+            top: "calc(100% + 12px)",
             right: 0,
             background: "rgba(20, 20, 20, 0.98)",
             backdropFilter: "blur(20px)",
