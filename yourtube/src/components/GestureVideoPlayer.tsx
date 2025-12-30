@@ -182,7 +182,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   };
 
   return (
-    <div className="relative" style={{ zIndex: isOpen ? 9999 : 50 }}>
+    <div
+      className="relative"
+      style={{ zIndex: isOpen && isMobile ? 99999 : isOpen ? 9999 : 50 }}
+    >
       {/* Settings Button */}
       <button
         ref={buttonRef}
@@ -211,11 +214,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           {/* Backdrop */}
           <div
             className="fixed inset-0 z-[99998] animate-in fade-in duration-200"
-            style={{
-              background: "rgba(0, 0, 0, 0.90)",
-              backdropFilter: "blur(4px)",
-            }}
+            style={{ touchAction: "none" }}
             onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               closeMenu();
             }}
@@ -233,6 +239,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               height: "auto",
               boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.95)",
               border: "1px solid rgba(255, 255, 255, 0.15)",
+              touchAction: "none",
             }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
@@ -251,6 +258,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center gap-3 touch-manipulation"
                 style={{
                   WebkitTapHighlightColor: "transparent",
+                  minHeight: "52px",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -258,7 +266,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 }}
                 aria-label="Close quality selector"
               >
-                <ChevronLeft className="w-5 h-5" style={{ color: "rgba(255, 255, 255, 0.9)" }} />
+                <ChevronLeft
+                  className="w-5 h-5"
+                  style={{ color: "rgba(255, 255, 255, 0.9)" }}
+                />
                 <span className="text-sm font-semibold">Quality</span>
               </button>
             </div>
@@ -270,6 +281,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 WebkitOverflowScrolling: "touch",
                 background: "rgba(28, 28, 28, 0.98)",
                 paddingBottom: "max(env(safe-area-inset-bottom, 0px), 24px)",
+                paddingTop: "8px",
               }}
             >
               {availableQualities.map((quality) => {
@@ -285,7 +297,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     }}
                     onTouchStart={(e) => {
                       if (!isChanging) {
-                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                        e.currentTarget.style.background =
+                          "rgba(255, 255, 255, 0.08)";
                       }
                     }}
                     onTouchEnd={(e) => {
