@@ -173,7 +173,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     // Position menu above the controls bar with more space
     return {
       bottom: viewportHeight - rect.top + 16,
-      right: Math.max(12, viewportWidth - rect.right),
+      right: 12,
       top: "auto",
       left: "auto",
     };
