@@ -170,13 +170,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
-    // Position menu ABOVE the button, aligned to the right edge
+    // Position menu ABOVE and ALIGNED to right side like YouTube
     const menuWidth = 160;
-    const rightEdge = viewportWidth - rect.right;
 
     return {
-      bottom: viewportHeight - rect.top + 8, // 8px gap above button
-      right: Math.max(8, rightEdge),
+      bottom: viewportHeight - rect.top + 12, // 12px gap above button
+      right: 12, // Fixed 12px from right edge (like YouTube)
       top: "auto",
       left: "auto",
     };
@@ -234,15 +233,15 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
-            width: "160px",
-            maxHeight: "min(50vh, 280px)", // Increase max height
+            width: "180px", // Slightly wider like YouTube
+            maxHeight: "min(55vh, 320px)", // More height for all options
             zIndex: 999999,
-            boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.9)",
+            boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
             overflow: "visible",
             pointerEvents: "auto",
             display: "flex",
             flexDirection: "column",
-            borderRadius: "10px",
+            borderRadius: "12px", // Slightly more rounded
           }}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
@@ -314,13 +313,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   flex: 1,
-                  maxHeight: "min(40vh, 220px)", // Increase from 180px to 220px
-                  minHeight: "120px", // Increase from 80px
+                  maxHeight: "min(45vh, 260px)", // More space for scrolling
+                  minHeight: "140px",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
-                  paddingBottom: "4px",
+                  paddingBottom: "8px",
+                  paddingTop: "4px",
                 }}
               >
                 {availableQualities.map((q) => {
