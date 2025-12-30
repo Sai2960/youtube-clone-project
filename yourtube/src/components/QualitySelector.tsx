@@ -168,18 +168,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     const rect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-    const menuWidth = 180; // Matching the width in style
+    const menuWidth = 200;
 
-    // Center horizontally over the button
-    let left = rect.left + rect.width / 2 - menuWidth / 2;
+    // Center horizontally with smart bounds
+    const buttonCenterX = rect.left + rect.width / 2;
+    let left = buttonCenterX - menuWidth / 2;
 
-    // Clamp to screen edges (12px padding)
-    if (left < 12) left = 12;
-    if (left + menuWidth > viewportWidth - 12) left = viewportWidth - menuWidth - 12;
+    // Keep menu within viewport (8px padding)
+    const minLeft = 8;
+    const maxLeft = viewportWidth - menuWidth - 8;
+    left = Math.max(minLeft, Math.min(left, maxLeft));
 
     return {
       bottom: viewportHeight - rect.top + 12, // 12px gap above button
-      left: left,
+      left: `${left}px`,
       top: "auto",
       right: "auto",
     };
@@ -237,7 +239,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
-            width: "180px", // Slightly wider like YouTube
+            width: "200px", // Matches calculated menuWidth
             maxHeight: "min(55vh, 320px)", // More height for all options
             zIndex: 999999,
             boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
