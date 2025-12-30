@@ -225,18 +225,22 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       {isMobile && isOpen && (
         <div
           ref={menuRef}
-          className="absolute rounded-lg shadow-2xl"
+          className="rounded-lg shadow-2xl"
           style={{
-            bottom: "calc(100% + 8px)",
-            right: 0,
+            position: "fixed",
+            bottom: "auto",
+            top: buttonRef.current
+              ? buttonRef.current.getBoundingClientRect().top - 310
+              : "auto",
+            right: 16,
             left: "auto",
             background: "rgba(28, 28, 28, 0.98)",
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
             border: "1px solid rgba(255, 255, 255, 0.12)",
             width: "120px",
-            maxHeight: "min(300px, 60vh)",
-            zIndex: 99999,
+            maxHeight: "300px",
+            zIndex: 999999,
             boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.7)",
             overflow: "hidden",
           }}
@@ -246,7 +250,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           <div
             className="overflow-y-auto"
             style={{
-              maxHeight: "min(300px, 60vh)",
+              maxHeight: "300px",
               overscrollBehavior: "contain",
               scrollbarWidth: "none",
               msOverflowStyle: "none",
