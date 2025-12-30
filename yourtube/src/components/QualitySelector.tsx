@@ -170,26 +170,23 @@ const getMenuPosition = () => {
 
     const rect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
-
-    // Calculate position relative to viewport (for portal)
-    // Position menu ABOVE and ALIGNED to right side like YouTube
-    const menuHeight = 320; // approximate max height
+    
+    const menuHeight = 320;
     const spaceAbove = rect.top;
     const spaceBelow = viewportHeight - rect.bottom;
 
-    // Position above button if there's space, otherwise below
+    // Position above button, aligned to its right edge
     if (spaceAbove > menuHeight || spaceAbove > spaceBelow) {
       return {
-        bottom: viewportHeight - rect.top + 12, // 12px gap above button
-        right: viewportWidth - rect.right, // Align to button's right edge
+        bottom: viewportHeight - rect.top + 12,
+        right: 16, // Fixed distance from right edge
         top: "auto",
         left: "auto",
       };
     } else {
       return {
-        top: rect.bottom + 12, // 12px gap below button
-        right: viewportWidth - rect.right, // Align to button's right edge
+        top: rect.bottom + 12,
+        right: 16, // Fixed distance from right edge
         bottom: "auto",
         left: "auto",
       };
@@ -237,8 +234,7 @@ const getMenuPosition = () => {
       </button>
 
       {/* MOBILE VIEW - Two-step menu like desktop */}
-     {/* MOBILE VIEW - Two-step menu like desktop */}
-      {isMobile && isOpen && createPortal(
+   {isMobile && isOpen && createPortal(
         <div
           ref={menuRef}
           className="rounded-xl shadow-2xl"
@@ -259,6 +255,8 @@ const getMenuPosition = () => {
             display: "flex",
             flexDirection: "column",
             borderRadius: "12px",
+            isolation: "isolate",
+            willChange: "transform",
           }}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
