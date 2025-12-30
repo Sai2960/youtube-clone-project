@@ -12475,3 +12475,33 @@ button span {
     display: none;
   }
 }
+/* Mobile Quality Menu - Full Visibility Fix */
+@media (max-width: 768px) {
+  /* Hide scrollbar but keep functionality */
+  [aria-label="Video quality selector"] *::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Ensure proper stacking */
+  .video-controls {
+    z-index: 20 !important;
+  }
+  
+  /* Prevent body scroll when menu is open */
+  body:has([aria-label="Video quality selector"]) {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+  }
+  
+  /* Smooth scrolling for quality options */
+  [role="menuitemradio"] {
+    scroll-margin: 8px;
+  }
+  
+  /* Touch feedback */
+  [role="menuitemradio"]:active {
+    transform: scale(0.98);
+    transition: transform 100ms ease;
+  }
+}
