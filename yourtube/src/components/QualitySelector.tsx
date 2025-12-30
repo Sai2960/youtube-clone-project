@@ -165,22 +165,35 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   // Calculate menu position for mobile
   // Calculate menu position for mobile
-  const getMenuPosition = () => {
+const getMenuPosition = () => {
     if (!buttonRef.current) return {};
 
     const rect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
+    // Calculate position relative to viewport (for portal)
     // Position menu ABOVE and ALIGNED to right side like YouTube
-    const menuWidth = 160;
+    const menuHeight = 320; // approximate max height
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
 
-    return {
-      bottom: viewportHeight - rect.top + 12, // 12px gap above button
-      right: 12, // Fixed 12px from right edge (like YouTube)
-      top: "auto",
-      left: "auto",
-    };
+    // Position above button if there's space, otherwise below
+    if (spaceAbove > menuHeight || spaceAbove > spaceBelow) {
+      return {
+        bottom: viewportHeight - rect.top + 12, // 12px gap above button
+        right: viewportWidth - rect.right, // Align to button's right edge
+        top: "auto",
+        left: "auto",
+      };
+    } else {
+      return {
+        top: rect.bottom + 12, // 12px gap below button
+        right: viewportWidth - rect.right, // Align to button's right edge
+        bottom: "auto",
+        left: "auto",
+      };
+    }
   };
 
   return (
