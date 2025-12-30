@@ -305,7 +305,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   style={{
                     WebkitTapHighlightColor: "transparent",
                     minHeight: "56px",
-                    background: "rgba(28, 28, 28, 1)",
+                    background: "rgba(22, 22, 22, 1)",
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -328,7 +328,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 className="overflow-y-auto overflow-x-hidden flex-1"
                 style={{
                   WebkitOverflowScrolling: "touch",
-                  background: "rgba(18, 18, 18, 0.98)",
+                  background: "rgba(15, 15, 15, 0.98)",
                   paddingBottom: "8px",
                   paddingTop: "4px",
                   overscrollBehavior: "contain",
@@ -351,37 +351,37 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       onTouchStart={(e) => {
                         if (!isChanging) {
                           e.currentTarget.style.background =
-                            "rgba(255, 255, 255, 0.15)";
+                            "rgba(255, 255, 255, 0.18)";
                         }
                       }}
                       onTouchEnd={(e) => {
                         e.currentTarget.style.background = isActive
-                          ? "rgba(255, 255, 255, 0.1)"
+                          ? "rgba(255, 255, 255, 0.12)"
                           : "transparent";
                       }}
                       disabled={isChanging}
-                      className="w-full px-5 py-3.5 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                      className="w-full px-5 py-4 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
                       style={{
                         background: isActive
-                          ? "rgba(255, 255, 255, 0.1)"
+                          ? "rgba(255, 255, 255, 0.12)"
                           : "transparent",
                         WebkitTapHighlightColor: "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
-                        minHeight: "52px",
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+                        minHeight: "56px",
+                        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
                       }}
                       role="menuitemradio"
                       aria-checked={isActive}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-[15px] font-medium text-white">
+                      <div className="flex items-baseline gap-2.5">
+                        <span className="text-base font-normal text-white tracking-wide">
                           {label.full}
                         </span>
                         {quality === "auto" && (
                           <span
-                            className="text-xs"
-                            style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                            className="text-xs font-normal"
+                            style={{ color: "rgba(255, 255, 255, 0.65)" }}
                           >
                             {label.desc}
                           </span>
@@ -470,7 +470,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 }}
                 className="w-full px-4 py-4 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 sticky top-0 rounded-t-xl"
                 style={{
-                  background: "rgba(28, 28, 28, 0.98)",
+                  background: "rgba(22, 22, 22, 0.98)",
                   backdropFilter: "blur(20px)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
                   zIndex: 10,
