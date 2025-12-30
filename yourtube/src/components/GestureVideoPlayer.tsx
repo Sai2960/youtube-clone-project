@@ -196,6 +196,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       style={{
         zIndex: isOpen && isMobile ? 99999 : isOpen ? 9999 : 50,
         isolation: isMobile && isOpen ? "isolate" : "auto",
+        position: "relative",
       }}
     >
       {/* Settings Button */}
@@ -663,7 +664,8 @@ export default function GestureVideoPlayer({
   // ================================
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      // Lower breakpoint to catch more mobile/tablet sizes
+      setIsMobile(window.innerWidth <= 640);
     };
 
     checkMobile();
@@ -1511,7 +1513,8 @@ export default function GestureVideoPlayer({
     <div className="w-full space-y-0">
       <div
         ref={containerRef}
-        className="relative w-full aspect-video bg-black md:rounded-xl overflow-hidden cursor-pointer select-none md:shadow-lg group"
+        className="relative w-full aspect-video bg-black md:rounded-xl cursor-pointer select-none md:shadow-lg group"
+        style={{ overflow: "hidden", overflowX: "hidden" }}
         onClick={handleVideoClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -1784,7 +1787,10 @@ export default function GestureVideoPlayer({
                   </span>
                 </div>
                 {/* Right Controls */}
-                <div className="flex items-center gap-1 md:gap-2">
+                <div
+                  className="flex items-center gap-1 md:gap-2"
+                  style={{ position: "relative", overflow: "visible" }}
+                >
                   {onShare && (
                     <Button
                       variant="ghost"
