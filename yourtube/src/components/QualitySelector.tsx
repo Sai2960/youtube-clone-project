@@ -131,9 +131,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
-    if (isChanging) return;
+    if (isChanging) {
+      console.log("⚠️ Cannot toggle - quality is changing");
+      return;
+    }
 
     console.log("🔄 Toggle menu - currently open:", isOpen);
+    console.log("📍 About to set isOpen to:", !isOpen);
+
     if (isOpen) {
       closeMenu();
     } else {
@@ -156,46 +161,50 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     }
   };
 
-  // Calculate menu position for mobile
+  // Calculate menu position for mobile - FIXED for full visibility
   const getMenuPosition = () => {
     if (!buttonRef.current) return {};
 
     const rect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
     const buttonBottom = rect.bottom;
     const buttonTop = rect.top;
 
-    // Approximate menu heights
+    // Menu dimensions
+    const menuWidth = 200;
     const firstStepHeight = 60;
-    const secondStepHeight = availableQualities.length * 48 + 48;
+    const secondStepHeight = Math.min(
+      availableQualities.length * 52 + 56,
+      viewportHeight - 100
+    );
     const maxMenuHeight = showQualityMenu ? secondStepHeight : firstStepHeight;
 
-    // Calculate available space
+    // Calculate positions
     const spaceBelow = viewportHeight - buttonBottom;
     const spaceAbove = buttonTop;
     const padding = 16;
 
-    // Open downward if enough space, otherwise upward
-    if (spaceBelow > maxMenuHeight + padding) {
-      return {
-        top: buttonBottom + 8,
-        bottom: "auto",
-      };
-    } else if (spaceAbove > maxMenuHeight + padding) {
-      return {
-        bottom: viewportHeight - buttonTop + 8,
-        top: "auto",
-      };
+    let position: any = {};
+
+    // Vertical positioning - Always try to open upward from controls
+    if (spaceAbove > maxMenuHeight + padding) {
+      position.bottom = viewportHeight - buttonTop + 8;
+      position.top = "auto";
+    } else if (spaceBelow > maxMenuHeight + padding) {
+      position.top = buttonBottom + 8;
+      position.bottom = "auto";
     } else {
-      // Center on screen if not enough space either way
-      return {
-        top: "50%",
-        left: "50%",
-        right: "auto",
-        transform: "translate(-50%, -50%)",
-        bottom: "auto",
-      };
+      // Center vertically if not enough space
+      position.top = Math.max(padding, (viewportHeight - maxMenuHeight) / 2);
+      position.bottom = "auto";
     }
+
+    // Horizontal positioning - Always align to right edge with padding
+    position.right = padding;
+    position.left = "auto";
+
+    return position;
   };
 
   return (
@@ -214,6 +223,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         ref={buttonRef}
         onClick={(e) => {
           e.stopPropagation();
+          console.log("🎯 Settings button clicked! isOpen:", isOpen); // ADD THIS
           console.log("🎯 Settings button clicked!");
           if (!isChanging) {
             toggleMenu(e);
@@ -244,15 +254,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           className="rounded-xl shadow-2xl"
           style={{
             position: "fixed",
-            right: 16,
-            left: "auto",
             ...getMenuPosition(),
             background: "rgba(28, 28, 28, 0.98)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.12)",
             width: "200px",
-            maxHeight: `calc(100vh - 32px)`,
+            maxHeight: showQualityMenu ? `calc(100vh - 100px)` : "60px",
             zIndex: 999999,
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.8)",
             overflow: "hidden",
@@ -331,12 +339,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   flex: 1,
-                  maxHeight: `calc(100vh - 180px)`,
-                  minHeight: "120px",
+                  maxHeight: `calc(100vh - 200px)`,
+                  minHeight: "auto",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "rgba(255, 255, 255, 0.3) transparent",
                 }}
               >
                 {availableQualities.map((q) => {
