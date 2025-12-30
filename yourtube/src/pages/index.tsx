@@ -984,7 +984,7 @@ const Home: NextPage = () => {
                       </Link>
 
                       {/* Video Info - FIXED for mobile */}
-                      <div className="flex gap-2.5 w-full overflow-hidden">
+                      <div className="flex gap-2.5 w-full">
                         {/* Avatar */}
                         <div
                           onClick={(e) => {
@@ -1026,10 +1026,21 @@ const Home: NextPage = () => {
                           </div>
                         </div>
 
-                        {/* Text Info - FIXED overflow */}
-                        <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                          <Link href={`/watch/${video._id}`}>
-                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors break-words">
+                        {/* Text Info - FIXED overflow with proper constraints */}
+                        <div className="flex-1 min-w-0 pr-2">
+                          <Link href={`/watch/${video._id}`} className="block">
+                            <h3
+                              className="font-semibold text-sm text-gray-900 dark:text-white mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                wordBreak: "break-word",
+                                overflowWrap: "break-word",
+                                hyphens: "auto",
+                              }}
+                            >
                               {video?.videotitle || "Untitled Video"}
                             </h3>
                           </Link>
@@ -1041,16 +1052,21 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer max-w-full"
+                            className="text-xs text-gray-600 dark:text-gray-400 mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
                           >
                             {channelName}
                           </p>
 
-                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium flex-wrap">
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
                             <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
-                            <span className="font-bold flex-shrink-0">•</span>
+                            <span className="font-bold">•</span>
                             <span className="truncate">
                               {formatTimeAgo(video?.createdAt)}
                             </span>
