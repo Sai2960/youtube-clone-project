@@ -419,14 +419,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       {!isMobile && isOpen && (
         <div
           ref={menuRef}
-          className="absolute right-0 rounded-xl shadow-2xl"
+          className="absolute rounded-xl shadow-2xl"
           style={{
             bottom: "calc(100% + 8px)",
+            right: "0",
+            left: "auto",
+            transform: "translateX(0)",
             background: "rgba(28, 28, 28, 0.98)",
             backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
-            minWidth: "260px",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            width: "200px",
+            maxWidth: "calc(100vw - 48px)",
             zIndex: 9999,
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -436,17 +441,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
-              className="w-full px-4 py-4 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl"
+              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl"
+              style={{ minHeight: "52px" }}
             >
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-semibold">Quality</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">Quality</span>
                 <span
                   className="text-xs"
-                  style={{ color: "rgba(255, 255, 255, 0.7)" }}
+                  style={{ color: "rgba(255, 255, 255, 0.6)" }}
                 >
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
+
               <svg
                 className="w-5 h-5"
                 style={{ color: "rgba(255, 255, 255, 0.7)" }}
@@ -469,12 +476,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   e.stopPropagation();
                   setShowQualityMenu(false);
                 }}
-                className="w-full px-4 py-4 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 sticky top-0 rounded-t-xl"
+                className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2 sticky top-0 rounded-t-xl"
                 style={{
-                  background: "rgba(22, 22, 22, 0.98)",
-                  backdropFilter: "blur(20px)",
+                  background: "rgba(28, 28, 28, 1)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
                   zIndex: 10,
+                  minHeight: "48px",
                 }}
               >
                 <svg
@@ -496,7 +503,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
               <div
                 className="overflow-y-auto overflow-x-hidden"
-                style={{ maxHeight: "50vh" }}
+                style={{
+                  maxHeight: "min(50vh, 350px)",
+                  overflowX: "hidden",
+                }}
               >
                 {availableQualities.map((q) => (
                   <button
@@ -506,14 +516,15 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       handleQualitySelect(q);
                     }}
                     disabled={isChanging}
-                    className="w-full px-5 py-4 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between"
+                    className="w-full px-4 py-3 text-left hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between"
                     style={{
                       background:
                         currentQuality === q
-                          ? "rgba(255, 255, 255, 0.05)"
+                          ? "rgba(255, 255, 255, 0.08)"
                           : "transparent",
                       opacity: isChanging ? 0.5 : 1,
                       cursor: isChanging ? "not-allowed" : "pointer",
+                      minHeight: "44px",
                     }}
                   >
                     <div className="flex flex-col gap-0.5">
