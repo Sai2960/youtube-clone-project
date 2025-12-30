@@ -160,16 +160,21 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   const getMenuPosition = () => {
     if (!buttonRef.current) return {};
     const rect = buttonRef.current.getBoundingClientRect();
-    const menuHeight = showQualityMenu ? 380 : 60;
-    const spaceAbove = rect.top;
+    const menuHeight = showQualityMenu ? 400 : 60;
     const spaceBelow = window.innerHeight - rect.bottom;
 
-    if (spaceAbove > menuHeight + 8) {
-      return { bottom: window.innerHeight - rect.top + 8, top: "auto" };
-    } else if (spaceBelow > menuHeight + 8) {
-      return { top: rect.bottom + 8, bottom: "auto" };
+    if (spaceBelow > menuHeight + 16) {
+      return {
+        top: rect.bottom + 8,
+        bottom: "auto",
+        maxHeight: `${spaceBelow - 16}px`,
+      };
     } else {
-      return { bottom: window.innerHeight - rect.top + 8, top: "auto" };
+      return {
+        bottom: window.innerHeight - rect.top + 8,
+        top: "auto",
+        maxHeight: `${rect.top - 16}px`,
+      };
     }
   };
 
@@ -226,12 +231,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.12)",
-            width: "200px",
-            maxHeight: "400px",
+            width: "220px",
             zIndex: 999999,
-            boxShadow: "0 4px 24px rgba(0, 0, 0, 0.7)",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.8)",
             overflow: "hidden",
             pointerEvents: "auto",
+            display: "flex",
+            flexDirection: "column",
           }}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
@@ -296,8 +302,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               <div
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
-                  maxHeight: "320px",
+                  flex: 1,
+                  maxHeight: "calc(100vh - 200px)",
+                  minHeight: "200px",
                   overscrollBehavior: "contain",
+                  WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
                 }}
