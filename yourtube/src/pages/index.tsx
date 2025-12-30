@@ -463,63 +463,30 @@ const Home: NextPage = () => {
     return "/video/vdo.mp4";
   };
   const getThumbnailUrl = (video: Video) => {
-    // ✅ Priority 1: Use helper function first
-    const helperThumbnail = getThumbnailUrlHelper(video);
-    if (helperThumbnail && !helperThumbnail.includes("placeholder")) {
-      console.log(
-        "✅ Thumbnail from helper:",
-        helperThumbnail.substring(0, 60)
-      );
-      return helperThumbnail;
-    }
+    const backend = "https://youtube-clone-project-q3pd.onrender.com";
 
-    // ✅ Priority 2: Check explicit thumbnail fields
-    if (video?.thumbnailUrl) {
-      if (video.thumbnailUrl.startsWith("http")) {
-        console.log(
-          "✅ Using video.thumbnailUrl:",
-          video.thumbnailUrl.substring(0, 60)
-        );
-        return video.thumbnailUrl;
+    // Priority 1: Direct thumbnail URLs
+    const thumbnailFields = [
+      video?.thumbnailUrl,
+      video?.thumbnail,
+      video?.videothumbnail,
+      video?.videothumb,
+    ];
+
+    for (const field of thumbnailFields) {
+      if (field) {
+        if (field.startsWith("http")) {
+          return field;
+        }
+        return `${backend}${field.startsWith("/") ? "" : "/"}${field}`;
       }
-      const backend = "https://youtube-clone-project-q3pd.onrender.com";
-      return `${backend}${video.thumbnailUrl}`;
     }
 
-    if (video?.thumbnail) {
-      if (video.thumbnail.startsWith("http")) {
-        console.log(
-          "✅ Using video.thumbnail:",
-          video.thumbnail.substring(0, 60)
-        );
-        return video.thumbnail;
-      }
-      const backend = "https://youtube-clone-project-q3pd.onrender.com";
-      return `${backend}${video.thumbnail}`;
-    }
-
-    if (video?.videothumbnail) {
-      if (video.videothumbnail.startsWith("http")) {
-        return video.videothumbnail;
-      }
-      const backend = "https://youtube-clone-project-q3pd.onrender.com";
-      return `${backend}${video.videothumbnail}`;
-    }
-
-    if (video?.videothumb) {
-      if (video.videothumb.startsWith("http")) {
-        return video.videothumb;
-      }
-      const backend = "https://youtube-clone-project-q3pd.onrender.com";
-      return `${backend}${video.videothumb}`;
-    }
-
-    // ✅ Priority 3: Generate from video URL
+    // Priority 2: Generate from Cloudinary video URL
     const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
 
     if (
-      videoUrl &&
-      videoUrl.includes("res.cloudinary.com") &&
+      videoUrl?.includes("res.cloudinary.com") &&
       videoUrl.includes("/video/upload/")
     ) {
       try {
@@ -527,33 +494,26 @@ const Home: NextPage = () => {
         if (parts.length === 2) {
           const pathAfterUpload = parts[1]
             .split("/")
-            .filter(
-              (part) =>
-                !part.includes("f_") &&
-                !part.includes("vc_") &&
-                !part.includes("ac_")
-            )
+            .filter((part) => !part.match(/^(f_|vc_|ac_)/))
             .join("/");
 
-          const generatedThumbnail =
-            `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${pathAfterUpload}`.replace(
-              /\.(mp4|mov|avi|mkv|webm)$/i,
-              ".jpg"
-            );
-
-          console.log(
-            "🖼️ Generated thumbnail from video:",
-            generatedThumbnail.substring(0, 80)
+          return `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good,f_jpg/${pathAfterUpload}`.replace(
+            /\.(mp4|mov|avi|mkv|webm)$/i,
+            ".jpg"
           );
-          return generatedThumbnail;
         }
       } catch (error) {
         console.error("❌ Error generating thumbnail:", error);
       }
     }
 
-    // ✅ Fallback
-    console.warn("⚠️ No thumbnail available for video:", video?._id);
+    // Priority 3: Use helper function
+    const helperThumbnail = getThumbnailUrlHelper(video);
+    if (helperThumbnail && !helperThumbnail.includes("placeholder")) {
+      return helperThumbnail;
+    }
+
+    // Fallback
     return "/placeholder-thumbnail.jpg";
   };
 
@@ -803,6 +763,7 @@ const Home: NextPage = () => {
                       scrollBehavior: "smooth",
                       WebkitOverflowScrolling: "touch",
                       touchAction: "pan-x",
+                      scrollSnapType: "x mandatory",
                     }}
                     onTouchStart={handleShortsScrollTouchStart}
                     onTouchMove={handleShortsScrollTouchMove}
@@ -827,6 +788,7 @@ const Home: NextPage = () => {
                             minWidth: "160px",
                             userSelect: "none",
                             WebkitTapHighlightColor: "transparent",
+                            scrollSnapAlign: "start",
                           }}
                         >
                           {/* Thumbnail Card */}
@@ -841,6 +803,10 @@ const Home: NextPage = () => {
                               alt={short.title}
                               className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105"
                               loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.style.objectFit = "contain";
+                                e.currentTarget.style.backgroundColor = "#000";
+                              }}
                             />
 
                             {/* Play Icon Overlay */}
@@ -968,12 +934,16 @@ const Home: NextPage = () => {
                     <div key={video._id} className="block group w-full">
                       {/* Video Thumbnail */}
                       <Link href={`/watch/${video._id}`} className="block mb-3">
-                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
-                          <video
-                            src={getVideoUrl(video)}
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-900 dark:bg-gray-900 lg:rounded-xl shadow-sm">
+                          <img
+                            src={getThumbnailUrl(video)}
+                            alt={video?.videotitle || "Video thumbnail"}
                             className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-                            preload="metadata"
-                            poster={getThumbnailUrl(video)}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.src =
+                                "/placeholder-thumbnail.jpg";
+                            }}
                           />
                           {video?.duration && (
                             <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
