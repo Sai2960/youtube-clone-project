@@ -247,35 +247,16 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             flexDirection: "column",
             borderRadius: "12px",
           }}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-          onTouchStart={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
         >
           {!showQualityMenu ? (
             /* Step 1: Settings menu showing "Quality" button */
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                e.preventDefault();
                 console.log("📱 Quality menu button clicked");
                 setShowQualityMenu(true);
-              }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
               }}
               className="w-full px-5 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
               style={{
@@ -357,18 +338,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       key={q}
                       onClick={(e) => {
                         e.stopPropagation();
-                        e.preventDefault();
                         if (!isChanging) {
                           handleQualitySelect(q);
                         }
-                      }}
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                      }}
-                      onTouchStart={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
                       }}
                       disabled={isChanging}
                       className="w-full px-5 py-2.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
