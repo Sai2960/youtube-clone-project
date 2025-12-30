@@ -186,8 +186,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       className="relative"
       data-quality-selector="true"
       style={{
-        zIndex: 100000,
-        isolation: "isolate",
+        zIndex: 2147483647,
+        isolation: "auto",
         position: "relative",
         pointerEvents: "auto",
       }}
@@ -234,11 +234,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.15)",
             width: "240px",
-            minWidth: "240px", // ← ADD THIS
+            minWidth: "240px",
             maxHeight: "min(55vh, 320px)",
-            zIndex: 999999,
+            zIndex: 2147483647,
             boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
-            overflow: "hidden", // ← CHANGE from "visible" to "hidden"
+            overflow: "visible",
             pointerEvents: "auto",
             display: "flex",
             flexDirection: "column",
