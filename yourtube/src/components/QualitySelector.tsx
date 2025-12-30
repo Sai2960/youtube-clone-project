@@ -159,21 +159,41 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   // Calculate menu position for mobile
   const getMenuPosition = () => {
     if (!buttonRef.current) return {};
-    const rect = buttonRef.current.getBoundingClientRect();
-    const menuHeight = showQualityMenu ? 400 : 60;
-    const spaceBelow = window.innerHeight - rect.bottom;
 
-    if (spaceBelow > menuHeight + 16) {
+    const rect = buttonRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const buttonBottom = rect.bottom;
+    const buttonTop = rect.top;
+
+    // Approximate menu heights
+    const firstStepHeight = 60;
+    const secondStepHeight = availableQualities.length * 48 + 48;
+    const maxMenuHeight = showQualityMenu ? secondStepHeight : firstStepHeight;
+
+    // Calculate available space
+    const spaceBelow = viewportHeight - buttonBottom;
+    const spaceAbove = buttonTop;
+    const padding = 16;
+
+    // Open downward if enough space, otherwise upward
+    if (spaceBelow > maxMenuHeight + padding) {
       return {
-        top: rect.bottom + 8,
+        top: buttonBottom + 8,
         bottom: "auto",
-        maxHeight: `${spaceBelow - 16}px`,
+      };
+    } else if (spaceAbove > maxMenuHeight + padding) {
+      return {
+        bottom: viewportHeight - buttonTop + 8,
+        top: "auto",
       };
     } else {
+      // Center on screen if not enough space either way
       return {
-        bottom: window.innerHeight - rect.top + 8,
-        top: "auto",
-        maxHeight: `${rect.top - 16}px`,
+        top: "50%",
+        left: "50%",
+        right: "auto",
+        transform: "translate(-50%, -50%)",
+        bottom: "auto",
       };
     }
   };
@@ -232,12 +252,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.12)",
             width: "220px",
+            maxHeight: `calc(100vh - 32px)`,
             zIndex: 999999,
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.8)",
             overflow: "hidden",
             pointerEvents: "auto",
             display: "flex",
             flexDirection: "column",
+            borderRadius: "12px",
           }}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
@@ -303,8 +325,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   flex: 1,
-                  maxHeight: "calc(100vh - 200px)",
-                  minHeight: "200px",
+                  maxHeight: `calc(100vh - 280px)`,
+                  minHeight: "120px",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
