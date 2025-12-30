@@ -163,7 +163,23 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   };
 
   // Calculate menu position for mobile
-  // Calculate menu position for mobile
+  const getMobileMenuPosition = () => {
+    if (!buttonRef.current) return { top: "calc(100% + 12px)" };
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const menuHeight = 320;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    // If more space above (like inside video player), position above
+    if (spaceAbove > spaceBelow && spaceAbove > menuHeight) {
+      return { bottom: "calc(100% + 12px)", top: "auto" };
+    }
+
+    // Otherwise position below (normal case)
+    return { top: "calc(100% + 12px)", bottom: "auto" };
+  };
 
   return (
     <div
@@ -211,7 +227,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           className="rounded-xl shadow-2xl"
           style={{
             position: "absolute",
-            top: "calc(100% + 12px)",
+            ...getMobileMenuPosition(),
             right: 0,
             background: "rgba(20, 20, 20, 0.98)",
             backdropFilter: "blur(20px)",
