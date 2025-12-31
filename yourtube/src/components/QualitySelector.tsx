@@ -536,7 +536,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             left: "auto",
             background: isDarkMode
               ? "rgba(0, 0, 0, 0.95)"
-              : "rgba(248, 249, 250, 0.95)",
+              : "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: isDarkMode
@@ -607,7 +607,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 style={{
                   background: isDarkMode
                     ? "rgba(0, 0, 0, 0.95)"
-                    : "rgba(248, 249, 250, 0.95)",
+                    : "rgba(255, 255, 255, 0.95)",
                   borderBottom: isDarkMode
                     ? "1px solid rgba(255, 255, 255, 0.1)"
                     : "1px solid rgba(0, 0, 0, 0.1)",
