@@ -404,8 +404,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       disabled={isChanging}
                       className={`w-full px-5 py-2.5 text-left transition-colors flex items-center justify-between touch-manipulation ${
                         isDarkMode
-                          ? "hover:bg-white/10 active:bg-white/15"
-                          : "hover:bg-gray-100 active:bg-gray-200"
+                          ? "text-white hover:bg-white/10 active:bg-white/15"
+                          : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
                       }`}
                       style={{
                         background: isActive
@@ -591,8 +591,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       disabled={isChanging}
                       className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between ${
                         isDarkMode
-                          ? "hover:bg-white/10 active:bg-white/15"
-                          : "hover:bg-gray-100 active:bg-gray-200"
+                          ? "text-white hover:bg-white/10 active:bg-white/15"
+                          : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
                       }`}
                       style={{
                         background: isActive
