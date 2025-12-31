@@ -197,20 +197,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     }
   }, [isMobile, isOpen]);
 
-const openMenu = () => {
-  console.log("📖 Opening quality menu");
-  
-  // Force theme check when opening menu
-  const ytdApp = document.querySelector("ytd-app");
-  if (ytdApp) {
-    const isDark = ytdApp.hasAttribute("dark");
-    console.log("🎨 Force check on menu open:", { isDark });
-    setIsDarkMode(isDark);
-  }
-  
-  setIsOpen(true);
-  setShowQualityMenu(false);
-};
+  const openMenu = () => {
+    console.log("📖 Opening quality menu");
+
+    // Force theme check when opening menu
+    const ytdApp = document.querySelector("ytd-app");
+    if (ytdApp) {
+      const isDark = ytdApp.hasAttribute("dark");
+      console.log("🎨 Force check on menu open:", { isDark });
+      setIsDarkMode(isDark);
+    }
+
+    setIsOpen(true);
+    setShowQualityMenu(false);
+  };
   const closeMenu = () => {
     console.log("📕 Closing quality menu");
     setIsOpen(false);
@@ -557,9 +557,7 @@ const openMenu = () => {
               }}
               className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl"
               style={{
-                minHeight: "56px",
-                color: isDarkMode ? "#ffffff" : "#1f2937",
-                backgroundColor: "transparent",
+                color: isDarkMode ? "#ffffff" : "#000000",
               }}
               onMouseEnter={(e) => {
                 const target = e.currentTarget as HTMLButtonElement;
@@ -576,7 +574,7 @@ const openMenu = () => {
                 <span
                   className="text-sm font-medium"
                   style={{
-                    color: isDarkMode ? "#ffffff" : "#1f2937",
+                    color: isDarkMode ? "#ffffff" : "#000000",
                   }}
                 >
                   Quality
@@ -584,7 +582,7 @@ const openMenu = () => {
                 <span
                   className="text-xs"
                   style={{
-                    color: isDarkMode ? "#9ca3af" : "#6b7280",
+                    color: isDarkMode ? "#9ca3af" : "#4b5563",
                   }}
                 >
                   {qualityLabels[currentQuality]?.short || currentQuality}
@@ -593,7 +591,7 @@ const openMenu = () => {
               <ChevronRight
                 className="w-5 h-5"
                 style={{
-                  color: isDarkMode ? "#9ca3af" : "#6b7280",
+                  color: isDarkMode ? "#9ca3af" : "#4b5563",
                 }}
               />
             </button>
@@ -620,8 +618,7 @@ const openMenu = () => {
                   }}
                   className="w-full text-left flex items-center gap-2 transition-colors rounded"
                   style={{
-                    minHeight: "32px",
-                    color: isDarkMode ? "#ffffff" : "#1f2937",
+                    color: isDarkMode ? "#ffffff" : "#000000",
                   }}
                   onMouseEnter={(e) => {
                     const target = e.currentTarget as HTMLButtonElement;
@@ -637,13 +634,13 @@ const openMenu = () => {
                   <ChevronLeft
                     className="w-5 h-5"
                     style={{
-                      color: isDarkMode ? "#ffffff" : "#1f2937",
+                      color: isDarkMode ? "#ffffff" : "#000000",
                     }}
                   />
                   <span
                     className="text-sm font-semibold"
                     style={{
-                      color: isDarkMode ? "#ffffff" : "#1f2937",
+                      color: isDarkMode ? "#ffffff" : "#000000",
                     }}
                   >
                     Quality
@@ -680,7 +677,7 @@ const openMenu = () => {
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
                         minHeight: "52px",
-                        color: isDarkMode ? "#ffffff" : "#1f2937",
+                        color: isDarkMode ? "#ffffff" : "#000000",
                       }}
                       onMouseEnter={(e) => {
                         if (!isChanging) {
@@ -705,7 +702,7 @@ const openMenu = () => {
                         <span
                           className="text-sm font-medium"
                           style={{
-                            color: isDarkMode ? "#ffffff" : "#1f2937",
+                            color: isDarkMode ? "#ffffff" : "#000000",
                           }}
                         >
                           {label.full}
@@ -714,7 +711,7 @@ const openMenu = () => {
                           <span
                             className="text-xs"
                             style={{
-                              color: isDarkMode ? "#9ca3af" : "#6b7280",
+                              color: isDarkMode ? "#9ca3af" : "#4b5563",
                             }}
                           >
                             Recommended
