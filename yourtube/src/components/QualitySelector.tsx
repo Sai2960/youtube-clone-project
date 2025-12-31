@@ -529,7 +529,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl"
               style={{
                 minHeight: "56px",
-                color: `${isDarkMode ? "#ffffff" : "#1f2937"} !important`,
+                color: isDarkMode ? "#ffffff" : "#1f2937",
                 backgroundColor: "transparent",
               }}
               onMouseEnter={(e) => {
@@ -547,7 +547,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 <span
                   className="text-sm font-medium"
                   style={{
-                    color: `${isDarkMode ? "#ffffff" : "#1f2937"} !important`,
+                    color: isDarkMode ? "#ffffff" : "#1f2937",
                   }}
                 >
                   Quality
@@ -564,7 +564,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               <ChevronRight
                 className="w-5 h-5"
                 style={{
-                  color: `${isDarkMode ? "#9ca3af" : "#6b7280"} !important`,
+                  color: isDarkMode ? "#9ca3af" : "#6b7280",
                 }}
               />
             </button>
@@ -592,7 +592,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   className="w-full text-left flex items-center gap-2 transition-colors rounded"
                   style={{
                     minHeight: "32px",
-                    color: `${isDarkMode ? "#ffffff" : "#1f2937"} !important`,
+                    color: isDarkMode ? "#ffffff" : "#1f2937",
                   }}
                   onMouseEnter={(e) => {
                     const target = e.currentTarget as HTMLButtonElement;
@@ -608,13 +608,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   <ChevronLeft
                     className="w-5 h-5"
                     style={{
-                      color: `${isDarkMode ? "#ffffff" : "#1f2937"} !important`,
+                      color: isDarkMode ? "#ffffff" : "#1f2937",
                     }}
                   />
                   <span
                     className="text-sm font-semibold"
                     style={{
-                      color: `${isDarkMode ? "#ffffff" : "#1f2937"} !important`,
+                      color: isDarkMode ? "#ffffff" : "#1f2937",
                     }}
                   >
                     Quality
@@ -651,9 +651,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
                         minHeight: "52px",
-                        color: `${
-                          isDarkMode ? "#ffffff" : "#1f2937"
-                        } !important`,
+                        color: isDarkMode ? "#ffffff" : "#1f2937",
                       }}
                       onMouseEnter={(e) => {
                         if (!isChanging) {
@@ -678,9 +676,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         <span
                           className="text-sm font-medium"
                           style={{
-                            color: `${
-                              isDarkMode ? "#ffffff" : "#1f2937"
-                            } !important`,
+                            color: isDarkMode ? "#ffffff" : "#1f2937",
                           }}
                         >
                           {label.full}
@@ -689,9 +685,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                           <span
                             className="text-xs"
                             style={{
-                              color: `${
-                                isDarkMode ? "#9ca3af" : "#6b7280"
-                              } !important`,
+                              color: isDarkMode ? "#9ca3af" : "#6b7280",
                             }}
                           >
                             Recommended
