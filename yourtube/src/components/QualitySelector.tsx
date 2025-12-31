@@ -555,7 +555,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 <span
                   className="text-xs"
                   style={{
-                    color: `${isDarkMode ? "#9ca3af" : "#6b7280"} !important`,
+                    color: isDarkMode ? "#9ca3af" : "#6b7280",
                   }}
                 >
                   {qualityLabels[currentQuality]?.short || currentQuality}
