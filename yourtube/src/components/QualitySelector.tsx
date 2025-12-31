@@ -53,23 +53,53 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   // Detect if dark mode is active
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark
 
   useEffect(() => {
     const checkDarkMode = () => {
-      const isDark =
-        document.documentElement.classList.contains("dark") ||
-        window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setIsDarkMode(isDark);
+      // Check body background color
+      const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+      const htmlBg = window.getComputedStyle(
+        document.documentElement
+      ).backgroundColor;
+
+      // Parse RGB values
+      const bgToCheck = bodyBg !== "rgba(0, 0, 0, 0)" ? bodyBg : htmlBg;
+      const rgbMatch = bgToCheck.match(/\d+/g);
+
+      if (rgbMatch) {
+        const [r, g, b] = rgbMatch.map(Number);
+        const brightness = (r + g + b) / 3;
+
+        // If brightness is less than 128, it's dark mode
+        const isDark = brightness < 128;
+        console.log("🎨 Theme detection:", { bgToCheck, brightness, isDark });
+        setIsDarkMode(isDark);
+      } else {
+        // Fallback to class/media query check
+        const isDark =
+          document.documentElement.classList.contains("dark") ||
+          document.body.classList.contains("dark") ||
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
+        console.log("🎨 Fallback theme detection:", isDark);
+        setIsDarkMode(isDark);
+      }
     };
 
     checkDarkMode();
+
+    // Check again after a short delay to ensure styles are loaded
+    setTimeout(checkDarkMode, 100);
 
     // Listen for theme changes
     const observer = new MutationObserver(checkDarkMode);
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["class"],
+      attributeFilter: ["class", "style"],
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
     });
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
