@@ -534,7 +534,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       bottom: "calc(100% + 8px)",
       right: 0,
       left: "auto",
-      background: isDarkMode ? "rgba(28, 28, 30, 0.98)" : "rgba(255, 255, 255, 0.98)",
+      background: isDarkMode 
+        ? "rgba(28, 28, 30, 0.95)" 
+        : "rgba(255, 255, 255, 0.95)",
       backdropFilter: "blur(20px)",
       WebkitBackdropFilter: "blur(20px)",
       border: isDarkMode
@@ -543,8 +545,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       width: "200px",
       zIndex: 999999,
       boxShadow: isDarkMode
-        ? "0 4px 20px rgba(0, 0, 0, 0.5)"
-        : "0 4px 20px rgba(0, 0, 0, 0.15)",
+        ? "0 8px 32px rgba(0, 0, 0, 0.7)"
+        : "0 8px 32px rgba(0, 0, 0, 0.2)",
       overflow: "hidden",
     }}
     onClick={(e) => e.stopPropagation()}
@@ -604,8 +606,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           className="px-4 py-3 sticky top-0 rounded-t-xl"
           style={{
             background: isDarkMode
-              ? "rgba(28, 28, 30, 1)"
-              : "rgba(255, 255, 255, 1)",
+              ? "rgba(28, 28, 30, 0.95)"
+              : "rgba(255, 255, 255, 0.95)",
             borderBottom: isDarkMode
               ? "1px solid rgba(255, 255, 255, 0.1)"
               : "1px solid rgba(0, 0, 0, 0.1)",
