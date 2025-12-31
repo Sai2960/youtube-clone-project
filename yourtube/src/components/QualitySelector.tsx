@@ -268,20 +268,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               }}
             >
               <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white">
+                <span className="text-sm font-medium whitespace-nowrap text-gray-900">
                   Quality
                 </span>
-                <span
-                  className="text-gray-600 dark:text-gray-400"
-                  style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                >
+                <span className="text-xs text-gray-500">
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
-              <ChevronRight
-                className="w-5 h-5"
-                style={{ color: "rgba(255, 255, 255, 0.7)" }}
-              />
+              <ChevronRight className="w-5 h-5 text-gray-600" />
             </button>
           ) : (
             /* Step 2: Quality options with back button */
@@ -306,11 +300,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
-                  <ChevronLeft
-                    className="text-gray-900 dark:text-white"
-                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
-                  />
-                  <span className="text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-white">
+                  <ChevronLeft className="w-5 h-5 text-gray-900" />
+                  <span className="text-sm font-semibold whitespace-nowrap text-gray-900">
                     Quality
                   </span>
                 </button>
@@ -362,15 +353,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     >
                       <div className="flex items-center justify-between w-full gap-3">
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                          <span className="text-sm font-medium text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
                             {label.full}
                           </span>
                         </div>
                         {q === "auto" && (
-                          <span
-                            className="text-gray-600 dark:text-gray-400"
-                            style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                          >
+                          <span className="text-xs text-gray-500">
                             Recommended
                           </span>
                         )}
@@ -430,20 +418,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               style={{ minHeight: "56px" }}
             >
               <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                <span className="text-sm font-medium text-gray-900">
                   Quality
                 </span>
-                <span
-                  className="text-gray-600 dark:text-gray-400"
-                  style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                >
+                <span className="text-xs text-gray-500">
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
-              <ChevronRight
-                className="w-5 h-5"
-                style={{ color: "rgba(255, 255, 255, 0.7)" }}
-              />
+              <ChevronRight className="w-5 h-5 text-gray-600" />
             </button>
           ) : (
             /* Step 2: Quality options with back button */
@@ -465,11 +447,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   className="w-full text-left flex items-center gap-2 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors rounded"
                   style={{ minHeight: "32px" }}
                 >
-                  <ChevronLeft
-                    className="text-gray-900 dark:text-white"
-                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
-                  />
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  <ChevronLeft className="w-5 h-5 text-gray-900" />
+                  <span className="text-sm font-semibold text-gray-900">
                     Quality
                   </span>
                 </button>
@@ -505,14 +484,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       }}
                     >
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        <span className="text-sm font-medium text-gray-900">
                           {label.full}
                         </span>
                         {q === "auto" && (
-                          <span
-                            className="text-xs"
-                            style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                          >
+                          <span className="text-xs text-gray-500">
                             Recommended
                           </span>
                         )}
