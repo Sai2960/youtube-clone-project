@@ -316,19 +316,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             position: "absolute",
             ...getMobileMenuPosition(),
             right: 0,
-            background: isDarkMode
+            background: !isDarkMode
               ? "rgba(28, 28, 30, 0.98)"
               : "rgba(255, 255, 255, 0.98)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
-            border: isDarkMode
+            border: !isDarkMode
               ? "1px solid rgba(255, 255, 255, 0.15)"
               : "1px solid rgba(0, 0, 0, 0.15)",
             width: "240px",
             minWidth: "240px",
             maxHeight: "min(55vh, 320px)",
             zIndex: 2147483647,
-            boxShadow: isDarkMode
+            boxShadow: !isDarkMode
               ? "0 8px 32px rgba(0, 0, 0, 0.7)"
               : "0 8px 32px rgba(0, 0, 0, 0.2)",
             overflow: "visible",
@@ -560,11 +560,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               }}
               className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl"
               style={{
-                color: isDarkMode ? "#ffffff" : "#000000",
+                color: !isDarkMode ? "#ffffff" : "#000000",
               }}
               onMouseEnter={(e) => {
                 const target = e.currentTarget as HTMLButtonElement;
-                target.style.backgroundColor = isDarkMode
+                target.style.backgroundColor = !isDarkMode
                   ? "rgba(255, 255, 255, 0.1)"
                   : "rgba(0, 0, 0, 0.05)";
               }}
@@ -577,7 +577,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 <span
                   className="text-sm font-medium"
                   style={{
-                    color: isDarkMode ? "#ffffff" : "#000000",
+                    color: !isDarkMode ? "#ffffff" : "#000000",
                   }}
                 >
                   Quality
@@ -585,7 +585,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 <span
                   className="text-xs"
                   style={{
-                    color: isDarkMode ? "#9ca3af" : "#666666",
+                    color: !isDarkMode ? "#9ca3af" : "#666666",
                   }}
                 >
                   {qualityLabels[currentQuality]?.short || currentQuality}
@@ -594,7 +594,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               <ChevronRight
                 className="w-5 h-5"
                 style={{
-                  color: isDarkMode ? "#9ca3af" : "#666666",
+                  color: !isDarkMode ? "#9ca3af" : "#666666",
                 }}
               />
             </button>
@@ -605,10 +605,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               <div
                 className="px-4 py-3 sticky top-0 rounded-t-xl"
                 style={{
-                  background: isDarkMode
+                  background: !isDarkMode
                     ? "rgba(28, 28, 30, 1)"
                     : "rgba(255, 255, 255, 1)",
-                  borderBottom: isDarkMode
+                  borderBottom: !isDarkMode
                     ? "1px solid rgba(255, 255, 255, 0.1)"
                     : "1px solid rgba(0, 0, 0, 0.1)",
                   zIndex: 10,
@@ -621,11 +621,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   }}
                   className="w-full text-left flex items-center gap-2 transition-colors rounded"
                   style={{
-                    color: isDarkMode ? "#ffffff" : "#000000",
+                    color: !isDarkMode ? "#ffffff" : "#000000",
                   }}
                   onMouseEnter={(e) => {
                     const target = e.currentTarget as HTMLButtonElement;
-                    target.style.backgroundColor = isDarkMode
+                    target.style.backgroundColor = !isDarkMode
                       ? "rgba(255, 255, 255, 0.1)"
                       : "rgba(0, 0, 0, 0.05)";
                   }}
@@ -637,13 +637,13 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   <ChevronLeft
                     className="w-5 h-5"
                     style={{
-                      color: isDarkMode ? "#ffffff" : "#000000",
+                      color: !isDarkMode ? "#ffffff" : "#000000",
                     }}
                   />
                   <span
                     className="text-sm font-semibold"
                     style={{
-                      color: isDarkMode ? "#ffffff" : "#000000",
+                      color: !isDarkMode ? "#ffffff" : "#000000",
                     }}
                   >
                     Quality
@@ -673,19 +673,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between"
                       style={{
                         background: isActive
-                          ? isDarkMode
+                          ? !isDarkMode
                             ? "rgba(255, 255, 255, 0.08)"
                             : "rgba(0, 0, 0, 0.06)"
                           : "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
                         minHeight: "52px",
-                        color: isDarkMode ? "#ffffff" : "#000000",
+                        color: !isDarkMode ? "#ffffff" : "#000000",
                       }}
                       onMouseEnter={(e) => {
                         if (!isChanging) {
                           const target = e.currentTarget as HTMLButtonElement;
-                          target.style.backgroundColor = isDarkMode
+                          target.style.backgroundColor = !isDarkMode
                             ? "rgba(255, 255, 255, 0.1)"
                             : "rgba(0, 0, 0, 0.05)";
                         }
@@ -695,7 +695,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         if (!isActive) {
                           target.style.backgroundColor = "transparent";
                         } else {
-                          target.style.backgroundColor = isDarkMode
+                          target.style.backgroundColor = !isDarkMode
                             ? "rgba(255, 255, 255, 0.08)"
                             : "rgba(0, 0, 0, 0.06)";
                         }
@@ -705,7 +705,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         <span
                           className="text-sm font-medium"
                           style={{
-                            color: isDarkMode ? "#ffffff" : "#000000",
+                            color: !isDarkMode ? "#ffffff" : "#000000",
                           }}
                         >
                           {label.full}
@@ -714,7 +714,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                           <span
                             className="text-xs"
                             style={{
-                              color: isDarkMode ? "#9ca3af" : "#666666",
+                              color: !isDarkMode ? "#9ca3af" : "#666666",
                             }}
                           >
                             Recommended
