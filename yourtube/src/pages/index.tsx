@@ -957,109 +957,109 @@ const Home: NextPage = () => {
             ) : videos.length > 0 ? (
               <div className="space-y-4 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
                 {videos.slice(0, 12).map((video) => {
-  const channelName =
-    video.uploadedBy?.channelname ||
-    video.uploadedBy?.name ||
-    video?.videochanel ||
-    "Unknown Channel";
-  const channelInitial = channelName[0]?.toUpperCase() || "U";
+                  const channelName =
+                    video.uploadedBy?.channelname ||
+                    video.uploadedBy?.name ||
+                    video?.videochanel ||
+                    "Unknown Channel";
+                  const channelInitial = channelName[0]?.toUpperCase() || "U";
 
-  return (
-    <div key={video._id} className="block group w-full">
-      {/* Video Thumbnail */}
-      <Link href={`/watch/${video._id}`} className="block mb-3">
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
-          <video
-            src={getVideoUrl(video)}
-            className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-            preload="metadata"
-            poster={getThumbnailUrl(video)}
-          />
-          {video?.duration && (
-            <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
-              {video.duration}
-            </div>
-          )}
-        </div>
-      </Link>
+                  return (
+                    <div key={video._id} className="block group w-full">
+                      {/* Video Thumbnail */}
+                      <Link href={`/watch/${video._id}`} className="block mb-3">
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
+                          <video
+                            src={getVideoUrl(video)}
+                            className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
+                            preload="metadata"
+                            poster={getThumbnailUrl(video)}
+                          />
+                          {video?.duration && (
+                            <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
+                              {video.duration}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
 
-      {/* Video Info - FIXED for mobile */}
-      <div className="flex gap-2.5 w-full">
-        {/* Avatar */}
-        <div
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            router.push(
-              `/channel/${video.uploadedBy?._id || "unknown"}`
-            );
-          }}
-          className="flex-shrink-0 cursor-pointer"
-        >
-          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-            <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
-              {channelInitial}
-            </div>
-            <img
-              key={`video-avatar-${video._id}-${
-                imageKeys[video.uploadedBy?._id || ""] ||
-                Date.now()
-              }`}
-              src={getImageUrl(video.uploadedBy?.image, true)}
-              alt={channelName}
-              className="absolute inset-0 w-full h-full object-cover"
-              crossOrigin="anonymous"
-              loading="eager"
-              onError={(e) => {
-                const target =
-                  e.currentTarget as HTMLImageElement;
-                target.style.opacity = "0";
-                target.style.zIndex = "1";
-              }}
-              onLoad={(e) => {
-                const target =
-                  e.currentTarget as HTMLImageElement;
-                target.style.opacity = "1";
-                target.style.zIndex = "10";
-              }}
-            />
-          </div>
-        </div>
+                      {/* Video Info - FIXED for mobile */}
+                      <div className="flex gap-2.5 w-full">
+                        {/* Avatar */}
+                        <div
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            router.push(
+                              `/channel/${video.uploadedBy?._id || "unknown"}`
+                            );
+                          }}
+                          className="flex-shrink-0 cursor-pointer"
+                        >
+                          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
+                            <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
+                              {channelInitial}
+                            </div>
+                            <img
+                              key={`video-avatar-${video._id}-${
+                                imageKeys[video.uploadedBy?._id || ""] ||
+                                Date.now()
+                              }`}
+                              src={getImageUrl(video.uploadedBy?.image, true)}
+                              alt={channelName}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              crossOrigin="anonymous"
+                              loading="eager"
+                              onError={(e) => {
+                                const target =
+                                  e.currentTarget as HTMLImageElement;
+                                target.style.opacity = "0";
+                                target.style.zIndex = "1";
+                              }}
+                              onLoad={(e) => {
+                                const target =
+                                  e.currentTarget as HTMLImageElement;
+                                target.style.opacity = "1";
+                                target.style.zIndex = "10";
+                              }}
+                            />
+                          </div>
+                        </div>
 
-        {/* Text Info - FIXED overflow and alignment */}
-        <div className="flex-1 min-w-0 pr-2">
-          <Link href={`/watch/${video._id}`} className="block">
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors break-words">
-              {video?.videotitle || "Untitled Video"}
-            </h3>
-          </Link>
+                        {/* Text Info - FIXED overflow and alignment */}
+                        <div className="flex-1 min-w-0 pr-2 max-w-[calc(100%-3rem)]">
+                          <Link href={`/watch/${video._id}`} className="block">
+                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors break-words w-full">
+                              {video?.videotitle || "Untitled Video"}
+                            </h3>
+                          </Link>
 
-          <p
-            onClick={(e) => {
-              e.preventDefault();
-              router.push(
-                `/channel/${video.uploadedBy?._id || "unknown"}`
-              );
-            }}
-            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            {channelName}
-          </p>
+                          <p
+                            onClick={(e) => {
+                              e.preventDefault();
+                              router.push(
+                                `/channel/${video.uploadedBy?._id || "unknown"}`
+                              );
+                            }}
+                            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer w-full block"
+                          >
+                            {channelName}
+                          </p>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
-            <span className="font-semibold whitespace-nowrap">
-              {formatViews(video?.views)}
-            </span>
-            <span className="font-bold">•</span>
-            <span className="whitespace-nowrap">
-              {formatTimeAgo(video?.createdAt)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-})}
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
+                            <span className="font-semibold whitespace-nowrap">
+                              {formatViews(video?.views)}
+                            </span>
+                            <span className="font-bold">•</span>
+                            <span className="whitespace-nowrap">
+                              {formatTimeAgo(video?.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">
