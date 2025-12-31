@@ -262,13 +262,16 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               : "rgba(255, 255, 255, 0.98)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid rgba(0, 0, 0, 0.15)",
-
+            border: isDarkMode
+              ? "1px solid rgba(255, 255, 255, 0.15)"
+              : "1px solid rgba(0, 0, 0, 0.15)",
             width: "240px",
             minWidth: "240px",
             maxHeight: "min(55vh, 320px)",
             zIndex: 2147483647,
-            boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.9)",
+            boxShadow: isDarkMode
+              ? "0 -8px 32px rgba(0, 0, 0, 0.9)"
+              : "0 -8px 32px rgba(0, 0, 0, 0.2)",
             overflow: "visible",
             pointerEvents: "auto",
             display: "flex",
@@ -291,7 +294,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               onPointerDown={(e) => {
                 e.stopPropagation();
               }}
-              className="w-full px-5 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl touch-manipulation"
+              className={`w-full px-5 py-3 text-left transition-colors flex items-center justify-between rounded-xl touch-manipulation ${
+                isDarkMode
+                  ? "text-white hover:bg-white/10 active:bg-white/15"
+                  : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
+              }`}
               style={{
                 minHeight: "56px",
                 WebkitTapHighlightColor: "transparent",
@@ -329,7 +336,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   background: isDarkMode
                     ? "rgba(28, 28, 30, 1)"
                     : "rgba(255, 255, 255, 1)",
-                  borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
+                  borderBottom: isDarkMode
+                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                    : "1px solid rgba(0, 0, 0, 0.1)",
                   zIndex: 10,
                 }}
               >
@@ -338,11 +347,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     e.stopPropagation();
                     setShowQualityMenu(false);
                   }}
-                  className={`w-full text-left flex items-center gap-2 ${
+                  className={`w-full text-left flex items-center gap-2 transition-colors touch-manipulation rounded ${
                     isDarkMode
                       ? "text-white hover:bg-white/10 active:bg-white/15"
                       : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
-                  } transition-colors touch-manipulation rounded`}
+                  }`}
                   style={{
                     minHeight: "28px",
                     WebkitTapHighlightColor: "transparent",
@@ -393,16 +402,17 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         e.stopPropagation();
                       }}
                       disabled={isChanging}
-                      className={`w-full px-5 py-2.5 text-left ${
+                      className={`w-full px-5 py-2.5 text-left transition-colors flex items-center justify-between touch-manipulation ${
                         isDarkMode
-                          ? "text-white hover:bg-white/10 active:bg-white/15"
-                          : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
-                      } transition-colors flex items-center justify-between touch-manipulation`}
+                          ? "hover:bg-white/10 active:bg-white/15"
+                          : "hover:bg-gray-100 active:bg-gray-200"
+                      }`}
                       style={{
                         background: isActive
-                          ? "rgba(0, 0, 0, 0.08)"
+                          ? isDarkMode
+                            ? "rgba(255, 255, 255, 0.08)"
+                            : "rgba(0, 0, 0, 0.06)"
                           : "transparent",
-
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
                         minHeight: "36px",
@@ -414,9 +424,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       <div className="flex items-center justify-between w-full gap-3">
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                           <span
-                            className={`text-sm font-medium ${
+                            className={`text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis ${
                               isDarkMode ? "text-white" : "text-gray-900"
-                            } whitespace-nowrap overflow-hidden text-ellipsis`}
+                            }`}
                           >
                             {label.full}
                           </span>
@@ -469,10 +479,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               ? "rgba(28, 28, 30, 0.98)"
               : "rgba(255, 255, 255, 0.98)",
             backdropFilter: "blur(20px)",
-            border: "1px solid rgba(0, 0, 0, 0.12)",
+            border: isDarkMode
+              ? "1px solid rgba(255, 255, 255, 0.12)"
+              : "1px solid rgba(0, 0, 0, 0.12)",
             width: "200px",
             zIndex: 999999,
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
+            boxShadow: isDarkMode
+              ? "0 4px 20px rgba(0, 0, 0, 0.5)"
+              : "0 4px 20px rgba(0, 0, 0, 0.15)",
             overflow: "hidden",
           }}
           onClick={(e) => e.stopPropagation()}
@@ -484,11 +498,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
-              className={`w-full px-4 py-3 text-left ${
+              className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl ${
                 isDarkMode
                   ? "text-white hover:bg-white/10 active:bg-white/15"
                   : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
-              } transition-colors flex items-center justify-between rounded-xl`}
+              }`}
               style={{ minHeight: "56px" }}
             >
               <div className="flex flex-col gap-0.5">
@@ -523,7 +537,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   background: isDarkMode
                     ? "rgba(28, 28, 30, 1)"
                     : "rgba(255, 255, 255, 1)",
-                  borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
+                  borderBottom: isDarkMode
+                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                    : "1px solid rgba(0, 0, 0, 0.1)",
                   zIndex: 10,
                 }}
               >
@@ -532,11 +548,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     e.stopPropagation();
                     setShowQualityMenu(false);
                   }}
-                  className={`w-full text-left flex items-center gap-2 ${
+                  className={`w-full text-left flex items-center gap-2 transition-colors rounded ${
                     isDarkMode
                       ? "text-white hover:bg-white/10"
                       : "text-gray-900 hover:bg-gray-100"
-                  } transition-colors rounded`}
+                  }`}
                   style={{ minHeight: "32px" }}
                 >
                   <ChevronLeft
@@ -573,14 +589,16 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         handleQualitySelect(q);
                       }}
                       disabled={isChanging}
-                      className={`w-full px-4 py-3 text-left ${
+                      className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between ${
                         isDarkMode
-                          ? "text-white hover:bg-white/10 active:bg-white/15"
-                          : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
-                      } transition-colors flex items-center justify-between`}
+                          ? "hover:bg-white/10 active:bg-white/15"
+                          : "hover:bg-gray-100 active:bg-gray-200"
+                      }`}
                       style={{
                         background: isActive
-                          ? "rgba(255, 255, 255, 0.08)"
+                          ? isDarkMode
+                            ? "rgba(255, 255, 255, 0.08)"
+                            : "rgba(0, 0, 0, 0.06)"
                           : "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
