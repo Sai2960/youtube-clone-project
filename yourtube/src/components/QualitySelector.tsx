@@ -328,9 +328,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             minWidth: "240px",
             maxHeight: "min(55vh, 320px)",
             zIndex: 2147483647,
-           boxShadow: isDarkMode
-  ? "0 4px 20px rgba(0, 0, 0, 0.5)"
-  : "0 4px 20px rgba(0, 0, 0, 0.15)",
+            boxShadow: isDarkMode
+              ? "0 4px 20px rgba(0, 0, 0, 0.5)"
+              : "0 4px 20px rgba(0, 0, 0, 0.15)",
             overflow: "visible",
             pointerEvents: "auto",
             display: "flex",
@@ -524,226 +524,226 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         </div>
       )}
 
-    {/* DESKTOP VIEW - Two-step dropdown menu */}
-{!isMobile && isOpen && (
-  <div
-    ref={menuRef}
-    className="rounded-xl shadow-2xl"
-    style={{
-      position: "absolute",
-      bottom: "calc(100% + 8px)",
-      right: 0,
-      left: "auto",
-      background: isDarkMode 
-        ? "rgba(28, 28, 30, 0.95)" 
-        : "rgba(255, 255, 255, 0.95)",
-      backdropFilter: "blur(20px)",
-      WebkitBackdropFilter: "blur(20px)",
-      border: isDarkMode
-        ? "1px solid rgba(255, 255, 255, 0.15)"
-        : "1px solid rgba(0, 0, 0, 0.15)",
-      width: "200px",
-      zIndex: 999999,
-      boxShadow: isDarkMode
-        ? "0 8px 32px rgba(0, 0, 0, 0.7)"
-        : "0 8px 32px rgba(0, 0, 0, 0.2)",
-      overflow: "hidden",
-    }}
-    onClick={(e) => e.stopPropagation()}
-  >
-    {!showQualityMenu ? (
-      /* Step 1: Settings menu showing "Quality" button */
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowQualityMenu(true);
-        }}
-        className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl"
-        style={{
-          color: isDarkMode ? "#ffffff" : "#1f2937",
-        }}
-        onMouseEnter={(e) => {
-          const target = e.currentTarget as HTMLButtonElement;
-          target.style.backgroundColor = isDarkMode
-            ? "rgba(255, 255, 255, 0.1)"
-            : "rgba(0, 0, 0, 0.05)";
-        }}
-        onMouseLeave={(e) => {
-          const target = e.currentTarget as HTMLButtonElement;
-          target.style.backgroundColor = "transparent";
-        }}
-      >
-        <div className="flex flex-col gap-0.5">
-          <span
-            className="text-sm font-medium"
-            style={{
-              color: isDarkMode ? "#ffffff" : "#1f2937",
-            }}
-          >
-            Quality
-          </span>
-          <span
-            className="text-xs"
-            style={{
-              color: isDarkMode ? "#9ca3af" : "#6b7280",
-            }}
-          >
-            {qualityLabels[currentQuality]?.short || currentQuality}
-          </span>
-        </div>
-        <ChevronRight
-          className="w-5 h-5"
-          style={{
-            color: isDarkMode ? "#9ca3af" : "#6b7280",
-          }}
-        />
-      </button>
-    ) : (
-      /* Step 2: Quality options with back button */
-      <>
-        {/* Back button header */}
+      {/* DESKTOP VIEW - Two-step dropdown menu */}
+      {!isMobile && isOpen && (
         <div
-          className="px-4 py-3 sticky top-0 rounded-t-xl"
+          ref={menuRef}
+          className="rounded-xl shadow-2xl"
           style={{
+            position: "absolute",
+            bottom: "calc(100% + 8px)",
+            right: 0,
+            left: "auto",
             background: isDarkMode
-              ? "rgba(28, 28, 30, 0.95)"
-              : "rgba(255, 255, 255, 0.95)",
-            borderBottom: isDarkMode
-              ? "1px solid rgba(255, 255, 255, 0.1)"
-              : "1px solid rgba(0, 0, 0, 0.1)",
-            zIndex: 10,
+              ? "rgba(0, 0, 0, 0.95)"
+              : "rgba(248, 249, 250, 0.95)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: isDarkMode
+              ? "1px solid rgba(255, 255, 255, 0.15)"
+              : "1px solid rgba(0, 0, 0, 0.15)",
+            width: "200px",
+            zIndex: 999999,
+            boxShadow: isDarkMode
+              ? "0 8px 32px rgba(0, 0, 0, 0.7)"
+              : "0 8px 32px rgba(0, 0, 0, 0.2)",
+            overflow: "hidden",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowQualityMenu(false);
-            }}
-            className="w-full text-left flex items-center gap-2 transition-colors rounded"
-            style={{
-              color: isDarkMode ? "#ffffff" : "#1f2937",
-            }}
-            onMouseEnter={(e) => {
-              const target = e.currentTarget as HTMLButtonElement;
-              target.style.backgroundColor = isDarkMode
-                ? "rgba(255, 255, 255, 0.1)"
-                : "rgba(0, 0, 0, 0.05)";
-            }}
-            onMouseLeave={(e) => {
-              const target = e.currentTarget as HTMLButtonElement;
-              target.style.backgroundColor = "transparent";
-            }}
-          >
-            <ChevronLeft
-              className="w-5 h-5"
-              style={{
-                color: isDarkMode ? "#ffffff" : "#1f2937",
+          {!showQualityMenu ? (
+            /* Step 1: Settings menu showing "Quality" button */
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowQualityMenu(true);
               }}
-            />
-            <span
-              className="text-sm font-semibold"
+              className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl"
               style={{
-                color: isDarkMode ? "#ffffff" : "#1f2937",
+                color: isDarkMode ? "#ffffff" : "#000000",
+              }}
+              onMouseEnter={(e) => {
+                const target = e.currentTarget as HTMLButtonElement;
+                target.style.backgroundColor = isDarkMode
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "rgba(0, 0, 0, 0.05)";
+              }}
+              onMouseLeave={(e) => {
+                const target = e.currentTarget as HTMLButtonElement;
+                target.style.backgroundColor = "transparent";
               }}
             >
-              Quality
-            </span>
-          </button>
-        </div>
-
-        {/* Quality options */}
-        <div
-          className="overflow-y-auto overflow-x-hidden"
-          style={{
-            maxHeight: "min(50vh, 350px)",
-          }}
-        >
-          {availableQualities.map((q) => {
-            const isActive = q === currentQuality;
-            const label = qualityLabels[q];
-
-            return (
-              <button
-                key={q}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleQualitySelect(q);
-                }}
-                disabled={isChanging}
-                className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between"
+              <div className="flex flex-col gap-0.5">
+                <span
+                  className="text-sm font-medium"
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#000000",
+                  }}
+                >
+                  Quality
+                </span>
+                <span
+                  className="text-xs"
+                  style={{
+                    color: isDarkMode ? "#9ca3af" : "#666666",
+                  }}
+                >
+                  {qualityLabels[currentQuality]?.short || currentQuality}
+                </span>
+              </div>
+              <ChevronRight
+                className="w-5 h-5"
                 style={{
-                  background: isActive
-                    ? isDarkMode
-                      ? "rgba(255, 255, 255, 0.08)"
-                      : "rgba(0, 0, 0, 0.06)"
-                    : "transparent",
-                  opacity: isChanging ? 0.5 : 1,
-                  cursor: isChanging ? "not-allowed" : "pointer",
-                  minHeight: "52px",
-                  color: isDarkMode ? "#ffffff" : "#1f2937",
+                  color: isDarkMode ? "#9ca3af" : "#666666",
                 }}
-                onMouseEnter={(e) => {
-                  if (!isChanging) {
+              />
+            </button>
+          ) : (
+            /* Step 2: Quality options with back button */
+            <>
+              {/* Back button header */}
+              <div
+                className="px-4 py-3 sticky top-0 rounded-t-xl"
+                style={{
+                  background: isDarkMode
+                    ? "rgba(0, 0, 0, 0.95)"
+                    : "rgba(248, 249, 250, 0.95)",
+                  borderBottom: isDarkMode
+                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                    : "1px solid rgba(0, 0, 0, 0.1)",
+                  zIndex: 10,
+                }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowQualityMenu(false);
+                  }}
+                  className="w-full text-left flex items-center gap-2 transition-colors rounded"
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#000000",
+                  }}
+                  onMouseEnter={(e) => {
                     const target = e.currentTarget as HTMLButtonElement;
                     target.style.backgroundColor = isDarkMode
                       ? "rgba(255, 255, 255, 0.1)"
                       : "rgba(0, 0, 0, 0.05)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const target = e.currentTarget as HTMLButtonElement;
-                  if (!isActive) {
+                  }}
+                  onMouseLeave={(e) => {
+                    const target = e.currentTarget as HTMLButtonElement;
                     target.style.backgroundColor = "transparent";
-                  } else {
-                    target.style.backgroundColor = isDarkMode
-                      ? "rgba(255, 255, 255, 0.08)"
-                      : "rgba(0, 0, 0, 0.06)";
-                  }
-                }}
-              >
-                <div className="flex flex-col gap-0.5">
-                  <span
-                    className="text-sm font-medium"
+                  }}
+                >
+                  <ChevronLeft
+                    className="w-5 h-5"
                     style={{
-                      color: isDarkMode ? "#ffffff" : "#1f2937",
+                      color: isDarkMode ? "#ffffff" : "#000000",
+                    }}
+                  />
+                  <span
+                    className="text-sm font-semibold"
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#000000",
                     }}
                   >
-                    {label.full}
+                    Quality
                   </span>
-                  {q === "auto" && (
-                    <span
-                      className="text-xs"
+                </button>
+              </div>
+
+              {/* Quality options */}
+              <div
+                className="overflow-y-auto overflow-x-hidden"
+                style={{
+                  maxHeight: "min(50vh, 350px)",
+                }}
+              >
+                {availableQualities.map((q) => {
+                  const isActive = q === currentQuality;
+                  const label = qualityLabels[q];
+
+                  return (
+                    <button
+                      key={q}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleQualitySelect(q);
+                      }}
+                      disabled={isChanging}
+                      className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between"
                       style={{
-                        color: isDarkMode ? "#9ca3af" : "#6b7280",
+                        background: isActive
+                          ? isDarkMode
+                            ? "rgba(255, 255, 255, 0.08)"
+                            : "rgba(0, 0, 0, 0.06)"
+                          : "transparent",
+                        opacity: isChanging ? 0.5 : 1,
+                        cursor: isChanging ? "not-allowed" : "pointer",
+                        minHeight: "52px",
+                        color: isDarkMode ? "#ffffff" : "#1f2937",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isChanging) {
+                          const target = e.currentTarget as HTMLButtonElement;
+                          target.style.backgroundColor = isDarkMode
+                            ? "rgba(255, 255, 255, 0.1)"
+                            : "rgba(0, 0, 0, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        const target = e.currentTarget as HTMLButtonElement;
+                        if (!isActive) {
+                          target.style.backgroundColor = "transparent";
+                        } else {
+                          target.style.backgroundColor = isDarkMode
+                            ? "rgba(255, 255, 255, 0.08)"
+                            : "rgba(0, 0, 0, 0.06)";
+                        }
                       }}
                     >
-                      Recommended
-                    </span>
-                  )}
-                </div>
-                {isActive && !isChanging && (
-                  <Check
-                    className="w-5 h-5 flex-shrink-0"
-                    style={{ color: "#ef4444", strokeWidth: 2.5 }}
-                  />
-                )}
-                {isChanging && isActive && (
-                  <div
-                    className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
-                    style={{
-                      border: "2px solid #ef4444",
-                      borderTopColor: "transparent",
-                    }}
-                  />
-                )}
-              </button>
-            );
-          })}
+                      <div className="flex flex-col gap-0.5">
+                        <span
+                          className="text-sm font-medium"
+                          style={{
+                            color: isDarkMode ? "#ffffff" : "#1f2937",
+                          }}
+                        >
+                          {label.full}
+                        </span>
+                        {q === "auto" && (
+                          <span
+                            className="text-xs"
+                            style={{
+                              color: isDarkMode ? "#9ca3af" : "#666666",
+                            }}
+                          >
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      {isActive && !isChanging && (
+                        <Check
+                          className="w-5 h-5 flex-shrink-0"
+                          style={{ color: "#ef4444", strokeWidth: 2.5 }}
+                        />
+                      )}
+                      {isChanging && isActive && (
+                        <div
+                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
+                          style={{
+                            border: "2px solid #ef4444",
+                            borderTopColor: "transparent",
+                          }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
-      </>
-    )}
-  </div>
-)}
+      )}
     </div>
   );
 };
