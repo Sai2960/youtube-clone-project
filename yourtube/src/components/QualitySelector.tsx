@@ -197,12 +197,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     }
   }, [isMobile, isOpen]);
 
-  const openMenu = () => {
-    console.log("📖 Opening quality menu");
-    setIsOpen(true);
-    setShowQualityMenu(false); // KEEP THIS - reset to first step
-  };
-
+const openMenu = () => {
+  console.log("📖 Opening quality menu");
+  
+  // Force theme check when opening menu
+  const ytdApp = document.querySelector("ytd-app");
+  if (ytdApp) {
+    const isDark = ytdApp.hasAttribute("dark");
+    console.log("🎨 Force check on menu open:", { isDark });
+    setIsDarkMode(isDark);
+  }
+  
+  setIsOpen(true);
+  setShowQualityMenu(false);
+};
   const closeMenu = () => {
     console.log("📕 Closing quality menu");
     setIsOpen(false);
