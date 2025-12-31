@@ -542,7 +542,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             border: isDarkMode
               ? "1px solid rgba(255, 255, 255, 0.15)"
               : "1px solid rgba(0, 0, 0, 0.15)",
-            width: "200px",
+            width: "220px",
+
             zIndex: 999999,
             boxShadow: isDarkMode
               ? "0 8px 32px rgba(0, 0, 0, 0.7)"
@@ -558,9 +559,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
-              className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl"
+              className="w-full px-4 py-2.5 text-left transition-colors flex items-center justify-between"
               style={{
-                color: isDarkMode ? "#ffffff" : "#000000",
+                minHeight: "52px",
               }}
               onMouseEnter={(e) => {
                 const target = e.currentTarget as HTMLButtonElement;
@@ -603,15 +604,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <>
               {/* Back button header */}
               <div
-                className="px-4 py-3 sticky top-0 rounded-t-xl"
+                className="px-4 py-2.5 sticky top-0"
                 style={{
-                  background: isDarkMode
-                    ? "rgba(28, 28, 30, 1)"
-                    : "rgba(255, 255, 255, 1)",
-                  borderBottom: isDarkMode
-                    ? "1px solid rgba(255, 255, 255, 0.1)"
-                    : "1px solid rgba(0, 0, 0, 0.1)",
-                  zIndex: 10,
+                  borderTopLeftRadius: "8px",
+                  borderTopRightRadius: "8px",
                 }}
               >
                 <button
@@ -619,9 +615,9 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     e.stopPropagation();
                     setShowQualityMenu(false);
                   }}
-                  className="w-full text-left flex items-center gap-2 transition-colors rounded"
+                  className="w-full py-1 text-left flex items-center gap-2 transition-colors rounded"
                   style={{
-                    color: isDarkMode ? "#ffffff" : "#000000",
+                    minHeight: "32px",
                   }}
                   onMouseEnter={(e) => {
                     const target = e.currentTarget as HTMLButtonElement;
@@ -635,7 +631,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   }}
                 >
                   <ChevronLeft
-                    className="w-5 h-5"
+                    className="w-4 h-4"
                     style={{
                       color: isDarkMode ? "#ffffff" : "#000000",
                     }}
@@ -658,9 +654,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                   maxHeight: "min(50vh, 350px)",
                 }}
               >
-                {availableQualities.map((q) => {
+                {availableQualities.map((q, index) => {
                   const isActive = q === currentQuality;
                   const label = qualityLabels[q];
+                  const isLast = index === availableQualities.length - 1;
 
                   return (
                     <button
@@ -670,7 +667,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         handleQualitySelect(q);
                       }}
                       disabled={isChanging}
-                      className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between"
+                      className="w-full px-4 py-2.5 text-left transition-colors flex items-center justify-between"
                       style={{
                         background: isActive
                           ? isDarkMode
@@ -679,7 +676,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                           : "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
-                        minHeight: "52px",
+                        minHeight: "44px",
                         color: isDarkMode ? "#ffffff" : "#000000",
                       }}
                       onMouseEnter={(e) => {
@@ -723,7 +720,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       </div>
                       {isActive && !isChanging && (
                         <Check
-                          className="w-5 h-5 flex-shrink-0"
+                          className="w-5 h-5 flex-shrink-0 ml-2"
                           style={{ color: "#ef4444", strokeWidth: 2.5 }}
                         />
                       )}
