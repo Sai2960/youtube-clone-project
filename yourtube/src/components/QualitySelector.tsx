@@ -229,7 +229,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             position: "absolute",
             ...getMobileMenuPosition(),
             right: 0,
-            background: "rgba(255, 255, 255, 0.98)",
+            background: "rgba(28, 28, 30, 0.98)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(0, 0, 0, 0.15)",
@@ -268,14 +268,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               }}
             >
               <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium whitespace-nowrap text-gray-900">
+                <span className="text-sm font-medium whitespace-nowrap text-white">
                   Quality
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-400">
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
           ) : (
             /* Step 2: Quality options with back button */
@@ -284,7 +284,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               <div
                 className="px-4 py-2 sticky top-0 rounded-t-xl"
                 style={{
-                  background: "rgba(255, 255, 255, 1)",
+                  background: "rgba(28, 28, 30, 1)",
                   borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
                   zIndex: 10,
                 }}
@@ -294,14 +294,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     e.stopPropagation();
                     setShowQualityMenu(false);
                   }}
-                  className="w-full text-left flex items-center gap-2 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 active:bg-gray-300 dark:active:bg-white/15 transition-colors touch-manipulation rounded"
+                  className="w-full text-left flex items-center gap-2 text-white hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation rounded"
                   style={{
                     minHeight: "28px",
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
-                  <ChevronLeft className="w-5 h-5 text-gray-900" />
-                  <span className="text-sm font-semibold whitespace-nowrap text-gray-900">
+                  <ChevronLeft className="w-5 h-5 text-white" />
+                  <span className="text-sm font-semibold whitespace-nowrap text-white">
                     Quality
                   </span>
                 </button>
@@ -337,7 +337,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         e.stopPropagation();
                       }}
                       disabled={isChanging}
-                      className="w-full px-5 py-2.5 text-left text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 active:bg-gray-300 dark:active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
+                      className="w-full px-5 py-2.5 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between touch-manipulation"
                       style={{
                         background: isActive
                           ? "rgba(0, 0, 0, 0.08)"
@@ -353,12 +353,12 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     >
                       <div className="flex items-center justify-between w-full gap-3">
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                          <span className="text-sm font-medium text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
+                          <span className="text-sm font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis">
                             {label.full}
                           </span>
                         </div>
                         {q === "auto" && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-400">
                             Recommended
                           </span>
                         )}
@@ -397,7 +397,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             bottom: "calc(100% + 8px)",
             right: 0,
             left: "auto",
-            background: "rgba(255, 255, 255, 0.98)",
+            background: "rgba(28, 28, 30, 0.98)",
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(0, 0, 0, 0.12)",
             width: "200px",
@@ -414,18 +414,16 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
-              className="w-full px-4 py-3 text-left text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 active:bg-gray-300 dark:active:bg-white/15 transition-colors flex items-center justify-between rounded-xl"
+              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between rounded-xl"
               style={{ minHeight: "56px" }}
             >
               <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium text-gray-900">
-                  Quality
-                </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-sm font-medium text-white">Quality</span>
+                <span className="text-xs text-gray-400">
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
           ) : (
             /* Step 2: Quality options with back button */
@@ -434,7 +432,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               <div
                 className="px-4 py-3 sticky top-0 rounded-t-xl"
                 style={{
-                  background: "rgba(255, 255, 255, 1)",
+                  background: "rgba(28, 28, 30, 1)",
                   borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
                   zIndex: 10,
                 }}
@@ -444,11 +442,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     e.stopPropagation();
                     setShowQualityMenu(false);
                   }}
-                  className="w-full text-left flex items-center gap-2 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors rounded"
+                  className="w-full text-left flex items-center gap-2 text-white hover:bg-white/10 transition-colors rounded"
                   style={{ minHeight: "32px" }}
                 >
-                  <ChevronLeft className="w-5 h-5 text-gray-900" />
-                  <span className="text-sm font-semibold text-gray-900">
+                  <ChevronLeft className="w-5 h-5 text-white" />
+                  <span className="text-sm font-semibold text-white">
                     Quality
                   </span>
                 </button>
@@ -473,7 +471,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         handleQualitySelect(q);
                       }}
                       disabled={isChanging}
-                      className="w-full px-4 py-3 text-left text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 active:bg-gray-300 dark:active:bg-white/15 transition-colors flex items-center justify-between"
+                      className="w-full px-4 py-3 text-left text-white hover:bg-white/10 active:bg-white/15 transition-colors flex items-center justify-between"
                       style={{
                         background: isActive
                           ? "rgba(255, 255, 255, 0.08)"
@@ -484,11 +482,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       }}
                     >
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-white">
                           {label.full}
                         </span>
                         {q === "auto" && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-400">
                             Recommended
                           </span>
                         )}
