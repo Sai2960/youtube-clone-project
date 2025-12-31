@@ -57,26 +57,36 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   useEffect(() => {
     const checkDarkMode = () => {
-      // Check body background color
+      // Method 1: Check if YouTube has dark theme class
+      const ytdApp = document.querySelector("ytd-app");
+      if (ytdApp) {
+        const isDark = ytdApp.hasAttribute("dark");
+        console.log("🎨 YouTube theme detection:", { isDark });
+        setIsDarkMode(isDark);
+        return;
+      }
+
+      // Method 2: Check body/html background color
       const bodyBg = window.getComputedStyle(document.body).backgroundColor;
       const htmlBg = window.getComputedStyle(
         document.documentElement
       ).backgroundColor;
 
-      // Parse RGB values
       const bgToCheck = bodyBg !== "rgba(0, 0, 0, 0)" ? bodyBg : htmlBg;
       const rgbMatch = bgToCheck.match(/\d+/g);
 
       if (rgbMatch) {
         const [r, g, b] = rgbMatch.map(Number);
         const brightness = (r + g + b) / 3;
-
-        // If brightness is less than 128, it's dark mode
         const isDark = brightness < 128;
-        console.log("🎨 Theme detection:", { bgToCheck, brightness, isDark });
+        console.log("🎨 Background theme detection:", {
+          bgToCheck,
+          brightness,
+          isDark,
+        });
         setIsDarkMode(isDark);
       } else {
-        // Fallback to class/media query check
+        // Method 3: Fallback to class/media query check
         const isDark =
           document.documentElement.classList.contains("dark") ||
           document.body.classList.contains("dark") ||
@@ -88,11 +98,22 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
     checkDarkMode();
 
-    // Check again after a short delay to ensure styles are loaded
+    // Check again after delays to ensure styles are loaded
     setTimeout(checkDarkMode, 100);
+    setTimeout(checkDarkMode, 500);
 
     // Listen for theme changes
     const observer = new MutationObserver(checkDarkMode);
+
+    // Observe ytd-app specifically for YouTube
+    const ytdApp = document.querySelector("ytd-app");
+    if (ytdApp) {
+      observer.observe(ytdApp, {
+        attributes: true,
+        attributeFilter: ["dark"],
+      });
+    }
+
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class", "style"],
