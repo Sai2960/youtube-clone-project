@@ -680,7 +680,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
                         minHeight: "52px",
-                        color: isDarkMode ? "#ffffff" : "#1f2937",
+                        color: isDarkMode ? "#ffffff" : "#000000",
                       }}
                       onMouseEnter={(e) => {
                         if (!isChanging) {
@@ -705,7 +705,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         <span
                           className="text-sm font-medium"
                           style={{
-                            color: isDarkMode ? "#ffffff" : "#1f2937",
+                            color: isDarkMode ? "#ffffff" : "#000000",
                           }}
                         >
                           {label.full}
