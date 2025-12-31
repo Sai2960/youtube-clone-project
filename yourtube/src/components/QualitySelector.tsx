@@ -316,19 +316,19 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             position: "absolute",
             ...getMobileMenuPosition(),
             right: 0,
-            background: !isDarkMode
+            background: isDarkMode
               ? "rgba(28, 28, 30, 0.98)"
               : "rgba(255, 255, 255, 0.98)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
-            border: !isDarkMode
+            border: isDarkMode
               ? "1px solid rgba(255, 255, 255, 0.15)"
               : "1px solid rgba(0, 0, 0, 0.15)",
             width: "240px",
             minWidth: "240px",
             maxHeight: "min(55vh, 320px)",
             zIndex: 2147483647,
-            boxShadow: !isDarkMode
+            boxShadow: isDarkMode
               ? "0 8px 32px rgba(0, 0, 0, 0.7)"
               : "0 8px 32px rgba(0, 0, 0, 0.2)",
             overflow: "visible",
