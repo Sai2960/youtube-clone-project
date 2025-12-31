@@ -329,8 +329,8 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             maxHeight: "min(55vh, 320px)",
             zIndex: 2147483647,
             boxShadow: isDarkMode
-              ? "0 4px 20px rgba(0, 0, 0, 0.5)"
-              : "0 4px 20px rgba(0, 0, 0, 0.15)",
+              ? "0 8px 32px rgba(0, 0, 0, 0.7)"
+              : "0 8px 32px rgba(0, 0, 0, 0.2)",
             overflow: "visible",
             pointerEvents: "auto",
             display: "flex",
