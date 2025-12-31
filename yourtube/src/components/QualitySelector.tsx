@@ -528,33 +528,38 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                 e.stopPropagation();
                 setShowQualityMenu(true);
               }}
-              className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl ${
-                isDarkMode
-                  ? "text-white hover:bg-white/10 active:bg-white/15"
-                  : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
-              }`}
-              style={{ minHeight: "56px" }}
+              className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between rounded-xl"
+              style={{
+                minHeight: "56px",
+                color: isDarkMode ? "#ffffff" : "#1f2937",
+                backgroundColor: "transparent",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDarkMode
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "rgba(0, 0, 0, 0.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <div className="flex flex-col gap-0.5">
                 <span
-                  className={`text-sm font-medium ${
-                    isDarkMode ? "text-white" : "text-gray-900"
-                  }`}
+                  className="text-sm font-medium"
+                  style={{ color: isDarkMode ? "#ffffff" : "#1f2937" }}
                 >
                   Quality
                 </span>
                 <span
-                  className={`text-xs ${
-                    isDarkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
+                  className="text-xs"
+                  style={{ color: isDarkMode ? "#9ca3af" : "#6b7280" }}
                 >
                   {qualityLabels[currentQuality]?.short || currentQuality}
                 </span>
               </div>
               <ChevronRight
-                className={`w-5 h-5 ${
-                  isDarkMode ? "text-gray-400" : "text-gray-600"
-                }`}
+                className="w-5 h-5"
+                style={{ color: isDarkMode ? "#9ca3af" : "#6b7280" }}
               />
             </button>
           ) : (
@@ -578,22 +583,27 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     e.stopPropagation();
                     setShowQualityMenu(false);
                   }}
-                  className={`w-full text-left flex items-center gap-2 transition-colors rounded ${
-                    isDarkMode
-                      ? "text-white hover:bg-white/10"
-                      : "text-gray-900 hover:bg-gray-100"
-                  }`}
-                  style={{ minHeight: "32px" }}
+                  className="w-full text-left flex items-center gap-2 transition-colors rounded"
+                  style={{
+                    minHeight: "32px",
+                    color: isDarkMode ? "#ffffff" : "#1f2937",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isDarkMode
+                      ? "rgba(255, 255, 255, 0.1)"
+                      : "rgba(0, 0, 0, 0.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                 >
                   <ChevronLeft
-                    className={`w-5 h-5 ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
+                    className="w-5 h-5"
+                    style={{ color: isDarkMode ? "#ffffff" : "#1f2937" }}
                   />
                   <span
-                    className={`text-sm font-semibold ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
+                    className="text-sm font-semibold"
+                    style={{ color: isDarkMode ? "#ffffff" : "#1f2937" }}
                   >
                     Quality
                   </span>
@@ -619,11 +629,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         handleQualitySelect(q);
                       }}
                       disabled={isChanging}
-                      className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between ${
-                        isDarkMode
-                          ? "text-white hover:bg-white/10 active:bg-white/15"
-                          : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
-                      }`}
+                      className="w-full px-4 py-3 text-left transition-colors flex items-center justify-between"
                       style={{
                         background: isActive
                           ? isDarkMode
@@ -633,21 +639,38 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
                         minHeight: "52px",
+                        color: isDarkMode ? "#ffffff" : "#1f2937",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isChanging) {
+                          e.currentTarget.style.backgroundColor = isDarkMode
+                            ? "rgba(255, 255, 255, 0.1)"
+                            : "rgba(0, 0, 0, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        } else {
+                          e.currentTarget.style.backgroundColor = isDarkMode
+                            ? "rgba(255, 255, 255, 0.08)"
+                            : "rgba(0, 0, 0, 0.06)";
+                        }
                       }}
                     >
                       <div className="flex flex-col gap-0.5">
                         <span
-                          className={`text-sm font-medium ${
-                            isDarkMode ? "text-white" : "text-gray-900"
-                          }`}
+                          className="text-sm font-medium"
+                          style={{ color: isDarkMode ? "#ffffff" : "#1f2937" }}
                         >
                           {label.full}
                         </span>
                         {q === "auto" && (
                           <span
-                            className={`text-xs ${
-                              isDarkMode ? "text-gray-400" : "text-gray-600"
-                            }`}
+                            className="text-xs"
+                            style={{
+                              color: isDarkMode ? "#9ca3af" : "#6b7280",
+                            }}
                           >
                             Recommended
                           </span>
@@ -661,7 +684,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                       )}
                       {isChanging && isActive && (
                         <div
-                          className="w-5 h-5 rounded-full animate-spin"
+                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
                           style={{
                             border: "2px solid #ef4444",
                             borderTopColor: "transparent",
