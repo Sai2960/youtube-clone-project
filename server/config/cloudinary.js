@@ -27,8 +27,7 @@ const videoStorage = new CloudinaryStorage({
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
 
-    // ✅ CRITICAL: Cloudinary free tier limit is 100MB
-    const MAX_SIZE_MB = 95; // Leave 5MB buffer
+    const MAX_SIZE_MB = 95;
     const fileSizeMB = file.size / (1024 * 1024);
 
     console.log(`📦 Upload attempt: ${fileSizeMB.toFixed(2)}MB`);
@@ -47,7 +46,8 @@ const videoStorage = new CloudinaryStorage({
       public_id: `file_${timestamp}_${randomStr}`,
       format: "mp4",
       allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
-
+      type: "upload", // ✅ ADD THIS - Makes videos public
+      access_mode: "public", // ✅ ADD THIS - Ensures public access
       chunk_size: 6000000, // 6MB chunks for network transfer
       timeout: 900000, // 15 minutes
 
@@ -86,6 +86,8 @@ const channelImageStorage = new CloudinaryStorage({
   params: {
     folder: "youtube-clone/channel-images",
     resource_type: "image",
+    type: "upload", // ✅ ADD THIS
+    access_mode: "public", // ✅ ADD THIS
     allowed_formats: ["jpg", "png", "jpeg", "gif", "webp"],
     transformation: [
       { width: 800, height: 800, crop: "limit", quality: "auto" },
@@ -99,6 +101,8 @@ const thumbnailStorage = new CloudinaryStorage({
   params: {
     folder: "youtube-clone/thumbnails",
     resource_type: "image",
+    type: "upload", // ✅ ADD THIS
+    access_mode: "public", // ✅ ADD THIS
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
     transformation: [
       { width: 1280, height: 720, crop: "limit", quality: "auto" },
@@ -118,7 +122,9 @@ const shortsVideoStorage = new CloudinaryStorage({
 
     return {
       folder: "youtube-clone/shorts/videos",
-      resource_type: "auto", // ✅ Auto-detect resource type
+      resource_type: "auto",
+      type: "upload", // ✅ ADD THIS
+      access_mode: "public", // ✅ ADD THIS
       allowed_formats: ["mp4", "mov", "webm"],
       chunk_size: 6000000,
       timeout: 600000,
@@ -145,6 +151,8 @@ const shortsThumbnailStorage = new CloudinaryStorage({
   params: {
     folder: "youtube-clone/shorts/thumbnails",
     resource_type: "image",
+    type: "upload", // ✅ ADD THIS
+    access_mode: "public", // ✅ ADD THIS
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
     transformation: [
       { width: 720, height: 1280, crop: "limit", quality: "auto" },
@@ -365,7 +373,7 @@ export const deleteFromCloudinary = async (
 /**
  * Extract public ID from Cloudinary URL
  * @param {string} url - Cloudinary URL
- * 
+ *
  *
  * @returns {string|null} - Public ID or null
  */
