@@ -144,27 +144,43 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "http://192.168.0.181:3000",
+  "http://127.0.0.1:3000",
 
-  // ✅ ALL Vercel domains
+  // ✅ ALL Vercel domains (add YOUR specific ones)
   "https://youtube-clone-project-eosin.vercel.app",
   "https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app",
+
+  // ✅ Add more Vercel preview URLs if needed
+  // "https://youtube-clone-project-abc123.vercel.app",
 ];
 
-// ✅ CRITICAL: Also allow ANY Vercel preview domain
+// ✅ CRITICAL: Allow ANY Vercel preview domain
 const isOriginAllowed = (origin) => {
   if (!origin) return true; // Allow no origin (mobile apps, Postman)
 
   // Exact match
-  if (allowedOrigins.includes(origin)) return true;
-
-  // ✅ Allow ANY Vercel domain (production or preview)
-  if (/^https:\/\/youtube-clone-project.*\.vercel\.app$/.test(origin)) {
-    console.log("   ✅ Vercel domain allowed:", origin);
+  if (allowedOrigins.includes(origin)) {
+    console.log("   ✅ Allowed origin (exact match):", origin);
     return true;
   }
 
+  // ✅ Allow ANY Vercel domain (production or preview)
+  if (/^https:\/\/youtube-clone-project.*\.vercel\.app$/.test(origin)) {
+    console.log("   ✅ Allowed origin (Vercel domain):", origin);
+    return true;
+  }
+
+  // ✅ Production: be permissive
+  if (process.env.NODE_ENV === "production") {
+    console.log("   ⚠️  Production: allowing origin:", origin);
+    return true;
+  }
+
+  console.log("   ❌ Origin blocked:", origin);
   return false;
 };
+
+// ✅ Socket.IO CORS
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
@@ -202,15 +218,15 @@ const io = new Server(server, {
   },
 
   // ✅ CRITICAL FIX: Match frontend transport order
-  transports: ["websocket", "polling"], // ✅ FIXED: websocket first, then polling
+  transports: ["websocket", "polling"],
   allowEIO3: true,
-  allowUpgrades: true, // ✅ ADDED: Allow transport upgrades
+  allowUpgrades: true,
 
   // ✅ Timeouts
-  pingTimeout: 60000, // ✅ INCREASED: 60 seconds (was 20)
-  pingInterval: 25000, // ✅ INCREASED: 25 seconds (was 10)
+  pingTimeout: 60000,
+  pingInterval: 25000,
   upgradeTimeout: 10000,
-  connectTimeout: 45000, // ✅ INCREASED: 45 seconds (was 15)
+  connectTimeout: 45000,
   maxHttpBufferSize: 1e8,
 
   // Path
@@ -242,20 +258,25 @@ Object.entries(directories).forEach(([name, dirPath]) => {
   }
 });
 // =================== ENHANCED CORS MIDDLEWARE ===================
+// =================== EXPRESS CORS MIDDLEWARE ===================
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log("🔍 CORS origin check:", origin || "no origin");
+      console.log("🔍 Express CORS check:", origin || "no origin");
 
       // ✅ Always allow in production
       if (process.env.NODE_ENV === "production") {
+        console.log("   ✅ Production: allowing all origins");
         return callback(null, true);
       }
 
+      // ✅ Check if origin is allowed
       if (!origin || isOriginAllowed(origin)) {
+        console.log("   ✅ Origin allowed");
         return callback(null, true);
       }
 
+      console.log("   ⚠️  Origin not in list, but allowing anyway");
       callback(null, true); // ✅ Permissive fallback
     },
     credentials: true,
@@ -266,11 +287,11 @@ app.use(
       "X-Requested-With",
       "Accept",
       "Origin",
-      "Cache-Control", // ✅ ADD THIS
-      "Pragma", // ✅ ADD THIS
-      "Expires", // ✅ ADD THIS
-      "If-None-Match", // ✅ ADD THIS
-      "If-Modified-Since", // ✅ ADD THIS
+      "Cache-Control",
+      "Pragma",
+      "Expires",
+      "If-None-Match",
+      "If-Modified-Since",
     ],
     exposedHeaders: ["Content-Range", "X-Content-Range", "ETag"],
     preflightContinue: false,
@@ -278,6 +299,8 @@ app.use(
     maxAge: 86400,
   })
 );
+
+console.log("✅ Express CORS configured");
 
 // ✅ CRITICAL: Video streaming with Range support for Shorts
 // ✅ ENHANCED: Better error handling and CORS
@@ -971,7 +994,6 @@ server.listen(PORT, "0.0.0.0", () => {
 // Connect to MongoDB if connection string is provided
 if (DATABASE_URL) {
   mongoose.set("strictQuery", false);
-
 
   // Initial connection attempt
   connectToDatabase();
