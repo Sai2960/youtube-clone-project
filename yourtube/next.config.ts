@@ -10,8 +10,10 @@ const nextConfig = {
   },
   
   env: {
-    NEXT_PUBLIC_API_URL: '/api',
-    NEXT_PUBLIC_BACKEND_URL: '/api',
+    // ✅ FIXED: Point to Render backend
+    NEXT_PUBLIC_API_URL: 'https://youtube-clone-project-q3pd.onrender.com',
+    NEXT_PUBLIC_BACKEND_URL: 'https://youtube-clone-project-q3pd.onrender.com',
+    NEXT_PUBLIC_SOCKET_URL: 'https://youtube-clone-project-q3pd.onrender.com',
     NEXT_PUBLIC_DEFAULT_AVATAR: 'https://res.cloudinary.com/dxuxxk0ss/image/upload/v1/youtube-clone/avatars/default-avatar.png',
   },
   
