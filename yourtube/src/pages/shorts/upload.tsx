@@ -190,8 +190,8 @@ Watch till the end! Don't forget to like and subscribe!
 
       if (!formData.title) {
         const filename = file.name.replace(/\.[^/.]+$/, "");
-        const cleanTitle = filename.substring(0, 95); // ✅ Auto-trim to safe length
-        setFormData((prev) => ({ ...prev, title: cleanTitle }));
+        const cleanTitle = filename.substring(0, 95).trim(); // ✅ Trim to 95 chars
+        //         setFormData((prev) => ({ ...prev, title: cleanTitle }));
       }
     };
     video.src = url;
@@ -300,7 +300,9 @@ Watch till the end! Don't forget to like and subscribe!
       const uploadData = new FormData();
       uploadData.append("video", videoFile);
       uploadData.append("thumbnail", thumbnailFile);
-      uploadData.append("title", formData.title.trim());
+      // ✅ CRITICAL: Trim title to max 100 chars (safe limit)
+      const safeTitle = formData.title.trim().substring(0, 100);
+      uploadData.append("title", safeTitle);
       uploadData.append("description", formData.description.trim());
       uploadData.append("category", formData.category);
       uploadData.append("duration", videoDuration.toString());
@@ -343,33 +345,33 @@ Watch till the end! Don't forget to like and subscribe!
       } else {
         throw new Error(response.data.message || "Upload failed");
       }
-   } catch (error: any) {
-  console.error('❌ Upload error:', error);
-  
-  let errorMessage = 'Failed to upload short. Please try again.';
-  
-  if (error.response) {
-    const responseData = error.response.data;
-    errorMessage = responseData?.message || errorMessage;
-    
-    // ✅ BETTER ERROR MESSAGES
-    if (error.response.status === 401) {
-      errorMessage = 'Session expired. Please login again.';
-      setTimeout(() => router.push('/login?redirect=/shorts/upload'), 2000);
-    } else if (errorMessage.includes('Title')) {
-      // Title validation error
-      const titleLength = responseData?.titleLength || formData.title.length;
-      const maxLength = responseData?.maxLength || 200;
-      errorMessage = `Title too long (${titleLength} chars). Please shorten to ${maxLength} characters or less.`;
-      
-      // Auto-trim the title
-      setFormData(prev => ({
-        ...prev,
-        title: prev.title.substring(0, maxLength - 5) // Leave some buffer
-      }));
-    }
-  }
-      else if (error.request) {
+    } catch (error: any) {
+      console.error("❌ Upload error:", error);
+
+      let errorMessage = "Failed to upload short. Please try again.";
+
+      if (error.response) {
+        const responseData = error.response.data;
+        errorMessage = responseData?.message || errorMessage;
+
+        // ✅ BETTER ERROR MESSAGES
+        if (error.response.status === 401) {
+          errorMessage = "Session expired. Please login again.";
+          setTimeout(() => router.push("/login?redirect=/shorts/upload"), 2000);
+        } else if (errorMessage.includes("Title")) {
+          // Title validation error
+          const titleLength =
+            responseData?.titleLength || formData.title.length;
+          const maxLength = responseData?.maxLength || 200;
+          errorMessage = `Title too long (${titleLength} chars). Please shorten to ${maxLength} characters or less.`;
+
+          // Auto-trim the title
+          setFormData((prev) => ({
+            ...prev,
+            title: prev.title.substring(0, maxLength - 5), // Leave some buffer
+          }));
+        }
+      } else if (error.request) {
         errorMessage = "Network error. Please check your connection.";
       } else {
         errorMessage = error.message || errorMessage;
