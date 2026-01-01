@@ -23,7 +23,7 @@ const CallPage = () => {
     if (user?._id) {
       console.log("🔌 Initializing socket for call page");
       try {
-        const socket = initializeSocket(user._id);
+        const socket = initializeSocket.initializeSocket(user._id);
 
         // Wait for connection
         const checkConnection = setInterval(() => {
