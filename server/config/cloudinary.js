@@ -26,7 +26,6 @@ const videoStorage = new CloudinaryStorage({
   params: async (req, file) => {
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
-
     const MAX_SIZE_MB = 95;
     const fileSizeMB = file.size / (1024 * 1024);
 
@@ -34,9 +33,7 @@ const videoStorage = new CloudinaryStorage({
 
     if (fileSizeMB > MAX_SIZE_MB) {
       throw new Error(
-        `File size ${fileSizeMB.toFixed(
-          0
-        )}MB exceeds ${MAX_SIZE_MB}MB limit for direct upload. Use chunked upload instead.`
+        `File size ${fileSizeMB.toFixed(0)}MB exceeds ${MAX_SIZE_MB}MB limit`
       );
     }
 
@@ -46,11 +43,10 @@ const videoStorage = new CloudinaryStorage({
       public_id: `file_${timestamp}_${randomStr}`,
       format: "mp4",
       allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
-      type: "upload", // ✅ ADD THIS - Makes videos public
-      access_mode: "public", // ✅ ADD THIS - Ensures public access
-      chunk_size: 6000000, // 6MB chunks for network transfer
-      timeout: 900000, // 15 minutes
-
+      type: "upload", // ✅ CRITICAL FIX - Makes public
+      access_mode: "public", // ✅ CRITICAL FIX - Ensures public access
+      chunk_size: 6000000,
+      timeout: 900000,
       transformation: [
         {
           fetch_format: "mp4",
@@ -62,7 +58,6 @@ const videoStorage = new CloudinaryStorage({
           flags: "keep_iptc",
         },
       ],
-
       eager: [
         {
           width: 854,
@@ -86,8 +81,8 @@ const channelImageStorage = new CloudinaryStorage({
   params: {
     folder: "youtube-clone/channel-images",
     resource_type: "image",
-    type: "upload", // ✅ ADD THIS
-    access_mode: "public", // ✅ ADD THIS
+    type: "upload", // ✅ CRITICAL FIX
+    access_mode: "public", // ✅ CRITICAL FIX
     allowed_formats: ["jpg", "png", "jpeg", "gif", "webp"],
     transformation: [
       { width: 800, height: 800, crop: "limit", quality: "auto" },
@@ -101,8 +96,8 @@ const thumbnailStorage = new CloudinaryStorage({
   params: {
     folder: "youtube-clone/thumbnails",
     resource_type: "image",
-    type: "upload", // ✅ ADD THIS
-    access_mode: "public", // ✅ ADD THIS
+    type: "upload", // ✅ CRITICAL FIX
+    access_mode: "public", // ✅ CRITICAL FIX
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
     transformation: [
       { width: 1280, height: 720, crop: "limit", quality: "auto" },
@@ -123,20 +118,19 @@ const shortsVideoStorage = new CloudinaryStorage({
     return {
       folder: "youtube-clone/shorts/videos",
       resource_type: "auto",
-      type: "upload", // ✅ ADD THIS
-      access_mode: "public", // ✅ ADD THIS
+      type: "upload", // ✅ CRITICAL FIX
+      access_mode: "public", // ✅ CRITICAL FIX
       allowed_formats: ["mp4", "mov", "webm"],
       chunk_size: 6000000,
       timeout: 600000,
       use_filename: true,
       unique_filename: true,
       overwrite: false,
-      // ✅ CRITICAL: Preserve audio for shorts videos
       transformation: [
         {
           video_codec: "auto",
-          audio_codec: "aac", // ✅ AAC audio codec
-          audio_frequency: 44100, // ✅ Standard audio frequency
+          audio_codec: "aac",
+          audio_frequency: 44100,
           bit_rate: "500k",
           quality: "auto",
         },
@@ -151,8 +145,8 @@ const shortsThumbnailStorage = new CloudinaryStorage({
   params: {
     folder: "youtube-clone/shorts/thumbnails",
     resource_type: "image",
-    type: "upload", // ✅ ADD THIS
-    access_mode: "public", // ✅ ADD THIS
+    type: "upload", // ✅ CRITICAL FIX
+    access_mode: "public", // ✅ CRITICAL FIX
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
     transformation: [
       { width: 720, height: 1280, crop: "limit", quality: "auto" },
@@ -166,8 +160,8 @@ const shortsThumbnailStorage = new CloudinaryStorage({
 export const uploadVideo = multer({
   storage: videoStorage,
   limits: {
-    fileSize: 95 * 1024 * 1024, // ✅ 95MB hard limit
-    fieldSize: 10 * 1024 * 1024, // 10MB for metadata
+    fileSize: 95 * 1024 * 1024,
+    fieldSize: 10 * 1024 * 1024,
     fields: 10,
     files: 1,
   },
@@ -179,17 +173,9 @@ export const uploadVideo = multer({
       size: file.size,
     });
 
-    // ✅ Check file size if available
     if (file.size && file.size > 95 * 1024 * 1024) {
       console.log("❌ File too large in fileFilter");
-      return cb(
-        new Error(
-          `File size ${(file.size / 1024 / 1024).toFixed(
-            0
-          )}MB exceeds 95MB limit`
-        ),
-        false
-      );
+      return cb(new Error(`File size exceeds 95MB limit`), false);
     }
 
     const allowedMimeTypes = [
@@ -220,11 +206,12 @@ export const uploadVideo = multer({
     }
   },
 });
+
 // Channel image uploader
 export const uploadChannelImage = multer({
   storage: channelImageStorage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // ✅ 10MB limit
+    fileSize: 10 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     console.log("🔍 File filter - Channel Image:", {
@@ -255,7 +242,7 @@ export const uploadChannelImage = multer({
 export const uploadThumbnail = multer({
   storage: thumbnailStorage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // ✅ 10MB limit
+    fileSize: 10 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     console.log("🔍 File filter - Thumbnail:", {
@@ -285,7 +272,7 @@ export const uploadThumbnail = multer({
 export const uploadShortsVideo = multer({
   storage: shortsVideoStorage,
   limits: {
-    fileSize: 100 * 1024 * 1024, // ✅ 100MB limit
+    fileSize: 100 * 1024 * 1024,
     fieldSize: 100 * 1024 * 1024,
     fields: 10,
     files: 1,
@@ -316,7 +303,7 @@ export const uploadShortsVideo = multer({
 export const uploadShortsThumbnail = multer({
   storage: shortsThumbnailStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     console.log("🔍 File filter - Shorts Thumbnail:", {
@@ -356,12 +343,10 @@ export const deleteFromCloudinary = async (
 ) => {
   try {
     console.log(`🗑️ Deleting ${resourceType} from Cloudinary:`, publicId);
-
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: resourceType,
       invalidate: true,
     });
-
     console.log("✅ Cloudinary deletion result:", result);
     return result;
   } catch (error) {
@@ -369,7 +354,6 @@ export const deleteFromCloudinary = async (
     throw error;
   }
 };
-
 /**
  * Extract public ID from Cloudinary URL
  * @param {string} url - Cloudinary URL
@@ -379,17 +363,15 @@ export const deleteFromCloudinary = async (
  */
 export const extractPublicId = (url) => {
   if (!url || !url.includes("cloudinary.com")) return null;
-
   try {
     const parts = url.split("/upload/");
     if (parts.length > 1) {
       const afterUpload = parts[1].split("/").slice(1).join("/");
-      return afterUpload.replace(/\.[^/.]+$/, ""); // Remove extension
+      return afterUpload.replace(/\.[^/.]+$/, "");
     }
   } catch (error) {
     console.error("Error extracting public ID:", error);
   }
-
   return null;
 };
 
@@ -401,18 +383,15 @@ export const extractPublicId = (url) => {
 export const getVideoInfo = async (publicId) => {
   try {
     console.log("📊 Fetching video info from Cloudinary:", publicId);
-
     const result = await cloudinary.api.resource(publicId, {
       resource_type: "video",
     });
-
     console.log("✅ Video info retrieved:", {
       duration: result.duration,
       format: result.format,
       bytes: result.bytes,
       hasAudio: result.audio ? true : false,
     });
-
     return result;
   } catch (error) {
     console.error("❌ Error fetching video info:", error);
