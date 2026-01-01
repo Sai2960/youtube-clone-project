@@ -83,7 +83,24 @@ export const getVideoUrl = (
 
   console.log("🎬 Processing video URL for:", video._id, "Quality:", quality);
 
-  // ✅ PRIORITY 1: Use videofilename (database public_id)
+  // ✅ PRIORITY 1: Check for Vercel Blob URLs FIRST
+  if (
+    video.videoLink?.includes("vercel-storage.com") ||
+    video.videoLink?.includes("blob.vercel-storage.com")
+  ) {
+    console.log("✅ Using Vercel Blob URL");
+    return video.videoLink;
+  }
+
+  if (
+    video.filepath?.includes("vercel-storage.com") ||
+    video.filepath?.includes("blob.vercel-storage.com")
+  ) {
+    console.log("✅ Using Vercel Blob filepath");
+    return video.filepath;
+  }
+
+  // ✅ PRIORITY 2: Cloudinary fallback (for old videos)
   if (
     video.videofilename &&
     video.videofilename.includes("youtube-clone/videos/")

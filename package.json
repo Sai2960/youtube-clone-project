@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@vercel/blob": "^2.0.0",
+    "formidable": "^3.5.4"
+  }
+}

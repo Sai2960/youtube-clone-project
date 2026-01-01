@@ -302,10 +302,6 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     }
     resetForm();
   };
-  // ============================================================================
-  // MAIN UPLOAD HANDLER (Fixed & Optimized)
-  // ============================================================================
-
   const handleUpload = async () => {
     console.log("\n🔥 ===== UPLOAD STARTED =====");
 
@@ -324,11 +320,9 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
 
     // ✅ CRITICAL: Block oversized files
-    if (fileSizeMB > 280) {
+    if (fileSizeMB > 100) {
       toast.error(
-        `File is ${fileSizeMB.toFixed(
-          0
-        )}MB. Maximum is 280MB. Please compress your video.`,
+        `File is ${fileSizeMB.toFixed(0)}MB. Maximum is 100MB for free tier.`,
         { duration: 6000 }
       );
       return;
@@ -338,45 +332,16 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       setIsUploading(true);
       setUploadProgress(0);
 
-      const metadata = {
-        videotitle: videoTitle,
-        videodescription: videoDescription,
-        videochanel: channelName,
-      };
-
-      // ✅ Use chunked upload for files > 90MB
-      if (fileSizeMB > 90) {
-        console.log("✅ Using chunked upload");
-        toast.info(`Splitting ${fileSizeMB.toFixed(0)}MB file into parts...`);
-
-        const result = await uploadLargeVideo(
-          videoFile,
-          metadata,
-          setUploadProgress
-        );
-
-        if (result.success) {
-          setUploadComplete(true);
-          toast.success("🎉 Video uploaded successfully!");
-          setTimeout(() => {
-            resetForm();
-            window.location.reload();
-          }, 2000);
-        }
-        return;
-      }
-
-      // ✅ Single upload for files ≤ 90MB
-      console.log("✅ Using single upload");
       const formData = new FormData();
       formData.append("file", videoFile);
       formData.append("videotitle", videoTitle);
       formData.append("videodescription", videoDescription);
       formData.append("videochanel", channelName);
 
-      const res = await axiosInstance.post("/video/upload", formData, {
+      // ✅ Use /api/video/upload (will be created next)
+      const res = await axiosInstance.post("/api/video/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        timeout: 900000,
+        timeout: 600000,
         onUploadProgress: (e: any) => {
           setUploadProgress(Math.round((e.loaded * 100) / e.total));
         },
@@ -396,8 +361,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       let errorMessage = "Upload failed";
 
       if (error.response?.status === 413) {
-        errorMessage =
-          "File too large for direct upload. Please compress your video.";
+        errorMessage = "File too large. Maximum is 100MB.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
@@ -408,10 +372,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       setUploadProgress(0);
     } finally {
       setIsUploading(false);
-      setIsCompressing(false);
     }
-  };
-  // ============================================================================
+  }; // ============================================================================
   // COMPONENT JSX RENDER
   // ============================================================================
 

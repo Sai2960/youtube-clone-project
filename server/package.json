@@ -20,7 +20,6 @@
     "fixBrokenVideoUrls": "node scripts/fixBrokenVideoUrls.js",
     "fix-thumbnails": "node scripts/fix-thumbnails.js",
     "fix-quality": "node scripts/generateQualities.js"
-    
   },
   "keywords": [],
   "author": "",
@@ -28,6 +27,7 @@
   "type": "module",
   "dependencies": {
     "@iamtraction/google-translate": "^2.0.1",
+    "@vercel/blob": "^2.0.0",
     "axios": "^1.13.2",
     "bad-words": "^4.0.0",
     "bcryptjs": "^3.0.3",
