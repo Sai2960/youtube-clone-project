@@ -14,41 +14,37 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('🎬 Upload API called');
-
-    // Verify authentication
+    // Get token from header
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // Decode token
+    // Decode token to get user ID
     let userId;
     try {
       const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
       userId = payload.userId || payload.id;
-      console.log('✅ User authenticated:', userId);
     } catch (e) {
       return res.status(401).json({ message: 'Invalid token' });
     }
 
-    // Parse form data
+    // Parse the uploaded file
     const form = formidable({ 
-      maxFileSize: 100 * 1024 * 1024,
+      maxFileSize: 100 * 1024 * 1024, // 100MB max
       keepExtensions: true
     });
     
     const [fields, files] = await form.parse(req);
-    console.log('📝 Form parsed');
-
     const videoFile = files.file?.[0];
+    
     if (!videoFile) {
       return res.status(400).json({ message: 'No video file uploaded' });
     }
 
     console.log('📤 Uploading to Vercel Blob:', videoFile.originalFilename);
 
-    // Read file buffer
+    // Read the file
     const fileBuffer = fs.readFileSync(videoFile.filepath);
 
     // Upload to Vercel Blob
@@ -62,16 +58,15 @@ export default async function handler(req, res) {
       }
     );
 
-    console.log('✅ Uploaded to Vercel Blob:', blob.url);
+    console.log('✅ Uploaded:', blob.url);
 
-    // Cleanup temp file
+    // Delete temp file
     fs.unlinkSync(videoFile.filepath);
 
-    // ⚠️ TEMPORARY: Return success WITHOUT MongoDB
-    // We'll add MongoDB connection after this works
+    // Send success response
     return res.status(200).json({
       success: true,
-      message: 'Video uploaded successfully to Vercel Blob',
+      message: 'Video uploaded successfully',
       videoUrl: blob.url,
       videoId: blob.pathname,
       metadata: {
@@ -85,8 +80,7 @@ export default async function handler(req, res) {
     console.error('❌ Upload error:', error);
     return res.status(500).json({ 
       success: false,
-      message: error.message || 'Upload failed',
-      error: error.toString()
+      message: error.message
     });
   }
 }
