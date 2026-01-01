@@ -8,22 +8,25 @@ declare module "axios" {
 }
 
 // ✅ NEW CODE - COPY THIS
+// ✅ SIMPLIFIED & FIXED
 const getBackendURL = (): string => {
-  // 1. Check environment variables first
+  // Check environment variable first
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
   }
 
-  // 2. Local development
+  // Local development
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
 
     if (hostname === "localhost" || hostname === "127.0.0.1") {
+      console.log("💻 Local development");
       return "http://localhost:5000";
     }
   }
 
-  // 3. Production default (Render backend)
+  // Production: Always use Render backend
+  console.log("🌐 Production: Using Render backend");
   return "https://youtube-clone-project-q3pd.onrender.com";
 };
 
@@ -34,7 +37,7 @@ console.log("   Backend URL:", BACKEND_URL);
 console.log("   Is HTTPS:", BACKEND_URL.startsWith("https"));
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: BACKEND_URL,
+  baseURL: BACKEND_URL, // ✅ This will be https://youtube-clone-project-q3pd.onrender.com
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
@@ -42,7 +45,6 @@ const axiosInstance: AxiosInstance = axios.create({
   withCredentials: true,
   validateStatus: (status) => status < 500,
 });
-
 // ✅ CRITICAL: Request Interceptor with aggressive cache busting
 axiosInstance.interceptors.request.use(
   (config) => {
