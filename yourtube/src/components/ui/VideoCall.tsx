@@ -1666,7 +1666,7 @@ const VideoCall = ({
       // Socket setup
       if (!isSocketConnected()) {
         console.log("🔌 Initializing socket...");
-        initializeSocket(user._id);
+        initializeSocket.initializeSocket(user._id);
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
 
