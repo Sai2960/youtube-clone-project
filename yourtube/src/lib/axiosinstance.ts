@@ -7,37 +7,23 @@ declare module "axios" {
   }
 }
 
+// ✅ NEW CODE - COPY THIS
 const getBackendURL = (): string => {
-  const removeTrailingSlash = (url: string): string => url.replace(/\/$/, "");
-
+  // 1. Check environment variables first
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return removeTrailingSlash(process.env.NEXT_PUBLIC_API_URL);
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
   }
 
-  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
-    return removeTrailingSlash(process.env.NEXT_PUBLIC_BACKEND_URL);
-  }
-
+  // 2. Local development
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
 
-    if (hostname.includes("vercel.app")) {
-      console.log("🌐 Vercel detected - using Render backend");
-      return "https://youtube-clone-project-q3pd.onrender.com";
-    }
-
-    if (hostname.startsWith("192.168.")) {
-      console.log("📱 Local network detected");
-      return `http://${hostname}:5000`;
-    }
-
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-      console.log("💻 Localhost detected");
       return "http://localhost:5000";
     }
   }
 
-  console.warn("⚠️ No hostname detected, using production backend");
+  // 3. Production default (Render backend)
   return "https://youtube-clone-project-q3pd.onrender.com";
 };
 

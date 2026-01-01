@@ -55,7 +55,7 @@ export const initializeSocket = (userId: string): Socket => {
   const isSecure = SOCKET_URL.startsWith("https");
 
   socket = io(SOCKET_URL, {
-    transports: ["polling", "websocket"], // ✅ Match backend order
+    transports: ["websocket", "polling"], // ✅ Match backend order
     upgrade: true,
     reconnection: true,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
