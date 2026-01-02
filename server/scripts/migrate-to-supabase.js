@@ -22,7 +22,8 @@ async function migrateVideos() {
       const { data, error } = await supabase.storage
         .from('youtube-videos')
         .upload(fileName, buffer, {
-          contentType: 'video/mp4'
+          contentType: 'video/mp4',
+          upsert: false // Set to true if you want to overwrite existing files
         });
 
       if (error) throw error;
@@ -33,14 +34,14 @@ async function migrateVideos() {
         .getPublicUrl(fileName);
 
       // Update database
-      video.filepath = publicUrl;s
+      video.filepath = publicUrl; // ✅ Fixed the typo
       video.videofile = publicUrl;
       video.videoLink = publicUrl;
       await video.save();
 
       console.log(`✅ Migrated: ${video.videotitle}`);
     } catch (error) {
-      console.error(`❌ Failed to migrate ${video._id}:`, error);
+      console.error(`❌ Failed to migrate ${video._id}:`, error.message);
     }
   }
 

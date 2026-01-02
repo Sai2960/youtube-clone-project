@@ -1,0 +1,9 @@
+youtube/
+node_modules/
+.env
+.env.local
+.git/
+uploads/
+invoices/
+*.md
+.vscode/
