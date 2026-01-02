@@ -60,6 +60,21 @@ export const getVideoUrl = (
 
   console.log("🎬 Processing video URL for:", video._id, "Quality:", quality);
 
+  const supabaseFields = [
+    video.videoLink,
+    video.filepath,
+    video.videofile,
+    video.videoUrl,
+  ].filter(Boolean);
+
+  for (const field of supabaseFields) {
+    const urlStr = String(field).trim();
+    if (urlStr.includes("supabase.co/storage")) {
+      console.log("✅ Using Supabase URL");
+      return urlStr;
+    }
+  }
+
   // ✅ PRIORITY 1: Check for Vercel Blob URLs FIRST (unchanged)
   if (
     video.videoLink?.includes("vercel-storage.com") ||
@@ -100,12 +115,15 @@ export const getVideoUrl = (
     const urlStr = String(field).trim();
 
     // ✅ CRITICAL FIX: If already a Cloudinary URL, return as-is
-    if (urlStr.includes("res.cloudinary.com/") && urlStr.includes("/video/upload/")) {
+    if (
+      urlStr.includes("res.cloudinary.com/") &&
+      urlStr.includes("/video/upload/")
+    ) {
       // Clean the URL but DON'T rebuild it
       const cleanUrl = urlStr
         .replace(/^http:\/\//, "https://")
         .replace(/\?t=\d+/, ""); // Remove old cache-busting timestamps
-      
+
       console.log("✅ Using existing Cloudinary URL (not rebuilding)");
       return cleanUrl;
     }
