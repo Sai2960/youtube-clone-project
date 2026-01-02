@@ -310,19 +310,19 @@ export const uploadvideo = async (req, res) => {
     // ✅ BUILD ALL QUALITY URLS
     const qualities = {
       // Mobile 3G/Slow connection (360p)
-      mobile_low: `${baseUrl}/w_640,h_360,c_limit,q_auto:low,br_500k,vc_h264,ac_aac/${publicId}.mp4`,
+      mobile_low: `${baseUrl}/${publicId}.mp4`,
 
       // Mobile 4G (480p)
-      mobile: `${baseUrl}/w_854,h_480,c_limit,q_auto:good,br_1m,vc_h264,ac_aac/${publicId}.mp4`,
+      mobile: `${baseUrl}/${publicId}.mp4`,
 
       // Desktop/WiFi (720p)
-      sd: `${baseUrl}/w_1280,h_720,c_limit,q_auto:good,br_2500k,vc_h264,ac_aac/${publicId}.mp4`,
+      sd: `${baseUrl}/${publicId}.mp4`,
 
       // Desktop High-speed (1080p)
-      hd: `${baseUrl}/w_1920,h_1080,c_limit,q_100,br_5m,vc_h264,ac_aac/${publicId}.mp4`,
+      hd: `${baseUrl}/${publicId}.mp4`,
 
       // Original (fallback)
-      original: `${baseUrl}/q_100,vc_h264,ac_aac/${publicId}.mp4`,
+      original: `${baseUrl}/${publicId}.mp4`,
     };
 
     // ✅ Default to mobile-friendly quality
@@ -330,9 +330,9 @@ export const uploadvideo = async (req, res) => {
 
     // ✅ Thumbnails for different sizes
     const thumbnails = {
-      small: `${baseUrl}/so_0,w_320,h_180,c_fill,q_auto:low/${publicId}.jpg`,
-      medium: `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`,
-      large: `${baseUrl}/so_0,w_1280,h_720,c_fill,q_100/${publicId}.jpg`,
+      small: `${baseUrl}/${publicId}.jpg`,
+      medium: `${baseUrl}/${publicId}.jpg`,
+      large: `${baseUrl}/${publicId}.jpg`,
     };
 
     const { videotitle, videodescription, videochanel } = req.body;

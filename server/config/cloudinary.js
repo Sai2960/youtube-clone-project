@@ -12,7 +12,11 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
-  timeout: 600000, // 10 minutes
+  timeout: 600000,
+  // ✅ CRITICAL FIX: Force unsigned delivery
+  sign_url: false,
+  secure_distribution: null,
+  private_cdn: false,
 });
 
 console.log("🎨 Cloudinary configured:", {
@@ -43,8 +47,10 @@ const videoStorage = new CloudinaryStorage({
       public_id: `file_${timestamp}_${randomStr}`,
       format: "mp4",
       allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
-      type: "upload", // ✅ CRITICAL FIX - Makes public
-      access_mode: "public", // ✅ CRITICAL FIX - Ensures public access
+      resource_type: "video",
+      type: "upload",
+      access_mode: "public",
+      delivery_type: "upload", // ✅ ADD THIS
       chunk_size: 6000000,
       timeout: 900000,
       transformation: [
@@ -81,8 +87,9 @@ const channelImageStorage = new CloudinaryStorage({
   params: {
     folder: "youtube-clone/channel-images",
     resource_type: "image",
-    type: "upload", // ✅ CRITICAL FIX
-    access_mode: "public", // ✅ CRITICAL FIX
+    type: "upload",
+    access_mode: "public",
+    delivery_type: "upload", // ✅ ADD THIS
     allowed_formats: ["jpg", "png", "jpeg", "gif", "webp"],
     transformation: [
       { width: 800, height: 800, crop: "limit", quality: "auto" },
@@ -96,8 +103,9 @@ const thumbnailStorage = new CloudinaryStorage({
   params: {
     folder: "youtube-clone/thumbnails",
     resource_type: "image",
-    type: "upload", // ✅ CRITICAL FIX
-    access_mode: "public", // ✅ CRITICAL FIX
+    type: "upload",
+    access_mode: "public",
+    delivery_type: "upload", // ✅ ADD THIS
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
     transformation: [
       { width: 1280, height: 720, crop: "limit", quality: "auto" },
@@ -119,6 +127,7 @@ const shortsVideoStorage = new CloudinaryStorage({
       folder: "youtube-clone/shorts/videos",
       resource_type: "auto",
       type: "upload", // ✅ CRITICAL FIX
+      delivery_type: "upload",
       access_mode: "public", // ✅ CRITICAL FIX
       allowed_formats: ["mp4", "mov", "webm"],
       chunk_size: 6000000,
