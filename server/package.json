@@ -19,7 +19,9 @@
     "fixCloudinaryUrls": "node scripts/fixCloudinaryUrls.js",
     "fixBrokenVideoUrls": "node scripts/fixBrokenVideoUrls.js",
     "fix-thumbnails": "node scripts/fix-thumbnails.js",
-    "fix-quality": "node scripts/generateQualities.js"
+    "fix-quality": "node scripts/generateQualities.js",
+    "fix-migrate-to-supabase.js": "node scripts/migrate-to-supabase.js"
+    
   },
   "keywords": [],
   "author": "",
@@ -27,6 +29,7 @@
   "type": "module",
   "dependencies": {
     "@iamtraction/google-translate": "^2.0.1",
+    "@supabase/supabase-js": "^2.89.0",
     "@vercel/blob": "^2.0.0",
     "axios": "^1.13.2",
     "bad-words": "^4.0.0",

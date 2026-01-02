@@ -281,7 +281,11 @@ router.post(
     next();
   },
 
-  uploadVideo.single("file"),
+  // ✅ Use memory storage instead of Cloudinary
+  multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 95 * 1024 * 1024 },
+  }).single("file"),
 
   (err, req, res, next) => {
     if (err) {

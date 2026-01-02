@@ -52,10 +52,17 @@ const buildCloudinaryVideoUrl = (publicId, quality = "auto") => {
 export const getVideoURL = (filepath, quality = "auto") => {
   if (!filepath) return null;
 
+  const fileStr = String(filepath).trim();
+
+  // ✅ Check if Supabase URL
+  if (fileStr.includes("supabase.co")) {
+    console.log("✅ Supabase URL detected");
+    return fileStr;
+  }
+
+  // ✅ Fallback to Cloudinary for old videos
   const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
   const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-
-  const fileStr = String(filepath).trim();
 
   // ✅ Already valid Cloudinary URL
   if (

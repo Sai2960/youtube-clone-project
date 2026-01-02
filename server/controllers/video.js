@@ -3,6 +3,7 @@ import videofiles from "../Modals/video.js";
 import path from "path";
 import User from "../Modals/User.js";
 import { toAbsoluteURL } from "../utils/urlHelper.js";
+import { supabase } from "../config/supabase.js";
 
 const getVideoURL = (filepath) => {
   if (!filepath) return null;
@@ -288,10 +289,37 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    console.log("🔍 Full Cloudinary Response:");
-    console.log(JSON.stringify(req.file, null, 2));
+    // ✅ SUPABASE: Upload video
+    const { supabase } = await import("../config/supabase.js");
+    const fileName = `${Date.now()}-${req.file.originalname}`;
+    const bucketName = process.env.SUPABASE_BUCKET || "youtube-videos";
 
-    const publicId = req.file.public_id || req.file.filename;
+    console.log("📤 Uploading to Supabase:", fileName);
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("❌ Supabase upload error:", uploadError);
+      return res.status(500).json({
+        success: false,
+        message: "Video upload failed",
+        error: uploadError.message,
+      });
+    }
+
+    // ✅ Get public URL
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+
+    console.log("✅ Video uploaded:", publicUrl);
+
+    const publicId = fileName;
 
     if (!publicId) {
       console.error("❌ NO PUBLIC_ID RETURNED FROM CLOUDINARY!");
@@ -308,31 +336,21 @@ export const uploadvideo = async (req, res) => {
     const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
 
     // ✅ BUILD ALL QUALITY URLS
+    // ✅ Supabase URLs (no quality transformations)
+    const defaultVideoUrl = publicUrl;
+
     const qualities = {
-      // Mobile 3G/Slow connection (360p)
-      mobile_low: `${baseUrl}/${publicId}.mp4`,
-
-      // Mobile 4G (480p)
-      mobile: `${baseUrl}/${publicId}.mp4`,
-
-      // Desktop/WiFi (720p)
-      sd: `${baseUrl}/${publicId}.mp4`,
-
-      // Desktop High-speed (1080p)
-      hd: `${baseUrl}/${publicId}.mp4`,
-
-      // Original (fallback)
-      original: `${baseUrl}/${publicId}.mp4`,
+      mobile_low: publicUrl,
+      mobile: publicUrl,
+      sd: publicUrl,
+      hd: publicUrl,
+      original: publicUrl,
     };
 
-    // ✅ Default to mobile-friendly quality
-    const defaultVideoUrl = qualities.mobile;
-
-    // ✅ Thumbnails for different sizes
     const thumbnails = {
-      small: `${baseUrl}/${publicId}.jpg`,
-      medium: `${baseUrl}/${publicId}.jpg`,
-      large: `${baseUrl}/${publicId}.jpg`,
+      small: publicUrl, // Supabase doesn't auto-generate thumbnails
+      medium: publicUrl,
+      large: publicUrl,
     };
 
     const { videotitle, videodescription, videochanel } = req.body;
