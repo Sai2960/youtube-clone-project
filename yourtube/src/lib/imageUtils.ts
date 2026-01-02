@@ -111,12 +111,10 @@ export const getImageUrl = (
   const urlStr = String(imagePath).trim();
 
   // ✅ Cloudinary URLs
-  if (urlStr.includes('res.cloudinary.com')) {
-    let finalUrl = urlStr.replace(/^http:\/\//, 'https://');
-    if (bustCache || forceRefresh) {
-      finalUrl = addTimestamp(finalUrl);
-    }
-    return finalUrl;
+ if (urlStr.includes('res.cloudinary.com')) {
+    return urlStr
+      .replace(/^http:\/\//, 'https://')
+      .replace(/\?t=\d+/, ""); // ✅ REMOVE old timestamps
   }
   
   // ✅ OAuth images (Google, GitHub) - keep original

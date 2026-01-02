@@ -126,8 +126,8 @@ const uploadLargeVideo = async (
     formData.append("videodescription", metadata.videodescription);
     formData.append("videochanel", metadata.videochanel);
 
-    const res = await axiosInstance.post("/video/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+const res = await axiosInstance.post("/api/video/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       timeout: 900000,
       onUploadProgress: (e: any) => {
         onProgress(Math.round((e.loaded * 100) / e.total));
