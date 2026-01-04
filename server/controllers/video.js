@@ -293,6 +293,16 @@ export const uploadvideo = async (req, res) => {
     console.log("\n📤 ===== VIDEO UPLOAD STARTED =====");
     console.log("   req.file exists:", !!req.file);
     console.log("   req.userId:", req.userId);
+    console.log(
+      "   File details:",
+      req.file
+        ? {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: `${(req.file.size / (1024 * 1024)).toFixed(2)}MB`,
+          }
+        : "No file"
+    );
 
     if (!req.file) {
       return res.status(400).json({
@@ -305,6 +315,7 @@ export const uploadvideo = async (req, res) => {
     let videoUrl = null;
     let publicId = null;
     let thumbnailUrl = null;
+    let storageType = "cloudinary"; // Default
 
     if (isSupabaseConfigured()) {
       try {
@@ -331,6 +342,7 @@ export const uploadvideo = async (req, res) => {
         videoUrl = publicUrl;
         publicId = fileName;
         thumbnailUrl = publicUrl; // Supabase doesn't auto-generate thumbnails
+        storageType = "supabase";
 
         console.log("✅ Supabase upload successful:", publicUrl);
       } catch (supabaseError) {
@@ -344,28 +356,67 @@ export const uploadvideo = async (req, res) => {
 
     // ✅ CHECK 2: Fallback to Cloudinary if Supabase not available or failed
     if (!videoUrl) {
-      console.log("📤 Uploading to Cloudinary...");
+      console.log("📤 Using Cloudinary (Supabase not configured or failed)");
 
-      // Cloudinary upload happens via multer middleware
-      // req.file should have cloudinary data
-      publicId = req.file.public_id || req.file.filename;
+      // ✅ CRITICAL: Check if req.file has Cloudinary data OR upload manually
+      if (req.file.path && req.file.path.includes("cloudinary.com")) {
+        // Already uploaded by Cloudinary multer
+        publicId = req.file.public_id || req.file.filename;
+        videoUrl = req.file.secure_url || req.file.path;
 
-      if (!publicId) {
-        return res.status(500).json({
-          success: false,
-          message: "Upload failed - no identifier returned",
+        console.log("✅ Cloudinary upload via multer:", publicId);
+      } else {
+        // Manual Cloudinary upload
+        const cloudinary = await import("../config/cloudinary.js");
+        const streamifier = await import("streamifier");
+
+        const uploadPromise = new Promise((resolve, reject) => {
+          const stream = cloudinary.cloudinary.uploader.upload_stream(
+            {
+              resource_type: "video",
+              folder: "youtube-clone/videos",
+              format: "mp4",
+              transformation: [
+                {
+                  video_codec: "h264",
+                  audio_codec: "aac",
+                  audio_frequency: 44100,
+                  bit_rate: "1m",
+                  quality: "auto:good",
+                },
+              ],
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+
+          streamifier.createReadStream(req.file.buffer).pipe(stream);
         });
+
+        const result = await uploadPromise;
+        publicId = result.public_id;
+        videoUrl = result.secure_url;
+
+        console.log("✅ Cloudinary manual upload successful:", publicId);
       }
 
+      // Generate Cloudinary thumbnail
       const CLOUDINARY_CLOUD_NAME =
         process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
       const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+      thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
 
-      const transforms = "f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good";
-      videoUrl = `${baseUrl}/${transforms}/youtube-clone/videos/${publicId}.mp4`;
-      thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${publicId}.jpg`;
+      storageType = "cloudinary";
+    }
 
-      console.log("✅ Cloudinary upload successful");
+    // ✅ Validate we have a video URL
+    if (!videoUrl || !publicId) {
+      return res.status(500).json({
+        success: false,
+        message: "Upload failed - no video URL generated",
+      });
     }
 
     // ✅ SAVE VIDEO TO DATABASE
@@ -412,15 +463,13 @@ export const uploadvideo = async (req, res) => {
 
       filename: req.file.originalname,
       filetype: req.file.mimetype,
-      filesize: req.file.size
-        ? `${(req.file.size / (1024 * 1024)).toFixed(2)} MB`
-        : "Unknown",
+      filesize: `${(req.file.size / (1024 * 1024)).toFixed(2)} MB`,
       videotype: req.file.mimetype,
       uploadedBy,
       user: uploadedBy,
       videochanel: channelName,
       channelName: channelName,
-      views: Math.floor(Math.random() * 91) + 10,
+      views: 0,
       Like: 0,
       Dislike: 0,
       likes: 0,
@@ -433,6 +482,7 @@ export const uploadvideo = async (req, res) => {
       _id: savedVideo._id,
       title: savedVideo.videotitle,
       url: videoUrl,
+      storage: storageType,
     });
 
     // Clear cache
@@ -452,7 +502,7 @@ export const uploadvideo = async (req, res) => {
       videoUrl: videoUrl,
       thumbnailUrl: thumbnailUrl,
       publicId: publicId,
-      storage: isSupabaseConfigured() ? "supabase" : "cloudinary",
+      storage: storageType,
     });
   } catch (error) {
     console.error("\n❌ VIDEO UPLOAD ERROR:", error);

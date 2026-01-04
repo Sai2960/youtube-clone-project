@@ -142,15 +142,10 @@ app.use((req, res, next) => {
 // =================== ENHANCED CORS CONFIGURATION ===================
 // Build allowed origins array
 const allowedOrigins = [
-  // Local development
   "http://localhost:3000",
   "http://localhost:3001",
-
-  // ✅ Your Vercel domains
   "https://youtube-clone-project-eosin.vercel.app",
   "https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app",
-
-  // ✅ Railway domain
   "https://youtube-clone-project-production.up.railway.app",
 ];
 
@@ -158,21 +153,17 @@ const allowedOrigins = [
 const isOriginAllowed = (origin) => {
   if (!origin) return true;
 
-  // Exact match
   if (allowedOrigins.includes(origin)) {
-    console.log("   ✅ Allowed origin (exact match):", origin);
     return true;
   }
 
-  // ✅ Allow ANY Vercel domain
+  // Allow ANY Vercel preview domain
   if (/^https:\/\/youtube-clone-project.*\.vercel\.app$/.test(origin)) {
-    console.log("   ✅ Allowed origin (Vercel domain):", origin);
     return true;
   }
 
-  // ✅ Production: be permissive
+  // Production: be permissive
   if (process.env.NODE_ENV === "production") {
-    console.log("   ✅ Production: allowing origin:", origin);
     return true;
   }
 
@@ -264,28 +255,27 @@ app.use(
     origin: function (origin, callback) {
       console.log("🔍 Express CORS check:", origin || "no origin");
 
-      // ✅ Allow requests with no origin (mobile apps, Postman)
+      // Allow requests with no origin
       if (!origin) {
         return callback(null, true);
       }
 
-      // ✅ Check if origin is allowed
+      // Check if allowed
       if (isOriginAllowed(origin)) {
         console.log("   ✅ Origin allowed");
-        return callback(null, origin); // ✅ CRITICAL: Return specific origin, not true
+        return callback(null, origin); // ✅ Return specific origin
       }
 
-      // ✅ Production: allow Vercel domains
+      // Production fallback
       if (
         process.env.NODE_ENV === "production" ||
         origin.includes("vercel.app")
       ) {
         console.log("   ✅ Production/Vercel origin allowed");
-        return callback(null, origin); // ✅ Return specific origin
+        return callback(null, origin);
       }
 
-      console.log("   ⚠️  Origin not in list, but allowing anyway");
-      callback(null, origin); // ✅ Return specific origin instead of true
+      callback(null, origin); // ✅ Allow anyway to prevent blocking
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
@@ -478,11 +468,10 @@ app.get("/uploads/videos/:filename", (req, res) => {
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // ✅ CRITICAL: Set specific origin, not wildcard
+  // Set specific origin if present
   if (origin) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   } else {
-    // Only use wildcard for requests without origin (native apps, curl, etc.)
     res.setHeader("Access-Control-Allow-Origin", "*");
   }
 
@@ -494,14 +483,13 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Max-Age", "86400");
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, Range, If-None-Match, If-Modified-Since, X-Auth-Token"
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, Range, If-None-Match, If-Modified-Since"
   );
   res.setHeader(
     "Access-Control-Expose-Headers",
-    "Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag, X-Request-Id"
+    "Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag"
   );
 
-  // ✅ CRITICAL: Handle OPTIONS preflight
   if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
