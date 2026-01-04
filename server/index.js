@@ -144,17 +144,14 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
 
-  // ✅ Vercel domains
+  // ✅ Your Vercel domains
   "https://youtube-clone-project-eosin.vercel.app",
   "https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app",
-
-  // ✅ ADD: Railway domain (for testing)
-  "https://youtube-clone-project-production.up.railway.app",
 ];
 
 // ✅ CRITICAL: Allow ANY Vercel preview domain
 const isOriginAllowed = (origin) => {
-  if (!origin) return true; // Allow no origin (mobile apps, Postman)
+  if (!origin) return true;
 
   // Exact match
   if (allowedOrigins.includes(origin)) {
@@ -162,7 +159,7 @@ const isOriginAllowed = (origin) => {
     return true;
   }
 
-  // ✅ Allow ANY Vercel domain (production or preview)
+  // ✅ Allow ANY Vercel domain
   if (/^https:\/\/youtube-clone-project.*\.vercel\.app$/.test(origin)) {
     console.log("   ✅ Allowed origin (Vercel domain):", origin);
     return true;
@@ -170,11 +167,10 @@ const isOriginAllowed = (origin) => {
 
   // ✅ Production: be permissive
   if (process.env.NODE_ENV === "production") {
-    console.log("   ⚠️  Production: allowing origin:", origin);
+    console.log("   ✅ Production: allowing origin:", origin);
     return true;
   }
 
-  console.log("   ❌ Origin blocked:", origin);
   return false;
 };
 

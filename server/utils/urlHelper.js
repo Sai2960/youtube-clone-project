@@ -1,9 +1,19 @@
 // server/utils/urlHelper.js - COMPLETE FIXED VERSION
 
+// ✅ FIXED: Railway-compatible URL detection
 const getBackendURL = () => {
-  return (
-    process.env.BASE_URL || "https://youtube-clone-project-q3pd.onrender.com"
-  );
+  // Railway provides RAILWAY_PUBLIC_DOMAIN automatically
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+
+  // Or use manually set BASE_URL
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL;
+  }
+
+  // Fallback for local development
+  return "http://localhost:5000";
 };
 
 const BASE_URL = getBackendURL();
