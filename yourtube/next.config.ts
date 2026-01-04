@@ -37,6 +37,15 @@ const nextConfig = {
         protocol: "https",
         hostname: "blob.vercel-storage.com",
       },
+      // ✅ ADD: Supabase storage domain
+      {
+        protocol: "https",
+        hostname: "ejzqutnycnagdtfxkczu.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
     ],
   },
 
