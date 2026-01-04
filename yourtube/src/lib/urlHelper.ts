@@ -38,10 +38,6 @@ const buildCloudinaryVideoUrl = (publicId: string, quality: string): string => {
   // Return plain URL without transformations
   return `${CLOUDINARY_BASE}/${publicId}.mp4`;
 };
-/**
- * ✅ FIXED VIDEO URL FUNCTION - Maintains all original features
- * Priority order: Vercel Blob → Cloudinary → Other URLs
- */
 export const getVideoUrl = (
   video: any,
   quality:
@@ -60,6 +56,7 @@ export const getVideoUrl = (
 
   console.log("🎬 Processing video URL for:", video._id, "Quality:", quality);
 
+  // ✅ PRIORITY 1: Check for Supabase URLs FIRST
   const supabaseFields = [
     video.videoLink,
     video.filepath,
@@ -75,7 +72,7 @@ export const getVideoUrl = (
     }
   }
 
-  // ✅ PRIORITY 1: Check for Vercel Blob URLs FIRST (unchanged)
+  // ✅ PRIORITY 2: Check for Vercel Blob URLs
   if (
     video.videoLink?.includes("vercel-storage.com") ||
     video.videoLink?.includes("blob.vercel-storage.com")
@@ -92,7 +89,7 @@ export const getVideoUrl = (
     return video.filepath;
   }
 
-  // ✅ PRIORITY 2: Handle videofilename field (unchanged)
+  // ✅ PRIORITY 3: Handle videofilename field (Cloudinary)
   if (
     video.videofilename &&
     video.videofilename.includes("youtube-clone/videos/")
@@ -102,7 +99,7 @@ export const getVideoUrl = (
     return url;
   }
 
-  // ✅ PRIORITY 3: Process Cloudinary URLs (FIXED)
+  // ✅ PRIORITY 4: Process Cloudinary URLs
   const cloudinaryFields = [
     video.filepath,
     video.videofile,
@@ -114,21 +111,21 @@ export const getVideoUrl = (
   for (const field of cloudinaryFields) {
     const urlStr = String(field).trim();
 
-    // ✅ CRITICAL FIX: If already a Cloudinary URL, return as-is
+    // If already a Cloudinary URL, return as-is
     if (
       urlStr.includes("res.cloudinary.com/") &&
       urlStr.includes("/video/upload/")
     ) {
-      // Clean the URL but DON'T rebuild it
       const cleanUrl = urlStr
         .replace(/^http:\/\//, "https://")
-        .replace(/\?t=\d+/, ""); // Remove old cache-busting timestamps
+        .replace(/\?t=\d+/, "");
 
-      console.log("✅ Using existing Cloudinary URL (not rebuilding)");
+      console.log("✅ Using existing Cloudinary URL");
       return cleanUrl;
     }
   }
-  // ✅ PRIORITY 4: Try to extract public_id pattern from any field (unchanged)
+
+  // ✅ PRIORITY 5: Try to extract public_id pattern
   for (const field of cloudinaryFields) {
     const urlStr = String(field).trim();
     const publicIdMatch = urlStr.match(
@@ -143,7 +140,7 @@ export const getVideoUrl = (
     }
   }
 
-  // ✅ PRIORITY 5: Handle non-Cloudinary URLs (unchanged - legacy support)
+  // ✅ PRIORITY 6: Handle non-Cloudinary URLs
   const rawUrl =
     video.filepath ||
     video.videoLink ||
@@ -207,7 +204,7 @@ export const getVideoUrl = (
 export const getThumbnailUrl = (video: any): string | null => {
   if (!video) return null;
 
-  // Check explicit thumbnail fields
+  // ✅ Check for Supabase thumbnails first
   const explicitThumbs = [
     video.thumbnailUrl,
     video.thumbnail,
@@ -218,6 +215,12 @@ export const getThumbnailUrl = (video: any): string | null => {
   for (const thumb of explicitThumbs) {
     const thumbStr = String(thumb).trim();
 
+    // Supabase URLs
+    if (thumbStr.includes("supabase.co/storage")) {
+      return thumbStr;
+    }
+
+    // Cloudinary URLs
     if (
       thumbStr.includes("res.cloudinary.com") &&
       /\.(jpg|png|jpeg|webp)$/i.test(thumbStr)
@@ -232,7 +235,7 @@ export const getThumbnailUrl = (video: any): string | null => {
     }
   }
 
-  // Generate from videofilename
+  // Generate from videofilename (Cloudinary only)
   if (
     video.videofilename &&
     video.videofilename.includes("youtube-clone/videos/")
@@ -240,7 +243,7 @@ export const getThumbnailUrl = (video: any): string | null => {
     return `${CLOUDINARY_BASE}/so_0,w_640,h_360,c_fill,q_auto:good/${video.videofilename}.jpg`;
   }
 
-  // Generate from video URL
+  // Generate from video URL (Cloudinary only)
   const videoSources = [
     video.filepath,
     video.videofile,
@@ -251,6 +254,12 @@ export const getThumbnailUrl = (video: any): string | null => {
   for (const source of videoSources) {
     try {
       const urlStr = String(source).trim();
+
+      // Skip Supabase URLs for thumbnail generation
+      if (urlStr.includes("supabase.co")) {
+        continue;
+      }
+
       const cleanUrlStr = urlStr.replace(/\/v\d+\//g, "/");
       const publicIdMatch = cleanUrlStr.match(/youtube-clone\/videos\/[^.?]+/i);
 
