@@ -278,7 +278,7 @@ export default function HistoryContent() {
 
 const getShortThumbnail = (short: Short) => {
   if (short?.thumbnailUrl) {
-    const backendUrl = "https://youtube-clone-project-q3pd.onrender.com";
+    const backendUrl = "https://youtube-clone-project-production.up.railway.app";
 
     if (short.thumbnailUrl.startsWith('http')) {
       return short.thumbnailUrl;
@@ -289,7 +289,7 @@ const getShortThumbnail = (short: Short) => {
 };
 const getShortUrl = (short: Short) => {
   if (short?.videoUrl) {
-    const backendUrl = "https://youtube-clone-project-q3pd.onrender.com";
+    const backendUrl = "https://youtube-clone-project-production.up.railway.app";
     
     if (short.videoUrl.startsWith('http')) {
       return short.videoUrl;

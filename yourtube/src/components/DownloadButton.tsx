@@ -75,7 +75,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
 
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://youtube-clone-project-q3pd.onrender.com";
+        "https://youtube-clone-project-production.up.railway.app";
 
       // ✅ Record download
       const recordResponse = await fetch(

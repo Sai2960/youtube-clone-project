@@ -10,7 +10,7 @@ interface OTPModalProps {
   onSuccess: () => void;
 }
 
-const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-q3pd.onrender.com";
+const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || "https://youtube-clone-project-production.up.railway.app";
 
 export const OTPModal: React.FC<OTPModalProps> = ({
   isOpen,

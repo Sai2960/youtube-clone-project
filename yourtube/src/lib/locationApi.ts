@@ -4,7 +4,7 @@ import { applyTheme } from "./theme";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://youtube-clone-project-q3pd.onrender.com";
+  "https://youtube-clone-project-production.up.railway.app";
 
 export interface LocationData {
   success: boolean;

@@ -285,7 +285,7 @@ const WatchPage = () => {
         hostname.includes("vercel.app") ||
         hostname.includes("your-domain.com")
       ) {
-        return "https://youtube-clone-project-q3pd.onrender.com";
+        return "https://youtube-clone-project-production.up.railway.app";
       }
 
       // Local development
@@ -295,7 +295,7 @@ const WatchPage = () => {
     }
 
     // Default to HTTPS backend
-    return "https://youtube-clone-project-q3pd.onrender.com";
+    return "https://youtube-clone-project-production.up.railway.app";
   };
 
   // ✅ Share modal handlers

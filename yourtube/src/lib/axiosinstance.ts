@@ -40,7 +40,7 @@ console.log("   Is HTTPS:", BACKEND_URL.startsWith("https"));
 console.log("   Environment:", process.env.NODE_ENV || "development");
 // ✅ Create axios instance with production-ready configuration
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: BACKEND_URL, // Will be https://youtube-clone-project-q3pd.onrender.com in production
+  baseURL: BACKEND_URL, // Will be https://youtube-clone-project-production.up.railway.app in production
   timeout: 30000, // 30 seconds default timeout
   headers: {
     "Content-Type": "application/json",

@@ -142,7 +142,7 @@ const Home: NextPage = () => {
         const response = await fetch(
           `${
             process.env.NEXT_PUBLIC_API_URL ||
-            "https://youtube-clone-project-q3pd.onrender.com"
+            "https://youtube-clone-project-production.up.railway.app"
           }/api/health`,
           {
             signal: controller.signal,
@@ -214,7 +214,7 @@ const Home: NextPage = () => {
         const response = await fetch(
           `${
             process.env.NEXT_PUBLIC_API_URL ||
-            "https://youtube-clone-project-q3pd.onrender.com"
+            "https://youtube-clone-project-production.up.railway.app"
           }/api/health`,
           { signal: controller.signal }
         ).catch(() => null);
@@ -439,7 +439,7 @@ const Home: NextPage = () => {
 
   // REPLACE lines 54-68 (the getVideoUrl function) with:
   const getVideoUrl = (video: Video) => {
-    const backend = "https://youtube-clone-project-q3pd.onrender.com";
+    const backend = "https://youtube-clone-project-production.up.railway.app";
 
     // Priority order for video URL
     if (video?.videofilename) {
@@ -482,7 +482,7 @@ const Home: NextPage = () => {
         );
         return video.thumbnailUrl;
       }
-      const backend = "https://youtube-clone-project-q3pd.onrender.com";
+      const backend = "https://youtube-clone-project-production.up.railway.app";
       return `${backend}${video.thumbnailUrl}`;
     }
 
@@ -494,7 +494,7 @@ const Home: NextPage = () => {
         );
         return video.thumbnail;
       }
-      const backend = "https://youtube-clone-project-q3pd.onrender.com";
+      const backend = "https://youtube-clone-project-production.up.railway.app";
       return `${backend}${video.thumbnail}`;
     }
 
@@ -502,7 +502,7 @@ const Home: NextPage = () => {
       if (video.videothumbnail.startsWith("http")) {
         return video.videothumbnail;
       }
-      const backend = "https://youtube-clone-project-q3pd.onrender.com";
+      const backend = "https://youtube-clone-project-production.up.railway.app";
       return `${backend}${video.videothumbnail}`;
     }
 
@@ -510,7 +510,7 @@ const Home: NextPage = () => {
       if (video.videothumb.startsWith("http")) {
         return video.videothumb;
       }
-      const backend = "https://youtube-clone-project-q3pd.onrender.com";
+      const backend = "https://youtube-clone-project-production.up.railway.app";
       return `${backend}${video.videothumb}`;
     }
 

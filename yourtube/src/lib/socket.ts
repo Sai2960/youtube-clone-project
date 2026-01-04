@@ -23,7 +23,7 @@ const getSocketURL = (): string => {
     return envURL;
   }
 
-  const PRODUCTION_URL = "https://youtube-clone-project-q3pd.onrender.com";
+  const PRODUCTION_URL = "https://youtube-clone-project-production.up.railway.app";
   const hostname = window.location.hostname;
 
   // ✅ Local development detection

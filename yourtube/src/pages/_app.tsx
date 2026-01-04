@@ -17,7 +17,7 @@ import { initKeepAlive } from "@/lib/keepAlive";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://youtube-clone-project-q3pd.onrender.com";
+  "https://youtube-clone-project-production.up.railway.app";
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = ["/login", "/signup"];

@@ -71,7 +71,7 @@ const ChannelVideos: React.FC<ChannelVideosProps> = ({
 
 const getBackendUrl = () => {
   // Always use environment variable
-  return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://youtube-clone-project-q3pd.onrender.com';
+  return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://youtube-clone-project-production.up.railway.app';
 };
 const getVideoUrl = (video: Video) => {
   return getVideoUrlHelper(video) || '/video/vdo.mp4';

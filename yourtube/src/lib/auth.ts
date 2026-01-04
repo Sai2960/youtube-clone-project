@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = "https://youtube-clone-project-q3pd.onrender.com";
+const API_URL = "https://youtube-clone-project-production.up.railway.app";
 
 
 
