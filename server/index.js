@@ -19,8 +19,10 @@ dotenv.config({ path: envPath });
 
 // Set BASE_URL if not provided
 if (!process.env.BASE_URL) {
-  if (process.env.RENDER) {
-    process.env.BASE_URL = "https://youtube-clone-project-q3pd.onrender.com";
+  if (process.env.RAILWAY_STATIC_URL || process.env.RAILWAY_PUBLIC_DOMAIN) {
+    process.env.BASE_URL = `https://${
+      process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL
+    }`;
   } else {
     process.env.BASE_URL = "http://localhost:5000";
   }
@@ -147,6 +149,9 @@ const allowedOrigins = [
   // ✅ Your Vercel domains
   "https://youtube-clone-project-eosin.vercel.app",
   "https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app",
+
+  // ✅ Railway domain
+  "https://youtube-clone-project-production.up.railway.app",
 ];
 
 // ✅ CRITICAL: Allow ANY Vercel preview domain
