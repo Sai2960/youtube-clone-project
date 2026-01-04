@@ -3,28 +3,39 @@ import videofiles from "../Modals/video.js";
 import path from "path";
 import User from "../Modals/User.js";
 import { toAbsoluteURL } from "../utils/urlHelper.js";
-import { supabase } from "../config/supabase.js";
+import {
+  supabase,
+  bucketName,
+  isSupabaseConfigured,
+} from "../config/supabase.js";
 
 const getVideoURL = (filepath) => {
   if (!filepath) return null;
 
+  const fileStr = String(filepath).trim();
+
+  // ✅ PRIORITY 1: Check if Supabase URL
+  if (fileStr.includes("supabase.co/storage")) {
+    console.log("✅ Supabase URL detected");
+    return fileStr;
+  }
+
+  // ✅ PRIORITY 2: Fallback to Cloudinary (for old videos)
   const CLOUDINARY_CLOUD_NAME =
     process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
   const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
 
-  const fileStr = String(filepath).trim();
-  // ✅ CRITICAL FIX: Handle Cloudinary URLs with audio
+  // Already valid Cloudinary URL
   if (fileStr.includes("res.cloudinary.com") && fileStr.includes("/upload/")) {
     let url = fileStr.replace(/^http:\/\//, "https://").replace(/:\d+/, "");
 
-    // ✅ Add audio transformations if missing
+    // Add audio transformations if missing
     if (!url.includes("ac_aac") && !url.includes("audio")) {
       const urlParts = url.split("/upload/");
       if (urlParts.length === 2) {
         const transforms = "f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good";
         url = `${urlParts[0]}/upload/${transforms}/${urlParts[1]}`;
 
-        // Ensure .mp4 extension
         if (!url.endsWith(".mp4")) {
           url = url.replace(/\.[^.]+$/, ".mp4");
         }
@@ -42,7 +53,7 @@ const getVideoURL = (filepath) => {
     return `${CLOUDINARY_BASE}/${transforms}/youtube-clone/videos/${fileId}.mp4`;
   }
 
-  // ✅ Reject invalid URLs
+  // Reject invalid URLs
   if (
     fileStr.includes("localhost") ||
     fileStr.includes(":5000") ||
@@ -61,7 +72,8 @@ const getImageURL = (imagePath) => {
   if (!imagePath) return null;
 
   const BASE_URL =
-    process.env.BASE_URL || "https://youtube-clone-project-production.up.railway.app";
+    process.env.BASE_URL ||
+    "https://youtube-clone-project-production.up.railway.app";
 
   // Already full URL
   if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
@@ -289,70 +301,74 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    // ✅ SUPABASE: Upload video
-    const { supabase } = await import("../config/supabase.js");
-    const fileName = `${Date.now()}-${req.file.originalname}`;
-    const bucketName = process.env.SUPABASE_BUCKET || "youtube-videos";
+    // ✅ CHECK 1: Try Supabase first (if configured)
+    let videoUrl = null;
+    let publicId = null;
+    let thumbnailUrl = null;
 
-    console.log("📤 Uploading to Supabase:", fileName);
+    if (isSupabaseConfigured()) {
+      try {
+        console.log("📤 Uploading to Supabase...");
+        const fileName = `${Date.now()}-${req.file.originalname}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(fileName, req.file.buffer, {
-        contentType: req.file.mimetype,
-        upsert: false,
-      });
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(bucketName)
+          .upload(fileName, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false,
+          });
 
-    if (uploadError) {
-      console.error("❌ Supabase upload error:", uploadError);
-      return res.status(500).json({
-        success: false,
-        message: "Video upload failed",
-        error: uploadError.message,
-      });
+        if (uploadError) {
+          console.error("❌ Supabase upload error:", uploadError);
+          throw uploadError;
+        }
+
+        // Get public URL
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+
+        videoUrl = publicUrl;
+        publicId = fileName;
+        thumbnailUrl = publicUrl; // Supabase doesn't auto-generate thumbnails
+
+        console.log("✅ Supabase upload successful:", publicUrl);
+      } catch (supabaseError) {
+        console.error(
+          "❌ Supabase failed, falling back to Cloudinary:",
+          supabaseError.message
+        );
+        // Fall through to Cloudinary
+      }
     }
 
-    // ✅ Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+    // ✅ CHECK 2: Fallback to Cloudinary if Supabase not available or failed
+    if (!videoUrl) {
+      console.log("📤 Uploading to Cloudinary...");
 
-    console.log("✅ Video uploaded:", publicUrl);
+      // Cloudinary upload happens via multer middleware
+      // req.file should have cloudinary data
+      publicId = req.file.public_id || req.file.filename;
 
-    const publicId = fileName;
+      if (!publicId) {
+        return res.status(500).json({
+          success: false,
+          message: "Upload failed - no identifier returned",
+        });
+      }
 
-    if (!publicId) {
-      console.error("❌ NO PUBLIC_ID RETURNED FROM CLOUDINARY!");
-      return res.status(500).json({
-        success: false,
-        message: "Upload failed - Cloudinary did not return public_id",
-      });
+      const CLOUDINARY_CLOUD_NAME =
+        process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
+      const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+
+      const transforms = "f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good";
+      videoUrl = `${baseUrl}/${transforms}/youtube-clone/videos/${publicId}.mp4`;
+      thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${publicId}.jpg`;
+
+      console.log("✅ Cloudinary upload successful");
     }
 
-    console.log("✅ Exact public_id from Cloudinary:", publicId);
-
-    const CLOUDINARY_CLOUD_NAME =
-      process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
-    const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-
-    // ✅ BUILD ALL QUALITY URLS
-    // ✅ Supabase URLs (no quality transformations)
-    const defaultVideoUrl = publicUrl;
-
-    const qualities = {
-      mobile_low: publicUrl,
-      mobile: publicUrl,
-      sd: publicUrl,
-      hd: publicUrl,
-      original: publicUrl,
-    };
-
-    const thumbnails = {
-      small: publicUrl, // Supabase doesn't auto-generate thumbnails
-      medium: publicUrl,
-      large: publicUrl,
-    };
-
+    // ✅ SAVE VIDEO TO DATABASE
     const { videotitle, videodescription, videochanel } = req.body;
     const uploadedBy = req.userId;
 
@@ -378,69 +394,51 @@ export const uploadvideo = async (req, res) => {
       videodescription?.trim() ||
       `Watch this amazing video about ${title}. Don't forget to like and subscribe!`;
 
-    const views = Math.floor(Math.random() * 91) + 10;
-    const likes = Math.floor(views * 0.075);
-    const dislikes = Math.floor(views * 0.01);
-
-    // ✅ Create video document with ALL quality URLs
     const newVideo = new videofiles({
       videotitle: title,
       videodescription: autoDescription,
       videofilename: publicId,
 
-      // ✅ Default URLs (mobile-friendly)
-      filepath: defaultVideoUrl,
-      videofile: defaultVideoUrl,
-      videoLink: defaultVideoUrl,
-      videoUrl: defaultVideoUrl,
+      // Store SAME URL in all fields
+      filepath: videoUrl,
+      videofile: videoUrl,
+      videoLink: videoUrl,
+      videoUrl: videoUrl,
 
-      // ✅ ALL QUALITY VERSIONS
-      qualities: qualities,
-
-      // ✅ ALL THUMBNAIL SIZES
-      thumbnail: thumbnails.medium,
-      videothumbnail: thumbnails.medium,
-      thumbnailUrl: thumbnails.medium,
-      thumbnails: thumbnails,
+      // Thumbnails
+      thumbnail: thumbnailUrl,
+      videothumbnail: thumbnailUrl,
+      thumbnailUrl: thumbnailUrl,
 
       filename: req.file.originalname,
       filetype: req.file.mimetype,
-      filesize: req.file.bytes
-        ? `${(req.file.bytes / (1024 * 1024)).toFixed(2)} MB`
+      filesize: req.file.size
+        ? `${(req.file.size / (1024 * 1024)).toFixed(2)} MB`
         : "Unknown",
       videotype: req.file.mimetype,
       uploadedBy,
       user: uploadedBy,
       videochanel: channelName,
       channelName: channelName,
-      views: views,
-      Like: likes,
-      Dislike: dislikes,
-      likes: likes,
-      dislikes: dislikes,
+      views: Math.floor(Math.random() * 91) + 10,
+      Like: 0,
+      Dislike: 0,
+      likes: 0,
+      dislikes: 0,
     });
 
     const savedVideo = await newVideo.save();
 
-    console.log("✅ Video saved with multiple qualities:", {
+    console.log("✅ Video saved:", {
       _id: savedVideo._id,
       title: savedVideo.videotitle,
-      publicId: savedVideo.videofilename,
-      defaultUrl: defaultVideoUrl,
-      hasQualities: !!savedVideo.qualities,
+      url: videoUrl,
     });
 
-    await savedVideo.populate({
-      path: "uploadedBy",
-      select: "name email channelname image",
-      options: { strictPopulate: false },
-    });
-
-    // ✅ Clear cache
+    // Clear cache
     try {
       const { clearCachePattern } = await import("../middleware/cache.js");
       clearCachePattern(/\/video/);
-      console.log("✅ Video cache cleared");
     } catch (e) {
       console.log("⚠️ Cache clear skipped:", e.message);
     }
@@ -449,24 +447,15 @@ export const uploadvideo = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Video uploaded successfully with multiple qualities",
+      message: "Video uploaded successfully",
       video: savedVideo,
-      videoUrl: defaultVideoUrl,
-      qualities: qualities,
-      thumbnails: thumbnails,
+      videoUrl: videoUrl,
+      thumbnailUrl: thumbnailUrl,
       publicId: publicId,
-      cloudinaryData: {
-        secure_url: req.file.secure_url,
-        public_id: publicId,
-        format: req.file.format,
-        bytes: req.file.bytes,
-        duration: req.file.duration,
-      },
+      storage: isSupabaseConfigured() ? "supabase" : "cloudinary",
     });
   } catch (error) {
-    console.error("\n❌ VIDEO UPLOAD ERROR:");
-    console.error("   Message:", error.message);
-    console.error("   Stack:", error.stack);
+    console.error("\n❌ VIDEO UPLOAD ERROR:", error);
 
     res.status(500).json({
       success: false,
