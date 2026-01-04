@@ -143,15 +143,13 @@ const allowedOrigins = [
   // Local development
   "http://localhost:3000",
   "http://localhost:3001",
-  "http://192.168.0.181:3000",
-  "http://127.0.0.1:3000",
 
-  // ✅ ALL Vercel domains (add YOUR specific ones)
+  // ✅ Vercel domains
   "https://youtube-clone-project-eosin.vercel.app",
   "https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app",
 
-  // ✅ Add more Vercel preview URLs if needed
-  // "https://youtube-clone-project-abc123.vercel.app",
+  // ✅ ADD: Railway domain (for testing)
+  "https://youtube-clone-project-production.up.railway.app",
 ];
 
 // ✅ CRITICAL: Allow ANY Vercel preview domain
