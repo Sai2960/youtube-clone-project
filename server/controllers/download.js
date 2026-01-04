@@ -752,7 +752,7 @@ export const getUserDownloads = async (req, res) => {
     const baseUrl =
       process.env.BASE_URL ||
       process.env.BACKEND_URL ||
-      "https://youtube-clone-project-q3pd.onrender.com";
+      "https://youtube-clone-project-production.up.railway.app";
 
     const enhancedDownloads = downloads.map((download) => ({
       ...download,

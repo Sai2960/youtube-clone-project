@@ -470,7 +470,7 @@ router.get("/channel/:id", async (req, res) => {
 
     // ✅ CRITICAL FIX: Construct absolute URLs
     const BASE_URL =
-      process.env.BASE_URL || "https://youtube-clone-project-q3pd.onrender.com";
+      process.env.BASE_URL || "https://youtube-clone-project-production.up.railway.app";
 
     const formatImageURL = (imagePath) => {
       if (!imagePath) return null;

@@ -17,7 +17,7 @@ services:
         value: 5000
       
       - key: BASE_URL
-        value: https://youtube-clone-project-q3pd.onrender.com
+        value: https://youtube-clone-project-production.up.railway.app
       
       # Authentication (set manually in Render dashboard)
       - key: JWT_SECRET

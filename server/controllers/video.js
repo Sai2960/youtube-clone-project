@@ -61,7 +61,7 @@ const getImageURL = (imagePath) => {
   if (!imagePath) return null;
 
   const BASE_URL =
-    process.env.BASE_URL || "https://youtube-clone-project-q3pd.onrender.com";
+    process.env.BASE_URL || "https://youtube-clone-project-production.up.railway.app";
 
   // Already full URL
   if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
