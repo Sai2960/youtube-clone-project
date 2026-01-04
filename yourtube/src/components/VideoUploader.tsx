@@ -337,14 +337,19 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       formData.append("videodescription", videoDescription);
       formData.append("videochanel", channelName);
 
-      console.log("📤 Uploading to:", "/video/upload"); // ✅ Changed from /api/video/upload
+      console.log("📤 Uploading to: /video/upload");
+      console.log("📊 Upload details:", {
+        filename: videoFile.name,
+        size: `${fileSizeMB.toFixed(2)}MB`,
+        title: videoTitle,
+      });
 
       const res = await axiosInstance.post("/video/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        timeout: 600000,
-        withCredentials: true, // ✅ Explicit
+        timeout: 600000, // 10 minutes
+        withCredentials: true,
         onUploadProgress: (e: any) => {
           const progress = Math.round((e.loaded * 100) / e.total);
           console.log(`📊 Upload progress: ${progress}%`);
@@ -357,6 +362,8 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       if (res.data.success) {
         setUploadComplete(true);
         toast.success("🎉 Video uploaded successfully!");
+
+        // Wait 2 seconds then reload
         setTimeout(() => {
           resetForm();
           window.location.reload();
@@ -369,7 +376,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
 
       let errorMessage = "Upload failed";
 
-      // ✅ Enhanced error detection
+      // Enhanced error detection
       if (error.code === "ERR_NETWORK") {
         errorMessage =
           "Network error: Cannot reach server. Check your internet connection.";
@@ -380,6 +387,11 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         errorMessage = "Upload endpoint not found. Server may not be running.";
       } else if (error.response?.status === 413) {
         errorMessage = "File too large. Maximum is 100MB.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Authentication failed. Please log in again.";
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.userMessage) {
