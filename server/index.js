@@ -1095,3 +1095,5 @@ console.log("   ✓ OTP Services");
 console.log("   ✓ Report System");
 console.log("   ✓ Cron Jobs");
 console.log("\n🎉 YouTube Clone Backend Ready!\n");
+
+export default app;
