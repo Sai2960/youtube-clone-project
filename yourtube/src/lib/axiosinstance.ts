@@ -1,43 +1,29 @@
-// src/lib/axiosinstance.ts - FULLY MERGED AND FIXED VERSION
+// src/lib/axiosinstance.ts - HARDCODED RAILWAY URL
 import axios, { AxiosInstance } from "axios";
 
-declare module "axios" {
-  export interface AxiosRequestConfig {
-    timeout?: number;
-  }
-}
-// ✅ ENHANCED: Smart backend URL detection with fallback
+// ✅ HARDCODED RAILWAY URL - NO ENV VAR NEEDED
 const getBackendURL = (): string => {
-  // Priority 1: Environment variable
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    const cleanURL = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
-    console.log("🔧 Using environment variable:", cleanURL);
-    return cleanURL;
-  }
-
-  // Priority 2: Local development
+  // Local development
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
-
+    
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-      console.log("💻 Local development detected");
+      console.log("💻 Local development");
       return "http://localhost:5000";
     }
   }
-
-  // ✅ CRITICAL: Use Railway backend (NOT Render!)
-  const RAILWAY_BACKEND = "https://youtube-clone-project-production.up.railway.app";
-  console.log("🌐 Production: Using Railway backend");
-  return RAILWAY_BACKEND;
+  
+  // ✅ ALWAYS use Railway in production
+  const RAILWAY_URL = "https://youtube-clone-project-production.up.railway.app";
+  console.log("🌐 Using Railway backend:", RAILWAY_URL);
+  return RAILWAY_URL;
 };
 
 const BACKEND_URL: string = getBackendURL();
 
-console.log("🔧 Axios Configuration:");
-console.log("   Backend URL:", BACKEND_URL);
-console.log("   Is HTTPS:", BACKEND_URL.startsWith("https"));
+console.log("🔧 Axios Backend URL:", BACKEND_URL);
 
-// ✅ Create axios instance
+// Create axios instance
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: BACKEND_URL,
   timeout: 30000,
@@ -50,8 +36,7 @@ const axiosInstance: AxiosInstance = axios.create({
   maxBodyLength: Infinity,
 });
 
-
-// ✅ CRITICAL: Request Interceptor with comprehensive handling
+// Request Interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
     // Extended timeout for uploads/videos
@@ -95,6 +80,7 @@ axiosInstance.interceptors.request.use(
     console.log("📤 Request:", {
       method: config.method?.toUpperCase(),
       url: config.url,
+      fullURL: `${BACKEND_URL}${config.url}`,
       hasAuth: !!config.headers.Authorization,
     });
 
@@ -106,7 +92,7 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// ✅ FEATURE 12: Specialized upload error handler
+// Response Interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
     console.log("✅ API Response:", {
@@ -126,6 +112,7 @@ axiosInstance.interceptors.response.use(
       statusText: error.response?.statusText,
       message: error.response?.data?.message || error.message,
       code: error.code,
+      backendURL: BACKEND_URL,
     });
 
     // Handle 401 Unauthorized
@@ -144,6 +131,6 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-// ✅ Export configured axios instance and backend URL
+
 export default axiosInstance;
 export { BACKEND_URL };
