@@ -13,10 +13,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
   timeout: 600000,
-  // ✅ CRITICAL FIX: Force unsigned delivery
-  sign_url: false,
-  secure_distribution: null,
-  private_cdn: false,
+  // ✅ Remove sign_url, secure_distribution, private_cdn
 });
 
 console.log("🎨 Cloudinary configured:", {
