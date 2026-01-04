@@ -126,8 +126,8 @@ const uploadLargeVideo = async (
     formData.append("videodescription", metadata.videodescription);
     formData.append("videochanel", metadata.videochanel);
 
-const res = await axiosInstance.post("/api/video/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+    const res = await axiosInstance.post("/api/video/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
       timeout: 900000,
       onUploadProgress: (e: any) => {
         onProgress(Math.round((e.loaded * 100) / e.total));
@@ -319,7 +319,6 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     const fileSizeMB = videoFile.size / (1024 * 1024);
     console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
 
-    // ✅ CRITICAL: Block oversized files
     if (fileSizeMB > 100) {
       toast.error(
         `File is ${fileSizeMB.toFixed(0)}MB. Maximum is 100MB for free tier.`,
@@ -338,14 +337,22 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       formData.append("videodescription", videoDescription);
       formData.append("videochanel", channelName);
 
-      // ✅ Use /api/video/upload (will be created next)
-      const res = await axiosInstance.post("/api/video/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      console.log("📤 Uploading to:", "/video/upload"); // ✅ Changed from /api/video/upload
+
+      const res = await axiosInstance.post("/video/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
         timeout: 600000,
+        withCredentials: true, // ✅ Explicit
         onUploadProgress: (e: any) => {
-          setUploadProgress(Math.round((e.loaded * 100) / e.total));
+          const progress = Math.round((e.loaded * 100) / e.total);
+          console.log(`📊 Upload progress: ${progress}%`);
+          setUploadProgress(progress);
         },
       });
+
+      console.log("✅ Upload response:", res.data);
 
       if (res.data.success) {
         setUploadComplete(true);
@@ -354,16 +361,29 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           resetForm();
           window.location.reload();
         }, 2000);
+      } else {
+        throw new Error(res.data.message || "Upload failed");
       }
     } catch (error: any) {
       console.error("❌ Upload error:", error);
 
       let errorMessage = "Upload failed";
 
-      if (error.response?.status === 413) {
+      // ✅ Enhanced error detection
+      if (error.code === "ERR_NETWORK") {
+        errorMessage =
+          "Network error: Cannot reach server. Check your internet connection.";
+      } else if (error.message?.includes("CORS")) {
+        errorMessage =
+          "CORS error: Server configuration issue. Contact support.";
+      } else if (error.response?.status === 404) {
+        errorMessage = "Upload endpoint not found. Server may not be running.";
+      } else if (error.response?.status === 413) {
         errorMessage = "File too large. Maximum is 100MB.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+      } else if (error.userMessage) {
+        errorMessage = error.userMessage;
       } else if (error.message) {
         errorMessage = error.message;
       }

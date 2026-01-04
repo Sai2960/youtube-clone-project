@@ -47,6 +47,8 @@ const axiosInstance: AxiosInstance = axios.create({
   },
   withCredentials: true, // Important for cookies and auth
   validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity,
 });
 // ✅ CRITICAL: Request Interceptor with comprehensive handling
 axiosInstance.interceptors.request.use(
@@ -111,10 +113,10 @@ axiosInstance.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-// ✅ Response Interceptor with comprehensive error handling
+// ✅ FEATURE 12: Specialized upload error handler
 axiosInstance.interceptors.response.use(
   (response) => {
-    // ✅ FEATURE 6: Response logging for debugging
+    // Success handler (keep existing code)
     console.log("✅ API Response:", {
       url: response.config.url,
       status: response.status,
@@ -125,7 +127,7 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    // ✅ FEATURE 7: Detailed error logging
+    // ✅ Enhanced error logging
     console.error("❌ API Error:", {
       url: error.config?.url,
       method: error.config?.method,
@@ -136,7 +138,31 @@ axiosInstance.interceptors.response.use(
       timestamp: new Date().toISOString(),
     });
 
-    // ✅ FEATURE 8: Network error detection
+    // ✅ CRITICAL: Handle CORS-specific upload errors
+    if (error.code === "ERR_NETWORK" && error.config?.url?.includes("upload")) {
+      console.error("🚨 UPLOAD CORS ERROR DETECTED");
+      console.error("   This is likely a CORS configuration issue");
+      console.error("   Backend must return specific origin, not wildcard");
+      console.error("   Current backend:", BACKEND_URL);
+
+      // Provide helpful error message
+      error.userMessage =
+        "Upload failed due to CORS policy. Please check backend configuration.";
+    }
+    // ✅ Handle 404 errors for uploads
+    if (
+      error.response?.status === 404 &&
+      error.config?.url?.includes("upload")
+    ) {
+      console.error("🚨 UPLOAD ENDPOINT NOT FOUND");
+      console.error("   URL attempted:", error.config.url);
+      console.error("   Full backend URL:", BACKEND_URL);
+
+      error.userMessage =
+        "Upload endpoint not found. Backend may not be deployed correctly.";
+    }
+
+    // ✅ Network error detection
     if (error.code === "ERR_NETWORK") {
       console.error("🌐 NETWORK ERROR - Backend unreachable");
       console.error("   Backend URL:", BACKEND_URL);
@@ -144,10 +170,17 @@ axiosInstance.interceptors.response.use(
       console.error("   Check CORS configuration on backend");
     }
 
-    // ✅ FEATURE 9: CORS error detection
-    if (error.message?.includes("CORS")) {
-      console.error("🚫 CORS ERROR - Origin not allowed");
-      console.error("   Frontend origin needs to be whitelisted on backend");
+    // ✅ CORS error detection
+    if (error.message?.includes("CORS") || error.message?.includes("cors")) {
+      console.error(
+        "🚫 CORS ERROR - Origin not allowed or wildcard used with credentials"
+      );
+      console.error(
+        "   Frontend origin needs specific CORS headers on backend"
+      );
+      console.error(
+        "   Backend MUST NOT use Access-Control-Allow-Origin: * with credentials"
+      );
     }
     // ✅ FEATURE 10: Handle approval pending (403 Forbidden)
     // This allows the UI to show appropriate messages for pending accounts
