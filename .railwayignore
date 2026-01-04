@@ -1,0 +1,10 @@
+.next
+.vercel
+youtube/
+yourtube/
+node_modules/
+.git/
+*.log
+.env.local
+package-lock.json
+package.json
