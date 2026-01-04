@@ -634,12 +634,17 @@ router.post(
   }
 );
 
+// FIND THIS SECTION (around line 400):
 router.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // Allow all Vercel domains
+  // ✅ CRITICAL: Set specific origin, not wildcard when credentials are used
   if (origin && /vercel\.app$/.test(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  } else if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
   } else {
     res.setHeader("Access-Control-Allow-Origin", "*");
   }
@@ -651,8 +656,7 @@ router.use((req, res, next) => {
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since"
-  ); // ✅ ADDED if-none-match
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+  );
   res.setHeader("Access-Control-Max-Age", "86400");
 
   if (req.method === "OPTIONS") {

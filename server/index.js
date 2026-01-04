@@ -256,27 +256,36 @@ Object.entries(directories).forEach(([name, dirPath]) => {
     console.log(`✅ Created ${name} directory: ${dirPath}`);
   }
 });
-// =================== ENHANCED CORS MIDDLEWARE ===================
 // =================== EXPRESS CORS MIDDLEWARE ===================
+// REPLACE THE EXISTING app.use(cors({...})) WITH THIS:
+
 app.use(
   cors({
     origin: function (origin, callback) {
       console.log("🔍 Express CORS check:", origin || "no origin");
 
-      // ✅ Always allow in production
-      if (process.env.NODE_ENV === "production") {
-        console.log("   ✅ Production: allowing all origins");
+      // ✅ Allow requests with no origin (mobile apps, Postman)
+      if (!origin) {
         return callback(null, true);
       }
 
       // ✅ Check if origin is allowed
-      if (!origin || isOriginAllowed(origin)) {
+      if (isOriginAllowed(origin)) {
         console.log("   ✅ Origin allowed");
-        return callback(null, true);
+        return callback(null, origin); // ✅ CRITICAL: Return specific origin, not true
+      }
+
+      // ✅ Production: allow Vercel domains
+      if (
+        process.env.NODE_ENV === "production" ||
+        origin.includes("vercel.app")
+      ) {
+        console.log("   ✅ Production/Vercel origin allowed");
+        return callback(null, origin); // ✅ Return specific origin
       }
 
       console.log("   ⚠️  Origin not in list, but allowing anyway");
-      callback(null, true); // ✅ Permissive fallback
+      callback(null, origin); // ✅ Return specific origin instead of true
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
@@ -464,11 +473,19 @@ app.get("/uploads/videos/:filename", (req, res) => {
   }
 });
 // ✅ ENHANCED CORS - COMPLETE FIX
+// REPLACE THE EXISTING app.use((req, res, next) => {...}) WITH THIS:
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // Allow all origins in production (or restrict to your Vercel domain)
-  res.setHeader("Access-Control-Allow-Origin", origin || "*");
+  // ✅ CRITICAL: Set specific origin, not wildcard
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else {
+    // Only use wildcard for requests without origin (native apps, curl, etc.)
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -499,10 +516,38 @@ app.use(express.json({ limit: "30mb", extended: true }));
 app.use(express.urlencoded({ limit: "30mb", extended: true }));
 app.use(bodyParser.json());
 
-// Static file serving for uploads and invoices
-// Static file serving for uploads and invoices
+// =================== STATIC FILE SERVING ===================
+// REPLACE THE EXISTING app.use("/uploads", ...) WITH THIS:
+
 app.use(
   "/uploads",
+  (req, res, next) => {
+    const origin = req.headers.origin;
+
+    // ✅ Set specific origin if present
+    if (origin) {
+      res.set("Access-Control-Allow-Origin", origin);
+    } else {
+      res.set("Access-Control-Allow-Origin", "*");
+    }
+
+    res.set("Access-Control-Allow-Credentials", "true");
+    res.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.set(
+      "Access-Control-Allow-Headers",
+      "Range, Content-Type, Authorization"
+    );
+    res.set(
+      "Access-Control-Expose-Headers",
+      "Content-Length, Content-Range, Accept-Ranges"
+    );
+
+    if (req.method === "OPTIONS") {
+      return res.status(204).end();
+    }
+
+    next();
+  },
   express.static(path.join(__dirname, "uploads"), {
     setHeaders: (res, filePath) => {
       // Set proper MIME types
@@ -516,22 +561,8 @@ app.use(
         res.set("Content-Type", "image/png");
       }
 
-      // ✅ CRITICAL: Enable CORS for media files
-      res.set("Access-Control-Allow-Origin", "*");
-      res.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-      res.set(
-        "Access-Control-Allow-Headers",
-        "Range, Content-Type, Authorization"
-      );
-      res.set(
-        "Access-Control-Expose-Headers",
-        "Content-Length, Content-Range, Accept-Ranges"
-      );
-
-      // ✅ CRITICAL: Enable range requests for video streaming
+      // ✅ Enable range requests for video streaming
       res.set("Accept-Ranges", "bytes");
-
-      // ✅ CRITICAL: Prevent caching issues
       res.set("Cache-Control", "public, max-age=3600");
       res.set("X-Content-Type-Options", "nosniff");
     },
