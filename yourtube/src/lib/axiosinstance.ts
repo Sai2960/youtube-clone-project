@@ -25,13 +25,11 @@ const getBackendURL = (): string => {
     }
   }
 
-  // Priority 3: Production - Always use Render backend
   // Priority 3: Production - Always use Railway backend
   const RAILWAY_BACKEND =
-    "https://youtube-clone-project-production.up.railway.app"; // ✅ YOUR RAILWAY URL
+    "https://youtube-clone-project-production.up.railway.app";
   console.log("🌐 Production: Using Railway backend");
   return RAILWAY_BACKEND;
-  console.log("🌐 Production: Using Render backend");
 };
 
 const BACKEND_URL: string = getBackendURL();
