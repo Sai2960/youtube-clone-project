@@ -1,8 +1,2 @@
-[phases.setup]
-nixPkgs = ["nodejs_20", "npm"]
-
-[phases.install]
-cmds = ["npm ci --only=production"]
-
 [start]
-cmd = "npm start"
+cmd = "node server/index.js"
