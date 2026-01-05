@@ -86,8 +86,22 @@ const server = http.createServer(app);
 // ✅ CRITICAL FIX: Ultra-fast health check FIRST (before ANY middleware)
 // This MUST be the first route to respond instantly to Railway health checks
 app.get("/health", (req, res) => {
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end('{"status":"OK"}');
+  // Bypass ALL middleware - respond immediately
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Cache-Control", "no-cache");
+  res.end('{"status":"OK","timestamp":' + Date.now() + "}");
+});
+
+// ✅ Alternative health check for detailed status
+app.get("/health/full", (req, res) => {
+  res.json({
+    status: "OK",
+    server: "running",
+    mongodb: mongoConnected ? "connected" : "connecting",
+    uptime: Math.floor(process.uptime()),
+    timestamp: Date.now(),
+  });
 });
 
 console.log("✅ Express app created");
