@@ -635,17 +635,16 @@ router.post(
 );
 
 // FIND THIS SECTION (around line 400):
+// REPLACE the CORS middleware section (around line 400) with:
 router.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // ✅ CRITICAL: Set specific origin, not wildcard when credentials are used
-  if (origin && /vercel\.app$/.test(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  } else if (origin) {
+  // ✅ CRITICAL FIX: Set specific origin for credentials
+  if (origin) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
   } else {
+    // No origin = same-origin or direct API call
     res.setHeader("Access-Control-Allow-Origin", "*");
   }
 

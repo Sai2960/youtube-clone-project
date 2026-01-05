@@ -18,17 +18,17 @@ console.log("📁 Loading .env from:", envPath);
 dotenv.config({ path: envPath });
 
 // Set BASE_URL if not provided
+// REPLACE lines 18-31 with:
 if (!process.env.BASE_URL) {
-  if (process.env.RAILWAY_STATIC_URL || process.env.RAILWAY_PUBLIC_DOMAIN) {
-    process.env.BASE_URL = `https://${
-      process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL
-    }`;
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    process.env.BASE_URL = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  } else if (process.env.RAILWAY_STATIC_URL) {
+    process.env.BASE_URL = `https://${process.env.RAILWAY_STATIC_URL}`;
   } else {
     process.env.BASE_URL = "http://localhost:5000";
   }
   console.log("🌐 BASE_URL set to:", process.env.BASE_URL);
 }
-
 // Verify critical environment variables
 if (!process.env.JWT_SECRET) {
   console.error("❌ FATAL ERROR: JWT_SECRET not found in .env");
@@ -141,32 +141,29 @@ app.use((req, res, next) => {
 
 // =================== ENHANCED CORS CONFIGURATION ===================
 // Build allowed origins array
+// REPLACE the allowedOrigins array:
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://youtube-clone-project-eosin.vercel.app",
-  "https://youtube-clone-project-git-main-sais-projects-daab7a9a.vercel.app",
-  "https://youtube-clone-project-production.up.railway.app",
+  /^https:\/\/youtube-clone-project.*\.vercel\.app$/, // ✅ Allow all Vercel preview domains
 ];
 
-// ✅ CRITICAL: Allow ANY Vercel preview domain
 const isOriginAllowed = (origin) => {
   if (!origin) return true;
-
-  if (allowedOrigins.includes(origin)) {
+  
+  // Check exact matches
+  if (allowedOrigins.some(allowed => 
+    typeof allowed === 'string' ? allowed === origin : allowed.test(origin)
+  )) {
     return true;
   }
-
-  // Allow ANY Vercel preview domain
-  if (/^https:\/\/youtube-clone-project.*\.vercel\.app$/.test(origin)) {
-    return true;
-  }
-
+  
   // Production: be permissive
   if (process.env.NODE_ENV === "production") {
     return true;
   }
-
+  
   return false;
 };
 
