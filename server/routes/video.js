@@ -235,30 +235,45 @@ router.post("/merge-chunks", verifyToken, async (req, res) => {
 
 // REPLACE the /upload route middleware chain:
 
-// REPLACE /upload route in routes/video.js (starting line 175)
 router.post(
   "/upload",
   verifyToken,
-  multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } }).single("file"),
+  
+  // ✅ FIX 1: Remove early size check - let storage handle it
+  (req, res, next) => {
+    req.setTimeout(600000); // 10 minutes
+    res.setTimeout(600000);
+    next();
+  },
+
+  // ✅ FIX 2: Use memory storage (works with both Supabase & Cloudinary)
+  multer({
+    storage: multer.memoryStorage(),
+    limits: { 
+      fileSize: 100 * 1024 * 1024, // 100MB
+      fieldSize: 100 * 1024 * 1024,
+    },
+  }).single("file"),
+
   async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ success: false, message: "No file uploaded" });
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded",
+        });
       }
 
       const fileSizeMB = req.file.size / (1024 * 1024);
       console.log(`📊 Upload: ${fileSizeMB.toFixed(2)}MB`);
 
+      // ✅ FIX 3: Try Supabase first, fallback to Cloudinary
       let videoUrl = null;
       let publicId = null;
-      let thumbnailUrl = null;
       let storageType = null;
 
-      // ✅ PRIORITY 1: Try Supabase (free tier: 1GB storage)
-      const { getSupabaseClient, bucketName } = await import("../config/supabase.js");
-      const supabase = getSupabaseClient();
-
-      if (supabase) {
+      // Try Supabase
+      if (isSupabaseConfigured()) {
         try {
           const fileName = `videos/${Date.now()}-${req.file.originalname}`;
           
@@ -267,7 +282,6 @@ router.post(
             .upload(fileName, req.file.buffer, {
               contentType: req.file.mimetype,
               cacheControl: "3600",
-              upsert: false,
             });
 
           if (!error) {
@@ -277,51 +291,29 @@ router.post(
             
             videoUrl = publicUrl;
             publicId = fileName;
-            thumbnailUrl = publicUrl; // Supabase doesn't auto-generate thumbnails
             storageType = "supabase";
             console.log("✅ Uploaded to Supabase");
-          } else {
-            throw error;
           }
         } catch (err) {
-          console.warn("⚠️ Supabase failed, falling back to Cloudinary:", err.message);
+          console.warn("⚠️ Supabase failed, trying Cloudinary:", err.message);
         }
       }
 
-      // ✅ FALLBACK: Cloudinary (free tier: 25GB storage, 25 monthly credits)
+      // Fallback to Cloudinary
       if (!videoUrl) {
         const { uploadVideoWithAudio } = await import("../config/cloudinary.js");
+        const result = await uploadVideoWithAudio(req.file.buffer, {
+          folder: "youtube-clone/videos",
+          resource_type: "video",
+        });
         
-        // Write buffer to temp file for Cloudinary
-        const tempPath = path.join(process.cwd(), "temp", `${Date.now()}-${req.file.originalname}`);
-        fs.mkdirSync(path.dirname(tempPath), { recursive: true });
-        fs.writeFileSync(tempPath, req.file.buffer);
-
-        try {
-          const result = await uploadVideoWithAudio(tempPath, {
-            folder: "youtube-clone/videos",
-            resource_type: "video",
-          });
-          
-          publicId = result.public_id;
-          videoUrl = result.secure_url;
-          
-          const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
-          const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-          thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-          
-          storageType = "cloudinary";
-          console.log("✅ Uploaded to Cloudinary");
-        } finally {
-          // Clean up temp file
-          if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-        }
+        videoUrl = result.secure_url;
+        publicId = result.public_id;
+        storageType = "cloudinary";
+        console.log("✅ Uploaded to Cloudinary");
       }
 
-      // ✅ Save to database
-      const user = await User.findById(req.userId);
-      const channelName = user?.channelname || user?.name || "Unknown";
-
+      // Save to database...
       const newVideo = new videofiles({
         videotitle: req.body.videotitle || req.file.originalname,
         videodescription: req.body.videodescription || `Watch "${req.body.videotitle}"`,
@@ -329,13 +321,8 @@ router.post(
         filepath: videoUrl,
         videofile: videoUrl,
         videoLink: videoUrl,
-        videoUrl: videoUrl,
-        thumbnail: thumbnailUrl,
-        videothumbnail: thumbnailUrl,
-        thumbnailUrl: thumbnailUrl,
         uploadedBy: req.userId,
-        videochanel: channelName,
-        storageType, // Track which service was used
+        storageType,
       });
 
       await newVideo.save();
@@ -344,7 +331,6 @@ router.post(
         success: true,
         video: newVideo,
         videoUrl,
-        thumbnailUrl,
         storage: storageType,
       });
     } catch (error) {
