@@ -14,6 +14,14 @@ import mongoose from 'mongoose';
 import videofiles from '../Modals/video.js';
 import { supabase, bucketName, isSupabaseConfigured } from '../config/supabase.js';
 import fetch from 'node-fetch';
+import cloudinary from 'cloudinary';
+
+// Configure Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 async function migrateVideos() {
   console.log('\n🚀 ===== VIDEO MIGRATION TO SUPABASE =====');
@@ -23,6 +31,8 @@ async function migrateVideos() {
   console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ Set' : '❌ Missing');
   console.log('   SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅ Set (length: ' + process.env.SUPABASE_KEY.length + ')' : '❌ Missing');
   console.log('   SUPABASE_BUCKET:', process.env.SUPABASE_BUCKET || 'youtube-videos (default)');
+  console.log('   CLOUDINARY_NAME:', process.env.CLOUDINARY_NAME ? '✅ Set' : '❌ Missing');
+  console.log('   CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY ? '✅ Set' : '❌ Missing');
   console.log('');
   
   // Validate Supabase config
@@ -33,7 +43,15 @@ async function migrateVideos() {
     process.exit(1);
   }
 
+  // Validate Cloudinary config
+  if (!process.env.CLOUDINARY_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.error('❌ Cloudinary is not configured!');
+    console.error('   Please set CLOUDINARY_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in .env');
+    process.exit(1);
+  }
+
   console.log('✅ Supabase configured');
+  console.log('✅ Cloudinary configured');
   console.log('📦 Bucket:', bucketName);
 
   // Connect to MongoDB
@@ -65,10 +83,28 @@ async function migrateVideos() {
     console.log(`   Current URL: ${video.filepath.substring(0, 60)}...`);
 
     try {
-      // ✅ STEP 1: Download from Cloudinary
+      // ✅ STEP 1: Extract Cloudinary public_id from URL
+      const urlMatch = video.filepath.match(/\/upload\/(?:v\d+\/)?(.+)\.(mp4|mov|avi|webm)/i);
+      if (!urlMatch) {
+        throw new Error('Could not extract public_id from Cloudinary URL');
+      }
+      
+      const publicId = urlMatch[1];
+      console.log(`   📋 Public ID: ${publicId}`);
+
+      // ✅ STEP 2: Download from Cloudinary using SDK (handles auth automatically)
       console.log('   📥 Downloading from Cloudinary...');
-      const response = await fetch(video.filepath, {
-        timeout: 30000, // 30 second timeout
+      
+      // Generate authenticated URL
+      const authenticatedUrl = cloudinary.v2.url(publicId, {
+        resource_type: 'video',
+        type: 'upload',
+        sign_url: true,
+        secure: true,
+      });
+
+      const response = await fetch(authenticatedUrl, {
+        timeout: 60000, // 60 second timeout for large videos
       });
 
       if (!response.ok) {
@@ -79,7 +115,7 @@ async function migrateVideos() {
       const sizeInMB = (buffer.length / (1024 * 1024)).toFixed(2);
       console.log(`   ✅ Downloaded: ${sizeInMB}MB`);
 
-      // ✅ STEP 2: Upload to Supabase
+      // ✅ STEP 3: Upload to Supabase
       console.log('   📤 Uploading to Supabase...');
       const fileName = `migrated/videos/${video._id}.mp4`;
 
@@ -102,14 +138,14 @@ async function migrateVideos() {
         console.log('   ✅ Uploaded to Supabase');
       }
 
-      // ✅ STEP 3: Get new public URL
+      // ✅ STEP 4: Get new public URL
       const { data: { publicUrl } } = supabase.storage
         .from(bucketName)
         .getPublicUrl(fileName);
 
       console.log(`   🔗 New URL: ${publicUrl.substring(0, 60)}...`);
 
-      // ✅ STEP 4: Update database (ALL video URL fields)
+      // ✅ STEP 5: Update database (ALL video URL fields)
       video.filepath = publicUrl;
       video.videofile = publicUrl;
       video.videoLink = publicUrl;
@@ -125,7 +161,11 @@ async function migrateVideos() {
     } catch (error) {
       console.error(`   ❌ FAILED: ${video.videotitle}`);
       console.error(`   Error: ${error.message}`);
+      console.error(`   Stack: ${error.stack}`);
       failed++;
+      
+      // Continue to next video instead of stopping
+      continue;
     }
   }
 
