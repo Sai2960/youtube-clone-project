@@ -601,7 +601,6 @@ app.use("/report", reportRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api", imageProxyRouter);
 app.use("/api/admin", adminRoutes);
-app.use("/api", healthRoutes);
 
 console.log("✅ All routes registered successfully");
 
@@ -1122,13 +1121,10 @@ server.listen(PORT, HOST, () => {
   console.log(`   Host: ${HOST}`);
   console.log(`   Local: http://localhost:${PORT}`);
 
-  // Railway-specific URLs
   if (process.env.RAILWAY_ENVIRONMENT) {
     console.log("\n🚂 Railway Deployment:");
     if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-      console.log(
-        `   Public URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-      );
+      console.log(`   Public URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
     }
     if (process.env.RAILWAY_STATIC_URL) {
       console.log(`   Static URL: ${process.env.RAILWAY_STATIC_URL}`);
@@ -1139,29 +1135,7 @@ server.listen(PORT, HOST, () => {
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`   CORS Origins: ${allowedOrigins.length} configured`);
   console.log(`   Socket.IO: Enabled`);
-  console.log(`   Compression: Enabled`);
   console.log(`   MongoDB: ${DATABASE_URL ? "Configured" : "Not configured"}`);
-
-  console.log("\n✨ Features Active:");
-  console.log("   ✓ Authentication & Users");
-  console.log("   ✓ Video Management & Streaming");
-  console.log("   ✓ Shorts (Short-form videos)");
-  console.log("   ✓ Real-time Calls (WebRTC)");
-  console.log("   ✓ Comments & Translations");
-  console.log("   ✓ Subscriptions & History");
-  console.log("   ✓ Location Services");
-  console.log("   ✓ Admin Panel");
-  console.log("   ✓ Health Monitoring");
-  console.log("   ✓ Image Proxy");
-  console.log("   ✓ OTP Services");
-  console.log("   ✓ Report System");
-
-  console.log("\n🔗 Key Endpoints:");
-  console.log(`   Health Check: http://localhost:${PORT}/health`);
-  console.log(`   API Root: http://localhost:${PORT}/`);
-  console.log(`   Test Env: http://localhost:${PORT}/test-env`);
-  console.log(`   Videos: http://localhost:${PORT}/video`);
-  console.log(`   Shorts: http://localhost:${PORT}/api/shorts`);
 
   console.log("\n============================================");
   console.log("✅ SERVER READY - Accepting Connections");
@@ -1169,10 +1143,14 @@ server.listen(PORT, HOST, () => {
 
   serverReady = true;
 
-  // ✅ Start MongoDB connection AFTER server is listening
+  // ✅ CRITICAL: Connect to MongoDB in background, don't block server
   if (DATABASE_URL) {
-    console.log("🔄 Initiating database connection...\n");
-    connectToDatabase();
+    console.log("🔄 Starting background database connection...\n");
+    setImmediate(() => {
+      connectToDatabase().catch(err => {
+        console.error("❌ Background DB connection failed:", err.message);
+      });
+    });
   } else {
     console.log("⚠️  Skipping database connection (no DB_URL configured)\n");
   }
