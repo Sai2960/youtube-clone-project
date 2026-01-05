@@ -21,7 +21,6 @@
     "fix-thumbnails": "node scripts/fix-thumbnails.js",
     "fix-quality": "node scripts/generateQualities.js",
     "fix-migrate-to-supabase.js": "node scripts/migrate-to-supabase.js"
-    
   },
   "keywords": [],
   "author": "",
@@ -61,7 +60,6 @@
     "socket.io": "^4.8.1",
     "twilio": "^5.10.5"
   },
-  
   "devDependencies": {
     "nodemon": "^3.1.10"
   }
