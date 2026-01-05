@@ -1,8 +1,4 @@
 // server/scripts/migrate-videos-to-supabase.js
-import mongoose from 'mongoose';
-import videofiles from '../Modals/video.js';
-import { supabase, bucketName, isSupabaseConfigured } from '../config/supabase.js';
-import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,16 +6,30 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
+// ✅ CRITICAL: Load environment variables FIRST, before any other imports
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
+// Now import modules that depend on environment variables
+import mongoose from 'mongoose';
+import videofiles from '../Modals/video.js';
+import { supabase, bucketName, isSupabaseConfigured } from '../config/supabase.js';
+import fetch from 'node-fetch';
 
 async function migrateVideos() {
   console.log('\n🚀 ===== VIDEO MIGRATION TO SUPABASE =====');
+  
+  // Debug: Check if env vars are loaded
+  console.log('🔍 Debug Info:');
+  console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ Set' : '❌ Missing');
+  console.log('   SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅ Set (length: ' + process.env.SUPABASE_KEY.length + ')' : '❌ Missing');
+  console.log('   SUPABASE_BUCKET:', process.env.SUPABASE_BUCKET || 'youtube-videos (default)');
+  console.log('');
   
   // Validate Supabase config
   if (!isSupabaseConfigured()) {
     console.error('❌ Supabase is not configured!');
     console.error('   Please set SUPABASE_URL and SUPABASE_KEY in .env');
+    console.error('   Current .env path:', path.join(__dirname, '..', '.env'));
     process.exit(1);
   }
 
