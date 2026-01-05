@@ -13,9 +13,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load .env with explicit path - THIS MUST HAPPEN BEFORE OTHER IMPORTS
-const envPath = path.join(__dirname, ".env");
-console.log("📁 Loading .env from:", envPath);
-dotenv.config({ path: envPath });
+// Railway provides env vars directly, but load .env for local dev
+if (process.env.RAILWAY_ENVIRONMENT) {
+  console.log("🚂 Running on Railway - using Railway env vars");
+  dotenv.config(); // Just load defaults
+} else {
+  const envPath = path.join(__dirname, ".env");
+  console.log("📁 Loading .env from:", envPath);
+  dotenv.config({ path: envPath });
+}
 
 // Set BASE_URL if not provided
 if (!process.env.BASE_URL) {
@@ -97,6 +103,7 @@ const allowedOrigins = [
   "http://localhost:3001",
   "https://youtube-clone-project-eosin.vercel.app",
   /^https:\/\/youtube-clone-project.*\.vercel\.app$/,
+  /^https:\/\/.*\.up\.railway\.app$/, // ✅ ADD THIS for Railway
 ];
 
 const io = new Server(server, {
@@ -928,8 +935,20 @@ mongoose.connection.on("disconnected", () => {
 });
 
 // ✅ CRITICAL FIX: Start server FIRST, then connect to DB
-server.listen(PORT, "0.0.0.0", () => {
+const HOST = process.env.RAILWAY_STATIC_URL ? "0.0.0.0" : "localhost";
+
+server.listen(PORT, HOST, () => {
   console.log(`\n🚀 ===== SERVER STARTED =====`);
+  console.log(`   Port: ${PORT}`);
+  console.log(`   Host: ${HOST}`);
+  console.log(`   Local: http://localhost:${PORT}`);
+  console.log(
+    `   Railway: ${
+      process.env.RAILWAY_PUBLIC_DOMAIN
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : "Not deployed yet"
+    }`
+  );
   console.log(`   Port: ${PORT}`);
   console.log(`   Local: http://localhost:${PORT}`);
   console.log(`   Network: http://0.0.0.0:${PORT}`);

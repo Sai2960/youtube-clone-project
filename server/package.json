@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
+      "railway:start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:stop": "pm2 stop youtube-backend",
