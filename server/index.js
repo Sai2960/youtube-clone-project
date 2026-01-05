@@ -883,11 +883,9 @@ app.use((req, res) => {
 });
 // =================== Database Connection & Server Startup ===================
 // ✅ Railway sets PORT automatically - MUST use it
-const PORT = process.env.PORT || process.env.RAILWAY_PORT || 5000;
-console.log("🔌 PORT Configuration:", {
-  PORT,
-  "process.env.PORT": process.env.PORT,
-  RAILWAY_PORT: process.env.RAILWAY_PORT,
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Railway URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'localhost'}`);
 });
 const DATABASE_URL = process.env.DB_URL;
 
@@ -953,7 +951,7 @@ mongoose.connection.on("disconnected", () => {
 const HOST = "0.0.0.0";
 const LISTEN_PORT = parseInt(PORT, 10);
 
-server.listen(LISTEN_PORT, HOST, () => {
+server.listen(process.env.PORT || 8080, '0.0.0.0')
   console.log(`\n🚀 ===== SERVER STARTED =====`);
   console.log(`   Port: ${LISTEN_PORT}`);
   console.log(`   Host: ${HOST}`);
@@ -978,7 +976,7 @@ server.listen(LISTEN_PORT, HOST, () => {
     console.log("🔄 Starting database connection...");
     connectToDatabase();
   }
-});
+
 // =================== Graceful Shutdown Handler ===================
 const handleShutdown = async (signal) => {
   console.log(`\n🛑 ${signal} received. Starting graceful shutdown...`);
