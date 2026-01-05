@@ -1009,9 +1009,19 @@ app.use((req, res) => {
 console.log("✅ Error handling middleware configured");
 // =================== DATABASE CONNECTION & CONFIGURATION ===================
 
+// =================== DATABASE CONNECTION & CONFIGURATION ===================
+
 const DATABASE_URL = process.env.DB_URL;
 const PORT = parseInt(process.env.PORT || "8080", 10);
 const HOST = "0.0.0.0";
+
+// ✅ CRITICAL: Validate port before starting
+if (isNaN(PORT) || PORT < 1 || PORT > 65535) {
+  console.error(`❌ Invalid PORT: ${process.env.PORT}`);
+  process.exit(1);
+}
+
+console.log(`🔧 Server will bind to ${HOST}:${PORT}`);
 
 // ✅ Database connection function with retry logic
 const connectToDatabase = async () => {
@@ -1058,12 +1068,10 @@ const connectToDatabase = async () => {
     console.error("❌ MongoDB connection failed:", error.message);
     mongoConnected = false;
 
-    // Retry connection after delay
-    console.log("   Retrying in 30 seconds...");
-    setTimeout(connectToDatabase, 30000);
+    // Don't retry forever - Railway will restart the service
+    console.log("   MongoDB will retry on reconnect event");
   }
 };
-
 // =================== MONGODB EVENT LISTENERS ===================
 
 mongoose.connection.on("connected", () => {
@@ -1111,7 +1119,10 @@ console.log("✅ MongoDB event listeners configured");
 // =================== SERVER STARTUP ===================
 
 // ✅ CRITICAL: Single server.listen() call for Railway
-server.listen(PORT, HOST, () => {
+// =================== SERVER STARTUP ===================
+
+// ✅ CRITICAL: Start server immediately, connect to DB in background
+server.listen(PORT, HOST, async () => {
   console.log("\n");
   console.log("🚀 ============================================");
   console.log("🚀 ===== SERVER STARTED SUCCESSFULLY =====");
@@ -1124,7 +1135,9 @@ server.listen(PORT, HOST, () => {
   if (process.env.RAILWAY_ENVIRONMENT) {
     console.log("\n🚂 Railway Deployment:");
     if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-      console.log(`   Public URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+      console.log(
+        `   Public URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      );
     }
     if (process.env.RAILWAY_STATIC_URL) {
       console.log(`   Static URL: ${process.env.RAILWAY_STATIC_URL}`);
@@ -1143,29 +1156,36 @@ server.listen(PORT, HOST, () => {
 
   serverReady = true;
 
-  // ✅ CRITICAL: Connect to MongoDB in background, don't block server
+  // ✅ Connect to database AFTER server is listening
   if (DATABASE_URL) {
-    console.log("🔄 Starting background database connection...\n");
-    setImmediate(() => {
-      connectToDatabase().catch(err => {
+    console.log("🔄 Connecting to database in background...\n");
+    // Use setTimeout to ensure it's truly async and won't block
+    setTimeout(() => {
+      connectToDatabase().catch((err) => {
         console.error("❌ Background DB connection failed:", err.message);
+        console.error("   Server will continue without database");
       });
-    });
+    }, 100);
   } else {
     console.log("⚠️  Skipping database connection (no DB_URL configured)\n");
   }
 });
 
-// Handle server startup errors
+// ✅ CRITICAL: Handle server startup errors
 server.on("error", (error) => {
+  console.error("\n❌ ===== SERVER ERROR =====");
+  console.error("Error:", error);
+
   if (error.code === "EADDRINUSE") {
     console.error(`❌ Port ${PORT} is already in use`);
-    console.error(
-      `   Try using a different port or stop the process using port ${PORT}`
-    );
+    console.error(`   Railway assigned port: ${process.env.PORT}`);
+  } else if (error.code === "EACCES") {
+    console.error(`❌ Permission denied for port ${PORT}`);
   } else {
-    console.error("❌ Server error:", error);
+    console.error(`❌ Server failed to start: ${error.message}`);
   }
+
+  console.error("========================\n");
   process.exit(1);
 });
 
