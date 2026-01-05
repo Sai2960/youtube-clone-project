@@ -118,20 +118,51 @@ async function migrateVideos() {
       // ✅ STEP 2: Download from Cloudinary using SDK (handles auth automatically)
       console.log('   📥 Downloading from Cloudinary...');
       
-      // Generate authenticated URL
-      const authenticatedUrl = cloudinary.v2.url(publicId, {
-        resource_type: 'video',
-        type: 'upload',
-        sign_url: true,
-        secure: true,
-      });
-
-      const response = await fetch(authenticatedUrl, {
-        timeout: 60000, // 60 second timeout for large videos
-      });
+      // Try multiple URL approaches
+      let response;
+      let downloadUrl;
+      
+      // Approach 1: Try the original URL first (might be public)
+      try {
+        console.log('   🔄 Trying original URL...');
+        response = await fetch(video.filepath, { timeout: 60000 });
+        if (response.ok) {
+          downloadUrl = video.filepath;
+          console.log('   ✅ Original URL works!');
+        }
+      } catch (err) {
+        console.log('   ⚠️  Original URL failed, trying authenticated URL...');
+      }
+      
+      // Approach 2: Generate signed/authenticated URL
+      if (!response || !response.ok) {
+        try {
+          const authenticatedUrl = cloudinary.v2.url(publicId, {
+            resource_type: 'video',
+            type: 'upload',
+            sign_url: true,
+            secure: true,
+          });
+          console.log('   🔑 Authenticated URL:', authenticatedUrl.substring(0, 80) + '...');
+          
+          response = await fetch(authenticatedUrl, { timeout: 60000 });
+          downloadUrl = authenticatedUrl;
+        } catch (err) {
+          console.log('   ⚠️  Authenticated URL failed, trying basic auth...');
+        }
+      }
+      
+      // Approach 3: Use Cloudinary's API with basic auth
+      if (!response || !response.ok) {
+        const apiUrl = `https://${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}@api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/video/upload/${publicId}`;
+        console.log('   🔐 Using API authentication...');
+        
+        response = await fetch(apiUrl, { timeout: 60000 });
+        downloadUrl = apiUrl;
+      }
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} (URL: ${downloadUrl.substring(0, 100)}...)`);
       }
 
       const buffer = Buffer.from(await response.arrayBuffer());
