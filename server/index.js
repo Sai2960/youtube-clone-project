@@ -1,7 +1,7 @@
 // server/index.js
 // Main server file for YouTube Clone Backend
 // Handles video streaming, real-time calls, and content management
-// FULLY MERGED VERSION - All Features + Fixed Timeouts
+// FULLY MERGED VERSION - All Features + Fixed Socket.IO Initialization
 
 // =================== ENVIRONMENT SETUP (MUST BE FIRST) ===================
 import dotenv from "dotenv";
@@ -18,7 +18,6 @@ console.log("📁 Loading .env from:", envPath);
 dotenv.config({ path: envPath });
 
 // Set BASE_URL if not provided
-// REPLACE lines 18-31 with:
 if (!process.env.BASE_URL) {
   if (process.env.RAILWAY_PUBLIC_DOMAIN) {
     process.env.BASE_URL = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
@@ -29,6 +28,7 @@ if (!process.env.BASE_URL) {
   }
   console.log("🌐 BASE_URL set to:", process.env.BASE_URL);
 }
+
 // Verify critical environment variables
 if (!process.env.JWT_SECRET) {
   console.error("❌ FATAL ERROR: JWT_SECRET not found in .env");
@@ -86,10 +86,65 @@ import { startAllCronJobs, stopAllCronJobs } from "./services/cronJobs.js";
 let mongoConnected = false;
 let cronJobsRunning = false;
 let serverReady = false;
-
+// =================== CREATE EXPRESS APP & SOCKET.IO ===================
 // Create Express app FIRST
 const app = express();
 const server = http.createServer(app);
+
+// ✅ CRITICAL FIX: Initialize Socket.IO immediately after server creation
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://youtube-clone-project-eosin.vercel.app",
+  /^https:\/\/youtube-clone-project.*\.vercel\.app$/,
+];
+
+const io = new Server(server, {
+  cors: {
+    origin: function (origin, callback) {
+      console.log("🔍 Socket.IO CORS check:", origin || "no origin");
+
+      // Allow no origin (mobile, Postman)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check if allowed
+      const isAllowed = allowedOrigins.some((allowed) =>
+        typeof allowed === "string" ? allowed === origin : allowed.test(origin)
+      );
+
+      if (isAllowed || process.env.NODE_ENV === "production") {
+        return callback(null, true);
+      }
+
+      callback(null, true); // Allow anyway to prevent blocking
+    },
+    credentials: true,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  },
+  transports: ["websocket", "polling"],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  path: "/socket.io/",
+});
+
+console.log("✅ Socket.IO configured");
+
+// Maps to track online users and their socket connections
+const userToSocket = new Map(); // userId -> socketId
+const socketToUser = new Map(); // socketId -> userId
+const activeCallRooms = new Map(); // roomId -> Set of socketIds
+
+// ✅ CRITICAL: Export immediately after declaration
+export {
+  mongoConnected as isMongoConnected,
+  io,
+  userToSocket as userSocketMap,
+};
+
 // =================== MIDDLEWARE ===================
 
 // ✅ Compression middleware
@@ -104,9 +159,7 @@ app.use(
     level: 6, // Good balance between speed and compression
   })
 );
-
-// ✅ CRITICAL: Smart timeout - LONGER for uploads
-// ✅ CRITICAL: Smart timeout - LONGER for OTP operations
+// ✅ CRITICAL: Smart timeout - LONGER for OTP operations and uploads
 app.use((req, res, next) => {
   // OTP and upload routes: 2 minute timeout
   if (
@@ -140,53 +193,14 @@ app.use((req, res, next) => {
 });
 
 // =================== ENHANCED CORS CONFIGURATION ===================
-// Build allowed origins array
-// REPLACE the allowedOrigins array:
-// REPLACE existing CORS configuration with this:
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "https://youtube-clone-project-eosin.vercel.app",
-  /^https:\/\/youtube-clone-project.*\.vercel\.app$/, // All preview deployments
-];
-
 // Strict origin validation
 const isOriginAllowed = (origin) => {
-  if (!origin) return false; // ❌ CHANGED: Don't allow empty origin in production
-  
-  return allowedOrigins.some(allowed => 
-    typeof allowed === 'string' ? allowed === origin : allowed.test(origin)
+  if (!origin) return true; // Allow no origin for mobile apps
+
+  return allowedOrigins.some((allowed) =>
+    typeof allowed === "string" ? allowed === origin : allowed.test(origin)
   );
 };
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Development: allow localhost
-    if (process.env.NODE_ENV === "development") {
-      return callback(null, true);
-    }
-    
-    // Production: strict validation
-    if (isOriginAllowed(origin)) {
-      return callback(null, origin);
-    }
-    
-    console.warn("❌ Blocked origin:", origin);
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Cache-Control",
-  ],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
-  maxAge: 86400,
-}));
-// =================== EXPRESS CORS MIDDLEWARE ===================
-// REPLACE THE EXISTING app.use(cors({...})) WITH THIS:
 
 app.use(
   cors({
@@ -201,7 +215,7 @@ app.use(
       // Check if allowed
       if (isOriginAllowed(origin)) {
         console.log("   ✅ Origin allowed");
-        return callback(null, origin); // ✅ Return specific origin
+        return callback(null, origin);
       }
 
       // Production fallback
@@ -213,7 +227,7 @@ app.use(
         return callback(null, origin);
       }
 
-      callback(null, origin); // ✅ Allow anyway to prevent blocking
+      callback(null, origin); // Allow anyway to prevent blocking
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
@@ -237,7 +251,6 @@ app.use(
 );
 
 console.log("✅ Express CORS configured");
-
 // ✅ CRITICAL: Video streaming with Range support for Shorts
 // ✅ ENHANCED: Better error handling and CORS
 app.get("/uploads/shorts/videos/:filename", (req, res) => {
@@ -275,7 +288,7 @@ app.get("/uploads/shorts/videos/:filename", (req, res) => {
   );
   res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Content-Type", "video/mp4");
-  res.setHeader("Cache-Control", "public, max-age=31536000"); // ✅ ADD: Cache for 1 year
+  res.setHeader("Cache-Control", "public, max-age=31536000");
 
   if (range) {
     const parts = range.replace(/bytes=/, "").split("-");
@@ -313,7 +326,6 @@ app.get("/api/test-video/:shortId", async (req, res) => {
     const { shortId } = req.params;
     console.log("🔍 Testing video access for short:", shortId);
 
-    const mongoose = await import("mongoose");
     const Short = mongoose.connection.model("Short");
 
     const short = await Short.findById(shortId);
@@ -401,8 +413,6 @@ app.get("/uploads/videos/:filename", (req, res) => {
   }
 });
 // ✅ ENHANCED CORS - COMPLETE FIX
-// REPLACE THE EXISTING app.use((req, res, next) => {...}) WITH THIS:
-
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
@@ -443,8 +453,6 @@ app.use(express.urlencoded({ limit: "30mb", extended: true }));
 app.use(bodyParser.json());
 
 // =================== STATIC FILE SERVING ===================
-// REPLACE THE EXISTING app.use("/uploads", ...) WITH THIS:
-
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -494,6 +502,7 @@ app.use(
     },
   })
 );
+
 app.use("/invoices", express.static(path.join(__dirname, "invoices")));
 // =================== API Routes ===================
 console.log("📋 Setting up API routes...");
@@ -503,13 +512,11 @@ app.use("/auth", userroutes);
 app.use("/user", userroutes);
 
 // Video content routes
-// ✅ CRITICAL FIX: Add video list endpoint
-
 app.use("/video", videoroutes);
+
 // ✅ TEMPORARY: Add direct /video GET endpoint until routes are fixed
 app.get("/video", async (req, res) => {
   try {
-    const mongoose = await import("mongoose");
     const videofiles = mongoose.connection.model("videofiles");
 
     const videos = await videofiles
@@ -540,6 +547,7 @@ app.get("/video", async (req, res) => {
     });
   }
 });
+
 app.use("/subscription", subscriptionroutes);
 app.use("/api/download", downloadroutes);
 app.use("/history", historyroutes);
@@ -611,7 +619,6 @@ app.get("/test-env", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-
 // =================== HEALTH CHECK ENDPOINTS ===================
 
 // Simple health check for Render (fast response)
@@ -665,12 +672,6 @@ app.get("/health/detailed", (req, res) => {
     });
   }
 });
-// =================== Socket.IO User Management ===================
-// Maps to track online users and their socket connections
-const userToSocket = new Map(); // userId -> socketId
-const socketToUser = new Map(); // socketId -> userId
-const activeCallRooms = new Map(); // roomId -> Set of socketIds
-
 // =================== Socket.IO Connection Handler ===================
 io.on("connection", (socket) => {
   console.log("\n👤 New user connected");
@@ -838,7 +839,7 @@ app.use((err, req, res, next) => {
   console.error("❌ Server error:", err.stack);
 
   // Special handling for CORS errors
-  if (err.message === "Not allowed by CORS policy") {
+  if (err.message === "Not allowed by CORS") {
     return res.status(403).json({
       error: "CORS Error",
       message: "This origin is not allowed to access this resource",
@@ -864,7 +865,6 @@ app.use((req, res) => {
     method: req.method,
   });
 });
-
 // =================== Database Connection & Server Startup ===================
 const PORT = process.env.PORT || 5000;
 const DATABASE_URL = process.env.DB_URL;
@@ -927,8 +927,7 @@ mongoose.connection.on("disconnected", () => {
   console.log("❌ MongoDB disconnected. Attempting to reconnect...");
 });
 
-// Start the server (listening on all network interfaces)
-// Start the server (listening on all network interfaces)
+// ✅ CRITICAL FIX: Start server FIRST, then connect to DB
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`\n🚀 ===== SERVER STARTED =====`);
   console.log(`   Port: ${PORT}`);
@@ -944,20 +943,10 @@ server.listen(PORT, "0.0.0.0", () => {
   // ✅ CRITICAL: Start MongoDB connection AFTER server is listening
   // This prevents Render timeout issues
   if (DATABASE_URL) {
+    console.log("🔄 Starting database connection...");
     connectToDatabase();
   }
 });
-// Connect to MongoDB if connection string is provided
-if (DATABASE_URL) {
-  mongoose.set("strictQuery", false);
-
-  // Initial connection attempt
-  connectToDatabase();
-} else {
-  console.warn("⚠️  No MongoDB connection string provided");
-  console.warn("⚠️  Set DB_URL in your .env file");
-  console.warn("⚠️  Database features and cron jobs will not be available");
-}
 // =================== Graceful Shutdown Handler ===================
 const handleShutdown = async (signal) => {
   console.log(`\n🛑 ${signal} received. Starting graceful shutdown...`);
@@ -974,7 +963,7 @@ const handleShutdown = async (signal) => {
     }
   }
 
-  // ✅ ADD: Close email connections
+  // ✅ Close email connections
   try {
     const { closeEmailConnections } = await import("./utils/emailService.js");
     closeEmailConnections();
@@ -1025,13 +1014,6 @@ process.on("uncaughtException", (error) => {
     handleShutdown("UNCAUGHT_EXCEPTION");
   }
 });
-
-// Export for use in other modules
-export {
-  mongoConnected as isMongoConnected,
-  io,
-  userToSocket as userSocketMap,
-};
 
 // =================== END OF FILE ===================
 console.log("\n✅ Server initialization complete");
