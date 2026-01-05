@@ -2,7 +2,7 @@
 nixPkgs = ['nodejs_22']
 
 [phases.install]
-cmds = ['npm ci']
+cmds = ['npm ci --prefer-offline=false --cache=/tmp/.npm-cache']
 
 [phases.build]
 cmds = []
@@ -11,4 +11,4 @@ cmds = []
 cmd = 'node index.js'
 
 [variables]
-NODE_ENV = 'production'
+NODE_ENV = 'production

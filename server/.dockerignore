@@ -4,3 +4,7 @@ node_modules
 *log
 npm-debug.log*
 DS_Store
+.npm
+.npm-cache
+node_modules/
+cache
