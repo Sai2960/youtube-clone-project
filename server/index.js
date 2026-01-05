@@ -142,108 +142,49 @@ app.use((req, res, next) => {
 // =================== ENHANCED CORS CONFIGURATION ===================
 // Build allowed origins array
 // REPLACE the allowedOrigins array:
+// REPLACE existing CORS configuration with this:
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://youtube-clone-project-eosin.vercel.app",
-  /^https:\/\/youtube-clone-project.*\.vercel\.app$/, // ✅ Allow all Vercel preview domains
+  /^https:\/\/youtube-clone-project.*\.vercel\.app$/, // All preview deployments
 ];
 
+// Strict origin validation
 const isOriginAllowed = (origin) => {
-  if (!origin) return true;
+  if (!origin) return false; // ❌ CHANGED: Don't allow empty origin in production
   
-  // Check exact matches
-  if (allowedOrigins.some(allowed => 
+  return allowedOrigins.some(allowed => 
     typeof allowed === 'string' ? allowed === origin : allowed.test(origin)
-  )) {
-    return true;
-  }
-  
-  // Production: be permissive
-  if (process.env.NODE_ENV === "production") {
-    return true;
-  }
-  
-  return false;
+  );
 };
 
-// ✅ Socket.IO CORS
-const io = new Server(server, {
-  cors: {
-    origin: function (origin, callback) {
-      console.log("🔍 Socket.IO CORS check:", origin || "no origin");
-
-      // Allow no origin (mobile, Postman)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      // Check if allowed
-      if (isOriginAllowed(origin)) {
-        console.log("   ✅ Socket origin allowed");
-        return callback(null, true);
-      }
-
-      // Production: permissive
-      if (process.env.NODE_ENV === "production") {
-        console.log("   ⚠️  Production: allowing socket origin");
-        return callback(null, true);
-      }
-
-      console.log("   ❌ Socket origin blocked");
-      callback(null, true); // ✅ ALLOW ANYWAY to prevent connection issues
-    },
-    credentials: true,
-    methods: ["GET", "POST"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept",
-      "Origin",
-    ],
+app.use(cors({
+  origin: function (origin, callback) {
+    // Development: allow localhost
+    if (process.env.NODE_ENV === "development") {
+      return callback(null, true);
+    }
+    
+    // Production: strict validation
+    if (isOriginAllowed(origin)) {
+      return callback(null, origin);
+    }
+    
+    console.warn("❌ Blocked origin:", origin);
+    callback(new Error('Not allowed by CORS'));
   },
-
-  // ✅ CRITICAL FIX: Match frontend transport order
-  transports: ["websocket", "polling"],
-  allowEIO3: true,
-  allowUpgrades: true,
-
-  // ✅ Timeouts
-  pingTimeout: 60000,
-  pingInterval: 25000,
-  upgradeTimeout: 10000,
-  connectTimeout: 45000,
-  maxHttpBufferSize: 1e8,
-
-  // Path
-  path: "/socket.io/",
-
-  // Server options
-  serveClient: false,
-  perMessageDeflate: false,
-  httpCompression: false,
-});
-
-console.log("✅ Socket.IO configured with CORS");
-
-// Define upload directories for different content types
-const directories = {
-  videos: path.join(__dirname, "uploads", "videos"),
-  channelImages: path.join(__dirname, "uploads", "channel-images"),
-  shortsVideos: path.join(__dirname, "uploads", "shorts", "videos"),
-  shortsThumbnails: path.join(__dirname, "uploads", "shorts", "thumbnails"),
-  recordings: path.join(__dirname, "uploads", "recordings"),
-  invoices: path.join(__dirname, "invoices"),
-};
-
-// Make sure all upload directories exist
-Object.entries(directories).forEach(([name, dirPath]) => {
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-    console.log(`✅ Created ${name} directory: ${dirPath}`);
-  }
-});
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Cache-Control",
+  ],
+  exposedHeaders: ["Content-Range", "X-Content-Range"],
+  maxAge: 86400,
+}));
 // =================== EXPRESS CORS MIDDLEWARE ===================
 // REPLACE THE EXISTING app.use(cors({...})) WITH THIS:
 

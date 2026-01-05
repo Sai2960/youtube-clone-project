@@ -233,92 +233,30 @@ router.post("/merge-chunks", verifyToken, async (req, res) => {
   }
 });
 
+// REPLACE the /upload route middleware chain:
+
 router.post(
   "/upload",
-  (req, res, next) => {
-    console.log("\n📤 ===== SINGLE UPLOAD REQUEST =====");
-    console.log("   Content-Length:", req.headers["content-length"]);
-
-    // ✅ CRITICAL: Check size from header BEFORE multer processes
-    const contentLength = parseInt(req.headers["content-length"] || "0");
-    const sizeMB = contentLength / (1024 * 1024);
-
-    console.log(`   Estimated size: ${sizeMB.toFixed(2)}MB`);
-
-    // ✅ Reject files over 95MB for direct upload
-    if (sizeMB > 95) {
-      console.log("❌ File too large - rejecting before Multer");
-      return res.status(413).json({
-        success: false,
-        message: `File size ${sizeMB.toFixed(
-          0
-        )}MB exceeds 95MB limit for direct upload. Please use chunked upload or compress your video.`,
-        shouldUseChunks: true,
-        fileSize: sizeMB,
-        maxSize: 95,
-      });
-    }
-
-    next();
-  },
-
   verifyToken,
-
+  
+  // ✅ FIX 1: Remove early size check - let storage handle it
   (req, res, next) => {
-    if (!req.userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
-    }
+    req.setTimeout(600000); // 10 minutes
+    res.setTimeout(600000);
     next();
   },
 
-  // ✅ Add timeout for large uploads
-  (req, res, next) => {
-    req.setTimeout(900000); // 15 minutes
-    res.setTimeout(900000);
-    next();
-  },
-
-  // ✅ Use memory storage instead of Cloudinary
+  // ✅ FIX 2: Use memory storage (works with both Supabase & Cloudinary)
   multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 95 * 1024 * 1024 },
+    limits: { 
+      fileSize: 100 * 1024 * 1024, // 100MB
+      fieldSize: 100 * 1024 * 1024,
+    },
   }).single("file"),
-
-  (err, req, res, next) => {
-    if (err) {
-      console.error("❌ Multer/Cloudinary error:", err.message);
-
-      // ✅ Handle Cloudinary size errors gracefully
-      if (
-        err.message?.includes("File size too large") ||
-        err.message?.includes("exceeds") ||
-        err.message?.includes("Maximum is")
-      ) {
-        return res.status(413).json({
-          success: false,
-          message:
-            "File exceeds Cloudinary's 100MB limit. Please compress your video or use chunked upload.",
-          shouldUseChunks: true,
-          cloudinaryLimit: 100,
-          error: err.message,
-        });
-      }
-
-      return res.status(400).json({
-        success: false,
-        message: err.message || "Upload failed",
-      });
-    }
-    next();
-  },
 
   async (req, res) => {
     try {
-      console.log("\n📤 ===== PROCESSING SINGLE UPLOAD =====");
-
       if (!req.file) {
         return res.status(400).json({
           success: false,
@@ -327,100 +265,73 @@ router.post(
       }
 
       const fileSizeMB = req.file.size / (1024 * 1024);
-      console.log(`📊 File size: ${fileSizeMB.toFixed(2)}MB`);
+      console.log(`📊 Upload: ${fileSizeMB.toFixed(2)}MB`);
 
-      // ✅ Final safety check (should never reach here if over 95MB)
-      if (fileSizeMB > 95) {
-        return res.status(413).json({
-          success: false,
-          message: `File size ${fileSizeMB.toFixed(
-            0
-          )}MB exceeds limit. Use chunked upload.`,
-          shouldUseChunks: true,
-          fileSize: fileSizeMB,
+      // ✅ FIX 3: Try Supabase first, fallback to Cloudinary
+      let videoUrl = null;
+      let publicId = null;
+      let storageType = null;
+
+      // Try Supabase
+      if (isSupabaseConfigured()) {
+        try {
+          const fileName = `videos/${Date.now()}-${req.file.originalname}`;
+          
+          const { data, error } = await supabase.storage
+            .from(bucketName)
+            .upload(fileName, req.file.buffer, {
+              contentType: req.file.mimetype,
+              cacheControl: "3600",
+            });
+
+          if (!error) {
+            const { data: { publicUrl } } = supabase.storage
+              .from(bucketName)
+              .getPublicUrl(fileName);
+            
+            videoUrl = publicUrl;
+            publicId = fileName;
+            storageType = "supabase";
+            console.log("✅ Uploaded to Supabase");
+          }
+        } catch (err) {
+          console.warn("⚠️ Supabase failed, trying Cloudinary:", err.message);
+        }
+      }
+
+      // Fallback to Cloudinary
+      if (!videoUrl) {
+        const { uploadVideoWithAudio } = await import("../config/cloudinary.js");
+        const result = await uploadVideoWithAudio(req.file.buffer, {
+          folder: "youtube-clone/videos",
+          resource_type: "video",
         });
+        
+        videoUrl = result.secure_url;
+        publicId = result.public_id;
+        storageType = "cloudinary";
+        console.log("✅ Uploaded to Cloudinary");
       }
 
-      const publicId = req.file.public_id || req.file.filename;
-
-      if (!publicId) {
-        return res.status(500).json({
-          success: false,
-          message: "Upload failed - no public_id",
-        });
-      }
-
-      const CLOUDINARY_CLOUD_NAME =
-        process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
-      const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-
-      const videoUrl = `${baseUrl}/f_mp4,vc_h264,ac_aac,af_44100,br_1000k,q_auto:good/${publicId}.mp4`;
-      const thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-
-      const { videotitle, videodescription, videochanel } = req.body;
-      const uploadedBy = req.userId;
-
-      const user = await User.findById(uploadedBy)
-        .select("name channelname")
-        .lean();
-
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
-
-      const channelName =
-        user.channelname || videochanel || user.name || "Unknown";
-      const title = videotitle || req.file.originalname;
-      const autoDescription =
-        videodescription?.trim() ||
-        `Watch "${title}" - Don't forget to like and subscribe!`;
-
+      // Save to database...
       const newVideo = new videofiles({
-        videotitle: title,
-        videodescription: autoDescription,
+        videotitle: req.body.videotitle || req.file.originalname,
+        videodescription: req.body.videodescription || `Watch "${req.body.videotitle}"`,
         videofilename: publicId,
-
         filepath: videoUrl,
         videofile: videoUrl,
         videoLink: videoUrl,
-        videoUrl: videoUrl,
-
-        thumbnail: thumbnailUrl,
-        videothumbnail: thumbnailUrl,
-        thumbnailUrl: thumbnailUrl,
-
-        filename: req.file.originalname,
-        filetype: req.file.mimetype,
-        filesize: `${fileSizeMB.toFixed(2)} MB`,
-
-        uploadedBy,
-        user: uploadedBy,
-        videochanel: channelName,
-        channelName: channelName,
-
-        views: 0,
-        Like: 0,
-        Dislike: 0,
+        uploadedBy: req.userId,
+        storageType,
       });
 
       await newVideo.save();
 
-      console.log("✅ Video saved:", newVideo._id);
-
       res.status(201).json({
         success: true,
-        message: "Video uploaded successfully!",
-        video: {
-          _id: newVideo._id,
-          title: newVideo.videotitle,
-          url: videoUrl,
-          thumbnail: thumbnailUrl,
-        },
+        video: newVideo,
         videoUrl,
-        thumbnailUrl,
-        publicId,
+        storage: storageType,
       });
     } catch (error) {
       console.error("❌ Upload error:", error);
@@ -634,36 +545,7 @@ router.post(
   }
 );
 
-// FIND THIS SECTION (around line 400):
-// REPLACE the CORS middleware section (around line 400) with:
-router.use((req, res, next) => {
-  const origin = req.headers.origin;
 
-  // ✅ CRITICAL FIX: Set specific origin for credentials
-  if (origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  } else {
-    // No origin = same-origin or direct API call
-    res.setHeader("Access-Control-Allow-Origin", "*");
-  }
-
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, If-None-Match, If-Modified-Since"
-  );
-  res.setHeader("Access-Control-Max-Age", "86400");
-
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-
-  next();
-});
 // =================== HELPER FUNCTIONS ===================
 // Transform video URLs to absolute URLs
 function transformVideoURLs(video) {
