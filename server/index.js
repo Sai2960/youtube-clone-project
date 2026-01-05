@@ -79,6 +79,37 @@ let cronJobsRunning = false;
 let serverReady = false;
 
 console.log("✅ All modules imported successfully");
+// =================== CRITICAL: GLOBAL ERROR HANDLERS ===================
+// Must be set up BEFORE any async operations
+
+process.on("uncaughtException", (error) => {
+  console.error("\n🚨 ===== UNCAUGHT EXCEPTION =====");
+  console.error("Error:", error.message);
+  console.error("Stack:", error.stack);
+  console.error("=================================\n");
+
+  // In production, log but don't crash
+  if (process.env.NODE_ENV === "production") {
+    console.error("⚠️  Server continuing despite error (production mode)");
+  } else {
+    console.error("🛑 Crashing in development mode");
+    process.exit(1);
+  }
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("\n🚨 ===== UNHANDLED PROMISE REJECTION =====");
+  console.error("Promise:", promise);
+  console.error("Reason:", reason);
+  console.error("==========================================\n");
+
+  // In production, log but don't crash
+  if (process.env.NODE_ENV === "production") {
+    console.error("⚠️  Server continuing despite rejection (production mode)");
+  }
+});
+
+console.log("✅ Global error handlers configured");
 // =================== CREATE EXPRESS APP & SERVER ===================
 const app = express();
 const server = http.createServer(app);
@@ -1144,16 +1175,8 @@ mongoose.connection.on("reconnected", () => {
 });
 
 console.log("✅ MongoDB event listeners configured");
-// =================== SERVER STARTUP ===================
-
-// ✅ CRITICAL: Single server.listen() call for Railway
-// =================== SERVER STARTUP ===================
-
-// ✅ CRITICAL: Single server.listen() call for Railway
-// =================== SERVER STARTUP ===================
-
 // ✅ CRITICAL: Start server immediately, connect to DB in background
-server.listen(PORT, HOST, async () => {
+server.listen(PORT, HOST, () => {
   console.log("\n");
   console.log("🚀 ============================================");
   console.log("🚀 ===== SERVER STARTED SUCCESSFULLY =====");
@@ -1187,16 +1210,21 @@ server.listen(PORT, HOST, async () => {
 
   serverReady = true;
 
-  // ✅ Connect to database AFTER server is listening
+  // ✅ CRITICAL: Connect to database with bulletproof error handling
   if (DATABASE_URL) {
     console.log("🔄 Connecting to database in background...\n");
-    // Use setTimeout to ensure it's truly async and won't block
-    setTimeout(() => {
-      connectToDatabase().catch((err) => {
+
+    // Wrap in setImmediate to ensure it's truly non-blocking
+    setImmediate(async () => {
+      try {
+        await connectToDatabase();
+        console.log("🎉 Background initialization complete!");
+      } catch (err) {
         console.error("❌ Background DB connection failed:", err.message);
         console.error("   Server will continue without database");
-      });
-    }, 100);
+        // Don't crash - just log the error
+      }
+    });
   } else {
     console.log("⚠️  Skipping database connection (no DB_URL configured)\n");
   }
