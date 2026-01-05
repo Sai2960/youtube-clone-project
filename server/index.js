@@ -1,7 +1,7 @@
 // server/index.js
 // Main server file for YouTube Clone Backend
-// Handles video streaming, real-time calls, and content management
-// FULLY MERGED VERSION - All Features + Fixed Socket.IO Initialization
+// FULLY MERGED VERSION - All Features + Railway Deployment Fixes
+// Version: 2.0.2 - Production Ready
 
 // =================== ENVIRONMENT SETUP (MUST BE FIRST) ===================
 import dotenv from "dotenv";
@@ -12,63 +12,34 @@ import path from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env with explicit path - THIS MUST HAPPEN BEFORE OTHER IMPORTS
-// Railway provides env vars directly, but load .env for local dev
+// ✅ Load environment variables FIRST
+dotenv.config();
+
+// ✅ CRITICAL: Railway-specific environment setup
 if (process.env.RAILWAY_ENVIRONMENT) {
-  console.log("🚂 Running on Railway - using Railway env vars");
-  dotenv.config(); // Just load defaults for Railway
-} else {
-  const envPath = path.join(__dirname, ".env");
-  console.log("📁 Loading .env from:", envPath);
-  dotenv.config({ path: envPath });
-}
+  console.log("🚂 Running on Railway");
 
-// ✅ NOW check JWT_SECRET after dotenv.config() has run
-if (!process.env.JWT_SECRET) {
-  console.error("❌ FATAL ERROR: JWT_SECRET not found");
-  console.error("   Current directory:", __dirname);
-
-  // Don't exit on Railway - env vars are set differently
-  if (!process.env.RAILWAY_ENVIRONMENT) {
-    console.error("   Please create a .env file with JWT_SECRET");
-    process.exit(1);
-  } else {
-    console.warn("⚠️  JWT_SECRET not loaded - check Railway variables");
+  // Set BASE_URL from Railway's provided domain
+  if (!process.env.BASE_URL) {
+    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+      process.env.BASE_URL = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+    } else if (process.env.RAILWAY_STATIC_URL) {
+      process.env.BASE_URL = process.env.RAILWAY_STATIC_URL;
+    }
   }
+
+  console.log("   BASE_URL:", process.env.BASE_URL);
 }
 
-// Set BASE_URL if not provided
-if (!process.env.BASE_URL) {
-  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-    process.env.BASE_URL = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
-  } else if (process.env.RAILWAY_STATIC_URL) {
-    process.env.BASE_URL = `https://${process.env.RAILWAY_STATIC_URL}`;
-  } else {
-    process.env.BASE_URL = "http://localhost:5000";
-  }
-  console.log("🌐 BASE_URL set to:", process.env.BASE_URL);
-}
-
-// Verify critical environment variables
+// ✅ Verify critical environment variables
 if (!process.env.JWT_SECRET) {
-  console.error("❌ FATAL ERROR: JWT_SECRET not found in .env");
-  console.error("   .env path:", envPath);
-  console.error("   Current directory:", __dirname);
-  console.error("   Please create a .env file with JWT_SECRET");
+  console.error("❌ FATAL: JWT_SECRET not found");
   process.exit(1);
 }
 
-console.log("🔐 Environment Check:");
-console.log("   JWT_SECRET exists:", !!process.env.JWT_SECRET);
-console.log("   JWT_SECRET length:", process.env.JWT_SECRET?.length || 0);
-console.log(
-  "   JWT_SECRET preview:",
-  process.env.JWT_SECRET?.substring(0, 15) + "..."
-);
-console.log("   DB_URL exists:", !!process.env.DB_URL);
-console.log("   NODE_ENV:", process.env.NODE_ENV || "development");
+console.log("✅ Environment validated");
 
-// =================== NOW IMPORT EVERYTHING ELSE ===================
+// =================== IMPORTS ===================
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -106,20 +77,44 @@ import { startAllCronJobs, stopAllCronJobs } from "./services/cronJobs.js";
 let mongoConnected = false;
 let cronJobsRunning = false;
 let serverReady = false;
-// =================== CREATE EXPRESS APP & SOCKET.IO ===================
-// Create Express app FIRST
+
+console.log("✅ All modules imported successfully");
+// =================== CREATE EXPRESS APP & SERVER ===================
 const app = express();
 const server = http.createServer(app);
 
-// ✅ CRITICAL FIX: Initialize Socket.IO immediately after server creation
+// ✅ CRITICAL FIX: Ultra-fast health check FIRST (before ANY middleware)
+// This MUST be the first route to respond instantly to Railway health checks
+app.get("/health", (req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end('{"status":"OK"}');
+});
+
+console.log("✅ Express app created");
+console.log("✅ Critical health check route registered");
+
+// =================== CORS CONFIGURATION ===================
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://youtube-clone-project-eosin.vercel.app",
   /^https:\/\/youtube-clone-project.*\.vercel\.app$/,
-  /^https:\/\/.*\.up\.railway\.app$/, // ✅ ADD THIS for Railway
+  /^https:\/\/.*\.railway\.app$/, // ✅ Railway domains
+  /^https:\/\/.*\.up\.railway\.app$/, // ✅ Railway custom domains
 ];
 
+// Helper function for origin validation
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // Allow no origin for mobile apps
+
+  return allowedOrigins.some((allowed) =>
+    typeof allowed === "string" ? allowed === origin : allowed.test(origin)
+  );
+};
+
+console.log("✅ CORS configuration prepared");
+// =================== SOCKET.IO INITIALIZATION ===================
+// ✅ Initialize Socket.IO immediately after server creation
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
@@ -159,16 +154,17 @@ const userToSocket = new Map(); // userId -> socketId
 const socketToUser = new Map(); // socketId -> userId
 const activeCallRooms = new Map(); // roomId -> Set of socketIds
 
-// ✅ CRITICAL: Export immediately after declaration
+// ✅ Export for use in other modules
 export {
   mongoConnected as isMongoConnected,
   io,
   userToSocket as userSocketMap,
 };
 
+console.log("✅ Socket.IO maps initialized and exported");
 // =================== MIDDLEWARE ===================
 
-// ✅ Compression middleware
+// ✅ Compression middleware for better performance
 app.use(
   compression({
     filter: (req, res) => {
@@ -180,6 +176,9 @@ app.use(
     level: 6, // Good balance between speed and compression
   })
 );
+
+console.log("✅ Compression middleware enabled");
+
 // ✅ CRITICAL: Smart timeout - LONGER for OTP operations and uploads
 app.use((req, res, next) => {
   // OTP and upload routes: 2 minute timeout
@@ -195,9 +194,9 @@ app.use((req, res, next) => {
     return next();
   }
 
-  // Regular routes: 25 second timeout
-  req.setTimeout(25000);
-  res.setTimeout(25000);
+  // Regular routes: 30 second timeout (increased from 25s for Railway stability)
+  req.setTimeout(30000);
+  res.setTimeout(30000);
 
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
@@ -207,22 +206,15 @@ app.use((req, res, next) => {
         message: "Request timeout",
       });
     }
-  }, 25000);
+  }, 30000);
 
   res.on("finish", () => clearTimeout(timeout));
   next();
 });
 
-// =================== ENHANCED CORS CONFIGURATION ===================
-// Strict origin validation
-const isOriginAllowed = (origin) => {
-  if (!origin) return true; // Allow no origin for mobile apps
+console.log("✅ Smart timeout middleware configured");
 
-  return allowedOrigins.some((allowed) =>
-    typeof allowed === "string" ? allowed === origin : allowed.test(origin)
-  );
-};
-
+// =================== EXPRESS CORS MIDDLEWARE ===================
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -242,9 +234,10 @@ app.use(
       // Production fallback
       if (
         process.env.NODE_ENV === "production" ||
-        origin.includes("vercel.app")
+        origin.includes("vercel.app") ||
+        origin.includes("railway.app")
       ) {
-        console.log("   ✅ Production/Vercel origin allowed");
+        console.log("   ✅ Production origin allowed");
         return callback(null, origin);
       }
 
@@ -272,8 +265,16 @@ app.use(
 );
 
 console.log("✅ Express CORS configured");
+
+// Parse JSON and URL-encoded request bodies
+app.use(express.json({ limit: "30mb", extended: true }));
+app.use(express.urlencoded({ limit: "30mb", extended: true }));
+app.use(bodyParser.json());
+
+console.log("✅ Body parser middleware configured");
+// =================== VIDEO STREAMING ROUTES WITH RANGE SUPPORT ===================
+
 // ✅ CRITICAL: Video streaming with Range support for Shorts
-// ✅ ENHANCED: Better error handling and CORS
 app.get("/uploads/shorts/videos/:filename", (req, res) => {
   const filename = req.params.filename;
   const videoPath = path.join(
@@ -284,7 +285,7 @@ app.get("/uploads/shorts/videos/:filename", (req, res) => {
     filename
   );
 
-  console.log("🎬 Video request:", {
+  console.log("🎬 Shorts video request:", {
     filename,
     path: videoPath,
     exists: fs.existsSync(videoPath),
@@ -341,14 +342,74 @@ app.get("/uploads/shorts/videos/:filename", (req, res) => {
   }
 });
 
-// Debug endpoint to test video URL
+// ✅ Regular videos streaming
+app.get("/uploads/videos/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const videoPath = path.join(__dirname, "uploads", "videos", filename);
+
+  console.log("🎬 Regular video request:", {
+    filename,
+    path: videoPath,
+    exists: fs.existsSync(videoPath),
+  });
+
+  if (!fs.existsSync(videoPath)) {
+    console.error("❌ Video not found:", videoPath);
+    return res.status(404).json({ success: false, message: "Video not found" });
+  }
+
+  const stat = fs.statSync(videoPath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
+  res.setHeader(
+    "Access-Control-Expose-Headers",
+    "Content-Length, Content-Range, Accept-Ranges"
+  );
+  res.setHeader("Accept-Ranges", "bytes");
+  res.setHeader("Content-Type", "video/mp4");
+  res.setHeader("Cache-Control", "public, max-age=31536000");
+
+  if (range) {
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+    if (start >= fileSize) {
+      res.status(416).setHeader("Content-Range", `bytes */${fileSize}`);
+      return res.end();
+    }
+
+    const chunksize = end - start + 1;
+    const file = fs.createReadStream(videoPath, { start, end });
+
+    console.log("✅ Streaming range:", { start, end, chunksize, fileSize });
+
+    res.writeHead(206, {
+      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+      "Content-Length": chunksize,
+    });
+
+    file.pipe(res);
+  } else {
+    console.log("✅ Streaming full video");
+    res.writeHead(200, {
+      "Content-Length": fileSize,
+    });
+    fs.createReadStream(videoPath).pipe(res);
+  }
+});
+
+// ✅ Debug endpoint to test video URL
 app.get("/api/test-video/:shortId", async (req, res) => {
   try {
     const { shortId } = req.params;
     console.log("🔍 Testing video access for short:", shortId);
 
     const Short = mongoose.connection.model("Short");
-
     const short = await Short.findById(shortId);
 
     if (!short) {
@@ -383,57 +444,8 @@ app.get("/api/test-video/:shortId", async (req, res) => {
   }
 });
 
-// Same for regular videos
-app.get("/uploads/videos/:filename", (req, res) => {
-  const filename = req.params.filename;
-  const videoPath = path.join(__dirname, "uploads", "videos", filename);
-
-  if (!fs.existsSync(videoPath)) {
-    console.error("❌ Video not found:", videoPath);
-    return res.status(404).json({ success: false, message: "Video not found" });
-  }
-
-  const stat = fs.statSync(videoPath);
-  const fileSize = stat.size;
-  const range = req.headers.range;
-
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
-  res.setHeader(
-    "Access-Control-Expose-Headers",
-    "Content-Length, Content-Range, Accept-Ranges"
-  );
-  res.setHeader("Accept-Ranges", "bytes");
-  res.setHeader("Content-Type", "video/mp4");
-
-  if (range) {
-    const parts = range.replace(/bytes=/, "").split("-");
-    const start = parseInt(parts[0], 10);
-    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-
-    if (start >= fileSize) {
-      res.status(416).setHeader("Content-Range", `bytes */${fileSize}`);
-      return res.end();
-    }
-
-    const chunksize = end - start + 1;
-    const file = fs.createReadStream(videoPath, { start, end });
-
-    res.writeHead(206, {
-      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
-      "Content-Length": chunksize,
-    });
-
-    file.pipe(res);
-  } else {
-    res.writeHead(200, {
-      "Content-Length": fileSize,
-    });
-    fs.createReadStream(videoPath).pipe(res);
-  }
-});
-// ✅ ENHANCED CORS - COMPLETE FIX
+console.log("✅ Video streaming routes configured");
+// =================== ENHANCED CORS MIDDLEWARE ===================
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
@@ -466,12 +478,7 @@ app.use((req, res, next) => {
   next();
 });
 
-console.log("✅ CORS middleware configured");
-
-// Parse JSON and URL-encoded request bodies
-app.use(express.json({ limit: "30mb", extended: true }));
-app.use(express.urlencoded({ limit: "30mb", extended: true }));
-app.use(bodyParser.json());
+console.log("✅ Enhanced CORS middleware configured");
 
 // =================== STATIC FILE SERVING ===================
 app.use(
@@ -525,7 +532,9 @@ app.use(
 );
 
 app.use("/invoices", express.static(path.join(__dirname, "invoices")));
-// =================== API Routes ===================
+
+console.log("✅ Static file serving configured");
+// =================== API ROUTES ===================
 console.log("📋 Setting up API routes...");
 
 // Authentication and user management
@@ -535,7 +544,7 @@ app.use("/user", userroutes);
 // Video content routes
 app.use("/video", videoroutes);
 
-// ✅ TEMPORARY: Add direct /video GET endpoint until routes are fixed
+// ✅ Fallback endpoint for video listing (until routes are fully fixed)
 app.get("/video", async (req, res) => {
   try {
     const videofiles = mongoose.connection.model("videofiles");
@@ -569,11 +578,14 @@ app.get("/video", async (req, res) => {
   }
 });
 
+// Subscription and engagement routes
 app.use("/subscription", subscriptionroutes);
 app.use("/api/download", downloadroutes);
 app.use("/history", historyroutes);
 app.use("/like", likeroutes);
 app.use("/watch", watchroutes);
+
+// Translation and comment routes
 app.use("/translate", translationroutes);
 app.use("/comment", commentroutes);
 
@@ -582,7 +594,7 @@ app.use("/api/shorts/translate", shortTranslationRoutes);
 app.use("/api/shorts", shortroutes);
 app.use("/shorts", shortroutes);
 
-// Other features
+// Other feature routes
 app.use("/api/location", locationRoutes);
 app.use("/call", callroutes);
 app.use("/report", reportRoutes);
@@ -593,12 +605,12 @@ app.use("/api", healthRoutes);
 
 console.log("✅ All routes registered successfully");
 
-// Root endpoint - shows available API endpoints
+// =================== ROOT ENDPOINT ===================
 app.get("/", (req, res) => {
   res.json({
     message: "YouTube Clone Backend API",
     status: "OK",
-    version: "2.0.1",
+    version: "2.0.2",
     environment: process.env.NODE_ENV || "development",
     mongoConnected: mongoConnected,
     cronJobsActive: cronJobsRunning,
@@ -624,7 +636,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// Environment test endpoint (for debugging)
+// =================== ENVIRONMENT TEST ENDPOINT ===================
 app.get("/test-env", (req, res) => {
   res.json({
     nodeEnv: process.env.NODE_ENV || "development",
@@ -634,31 +646,24 @@ app.get("/test-env", (req, res) => {
       ? process.env.JWT_SECRET.substring(0, 10) + "..."
       : "NOT LOADED",
     hasDbUrl: !!process.env.DB_URL,
-    port: process.env.PORT || 5000,
+    port: process.env.PORT || 8080,
     allowedOrigins: allowedOrigins.length,
-    origins: allowedOrigins,
+    origins: allowedOrigins.map((o) =>
+      typeof o === "string" ? o : o.toString()
+    ),
     timestamp: new Date().toISOString(),
+    railway: {
+      environment: process.env.RAILWAY_ENVIRONMENT || "N/A",
+      publicDomain: process.env.RAILWAY_PUBLIC_DOMAIN || "N/A",
+      staticUrl: process.env.RAILWAY_STATIC_URL || "N/A",
+    },
   });
 });
+
+console.log("✅ Root and test endpoints configured");
 // =================== HEALTH CHECK ENDPOINTS ===================
 
-// Simple health check for Render (fast response)
-// ✅ CRITICAL: Ultra-fast health check for Railway
-app.get("/health", (req, res) => {
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end('{"status":"OK"}');
-});
-
-// Keep detailed health for monitoring
-app.get("/health/detailed", (req, res) => {
-  res.status(200).json({
-    status: "OK",
-    timestamp: new Date().toISOString(),
-    mongodb: mongoConnected ? "Connected" : "Disconnected",
-    uptime: process.uptime(),
-  });
-});
-
+// ✅ Keep-alive endpoint for external monitoring
 app.get("/api/keep-alive", (req, res) => {
   console.log("🔔 Keep-alive ping received at", new Date().toISOString());
 
@@ -671,15 +676,17 @@ app.get("/api/keep-alive", (req, res) => {
     cronJobs: cronJobsRunning ? "active" : "inactive",
     socketConnections: io.sockets.sockets.size,
     environment: process.env.NODE_ENV || "development",
+    railway: !!process.env.RAILWAY_ENVIRONMENT,
   });
 });
 
-// Detailed health check for monitoring
+// Detailed health check for monitoring and debugging
 app.get("/health/detailed", (req, res) => {
   try {
     res.status(200).json({
       message: "Server is running",
       status: "OK",
+      version: "2.0.2",
       mongodb: mongoConnected ? "Connected" : "Disconnected",
       cronJobs: cronJobsRunning ? "Active" : "Inactive",
       socketConnections: io.sockets.sockets.size,
@@ -691,10 +698,21 @@ app.get("/health/detailed", (req, res) => {
       memory: {
         used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + "MB",
         total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + "MB",
+        rss: Math.round(process.memoryUsage().rss / 1024 / 1024) + "MB",
+      },
+      platform: {
+        node: process.version,
+        platform: process.platform,
+        arch: process.arch,
+      },
+      railway: {
+        isRailway: !!process.env.RAILWAY_ENVIRONMENT,
+        publicDomain: process.env.RAILWAY_PUBLIC_DOMAIN || "N/A",
+        staticUrl: process.env.RAILWAY_STATIC_URL || "N/A",
       },
     });
   } catch (error) {
-    console.error("Health check error:", error);
+    console.error("❌ Health check error:", error);
     res.status(500).json({
       status: "ERROR",
       message: error.message,
@@ -702,21 +720,28 @@ app.get("/health/detailed", (req, res) => {
     });
   }
 });
-// =================== Socket.IO Connection Handler ===================
+
+console.log("✅ Health check endpoints configured");
+// =================== SOCKET.IO CONNECTION HANDLER ===================
 io.on("connection", (socket) => {
   console.log("\n👤 New user connected");
   console.log("   Socket ID:", socket.id);
   console.log("   Total connections:", io.sockets.sockets.size);
+  console.log("   Origin:", socket.handshake.headers.origin || "unknown");
 
-  // ✅ CRITICAL FIX: Setup call handlers from external file
+  // ✅ CRITICAL: Setup call handlers from external file
   try {
     setupCallHandlers(io, socket);
     console.log("✅ Call handlers initialized for socket:", socket.id);
   } catch (error) {
     console.error("❌ Failed to setup call handlers:", error);
+    socket.emit("setup-error", {
+      message: "Failed to initialize call handlers",
+      error: error.message,
+    });
   }
 
-  // User registration - links userId to socketId
+  // =================== USER REGISTRATION ===================
   socket.on("register-user", (userId) => {
     if (!userId) {
       console.error("❌ Registration failed: No userId provided");
@@ -730,7 +755,18 @@ io.on("connection", (socket) => {
       console.log(`   ℹ️  User ${userId} reconnected with new socket`);
       console.log(`   Old socket: ${existingSocketId}`);
       console.log(`   New socket: ${socket.id}`);
+
+      // Remove old socket mapping
       socketToUser.delete(existingSocketId);
+
+      // Notify old socket if still connected
+      const oldSocket = io.sockets.sockets.get(existingSocketId);
+      if (oldSocket) {
+        oldSocket.emit("session-replaced", {
+          message: "New session started from another device",
+          newSocketId: socket.id,
+        });
+      }
     }
 
     // Update mappings
@@ -756,7 +792,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  // Initiate a call to another user
+  // =================== CALL INITIATION ===================
   socket.on("call-user", (callData) => {
     console.log("\n📞 Initiating call");
     console.log("   To:", callData.userToCall);
@@ -792,17 +828,19 @@ io.on("connection", (socket) => {
         success: true,
         receiverId: callData.userToCall,
         roomId: callData.roomId,
+        timestamp: Date.now(),
       });
     } else {
       console.log(`❌ Receiver not available: ${callData.userToCall}`);
       socket.emit("call-error", {
         success: false,
         message: "User not available or offline",
+        userId: callData.userToCall,
       });
     }
   });
 
-  // Handle disconnection
+  // =================== DISCONNECT HANDLER ===================
   socket.on("disconnect", (reason) => {
     console.log("\n👋 User disconnected");
     console.log("   Socket:", socket.id);
@@ -817,6 +855,7 @@ io.on("connection", (socket) => {
       // Notify others that user went offline
       io.emit("user-offline", {
         userId: disconnectedUserId,
+        socketId: socket.id,
         timestamp: Date.now(),
       });
     }
@@ -832,17 +871,20 @@ io.on("connection", (socket) => {
         socket.to(roomId).emit("user-disconnected", {
           socketId: socket.id,
           userId: disconnectedUserId,
+          timestamp: Date.now(),
         });
 
         socket.to(roomId).emit("call-ended", {
           reason: "user-disconnected",
           socketId: socket.id,
           endedBy: disconnectedUserId,
+          timestamp: Date.now(),
         });
 
         // Remove empty rooms
         if (sockets.size === 0) {
           activeCallRooms.delete(roomId);
+          console.log(`   Removed empty room: ${roomId}`);
         }
       }
     }
@@ -851,26 +893,45 @@ io.on("connection", (socket) => {
     console.log(`   Active rooms: ${activeCallRooms.size}\n`);
   });
 
-  // Error handling
+  // =================== ERROR HANDLING ===================
   socket.on("error", (error) => {
     console.error("❌ Socket error:", error);
-  });
-
-  // Simple ping/pong for connection monitoring
-  socket.on("ping", (roomId) => {
-    socket.emit("pong", {
-      roomId,
+    socket.emit("socket-error", {
+      message: "An error occurred",
+      error: error.message,
       timestamp: Date.now(),
     });
   });
+
+  // =================== CONNECTION MONITORING ===================
+  socket.on("ping", (data) => {
+    socket.emit("pong", {
+      roomId: data?.roomId,
+      timestamp: Date.now(),
+      serverTime: new Date().toISOString(),
+    });
+  });
+
+  // ✅ Heartbeat for connection health
+  socket.on("heartbeat", () => {
+    socket.emit("heartbeat-ack", {
+      timestamp: Date.now(),
+      socketId: socket.id,
+    });
+  });
 });
-// =================== Error Handling Middleware ===================
+
+console.log("✅ Socket.IO connection handler configured");
+// =================== ERROR HANDLING MIDDLEWARE ===================
+
+// Global error handler
 app.use((err, req, res, next) => {
   console.error("❌ Server error:", err.stack);
 
   // Special handling for CORS errors
   if (err.message === "Not allowed by CORS") {
     return res.status(403).json({
+      success: false,
       error: "CORS Error",
       message: "This origin is not allowed to access this resource",
       origin: req.headers.origin,
@@ -878,51 +939,111 @@ app.use((err, req, res, next) => {
     });
   }
 
+  // Handle multer file upload errors
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({
+      success: false,
+      error: "File Too Large",
+      message: "The uploaded file exceeds the maximum allowed size",
+      maxSize: "30MB",
+    });
+  }
+
+  // Handle MongoDB errors
+  if (err.name === "ValidationError") {
+    return res.status(400).json({
+      success: false,
+      error: "Validation Error",
+      message: err.message,
+      details: err.errors,
+    });
+  }
+
+  if (err.name === "CastError") {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid ID",
+      message: "The provided ID is not valid",
+    });
+  }
+
+  // Handle JWT errors
+  if (err.name === "JsonWebTokenError") {
+    return res.status(401).json({
+      success: false,
+      error: "Authentication Error",
+      message: "Invalid token",
+    });
+  }
+
+  if (err.name === "TokenExpiredError") {
+    return res.status(401).json({
+      success: false,
+      error: "Authentication Error",
+      message: "Token has expired",
+    });
+  }
+
+  // Generic error response
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Something went wrong!",
+    message: err.message || "Internal server error",
     // Only show stack trace in development
     error: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    timestamp: new Date().toISOString(),
   });
 });
 
 // 404 handler for undefined routes
 app.use((req, res) => {
+  console.log("❌ 404 - Route not found:", req.method, req.path);
   res.status(404).json({
     success: false,
     message: "Route not found",
     path: req.path,
     method: req.method,
+    availableEndpoints: "/",
+    timestamp: new Date().toISOString(),
   });
 });
-// =================== Database Connection & Server Startup ===================
-// ✅ Railway sets PORT automatically - MUST use it
-// =================== Database Connection & Server Startup ===================
-const DATABASE_URL = process.env.DB_URL;
-const PORT = process.env.PORT || 8080;
 
-// =================== Database Connection Setup ===================
+console.log("✅ Error handling middleware configured");
+// =================== DATABASE CONNECTION & CONFIGURATION ===================
+
+const DATABASE_URL = process.env.DB_URL;
+const PORT = parseInt(process.env.PORT || "8080", 10);
+const HOST = "0.0.0.0";
+
+// ✅ Database connection function with retry logic
 const connectToDatabase = async () => {
   if (!DATABASE_URL) {
-    console.warn("⚠️  No MongoDB connection string provided");
+    console.warn("\n⚠️  ===== NO MONGODB CONNECTION =====");
     console.warn("⚠️  Set DB_URL in your .env file");
-    console.warn("⚠️  Database features and cron jobs will not be available");
+    console.warn("⚠️  Database features will not be available");
+    console.warn("⚠️  Cron jobs will not run");
+    console.warn("===== SERVER RUNNING WITHOUT DB =====\n");
     return;
   }
 
   mongoose.set("strictQuery", false);
 
   try {
+    console.log("🔄 Connecting to MongoDB...");
+
     await mongoose.connect(DATABASE_URL, {
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      retryWrites: true,
+      retryReads: true,
     });
 
     console.log("✅ MongoDB connected successfully");
     mongoConnected = true;
 
     // Start cron jobs after successful database connection
-    if (!cronJobsRunning) {
+    if (!cronJobsRunning && DATABASE_URL) {
       console.log("\n⏰ ===== STARTING CRON JOBS =====");
       try {
         startAllCronJobs();
@@ -931,19 +1052,35 @@ const connectToDatabase = async () => {
         console.log("===== CRON JOBS ACTIVE =====\n");
       } catch (error) {
         console.error("❌ Failed to start cron jobs:", error.message);
+        console.error("   Cron jobs will retry on next MongoDB reconnect");
       }
     }
   } catch (error) {
     console.error("❌ MongoDB connection failed:", error.message);
+    mongoConnected = false;
+
+    // Retry connection after delay
     console.log("   Retrying in 30 seconds...");
     setTimeout(connectToDatabase, 30000);
   }
 };
 
-// MongoDB event listeners
+// =================== MONGODB EVENT LISTENERS ===================
+
 mongoose.connection.on("connected", () => {
   mongoConnected = true;
   console.log("✅ MongoDB connection established");
+
+  // Start cron jobs if not already running
+  if (!cronJobsRunning && DATABASE_URL) {
+    try {
+      startAllCronJobs();
+      cronJobsRunning = true;
+      console.log("✅ Cron jobs started after reconnection");
+    } catch (error) {
+      console.error("❌ Failed to start cron jobs:", error.message);
+    }
+  }
 });
 
 mongoose.connection.on("error", (err) => {
@@ -953,47 +1090,123 @@ mongoose.connection.on("error", (err) => {
 
 mongoose.connection.on("disconnected", () => {
   mongoConnected = false;
+  console.log("❌ MongoDB disconnected");
+
   if (cronJobsRunning) {
-    console.log("⚠️  MongoDB disconnected - Cron jobs may not work properly");
+    console.log("⚠️  Cron jobs may not work properly without database");
   }
-  console.log("❌ MongoDB disconnected. Attempting to reconnect...");
+
+  console.log("🔄 Attempting to reconnect...");
+  setTimeout(connectToDatabase, 5000);
 });
 
-// ✅ CRITICAL FIX: Single server.listen() call
-const HOST = "0.0.0.0";
-const LISTEN_PORT = parseInt(PORT, 10);
+mongoose.connection.on("reconnected", () => {
+  mongoConnected = true;
+  console.log("✅ MongoDB reconnected successfully");
+});
 
-server.listen(LISTEN_PORT, HOST, () => {
-  console.log(`\n🚀 ===== SERVER STARTED =====`);
-  console.log(`   Port: ${LISTEN_PORT}`);
+console.log("✅ MongoDB event listeners configured");
+// =================== SERVER STARTUP ===================
+
+// ✅ CRITICAL: Single server.listen() call for Railway
+// =================== SERVER STARTUP ===================
+
+// ✅ CRITICAL: Single server.listen() call for Railway
+server.listen(PORT, HOST, () => {
+  console.log("\n");
+  console.log("🚀 ============================================");
+  console.log("🚀 ===== SERVER STARTED SUCCESSFULLY =====");
+  console.log("🚀 ============================================");
+  console.log(`\n📍 Server Details:`);
+  console.log(`   Port: ${PORT}`);
   console.log(`   Host: ${HOST}`);
-  console.log(`   Local: http://localhost:${LISTEN_PORT}`);
+  console.log(`   Local: http://localhost:${PORT}`);
 
-  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-    console.log(`   Railway URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
-  } else if (process.env.RAILWAY_STATIC_URL) {
-    console.log(`   Railway URL: ${process.env.RAILWAY_STATIC_URL}`);
+  // Railway-specific URLs
+  if (process.env.RAILWAY_ENVIRONMENT) {
+    console.log("\n🚂 Railway Deployment:");
+    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+      console.log(
+        `   Public URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      );
+    }
+    if (process.env.RAILWAY_STATIC_URL) {
+      console.log(`   Static URL: ${process.env.RAILWAY_STATIC_URL}`);
+    }
   }
 
+  console.log(`\n⚙️  Configuration:`);
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`   CORS Origins: ${allowedOrigins.length}`);
-  console.log(`   Socket.IO: Configured`);
-  console.log(`===== SERVER READY =====\n`);
+  console.log(`   CORS Origins: ${allowedOrigins.length} configured`);
+  console.log(`   Socket.IO: Enabled`);
+  console.log(`   Compression: Enabled`);
+  console.log(`   MongoDB: ${DATABASE_URL ? "Configured" : "Not configured"}`);
+
+  console.log("\n✨ Features Active:");
+  console.log("   ✓ Authentication & Users");
+  console.log("   ✓ Video Management & Streaming");
+  console.log("   ✓ Shorts (Short-form videos)");
+  console.log("   ✓ Real-time Calls (WebRTC)");
+  console.log("   ✓ Comments & Translations");
+  console.log("   ✓ Subscriptions & History");
+  console.log("   ✓ Location Services");
+  console.log("   ✓ Admin Panel");
+  console.log("   ✓ Health Monitoring");
+  console.log("   ✓ Image Proxy");
+  console.log("   ✓ OTP Services");
+  console.log("   ✓ Report System");
+
+  console.log("\n🔗 Key Endpoints:");
+  console.log(`   Health Check: http://localhost:${PORT}/health`);
+  console.log(`   API Root: http://localhost:${PORT}/`);
+  console.log(`   Test Env: http://localhost:${PORT}/test-env`);
+  console.log(`   Videos: http://localhost:${PORT}/video`);
+  console.log(`   Shorts: http://localhost:${PORT}/api/shorts`);
+
+  console.log("\n============================================");
+  console.log("✅ SERVER READY - Accepting Connections");
+  console.log("============================================\n");
 
   serverReady = true;
 
   // ✅ Start MongoDB connection AFTER server is listening
   if (DATABASE_URL) {
-    console.log("🔄 Starting database connection...");
+    console.log("🔄 Initiating database connection...\n");
     connectToDatabase();
+  } else {
+    console.log("⚠️  Skipping database connection (no DB_URL configured)\n");
   }
 });
 
-// =================== Graceful Shutdown Handler ===================
+// Handle server startup errors
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(`❌ Port ${PORT} is already in use`);
+    console.error(
+      `   Try using a different port or stop the process using port ${PORT}`
+    );
+  } else {
+    console.error("❌ Server error:", error);
+  }
+  process.exit(1);
+});
+
+console.log("✅ Server startup configured");
+// =================== GRACEFUL SHUTDOWN HANDLER ===================
+
 const handleShutdown = async (signal) => {
   console.log(`\n🛑 ${signal} received. Starting graceful shutdown...`);
+  console.log("============================================");
 
-  // Stop cron jobs first
+  let exitCode = 0;
+
+  // 1. Stop accepting new connections
+  console.log("🔒 Stopping new connections...");
+  server.close(() => {
+    console.log("✅ HTTP server closed");
+  });
+
+  // 2. Stop cron jobs first
   if (cronJobsRunning) {
     console.log("⏰ Stopping cron jobs...");
     try {
@@ -1002,36 +1215,62 @@ const handleShutdown = async (signal) => {
       console.log("✅ Cron jobs stopped");
     } catch (error) {
       console.error("❌ Error stopping cron jobs:", error.message);
+      exitCode = 1;
     }
   }
 
-  // ✅ Close email connections
+  // 3. Close email connections
   try {
+    console.log("📧 Closing email connections...");
     const { closeEmailConnections } = await import("./utils/emailService.js");
     closeEmailConnections();
+    console.log("✅ Email connections closed");
   } catch (error) {
     console.error("❌ Error closing email connections:", error.message);
+    // Non-critical, don't change exit code
   }
 
-  // Close Socket.IO connections
+  // 4. Close Socket.IO connections gracefully
   console.log("🔌 Closing Socket.IO connections...");
-  io.close(() => {
-    console.log("✅ Socket.IO closed");
-  });
+  try {
+    // Notify all connected clients
+    io.emit("server-shutdown", {
+      message: "Server is shutting down",
+      timestamp: Date.now(),
+    });
 
-  // Close MongoDB connection
+    // Give clients time to disconnect
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    io.close(() => {
+      console.log("✅ Socket.IO closed");
+    });
+  } catch (error) {
+    console.error("❌ Error closing Socket.IO:", error.message);
+    exitCode = 1;
+  }
+
+  // 5. Close MongoDB connection
   if (mongoose.connection.readyState === 1) {
+    console.log("🗄️  Closing MongoDB connection...");
     try {
       await mongoose.connection.close(false);
+      mongoConnected = false;
       console.log("✅ MongoDB connection closed");
     } catch (error) {
       console.error("❌ Error closing MongoDB:", error.message);
+      exitCode = 1;
     }
   }
 
+  console.log("\n============================================");
   console.log("✅ Graceful shutdown complete");
-  process.exit(0);
+  console.log("============================================\n");
+
+  process.exit(exitCode);
 };
+
+// =================== PROCESS EVENT HANDLERS ===================
 
 // Listen for shutdown signals
 process.on("SIGTERM", () => handleShutdown("SIGTERM"));
@@ -1039,41 +1278,70 @@ process.on("SIGINT", () => handleShutdown("SIGINT"));
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("❌ Unhandled Promise Rejection at:", promise);
-  console.error("   Reason:", reason);
+  console.error("\n❌ ===== UNHANDLED PROMISE REJECTION =====");
+  console.error("Promise:", promise);
+  console.error("Reason:", reason);
+  console.error("==========================================\n");
+
   // Don't exit in production, just log
   if (process.env.NODE_ENV !== "production") {
-    console.error("   Consider fixing this promise rejection");
+    console.error(
+      "💡 Tip: This promise rejection should be handled with .catch()"
+    );
   }
 });
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
-  console.error("❌ Uncaught Exception:", error);
-  console.error("   Stack:", error.stack);
+  console.error("\n❌ ===== UNCAUGHT EXCEPTION =====");
+  console.error("Error:", error.message);
+  console.error("Stack:", error.stack);
+  console.error("=================================\n");
+
   // Only shutdown on critical errors in development
   if (process.env.NODE_ENV !== "production") {
+    console.error(
+      "🛑 Shutting down due to uncaught exception in development mode"
+    );
     handleShutdown("UNCAUGHT_EXCEPTION");
+  } else {
+    console.error(
+      "⚠️  Continuing in production mode - please fix this exception"
+    );
   }
 });
 
+// Handle warning events
+process.on("warning", (warning) => {
+  console.warn("\n⚠️  Node.js Warning:");
+  console.warn("   Name:", warning.name);
+  console.warn("   Message:", warning.message);
+  if (warning.stack) {
+    console.warn("   Stack:", warning.stack);
+  }
+  console.warn("");
+});
+
+console.log("✅ Process event handlers configured");
+
 // =================== END OF FILE ===================
-console.log("\n✅ Server initialization complete");
-console.log("📝 All features loaded:");
-console.log("   ✓ Authentication & Users");
-console.log("   ✓ Video Management");
-console.log("   ✓ Shorts (Short-form videos)");
-console.log("   ✓ Real-time Calls (WebRTC)");
-console.log("   ✓ Comments & Translations");
-console.log("   ✓ Subscriptions & History");
-console.log("   ✓ Screen Sharing & Recording");
-console.log("   ✓ Location Services");
-console.log("   ✓ Admin Panel");
+console.log("\n✅ ============================================");
+console.log("✅ Server initialization complete");
+console.log("✅ ============================================");
+console.log("\n📝 All features loaded and configured:");
+console.log("   ✓ Environment & Configuration");
+console.log("   ✓ Express & HTTP Server");
+console.log("   ✓ Socket.IO & WebRTC");
+console.log("   ✓ CORS & Security");
+console.log("   ✓ Video Streaming (Range Support)");
+console.log("   ✓ Static File Serving");
+console.log("   ✓ API Routes (16+ routes)");
 console.log("   ✓ Health Monitoring");
-console.log("   ✓ Image Proxy");
-console.log("   ✓ OTP Services");
-console.log("   ✓ Report System");
-console.log("   ✓ Cron Jobs");
-console.log("\n🎉 YouTube Clone Backend Ready!\n");
+console.log("   ✓ Error Handling");
+console.log("   ✓ Database Connection");
+console.log("   ✓ Graceful Shutdown");
+console.log("   ✓ Process Handlers");
+console.log("\n🎉 YouTube Clone Backend Ready for Deployment!");
+console.log("============================================\n");
 
 export default app;
