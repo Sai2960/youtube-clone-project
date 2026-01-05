@@ -293,16 +293,6 @@ export const uploadvideo = async (req, res) => {
     console.log("\n📤 ===== VIDEO UPLOAD STARTED =====");
     console.log("   req.file exists:", !!req.file);
     console.log("   req.userId:", req.userId);
-    console.log(
-      "   File details:",
-      req.file
-        ? {
-            originalname: req.file.originalname,
-            mimetype: req.file.mimetype,
-            size: `${(req.file.size / (1024 * 1024)).toFixed(2)}MB`,
-          }
-        : "No file"
-    );
 
     if (!req.file) {
       return res.status(400).json({
@@ -311,21 +301,23 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    // ✅ CHECK 1: Try Supabase first (if configured)
     let videoUrl = null;
     let publicId = null;
     let thumbnailUrl = null;
     let storageType = "cloudinary"; // Default
 
+    // ✅ PRIORITY 1: Try Supabase first
     if (isSupabaseConfigured()) {
       try {
         console.log("📤 Uploading to Supabase...");
-        const fileName = `${Date.now()}-${req.file.originalname}`;
+
+        const fileName = `videos/${Date.now()}-${req.file.originalname}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from(bucketName)
           .upload(fileName, req.file.buffer, {
             contentType: req.file.mimetype,
+            cacheControl: "3600",
             upsert: false,
           });
 
@@ -354,61 +346,40 @@ export const uploadvideo = async (req, res) => {
       }
     }
 
-    // ✅ CHECK 2: Fallback to Cloudinary if Supabase not available or failed
+    // ✅ FALLBACK: Use Cloudinary if Supabase failed
     if (!videoUrl) {
-      console.log("📤 Using Cloudinary (Supabase not configured or failed)");
+      console.log("📤 Using Cloudinary fallback...");
 
-      // ✅ CRITICAL: Check if req.file has Cloudinary data OR upload manually
-      if (req.file.path && req.file.path.includes("cloudinary.com")) {
-        // Already uploaded by Cloudinary multer
-        publicId = req.file.public_id || req.file.filename;
-        videoUrl = req.file.secure_url || req.file.path;
+      const { uploadVideoWithAudio } = await import("../config/cloudinary.js");
 
-        console.log("✅ Cloudinary upload via multer:", publicId);
-      } else {
-        // Manual Cloudinary upload
-        const cloudinary = await import("../config/cloudinary.js");
-        const streamifier = await import("streamifier");
+      // Create temporary file for Cloudinary
+      const tempPath = path.join(
+        process.cwd(),
+        "temp",
+        `${Date.now()}-${req.file.originalname}`
+      );
+      fs.writeFileSync(tempPath, req.file.buffer);
 
-        const uploadPromise = new Promise((resolve, reject) => {
-          const stream = cloudinary.cloudinary.uploader.upload_stream(
-            {
-              resource_type: "video",
-              folder: "youtube-clone/videos",
-              format: "mp4",
-              transformation: [
-                {
-                  video_codec: "h264",
-                  audio_codec: "aac",
-                  audio_frequency: 44100,
-                  bit_rate: "1m",
-                  quality: "auto:good",
-                },
-              ],
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-
-          streamifier.createReadStream(req.file.buffer).pipe(stream);
+      try {
+        const result = await uploadVideoWithAudio(tempPath, {
+          folder: "youtube-clone/videos",
         });
 
-        const result = await uploadPromise;
         publicId = result.public_id;
         videoUrl = result.secure_url;
 
-        console.log("✅ Cloudinary manual upload successful:", publicId);
+        const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
+        const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+        thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+
+        storageType = "cloudinary";
+        console.log("✅ Cloudinary upload successful:", publicId);
+      } finally {
+        // Clean up temp file
+        if (fs.existsSync(tempPath)) {
+          fs.unlinkSync(tempPath);
+        }
       }
-
-      // Generate Cloudinary thumbnail
-      const CLOUDINARY_CLOUD_NAME =
-        process.env.CLOUDINARY_CLOUD_NAME || "dxuxxk0ss";
-      const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-      thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-
-      storageType = "cloudinary";
     }
 
     // ✅ Validate we have a video URL
@@ -474,6 +445,7 @@ export const uploadvideo = async (req, res) => {
       Dislike: 0,
       likes: 0,
       dislikes: 0,
+      storageType, // Track where it's stored
     });
 
     const savedVideo = await newVideo.save();
