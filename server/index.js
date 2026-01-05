@@ -19,8 +19,19 @@ if (process.env.RAILWAY_ENVIRONMENT) {
   dotenv.config(); // Just load defaults
 } else {
   const envPath = path.join(__dirname, ".env");
-  console.log("📁 Loading .env from:", envPath);
-  dotenv.config({ path: envPath });
+
+  if (!process.env.JWT_SECRET) {
+    console.error("❌ FATAL ERROR: JWT_SECRET not found");
+    console.error("   Current directory:", __dirname);
+
+    // ✅ CRITICAL: Don't exit on Railway - env vars are set differently
+    if (!process.env.RAILWAY_ENVIRONMENT) {
+      console.error("   Please create a .env file with JWT_SECRET");
+      process.exit(1);
+    } else {
+      console.warn("⚠️  JWT_SECRET not loaded - check Railway variables");
+    }
+  }
 }
 
 // Set BASE_URL if not provided
