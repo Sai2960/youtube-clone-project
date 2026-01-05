@@ -24,10 +24,9 @@ RUN mkdir -p \
 
 # Expose port (Railway uses PORT env var, default to 8080)
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
+# Health check - more lenient for Railway
+HEALTHCHECK --interval=20s --timeout=10s --start-period=60s --retries=5 \
   CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
-
+  
 # Start the application
 CMD ["node", "index.js"]
