@@ -20,7 +20,8 @@
     "fixBrokenVideoUrls": "node scripts/fixBrokenVideoUrls.js",
     "fix-thumbnails": "node scripts/fix-thumbnails.js",
     "fix-quality": "node scripts/generateQualities.js",
-    "fix-migrate-to-supabase.js": "node scripts/migrate-to-supabase.js"
+    "fix-migrate-to-supabase.js": "node scripts/migrate-to-supabase.js",
+    "check-cloudinary": "node scripts/check-cloudinary-videos.js"
   },
   "keywords": [],
   "author": "",

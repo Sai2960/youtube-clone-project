@@ -115,10 +115,37 @@ async function migrateVideos() {
       const publicId = pathParts.join('/');
       console.log(`   📋 Public ID: ${publicId}`);
 
-      // ✅ STEP 2: Download from Cloudinary using SDK (handles auth automatically)
-      console.log('   📥 Downloading from Cloudinary...');
+      // ✅ STEP 2: Check if video exists, then download
+      console.log('   📥 Checking if video exists in Cloudinary...');
       
-      // Try multiple URL approaches
+      // First check if the video exists (HEAD request)
+      const checkUrl = cloudinary.v2.url(publicId, {
+        resource_type: 'video',
+        type: 'upload',
+        sign_url: true,
+        secure: true,
+      });
+      
+      const checkResponse = await fetch(checkUrl, { 
+        method: 'HEAD',
+        timeout: 10000 
+      });
+      
+      if (!checkResponse.ok) {
+        if (checkResponse.status === 404) {
+          console.log('   ⚠️  Video does NOT exist in Cloudinary (404)');
+          console.log('   ℹ️  Skipping - video was likely deleted from Cloudinary');
+          failed++;
+          continue;
+        } else {
+          throw new Error(`HTTP ${checkResponse.status}: ${checkResponse.statusText}`);
+        }
+      }
+      
+      console.log('   ✅ Video exists in Cloudinary');
+      console.log('   📥 Downloading...');
+      
+      // Now download the video
       let response;
       let downloadUrl;
       
