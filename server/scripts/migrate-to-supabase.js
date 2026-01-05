@@ -18,7 +18,7 @@ import cloudinary from 'cloudinary';
 
 // Configure Cloudinary
 cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
@@ -31,8 +31,9 @@ async function migrateVideos() {
   console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ Set' : '❌ Missing');
   console.log('   SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅ Set (length: ' + process.env.SUPABASE_KEY.length + ')' : '❌ Missing');
   console.log('   SUPABASE_BUCKET:', process.env.SUPABASE_BUCKET || 'youtube-videos (default)');
-  console.log('   CLOUDINARY_NAME:', process.env.CLOUDINARY_NAME ? '✅ Set' : '❌ Missing');
+  console.log('   CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME ? '✅ Set' : '❌ Missing');
   console.log('   CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY ? '✅ Set' : '❌ Missing');
+  console.log('   CLOUDINARY_API_SECRET:', process.env.CLOUDINARY_API_SECRET ? '✅ Set' : '❌ Missing');
   console.log('');
   
   // Validate Supabase config
@@ -44,9 +45,9 @@ async function migrateVideos() {
   }
 
   // Validate Cloudinary config
-  if (!process.env.CLOUDINARY_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
     console.error('❌ Cloudinary is not configured!');
-    console.error('   Please set CLOUDINARY_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in .env');
+    console.error('   Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in .env');
     process.exit(1);
   }
 
