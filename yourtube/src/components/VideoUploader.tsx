@@ -344,12 +344,15 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         title: videoTitle,
       });
 
+      // REPLACE line 185-200 in VideoUploader.tsx:
       const res = await axiosInstance.post("/video/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
         timeout: 600000, // 10 minutes
-        withCredentials: true,
+        withCredentials: true, // ✅ KEEP credentials enabled
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
         onUploadProgress: (e: any) => {
           const progress = Math.round((e.loaded * 100) / e.total);
           console.log(`📊 Upload progress: ${progress}%`);
