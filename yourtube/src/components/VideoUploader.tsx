@@ -337,78 +337,48 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       formData.append("videodescription", videoDescription);
       formData.append("videochanel", channelName);
 
-      console.log("📤 Uploading to: /video/upload");
-      console.log("📊 Upload details:", {
-        filename: videoFile.name,
-        size: `${fileSizeMB.toFixed(2)}MB`,
-        title: videoTitle,
-      });
+      console.log("📤 Uploading to Railway:", axiosInstance.defaults.baseURL);
 
-      // REPLACE line 185-200 in VideoUploader.tsx:
-      const res = await axiosInstance.post("/video/upload", formData, {
+      // ✅ Use absolute path to avoid confusion
+      const res = await axiosInstance({
+        method: "POST",
+        url: "/video/upload", // Relative to baseURL
+        data: formData,
         headers: {
           "Content-Type": "multipart/form-data",
         },
         timeout: 600000, // 10 minutes
-        withCredentials: true, // ✅ KEEP credentials enabled
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
         onUploadProgress: (e: any) => {
           const progress = Math.round((e.loaded * 100) / e.total);
-          console.log(`📊 Upload progress: ${progress}%`);
           setUploadProgress(progress);
         },
       });
 
-      console.log("✅ Upload response:", res.data);
-
       if (res.data.success) {
-        setUploadComplete(true);
         toast.success("🎉 Video uploaded successfully!");
-
-        // Wait 2 seconds then reload
         setTimeout(() => {
           resetForm();
           window.location.reload();
         }, 2000);
-      } else {
-        throw new Error(res.data.message || "Upload failed");
       }
     } catch (error: any) {
-      console.error("❌ Upload error:", error);
+      console.error("❌ Upload failed:", error);
 
-      let errorMessage = "Upload failed";
-
-      // Enhanced error detection
-      if (error.code === "ERR_NETWORK") {
-        errorMessage =
-          "Network error: Cannot reach server. Check your internet connection.";
-      } else if (error.message?.includes("CORS")) {
-        errorMessage =
-          "CORS error: Server configuration issue. Contact support.";
-      } else if (error.response?.status === 404) {
-        errorMessage = "Upload endpoint not found. Server may not be running.";
+      // ✅ Better error handling
+      if (error.code === "ECONNABORTED") {
+        toast.error("Upload timeout. File may be too large.");
       } else if (error.response?.status === 413) {
-        errorMessage = "File too large. Maximum is 100MB.";
-      } else if (error.response?.status === 401) {
-        errorMessage = "Authentication failed. Please log in again.";
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 2000);
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.userMessage) {
-        errorMessage = error.userMessage;
-      } else if (error.message) {
-        errorMessage = error.message;
+        toast.error("File too large (max 100MB)");
+      } else if (error.message?.includes("CORS")) {
+        toast.error("Server configuration error. Please contact support.");
+      } else {
+        toast.error(error.response?.data?.message || "Upload failed");
       }
-
-      toast.error(errorMessage, { duration: 5000 });
-      setUploadProgress(0);
     } finally {
       setIsUploading(false);
     }
-  }; // ============================================================================
+  };
+  // ============================================================================
   // COMPONENT JSX RENDER
   // ============================================================================
 
