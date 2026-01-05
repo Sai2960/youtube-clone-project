@@ -883,11 +883,9 @@ app.use((req, res) => {
 });
 // =================== Database Connection & Server Startup ===================
 // ✅ Railway sets PORT automatically - MUST use it
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Railway URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'localhost'}`);
-});
+// =================== Database Connection & Server Startup ===================
 const DATABASE_URL = process.env.DB_URL;
+const PORT = process.env.PORT || 8080;
 
 // =================== Database Connection Setup ===================
 const connectToDatabase = async () => {
@@ -947,11 +945,11 @@ mongoose.connection.on("disconnected", () => {
   console.log("❌ MongoDB disconnected. Attempting to reconnect...");
 });
 
-// ✅ CRITICAL FIX: Start server FIRST, then connect to DB
+// ✅ CRITICAL FIX: Single server.listen() call
 const HOST = "0.0.0.0";
 const LISTEN_PORT = parseInt(PORT, 10);
 
-server.listen(process.env.PORT || 8080, '0.0.0.0')
+server.listen(LISTEN_PORT, HOST, () => {
   console.log(`\n🚀 ===== SERVER STARTED =====`);
   console.log(`   Port: ${LISTEN_PORT}`);
   console.log(`   Host: ${HOST}`);
@@ -970,12 +968,12 @@ server.listen(process.env.PORT || 8080, '0.0.0.0')
 
   serverReady = true;
 
-  // ✅ CRITICAL: Start MongoDB connection AFTER server is listening
-  // This prevents Render timeout issues
+  // ✅ Start MongoDB connection AFTER server is listening
   if (DATABASE_URL) {
     console.log("🔄 Starting database connection...");
     connectToDatabase();
   }
+});
 
 // =================== Graceful Shutdown Handler ===================
 const handleShutdown = async (signal) => {
