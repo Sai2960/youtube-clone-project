@@ -202,33 +202,15 @@ const isOriginAllowed = (origin) => {
   );
 };
 
+// REPLACE lines 85-115 in server/index.js
 app.use(
   cors({
-    origin: function (origin, callback) {
-      console.log("🔍 Express CORS check:", origin || "no origin");
-
-      // Allow requests with no origin
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      // Check if allowed
-      if (isOriginAllowed(origin)) {
-        console.log("   ✅ Origin allowed");
-        return callback(null, origin);
-      }
-
-      // Production fallback
-      if (
-        process.env.NODE_ENV === "production" ||
-        origin.includes("vercel.app")
-      ) {
-        console.log("   ✅ Production/Vercel origin allowed");
-        return callback(null, origin);
-      }
-
-      callback(null, origin); // Allow anyway to prevent blocking
-    },
+    origin: [
+      "https://youtube-clone-project-eosin.vercel.app",
+      /^https:\/\/youtube-clone-project.*\.vercel\.app$/,
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
     allowedHeaders: [
@@ -238,10 +220,6 @@ app.use(
       "Accept",
       "Origin",
       "Cache-Control",
-      "Pragma",
-      "Expires",
-      "If-None-Match",
-      "If-Modified-Since",
     ],
     exposedHeaders: ["Content-Range", "X-Content-Range", "ETag"],
     preflightContinue: false,
@@ -249,6 +227,10 @@ app.use(
     maxAge: 86400,
   })
 );
+
+// ✅ CRITICAL: Add explicit preflight handler for uploads
+app.options("/video/upload", cors());
+app.options("/api/video/upload", cors());
 
 console.log("✅ Express CORS configured");
 // ✅ CRITICAL: Video streaming with Range support for Shorts
