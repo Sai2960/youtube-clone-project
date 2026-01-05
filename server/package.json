@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "server/index.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
-      "railway:start": "node index.js",
+    "railway:start": "node server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:stop": "pm2 stop youtube-backend",
@@ -36,7 +40,7 @@
     "bad-words": "^4.0.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
-    "cheerio": "^1.1.2",
+    "cheerio": "1.0.0-rc.12",
     "cloudinary": "^1.41.3",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
