@@ -84,13 +84,35 @@ async function migrateVideos() {
     console.log(`   Current URL: ${video.filepath.substring(0, 60)}...`);
 
     try {
-      // ✅ STEP 1: Extract Cloudinary public_id from URL
-      const urlMatch = video.filepath.match(/\/upload\/(?:v\d+\/)?(.+)\.(mp4|mov|avi|webm)/i);
-      if (!urlMatch) {
-        throw new Error('Could not extract public_id from Cloudinary URL');
+      // ✅ STEP 1: Extract Cloudinary public_id from URL (skip transformation params)
+      // URL format: https://res.cloudinary.com/CLOUD_NAME/video/upload/TRANSFORMATIONS/PATH/FILE.EXT
+      const urlParts = video.filepath.split('/upload/');
+      if (urlParts.length !== 2) {
+        throw new Error('Invalid Cloudinary URL format');
       }
       
-      const publicId = urlMatch[1];
+      // Get everything after /upload/
+      const afterUpload = urlParts[1];
+      
+      // Remove file extension
+      const withoutExt = afterUpload.replace(/\.(mp4|mov|avi|webm)$/i, '');
+      
+      // Split by / and find the part that starts with actual path (not transformations)
+      // Transformations contain commas or colons, paths don't
+      const parts = withoutExt.split('/');
+      const pathParts = [];
+      let foundPath = false;
+      
+      for (const part of parts) {
+        // Skip transformation parameters (they contain commas, colons, or start with v followed by numbers)
+        if (!foundPath && (part.includes(',') || part.includes(':') || /^v\d+$/.test(part))) {
+          continue;
+        }
+        foundPath = true;
+        pathParts.push(part);
+      }
+      
+      const publicId = pathParts.join('/');
       console.log(`   📋 Public ID: ${publicId}`);
 
       // ✅ STEP 2: Download from Cloudinary using SDK (handles auth automatically)
