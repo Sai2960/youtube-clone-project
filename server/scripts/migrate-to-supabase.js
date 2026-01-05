@@ -115,86 +115,49 @@ async function migrateVideos() {
       const publicId = pathParts.join('/');
       console.log(`   📋 Public ID: ${publicId}`);
 
-      // ✅ STEP 2: Check if video exists, then download
-      console.log('   📥 Checking if video exists in Cloudinary...');
+      // ✅ STEP 2: Use Cloudinary Admin API to get video details and download URL
+      console.log('   📥 Fetching video from Cloudinary Admin API...');
       
-      // First check if the video exists (HEAD request)
-      const checkUrl = cloudinary.v2.url(publicId, {
-        resource_type: 'video',
-        type: 'upload',
-        sign_url: true,
-        secure: true,
-      });
-      
-      const checkResponse = await fetch(checkUrl, { 
-        method: 'HEAD',
-        timeout: 10000 
-      });
-      
-      if (!checkResponse.ok) {
-        if (checkResponse.status === 404) {
+      try {
+        // Use Admin API to get resource details
+        const resourceInfo = await new Promise((resolve, reject) => {
+          cloudinary.v2.api.resource(publicId, {
+            resource_type: 'video',
+            type: 'upload'
+          }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          });
+        });
+        
+        console.log('   ✅ Video found in Cloudinary');
+        console.log(`   📊 Size: ${(resourceInfo.bytes / (1024 * 1024)).toFixed(2)}MB`);
+        console.log(`   🔗 Secure URL: ${resourceInfo.secure_url.substring(0, 60)}...`);
+        
+        // Download using the secure_url from API response
+        console.log('   📥 Downloading video...');
+        const response = await fetch(resourceInfo.secure_url, { 
+          timeout: 120000 // 2 minutes for large videos
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const sizeInMB = (buffer.length / (1024 * 1024)).toFixed(2);
+        console.log(`   ✅ Downloaded: ${sizeInMB}MB`);
+        
+      } catch (apiError) {
+        // If Admin API fails, the video likely doesn't exist
+        if (apiError.error && apiError.error.http_code === 404) {
           console.log('   ⚠️  Video does NOT exist in Cloudinary (404)');
-          console.log('   ℹ️  Skipping - video was likely deleted from Cloudinary');
+          console.log('   ℹ️  Skipping - video was deleted from Cloudinary');
           failed++;
           continue;
-        } else {
-          throw new Error(`HTTP ${checkResponse.status}: ${checkResponse.statusText}`);
         }
+        throw apiError;
       }
-      
-      console.log('   ✅ Video exists in Cloudinary');
-      console.log('   📥 Downloading...');
-      
-      // Now download the video
-      let response;
-      let downloadUrl;
-      
-      // Approach 1: Try the original URL first (might be public)
-      try {
-        console.log('   🔄 Trying original URL...');
-        response = await fetch(video.filepath, { timeout: 60000 });
-        if (response.ok) {
-          downloadUrl = video.filepath;
-          console.log('   ✅ Original URL works!');
-        }
-      } catch (err) {
-        console.log('   ⚠️  Original URL failed, trying authenticated URL...');
-      }
-      
-      // Approach 2: Generate signed/authenticated URL
-      if (!response || !response.ok) {
-        try {
-          const authenticatedUrl = cloudinary.v2.url(publicId, {
-            resource_type: 'video',
-            type: 'upload',
-            sign_url: true,
-            secure: true,
-          });
-          console.log('   🔑 Authenticated URL:', authenticatedUrl.substring(0, 80) + '...');
-          
-          response = await fetch(authenticatedUrl, { timeout: 60000 });
-          downloadUrl = authenticatedUrl;
-        } catch (err) {
-          console.log('   ⚠️  Authenticated URL failed, trying basic auth...');
-        }
-      }
-      
-      // Approach 3: Use Cloudinary's API with basic auth
-      if (!response || !response.ok) {
-        const apiUrl = `https://${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}@api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/video/upload/${publicId}`;
-        console.log('   🔐 Using API authentication...');
-        
-        response = await fetch(apiUrl, { timeout: 60000 });
-        downloadUrl = apiUrl;
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText} (URL: ${downloadUrl.substring(0, 100)}...)`);
-      }
-
-      const buffer = Buffer.from(await response.arrayBuffer());
-      const sizeInMB = (buffer.length / (1024 * 1024)).toFixed(2);
-      console.log(`   ✅ Downloaded: ${sizeInMB}MB`);
 
       // ✅ STEP 3: Upload to Supabase
       console.log('   📤 Uploading to Supabase...');

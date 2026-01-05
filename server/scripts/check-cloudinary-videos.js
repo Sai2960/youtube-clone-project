@@ -1,4 +1,4 @@
-// server/scripts/check-cloudinary-videos.js
+/ server/scripts/check-cloudinary-videos.js
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -67,30 +67,37 @@ async function checkCloudinaryVideos() {
       
       const publicId = pathParts.join('/');
       
-      // Check if video exists using HEAD request
-      const checkUrl = cloudinary.v2.url(publicId, {
-        resource_type: 'video',
-        type: 'upload',
-        sign_url: true,
-        secure: true,
-      });
-      
-      const response = await fetch(checkUrl, { 
-        method: 'HEAD',
-        timeout: 10000 
-      });
-      
-      if (response.ok) {
+      // Check if video exists using Cloudinary Admin API
+      try {
+        const resourceInfo = await new Promise((resolve, reject) => {
+          cloudinary.v2.api.resource(publicId, {
+            resource_type: 'video',
+            type: 'upload'
+          }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          });
+        });
+        
         console.log(`${num} ✅ EXISTS: ${video.videotitle}`);
         console.log(`     ID: ${video._id}`);
         console.log(`     Public ID: ${publicId}`);
+        console.log(`     Size: ${(resourceInfo.bytes / (1024 * 1024)).toFixed(2)}MB`);
+        console.log(`     Format: ${resourceInfo.format}`);
         existing++;
-      } else {
-        console.log(`${num} ❌ MISSING (${response.status}): ${video.videotitle}`);
-        console.log(`     ID: ${video._id}`);
-        console.log(`     Public ID: ${publicId}`);
-        console.log(`     URL: ${video.filepath.substring(0, 80)}...`);
-        missing++;
+        
+      } catch (apiError) {
+        if (apiError.error && apiError.error.http_code === 404) {
+          console.log(`${num} ❌ MISSING (404): ${video.videotitle}`);
+          console.log(`     ID: ${video._id}`);
+          console.log(`     Public ID: ${publicId}`);
+          console.log(`     URL: ${video.filepath.substring(0, 80)}...`);
+          missing++;
+        } else {
+          console.log(`${num} ⚠️  ERROR: ${video.videotitle}`);
+          console.log(`     ${apiError.message || JSON.stringify(apiError)}`);
+          errors++;
+        }
       }
       
     } catch (error) {
