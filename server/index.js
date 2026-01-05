@@ -180,7 +180,13 @@ app.use(
 console.log("✅ Compression middleware enabled");
 
 // ✅ CRITICAL: Smart timeout - LONGER for OTP operations and uploads
+// ✅ CRITICAL: Railway-optimized timeout middleware
 app.use((req, res, next) => {
+  // Skip timeout for health checks - CRITICAL for Railway
+  if (req.path === "/health" || req.path === "/api/keep-alive") {
+    return next();
+  }
+
   // OTP and upload routes: 2 minute timeout
   if (
     req.path.includes("/otp") ||
@@ -188,15 +194,14 @@ app.use((req, res, next) => {
     (req.method === "POST" &&
       req.headers["content-type"]?.includes("multipart/form-data"))
   ) {
-    req.setTimeout(120000); // 2 minutes for OTP/uploads
+    req.setTimeout(120000);
     res.setTimeout(120000);
-    console.log("⏱️ Extended timeout (2min) for:", req.path);
     return next();
   }
 
-  // Regular routes: 30 second timeout (increased from 25s for Railway stability)
-  req.setTimeout(30000);
-  res.setTimeout(30000);
+  // Regular routes: 60 second timeout for Railway stability
+  req.setTimeout(60000);
+  res.setTimeout(60000);
 
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
@@ -206,9 +211,18 @@ app.use((req, res, next) => {
         message: "Request timeout",
       });
     }
-  }, 30000);
+  }, 60000);
 
-  res.on("finish", () => clearTimeout(timeout));
+  // Clean up timeout on response finish
+  const cleanup = () => {
+    clearTimeout(timeout);
+    res.removeListener("finish", cleanup);
+    res.removeListener("close", cleanup);
+  };
+
+  res.on("finish", cleanup);
+  res.on("close", cleanup);
+
   next();
 });
 
@@ -1068,8 +1082,11 @@ const connectToDatabase = async () => {
     console.error("❌ MongoDB connection failed:", error.message);
     mongoConnected = false;
 
-    // Don't retry forever - Railway will restart the service
-    console.log("   MongoDB will retry on reconnect event");
+    // Don't crash the server - just log and continue
+    console.log("   Server will continue without database");
+    console.log("   MongoDB will retry via reconnect events");
+
+    // Don't call connectToDatabase recursively here
   }
 };
 // =================== MONGODB EVENT LISTENERS ===================
