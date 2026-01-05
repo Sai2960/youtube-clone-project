@@ -1,52 +1,138 @@
+// server/scripts/migrate-videos-to-supabase.js
+import mongoose from 'mongoose';
 import videofiles from '../Modals/video.js';
-import { supabase } from '../config/supabase.js';
+import { supabase, bucketName, isSupabaseConfigured } from '../config/supabase.js';
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 async function migrateVideos() {
+  console.log('\n🚀 ===== VIDEO MIGRATION TO SUPABASE =====');
+  
+  // Validate Supabase config
+  if (!isSupabaseConfigured()) {
+    console.error('❌ Supabase is not configured!');
+    console.error('   Please set SUPABASE_URL and SUPABASE_KEY in .env');
+    process.exit(1);
+  }
+
+  console.log('✅ Supabase configured');
+  console.log('📦 Bucket:', bucketName);
+
+  // Connect to MongoDB
+  try {
+    await mongoose.connect(process.env.DB_URL, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    console.log('✅ MongoDB connected');
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
+    process.exit(1);
+  }
+
+  // Find Cloudinary videos
   const videos = await videofiles.find({ 
-    filepath: { $regex: 'cloudinary.com' } 
-  }).limit(10);
+    filepath: { $regex: 'cloudinary.com' },
+    // ✅ Optional: Filter only videos without Supabase URL
+    // filepath: { $not: { $regex: 'supabase.co' } }
+  }).limit(10); // Start with 10 for testing
 
-  console.log(`📦 Found ${videos.length} Cloudinary videos`);
+  console.log(`\n📊 Found ${videos.length} Cloudinary videos to migrate\n`);
 
-  for (const video of videos) {
+  let migrated = 0;
+  let failed = 0;
+
+  for (let i = 0; i < videos.length; i++) {
+    const video = videos[i];
+    console.log(`\n[${i + 1}/${videos.length}] Processing: ${video.videotitle}`);
+    console.log(`   Current URL: ${video.filepath.substring(0, 60)}...`);
+
     try {
-      console.log(`🔄 Migrating: ${video.videotitle}`);
-      
-      // Download from Cloudinary
-      const response = await fetch(video.filepath);
-      const buffer = await response.arrayBuffer();
-      
-      // Upload to Supabase
-      const fileName = `migrated-${video._id}.mp4`;
-      const { data, error } = await supabase.storage
-        .from('youtube-videos')
+      // ✅ STEP 1: Download from Cloudinary
+      console.log('   📥 Downloading from Cloudinary...');
+      const response = await fetch(video.filepath, {
+        timeout: 30000, // 30 second timeout
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const sizeInMB = (buffer.length / (1024 * 1024)).toFixed(2);
+      console.log(`   ✅ Downloaded: ${sizeInMB}MB`);
+
+      // ✅ STEP 2: Upload to Supabase
+      console.log('   📤 Uploading to Supabase...');
+      const fileName = `migrated/videos/${video._id}.mp4`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
         .upload(fileName, buffer, {
           contentType: 'video/mp4',
-          upsert: false // Set to true if you want to overwrite existing files
+          cacheControl: '3600',
+          upsert: false, // Don't overwrite if exists
         });
 
-      if (error) throw error;
+      if (uploadError) {
+        // Check if file already exists
+        if (uploadError.message.includes('already exists')) {
+          console.log('   ℹ️  File already exists in Supabase, using existing');
+        } else {
+          throw uploadError;
+        }
+      } else {
+        console.log('   ✅ Uploaded to Supabase');
+      }
 
-      // Get new URL
+      // ✅ STEP 3: Get new public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('youtube-videos')
+        .from(bucketName)
         .getPublicUrl(fileName);
 
-      // Update database
-      video.filepath = publicUrl; // ✅ Fixed the typo
+      console.log(`   🔗 New URL: ${publicUrl.substring(0, 60)}...`);
+
+      // ✅ STEP 4: Update database (ALL video URL fields)
+      video.filepath = publicUrl;
       video.videofile = publicUrl;
       video.videoLink = publicUrl;
+      video.videoUrl = publicUrl;
+      video.storageType = 'supabase'; // Track storage location
+
       await video.save();
 
-      console.log(`✅ Migrated: ${video.videotitle}`);
+      console.log('   ✅ Database updated');
+      console.log(`   ✅ MIGRATED: ${video.videotitle}`);
+      migrated++;
+
     } catch (error) {
-      console.error(`❌ Failed to migrate ${video._id}:`, error.message);
+      console.error(`   ❌ FAILED: ${video.videotitle}`);
+      console.error(`   Error: ${error.message}`);
+      failed++;
     }
   }
 
-  console.log('🎉 Migration complete!');
+  console.log('\n' + '='.repeat(50));
+  console.log('🎉 MIGRATION COMPLETE');
+  console.log('='.repeat(50));
+  console.log(`✅ Migrated: ${migrated}`);
+  console.log(`❌ Failed: ${failed}`);
+  console.log(`📊 Total: ${videos.length}`);
+  console.log('='.repeat(50) + '\n');
+
+  await mongoose.disconnect();
   process.exit(0);
 }
 
-migrateVideos();
+// Run migration
+migrateVideos().catch((error) => {
+  console.error('\n❌ Migration script error:', error);
+  process.exit(1);
+});
