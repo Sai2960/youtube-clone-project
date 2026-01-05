@@ -275,28 +275,24 @@ const WatchPage = () => {
   };
 
   // ✅ Get backend URL based on environment
-  const getBackendUrl = () => {
-    // ✅ Always use HTTPS in production
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
+const getBackendUrl = () => {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
 
-      // If on Vercel (production), use HTTPS Render backend
-      if (
-        hostname.includes("vercel.app") ||
-        hostname.includes("your-domain.com")
-      ) {
-        return "https://youtube-clone-project-production.up.railway.app";
-      }
-
-      // Local development
-      if (hostname === "localhost" || hostname === "127.0.0.1") {
-        return "http://localhost:5000";
-      }
+    if (
+      hostname.includes("vercel.app") ||
+      hostname.includes("your-domain.com")
+    ) {
+      return "https://youtube-clone-project-production.up.railway.app"; // ✅ NEW
     }
 
-    // Default to HTTPS backend
-    return "https://youtube-clone-project-production.up.railway.app";
-  };
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:5000";
+    }
+  }
+
+  return "https://youtube-clone-project-production.up.railway.app"; // ✅ NEW
+};
 
   // ✅ Share modal handlers
   const handleOpenShareModal = (currentTime?: number) => {
