@@ -629,10 +629,19 @@ app.get("/test-env", (req, res) => {
 // =================== HEALTH CHECK ENDPOINTS ===================
 
 // Simple health check for Render (fast response)
+// ✅ CRITICAL: Ultra-fast health check for Railway
 app.get("/health", (req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end('{"status":"OK"}');
+});
+
+// Keep detailed health for monitoring
+app.get("/health/detailed", (req, res) => {
   res.status(200).json({
     status: "OK",
     timestamp: new Date().toISOString(),
+    mongodb: mongoConnected ? "Connected" : "Disconnected",
+    uptime: process.uptime(),
   });
 });
 
@@ -873,7 +882,13 @@ app.use((req, res) => {
   });
 });
 // =================== Database Connection & Server Startup ===================
-const PORT = process.env.PORT || 5000;
+// ✅ Railway sets PORT automatically - MUST use it
+const PORT = process.env.PORT || process.env.RAILWAY_PORT || 5000;
+console.log("🔌 PORT Configuration:", {
+  PORT,
+  "process.env.PORT": process.env.PORT,
+  RAILWAY_PORT: process.env.RAILWAY_PORT,
+});
 const DATABASE_URL = process.env.DB_URL;
 
 // =================== Database Connection Setup ===================
@@ -935,23 +950,21 @@ mongoose.connection.on("disconnected", () => {
 });
 
 // ✅ CRITICAL FIX: Start server FIRST, then connect to DB
-const HOST = process.env.RAILWAY_STATIC_URL ? "0.0.0.0" : "localhost";
+const HOST = "0.0.0.0";
+const LISTEN_PORT = parseInt(PORT, 10);
 
-server.listen(PORT, HOST, () => {
+server.listen(LISTEN_PORT, HOST, () => {
   console.log(`\n🚀 ===== SERVER STARTED =====`);
-  console.log(`   Port: ${PORT}`);
+  console.log(`   Port: ${LISTEN_PORT}`);
   console.log(`   Host: ${HOST}`);
-  console.log(`   Local: http://localhost:${PORT}`);
-  console.log(
-    `   Railway: ${
-      process.env.RAILWAY_PUBLIC_DOMAIN
-        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-        : "Not deployed yet"
-    }`
-  );
-  console.log(`   Port: ${PORT}`);
-  console.log(`   Local: http://localhost:${PORT}`);
-  console.log(`   Network: http://0.0.0.0:${PORT}`);
+  console.log(`   Local: http://localhost:${LISTEN_PORT}`);
+
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    console.log(`   Railway URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+  } else if (process.env.RAILWAY_STATIC_URL) {
+    console.log(`   Railway URL: ${process.env.RAILWAY_STATIC_URL}`);
+  }
+
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`   CORS Origins: ${allowedOrigins.length}`);
   console.log(`   Socket.IO: Configured`);
