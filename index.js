@@ -1,16 +1,15 @@
-// index.js - Railway Entry Point
-// Loads server module with proper error handling
-
-console.log('🚀 Starting YouTube Clone Backend...');
-console.log('📍 Loading from: index.js (root)');
-
 import('./server/index.js')
-  .then(() => {
-    console.log('✅ Server module loaded and running');
+  .then((module) => {
+    console.log('✅ Server module loaded successfully');
+    console.log('✅ Module exports:', Object.keys(module));
   })
   .catch((error) => {
     console.error('❌ CRITICAL: Failed to load server module');
     console.error('Error:', error.message);
     console.error('Stack:', error.stack);
+    console.error('Code:', error.code);
     process.exit(1);
   });
+
+// Keep process alive
+console.log('✅ index.js setup complete');
