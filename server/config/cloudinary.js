@@ -3,11 +3,7 @@ import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import dotenv from "dotenv";
-import {
-  supabase,
-  bucketName,
-  isSupabaseConfigured,
-} from "./supabase.js";
+import { supabase, bucketName, isSupabaseConfigured } from "./supabase.js";
 
 dotenv.config();
 
@@ -240,13 +236,13 @@ export const deleteFromCloudinary = async (
 
 export const extractPublicId = (url) => {
   if (!url) return null;
-  
+
   // Supabase URLs
   if (url.includes("supabase.co")) {
     const match = url.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)$/);
     return match ? match[1] : null;
   }
-  
+
   // Cloudinary URLs
   if (url.includes("cloudinary.com")) {
     try {
@@ -259,7 +255,7 @@ export const extractPublicId = (url) => {
       console.error("Error extracting public ID:", error);
     }
   }
-  
+
   return null;
 };
 

@@ -1,7 +1,10 @@
-// REPLACE entire file with this safer version:
-
+// server/config/supabase.js - COMPLETE SAFE VERSION
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
+dotenv.config();
+
+// ✅ Export function FIRST (before using it)
 export const isSupabaseConfigured = () => {
   const configured = !!(
     process.env.SUPABASE_URL && 
@@ -9,7 +12,7 @@ export const isSupabaseConfigured = () => {
   );
   
   if (!configured) {
-    console.warn('⚠️ Supabase not configured - using Cloudinary only');
+    console.warn('⚠️ Supabase not configured - using Cloudinary fallback');
   }
   
   return configured;
@@ -17,7 +20,7 @@ export const isSupabaseConfigured = () => {
 
 export const bucketName = process.env.SUPABASE_BUCKET || 'youtube-videos';
 
-// Lazy initialization
+// ✅ Lazy initialization (only create client when needed)
 let supabaseInstance = null;
 
 export const getSupabaseClient = () => {
@@ -32,7 +35,7 @@ export const getSupabaseClient = () => {
         process.env.SUPABASE_KEY,
         {
           auth: {
-            persistSession: false, // ✅ Server-side only
+            persistSession: false, // Server-side only
           },
         }
       );
@@ -46,12 +49,13 @@ export const getSupabaseClient = () => {
   return supabaseInstance;
 };
 
-// Safe proxy that returns null instead of throwing
+// ✅ Safe proxy that never throws
 export const supabase = new Proxy({}, {
   get(target, prop) {
     const client = getSupabaseClient();
     if (!client) {
       console.warn(`⚠️ Supabase.${String(prop)} called but not configured`);
+      // Return a function that returns a rejected promise
       return () => Promise.reject(new Error('Supabase not configured'));
     }
     return client[prop];
