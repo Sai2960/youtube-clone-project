@@ -2,21 +2,19 @@
 
 // ✅ FIXED: Railway-compatible URL detection
 const getBackendURL = () => {
-  // Railway provides RAILWAY_PUBLIC_DOMAIN automatically
   if (process.env.RAILWAY_PUBLIC_DOMAIN) {
     return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
   }
-
-  // Or use manually set BASE_URL
   if (process.env.BASE_URL) {
     return process.env.BASE_URL;
   }
-
-  // Fallback for local development
   return "http://localhost:5000";
 };
 
 const BASE_URL = getBackendURL();
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || "https://ejzqutnycnagdtfxkczu.supabase.co";
+const SUPABASE_BUCKET = "youtube-videos";
 
 /**
  * ✅ NEW: Build Cloudinary URL with quality parameter
@@ -59,81 +57,71 @@ const buildCloudinaryVideoUrl = (publicId, quality = "auto") => {
  * Handles broken formats like "file_t1d4kf.mp4" and converts to full Cloudinary URL
  */
 // 🔥 CRITICAL FIX: Handle Cloudinary versions (Line 15-80)
-export const getVideoURL = (filepath, quality = "auto") => {
+export const getVideoURL = (filepath) => {
   if (!filepath) return null;
 
   const fileStr = String(filepath).trim();
 
-  // ✅ Check if Supabase URL
-  if (fileStr.includes("supabase.co")) {
-    console.log("✅ Supabase URL detected");
+  // ✅ PRIORITY 1: Supabase URLs
+  if (fileStr.includes("supabase.co/storage")) {
+    console.log("✅ Using Supabase URL");
     return fileStr;
   }
 
-  // ✅ Fallback to Cloudinary for old videos
-  const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
-  const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-
-  // ✅ Already valid Cloudinary URL
-  if (
-    fileStr.includes("res.cloudinary.com") &&
-    fileStr.includes("/video/upload/")
-  ) {
-    // ✅ CRITICAL FIX: Clean URL and extract public_id to rebuild with correct transformations
-    let cleanUrl = fileStr
-      .replace(/^http:\/\//, "https://")
-      .replace(/:\d+/, "")
-      .replace(/\/v\d+\//g, "/");
-
-    // ✅ Extract public_id and rebuild URL with quality transformations
-    const publicIdMatch = cleanUrl.match(/youtube-clone\/videos\/[^.?]+/i);
-
-    if (publicIdMatch) {
-      const publicId = publicIdMatch[0];
-      const rebuiltUrl = buildCloudinaryVideoUrl(publicId, quality);
-      console.log("✅ Rebuilt URL with quality:", rebuiltUrl.substring(0, 80));
-      return rebuiltUrl;
-    }
-
-    // ✅ Fallback: return cleaned URL
-    console.log("✅ Cleaned URL:", cleanUrl.substring(0, 80));
-    return cleanUrl;
+  // ✅ PRIORITY 2: If it's a filename, construct Supabase URL
+  if (!fileStr.startsWith("http")) {
+    const filename = fileStr.split(/[\\/]/).pop();
+    const supabaseUrl = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${filename}`;
+    console.log("✅ Built Supabase URL:", supabaseUrl);
+    return supabaseUrl;
   }
 
-  // ✅ Extract public_id
-  let publicId = null;
-
-  if (fileStr.includes("youtube-clone/videos/")) {
-    const match = fileStr.match(/youtube-clone\/videos\/([^.\/]+)/);
-    if (match) publicId = `youtube-clone/videos/${match[1]}`;
-  } else {
-    const fileIdMatch = fileStr.match(/file_[a-z0-9]+/i);
-    if (fileIdMatch) publicId = `youtube-clone/videos/${fileIdMatch[0]}`;
-  }
-
-  if (publicId) {
-    // ✅ Build URL WITH quality transformation
-    const cleanUrl = buildCloudinaryVideoUrl(publicId, quality);
-    console.log(
-      `🔧 Reconstructed video URL (${quality}):`,
-      cleanUrl.substring(0, 80)
+  // ✅ PRIORITY 3: Legacy Cloudinary URLs (skip - expired)
+  if (fileStr.includes("cloudinary.com")) {
+    console.warn(
+      "⚠️ Cloudinary URL detected but free tier expired - returning null"
     );
-    return cleanUrl;
-  }
-
-  // ✅ Reject invalid URLs
-  if (
-    fileStr.includes("localhost") ||
-    fileStr.includes(":5000") ||
-    fileStr.includes("192.168") ||
-    fileStr.includes("127.0.0.1")
-  ) {
-    console.warn("⚠️ Invalid local URL detected:", fileStr);
     return null;
   }
 
-  console.error("❌ Could not process video URL:", fileStr.substring(0, 100));
+  // ✅ PRIORITY 4: Other full URLs
+  if (fileStr.startsWith("http://") || fileStr.startsWith("https://")) {
+    return fileStr.replace("http://", "https://");
+  }
+
+  console.error("❌ Could not process video URL:", fileStr);
   return null;
+};
+export const getThumbnailURL = (filepath) => {
+  if (!filepath) return null;
+
+  const fileStr = String(filepath).trim();
+
+  // ✅ Check if it's already a Supabase thumbnail URL
+  if (
+    fileStr.includes("supabase.co/storage") &&
+    fileStr.includes("/thumbnails/")
+  ) {
+    return fileStr;
+  }
+
+  // ✅ If it's a video URL, try to get corresponding thumbnail
+  if (fileStr.includes("supabase.co/storage") && fileStr.includes("/videos/")) {
+    const thumbnailUrl = fileStr
+      .replace("/videos/", "/thumbnails/")
+      .replace(/\.(mp4|mov|avi)$/i, ".jpg");
+    console.log("✅ Generated thumbnail URL:", thumbnailUrl);
+    return thumbnailUrl;
+  }
+
+  // ✅ Skip Cloudinary (expired)
+  if (fileStr.includes("cloudinary.com")) {
+    console.warn("⚠️ Cloudinary thumbnail skipped");
+    return null;
+  }
+
+  // ✅ Fallback: placeholder SVG
+  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"%3E%3Crect width="640" height="360" fill="%231F2937"/%3E%3Cpath d="M280 150L360 180L280 210V150Z" fill="%23EF4444"/%3E%3Ctext x="320" y="240" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="16"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
 };
 
 export const normalizeURL = (url) => {
@@ -142,14 +130,11 @@ export const normalizeURL = (url) => {
   const urlStr = String(url).trim();
 
   // Supabase URLs - ensure HTTPS
-  if (urlStr.includes("res.cloudinary.com")) {
-    if (urlStr.startsWith("http://")) {
-      return urlStr.replace("http://", "https://");
-    }
-    return urlStr.startsWith("http") ? urlStr : `https://${urlStr}`;
+  if (urlStr.includes("supabase.co/storage")) {
+    return urlStr.replace("http://", "https://");
   }
 
-  // OAuth images (Google, GitHub, Facebook, etc.) - ensure HTTPS
+  // OAuth images - ensure HTTPS
   if (
     urlStr.includes("googleusercontent.com") ||
     urlStr.includes("googleapis.com") ||
@@ -159,7 +144,7 @@ export const normalizeURL = (url) => {
     return urlStr.startsWith("http") ? urlStr : `https://${urlStr}`;
   }
 
-  // ✅ FIX: Remove localhost/local IP addresses FIRST (before port check)
+  // Remove localhost/local IPs
   if (
     urlStr.includes("localhost") ||
     urlStr.includes("192.168.") ||
@@ -169,7 +154,7 @@ export const normalizeURL = (url) => {
     return pathMatch ? `${BASE_URL}${pathMatch[1]}` : BASE_URL;
   }
 
-  // ✅ FIX: Remove :5000 port from any domain (including Vercel)
+  // Remove :5000 port
   if (urlStr.includes(":5000")) {
     const pathMatch = urlStr.match(/:5000(\/.+)$/);
     return pathMatch
@@ -177,22 +162,22 @@ export const normalizeURL = (url) => {
       : urlStr.replace(/:5000/, "");
   }
 
-  // Already absolute production URL
+  // Already absolute URL
   if (urlStr.startsWith(BASE_URL)) {
     return urlStr;
   }
 
-  // Other absolute HTTPS URLs - return as-is
+  // Other HTTPS URLs
   if (urlStr.startsWith("https://")) {
     return urlStr;
   }
 
-  // Convert HTTP to HTTPS for any other absolute URLs
+  // Convert HTTP to HTTPS
   if (urlStr.startsWith("http://")) {
     return urlStr.replace("http://", "https://");
   }
 
-  // Relative path - normalize and make absolute
+  // Relative path
   const cleanPath = urlStr.replace(/\\/g, "/").replace(/^\/+/, "");
   return `${BASE_URL}/${cleanPath}`;
 };
@@ -334,7 +319,8 @@ export { BASE_URL };
 
 // Default export for compatibility
 export default {
-  getVideoURL, // ✅ CRITICAL: Export this!
+  getVideoURL,
+  getThumbnailURL, // ✅ CRITICAL: Export this!
   normalizeURL,
   toAbsoluteURL,
   getSecureMediaURL,
