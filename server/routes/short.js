@@ -6,13 +6,12 @@ import {
   isSupabaseConfigured,
   bucketName,
 } from "../config/supabase.js";
+import { deleteFromSupabase, uploadToSupabase } from "../config/cloudinary.js"; // Keep for helper functions only
 import {
-  uploadShortsVideo,
-  uploadShortsThumbnail,
-  deleteFromSupabase,
-  uploadToSupabase,
-  extractPublicId,
-} from "../config/cloudinary.js";
+  supabase,
+  isSupabaseConfigured,
+  bucketName,
+} from "../config/supabase.js";
 import * as shortController from "../controllers/shortController.js";
 import { verifyToken } from "../middleware/auth.js";
 import Comment from "../Modals/comment.js";
@@ -118,6 +117,26 @@ router.post(
 
         const videoFile = req.files.video[0];
         const thumbnailFile = req.files.thumbnail[0];
+        const uploadedVideoUrl = videoFile.path; // This is now Supabase URL from middleware
+        const uploadedThumbnailUrl = thumbnailFile.path; // This is now Supabase URL from middleware
+
+        console.log("✅ URLs from middleware:", {
+          video: videoUrl?.substring(0, 80),
+          thumb: thumbnailUrl?.substring(0, 80),
+        });
+
+        if (!videoUrl || !thumbnailUrl) {
+          throw new Error("Failed to get Supabase URLs from upload");
+        }
+
+        // ✅ Validate Supabase URLs
+        if (
+          !videoUrl.includes("supabase.co") ||
+          !thumbnailUrl.includes("supabase.co")
+        ) {
+          console.error("❌ Non-Supabase URLs detected!");
+          throw new Error("Invalid upload URLs - not from Supabase");
+        }
 
         // Generate unique filenames
         const videoFilename = `shorts/videos/${Date.now()}-${

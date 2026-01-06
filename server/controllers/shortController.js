@@ -9,10 +9,12 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 import LikedShort from "../Modals/likedShort.js";
 import jwt from "jsonwebtoken"; // ✅ ADD THIS LINE
+import { deleteFromSupabase } from "../config/cloudinary.js"; // Only for delete helper
 import {
-  uploadShortsVideo,
-  uploadShortsThumbnail,
-} from "../config/cloudinary.js";
+  supabase,
+  isSupabaseConfigured,
+  bucketName,
+} from "../config/supabase.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -504,25 +506,27 @@ export const uploadShort = async (req, res) => {
     }
 
     // ✅ CRITICAL FIX: Cloudinary URLs are ALREADY in file.path
+    // ✅ Supabase URLs are ALREADY in file.path (set by route middleware)
     const videoFile = req.files.video[0];
     const thumbnailFile = req.files.thumbnail[0];
 
-    // Verify we got Cloudinary URLs
     const videoUrl = videoFile.path;
     const thumbnailUrl = thumbnailFile.path;
 
-    if (!videoUrl || !thumbnailUrl) {
-      throw new Error("Failed to get Cloudinary URLs from upload");
-    }
+    console.log("✅ Verified Supabase URLs:", {
+      video: videoUrl?.substring(0, 80),
+      thumb: thumbnailUrl?.substring(0, 80),
+    });
 
+    // ✅ Validate Supabase URLs
     if (
-      !videoUrl.includes("cloudinary.com") ||
-      !thumbnailUrl.includes("cloudinary.com")
+      !videoUrl.includes("supabase.co") ||
+      !thumbnailUrl.includes("supabase.co")
     ) {
-      console.error("❌ CRITICAL: Non-Cloudinary URLs detected!");
+      console.error("❌ CRITICAL: Non-Supabase URLs detected!");
       console.error("   Video:", videoUrl);
       console.error("   Thumbnail:", thumbnailUrl);
-      throw new Error("Invalid upload URLs - not from Cloudinary");
+      throw new Error("Invalid upload URLs - not from Supabase");
     }
 
     console.log("✅ Verified Cloudinary URLs:");
@@ -1217,20 +1221,36 @@ export const deleteShort = async (req, res) => {
     console.log("✅ Authorization passed, proceeding with deletion...");
 
     try {
-      const videoPath = path.join(__dirname, "..", short.videoUrl);
-      const thumbnailPath = path.join(__dirname, "..", short.thumbnailUrl);
+      // ✅ Delete from Supabase instead of local filesystem
+      if (short.videoUrl?.includes("supabase.co")) {
+        const videoPath = short.videoUrl.split("/storage/v1/object/public/")[1];
+        if (videoPath) {
+          const { error: videoError } = await supabase.storage
+            .from(bucketName)
+            .remove([videoPath.split("/").slice(1).join("/")]);
 
-      if (fs.existsSync(videoPath)) {
-        fs.unlinkSync(videoPath);
-        console.log("✅ Deleted video file");
+          if (!videoError) {
+            console.log("✅ Deleted video from Supabase");
+          }
+        }
       }
 
-      if (fs.existsSync(thumbnailPath)) {
-        fs.unlinkSync(thumbnailPath);
-        console.log("✅ Deleted thumbnail file");
+      if (short.thumbnailUrl?.includes("supabase.co")) {
+        const thumbPath = short.thumbnailUrl.split(
+          "/storage/v1/object/public/"
+        )[1];
+        if (thumbPath) {
+          const { error: thumbError } = await supabase.storage
+            .from(bucketName)
+            .remove([thumbPath.split("/").slice(1).join("/")]);
+
+          if (!thumbError) {
+            console.log("✅ Deleted thumbnail from Supabase");
+          }
+        }
       }
     } catch (fileError) {
-      console.error("⚠️ Error deleting files (continuing anyway):", fileError);
+      console.error("⚠️ Error deleting files from Supabase:", fileError);
     }
 
     const deletedComments = await Comment.deleteMany({ videoid: id });

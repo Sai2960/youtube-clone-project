@@ -25,26 +25,6 @@ console.log("   API Key:", process.env.CLOUDINARY_API_KEY ? "✅" : "❌");
 console.log("   API Secret:", process.env.CLOUDINARY_API_SECRET ? "✅" : "❌");
 
 // ============================================================================
-// SHORTS VIDEO UPLOAD (Cloudinary)
-// ============================================================================
-
-export const uploadShortsVideo = multer({
-  storage: new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-      folder: "youtube-clone/shorts/videos",
-      resource_type: "video",
-      allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
-      access_mode: "public", // ✅ CRITICAL: Make videos PUBLIC
-      transformation: [{ quality: "auto", fetch_format: "auto" }],
-    },
-  }),
-  limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB
-  },
-});
-
-// ============================================================================
 // SHORTS THUMBNAIL UPLOAD (Cloudinary)
 // ============================================================================
 
