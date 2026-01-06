@@ -1,11 +1,6 @@
 // server/routes/short.js - COMPLETE WORKING VERSION
 import express from "express";
 import multer from "multer";
-import {
-  supabase,
-  isSupabaseConfigured,
-  bucketName,
-} from "../config/supabase.js";
 import { deleteFromSupabase, uploadToSupabase } from "../config/cloudinary.js"; // Keep for helper functions only
 import {
   supabase,
