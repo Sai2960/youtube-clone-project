@@ -309,6 +309,5 @@ export const extractPublicId = (url) => {
 // ==================== EXPORTS ====================
 export {
   cloudinary,
-  uploadVideoWithAudio, // ✅ ADD THIS LINE
 };
 export default cloudinary;
