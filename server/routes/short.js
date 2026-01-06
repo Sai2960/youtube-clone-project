@@ -1,18 +1,23 @@
 // server/routes/short.js - COMPLETE WORKING VERSION
-
 import express from "express";
 import multer from "multer";
-import { cloudinary } from "../config/cloudinary.js";
-import * as shortController from "../controllers/shortController.js";
-import { verifyToken } from "../middleware/auth.js";
-import Comment from "../Modals/comment.js";
-import Short from "../Modals/short.js";
-import { translateComment } from "../controllers/translation.js";
 import {
   supabase,
   isSupabaseConfigured,
   bucketName,
 } from "../config/supabase.js";
+import {
+  uploadShortsVideo,
+  uploadShortsThumbnail,
+  deleteFromSupabase,
+  uploadToSupabase,
+  extractPublicId,
+} from "../config/cloudinary.js";
+import * as shortController from "../controllers/shortController.js";
+import { verifyToken } from "../middleware/auth.js";
+import Comment from "../Modals/comment.js";
+import Short from "../Modals/short.js";
+import { translateComment } from "../controllers/translation.js";
 
 const router = express.Router();
 
@@ -42,7 +47,7 @@ router.post(
     console.log("User ID:", req.user?._id);
     console.log(
       "Storage:",
-      isSupabaseConfigured() ? "Supabase" : "Cloudinary (fallback)"
+      isSupabaseConfigured() ? "Supabase" : "NOT CONFIGURED"
     );
 
     const upload = multer({
@@ -100,181 +105,82 @@ router.post(
         });
       }
 
-      console.log("✅ Files validated, uploading...");
+      console.log("✅ Files validated, uploading to Supabase...");
 
       try {
+        if (!isSupabaseConfigured()) {
+          console.error("❌ Supabase not configured!");
+          return res.status(500).json({
+            success: false,
+            message: "Storage service not configured",
+          });
+        }
+
         const videoFile = req.files.video[0];
         const thumbnailFile = req.files.thumbnail[0];
 
-        // ✅ TRY SUPABASE FIRST, FALLBACK TO CLOUDINARY
-        if (isSupabaseConfigured()) {
-          console.log("📤 Uploading to Supabase...");
+        // Generate unique filenames
+        const videoFilename = `shorts/videos/${Date.now()}-${
+          videoFile.originalname
+        }`;
+        const thumbnailFilename = `shorts/thumbnails/${Date.now()}-${
+          thumbnailFile.originalname
+        }`;
 
-          // Generate unique filenames
-          const videoFilename = `shorts/videos/${Date.now()}-${
-            videoFile.originalname
-          }`;
-          const thumbnailFilename = `shorts/thumbnails/${Date.now()}-${
-            thumbnailFile.originalname
-          }`;
+        console.log("📤 Uploading to Supabase...");
 
-          // Upload video to Supabase
-          const { data: videoData, error: videoError } = await supabase.storage
+        // Upload video
+        const { data: videoData, error: videoError } = await supabase.storage
+          .from(bucketName)
+          .upload(videoFilename, videoFile.buffer, {
+            contentType: videoFile.mimetype,
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (videoError) {
+          console.error("❌ Video upload error:", videoError);
+          throw new Error(`Video upload failed: ${videoError.message}`);
+        }
+
+        // Upload thumbnail
+        const { data: thumbnailData, error: thumbnailError } =
+          await supabase.storage
             .from(bucketName)
-            .upload(videoFilename, videoFile.buffer, {
-              contentType: videoFile.mimetype,
+            .upload(thumbnailFilename, thumbnailFile.buffer, {
+              contentType: thumbnailFile.mimetype,
               cacheControl: "3600",
               upsert: false,
             });
 
-          if (videoError) {
-            console.error("❌ Supabase video upload error:", videoError);
-            throw new Error(`Video upload failed: ${videoError.message}`);
-          }
-
-          // Upload thumbnail to Supabase
-          const { data: thumbnailData, error: thumbnailError } =
-            await supabase.storage
-              .from(bucketName)
-              .upload(thumbnailFilename, thumbnailFile.buffer, {
-                contentType: thumbnailFile.mimetype,
-                cacheControl: "3600",
-                upsert: false,
-              });
-
-          if (thumbnailError) {
-            console.error(
-              "❌ Supabase thumbnail upload error:",
-              thumbnailError
-            );
-            throw new Error(
-              `Thumbnail upload failed: ${thumbnailError.message}`
-            );
-          }
-
-          // Get public URLs
-          const { data: videoUrlData } = supabase.storage
-            .from(bucketName)
-            .getPublicUrl(videoFilename);
-
-          const { data: thumbnailUrlData } = supabase.storage
-            .from(bucketName)
-            .getPublicUrl(thumbnailFilename);
-
-          const videoUrl = videoUrlData.publicUrl;
-          const thumbnailUrl = thumbnailUrlData.publicUrl;
-
-          console.log("✅ Supabase upload complete");
-          console.log("   Video:", videoUrl.substring(0, 80));
-          console.log("   Thumbnail:", thumbnailUrl.substring(0, 80));
-
-          // Attach URLs for controller
-          req.files.video[0].path = videoUrl;
-          req.files.video[0].filename = videoFilename;
-          req.files.thumbnail[0].path = thumbnailUrl;
-          req.files.thumbnail[0].filename = thumbnailFilename;
-
-          next();
-        } else {
-          // ✅ FALLBACK TO CLOUDINARY
-          console.log("⚠️  Supabase not configured, using Cloudinary...");
-
-          if (
-            !process.env.CLOUDINARY_CLOUD_NAME ||
-            !process.env.CLOUDINARY_API_KEY ||
-            !process.env.CLOUDINARY_API_SECRET
-          ) {
-            console.error("❌ Cloudinary not configured!");
-            return res.status(500).json({
-              success: false,
-              message:
-                "Server configuration error: No storage service available",
-            });
-          }
-
-          console.log("📤 Uploading video to Cloudinary...");
-
-          const videoUploadPromise = new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-              {
-                folder: "youtube-clone/shorts/videos",
-                resource_type: "video",
-                format: "mp4",
-                chunk_size: 6000000,
-                timeout: 120000,
-                transformation: [
-                  {
-                    video_codec: "auto",
-                    audio_codec: "aac",
-                    audio_frequency: 44100,
-                    quality: "auto",
-                  },
-                ],
-              },
-              (error, result) => {
-                if (error) {
-                  console.error("❌ Video upload error:", error);
-                  reject(error);
-                } else {
-                  console.log(
-                    "✅ Video uploaded:",
-                    result.secure_url.substring(0, 80)
-                  );
-                  resolve(result);
-                }
-              }
-            );
-            uploadStream.end(videoFile.buffer);
-          });
-
-          console.log("📤 Uploading thumbnail to Cloudinary...");
-
-          const thumbnailUploadPromise = new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-              {
-                folder: "youtube-clone/shorts/thumbnails",
-                resource_type: "image",
-                format: "jpg",
-                timeout: 60000,
-                transformation: [
-                  {
-                    width: 720,
-                    height: 1280,
-                    crop: "fill",
-                    quality: "auto",
-                  },
-                ],
-              },
-              (error, result) => {
-                if (error) {
-                  console.error("❌ Thumbnail upload error:", error);
-                  reject(error);
-                } else {
-                  console.log(
-                    "✅ Thumbnail uploaded:",
-                    result.secure_url.substring(0, 80)
-                  );
-                  resolve(result);
-                }
-              }
-            );
-            uploadStream.end(thumbnailFile.buffer);
-          });
-
-          const [videoResult, thumbnailResult] = await Promise.all([
-            videoUploadPromise,
-            thumbnailUploadPromise,
-          ]);
-
-          console.log("✅ Both uploads complete");
-
-          req.files.video[0].path = videoResult.secure_url;
-          req.files.video[0].filename = videoResult.public_id;
-          req.files.thumbnail[0].path = thumbnailResult.secure_url;
-          req.files.thumbnail[0].filename = thumbnailResult.public_id;
-
-          next();
+        if (thumbnailError) {
+          console.error("❌ Thumbnail upload error:", thumbnailError);
+          throw new Error(`Thumbnail upload failed: ${thumbnailError.message}`);
         }
+
+        // Get public URLs
+        const { data: videoUrlData } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(videoFilename);
+
+        const { data: thumbnailUrlData } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(thumbnailFilename);
+
+        const videoUrl = videoUrlData.publicUrl;
+        const thumbnailUrl = thumbnailUrlData.publicUrl;
+
+        console.log("✅ Supabase upload complete");
+        console.log("   Video:", videoUrl.substring(0, 80));
+        console.log("   Thumbnail:", thumbnailUrl.substring(0, 80));
+
+        // Attach URLs for controller
+        req.files.video[0].path = videoUrl;
+        req.files.video[0].filename = videoFilename;
+        req.files.thumbnail[0].path = thumbnailUrl;
+        req.files.thumbnail[0].filename = thumbnailFilename;
+
+        next();
       } catch (uploadError) {
         console.error("❌ Upload error:", uploadError);
         return res.status(500).json({
@@ -289,6 +195,7 @@ router.post(
   },
   shortController.uploadShort
 );
+
 // ============================================================================
 // OTHER PROTECTED ROUTES
 // ============================================================================
@@ -657,7 +564,6 @@ router.post(
 );
 
 console.log("✅ Shorts routes loaded successfully");
-
 // ✅ ADMIN: Fix all existing shorts URLs
 router.post("/admin/fix-all-shorts", async (req, res) => {
   try {
