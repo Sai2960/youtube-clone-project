@@ -233,7 +233,7 @@ router.post("/login", locationMiddleware, async (req, res) => {
       }
 
       // ✅ CRITICAL: Only update image if user doesn't have a custom uploaded one
-      // Custom uploaded images are Supabase URLs or start with /uploads/
+      // Custom uploaded images are Cloudinary URLs or start with /uploads/
       if (
         image &&
         !user.image?.includes("cloudinary.com") &&
