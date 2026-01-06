@@ -28,41 +28,30 @@ const getShortThumbnail = (short: any): string => {
   ];
 
   for (const thumb of thumbnailCandidates) {
-    if (
-      thumb &&
-      typeof thumb === "string" &&
-      thumb.includes("res.cloudinary.com")
-    ) {
-      const cleanThumb = thumb
-        .replace(/\/v\d+\//g, "/")
-        .replace(/^http:\/\//, "https://");
-
-      console.log("✅ Using existing thumbnail:", cleanThumb.substring(0, 80));
-      return cleanThumb;
-    }
-  }
-
-  if (short.videoUrl && short.videoUrl.includes("res.cloudinary.com")) {
-    try {
-      const cleanVideoUrl = short.videoUrl.replace(/\/v\d+\//g, "/");
-      const match = cleanVideoUrl.match(
-        /youtube-clone\/shorts\/videos\/([^.\/]+)/
-      );
-
-      if (match) {
-        const publicId = `youtube-clone/shorts/videos/${match[1]}`;
-        const generatedThumbnail = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-        console.log(
-          "✅ Generated thumbnail:",
-          generatedThumbnail.substring(0, 80)
-        );
-        return generatedThumbnail;
+    if (thumb && typeof thumb === "string") {
+      // Only use Supabase URLs
+      if (thumb.includes("supabase.co/storage")) {
+        console.log("✅ Using Supabase thumbnail:", thumb.substring(0, 80));
+        return thumb;
       }
-    } catch (error) {
-      console.error("❌ Error generating thumbnail:", error);
+      // Skip Cloudinary (expired)
+      if (thumb.includes("cloudinary.com")) {
+        console.warn("⚠️ Skipping expired Cloudinary URL");
+        continue;
+      }
     }
   }
 
+  // Use video URL if available
+  if (short.videoUrl && short.videoUrl.includes("supabase.co/storage")) {
+    console.log(
+      "✅ Using Supabase video URL:",
+      short.videoUrl.substring(0, 80)
+    );
+    return short.videoUrl;
+  }
+
+  // Shorts placeholder (vertical)
   console.warn("⚠️ No thumbnail available for short:", short._id);
   return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
 };

@@ -199,7 +199,7 @@ export const videoApi = {
       urlPreview: videoUrl.substring(0, 60)
     });
     
-    // ✅ Optional: Validate and log Supabase URLs
+    // ✅ Optional: Validate and log Cloudinary URLs
     try {
       const normalizedUrl = normalizeURL(videoUrl);
       if (normalizedUrl) {

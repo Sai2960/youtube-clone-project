@@ -438,28 +438,32 @@ const Home: NextPage = () => {
   };
 
   // REPLACE lines 54-68 (the getVideoUrl function) with:
+  // pages/index.tsx - Replace getVideoUrl function
+
   const getVideoUrl = (video: Video) => {
-    const backend = "https://youtube-clone-project-production.up.railway.app";
+    const SUPABASE_URL =
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      "https://ejzqutnycnagdtfxkczu.supabase.co";
 
     // Priority order for video URL
-    if (video?.videofilename) {
-      return `${backend}/uploads/videos/${video.videofilename}`;
-    }
-    if (video?.filepath) {
-      // If filepath is already a full URL, return it
-      if (video.filepath.startsWith("http")) {
-        return video.filepath;
-      }
-      // Otherwise, construct the URL
-      const filename = video.filepath.split(/[\\/]/).pop();
-      return `${backend}/uploads/videos/${filename}`;
-    }
-    if (video?.videoUrl) {
-      return video.videoUrl.startsWith("http")
-        ? video.videoUrl
-        : `${backend}${video.videoUrl}`;
+    if (video?.videoUrl && video.videoUrl.includes("supabase.co/storage")) {
+      return video.videoUrl;
     }
 
+    if (video?.filepath && video.filepath.includes("supabase.co/storage")) {
+      return video.filepath;
+    }
+
+    if (video?.videofile && video.videofile.includes("supabase.co/storage")) {
+      return video.videofile;
+    }
+
+    // If using filename, construct Supabase URL
+    if (video?.videofilename) {
+      return `${SUPABASE_URL}/storage/v1/object/public/youtube-videos/${video.videofilename}`;
+    }
+
+    // Fallback
     return "/video/vdo.mp4";
   };
   // REPLACE lines ~522-602 in pages/index.tsx with this FIXED version:
@@ -467,7 +471,7 @@ const Home: NextPage = () => {
   const getThumbnailUrl = (video: Video) => {
     console.log("🖼️ Getting thumbnail for video:", video._id);
 
-    // ✅ PRIORITY 1: Check explicit thumbnail fields first
+    // ✅ PRIORITY 1: Check explicit thumbnail fields
     const thumbnailCandidates = [
       video.thumbnailUrl,
       video.thumbnail,
@@ -476,54 +480,31 @@ const Home: NextPage = () => {
     ];
 
     for (const thumb of thumbnailCandidates) {
-      if (
-        thumb &&
-        typeof thumb === "string" &&
-        thumb.includes("res.cloudinary.com")
-      ) {
-        // ✅ Clean Cloudinary URL
-        const cleanThumb = thumb
-          .replace(/\/v\d+\//g, "/")
-          .replace(/^http:\/\//, "https://");
-
-        console.log(
-          "✅ Using existing thumbnail:",
-          cleanThumb.substring(0, 80)
-        );
-        return cleanThumb;
+      if (thumb && typeof thumb === "string") {
+        // Only use Supabase URLs now
+        if (thumb.includes("supabase.co/storage")) {
+          console.log("✅ Using Supabase thumbnail:", thumb.substring(0, 80));
+          return thumb;
+        }
+        // Skip Cloudinary (expired)
+        if (thumb.includes("cloudinary.com")) {
+          console.warn("⚠️ Skipping expired Cloudinary URL");
+          continue;
+        }
       }
     }
 
-    // ✅ PRIORITY 2: Generate from video URL
+    // ✅ PRIORITY 2: Use video URL from Supabase
     const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
 
-    if (videoUrl && videoUrl.includes("res.cloudinary.com")) {
-      try {
-        // Remove version numbers and clean URL
-        const cleanVideoUrl = videoUrl.replace(/\/v\d+\//g, "/");
-
-        // Extract the public_id from the URL
-        // Format: https://res.cloudinary.com/{cloud}/video/upload/{transforms}/{folder}/{file}.mp4
-        const match = cleanVideoUrl.match(/youtube-clone\/videos\/([^.\/]+)/);
-
-        if (match) {
-          const publicId = `youtube-clone/videos/${match[1]}`;
-          const generatedThumbnail = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-
-          console.log(
-            "✅ Generated thumbnail from video:",
-            generatedThumbnail.substring(0, 80)
-          );
-          return generatedThumbnail;
-        }
-      } catch (error) {
-        console.error("❌ Error generating thumbnail:", error);
-      }
+    if (videoUrl && videoUrl.includes("supabase.co/storage")) {
+      console.log("✅ Using Supabase video URL:", videoUrl.substring(0, 80));
+      return videoUrl;
     }
 
-    // ✅ FALLBACK: Use helper function
+    // ✅ PRIORITY 3: Try helper function
     const helperThumbnail = getThumbnailUrlHelper(video);
-    if (helperThumbnail && !helperThumbnail.includes("placeholder")) {
+    if (helperThumbnail && helperThumbnail.includes("supabase.co")) {
       console.log(
         "✅ Using helper thumbnail:",
         helperThumbnail.substring(0, 80)
@@ -535,7 +516,6 @@ const Home: NextPage = () => {
     console.warn("⚠️ No thumbnail available for video:", video?._id);
     return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"%3E%3Crect width="640" height="360" fill="%231F2937"/%3E%3Cpath d="M280 150L360 180L280 210V150Z" fill="%23EF4444"/%3E%3Ctext x="320" y="240" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="16"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
   };
-
   const scrollShorts = (direction: "left" | "right") => {
     if (shortsScrollRef.current) {
       const scrollAmount = 300;
