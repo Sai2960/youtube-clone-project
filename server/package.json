@@ -26,7 +26,9 @@
     "fix-thumbnails": "node scripts/fix-thumbnails.js",
     "fix-quality": "node scripts/generateQualities.js",
     "fix-migrate-to-supabase.js": "node scripts/migrate-to-supabase.js",
-    "check-cloudinary": "node scripts/check-cloudinary-videos.js"
+    "check-cloudinary": "node scripts/check-cloudinary-videos.js",
+    "migrate-cloudinary-to-supabase.js": "node scripts/migrate:cloudinary-to-supabase"
+    
   },
   "keywords": [],
   "author": "",
