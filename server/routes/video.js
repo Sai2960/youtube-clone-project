@@ -309,12 +309,31 @@ router.post(
 
       // Fallback to Cloudinary
       if (!videoUrl) {
-        const { uploadVideoWithAudio } = await import(
-          "../config/cloudinary.js"
-        );
-        const result = await uploadVideoWithAudio(req.file.buffer, {
-          folder: "youtube-clone/videos",
-          resource_type: "video",
+        // ✅ USE THIS INSTEAD:
+        const { cloudinary } = await import("../config/cloudinary.js");
+
+        const result = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              resource_type: "video",
+              folder: "youtube-clone/videos",
+              chunk_size: 6000000,
+              eager: [
+                {
+                  format: "mp4",
+                  video_codec: "h264",
+                  audio_codec: "aac",
+                  audio_frequency: 44100,
+                  bit_rate: "1000k",
+                },
+              ],
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(req.file.buffer);
         });
 
         videoUrl = result.secure_url;
