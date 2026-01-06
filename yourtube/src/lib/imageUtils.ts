@@ -1,6 +1,6 @@
 /* eslint-disable import/no-anonymous-default-export */
 // src/lib/imageUtils.ts - COMPLETE MERGED & FIXED VERSION
-// Combines all features from both implementations
+// Combines Supabase support with comprehensive fallback logic
 
 import { fixMediaURL, normalizeURL, getBackendURL } from './urlHelper';
 
@@ -20,6 +20,61 @@ const DEFAULT_AVATAR_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2
  */
 const getBackendUrl = (): string => {
   return getBackendURL();
+};
+
+// ==========================================
+// URL VALIDATION HELPERS
+// ==========================================
+
+/**
+ * Check if URL is from Supabase
+ */
+export const isSupabaseUrl = (url: string | null | undefined): boolean => {
+  return !!(url && url.includes('supabase.co/storage'));
+};
+
+/**
+ * Check if URL is from Cloudinary (legacy)
+ */
+export const isCloudinaryUrl = (url: string | null | undefined): boolean => {
+  return !!(url && url.includes('res.cloudinary.com'));
+};
+
+/**
+ * Check if URL is OAuth image
+ */
+export const isOAuthImage = (url: string | null | undefined): boolean => {
+  if (!url) return false;
+  return (
+    url.includes('googleusercontent.com') ||
+    url.includes('googleapis.com') ||
+    url.includes('github.com') ||
+    url.includes('githubusercontent.com') ||
+    url.includes('facebook.com')
+  );
+};
+
+/**
+ * Check if image URL is valid and not a placeholder
+ */
+export const isValidImageUrl = (url: string | null | undefined): boolean => {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return false;
+  }
+
+  const invalidPatterns = [
+    'placeholder.com',
+    'via.placeholder',
+    'placeholde',
+    'example.com',
+    'default-avatar',
+    'no-avatar',
+    'null',
+    'undefined',
+  ];
+
+  const lowerUrl = url.toLowerCase();
+  return !invalidPatterns.some(pattern => lowerUrl.includes(pattern));
 };
 
 // ==========================================
@@ -68,6 +123,21 @@ const cleanMalformedUrl = (url: string): string => {
   // Remove double slashes EXCEPT after protocol
   cleaned = cleaned.replace(/([^:]\/)\/+/g, '$1');
   
+  // Remove localhost references
+  if (cleaned.includes('localhost') || /192\.168\.\d+\.\d+/.test(cleaned)) {
+    cleaned = cleaned.replace(/https:\/\/[^:]+:5000/, getBackendUrl());
+  }
+  
+  // Remove :5000 port
+  if (cleaned.includes(':5000')) {
+    const pathMatch = cleaned.match(/:5000(\/.+)$/);
+    if (pathMatch) {
+      cleaned = `${getBackendUrl()}${pathMatch[1]}`;
+    } else {
+      cleaned = cleaned.replace(/:5000/, '');
+    }
+  }
+  
   return cleaned;
 };
 
@@ -93,8 +163,8 @@ const removeTimestamp = (url: string): string => {
 // ==========================================
 
 /**
- * ✅ ENHANCED: Get properly formatted image URL with optional cache-busting
- * Combines urlHelper normalization with image-specific logic
+ * ✅ ENHANCED: Get properly formatted image URL with Supabase + cache-busting support
+ * Priority: Supabase > OAuth > Cloudinary > Full URLs > Relative paths
  */
 export const getImageUrl = (
   imagePath: string | undefined | null, 
@@ -110,26 +180,34 @@ export const getImageUrl = (
 
   const urlStr = String(imagePath).trim();
 
-  // ✅ Cloudinary URLs
- if (urlStr.includes('res.cloudinary.com')) {
-    return urlStr
-      .replace(/^http:\/\//, 'https://')
-      .replace(/\?t=\d+/, ""); // ✅ REMOVE old timestamps
+  // ✅ PRIORITY 1: Supabase URLs (return as-is with optional cache buster)
+  if (isSupabaseUrl(urlStr)) {
+    if (bustCache || forceRefresh) {
+      return addTimestamp(urlStr);
+    }
+    return urlStr;
   }
-  
-  // ✅ OAuth images (Google, GitHub) - keep original
-  if (urlStr.includes('googleusercontent.com') || 
-      urlStr.includes('googleapis.com') ||
-      urlStr.includes('github.com')) {
+
+  // ✅ PRIORITY 2: OAuth images (Google, GitHub, Facebook) - keep original
+  if (isOAuthImage(urlStr)) {
     return urlStr.replace(/^http:\/\//, 'https://');
   }
   
-  // ✅ Proxy other external OAuth images if needed
+  // ✅ PRIORITY 3: Proxy other external OAuth images if needed
   if (needsProxy(urlStr)) {
     return proxyImage(urlStr);
   }
+
+  // ✅ PRIORITY 4: Cloudinary URLs (legacy support)
+  if (isCloudinaryUrl(urlStr)) {
+    const cleanUrl = urlStr.replace(/^http:\/\//, 'https://').replace(/\?t=\d+/, "");
+    if (bustCache || forceRefresh) {
+      return addTimestamp(cleanUrl);
+    }
+    return cleanUrl;
+  }
   
-  // ✅ Full URLs - normalize
+  // ✅ PRIORITY 5: Full URLs - normalize and clean
   if (urlStr.startsWith('http')) {
     let finalUrl = urlStr.replace(/^http:\/\//, 'https://');
     finalUrl = cleanMalformedUrl(finalUrl);
@@ -139,17 +217,29 @@ export const getImageUrl = (
     return finalUrl;
   }
   
-  // ✅ Relative paths - use urlHelper
-  const normalized = normalizeURL(urlStr);
-  if (normalized) {
-    let finalUrl = normalized;
-    if (bustCache || forceRefresh) {
-      finalUrl = addTimestamp(finalUrl);
+  // ✅ PRIORITY 6: Relative paths - use urlHelper
+  const cleanPath = urlStr.replace(/\\/g, '/').replace(/^\/+/, '');
+  
+  if (!cleanPath) return defaultImage;
+
+  let finalUrl = '';
+  
+  if (cleanPath.startsWith('uploads/') || cleanPath.startsWith('channel-images/')) {
+    finalUrl = `${getBackendUrl()}/${cleanPath}`;
+  } else {
+    const normalized = normalizeURL(urlStr);
+    if (normalized) {
+      finalUrl = normalized;
+    } else {
+      finalUrl = `${getBackendUrl()}/uploads/${cleanPath}`;
     }
-    return finalUrl;
   }
 
-  return defaultImage;
+  if (bustCache || forceRefresh) {
+    finalUrl = addTimestamp(finalUrl);
+  }
+
+  return finalUrl || defaultImage;
 };
 
 /**
@@ -219,40 +309,21 @@ export const getImageFilename = (imagePath: string | undefined | null): string =
 // ==========================================
 
 /**
- * Check if image URL is valid and not a placeholder
- */
-export const isValidImageUrl = (url: string | null | undefined): boolean => {
-  if (!url || typeof url !== 'string' || url.trim() === '') {
-    return false;
-  }
-
-  const invalidPatterns = [
-    'placeholder.com',
-    'via.placeholder',
-    'placeholde',
-    'example.com',
-    'default-avatar',
-    'no-avatar',
-    'null',
-    'undefined',
-  ];
-
-  const lowerUrl = url.toLowerCase();
-  return !invalidPatterns.some(pattern => lowerUrl.includes(pattern));
-};
-
-/**
  * ✅ ENHANCED: Normalize avatar URL with comprehensive fallback logic
+ * Supports Supabase, OAuth, Cloudinary, and legacy formats
  */
 export const normalizeAvatarUrl = (avatar: string | undefined | null): string => {
   if (!avatar || avatar.trim() === '' || avatar.includes('placeholder') || avatar.includes('null')) {
     return DEFAULT_AVATAR_SVG;
   }
 
+  // Supabase URLs - return as-is
+  if (isSupabaseUrl(avatar)) {
+    return avatar;
+  }
+
   // Google/OAuth avatars - keep original
-  if (avatar.includes('googleusercontent.com') || 
-      avatar.includes('googleapis.com') ||
-      avatar.includes('github.com')) {
+  if (isOAuthImage(avatar)) {
     return avatar.replace(/^http:\/\//, 'https://');
   }
 
@@ -262,7 +333,7 @@ export const normalizeAvatarUrl = (avatar: string | undefined | null): string =>
   }
 
   // Cloudinary URLs
-  if (avatar.includes('res.cloudinary.com')) {
+  if (isCloudinaryUrl(avatar)) {
     return avatar.replace(/^http:\/\//, 'https://');
   }
 
@@ -287,6 +358,7 @@ export const getUserAvatar = (user: {
   channelAvatar?: string | null;
   avatar?: string | null;
   image?: string | null;
+  profilePicture?: string | null;
 } | null | undefined): string => {
   if (!user) return DEFAULT_AVATAR_SVG;
 
@@ -294,6 +366,7 @@ export const getUserAvatar = (user: {
     user.channelAvatar,
     user.avatar,
     user.image,
+    user.profilePicture,
   ];
 
   for (const field of avatarFields) {
@@ -347,6 +420,34 @@ export const getShortAvatar = (short: {
   }
 
   return DEFAULT_AVATAR_SVG;
+};
+
+/**
+ * ✅ Get channel avatar with fallback (Supabase compatible)
+ */
+export const getChannelAvatar = (channel: any): string => {
+  if (!channel) return DEFAULT_AVATAR_SVG;
+  
+  const avatarUrl = getImageUrl(
+    channel.image || channel.avatar || channel.profilePicture || channel.channelAvatar,
+    true, // isAvatar
+    true  // bustCache
+  );
+  
+  return avatarUrl || DEFAULT_AVATAR_SVG;
+};
+
+/**
+ * ✅ Get channel banner with fallback (Supabase compatible)
+ */
+export const getChannelBanner = (channel: any): string | null => {
+  if (!channel) return null;
+  
+  return getImageUrl(
+    channel.bannerImage || channel.banner,
+    false, // not avatar
+    true   // bustCache
+  );
 };
 
 // ==========================================
@@ -476,6 +577,9 @@ export const debugImageUrl = (url: string | undefined | null): void => {
   console.log('Backend URL:', getBackendUrl());
   console.log('Needs Proxy:', needsProxy(url));
   console.log('Is Valid:', isValidImageUrl(url));
+  console.log('Is Supabase:', isSupabaseUrl(url));
+  console.log('Is Cloudinary:', isCloudinaryUrl(url));
+  console.log('Is OAuth:', isOAuthImage(url));
   console.groupEnd();
 };
 
@@ -501,8 +605,13 @@ export default {
   getShortChannelName,
   getUserAvatar,
   getChannelName,
+  getChannelAvatar,
+  getChannelBanner,
   normalizeAvatarUrl,
   isValidImageUrl,
+  isSupabaseUrl,
+  isCloudinaryUrl,
+  isOAuthImage,
   formatViewCount,
   formatDuration,
   getImageUrlWithFallback,
