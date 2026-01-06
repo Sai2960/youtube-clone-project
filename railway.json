@@ -11,6 +11,5 @@
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "healthcheckInterval": 20
-  },
-  "$note": "v1.0.1"
+  }
 }

@@ -22,11 +22,12 @@ RUN mkdir -p \
     server/uploads/shorts/thumbnails \
     server/invoices
 
-# Expose port (Railway uses PORT env var, default to 8080)
+# Expose port (Railway uses PORT env var)
 EXPOSE 8080
+
 # Health check - more lenient for Railway
-HEALTHCHECK --interval=20s --timeout=10s --start-period=60s --retries=5 \
-  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
-  
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+
 # Start the application
 CMD ["node", "index.js"]

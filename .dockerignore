@@ -1,0 +1,24 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.git
+.gitignore
+.DS_Store
+*log
+coverage
+.vscode
+.idea
+
+ artifacts
+dist
+build
+
+directories (created in container)
+server/uploads/
+server/invoices/
+
+ files
+*md
+README.md
+docker-compose.yml
