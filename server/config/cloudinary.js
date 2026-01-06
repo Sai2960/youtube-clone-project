@@ -3,11 +3,7 @@ import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import dotenv from "dotenv";
-import {
-  supabase,
-  bucketName,
-  isSupabaseConfigured,
-} from "./supabase.js";
+import { supabase, bucketName, isSupabaseConfigured } from "./supabase.js";
 
 dotenv.config();
 
@@ -70,6 +66,53 @@ export const uploadToSupabase = async (file, folder = "videos") => {
 
 // ==================== MULTER MEMORY STORAGE (FOR SUPABASE) ====================
 const memoryStorage = multer.memoryStorage();
+
+// ==================== CLOUDINARY UPLOAD WITH AUDIO ====================
+export const uploadVideoWithAudio = async (fileBuffer, options = {}) => {
+  if (!isCloudinaryConfigured) {
+    throw new Error("Cloudinary is not configured");
+  }
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "video",
+        folder: options.folder || "youtube-clone/videos",
+        chunk_size: 6000000, // 6MB chunks
+        eager: [
+          {
+            format: "mp4",
+            video_codec: "h264",
+            audio_codec: "aac",
+            audio_frequency: 44100,
+            bit_rate: "1000k",
+            quality: "auto:good",
+          },
+        ],
+        eager_async: true,
+        ...options,
+      },
+      (error, result) => {
+        if (error) {
+          console.error("❌ Cloudinary upload error:", error);
+          reject(error);
+        } else {
+          console.log("✅ Cloudinary upload success:", result.public_id);
+          resolve(result);
+        }
+      }
+    );
+
+    // Handle both Buffer and File objects
+    if (Buffer.isBuffer(fileBuffer)) {
+      uploadStream.end(fileBuffer);
+    } else if (fileBuffer.buffer) {
+      uploadStream.end(fileBuffer.buffer);
+    } else {
+      uploadStream.end(fileBuffer);
+    }
+  });
+};
 
 // ==================== VIDEO UPLOADER ====================
 export const uploadVideo = multer({
@@ -220,8 +263,8 @@ export const deleteFromCloudinary = async (
   publicId,
   resourceType = "video"
 ) => {
-if (!isCloudinaryConfigured) {
-      console.warn("⚠️  Cloudinary not configured");
+  if (!isCloudinaryConfigured) {
+    console.warn("⚠️  Cloudinary not configured");
     return;
   }
 
@@ -240,13 +283,13 @@ if (!isCloudinaryConfigured) {
 
 export const extractPublicId = (url) => {
   if (!url) return null;
-  
+
   // Supabase URLs
   if (url.includes("supabase.co")) {
     const match = url.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)$/);
     return match ? match[1] : null;
   }
-  
+
   // Cloudinary URLs
   if (url.includes("cloudinary.com")) {
     try {
@@ -259,10 +302,13 @@ export const extractPublicId = (url) => {
       console.error("Error extracting public ID:", error);
     }
   }
-  
+
   return null;
 };
 
 // ==================== EXPORTS ====================
-export { cloudinary };
+export {
+  cloudinary,
+  uploadVideoWithAudio, // ✅ ADD THIS LINE
+};
 export default cloudinary;
