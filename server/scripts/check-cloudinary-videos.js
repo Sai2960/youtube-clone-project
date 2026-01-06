@@ -31,7 +31,7 @@ async function checkCloudinaryVideos() {
     filepath: { $regex: 'cloudinary.com' },
   });
 
-  console.log(`📊 Found ${videos.length} videos with Cloudinary URLs\n`);
+  console.log(`📊 Found ${videos.length} videos with Supabase URLs\n`);
   console.log('=' .repeat(70));
 
   let existing = 0;

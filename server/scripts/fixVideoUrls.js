@@ -72,7 +72,7 @@ async function fixVideoUrls() {
     console.log(`   ⚠️ Skipped (no Cloudinary URL): ${skipped}`);
     
     if (skipped > 0) {
-      console.log(`\n⚠️ WARNING: ${skipped} videos don't have Cloudinary URLs`);
+      console.log(`\n⚠️ WARNING: ${skipped} videos don't have Supabase URLs`);
       console.log(`   These videos need to be re-uploaded or manually fixed`);
     }
 

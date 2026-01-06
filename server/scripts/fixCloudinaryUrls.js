@@ -123,7 +123,7 @@ async function fixAllVideoUrls() {
     
     if (failed > 0) {
       console.log('\n⚠️  WARNING: Some videos could not be fixed!');
-      console.log('These videos have invalid/missing Cloudinary URLs and must be re-uploaded.');
+      console.log('These videos have invalid/missing Supabase URLs and must be re-uploaded.');
     }
 
     process.exit(0);

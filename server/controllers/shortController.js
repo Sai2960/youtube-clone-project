@@ -486,29 +486,29 @@ export const uploadShort = async (req, res) => {
       });
     }
 
-    // ✅ CRITICAL FIX: Cloudinary URLs are ALREADY in file.path
+    // ✅ CRITICAL FIX: Supabase URLs are ALREADY in file.path
     const videoFile = req.files.video[0];
     const thumbnailFile = req.files.thumbnail[0];
 
-    // Verify we got Cloudinary URLs
+    // Verify we got Supabase URLs
     const videoUrl = videoFile.path;
     const thumbnailUrl = thumbnailFile.path;
 
     if (!videoUrl || !thumbnailUrl) {
-      throw new Error("Failed to get Cloudinary URLs from upload");
+      throw new Error("Failed to get Supabase URLs from upload");
     }
 
     if (
       !videoUrl.includes("cloudinary.com") ||
       !thumbnailUrl.includes("cloudinary.com")
     ) {
-      console.error("❌ CRITICAL: Non-Cloudinary URLs detected!");
+      console.error("❌ CRITICAL: Non-Supabase URLs detected!");
       console.error("   Video:", videoUrl);
       console.error("   Thumbnail:", thumbnailUrl);
       throw new Error("Invalid upload URLs - not from Cloudinary");
     }
 
-    console.log("✅ Verified Cloudinary URLs:");
+    console.log("✅ Verified Supabase URLs:");
     console.log("   Video:", videoUrl.substring(0, 80));
     console.log("   Thumbnail:", thumbnailUrl.substring(0, 80));
 

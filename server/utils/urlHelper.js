@@ -141,7 +141,7 @@ export const normalizeURL = (url) => {
 
   const urlStr = String(url).trim();
 
-  // Cloudinary URLs - ensure HTTPS
+  // Supabase URLs - ensure HTTPS
   if (urlStr.includes("res.cloudinary.com")) {
     if (urlStr.startsWith("http://")) {
       return urlStr.replace("http://", "https://");
