@@ -12,8 +12,9 @@ import { fileURLToPath } from "url";
 import { locationMiddleware } from "../middleware/detectLocation.js";
 import {
   uploadChannelImage,
-  deleteFromSupabase, // ✅ CHANGED: Use Supabase delete instead
-  extractPublicId, // ✅ ADDED: Import from cloudinary.js
+  deleteFromSupabase,
+  extractPublicId,
+  uploadToSupabase, // Add this too since it's used later
 } from "../config/cloudinary.js";
 import { verifyToken } from "../middleware/auth.js";
 import { login } from "../controllers/auth.js"; // Your existing login function
