@@ -18,9 +18,14 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 // THUMBNAIL HELPER - FIXED VERSION
 // ============================================================================
 const getShortThumbnail = (short: any): string => {
-  console.log("🖼️ Getting thumbnail for short:", short._id);
+  console.log("🖼️ Getting thumbnail for short:", {
+    id: short._id,
+    thumbnailUrl: short.thumbnailUrl?.substring(0, 100),
+    thumbnail: short.thumbnail?.substring(0, 100),
+    videoUrl: short.videoUrl?.substring(0, 100),
+  });
 
-  // ✅ Check for Supabase thumbnail URLs
+  // ✅ Check for Supabase thumbnail URLs ONLY
   const thumbnailCandidates = [
     short.thumbnailUrl,
     short.thumbnail,
@@ -28,43 +33,50 @@ const getShortThumbnail = (short: any): string => {
     short.videothumb,
   ];
 
-  // ✅ First, check for valid Supabase thumbnails
+  // ✅ PRIORITY: Look for Supabase URLs first
   for (const thumb of thumbnailCandidates) {
     if (thumb && typeof thumb === "string") {
-      // Check for Supabase URLs
+      // Only accept Supabase URLs
       if (thumb.includes("supabase.co") || thumb.includes("supabase.in")) {
         console.log("✅ Using Supabase thumbnail:", thumb.substring(0, 80));
-        return thumb;
-      }
-      // Fallback: Check for legacy Cloudinary URLs (if any old data exists)
-      if (thumb.includes("res.cloudinary.com")) {
-        console.log(
-          "⚠️ Legacy Cloudinary thumbnail found:",
-          thumb.substring(0, 80)
-        );
         return thumb;
       }
     }
   }
 
-  // ✅ Try to extract thumbnail from Supabase video URL
+  // ✅ IGNORE legacy Cloudinary URLs - they're expired
+  console.warn(
+    "⚠️ No Supabase thumbnail found, trying to generate from video URL"
+  );
+
+  // ✅ Try to construct thumbnail from Supabase video URL
   if (short.videoUrl && typeof short.videoUrl === "string") {
     if (
       short.videoUrl.includes("supabase.co") ||
       short.videoUrl.includes("supabase.in")
     ) {
       try {
-        // For Supabase, try to construct thumbnail URL from video URL
-        // Replace 'videos/' with 'thumbnails/' and change extension to .jpg
-        const thumbnailUrl = short.videoUrl
-          .replace(/\/videos\//, "/thumbnails/")
-          .replace(/\.[^.]+$/, ".jpg"); // Replace extension with .jpg
+        // Extract the storage path and try common thumbnail patterns
+        const url = new URL(short.videoUrl);
+        const pathParts = url.pathname.split("/");
+
+        // Try multiple possible thumbnail constructions
+        const possibleThumbnails = [
+          // Pattern 1: Replace /videos/ with /thumbnails/
+          short.videoUrl
+            .replace(/\/videos\//, "/thumbnails/")
+            .replace(/\.[^.]+$/, ".jpg"),
+          // Pattern 2: Replace /videos/ with /thumbnails/ and keep original extension
+          short.videoUrl.replace(/\/videos\//, "/thumbnails/"),
+          // Pattern 3: Same directory, add _thumbnail suffix
+          short.videoUrl.replace(/\.[^.]+$/, "_thumbnail.jpg"),
+        ];
 
         console.log(
-          "✅ Generated Supabase thumbnail:",
-          thumbnailUrl.substring(0, 80)
+          "🔄 Trying thumbnail URLs:",
+          possibleThumbnails[0].substring(0, 80)
         );
-        return thumbnailUrl;
+        return possibleThumbnails[0]; // Return first option, error handler will try others
       } catch (error) {
         console.error("❌ Error generating Supabase thumbnail:", error);
       }
@@ -955,7 +967,12 @@ const ChannelPage = () => {
                                         )
                                           return;
 
-                                        // ✅ Try alternative Supabase thumbnail paths
+                                        console.log(
+                                          "❌ Thumbnail load failed:",
+                                          target.src.substring(0, 100)
+                                        );
+
+                                        // ✅ Try alternative Supabase thumbnail constructions
                                         if (
                                           short.videoUrl &&
                                           (short.videoUrl.includes(
@@ -966,27 +983,53 @@ const ChannelPage = () => {
                                             ))
                                         ) {
                                           try {
-                                            // Try different thumbnail path constructions
-                                            const altThumbnail = short.videoUrl
-                                              .replace(
-                                                /\/videos\//,
-                                                "/thumbnails/"
-                                              )
-                                              .replace(/\.[^.]+$/, ".jpg");
+                                            // Try different thumbnail naming patterns
+                                            const alternatives = [
+                                              short.videoUrl
+                                                .replace(
+                                                  /\/videos\//,
+                                                  "/thumbnails/"
+                                                )
+                                                .replace(/\.[^.]+$/, ".jpg"),
+                                              short.videoUrl
+                                                .replace(
+                                                  /\/videos\//,
+                                                  "/thumbnails/"
+                                                )
+                                                .replace(/\.[^.]+$/, ".png"),
+                                              short.videoUrl.replace(
+                                                /\.[^.]+$/,
+                                                "_thumbnail.jpg"
+                                              ),
+                                              short.videoUrl.replace(
+                                                /\.[^.]+$/,
+                                                "_thumb.jpg"
+                                              ),
+                                            ];
 
-                                            if (target.src !== altThumbnail) {
-                                              target.src = altThumbnail;
-                                              return;
+                                            // Try the next alternative
+                                            for (const alt of alternatives) {
+                                              if (target.src !== alt) {
+                                                console.log(
+                                                  "🔄 Trying alternative:",
+                                                  alt.substring(0, 100)
+                                                );
+                                                target.src = alt;
+                                                return;
+                                              }
                                             }
                                           } catch (error) {
                                             console.error(
-                                              "❌ Error generating alternative thumbnail:",
+                                              "❌ Error trying alternatives:",
                                               error
                                             );
                                           }
                                         }
 
-                                        // ✅ Fallback to placeholder
+                                        // ✅ Final fallback to placeholder
+                                        console.log(
+                                          "⚠️ All alternatives failed, using placeholder"
+                                        );
                                         target.src =
                                           'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
                                       }}
