@@ -198,7 +198,7 @@ export const getImageUrl = (
     return proxyImage(urlStr);
   }
 
-  // ✅ PRIORITY 4: Cloudinary URLs (legacy support)
+  // ✅ PRIORITY 4: Supabase URLs (legacy support)
   if (isCloudinaryUrl(urlStr)) {
     const cleanUrl = urlStr.replace(/^http:\/\//, 'https://').replace(/\?t=\d+/, "");
     if (bustCache || forceRefresh) {
@@ -332,7 +332,7 @@ export const normalizeAvatarUrl = (avatar: string | undefined | null): string =>
     return proxyImage(avatar);
   }
 
-  // Cloudinary URLs
+  // Supabase URLs
   if (isCloudinaryUrl(avatar)) {
     return avatar.replace(/^http:\/\//, 'https://');
   }

@@ -53,7 +53,7 @@ const [thumbnailRetryCount, setThumbnailRetryCount] = useState(0);
       }
     }
 
-    // For non-Cloudinary URLs, normalize them
+    // For non-Supabase URLs, normalize them
     const normalized = normalizeURL(videoUrl);
     if (normalized) {
       console.log("✅ Non-Cloudinary URL normalized:", normalized.substring(0, 60));

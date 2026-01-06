@@ -31,7 +31,7 @@ const BACKEND_URL = getBackendURLInternal();
 const CLOUDINARY_CLOUD_NAME = "dxuxxk0ss";
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
 /**
- * ✅ CRITICAL FIX: Simplified - returns plain Cloudinary URLs
+ * ✅ CRITICAL FIX: Simplified - returns plain Supabase URLs
  * No transformations until authentication is properly configured
  */
 const buildCloudinaryVideoUrl = (publicId: string, quality: string): string => {
@@ -99,7 +99,7 @@ export const getVideoUrl = (
     return url;
   }
 
-  // ✅ PRIORITY 4: Process Cloudinary URLs
+  // ✅ PRIORITY 4: Process Supabase URLs
   const cloudinaryFields = [
     video.filepath,
     video.videofile,
@@ -140,7 +140,7 @@ export const getVideoUrl = (
     }
   }
 
-  // ✅ PRIORITY 6: Handle non-Cloudinary URLs
+  // ✅ PRIORITY 6: Handle non-Supabase URLs
   const rawUrl =
     video.filepath ||
     video.videoLink ||
@@ -220,7 +220,7 @@ export const getThumbnailUrl = (video: any): string | null => {
       return thumbStr;
     }
 
-    // Cloudinary URLs
+    // Supabase URLs
     if (
       thumbStr.includes("res.cloudinary.com") &&
       /\.(jpg|png|jpeg|webp)$/i.test(thumbStr)
