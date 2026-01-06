@@ -20,6 +20,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 const getShortThumbnail = (short: any): string => {
   console.log("🖼️ Getting thumbnail for short:", short._id);
 
+  // ✅ Check for Supabase thumbnail URLs
   const thumbnailCandidates = [
     short.thumbnailUrl,
     short.thumbnail,
@@ -27,39 +28,46 @@ const getShortThumbnail = (short: any): string => {
     short.videothumb,
   ];
 
+  // ✅ First, check for valid Supabase thumbnails
   for (const thumb of thumbnailCandidates) {
-    if (
-      thumb &&
-      typeof thumb === "string" &&
-      thumb.includes("res.cloudinary.com")
-    ) {
-      const cleanThumb = thumb
-        .replace(/\/v\d+\//g, "/")
-        .replace(/^http:\/\//, "https://");
-
-      console.log("✅ Using existing thumbnail:", cleanThumb.substring(0, 80));
-      return cleanThumb;
+    if (thumb && typeof thumb === "string") {
+      // Check for Supabase URLs
+      if (thumb.includes("supabase.co") || thumb.includes("supabase.in")) {
+        console.log("✅ Using Supabase thumbnail:", thumb.substring(0, 80));
+        return thumb;
+      }
+      // Fallback: Check for legacy Cloudinary URLs (if any old data exists)
+      if (thumb.includes("res.cloudinary.com")) {
+        console.log(
+          "⚠️ Legacy Cloudinary thumbnail found:",
+          thumb.substring(0, 80)
+        );
+        return thumb;
+      }
     }
   }
 
-  if (short.videoUrl && short.videoUrl.includes("res.cloudinary.com")) {
-    try {
-      const cleanVideoUrl = short.videoUrl.replace(/\/v\d+\//g, "/");
-      const match = cleanVideoUrl.match(
-        /youtube-clone\/shorts\/videos\/([^.\/]+)/
-      );
+  // ✅ Try to extract thumbnail from Supabase video URL
+  if (short.videoUrl && typeof short.videoUrl === "string") {
+    if (
+      short.videoUrl.includes("supabase.co") ||
+      short.videoUrl.includes("supabase.in")
+    ) {
+      try {
+        // For Supabase, try to construct thumbnail URL from video URL
+        // Replace 'videos/' with 'thumbnails/' and change extension to .jpg
+        const thumbnailUrl = short.videoUrl
+          .replace(/\/videos\//, "/thumbnails/")
+          .replace(/\.[^.]+$/, ".jpg"); // Replace extension with .jpg
 
-      if (match) {
-        const publicId = `youtube-clone/shorts/videos/${match[1]}`;
-        const generatedThumbnail = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
         console.log(
-          "✅ Generated thumbnail:",
-          generatedThumbnail.substring(0, 80)
+          "✅ Generated Supabase thumbnail:",
+          thumbnailUrl.substring(0, 80)
         );
-        return generatedThumbnail;
+        return thumbnailUrl;
+      } catch (error) {
+        console.error("❌ Error generating Supabase thumbnail:", error);
       }
-    } catch (error) {
-      console.error("❌ Error generating thumbnail:", error);
     }
   }
 
@@ -947,25 +955,38 @@ const ChannelPage = () => {
                                         )
                                           return;
 
+                                        // ✅ Try alternative Supabase thumbnail paths
                                         if (
-                                          short.videoUrl?.includes(
-                                            "cloudinary.com"
-                                          )
+                                          short.videoUrl &&
+                                          (short.videoUrl.includes(
+                                            "supabase.co"
+                                          ) ||
+                                            short.videoUrl.includes(
+                                              "supabase.in"
+                                            ))
                                         ) {
-                                          const cleanUrl =
-                                            short.videoUrl.replace(
-                                              /\/v\d+\//g,
-                                              "/"
+                                          try {
+                                            // Try different thumbnail path constructions
+                                            const altThumbnail = short.videoUrl
+                                              .replace(
+                                                /\/videos\//,
+                                                "/thumbnails/"
+                                              )
+                                              .replace(/\.[^.]+$/, ".jpg");
+
+                                            if (target.src !== altThumbnail) {
+                                              target.src = altThumbnail;
+                                              return;
+                                            }
+                                          } catch (error) {
+                                            console.error(
+                                              "❌ Error generating alternative thumbnail:",
+                                              error
                                             );
-                                          const match = cleanUrl.match(
-                                            /youtube-clone\/shorts\/videos\/([^.\/]+)/
-                                          );
-                                          if (match) {
-                                            target.src = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/shorts/videos/${match[1]}.jpg`;
-                                            return;
                                           }
                                         }
 
+                                        // ✅ Fallback to placeholder
                                         target.src =
                                           'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
                                       }}
