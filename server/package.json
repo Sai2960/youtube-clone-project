@@ -27,7 +27,8 @@
     "fix-quality": "node scripts/generateQualities.js",
     "fix-migrate-to-supabase.js": "node scripts/migrate-to-supabase.js",
     "check-cloudinary": "node scripts/check-cloudinary-videos.js",
-    "migrate-cloudinary-to-supabase.js": "node scripts/migrate:cloudinary-to-supabase"
+    "migrate-cloudinary-to-supabase.js": "node scripts/migrate:cloudinary-to-supabase",
+    "update-frontend-urls.js": "node scripts/update-frontend-urls.js"
     
   },
   "keywords": [],

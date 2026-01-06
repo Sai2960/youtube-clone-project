@@ -288,7 +288,7 @@ const migrateAllVideos = async () => {
 // RUN MIGRATION
 // ============================================================================
 
-// Check if running as standalone script
+// Check if running as standalone script    
 if (import.meta.url === `file://${process.argv[1]}`) {
   migrateAllVideos()
     .then(() => process.exit(0))
