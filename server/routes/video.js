@@ -1,5 +1,7 @@
 // server/routes/video.js - COMPLETE MERGED & FIXED VERSION
 
+// server/routes/video.js - COMPLETE MERGED & FIXED VERSION
+
 import express from "express";
 import cache from "../middleware/cache.js";
 import multer from "multer";
@@ -22,7 +24,13 @@ import {
   uploadVideo,
   uploadThumbnail,
   deleteFromCloudinary,
+  uploadToSupabase, // ✅ ADD THIS
 } from "../config/cloudinary.js";
+import {
+  supabase,
+  bucketName,
+  isSupabaseConfigured, // ✅ ADD THIS - CRITICAL
+} from "../config/supabase.js";
 import compression from "compression";
 import { getallvideo } from "../controllers/video.js";
 
@@ -238,7 +246,7 @@ router.post("/merge-chunks", verifyToken, async (req, res) => {
 router.post(
   "/upload",
   verifyToken,
-  
+
   // ✅ FIX 1: Remove early size check - let storage handle it
   (req, res, next) => {
     req.setTimeout(600000); // 10 minutes
@@ -249,7 +257,7 @@ router.post(
   // ✅ FIX 2: Use memory storage (works with both Supabase & Cloudinary)
   multer({
     storage: multer.memoryStorage(),
-    limits: { 
+    limits: {
       fileSize: 100 * 1024 * 1024, // 100MB
       fieldSize: 100 * 1024 * 1024,
     },
@@ -276,7 +284,7 @@ router.post(
       if (isSupabaseConfigured()) {
         try {
           const fileName = `videos/${Date.now()}-${req.file.originalname}`;
-          
+
           const { data, error } = await supabase.storage
             .from(bucketName)
             .upload(fileName, req.file.buffer, {
@@ -285,10 +293,10 @@ router.post(
             });
 
           if (!error) {
-            const { data: { publicUrl } } = supabase.storage
-              .from(bucketName)
-              .getPublicUrl(fileName);
-            
+            const {
+              data: { publicUrl },
+            } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+
             videoUrl = publicUrl;
             publicId = fileName;
             storageType = "supabase";
@@ -301,12 +309,14 @@ router.post(
 
       // Fallback to Cloudinary
       if (!videoUrl) {
-        const { uploadVideoWithAudio } = await import("../config/cloudinary.js");
+        const { uploadVideoWithAudio } = await import(
+          "../config/cloudinary.js"
+        );
         const result = await uploadVideoWithAudio(req.file.buffer, {
           folder: "youtube-clone/videos",
           resource_type: "video",
         });
-        
+
         videoUrl = result.secure_url;
         publicId = result.public_id;
         storageType = "cloudinary";
@@ -316,7 +326,8 @@ router.post(
       // Save to database...
       const newVideo = new videofiles({
         videotitle: req.body.videotitle || req.file.originalname,
-        videodescription: req.body.videodescription || `Watch "${req.body.videotitle}"`,
+        videodescription:
+          req.body.videodescription || `Watch "${req.body.videotitle}"`,
         videofilename: publicId,
         filepath: videoUrl,
         videofile: videoUrl,
@@ -544,7 +555,6 @@ router.post(
     });
   }
 );
-
 
 // =================== HELPER FUNCTIONS ===================
 // Transform video URLs to absolute URLs
