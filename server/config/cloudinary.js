@@ -68,50 +68,52 @@ export const uploadToSupabase = async (file, folder = "videos") => {
 const memoryStorage = multer.memoryStorage();
 
 // ==================== CLOUDINARY UPLOAD WITH AUDIO ====================
+// ==================== CLOUDINARY UPLOAD WITH AUDIO ====================
 export const uploadVideoWithAudio = async (fileBuffer, options = {}) => {
-  // ✅ CRITICAL: Always fail if Cloudinary is disabled
-  throw new Error("Cloudinary is disabled. Please use Supabase storage.");
-};
-
-return new Promise((resolve, reject) => {
-  const uploadStream = cloudinary.uploader.upload_stream(
-    {
-      resource_type: "video",
-      folder: options.folder || "youtube-clone/videos",
-      chunk_size: 6000000, // 6MB chunks
-      eager: [
-        {
-          format: "mp4",
-          video_codec: "h264",
-          audio_codec: "aac",
-          audio_frequency: 44100,
-          bit_rate: "1000k",
-          quality: "auto:good",
-        },
-      ],
-      eager_async: true,
-      ...options,
-    },
-    (error, result) => {
-      if (error) {
-        console.error("❌ Cloudinary upload error:", error);
-        reject(error);
-      } else {
-        console.log("✅ Cloudinary upload success:", result.public_id);
-        resolve(result);
-      }
-    }
-  );
-
-  // Handle both Buffer and File objects
-  if (Buffer.isBuffer(fileBuffer)) {
-    uploadStream.end(fileBuffer);
-  } else if (fileBuffer.buffer) {
-    uploadStream.end(fileBuffer.buffer);
-  } else {
-    uploadStream.end(fileBuffer);
+  if (!isCloudinaryConfigured) {
+    throw new Error("Cloudinary is not configured");
   }
-});
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "video",
+        folder: options.folder || "youtube-clone/videos",
+        chunk_size: 6000000, // 6MB chunks
+        eager: [
+          {
+            format: "mp4",
+            video_codec: "h264",
+            audio_codec: "aac",
+            audio_frequency: 44100,
+            bit_rate: "1000k",
+            quality: "auto:good",
+          },
+        ],
+        eager_async: true,
+        ...options,
+      },
+      (error, result) => {
+        if (error) {
+          console.error("❌ Cloudinary upload error:", error);
+          reject(error);
+        } else {
+          console.log("✅ Cloudinary upload success:", result.public_id);
+          resolve(result);
+        }
+      }
+    );
+
+    // Handle both Buffer and File objects
+    if (Buffer.isBuffer(fileBuffer)) {
+      uploadStream.end(fileBuffer);
+    } else if (fileBuffer.buffer) {
+      uploadStream.end(fileBuffer.buffer);
+    } else {
+      uploadStream.end(fileBuffer);
+    }
+  });
+};
 
 // ==================== VIDEO UPLOADER ====================
 export const uploadVideo = multer({
