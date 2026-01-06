@@ -12,7 +12,8 @@ import { fileURLToPath } from "url";
 import { locationMiddleware } from "../middleware/detectLocation.js";
 import {
   uploadChannelImage,
-  deleteFromCloudinary,
+  deleteFromSupabase, // ✅ CHANGED: Use Supabase delete instead
+  extractPublicId, // ✅ ADDED: Import from cloudinary.js
 } from "../config/cloudinary.js";
 import { verifyToken } from "../middleware/auth.js";
 import { login } from "../controllers/auth.js"; // Your existing login function
@@ -146,15 +147,6 @@ const determineThemeAndOtpMethod = (ip) => {
 };
 
 // 🔑 Extract Cloudinary Public ID from URL
-const extractPublicId = (url) => {
-  if (!url) return null;
-  const parts = url.split("/upload/");
-  if (parts.length > 1) {
-    const afterUpload = parts[1].split("/").slice(1).join("/");
-    return afterUpload.replace(/\.[^/.]+$/, "");
-  }
-  return null;
-};
 // ==================== AUTH ROUTES ====================
 
 // ✅ LOGIN WITH LOCATION MIDDLEWARE
@@ -470,7 +462,8 @@ router.get("/channel/:id", async (req, res) => {
 
     // ✅ CRITICAL FIX: Construct absolute URLs
     const BASE_URL =
-      process.env.BASE_URL || "https://youtube-clone-project-production.up.railway.app";
+      process.env.BASE_URL ||
+      "https://youtube-clone-project-production.up.railway.app";
 
     const formatImageURL = (imagePath) => {
       if (!imagePath) return null;
@@ -541,7 +534,7 @@ router.get("/channel/:id", async (req, res) => {
 router.post(
   "/channel/:channelId/upload-image",
   verifyToken,
-  upload.single("image"),
+  uploadChannelImage.single("image"),
   async (req, res) => {
     try {
       const { channelId } = req.params;
@@ -553,22 +546,12 @@ router.post(
         imageType,
         userId,
         hasFile: !!req.file,
-        cloudinaryUrl: req.file?.path,
+        fileBuffer: !!req.file?.buffer,
       });
 
       // Authorization check
       if (userId !== channelId) {
         console.error("❌ Unauthorized upload attempt");
-
-        // Delete uploaded Cloudinary file
-        if (req.file?.filename) {
-          try {
-            await deleteFromCloudinary(req.file.filename, "image");
-          } catch (err) {
-            console.error("⚠️ Cloudinary cleanup failed:", err);
-          }
-        }
-
         return res.status(403).json({
           success: false,
           message: "You can only upload images to your own channel",
@@ -585,15 +568,6 @@ router.post(
 
       const user = await User.findById(channelId);
       if (!user) {
-        // Delete uploaded Cloudinary file if user not found
-        if (req.file?.filename) {
-          try {
-            await deleteFromCloudinary(req.file.filename, "image");
-          } catch (err) {
-            console.error("⚠️ Cloudinary cleanup failed:", err);
-          }
-        }
-
         console.error("❌ User not found");
         return res.status(404).json({
           success: false,
@@ -601,114 +575,70 @@ router.post(
         });
       }
 
-      const imageUrl = req.file.path; // Cloudinary URL
-      const publicId = req.file.filename; // Cloudinary public ID
+      // ✅ DELETE OLD IMAGE FROM SUPABASE
+      const oldImageUrl =
+        imageType === "profile" ? user.image : user.bannerImage;
 
-      console.log("📸 Cloudinary image uploaded:", imageUrl);
-      console.log("🔑 Public ID:", publicId);
-
-      // Delete old Cloudinary image if exists
-      if (imageType === "banner" && user.bannerImage) {
-        if (user.bannerImage.includes("cloudinary.com")) {
-          try {
-            const oldPublicId = extractPublicId(user.bannerImage);
-            if (oldPublicId) {
-              await deleteFromCloudinary(oldPublicId, "image");
-              console.log("🗑️ Deleted old banner from Cloudinary");
-            }
-          } catch (err) {
-            console.error("⚠️ Could not delete old banner:", err);
+      if (oldImageUrl && oldImageUrl.includes("supabase.co")) {
+        try {
+          const oldPublicId = extractPublicId(oldImageUrl);
+          if (oldPublicId) {
+            await deleteFromSupabase(oldPublicId);
+            console.log("🗑️ Deleted old image from Supabase:", oldPublicId);
           }
-        } else if (user.bannerImage.startsWith("/uploads/")) {
-          // Delete local file if exists
-          const oldPath = path.join(__dirname, "..", user.bannerImage);
-          if (fs.existsSync(oldPath)) {
-            try {
-              fs.unlinkSync(oldPath);
-              console.log("🗑️ Deleted old local banner");
-            } catch (err) {
-              console.error("⚠️ Could not delete local banner:", err);
-            }
-          }
-        }
-      } else if (imageType === "profile" && user.image) {
-        if (user.image.includes("cloudinary.com")) {
-          try {
-            const oldPublicId = extractPublicId(user.image);
-            if (oldPublicId) {
-              await deleteFromCloudinary(oldPublicId, "image");
-              console.log("🗑️ Deleted old profile image from Cloudinary");
-            }
-          } catch (err) {
-            console.error("⚠️ Could not delete old profile:", err);
-          }
-        } else if (user.image.startsWith("/uploads/")) {
-          // Delete local file if exists
-          const oldPath = path.join(__dirname, "..", user.image);
-          if (fs.existsSync(oldPath)) {
-            try {
-              fs.unlinkSync(oldPath);
-              console.log("🗑️ Deleted old local profile image");
-            } catch (err) {
-              console.error("⚠️ Could not delete local profile:", err);
-            }
-          }
+        } catch (deleteError) {
+          console.warn("⚠️ Failed to delete old image:", deleteError.message);
         }
       }
 
-      // Update user with new Cloudinary image
-      if (imageType === "banner") {
-        user.bannerImage = imageUrl;
-      } else if (imageType === "profile") {
-        user.image = imageUrl;
-      } else {
-        // Clean up uploaded file
-        if (req.file?.filename) {
-          try {
-            await deleteFromCloudinary(req.file.filename, "image");
-          } catch (err) {
-            console.error("⚠️ Cleanup failed:", err);
-          }
-        }
+      // ✅ UPLOAD TO SUPABASE
+      const { uploadToSupabase } = await import("../config/cloudinary.js");
+      const folder =
+        imageType === "profile"
+          ? "channel-images/profiles"
+          : "channel-images/banners";
 
-        return res.status(400).json({
+      const uploadResult = await uploadToSupabase(req.file, folder);
+
+      console.log("✅ Upload result:", uploadResult);
+
+      // ✅ UPDATE DATABASE
+      const updateData =
+        imageType === "profile"
+          ? { image: uploadResult.url, hasImage: true }
+          : { bannerImage: uploadResult.url, hasBanner: true };
+
+      const updatedUser = await User.findByIdAndUpdate(
+        channelId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      ).select("name email channelname image bannerImage subscribers");
+
+      if (!updatedUser) {
+        return res.status(404).json({
           success: false,
-          message: "Invalid imageType. Must be 'profile' or 'banner'",
+          message: "Failed to update user",
         });
       }
 
-      await user.save();
-
-      console.log(`✅ ${imageType} image uploaded successfully:`, imageUrl);
-      console.log("✅ Updated user:", {
-        id: user._id,
-        image: user.image,
-        bannerImage: user.bannerImage,
-      });
+      console.log(
+        `✅ ${imageType} image uploaded successfully:`,
+        uploadResult.url
+      );
 
       res.json({
         success: true,
         message: `${imageType} image uploaded successfully`,
-        imageUrl: imageUrl,
-        publicId: publicId,
+        imageUrl: uploadResult.url,
+        publicId: uploadResult.publicId,
         user: {
-          _id: user._id,
-          image: user.image,
-          bannerImage: user.bannerImage,
+          _id: updatedUser._id,
+          image: updatedUser.image,
+          bannerImage: updatedUser.bannerImage,
         },
       });
     } catch (error) {
       console.error("❌ Upload error:", error);
-
-      // Clean up Cloudinary file on error
-      if (req.file?.filename) {
-        try {
-          await deleteFromCloudinary(req.file.filename, "image");
-          console.log("🗑️ Cleaned up Cloudinary file after error");
-        } catch (cleanupErr) {
-          console.error("⚠️ Cloudinary cleanup failed:", cleanupErr);
-        }
-      }
 
       res.status(500).json({
         success: false,
@@ -726,7 +656,7 @@ router.post(
 router.put(
   "/update-profile",
   verifyToken,
-  upload.single("avatar"),
+  uploadChannelImage.single("avatar"),
   async (req, res) => {
     try {
       const userId = req.user.id;
@@ -734,30 +664,37 @@ router.put(
 
       console.log("📝 Profile update request for user:", userId);
 
-      // If new avatar uploaded to Cloudinary
+      // If new avatar uploaded to Supabase
       if (req.file) {
         const oldUser = await User.findById(userId);
 
-        // Delete old avatar from Cloudinary if it exists
-        if (oldUser.image && oldUser.image.includes("cloudinary.com")) {
+        // Delete old avatar from Supabase if it exists
+        if (oldUser.image && oldUser.image.includes("supabase.co")) {
           try {
             const publicId = extractPublicId(oldUser.image);
             if (publicId) {
-              await deleteFromCloudinary(publicId, "image");
-              console.log("🗑️ Old avatar deleted from Cloudinary");
+              await deleteFromSupabase(publicId);
+              console.log("🗑️ Old avatar deleted from Supabase");
             }
           } catch (error) {
             console.error("⚠️ Failed to delete old avatar:", error);
           }
         }
 
-        updateData.image = req.file.path; // Cloudinary URL
-        console.log("✅ New avatar uploaded:", req.file.path);
+        // Upload new avatar to Supabase
+        const { uploadToSupabase } = await import("../config/cloudinary.js");
+        const uploadResult = await uploadToSupabase(
+          req.file,
+          "channel-images/profiles"
+        );
+
+        updateData.image = uploadResult.url;
+        console.log("✅ New avatar uploaded:", uploadResult.url);
       }
 
-      // Remove sensitive fields that shouldn't be updated directly
+      // Remove sensitive fields
       delete updateData.password;
-      delete updateData.email; // Email should be updated separately with verification
+      delete updateData.email;
 
       const updatedUser = await User.findByIdAndUpdate(
         userId,
@@ -782,15 +719,6 @@ router.put(
     } catch (error) {
       console.error("❌ Profile update error:", error);
 
-      // Clean up on error
-      if (req.file?.filename) {
-        try {
-          await deleteFromCloudinary(req.file.filename, "image");
-        } catch (err) {
-          console.error("⚠️ Cleanup failed:", err);
-        }
-      }
-
       res.status(500).json({
         success: false,
         message: "Profile update failed",
@@ -804,7 +732,7 @@ router.put(
 router.post(
   "/upload-avatar",
   verifyToken,
-  upload.single("avatar"),
+  uploadChannelImage.single("avatar"),
   async (req, res) => {
     try {
       const userId = req.user.id;
@@ -816,26 +744,30 @@ router.post(
         });
       }
 
-      const avatarUrl = req.file.path; // Cloudinary URL
-      const publicId = req.file.filename; // Cloudinary public ID
+      // Upload to Supabase
+      const { uploadToSupabase } = await import("../config/cloudinary.js");
+      const uploadResult = await uploadToSupabase(
+        req.file,
+        "channel-images/profiles"
+      );
 
       // Update user's avatar
       const user = await User.findById(userId);
 
       // Delete old avatar if exists
-      if (user.image && user.image.includes("cloudinary.com")) {
+      if (user.image && user.image.includes("supabase.co")) {
         try {
           const oldPublicId = extractPublicId(user.image);
           if (oldPublicId) {
-            await deleteFromCloudinary(oldPublicId, "image");
-            console.log("🗑️ Old avatar deleted from Cloudinary");
+            await deleteFromSupabase(oldPublicId);
+            console.log("🗑️ Old avatar deleted from Supabase");
           }
         } catch (error) {
           console.error("⚠️ Failed to delete old avatar:", error);
         }
       }
 
-      user.image = avatarUrl;
+      user.image = uploadResult.url;
       await user.save();
 
       console.log("✅ Avatar uploaded for:", user.name);
@@ -843,20 +775,11 @@ router.post(
       res.status(200).json({
         success: true,
         message: "Avatar uploaded successfully",
-        avatar: avatarUrl,
-        publicId: publicId,
+        avatar: uploadResult.url,
+        publicId: uploadResult.publicId,
       });
     } catch (error) {
       console.error("❌ Avatar upload error:", error);
-
-      // Clean up on error
-      if (req.file?.filename) {
-        try {
-          await deleteFromCloudinary(req.file.filename, "image");
-        } catch (err) {
-          console.error("⚠️ Cleanup failed:", err);
-        }
-      }
 
       res.status(500).json({
         success: false,
