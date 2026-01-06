@@ -124,47 +124,31 @@ export const uploadChannelImage = multer({
 });
 
 // ==================== SHORTS UPLOADER ====================
+// Make sure your Cloudinary uploads are PUBLIC, not authenticated
 export const uploadShortsVideo = multer({
-  storage: memoryStorage,
-  limits: {
-    fileSize: 100 * 1024 * 1024,
-    fieldSize: 100 * 1024 * 1024,
-    fields: 10,
-    files: 1,
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedMimeTypes = ["video/mp4", "video/quicktime", "video/webm"];
-
-    if (
-      allowedMimeTypes.includes(file.mimetype) ||
-      file.mimetype.startsWith("video/")
-    ) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only video files allowed for shorts"), false);
-    }
-  },
+  storage: new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'youtube-clone/shorts/videos',
+      resource_type: 'video',
+      allowed_formats: ['mp4', 'mov', 'avi', 'mkv', 'webm'],
+      // ✅ CRITICAL: Make sure this is set
+      access_mode: 'public', // NOT 'authenticated'
+    },
+  }),
 });
 
 export const uploadShortsThumbnail = multer({
-  storage: memoryStorage,
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedMimeTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-    ];
-
-    if (allowedMimeTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files allowed for shorts thumbnails"), false);
-    }
-  },
+  storage: new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'youtube-clone/shorts/thumbnails',
+      resource_type: 'image',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+      // ✅ CRITICAL: Make sure this is set
+      access_mode: 'public', // NOT 'authenticated'
+    },
+  }),
 });
 
 // ==================== DELETE FROM SUPABASE ====================

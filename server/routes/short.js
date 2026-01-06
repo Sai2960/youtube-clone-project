@@ -700,22 +700,26 @@ router.get("/admin/check-shorts", async (req, res) => {
 });
 
 // ✅ Delete all shorts with local /uploads/ paths
-router.post("/admin/delete-local-shorts", async (req, res) => {
+// ✅ NEW: Delete all shorts with invalid video URLs
+router.post("/admin/delete-invalid-shorts", async (req, res) => {
   try {
-    console.log("\n🗑️ ===== DELETING LOCAL-PATH SHORTS =====");
+    console.log("\n🗑️ ===== DELETING INVALID SHORTS =====");
 
-    const brokenShorts = await Short.find({
+    // Find shorts with local paths or missing URLs
+    const invalidShorts = await Short.find({
       $or: [
         { videoUrl: { $regex: "^/uploads/" } },
-        { thumbnailUrl: { $regex: "^/uploads/" } },
-        { videoUrl: { $not: { $regex: "cloudinary.com" } } },
+        { videoUrl: { $regex: "^/videos/" } },
+        { videoUrl: { $exists: false } },
+        { videoUrl: null },
+        { videoUrl: "" },
       ],
     });
 
-    console.log(`Found ${brokenShorts.length} broken shorts`);
+    console.log(`Found ${invalidShorts.length} invalid shorts`);
 
     const deleted = [];
-    for (const short of brokenShorts) {
+    for (const short of invalidShorts) {
       deleted.push({
         id: short._id,
         title: short.title,
@@ -724,7 +728,7 @@ router.post("/admin/delete-local-shorts", async (req, res) => {
       await Short.findByIdAndDelete(short._id);
     }
 
-    console.log(`✅ Deleted ${deleted.length} shorts`);
+    console.log(`✅ Deleted ${deleted.length} invalid shorts`);
 
     res.json({
       success: true,
@@ -733,6 +737,63 @@ router.post("/admin/delete-local-shorts", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Delete error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+// ✅ NEW: Fix Cloudinary video permissions
+router.post("/admin/fix-cloudinary-permissions", async (req, res) => {
+  try {
+    console.log("\n🔧 ===== FIXING CLOUDINARY PERMISSIONS =====");
+
+    const shorts = await Short.find({
+      videoUrl: { $regex: "cloudinary.com" },
+    });
+
+    let fixed = 0;
+    let errors = 0;
+
+    for (const short of shorts) {
+      try {
+        // Extract public_id from URL
+        const publicIdMatch = short.videoUrl.match(
+          /\/([^\/]+)\.(mp4|mov|avi)$/
+        );
+        if (!publicIdMatch) continue;
+
+        const publicId = `youtube-clone/shorts/videos/${publicIdMatch[1]}`;
+
+        console.log(`🔄 Updating: ${publicId}`);
+
+        // Update resource to public
+        await cloudinary.uploader.explicit(publicId, {
+          type: "upload",
+          resource_type: "video",
+          access_mode: "public",
+        });
+
+        fixed++;
+        console.log(`✅ Fixed: ${short.title}`);
+      } catch (error) {
+        errors++;
+        console.error(`❌ Error fixing ${short.title}:`, error.message);
+      }
+    }
+
+    console.log(`\n✅ Fixed: ${fixed}, Errors: ${errors}`);
+
+    res.json({
+      success: true,
+      summary: {
+        total: shorts.length,
+        fixed,
+        errors,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Fix error:", error);
     res.status(500).json({
       success: false,
       error: error.message,
