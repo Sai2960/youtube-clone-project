@@ -23,7 +23,7 @@ import { verifyToken } from "../middleware/auth.js";
 import {
   uploadVideo,
   uploadThumbnail,
-  deleteFromCloudinary,
+  deleteFromSupabase,
   uploadToSupabase, // ✅ ADD THIS
 } from "../config/cloudinary.js";
 import {
@@ -1396,7 +1396,7 @@ router.delete("/deletevideo/:videoId", verifyToken, async (req, res) => {
       try {
         const publicId = extractPublicId(videoLink);
         if (publicId) {
-          await deleteFromCloudinary(publicId, "video");
+          await deleteFromSupabase(publicId, "video");
           console.log("🗑️ Video deleted from Cloudinary");
         }
       } catch (error) {
@@ -1410,7 +1410,7 @@ router.delete("/deletevideo/:videoId", verifyToken, async (req, res) => {
       try {
         const publicId = extractPublicId(thumbnail);
         if (publicId) {
-          await deleteFromCloudinary(publicId, "image");
+          await deleteFromSupabase(publicId, "image");
           console.log("🗑️ Thumbnail deleted from Cloudinary");
         }
       } catch (error) {
@@ -1443,7 +1443,7 @@ router.delete("/cloudinary/:publicId", verifyToken, async (req, res) => {
 
     console.log(`🗑️ Deleting ${resourceType} from Cloudinary:`, publicId);
 
-    const result = await deleteFromCloudinary(publicId, resourceType);
+    const result = await deleteFromSupabase(publicId, resourceType);
 
     res.json({
       success: true,
