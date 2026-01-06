@@ -86,26 +86,41 @@ const WatchPage = () => {
           allKeys: Object.keys(videoData),
         });
         // ✅ Transform URLs - IMPROVED VERSION
+        // ✅ Transform URLs - IMPROVED VERSION
         const transformedVideo = {
           ...videoData,
-          // Use the proper getVideoUrl function for video files
+          // Use proper URL transformation
           filepath:
-            getVideoUrl(videoData) ||
-            fixMediaURL(
-              videoData.filepath ||
-                videoData.videofile ||
-                videoData.videoLink ||
-                videoData.video ||
-                videoData.videoUrl
-            ),
-          // Use getThumbnailUrl for thumbnails
-          videothumbnail:
-            getThumbnailUrl(videoData) ||
-            fixMediaURL(
+            videoData.filepath ||
+            videoData.videofile ||
+            videoData.videoLink ||
+            getVideoUrl(videoData),
+          // Generate thumbnail from video URL
+          videothumbnail: (() => {
+            // Try existing thumbnail first
+            const existingThumb =
               videoData.videothumbnail ||
-                videoData.thumbnail ||
-                videoData.thumbnailUrl
-            ),
+              videoData.thumbnail ||
+              videoData.thumbnailUrl;
+
+            if (existingThumb && existingThumb.includes("res.cloudinary.com")) {
+              return existingThumb
+                .replace(/\/v\d+\//g, "/")
+                .replace(/^http:\/\//, "https://");
+            }
+
+            // Generate from video URL
+            const videoUrl =
+              videoData.filepath || videoData.videofile || videoData.videoLink;
+            if (videoUrl && videoUrl.includes("res.cloudinary.com")) {
+              const match = videoUrl.match(/youtube-clone\/videos\/([^.\/]+)/);
+              if (match) {
+                return `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/youtube-clone/videos/${match[1]}.jpg`;
+              }
+            }
+
+            return existingThumb;
+          })(),
           uploadedBy: videoData.uploadedBy
             ? {
                 ...videoData.uploadedBy,
@@ -275,24 +290,24 @@ const WatchPage = () => {
   };
 
   // ✅ Get backend URL based on environment
-const getBackendUrl = () => {
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
+  const getBackendUrl = () => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
 
-    if (
-      hostname.includes("vercel.app") ||
-      hostname.includes("your-domain.com")
-    ) {
-      return "https://youtube-clone-project-production.up.railway.app"; // ✅ NEW
+      if (
+        hostname.includes("vercel.app") ||
+        hostname.includes("your-domain.com")
+      ) {
+        return "https://youtube-clone-project-production.up.railway.app"; // ✅ NEW
+      }
+
+      if (hostname === "localhost" || hostname === "127.0.0.1") {
+        return "http://localhost:5000";
+      }
     }
 
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return "http://localhost:5000";
-    }
-  }
-
-  return "https://youtube-clone-project-production.up.railway.app"; // ✅ NEW
-};
+    return "https://youtube-clone-project-production.up.railway.app"; // ✅ NEW
+  };
 
   // ✅ Share modal handlers
   const handleOpenShareModal = (currentTime?: number) => {

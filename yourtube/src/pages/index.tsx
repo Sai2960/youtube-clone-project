@@ -462,87 +462,56 @@ const Home: NextPage = () => {
 
     return "/video/vdo.mp4";
   };
+  // REPLACE lines ~522-602 in pages/index.tsx with this FIXED version:
+
   const getThumbnailUrl = (video: Video) => {
-    // ✅ Priority 1: Use helper function first
-    const helperThumbnail = getThumbnailUrlHelper(video);
-    if (helperThumbnail && !helperThumbnail.includes("placeholder")) {
-      console.log(
-        "✅ Thumbnail from helper:",
-        helperThumbnail.substring(0, 60)
-      );
-      return helperThumbnail;
-    }
+    console.log("🖼️ Getting thumbnail for video:", video._id);
 
-    // ✅ Priority 2: Check explicit thumbnail fields
-    if (video?.thumbnailUrl) {
-      if (video.thumbnailUrl.startsWith("http")) {
+    // ✅ PRIORITY 1: Check explicit thumbnail fields first
+    const thumbnailCandidates = [
+      video.thumbnailUrl,
+      video.thumbnail,
+      video.videothumbnail,
+      video.videothumb,
+    ];
+
+    for (const thumb of thumbnailCandidates) {
+      if (
+        thumb &&
+        typeof thumb === "string" &&
+        thumb.includes("res.cloudinary.com")
+      ) {
+        // ✅ Clean Cloudinary URL
+        const cleanThumb = thumb
+          .replace(/\/v\d+\//g, "/")
+          .replace(/^http:\/\//, "https://");
+
         console.log(
-          "✅ Using video.thumbnailUrl:",
-          video.thumbnailUrl.substring(0, 60)
+          "✅ Using existing thumbnail:",
+          cleanThumb.substring(0, 80)
         );
-        return video.thumbnailUrl;
+        return cleanThumb;
       }
-      const backend = "https://youtube-clone-project-production.up.railway.app";
-      return `${backend}${video.thumbnailUrl}`;
     }
 
-    if (video?.thumbnail) {
-      if (video.thumbnail.startsWith("http")) {
-        console.log(
-          "✅ Using video.thumbnail:",
-          video.thumbnail.substring(0, 60)
-        );
-        return video.thumbnail;
-      }
-      const backend = "https://youtube-clone-project-production.up.railway.app";
-      return `${backend}${video.thumbnail}`;
-    }
-
-    if (video?.videothumbnail) {
-      if (video.videothumbnail.startsWith("http")) {
-        return video.videothumbnail;
-      }
-      const backend = "https://youtube-clone-project-production.up.railway.app";
-      return `${backend}${video.videothumbnail}`;
-    }
-
-    if (video?.videothumb) {
-      if (video.videothumb.startsWith("http")) {
-        return video.videothumb;
-      }
-      const backend = "https://youtube-clone-project-production.up.railway.app";
-      return `${backend}${video.videothumb}`;
-    }
-
-    // ✅ Priority 3: Generate from video URL
+    // ✅ PRIORITY 2: Generate from video URL
     const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
 
-    if (
-      videoUrl &&
-      videoUrl.includes("res.cloudinary.com") &&
-      videoUrl.includes("/video/upload/")
-    ) {
+    if (videoUrl && videoUrl.includes("res.cloudinary.com")) {
       try {
-        const parts = videoUrl.split("/video/upload/");
-        if (parts.length === 2) {
-          const pathAfterUpload = parts[1]
-            .split("/")
-            .filter(
-              (part) =>
-                !part.includes("f_") &&
-                !part.includes("vc_") &&
-                !part.includes("ac_")
-            )
-            .join("/");
+        // Remove version numbers and clean URL
+        const cleanVideoUrl = videoUrl.replace(/\/v\d+\//g, "/");
 
-          const generatedThumbnail =
-            `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${pathAfterUpload}`.replace(
-              /\.(mp4|mov|avi|mkv|webm)$/i,
-              ".jpg"
-            );
+        // Extract the public_id from the URL
+        // Format: https://res.cloudinary.com/{cloud}/video/upload/{transforms}/{folder}/{file}.mp4
+        const match = cleanVideoUrl.match(/youtube-clone\/videos\/([^.\/]+)/);
+
+        if (match) {
+          const publicId = `youtube-clone/videos/${match[1]}`;
+          const generatedThumbnail = `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
 
           console.log(
-            "🖼️ Generated thumbnail from video:",
+            "✅ Generated thumbnail from video:",
             generatedThumbnail.substring(0, 80)
           );
           return generatedThumbnail;
@@ -552,9 +521,19 @@ const Home: NextPage = () => {
       }
     }
 
-    // ✅ Fallback
+    // ✅ FALLBACK: Use helper function
+    const helperThumbnail = getThumbnailUrlHelper(video);
+    if (helperThumbnail && !helperThumbnail.includes("placeholder")) {
+      console.log(
+        "✅ Using helper thumbnail:",
+        helperThumbnail.substring(0, 80)
+      );
+      return helperThumbnail;
+    }
+
+    // ✅ FINAL FALLBACK: SVG placeholder
     console.warn("⚠️ No thumbnail available for video:", video?._id);
-    return "/placeholder-thumbnail.jpg";
+    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"%3E%3Crect width="640" height="360" fill="%231F2937"/%3E%3Cpath d="M280 150L360 180L280 210V150Z" fill="%23EF4444"/%3E%3Ctext x="320" y="240" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="16"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
   };
 
   const scrollShorts = (direction: "left" | "right") => {
