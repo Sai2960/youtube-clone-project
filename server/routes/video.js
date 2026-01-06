@@ -246,113 +246,108 @@ router.post("/merge-chunks", verifyToken, async (req, res) => {
 router.post(
   "/upload",
   verifyToken,
-
-  // ✅ FIX 1: Remove early size check - let storage handle it
   (req, res, next) => {
-    req.setTimeout(600000); // 10 minutes
+    req.setTimeout(600000);
     res.setTimeout(600000);
     next();
   },
-
-  // ✅ FIX 2: Use memory storage (works with both Supabase & Cloudinary)
   multer({
     storage: multer.memoryStorage(),
     limits: {
-      fileSize: 100 * 1024 * 1024, // 100MB
+      fileSize: 100 * 1024 * 1024,
       fieldSize: 100 * 1024 * 1024,
     },
   }).single("file"),
+  uploadvideo // ✅ USE THE CONTROLLER FUNCTION
+);
 
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: "No file uploaded",
-        });
-      }
-
-      const fileSizeMB = req.file.size / (1024 * 1024);
-      console.log(`📊 Upload: ${fileSizeMB.toFixed(2)}MB`);
-
-      // ✅ FIX 3: Try Supabase first, fallback to Cloudinary
-      let videoUrl = null;
-      let publicId = null;
-      let storageType = null;
-
-      // Try Supabase
-      if (isSupabaseConfigured()) {
-        try {
-          const fileName = `videos/${Date.now()}-${req.file.originalname}`;
-
-          const { data, error } = await supabase.storage
-            .from(bucketName)
-            .upload(fileName, req.file.buffer, {
-              contentType: req.file.mimetype,
-              cacheControl: "3600",
-            });
-
-          if (!error) {
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from(bucketName).getPublicUrl(fileName);
-
-            videoUrl = publicUrl;
-            publicId = fileName;
-            storageType = "supabase";
-            console.log("✅ Uploaded to Supabase");
-          }
-        } catch (err) {
-          console.warn("⚠️ Supabase failed, trying Cloudinary:", err.message);
-        }
-      }
-
-      // Fallback to Cloudinary
-      if (!videoUrl) {
-        const { uploadVideoWithAudio } = await import(
-          "../config/cloudinary.js"
-        );
-        const result = await uploadVideoWithAudio(req.file.buffer, {
-          folder: "youtube-clone/videos",
-          resource_type: "video",
-        });
-
-        videoUrl = result.secure_url;
-        publicId = result.public_id;
-        storageType = "cloudinary";
-        console.log("✅ Uploaded to Cloudinary");
-      }
-
-      // Save to database...
-      const newVideo = new videofiles({
-        videotitle: req.body.videotitle || req.file.originalname,
-        videodescription:
-          req.body.videodescription || `Watch "${req.body.videotitle}"`,
-        videofilename: publicId,
-        filepath: videoUrl,
-        videofile: videoUrl,
-        videoLink: videoUrl,
-        uploadedBy: req.userId,
-        storageType,
-      });
-
-      await newVideo.save();
-
-      res.status(201).json({
-        success: true,
-        video: newVideo,
-        videoUrl,
-        storage: storageType,
-      });
-    } catch (error) {
-      console.error("❌ Upload error:", error);
-      res.status(500).json({
+async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
         success: false,
-        message: error.message,
+        message: "No file uploaded",
       });
     }
+
+    const fileSizeMB = req.file.size / (1024 * 1024);
+    console.log(`📊 Upload: ${fileSizeMB.toFixed(2)}MB`);
+
+    // ✅ FIX 3: Try Supabase first, fallback to Cloudinary
+    let videoUrl = null;
+    let publicId = null;
+    let storageType = null;
+
+    // Try Supabase
+    if (isSupabaseConfigured()) {
+      try {
+        const fileName = `videos/${Date.now()}-${req.file.originalname}`;
+
+        const { data, error } = await supabase.storage
+          .from(bucketName)
+          .upload(fileName, req.file.buffer, {
+            contentType: req.file.mimetype,
+            cacheControl: "3600",
+          });
+
+        if (!error) {
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+
+          videoUrl = publicUrl;
+          publicId = fileName;
+          storageType = "supabase";
+          console.log("✅ Uploaded to Supabase");
+        }
+      } catch (err) {
+        console.warn("⚠️ Supabase failed, trying Cloudinary:", err.message);
+      }
+    }
+
+    // Fallback to Cloudinary
+    if (!videoUrl) {
+      const { uploadVideoWithAudio } = await import("../config/cloudinary.js");
+      const result = await uploadVideoWithAudio(req.file.buffer, {
+        folder: "youtube-clone/videos",
+        resource_type: "video",
+      });
+
+      videoUrl = result.secure_url;
+      publicId = result.public_id;
+      storageType = "cloudinary";
+      console.log("✅ Uploaded to Cloudinary");
+    }
+
+    // Save to database...
+    const newVideo = new videofiles({
+      videotitle: req.body.videotitle || req.file.originalname,
+      videodescription:
+        req.body.videodescription || `Watch "${req.body.videotitle}"`,
+      videofilename: publicId,
+      filepath: videoUrl,
+      videofile: videoUrl,
+      videoLink: videoUrl,
+      uploadedBy: req.userId,
+      storageType,
+    });
+
+    await newVideo.save();
+
+    res.status(201).json({
+      success: true,
+      video: newVideo,
+      videoUrl,
+      storage: storageType,
+    });
+  } catch (error) {
+    console.error("❌ Upload error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
-);
+};
 
 // ============================================================================
 // ROUTE 3: Get Video with Multi-Part Streaming Support
