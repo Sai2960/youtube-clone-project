@@ -1,35 +1,12 @@
-// server/config/cloudinary.js - SUPABASE MIGRATION VERSION
-import { v2 as cloudinary } from "cloudinary";
+// server/config/cloudinary.js - SUPABASE ONLY VERSION (NO CLOUDINARY)
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
 import dotenv from "dotenv";
 import { supabase, bucketName, isSupabaseConfigured } from "./supabase.js";
 
 dotenv.config();
 
-// ==================== CLOUDINARY CONFIGURATION (FALLBACK ONLY) ====================
-const isCloudinaryConfigured = !!(
-  process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_SECRET
-);
-
-if (isCloudinaryConfigured) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true,
-    timeout: 600000,
-  });
-
-  console.log("⚠️  Cloudinary configured as FALLBACK:", {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    has_api_key: !!process.env.CLOUDINARY_API_KEY,
-  });
-} else {
-  console.log("ℹ️  Cloudinary not configured (Supabase-only mode)");
-}
+console.log("📦 Storage Configuration:");
+console.log("   Supabase configured:", isSupabaseConfigured());
 
 // ==================== SUPABASE UPLOAD HELPER ====================
 export const uploadToSupabase = async (file, folder = "videos") => {
@@ -38,6 +15,8 @@ export const uploadToSupabase = async (file, folder = "videos") => {
   }
 
   const fileName = `${folder}/${Date.now()}-${file.originalname}`;
+
+  console.log("📤 Uploading to Supabase:", fileName);
 
   const { data, error } = await supabase.storage
     .from(bucketName)
@@ -57,6 +36,8 @@ export const uploadToSupabase = async (file, folder = "videos") => {
     data: { publicUrl },
   } = supabase.storage.from(bucketName).getPublicUrl(fileName);
 
+  console.log("✅ Upload success:", publicUrl);
+
   return {
     url: publicUrl,
     path: fileName,
@@ -64,56 +45,8 @@ export const uploadToSupabase = async (file, folder = "videos") => {
   };
 };
 
-// ==================== MULTER MEMORY STORAGE (FOR SUPABASE) ====================
+// ==================== MULTER MEMORY STORAGE ====================
 const memoryStorage = multer.memoryStorage();
-
-// ==================== CLOUDINARY UPLOAD WITH AUDIO ====================
-// ==================== CLOUDINARY UPLOAD WITH AUDIO ====================
-export const uploadVideoWithAudio = async (fileBuffer, options = {}) => {
-  if (!isCloudinaryConfigured) {
-    throw new Error("Cloudinary is not configured");
-  }
-
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        resource_type: "video",
-        folder: options.folder || "youtube-clone/videos",
-        chunk_size: 6000000, // 6MB chunks
-        eager: [
-          {
-            format: "mp4",
-            video_codec: "h264",
-            audio_codec: "aac",
-            audio_frequency: 44100,
-            bit_rate: "1000k",
-            quality: "auto:good",
-          },
-        ],
-        eager_async: true,
-        ...options,
-      },
-      (error, result) => {
-        if (error) {
-          console.error("❌ Cloudinary upload error:", error);
-          reject(error);
-        } else {
-          console.log("✅ Cloudinary upload success:", result.public_id);
-          resolve(result);
-        }
-      }
-    );
-
-    // Handle both Buffer and File objects
-    if (Buffer.isBuffer(fileBuffer)) {
-      uploadStream.end(fileBuffer);
-    } else if (fileBuffer.buffer) {
-      uploadStream.end(fileBuffer.buffer);
-    } else {
-      uploadStream.end(fileBuffer);
-    }
-  });
-};
 
 // ==================== VIDEO UPLOADER ====================
 export const uploadVideo = multer({
@@ -167,11 +100,11 @@ export const uploadThumbnail = multer({
   },
 });
 
-// ==================== CHANNEL IMAGE UPLOADER ====================
+// ==================== CHANNEL IMAGE UPLOADER (PROFILE + BANNER) ====================
 export const uploadChannelImage = multer({
   storage: memoryStorage,
   limits: {
-    fileSize: 10 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = [
@@ -259,29 +192,7 @@ export const deleteFromSupabase = async (filePath) => {
   }
 };
 
-// ==================== CLOUDINARY FALLBACK (LEGACY) ====================
-export const deleteFromCloudinary = async (
-  publicId,
-  resourceType = "video"
-) => {
-  if (!isCloudinaryConfigured) {
-    console.warn("⚠️  Cloudinary not configured");
-    return;
-  }
-
-  try {
-    const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: resourceType,
-      invalidate: true,
-    });
-    console.log("✅ Cloudinary deletion result:", result);
-    return result;
-  } catch (error) {
-    console.error("❌ Cloudinary delete error:", error);
-    throw error;
-  }
-};
-
+// ==================== EXTRACT PUBLIC ID (SUPABASE COMPATIBLE) ====================
 export const extractPublicId = (url) => {
   if (!url) return null;
 
@@ -291,7 +202,7 @@ export const extractPublicId = (url) => {
     return match ? match[1] : null;
   }
 
-  // Cloudinary URLs
+  // Legacy Cloudinary URLs (for old data)
   if (url.includes("cloudinary.com")) {
     try {
       const parts = url.split("/upload/");
@@ -307,6 +218,56 @@ export const extractPublicId = (url) => {
   return null;
 };
 
+// ==================== GET IMAGE URL (SUPABASE FIRST) ====================
+export const getImageURL = (imagePath) => {
+  if (!imagePath) return null;
+
+  const BASE_URL =
+    process.env.BASE_URL ||
+    "https://youtube-clone-project-production.up.railway.app";
+
+  // ✅ PRIORITY 1: Supabase URLs
+  if (imagePath.includes("supabase.co/storage")) {
+    return imagePath;
+  }
+
+  // ✅ PRIORITY 2: Already full URL
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    // Fix localhost URLs
+    if (
+      imagePath.includes("192.168.0.181") ||
+      imagePath.includes("localhost")
+    ) {
+      return imagePath
+        .replace(/https?:\/\/(192\.168\.0\.181|localhost):5000/, BASE_URL)
+        .replace("http://", "https://");
+    }
+    // Fix wrong URLs with port
+    if (imagePath.includes(":5000")) {
+      return imagePath.replace(/https:\/\/[^/]+:5000/, BASE_URL);
+    }
+    return imagePath.replace("http://", "https://");
+  }
+
+  // ✅ PRIORITY 3: Legacy Cloudinary (fallback for old images)
+  if (imagePath.includes("cloudinary.com")) {
+    return imagePath.replace("http://", "https://");
+  }
+
+  // ✅ PRIORITY 4: Relative path
+  const cleanPath = imagePath.replace(/\\/g, "/").replace(/^\/+/, "");
+  return `${BASE_URL}/${cleanPath}`;
+};
+
 // ==================== EXPORTS ====================
-export { cloudinary };
-export default cloudinary;
+export default {
+  uploadToSupabase,
+  uploadVideo,
+  uploadThumbnail,
+  uploadChannelImage,
+  uploadShortsVideo,
+  uploadShortsThumbnail,
+  deleteFromSupabase,
+  extractPublicId,
+  getImageURL,
+};
