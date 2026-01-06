@@ -202,7 +202,7 @@ export const extractPublicId = (url) => {
     return match ? match[1] : null;
   }
 
-  // Legacy Supabase URLs (for old data)
+  // Legacy Cloudinary URLs (for old data)
   if (url.includes("cloudinary.com")) {
     try {
       const parts = url.split("/upload/");

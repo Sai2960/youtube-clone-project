@@ -8,7 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import LikedShort from "../Modals/likedShort.js";
-import jwt from 'jsonwebtoken';  // ✅ ADD THIS LINE
+import jwt from "jsonwebtoken"; // ✅ ADD THIS LINE
 import {
   uploadShortsVideo,
   uploadShortsThumbnail,
@@ -102,7 +102,7 @@ const getCleanAvatar = (avatar) => {
 // ✅ NEW: Utility to sync likes between Short model and LikedShort collection
 const syncShortLikeStatus = async (shortId, userId) => {
   try {
-    const short = await Short.findById(shortId).select('likes');
+    const short = await Short.findById(shortId).select("likes");
     const likedShortEntry = await LikedShort.findOne({
       viewer: userId,
       shortid: shortId,
@@ -116,7 +116,7 @@ const syncShortLikeStatus = async (shortId, userId) => {
     // If they're out of sync, fix it
     if (inShortModel !== inLikedShort) {
       console.log("⚠️ Like status out of sync, fixing...");
-      
+
       if (inShortModel && !inLikedShort) {
         // Add to LikedShort collection
         await LikedShort.create({
@@ -164,7 +164,10 @@ export const upload = {
 export const getAllShorts = async (req, res) => {
   try {
     // ✅ CRITICAL: Aggressive no-cache headers for mobile
-    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
+    res.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0"
+    );
     res.set("Pragma", "no-cache");
     res.set("Expires", "0");
     res.set("Surrogate-Control", "no-store");
@@ -186,17 +189,17 @@ export const getAllShorts = async (req, res) => {
     }
 
     let userId = null;
-    
+
     if (req.user) {
       userId = req.user._id || req.user.id || req.user.userId;
     }
-    
+
     if (!userId) {
       const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      if (authHeader && authHeader.startsWith("Bearer ")) {
         const token = authHeader.substring(7);
         try {
-          const jwt = await import('jsonwebtoken');
+          const jwt = await import("jsonwebtoken");
           const decoded = jwt.default.verify(token, process.env.JWT_SECRET);
           userId = decoded._id || decoded.id || decoded.userId;
         } catch (err) {
@@ -213,7 +216,7 @@ export const getAllShorts = async (req, res) => {
       .populate({
         path: "userId",
         select: "name avatar image channelName channelname subscribers",
-        options: { lean: true }
+        options: { lean: true },
       })
       .lean()
       .hint({ createdAt: -1 }) // ✅ Use index
@@ -223,26 +226,31 @@ export const getAllShorts = async (req, res) => {
     const shortsWithFreshData = await Promise.all(
       shorts.map(async (short) => {
         const freshUser = await User.findById(short.userId._id)
-          .select('name avatar image channelName channelname subscribers')
+          .select("name avatar image channelName channelname subscribers")
           .lean()
           .maxTimeMS(2000);
 
         const hasLiked = userId
           ? short.likes?.some((like) => like.toString() === userId.toString())
           : false;
-        
+
         const hasDisliked = userId
-          ? short.dislikes?.some((dislike) => dislike.toString() === userId.toString())
+          ? short.dislikes?.some(
+              (dislike) => dislike.toString() === userId.toString()
+            )
           : false;
 
-        let finalAvatar = freshUser?.image || freshUser?.avatar || short.channelAvatar;
-        finalAvatar = processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
+        let finalAvatar =
+          freshUser?.image || freshUser?.avatar || short.channelAvatar;
+        finalAvatar =
+          processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
 
-        const freshChannelName = freshUser?.channelname || 
-                                 freshUser?.channelName || 
-                                 freshUser?.name || 
-                                 short.channelName || 
-                                 "Unknown";
+        const freshChannelName =
+          freshUser?.channelname ||
+          freshUser?.channelName ||
+          freshUser?.name ||
+          short.channelName ||
+          "Unknown";
 
         return {
           ...short,
@@ -262,22 +270,29 @@ export const getAllShorts = async (req, res) => {
             image: finalAvatar,
             channelName: freshUser.channelname || freshUser.channelName,
             channelname: freshUser.channelname || freshUser.channelName,
-            subscribers: freshUser.subscribers
+            subscribers: freshUser.subscribers,
           },
         };
       })
     );
 
-    const total = await Short.countDocuments({ isPublic: true, status: "active" });
+    const total = await Short.countDocuments({
+      isPublic: true,
+      status: "active",
+    });
 
-    console.log(`✅ Returning ${shortsWithFreshData.length} shorts with FRESH data (timestamp: ${Date.now()})`);
+    console.log(
+      `✅ Returning ${
+        shortsWithFreshData.length
+      } shorts with FRESH data (timestamp: ${Date.now()})`
+    );
 
     res.status(200).json({
       success: true,
       data: shortsWithFreshData,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
-      timestamp: Date.now() // ✅ Help debug
+      timestamp: Date.now(), // ✅ Help debug
     });
   } catch (error) {
     console.error("❌ Error fetching shorts:", error);
@@ -289,7 +304,6 @@ export const getAllShorts = async (req, res) => {
   }
 };
 
-
 // Get single short by ID with proper avatar
 export const getShortById = async (req, res) => {
   try {
@@ -298,16 +312,16 @@ export const getShortById = async (req, res) => {
     res.set("Expires", "0");
 
     const { id } = req.params;
-    
+
     let userId = null;
-    
+
     if (req.user) {
       userId = req.user._id || req.user.id || req.user.userId;
     }
-    
+
     if (!userId) {
       const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      if (authHeader && authHeader.startsWith("Bearer ")) {
         const token = authHeader.substring(7);
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -319,7 +333,10 @@ export const getShortById = async (req, res) => {
     }
 
     const short = await Short.findById(id)
-      .populate("userId", "name avatar image channelName channelname subscribers")
+      .populate(
+        "userId",
+        "name avatar image channelName channelname subscribers"
+      )
       .lean();
 
     if (!short) {
@@ -331,14 +348,14 @@ export const getShortById = async (req, res) => {
 
     // ✅ CRITICAL FIX: Fetch fresh user data
     const freshUser = await User.findById(short.userId._id)
-      .select('name avatar image channelName channelname subscribers')
+      .select("name avatar image channelName channelname subscribers")
       .lean();
 
     console.log("🔄 Fresh user data:", {
       userId: freshUser._id,
       channelname: freshUser.channelname,
       name: freshUser.name,
-      image: freshUser.image
+      image: freshUser.image,
     });
 
     await Short.findByIdAndUpdate(id, { $inc: { views: 1 } });
@@ -350,7 +367,7 @@ export const getShortById = async (req, res) => {
       const inShortLikes = short.likes?.some(
         (like) => like.toString() === userId.toString()
       );
-      
+
       const likedShortEntry = await LikedShort.findOne({
         viewer: userId,
         shortid: id,
@@ -363,15 +380,15 @@ export const getShortById = async (req, res) => {
     }
 
     // ✅ Use fresh user data
-    const finalAvatar = processAvatar(
-      freshUser.image || freshUser.avatar,
-      req
-    ) || `https://github.com/shadcn.png`;
+    const finalAvatar =
+      processAvatar(freshUser.image || freshUser.avatar, req) ||
+      `https://github.com/shadcn.png`;
 
-    const freshChannelName = freshUser.channelname || 
-                             freshUser.channelName || 
-                             freshUser.name || 
-                             "Unknown";
+    const freshChannelName =
+      freshUser.channelname ||
+      freshUser.channelName ||
+      freshUser.name ||
+      "Unknown";
 
     const responseData = {
       ...short,
@@ -392,7 +409,7 @@ export const getShortById = async (req, res) => {
         image: finalAvatar,
         channelName: freshUser.channelname || freshUser.channelName,
         channelname: freshUser.channelname || freshUser.channelName,
-        subscribers: freshUser.subscribers
+        subscribers: freshUser.subscribers,
       },
     };
 
@@ -528,8 +545,8 @@ export const uploadShort = async (req, res) => {
     const newShort = new Short({
       title,
       description: description || "",
-      videoUrl, // ✅ Already full Cloudinary URL
-      thumbnailUrl, // ✅ Already full Cloudinary URL
+      videoUrl: req.files.video[0].path, // ✅ Supabase URL from multer
+      thumbnailUrl: req.files.thumbnail[0].path, // ✅ CRITICAL FIX
       duration: parseInt(duration),
       userId,
       channelName: user.channelName || user.channelname || user.name,
@@ -544,7 +561,6 @@ export const uploadShort = async (req, res) => {
       comments: [],
       shares: 0,
     });
-
     await newShort.save();
 
     console.log("✅ Short saved successfully:", newShort._id);
@@ -599,27 +615,27 @@ export const likeShort = async (req, res) => {
     if (hasLiked) {
       // ✅ UNLIKE - Remove from BOTH places
       console.log("🔄 Removing like...");
-      
+
       await Short.findByIdAndUpdate(id, {
-        $pull: { likes: userId }
+        $pull: { likes: userId },
       });
 
       await LikedShort.findOneAndDelete({
         viewer: userId,
         shortid: id,
       });
-      
-      const updatedShort = await Short.findById(id).select('likes dislikes');
-      
+
+      const updatedShort = await Short.findById(id).select("likes dislikes");
+
       console.log("✅ Like removed");
       console.log("New count:", updatedShort.likes.length);
 
       return res.status(200).json({
         success: true,
         message: "Like removed",
-        liked: false,                    // ✅ TOP-LEVEL (frontend reads this)
+        liked: false, // ✅ TOP-LEVEL (frontend reads this)
         action: "removed",
-        likesCount: updatedShort.likes.length,    // ✅ TOP-LEVEL
+        likesCount: updatedShort.likes.length, // ✅ TOP-LEVEL
         dislikesCount: updatedShort.dislikes.length,
         data: {
           hasLiked: false,
@@ -631,10 +647,10 @@ export const likeShort = async (req, res) => {
     } else {
       // ✅ LIKE - Add to BOTH places
       console.log("🔄 Adding like...");
-      
+
       await Short.findByIdAndUpdate(id, {
         $addToSet: { likes: userId },
-        $pull: { dislikes: userId }
+        $pull: { dislikes: userId },
       });
 
       try {
@@ -649,18 +665,18 @@ export const likeShort = async (req, res) => {
           throw likeError;
         }
       }
-      
-      const updatedShort = await Short.findById(id).select('likes dislikes');
-      
+
+      const updatedShort = await Short.findById(id).select("likes dislikes");
+
       console.log("✅ Like added");
       console.log("New count:", updatedShort.likes.length);
 
       return res.status(200).json({
         success: true,
         message: "Short liked",
-        liked: true,                     // ✅ TOP-LEVEL (frontend reads this)
+        liked: true, // ✅ TOP-LEVEL (frontend reads this)
         action: "added",
-        likesCount: updatedShort.likes.length,    // ✅ TOP-LEVEL
+        likesCount: updatedShort.likes.length, // ✅ TOP-LEVEL
         dislikesCount: updatedShort.dislikes.length,
         data: {
           hasLiked: true,
@@ -1061,10 +1077,9 @@ export const getShortsByChannel = async (req, res) => {
       });
     }
 
-    // ✅ CRITICAL FIX: Fetch fresh user data FIRST
-    const freshUser = await User.findById(userId).select(
-      "name avatar image channelName channelname"
-    ).lean();
+    const freshUser = await User.findById(userId)
+      .select("name avatar image channelName channelname")
+      .lean();
 
     if (!freshUser) {
       return res.status(404).json({
@@ -1072,12 +1087,6 @@ export const getShortsByChannel = async (req, res) => {
         message: "User not found",
       });
     }
-
-    console.log("🔄 Fresh channel data:", {
-      userId: freshUser._id,
-      channelname: freshUser.channelname,
-      name: freshUser.name
-    });
 
     const shorts = await Short.find({
       userId: userId,
@@ -1090,39 +1099,29 @@ export const getShortsByChannel = async (req, res) => {
       .lean();
 
     const processedShorts = shorts.map((short) => {
-      let videoUrl = short.videoUrl;
-      let thumbnailUrl = short.thumbnailUrl;
+      // ✅ CRITICAL: Ensure thumbnail URL is returned
+      const thumbnailUrl = short.thumbnailUrl || short.thumbnail;
+      const videoUrl = short.videoUrl || short.video;
 
-      if (videoUrl && videoUrl.includes("cloudinary.com")) {
-        videoUrl = videoUrl
-          .replace(/\/v\d+\//g, "/")
-          .replace(/^http:\/\//, "https://");
-      }
-
-      if (thumbnailUrl && thumbnailUrl.includes("cloudinary.com")) {
-        thumbnailUrl = thumbnailUrl
-          .replace(/\/v\d+\//g, "/")
-          .replace(/^http:\/\//, "https://");
-      }
-
-      // ✅ Use fresh user data
-      const finalAvatar = processAvatar(
-        freshUser.image || freshUser.avatar,
-        req
-      ) || `https://github.com/shadcn.png`;
-
-      const freshChannelName = freshUser.channelname || 
-                               freshUser.channelName || 
-                               freshUser.name;
+      const finalAvatar =
+        processAvatar(freshUser.image || freshUser.avatar, req) ||
+        `https://github.com/shadcn.png`;
 
       return {
         _id: short._id,
         title: short.title,
         description: short.description,
+
+        // ✅ CRITICAL: Return ALL thumbnail fields
         thumbnail: thumbnailUrl,
         thumbnailUrl: thumbnailUrl,
+        videothumbnail: thumbnailUrl,
+        videothumb: thumbnailUrl,
+
+        // ✅ Video fields
         videoUrl: videoUrl,
         video: videoUrl,
+
         views: short.views || 0,
         likes: short.likes?.length || 0,
         dislikes: short.dislikes?.length || 0,
@@ -1132,11 +1131,15 @@ export const getShortsByChannel = async (req, res) => {
         duration: short.duration,
         tags: short.tags || [],
         category: short.category || "Entertainment",
+
         channelAvatar: finalAvatar,
-        channelName: freshChannelName,
+        channelName:
+          freshUser.channelname || freshUser.channelName || freshUser.name,
+
         likesCount: short.likes?.length || 0,
         dislikesCount: short.dislikes?.length || 0,
         commentsCount: short.comments?.length || 0,
+
         userId: {
           _id: freshUser._id,
           name: freshUser.name,
@@ -1148,22 +1151,29 @@ export const getShortsByChannel = async (req, res) => {
       };
     });
 
-    const total = await Short.countDocuments({
-      userId: userId,
-      isPublic: true,
-      status: "active",
-    });
+    console.log(`✅ Sending ${processedShorts.length} shorts`);
 
-    console.log(`✅ Sending ${processedShorts.length} shorts with FRESH channel name: ${freshUser.channelname}`);
+    // ✅ DEBUG: Log first short's thumbnail
+    if (processedShorts.length > 0) {
+      console.log(
+        "📊 Sample thumbnail:",
+        processedShorts[0].thumbnailUrl?.substring(0, 100)
+      );
+    }
 
     res.status(200).json({
       success: true,
       shorts: processedShorts,
       data: processedShorts,
-      totalPages: Math.ceil(total / parseInt(limit)),
+      totalPages: Math.ceil(
+        (await Short.countDocuments({
+          userId,
+          isPublic: true,
+          status: "active",
+        })) / parseInt(limit)
+      ),
       currentPage: parseInt(page),
       count: processedShorts.length,
-      total: total,
     });
   } catch (error) {
     console.error("❌ Error in getShortsByChannel:", error);
