@@ -304,9 +304,9 @@ export const uploadvideo = async (req, res) => {
     let videoUrl = null;
     let publicId = null;
     let thumbnailUrl = null;
-    let storageType = "cloudinary"; // Default
+    let storageType = null;
 
-    // ✅ PRIORITY 1: Try Supabase first
+    // ✅ CRITICAL FIX: Try Supabase ONLY (skip Cloudinary completely)
     if (isSupabaseConfigured()) {
       try {
         console.log("📤 Uploading to Supabase...");
@@ -338,48 +338,22 @@ export const uploadvideo = async (req, res) => {
 
         console.log("✅ Supabase upload successful:", publicUrl);
       } catch (supabaseError) {
-        console.error(
-          "❌ Supabase failed, falling back to Cloudinary:",
-          supabaseError.message
-        );
-        // Fall through to Cloudinary
-      }
-    }
+        console.error("❌ Supabase upload failed:", supabaseError.message);
 
-    // ✅ FALLBACK: Use Cloudinary if Supabase failed
-    if (!videoUrl) {
-      console.log("📤 Using Cloudinary fallback...");
-
-      const { uploadVideoWithAudio } = await import("../config/cloudinary.js");
-
-      // Create temporary file for Cloudinary
-      const tempPath = path.join(
-        process.cwd(),
-        "temp",
-        `${Date.now()}-${req.file.originalname}`
-      );
-      fs.writeFileSync(tempPath, req.file.buffer);
-
-      try {
-        const result = await uploadVideoWithAudio(tempPath, {
-          folder: "youtube-clone/videos",
+        return res.status(500).json({
+          success: false,
+          message: "Upload failed - storage is currently unavailable",
+          error: supabaseError.message,
         });
-
-        publicId = result.public_id;
-        videoUrl = result.secure_url;
-
-        const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
-        const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload`;
-        thumbnailUrl = `${baseUrl}/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-
-        storageType = "cloudinary";
-        console.log("✅ Cloudinary upload successful:", publicId);
-      } finally {
-        // Clean up temp file
-        if (fs.existsSync(tempPath)) {
-          fs.unlinkSync(tempPath);
-        }
       }
+    } else {
+      // No storage configured
+      console.error("❌ No storage configured!");
+      return res.status(500).json({
+        success: false,
+        message:
+          "Upload failed - storage not configured. Contact administrator.",
+      });
     }
 
     // ✅ Validate we have a video URL
