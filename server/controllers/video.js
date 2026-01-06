@@ -304,55 +304,52 @@ export const uploadvideo = async (req, res) => {
     let videoUrl = null;
     let publicId = null;
     let thumbnailUrl = null;
-    let storageType = null;
+    const storageType = "supabase";
 
-    // ✅ CRITICAL FIX: Try Supabase ONLY (skip Cloudinary completely)
-    if (isSupabaseConfigured()) {
-      try {
-        console.log("📤 Uploading to Supabase...");
-
-        const fileName = `videos/${Date.now()}-${req.file.originalname}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(bucketName)
-          .upload(fileName, req.file.buffer, {
-            contentType: req.file.mimetype,
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.error("❌ Supabase upload error:", uploadError);
-          throw uploadError;
-        }
-
-        // Get public URL
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from(bucketName).getPublicUrl(fileName);
-
-        videoUrl = publicUrl;
-        publicId = fileName;
-        thumbnailUrl = publicUrl; // Supabase doesn't auto-generate thumbnails
-        storageType = "supabase";
-
-        console.log("✅ Supabase upload successful:", publicUrl);
-      } catch (supabaseError) {
-        console.error("❌ Supabase upload failed:", supabaseError.message);
-
-        return res.status(500).json({
-          success: false,
-          message: "Upload failed - storage is currently unavailable",
-          error: supabaseError.message,
-        });
-      }
-    } else {
-      // No storage configured
-      console.error("❌ No storage configured!");
+    // ✅ ONLY USE SUPABASE - NO CLOUDINARY
+    if (!isSupabaseConfigured()) {
+      console.error("❌ Supabase not configured!");
       return res.status(500).json({
         success: false,
-        message:
-          "Upload failed - storage not configured. Contact administrator.",
+        message: "Upload service not available. Contact administrator.",
+      });
+    }
+
+    try {
+      console.log("📤 Uploading to Supabase...");
+
+      const fileName = `videos/${Date.now()}-${req.file.originalname}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("❌ Supabase upload error:", uploadError);
+        throw uploadError;
+      }
+
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+
+      videoUrl = publicUrl;
+      publicId = fileName;
+      thumbnailUrl = publicUrl;
+
+      console.log("✅ Supabase upload successful:", publicUrl);
+    } catch (supabaseError) {
+      console.error("❌ Supabase upload failed:", supabaseError.message);
+
+      return res.status(500).json({
+        success: false,
+        message: "Upload failed - storage service error",
+        error: supabaseError.message,
       });
     }
 
@@ -419,7 +416,7 @@ export const uploadvideo = async (req, res) => {
       Dislike: 0,
       likes: 0,
       dislikes: 0,
-      storageType, // Track where it's stored
+      storageType,
     });
 
     const savedVideo = await newVideo.save();
