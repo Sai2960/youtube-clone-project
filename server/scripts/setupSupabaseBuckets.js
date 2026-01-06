@@ -1,52 +1,92 @@
 // server/scripts/setupSupabaseBuckets.js
 
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
-async function setupBuckets() {
-  const buckets = [
-    { name: 'videos', public: true },
-    { name: 'shorts', public: true },
-    { name: 'thumbnails', public: true },
-    { name: 'avatars', public: true }
-  ];
+const BUCKET_NAME = 'youtube-videos';
 
-  console.log('Setting up Supabase storage buckets...\n');
+async function setupBucket() {
+  console.log('Setting up Supabase storage bucket...\n');
+  console.log('Supabase URL:', process.env.SUPABASE_URL);
+  console.log('Bucket Name:', BUCKET_NAME);
+  console.log('\n');
 
-  for (const bucket of buckets) {
-    try {
-      // Check if bucket exists
-      const { data: existingBuckets } = await supabase.storage.listBuckets();
-      const exists = existingBuckets?.some(b => b.name === bucket.name);
+  try {
+    // Check if bucket exists
+    const { data: existingBuckets, error: listError } = await supabase.storage.listBuckets();
+    
+    if (listError) {
+      console.error('❌ Error listing buckets:', listError);
+      throw listError;
+    }
 
-      if (exists) {
-        console.log(`✓ Bucket "${bucket.name}" already exists`);
-      } else {
-        // Create bucket
-        const { data, error } = await supabase.storage.createBucket(bucket.name, {
-          public: bucket.public,
-          fileSizeLimit: bucket.name === 'videos' || bucket.name === 'shorts' 
-            ? 524288000  // 500MB for videos
-            : 10485760   // 10MB for images
-        });
+    const exists = existingBuckets?.some(b => b.name === BUCKET_NAME);
 
+    if (exists) {
+      console.log(`✅ Bucket "${BUCKET_NAME}" already exists`);
+      
+      // Verify folders exist by trying to list them
+      console.log('\nVerifying folder structure...');
+      const folders = ['videos', 'thumbnails', 'avatars', 'banners'];
+      
+      for (const folder of folders) {
+        const { data, error } = await supabase.storage
+          .from(BUCKET_NAME)
+          .list(folder, { limit: 1 });
+        
         if (error) {
-          console.error(`✗ Failed to create bucket "${bucket.name}":`, error.message);
+          console.log(`   ℹ️ Folder "${folder}" will be created on first upload`);
         } else {
-          console.log(`✓ Created bucket "${bucket.name}"`);
+          console.log(`   ✅ Folder "${folder}" verified`);
         }
       }
-    } catch (error) {
-      console.error(`Error with bucket "${bucket.name}":`, error.message);
-    }
-  }
+      
+    } else {
+      console.log(`📦 Creating bucket "${BUCKET_NAME}"...`);
+      
+      const { data, error } = await supabase.storage.createBucket(BUCKET_NAME, {
+        public: true,
+        fileSizeLimit: 524288000, // 500MB
+        allowedMimeTypes: [
+          'video/mp4',
+          'video/mpeg',
+          'video/quicktime',
+          'video/x-msvideo',
+          'video/x-matroska',
+          'video/webm',
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/webp'
+        ]
+      });
 
-  console.log('\n🎉 Bucket setup complete!');
+      if (error) {
+        console.error(`❌ Failed to create bucket:`, error);
+        throw error;
+      }
+
+      console.log(`✅ Bucket "${BUCKET_NAME}" created successfully!`);
+    }
+
+    console.log('\n🎉 Bucket setup complete!');
+    console.log('\n📝 Folder structure:');
+    console.log('   - videos/       (for video files)');
+    console.log('   - thumbnails/   (for video thumbnails)');
+    console.log('   - avatars/      (for user profile pictures)');
+    console.log('   - banners/      (for channel banners)');
+    
+  } catch (error) {
+    console.error('\n❌ Setup failed:', error.message);
+    process.exit(1);
+  }
 }
 
-setupBuckets();
+setupBucket();
