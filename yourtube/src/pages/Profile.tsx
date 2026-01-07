@@ -17,6 +17,8 @@ import {
 import PremiumModal from '../components/PremiumModal';
 import { useUser } from '../lib/AuthContext';
 import axiosInstance from '../lib/axiosinstance';
+import { GetServerSideProps } from "next";
+
 
 interface Download {
   _id: string;
@@ -512,6 +514,11 @@ const Profile: React.FC = () => {
       )}
     </div>
   );
+};
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
 };
 
 export default Profile;
