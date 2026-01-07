@@ -2435,39 +2435,60 @@ router.get("/refresh/:id", async (req, res) => {
     });
   }
 });
-// ✅ NEW: Fix all Supabase thumbnails
+// ✅ FIX ALL SUPABASE THUMBNAILS - ADD THIS ROUTE
 router.post('/admin/fix-supabase-thumbnails', async (req, res) => {
   try {
+    console.log('\n🖼️ ===== FIXING SUPABASE THUMBNAILS =====');
+
     const videos = await videofiles.find({
-      filepath: { $regex: 'supabase.co' }
+      $or: [
+        { filepath: { $regex: 'supabase.co' } },
+        { videofile: { $regex: 'supabase.co' } },
+        { videoLink: { $regex: 'supabase.co' } }
+      ]
     });
 
     let fixed = 0;
+    const results = [];
 
     for (const video of videos) {
       const videoUrl = video.filepath || video.videofile || video.videoLink;
       
       if (videoUrl && videoUrl.includes('supabase.co')) {
-        // Use video URL as thumbnail for Supabase
+        // ✅ For Supabase, use video URL as thumbnail
         video.thumbnail = videoUrl;
         video.thumbnailUrl = videoUrl;
         video.videothumbnail = videoUrl;
         video.videothumb = videoUrl;
         
         await video.save();
+        
         fixed++;
+        results.push({
+          id: video._id,
+          title: video.videotitle,
+          url: videoUrl
+        });
+        
         console.log(`✅ Fixed: ${video.videotitle}`);
       }
     }
 
+    console.log(`\n✅ Fixed ${fixed} videos`);
+
     res.json({
       success: true,
-      message: `Fixed ${fixed} videos`,
+      message: `Fixed ${fixed} Supabase video thumbnails`,
       fixed,
-      total: videos.length
+      total: videos.length,
+      results: results.slice(0, 10)
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Fix error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 });
 export default router;
