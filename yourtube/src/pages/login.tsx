@@ -7,6 +7,8 @@ import { LogIn, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { GetServerSideProps } from "next";
+
 
 // Import locationApi functions
 import {
@@ -1253,3 +1255,8 @@ export default function LoginPage() {
     </>
   );
 }
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
+};
