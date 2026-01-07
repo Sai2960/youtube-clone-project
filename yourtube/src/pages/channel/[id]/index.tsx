@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/imageUtils";
 import { Calendar, Video, Upload, Play, Film, Grid, User } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
-
+import { GetServerSideProps } from "next";
 // ============================================================================
 // THUMBNAIL HELPER - FIXED VERSION
 // ============================================================================
@@ -1190,4 +1190,14 @@ const ChannelPage = () => {
     </ProtectedRoute>
   );
 };
+// ✅ CRITICAL FIX: Disable static generation for dynamic channel pages
+// This prevents the "Cannot find module 'critters'" error during build
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  // You could optionally fetch initial channel data here if needed
+  // For now, we'll let the client-side useEffect handle it
+  return {
+    props: {}, // Empty props - we get everything client-side
+  };
+};
+
 export default ChannelPage;
