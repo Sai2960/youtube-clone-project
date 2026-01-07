@@ -2494,4 +2494,71 @@ router.post('/admin/fix-supabase-thumbnails', async (req, res) => {
     });
   }
 });
+// ✅ FIX SUPABASE THUMBNAILS - Add RIGHT BEFORE export default router;
+router.get('/admin/fix-supabase-thumbnails', async (req, res) => {
+  try {
+    console.log('\n🖼️ ===== FIXING SUPABASE THUMBNAILS =====');
+
+    const videos = await videofiles.find({
+      $or: [
+        { filepath: { $regex: 'supabase.co' } },
+        { videofile: { $regex: 'supabase.co' } },
+        { videoLink: { $regex: 'supabase.co' } }
+      ]
+    });
+
+    console.log(`📊 Found ${videos.length} Supabase videos`);
+
+    let fixed = 0;
+    const results = [];
+
+    for (const video of videos) {
+      try {
+        const videoUrl = video.filepath || video.videofile || video.videoLink;
+        
+        if (videoUrl && videoUrl.includes('supabase.co')) {
+          // ✅ Use video URL as thumbnail
+          video.thumbnail = videoUrl;
+          video.thumbnailUrl = videoUrl;
+          video.videothumbnail = videoUrl;
+          video.videothumb = videoUrl;
+          
+          await video.save();
+          
+          fixed++;
+          results.push({
+            id: video._id,
+            title: video.videotitle,
+            before: {
+              thumbnail: video.thumbnail,
+            },
+            after: {
+              thumbnail: videoUrl.substring(0, 80) + '...'
+            }
+          });
+          
+          console.log(`✅ Fixed: ${video.videotitle}`);
+        }
+      } catch (err) {
+        console.error(`❌ Error fixing ${video._id}:`, err.message);
+      }
+    }
+
+    console.log(`\n✅ COMPLETED: Fixed ${fixed}/${videos.length} videos`);
+
+    res.json({
+      success: true,
+      message: `Fixed ${fixed} Supabase video thumbnails`,
+      fixed,
+      total: videos.length,
+      results: results.slice(0, 10), // Show first 10
+    });
+  } catch (error) {
+    console.error('❌ Fix error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
 export default router;
