@@ -1,4 +1,4 @@
-// server/services/cronJobs.js - COMPLETE UNIFIED CRON SERVICE
+// server/services/cronJobs.js - OPTIMIZED WITH TIME WINDOWS
 import cron from "node-cron";
 import User from "../Modals/User.js";
 import Subscription from "../Modals/subscription.js";
@@ -13,58 +13,76 @@ const PLAN_WATCH_LIMITS = {
   YEARLY: -1,
 };
 
+// ✅ HELPER: Check if current time is within active window (9 AM - 1 AM IST)
+const isActiveHours = () => {
+  const now = new Date();
+  const istOffset = 5.5 * 60; // IST is UTC+5:30
+  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const istMinutes = (utcMinutes + istOffset) % (24 * 60);
+  const istHour = Math.floor(istMinutes / 60);
+  
+  // Active: 9 AM (9) to 1 AM next day (25 in 24h format = 1 AM)
+  // This means: 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0 (1 AM)
+  return istHour >= 9 || istHour <= 1;
+};
+
 // ===================================================================
-// 1. SUBSCRIPTION EXPIRY CHECK - Every Hour
+// 1. SUBSCRIPTION EXPIRY CHECK - Every 4 hours (9 AM - 1 AM only)
 // ===================================================================
 const subscriptionExpiryJob = cron.schedule(
-  "0 * * * *",
+  "0 */4 * * *", // Every 4 hours
   async () => {
+    // ✅ Skip if outside active hours
+    if (!isActiveHours()) {
+      console.log("⏸️ [CRON] Skipping expiry check - outside active hours");
+      return;
+    }
+
     try {
       console.log("\n🕐 [CRON] Checking expired subscriptions...");
       const startTime = Date.now();
 
       const now = new Date();
 
-      // Find expired subscriptions
       const expiredSubs = await Subscription.find({
         endDate: { $lt: now },
         status: "ACTIVE",
         isActive: true,
         planType: { $ne: "free" },
-      });
+      }).limit(100); // ✅ Process in batches
 
       console.log(`   Found ${expiredSubs.length} expired subscriptions`);
 
       let successCount = 0;
       let errorCount = 0;
 
-      for (const sub of expiredSubs) {
-        try {
-          // Mark subscription as expired
-          sub.status = "EXPIRED";
-          sub.isActive = false;
-          await sub.save();
+      // ✅ Process in batches of 10
+      for (let i = 0; i < expiredSubs.length; i += 10) {
+        const batch = expiredSubs.slice(i, i + 10);
+        
+        await Promise.all(
+          batch.map(async (sub) => {
+            try {
+              sub.status = "EXPIRED";
+              sub.isActive = false;
+              await sub.save();
 
-          // Downgrade user to FREE
-          const user = await User.findById(sub.userId);
-          if (user) {
-            user.currentPlan = "FREE";
-            user.watchTimeLimit = PLAN_WATCH_LIMITS.FREE;
-            user.subscriptionExpiry = null;
-            await user.save();
+              const user = await User.findById(sub.userId);
+              if (user) {
+                user.currentPlan = "FREE";
+                user.watchTimeLimit = PLAN_WATCH_LIMITS.FREE;
+                user.subscriptionExpiry = null;
+                await user.save();
 
-            console.log(
-              `   ✅ Expired: ${user.email} (${sub.planType} → FREE)`
-            );
-            successCount++;
-          }
-        } catch (error) {
-          console.error(
-            `   ❌ Error expiring subscription ${sub._id}:`,
-            error.message
-          );
-          errorCount++;
-        }
+                console.log(`   ✅ Expired: ${user.email} (${sub.planType} → FREE)`);
+                successCount++;
+              }
+            } catch (error) {
+              console.error(`   ❌ Error expiring subscription ${sub._id}:`, error.message);
+              errorCount++;
+            }
+          })
+        );
       }
 
       const duration = Date.now() - startTime;
@@ -76,47 +94,48 @@ const subscriptionExpiryJob = cron.schedule(
     }
   },
   {
-    scheduled: false, // Don't start immediately
+    scheduled: false,
+    timezone: "Asia/Kolkata", // ✅ IST timezone
   }
 );
 
 // ===================================================================
-// 2. DAILY WATCH TIME RESET - Every Day at Midnight
+// 2. DAILY WATCH TIME RESET - 3 AM IST (off-peak)
 // ===================================================================
 const watchTimeResetJob = cron.schedule(
-  "0 0 * * *",
+  "0 3 * * *", // 3 AM IST daily
   async () => {
     try {
       console.log("\n🌙 [CRON] Daily watch time reset starting...");
       const startTime = Date.now();
 
-      const users = await User.find({});
-
-      let updatedCount = 0;
-      let errorCount = 0;
-
-      for (const user of users) {
-        try {
-          const planLimit = PLAN_WATCH_LIMITS[user.currentPlan] || 5;
-
-          // Only reset if user consumed watch time
-          if (planLimit !== -1 && user.watchTimeLimit < planLimit) {
-            user.watchTimeLimit = planLimit;
-            await user.save();
-            updatedCount++;
-          }
-        } catch (error) {
-          console.error(
-            `   ❌ Error resetting user ${user._id}:`,
-            error.message
-          );
-          errorCount++;
-        }
-      }
+      // ✅ Use updateMany for better performance
+      const result = await User.updateMany(
+        {
+          currentPlan: { $in: ["FREE", "BRONZE", "SILVER"] },
+          watchTimeLimit: { $lt: 10 }, // Only reset if consumed
+        },
+        [
+          {
+            $set: {
+              watchTimeLimit: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ["$currentPlan", "FREE"] }, then: 5 },
+                    { case: { $eq: ["$currentPlan", "BRONZE"] }, then: 7 },
+                    { case: { $eq: ["$currentPlan", "SILVER"] }, then: 10 },
+                  ],
+                  default: 5,
+                },
+              },
+            },
+          },
+        ]
+      );
 
       const duration = Date.now() - startTime;
       console.log(
-        `✅ [CRON] Watch time reset complete - ${updatedCount}/${users.length} users updated (${duration}ms)\n`
+        `✅ [CRON] Watch time reset complete - ${result.modifiedCount} users updated (${duration}ms)\n`
       );
     } catch (error) {
       console.error("❌ [CRON] Watch time reset job failed:", error);
@@ -124,14 +143,15 @@ const watchTimeResetJob = cron.schedule(
   },
   {
     scheduled: false,
+    timezone: "Asia/Kolkata",
   }
 );
 
 // ===================================================================
-// 3. EXPIRY REMINDER - Daily at 9 AM (Optional)
+// 3. EXPIRY REMINDER - Tuesday & Friday at 10 AM IST only
 // ===================================================================
 const expiryReminderJob = cron.schedule(
-  "0 9 * * *",
+  "0 10 * * 2,5", // Tuesday & Friday at 10 AM IST
   async () => {
     try {
       console.log("\n📧 [CRON] Checking for subscriptions expiring soon...");
@@ -147,7 +167,9 @@ const expiryReminderJob = cron.schedule(
           $gte: new Date(),
           $lte: threeDaysFromNow,
         },
-      }).populate("userId", "email name");
+      })
+        .populate("userId", "email name")
+        .limit(50); // ✅ Limit batch size
 
       console.log(
         `   Found ${expiringSoon.length} subscriptions expiring in 3 days`
@@ -165,36 +187,29 @@ const expiryReminderJob = cron.schedule(
   },
   {
     scheduled: false,
+    timezone: "Asia/Kolkata",
   }
 );
 
 // ===================================================================
-// START ALL CRON JOBS
-// ===================================================================
-// ===================================================================
-// START ALL CRON JOBS - WITH CRASH PROTECTION
+// START ALL CRON JOBS WITH CRASH PROTECTION
 // ===================================================================
 export const startAllCronJobs = () => {
-  console.log("\n🚀 Starting cron jobs...");
+  console.log("\n🚀 Starting cron jobs (Active hours: 9 AM - 1 AM IST)...");
 
   try {
-    // Start subscription expiry checker (hourly)
     subscriptionExpiryJob.start();
-    console.log("   ✅ Subscription expiry check: Every hour");
+    console.log("   ✅ Subscription expiry check: Every 4 hours (9 AM - 1 AM)");
 
-    // Start watch time reset (daily at midnight)
     watchTimeResetJob.start();
-    console.log("   ✅ Watch time reset: Daily at 00:00");
+    console.log("   ✅ Watch time reset: Daily at 3 AM IST");
 
-    // Start expiry reminder (daily at 9 AM)
     expiryReminderJob.start();
-    console.log("   ✅ Expiry reminders: Daily at 09:00");
+    console.log("   ✅ Expiry reminders: Tue & Fri at 10 AM IST");
 
     console.log("✅ All cron jobs started successfully\n");
   } catch (error) {
     console.error("❌ Failed to start cron jobs:", error.message);
-    console.error("   Cron jobs will be retried later");
-    // Don't throw - just log the error
   }
 };
 
@@ -220,7 +235,7 @@ export const manualExpiryCheck = async () => {
     endDate: { $lt: now },
     status: "ACTIVE",
     planType: { $ne: "free" },
-  });
+  }).limit(100);
 
   for (const sub of expiredSubs) {
     sub.status = "EXPIRED";
@@ -242,24 +257,31 @@ export const manualExpiryCheck = async () => {
 export const manualWatchTimeReset = async () => {
   console.log("🔧 Manual watch time reset triggered");
 
-  const users = await User.find({});
-  let count = 0;
+  const result = await User.updateMany(
+    {
+      currentPlan: { $in: ["FREE", "BRONZE", "SILVER"] },
+    },
+    [
+      {
+        $set: {
+          watchTimeLimit: {
+            $switch: {
+              branches: [
+                { case: { $eq: ["$currentPlan", "FREE"] }, then: 5 },
+                { case: { $eq: ["$currentPlan", "BRONZE"] }, then: 7 },
+                { case: { $eq: ["$currentPlan", "SILVER"] }, then: 10 },
+              ],
+              default: 5,
+            },
+          },
+        },
+      },
+    ]
+  );
 
-  for (const user of users) {
-    const limit = PLAN_WATCH_LIMITS[user.currentPlan] || 5;
-    if (limit !== -1) {
-      user.watchTimeLimit = limit;
-      await user.save();
-      count++;
-    }
-  }
-
-  return { success: true, reset: count };
+  return { success: true, reset: result.modifiedCount };
 };
 
-// ===================================================================
-// EXPORT
-// ===================================================================
 export default {
   startAllCronJobs,
   stopAllCronJobs,

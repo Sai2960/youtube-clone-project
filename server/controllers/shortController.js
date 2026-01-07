@@ -211,6 +211,10 @@ export const getAllShorts = async (req, res) => {
     }
 
     // ✅ CRITICAL: Force fresh query with hint
+    // ✅ CRITICAL FIX: Don't re-fetch user for EVERY short
+    // Store in temporary cache during request
+    const userCache = new Map();
+
     const shorts = await Short.find({ isPublic: true, status: "active" })
       .sort(sortOption)
       .limit(limit * 1)
@@ -221,62 +225,52 @@ export const getAllShorts = async (req, res) => {
         options: { lean: true },
       })
       .lean()
-      .hint({ createdAt: -1 }) // ✅ Use index
-      .maxTimeMS(5000);
+      .hint({ createdAt: -1 })
+      .maxTimeMS(3000); // ✅ REDUCED timeout
 
-    // ✅ CRITICAL: Re-fetch user data to ensure it's fresh (mobile fix)
-    const shortsWithFreshData = await Promise.all(
-      shorts.map(async (short) => {
-        const freshUser = await User.findById(short.userId._id)
-          .select("name avatar image channelName channelname subscribers")
-          .lean()
-          .maxTimeMS(2000);
+    // ✅ REMOVE the re-fetch loop (lines 296-342)
+    // This was causing DOUBLE database queries for every short!
+    const shortsWithFreshData = shorts.map((short) => {
+      const user = short.userId;
 
-        const hasLiked = userId
-          ? short.likes?.some((like) => like.toString() === userId.toString())
-          : false;
+      // Use already-populated data
+      let finalAvatar = user?.image || user?.avatar || short.channelAvatar;
+      finalAvatar =
+        processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
 
-        const hasDisliked = userId
-          ? short.dislikes?.some(
-              (dislike) => dislike.toString() === userId.toString()
-            )
-          : false;
+      const hasLiked = userId
+        ? short.likes?.some((like) => like.toString() === userId.toString())
+        : false;
 
-        let finalAvatar =
-          freshUser?.image || freshUser?.avatar || short.channelAvatar;
-        finalAvatar =
-          processAvatar(finalAvatar, req) || `https://github.com/shadcn.png`;
+      const hasDisliked = userId
+        ? short.dislikes?.some(
+            (dislike) => dislike.toString() === userId.toString()
+          )
+        : false;
 
-        const freshChannelName =
-          freshUser?.channelname ||
-          freshUser?.channelName ||
-          freshUser?.name ||
-          short.channelName ||
-          "Unknown";
-
-        return {
-          ...short,
-          videoUrl: short.videoUrl,
-          thumbnailUrl: short.thumbnailUrl,
-          channelAvatar: finalAvatar,
-          channelName: freshChannelName,
-          likesCount: short.likes ? short.likes.length : 0,
-          dislikesCount: short.dislikes ? short.dislikes.length : 0,
-          commentsCount: short.comments ? short.comments.length : 0,
-          hasLiked,
-          hasDisliked,
-          userId: {
-            _id: freshUser._id,
-            name: freshUser.name,
-            avatar: finalAvatar,
-            image: finalAvatar,
-            channelName: freshUser.channelname || freshUser.channelName,
-            channelname: freshUser.channelname || freshUser.channelName,
-            subscribers: freshUser.subscribers,
-          },
-        };
-      })
-    );
+      return {
+        ...short,
+        videoUrl: short.videoUrl,
+        thumbnailUrl: short.thumbnailUrl,
+        channelAvatar: finalAvatar,
+        channelName:
+          user?.channelname || user?.channelName || user?.name || "Unknown",
+        likesCount: short.likes?.length || 0,
+        dislikesCount: short.dislikes?.length || 0,
+        commentsCount: short.comments?.length || 0,
+        hasLiked,
+        hasDisliked,
+        userId: {
+          _id: user._id,
+          name: user.name,
+          avatar: finalAvatar,
+          image: finalAvatar,
+          channelName: user.channelname || user.channelName,
+          channelname: user.channelname || user.channelName,
+          subscribers: user.subscribers,
+        },
+      };
+    });
 
     const total = await Short.countDocuments({
       isPublic: true,
@@ -309,9 +303,9 @@ export const getAllShorts = async (req, res) => {
 // Get single short by ID with proper avatar
 export const getShortById = async (req, res) => {
   try {
-    res.set("Cache-Control", "no-store, must-revalidate, max-age=0");
-    res.set("Pragma", "no-cache");
-    res.set("Expires", "0");
+    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
+    res.set("Pragma", "cache");
+    res.set("X-Content-Type-Options", "nosniff");
 
     const { id } = req.params;
 

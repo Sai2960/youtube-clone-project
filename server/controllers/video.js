@@ -9,6 +9,20 @@ import {
   isSupabaseConfigured,
 } from "../config/supabase.js";
 
+// ✅ ADD: Rate limiting for video operations
+const videoOperationLimiter = new Map();
+
+const canPerformOperation = (userId) => {
+  const now = Date.now();
+  const lastOp = videoOperationLimiter.get(userId);
+
+  if (!lastOp || now - lastOp > 1000) {
+    // 1 second cooldown
+    videoOperationLimiter.set(userId, now);
+    return true;
+  }
+  return false;
+};
 const getVideoURL = (filepath) => {
   if (!filepath) return null;
 
@@ -466,10 +480,10 @@ export const uploadvideo = async (req, res) => {
 export const getallvideo = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const limit = parseInt(req.query.limit) || 12; // ✅ REDUCED from 20
     const skip = (page - 1) * limit;
 
-    // ✅ CRITICAL FIX: Better projection + validation
+    // ✅ ADD: Aggressive indexing hints
     const videos = await videofiles
       .find()
       .select(
@@ -484,40 +498,36 @@ export const getallvideo = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .lean()
-      .maxTimeMS(5000);
+      .hint({ createdAt: -1 }) // ✅ FORCE index usage
+      .maxTimeMS(3000); // ✅ REDUCED from 5000
 
-    const total = await videofiles.countDocuments();
+    // ✅ Use cached count (update every 5 minutes)
+    const cacheKey = "video_total_count";
+    let total;
 
-    console.log(`📹 Retrieved ${videos.length} videos`);
+    try {
+      const { cache } = await import("../middleware/cache.js");
+      const cached = cache.get(cacheKey);
 
-    // ✅ Validate each video has an _id
-    const validVideos = videos.filter((video) => {
-      if (!video._id) {
-        console.warn("⚠️ Video missing _id:", video.videotitle);
-        return false;
+      if (cached && Date.now() < cached.expiry) {
+        total = cached.data;
+      } else {
+        total = await videofiles.countDocuments();
+        cache.set(cacheKey, {
+          data: total,
+          expiry: Date.now() + 300000, // 5 minutes
+          timestamp: Date.now(),
+        });
       }
-      return true;
-    });
+    } catch (e) {
+      total = await videofiles.countDocuments();
+    }
 
-    // ✅ Transform URLs
-    const videosWithAbsoluteURLs = validVideos.map((video) => {
-      const transformed = transformVideoURLs(video);
+    const validVideos = videos.filter((video) => video._id);
+    const videosWithAbsoluteURLs = validVideos.map(transformVideoURLs);
 
-      if (
-        transformed.uploadedBy &&
-        typeof transformed.uploadedBy === "object"
-      ) {
-        transformed.uploadedBy.image = getImageURL(
-          transformed.uploadedBy.image
-        );
-      }
-
-      return transformed;
-    });
-    // ✅ CRITICAL FIX: No caching for fresh data
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
+    // ✅ Cache for 2 minutes (down from no cache)
+    res.setHeader("Cache-Control", "public, max-age=120, s-maxage=300");
 
     res.status(200).json({
       success: true,
@@ -534,7 +544,6 @@ export const getallvideo = async (req, res) => {
     });
   }
 };
-
 // ==============================
 // 🎬 Get Video By ID
 // ==============================
