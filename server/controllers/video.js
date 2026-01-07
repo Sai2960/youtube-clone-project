@@ -337,8 +337,6 @@ const generateSampleComments = (videoTitle) => {
 export const uploadvideo = async (req, res) => {
   try {
     console.log("\n📤 ===== VIDEO UPLOAD STARTED =====");
-    console.log("   req.file exists:", !!req.file);
-    console.log("   req.userId:", req.userId);
 
     if (!req.file) {
       return res.status(400).json({
@@ -349,23 +347,23 @@ export const uploadvideo = async (req, res) => {
 
     let videoUrl = null;
     let publicId = null;
-    let thumbnailUrl = null;
+    let thumbnailUrl = null; // ✅ Will be a REAL image
     const storageType = "supabase";
 
-    // ✅ ONLY USE SUPABASE - NO CLOUDINARY
     if (!isSupabaseConfigured()) {
       console.error("❌ Supabase not configured!");
       return res.status(500).json({
         success: false,
-        message: "Upload service not available. Contact administrator.",
+        message: "Upload service not available.",
       });
     }
 
     try {
-      console.log("📤 Uploading to Supabase...");
+      console.log("📤 Uploading video to Supabase...");
 
       const fileName = `videos/${Date.now()}-${req.file.originalname}`;
 
+      // Upload video
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(fileName, req.file.buffer, {
@@ -374,40 +372,79 @@ export const uploadvideo = async (req, res) => {
           upsert: false,
         });
 
-      if (uploadError) {
-        console.error("❌ Supabase upload error:", uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+      // Get video URL
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(fileName);
 
       videoUrl = publicUrl;
       publicId = fileName;
-      thumbnailUrl = publicUrl;
 
-      console.log("✅ Supabase upload successful:", publicUrl);
+      // ✅ GENERATE THUMBNAIL IMAGE
+      const sharp = require('sharp'); // Add this: npm install sharp
+      const ffmpeg = require('fluent-ffmpeg'); // Add this: npm install fluent-ffmpeg
+      const { Readable } = require('stream');
+
+      console.log("🖼️ Generating thumbnail...");
+
+      // Create temporary file from buffer
+      const tempVideoPath = `/tmp/${Date.now()}-video.mp4`;
+      const tempThumbPath = `/tmp/${Date.now()}-thumb.jpg`;
+      
+      const fs = require('fs');
+      fs.writeFileSync(tempVideoPath, req.file.buffer);
+
+      // Extract frame at 1 second using ffmpeg
+      await new Promise((resolve, reject) => {
+        ffmpeg(tempVideoPath)
+          .screenshots({
+            timestamps: ['1'], // 1 second into video
+            filename: 'thumb.jpg',
+            folder: '/tmp',
+            size: '1280x720'
+          })
+          .on('end', resolve)
+          .on('error', reject);
+      });
+
+      // Upload thumbnail to Supabase
+      const thumbnailFileName = `thumbnails/${Date.now()}-thumb.jpg`;
+      const thumbnailBuffer = fs.readFileSync(tempThumbPath);
+
+      const { error: thumbError } = await supabase.storage
+        .from(bucketName)
+        .upload(thumbnailFileName, thumbnailBuffer, {
+          contentType: 'image/jpeg',
+          cacheControl: '31536000', // 1 year
+        });
+
+      if (thumbError) throw thumbError;
+
+      // Get thumbnail URL
+      const { data: { publicUrl: thumbUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(thumbnailFileName);
+
+      thumbnailUrl = thumbUrl;
+
+      // Cleanup temp files
+      fs.unlinkSync(tempVideoPath);
+      fs.unlinkSync(tempThumbPath);
+
+      console.log("✅ Thumbnail generated:", thumbnailUrl);
+
     } catch (supabaseError) {
-      console.error("❌ Supabase upload failed:", supabaseError.message);
-
+      console.error("❌ Upload failed:", supabaseError.message);
       return res.status(500).json({
         success: false,
-        message: "Upload failed - storage service error",
+        message: "Upload failed",
         error: supabaseError.message,
       });
     }
 
-    // ✅ Validate we have a video URL
-    if (!videoUrl || !publicId) {
-      return res.status(500).json({
-        success: false,
-        message: "Upload failed - no video URL generated",
-      });
-    }
-
-    // ✅ SAVE VIDEO TO DATABASE
+    // Save to database
     const { videotitle, videodescription, videochanel } = req.body;
     const uploadedBy = req.userId;
 
@@ -426,29 +463,22 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    const channelName =
-      user?.channelname || videochanel || user?.name || "Unknown Channel";
+    const channelName = user?.channelname || videochanel || user?.name || "Unknown Channel";
     const title = videotitle || req.file.originalname;
-    const autoDescription =
-      videodescription?.trim() ||
-      `Watch this amazing video about ${title}. Don't forget to like and subscribe!`;
+    const autoDescription = videodescription?.trim() || `Watch "${title}"`;
 
     const newVideo = new videofiles({
       videotitle: title,
       videodescription: autoDescription,
       videofilename: publicId,
-
-      // Store SAME URL in all fields
       filepath: videoUrl,
       videofile: videoUrl,
       videoLink: videoUrl,
       videoUrl: videoUrl,
-
-      // Thumbnails
-      thumbnail: thumbnailUrl,
+      thumbnail: thumbnailUrl, // ✅ REAL image URL
       videothumbnail: thumbnailUrl,
       thumbnailUrl: thumbnailUrl,
-
+      videothumb: thumbnailUrl,
       filename: req.file.originalname,
       filetype: req.file.mimetype,
       filesize: `${(req.file.size / (1024 * 1024)).toFixed(2)} MB`,
@@ -460,49 +490,28 @@ export const uploadvideo = async (req, res) => {
       views: 0,
       Like: 0,
       Dislike: 0,
-      likes: 0,
-      dislikes: 0,
       storageType,
     });
 
     const savedVideo = await newVideo.save();
 
-    console.log("✅ Video saved:", {
-      _id: savedVideo._id,
-      title: savedVideo.videotitle,
-      url: videoUrl,
-      storage: storageType,
-    });
-
-    // Clear cache
-    try {
-      const { clearCachePattern } = await import("../middleware/cache.js");
-      clearCachePattern(/\/video/);
-    } catch (e) {
-      console.log("⚠️ Cache clear skipped:", e.message);
-    }
-
-    console.log("===== VIDEO UPLOAD COMPLETE =====\n");
+    console.log("✅ Video saved with thumbnail");
 
     res.status(201).json({
       success: true,
       message: "Video uploaded successfully",
       video: savedVideo,
       videoUrl: videoUrl,
-      thumbnailUrl: thumbnailUrl,
+      thumbnailUrl: thumbnailUrl, // ✅ Returns image URL
       publicId: publicId,
       storage: storageType,
     });
   } catch (error) {
     console.error("\n❌ VIDEO UPLOAD ERROR:", error);
-
     res.status(500).json({
       success: false,
       message: "Failed to upload video",
-      error:
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : "Internal server error",
+      error: error.message,
     });
   }
 };
