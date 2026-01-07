@@ -8,6 +8,8 @@ import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import React, { useEffect, useState, useRef } from "react";
 import { fixMediaURL, getVideoUrl, getThumbnailUrl } from "@/lib/urlHelper";
+import { GetServerSideProps } from "next";
+
 import ProtectedRoute from "@/components/ProtectedRoute"; // ✅ NEW - Authentication wrapper
 const WatchPage = () => {
   const router = useRouter();
@@ -515,6 +517,11 @@ const WatchPage = () => {
       </div>
     </ProtectedRoute>
   );
+};
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
 };
 
 export default WatchPage;
