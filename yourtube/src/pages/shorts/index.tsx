@@ -8,10 +8,7 @@ import { RefreshCw, ChevronLeft } from "lucide-react";
 import ShortPlayer from "@/components/ui/ShortPlayer";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import Head from "next/head";
-
-// ✅ Force dynamic rendering & disable caching
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import { GetServerSideProps } from "next";
 
 interface Short {
   _id: string;
@@ -801,6 +798,14 @@ const ShortsPage: React.FC = () => {
       </div>
     </>
   );
+};
+
+// ✅ CRITICAL FIX: Disable static generation for shorts page
+// This prevents the "Cannot find module 'critters'" error during build
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles all shorts data
+  };
 };
 
 export default ShortsPage;
