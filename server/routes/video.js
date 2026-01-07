@@ -2435,5 +2435,39 @@ router.get("/refresh/:id", async (req, res) => {
     });
   }
 });
+// ✅ NEW: Fix all Supabase thumbnails
+router.post('/admin/fix-supabase-thumbnails', async (req, res) => {
+  try {
+    const videos = await videofiles.find({
+      filepath: { $regex: 'supabase.co' }
+    });
 
+    let fixed = 0;
+
+    for (const video of videos) {
+      const videoUrl = video.filepath || video.videofile || video.videoLink;
+      
+      if (videoUrl && videoUrl.includes('supabase.co')) {
+        // Use video URL as thumbnail for Supabase
+        video.thumbnail = videoUrl;
+        video.thumbnailUrl = videoUrl;
+        video.videothumbnail = videoUrl;
+        video.videothumb = videoUrl;
+        
+        await video.save();
+        fixed++;
+        console.log(`✅ Fixed: ${video.videotitle}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Fixed ${fixed} videos`,
+      fixed,
+      total: videos.length
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 export default router;

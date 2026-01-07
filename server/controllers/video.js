@@ -180,11 +180,10 @@ const transformVideoURLs = (video) => {
     }
   }
 
-  console.log("✅ Final URLs:", {
-    video: transformedVideoUrl?.substring(0, 60),
-    thumbnail: transformedThumbnailUrl?.substring(0, 60),
+  console.log("✅ Transformed URLs:", {
+    video: transformedVideoUrl,
+    thumbnail: transformedThumbnailUrl,
   });
-
   return {
     ...videoObj,
     // Video URLs
