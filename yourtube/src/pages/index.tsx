@@ -429,10 +429,7 @@ const Home: NextPage = () => {
       video?.videothumb;
 
     if (explicitThumbnail?.startsWith("http")) {
-      console.log(
-        "✅ Using explicit thumbnail:",
-        explicitThumbnail.substring(0, 60)
-      );
+      console.log("✅ Using explicit thumbnail:", explicitThumbnail); // ✅ REMOVED .substring(0, 60)
       return explicitThumbnail;
     }
 
@@ -1040,10 +1037,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     object-fit: cover;
     background: #000;
   }
-  
+
   /* Show first frame for videos without poster */
   video:not([poster]) {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
-`}</style>
+`}</style>;
 export default Home;

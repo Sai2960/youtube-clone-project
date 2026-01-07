@@ -84,10 +84,7 @@ export default function VideoCard({ video }: any) {
       video?.videothumb;
 
     if (explicitThumbnail?.startsWith("http")) {
-      console.log(
-        "✅ Using explicit thumbnail:",
-        explicitThumbnail.substring(0, 60)
-      );
+      console.log("✅ Using explicit thumbnail:", explicitThumbnail); // ✅ REMOVED .substring(0, 60)
       return explicitThumbnail;
     }
 
@@ -326,9 +323,9 @@ export default function VideoCard({ video }: any) {
     object-fit: cover;
     background: #000;
   }
-  
+
   /* Show first frame for videos without poster */
   video:not([poster]) {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
-`}</style>
+`}</style>;
