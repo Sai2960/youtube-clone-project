@@ -128,66 +128,7 @@ const Home: NextPage = () => {
   const [backendReady, setBackendReady] = useState(false);
   const [backendCheckAttempts, setBackendCheckAttempts] = useState(0);
 
-  useEffect(() => {
-    let isMounted = true;
 
-    const pingBackend = async (attempt = 1): Promise<void> => {
-      if (!isMounted) return;
-
-      console.log(`🔍 Checking backend availability (attempt ${attempt})...`);
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-        const response = await fetch(
-          `${
-            process.env.NEXT_PUBLIC_API_URL ||
-            "https://youtube-clone-project-production.up.railway.app"
-          }/api/health`,
-          {
-            signal: controller.signal,
-            method: "GET",
-            cache: "no-cache",
-          }
-        );
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          console.log("✅ Backend is ready!");
-          if (isMounted) {
-            setBackendReady(true);
-            setConnectionError(null);
-            fetchVideos();
-            fetchShorts();
-          }
-          return;
-        }
-      } catch (error) {
-        console.warn(`⚠️ Backend check ${attempt} failed:`, error);
-      }
-
-      // Retry with exponential backoff (max 5 attempts)
-      if (attempt < 5 && isMounted) {
-        setBackendCheckAttempts(attempt);
-        // REPLACE lines 186-188 with:
-        setConnectionError(`Server is warming up... (attempt ${attempt}/5)`);
-
-        const delay = Math.min(5000 * Math.pow(1.5, attempt - 1), 15000);
-        setTimeout(() => pingBackend(attempt + 1), delay);
-      } else if (isMounted) {
-        // REPLACE line 197 with:
-        setConnectionError("Server timeout. Please refresh the page.");
-      }
-    };
-
-    pingBackend();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Only fetch data after backend is ready
   useEffect(() => {
@@ -205,6 +146,42 @@ const Home: NextPage = () => {
     }
   }, [backendReady]);
   // pages/index.tsx - After line 133
+
+  useEffect(() => {
+    fetchVideos();
+    fetchShorts();
+
+    // Mobile-specific: Log when component mounts
+    console.log("📱 Home page mounted, viewport:", {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      isMobile: window.innerWidth < 1024,
+    });
+
+    // ✅ CRITICAL FIX: Refresh on window focus
+    const handleFocus = () => {
+      console.log("🔄 Window focused - refreshing data");
+      fetchVideos();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+
+    // Listen for avatar updates
+    const handleAvatarUpdate = () => {
+      const newKeys: Record<string, number> = {};
+      videos.forEach((video) => {
+        if (video.uploadedBy?._id) {
+          newKeys[video.uploadedBy._id] = Date.now();
+        }
+      });
+      setImageKeys(newKeys);
+    };
+
+    window.addEventListener("avatarUpdated", handleAvatarUpdate);
+    return () =>
+      window.removeEventListener("avatarUpdated", handleAvatarUpdate);
+  }, []);
 
   const fetchVideos = async () => {
     try {
@@ -291,6 +268,27 @@ const Home: NextPage = () => {
     }
     startY.current = 0;
   };
+
+  useEffect(() => {
+    const loadVideos = async () => {
+      try {
+        const response = await axiosInstance.get("/video/getall");
+        console.log("📊 Videos loaded:", {
+          total: response.data.videos?.length,
+          success: response.data.success,
+          firstVideo: response.data.videos?.[0],
+        });
+
+        if (response.data.success && response.data.videos) {
+          setVideos(response.data.videos);
+        }
+      } catch (error) {
+        console.error("❌ Load videos error:", error);
+      }
+    };
+
+    loadVideos();
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
