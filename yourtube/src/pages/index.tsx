@@ -21,6 +21,7 @@ import { getThumbnailUrl as getThumbnailUrlHelper } from "@/lib/urlHelper";
 import ProtectedRoute from "@/components/ProtectedRoute"; // ✅ NEW IMPORT
 import { useUser } from "@/lib/AuthContext"; // ✅ NEW IMPORT
 import { GetServerSideProps } from "next";
+import { BACKEND_URL } from "@/lib/axiosinstance";
 
 interface Video {
   videoLink: string;
@@ -128,64 +129,58 @@ const Home: NextPage = () => {
   const [backendReady, setBackendReady] = useState(false);
   const [backendCheckAttempts, setBackendCheckAttempts] = useState(0);
 
+  // ADD THIS ENTIRE BLOCK after line 133
+  useEffect(() => {
+    let isMounted = true;
 
-// ADD THIS ENTIRE BLOCK after line 133
-useEffect(() => {
-  let isMounted = true;
+    const pingBackend = async (attempt = 1): Promise<void> => {
+      if (!isMounted) return;
 
-  const pingBackend = async (attempt = 1): Promise<void> => {
-    if (!isMounted) return;
+      console.log(`🔍 Checking backend availability (attempt ${attempt})...`);
 
-    console.log(`🔍 Checking backend availability (attempt ${attempt})...`);
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL ||
-          "https://youtube-clone-project-production.up.railway.app"
-        }/health`,
-        {
+        // REPLACE lines 155-162 with this:
+        const response = await fetch(`${BACKEND_URL}/health`, {
           signal: controller.signal,
           method: "GET",
           cache: "no-cache",
-        }
-      );
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (response.ok) {
-        console.log("✅ Backend is ready!");
-        if (isMounted) {
-          setBackendReady(true);
-          setConnectionError(null);
+        if (response.ok) {
+          console.log("✅ Backend is ready!");
+          if (isMounted) {
+            setBackendReady(true);
+            setConnectionError(null);
+          }
+          return;
         }
-        return;
+      } catch (error) {
+        console.warn(`⚠️ Backend check ${attempt} failed:`, error);
       }
-    } catch (error) {
-      console.warn(`⚠️ Backend check ${attempt} failed:`, error);
-    }
 
-    // Retry with exponential backoff (max 5 attempts)
-    if (attempt < 5 && isMounted) {
-      setBackendCheckAttempts(attempt);
-      setConnectionError(`Server is warming up... (attempt ${attempt}/5)`);
+      // Retry with exponential backoff (max 5 attempts)
+      if (attempt < 5 && isMounted) {
+        setBackendCheckAttempts(attempt);
+        setConnectionError(`Server is warming up... (attempt ${attempt}/5)`);
 
-      const delay = Math.min(5000 * Math.pow(1.5, attempt - 1), 15000);
-      setTimeout(() => pingBackend(attempt + 1), delay);
-    } else if (isMounted) {
-      setConnectionError("Server timeout. Please refresh the page.");
-    }
-  };
+        const delay = Math.min(5000 * Math.pow(1.5, attempt - 1), 15000);
+        setTimeout(() => pingBackend(attempt + 1), delay);
+      } else if (isMounted) {
+        setConnectionError("Server timeout. Please refresh the page.");
+      }
+    };
 
-  pingBackend();
+    pingBackend();
 
-  return () => {
-    isMounted = false;
-  };
-}, []);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Only fetch data after backend is ready
   useEffect(() => {
@@ -203,7 +198,6 @@ useEffect(() => {
     }
   }, [backendReady]);
   // pages/index.tsx - After line 133
-
 
   useEffect(() => {
     fetchVideos();
