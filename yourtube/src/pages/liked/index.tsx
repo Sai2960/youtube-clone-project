@@ -1,6 +1,8 @@
 
 import LikedContent from "@/components/LikedContent";
 import React, { Suspense } from "react";
+import { GetServerSideProps } from "next";
+
 
 const LikedVideosPage = () => {
   return (
@@ -21,5 +23,11 @@ const LikedVideosPage = () => {
     </div>
   );
 };
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
+};
+
 
 export default LikedVideosPage;
