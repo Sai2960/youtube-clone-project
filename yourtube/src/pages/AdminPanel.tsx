@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
+import { GetServerSideProps } from "next";
 
 const AdminPanel = () => {
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -243,6 +244,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "14px",
     fontWeight: "bold",
   },
+};
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {},
+  };
 };
 
 export default AdminPanel;
