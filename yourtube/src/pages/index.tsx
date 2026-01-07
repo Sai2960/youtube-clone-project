@@ -171,14 +171,14 @@ const Home: NextPage = () => {
       // Retry with exponential backoff (max 5 attempts)
       if (attempt < 5 && isMounted) {
         setBackendCheckAttempts(attempt);
-        setConnectionError(
-          `Waking up server... (attempt ${attempt}/5) - Free tier servers sleep after inactivity`
-        );
+        // REPLACE lines 186-188 with:
+        setConnectionError(`Server is warming up... (attempt ${attempt}/5)`);
 
         const delay = Math.min(5000 * Math.pow(1.5, attempt - 1), 15000);
         setTimeout(() => pingBackend(attempt + 1), delay);
       } else if (isMounted) {
-        setConnectionError("Server is not responding. Please try again later.");
+        // REPLACE line 197 with:
+        setConnectionError("Server timeout. Please refresh the page.");
       }
     };
 
@@ -205,42 +205,6 @@ const Home: NextPage = () => {
     }
   }, [backendReady]);
   // pages/index.tsx - After line 133
-  useEffect(() => {
-    // Check if backend is reachable
-    const checkBackend = async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const response = await fetch(
-          `${
-            process.env.NEXT_PUBLIC_API_URL ||
-            "https://youtube-clone-project-production.up.railway.app"
-          }/api/health`,
-          { signal: controller.signal }
-        ).catch(() => null);
-
-        clearTimeout(timeoutId);
-
-        if (!response || !response.ok) {
-          setConnectionError(
-            "Backend server is not responding. It may be starting up (this can take 30-60 seconds on free tier)."
-          );
-        } else {
-          setConnectionError(null);
-        }
-      } catch (error) {
-        setConnectionError(
-          "Cannot reach backend server. Check your internet connection."
-        );
-      }
-    };
-
-    checkBackend();
-    const interval = setInterval(checkBackend, 10000); // Check every 10s
-
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     fetchVideos();
@@ -645,12 +609,6 @@ const Home: NextPage = () => {
               </svg>
               <span className="font-semibold">{connectionError}</span>
             </div>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-2 px-4 py-1 bg-white text-yellow-600 rounded font-semibold text-xs"
-            >
-              Retry Connection
-            </button>
           </div>
         )}
 
