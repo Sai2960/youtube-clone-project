@@ -3,6 +3,8 @@
 import SearchResult from "@/components/SearchResult";
 import { useRouter } from "next/router";
 import React, { Suspense } from "react";
+import { GetServerSideProps } from "next";
+
 
 const index = () => {
   const router = useRouter();
@@ -21,6 +23,12 @@ const index = () => {
       </div>
     </div>
   );
+};
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
 };
 
 export default index;
