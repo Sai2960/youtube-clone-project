@@ -1,9 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useState, useEffect } from "react";
 import { Crown, Check, Loader2, Zap, Star } from "lucide-react";
 import { useUser } from "@/lib/AuthContext";
 import { useSubscription } from "@/lib/SubscriptionContext";
 import axiosInstance from "@/lib/axiosinstance";
+import { GetServerSideProps } from "next";
 
 declare global {
   interface Window {
@@ -357,5 +358,9 @@ const handleSubscribe = async (plan: any) => {
     </div>
   );
 };
-
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
+};
 export default PremiumPage;
