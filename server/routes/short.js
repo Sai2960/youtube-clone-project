@@ -38,17 +38,15 @@ router.post(
   (req, res, next) => {
     console.log("\n📤 ===== SHORTS UPLOAD REQUEST =====");
     console.log("User:", req.user?.name);
-    console.log("User ID:", req.user?._id);
     console.log(
       "Storage:",
-      isSupabaseConfigured() ? "Supabase" : "NOT CONFIGURED"
+      isSupabaseConfigured() ? "✅ Supabase" : "❌ NOT CONFIGURED"
     );
 
     const upload = multer({
       storage: multer.memoryStorage(),
       limits: {
         fileSize: 100 * 1024 * 1024, // 100MB
-        files: 2,
       },
     }).fields([
       { name: "video", maxCount: 1 },
@@ -61,41 +59,13 @@ router.post(
         return res.status(400).json({
           success: false,
           message: `File upload error: ${err.message}`,
-          code: "MULTER_ERROR",
         });
       }
 
-      console.log("📦 Files received:");
-      console.log(
-        "   Video:",
-        req.files?.video?.[0]
-          ? `${req.files.video[0].originalname} (${(
-              req.files.video[0].size /
-              1024 /
-              1024
-            ).toFixed(2)}MB)`
-          : "MISSING"
-      );
-      console.log(
-        "   Thumbnail:",
-        req.files?.thumbnail?.[0]
-          ? `${req.files.thumbnail[0].originalname} (${(
-              req.files.thumbnail[0].size /
-              1024 /
-              1024
-            ).toFixed(2)}MB)`
-          : "MISSING"
-      );
-
-      if (!req.files || !req.files.video || !req.files.thumbnail) {
-        console.error("❌ Missing files");
+      if (!req.files?.video || !req.files?.thumbnail) {
         return res.status(400).json({
           success: false,
           message: "Both video and thumbnail files are required",
-          received: {
-            video: !!req.files?.video,
-            thumbnail: !!req.files?.thumbnail,
-          },
         });
       }
 
@@ -103,48 +73,21 @@ router.post(
 
       try {
         if (!isSupabaseConfigured()) {
-          console.error("❌ Supabase not configured!");
-          return res.status(500).json({
-            success: false,
-            message: "Storage service not configured",
-          });
+          throw new Error("Supabase not configured");
         }
 
         const videoFile = req.files.video[0];
         const thumbnailFile = req.files.thumbnail[0];
-        const uploadedVideoUrl = videoFile.path; // This is now Supabase URL from middleware
-        const uploadedThumbnailUrl = thumbnailFile.path; // This is now Supabase URL from middleware
-
-        console.log("✅ URLs from middleware:", {
-          video: videoUrl?.substring(0, 80),
-          thumb: thumbnailUrl?.substring(0, 80),
-        });
-
-        if (!videoUrl || !thumbnailUrl) {
-          throw new Error("Failed to get Supabase URLs from upload");
-        }
-
-        // ✅ Validate Supabase URLs
-        if (
-          !videoUrl.includes("supabase.co") ||
-          !thumbnailUrl.includes("supabase.co")
-        ) {
-          console.error("❌ Non-Supabase URLs detected!");
-          throw new Error("Invalid upload URLs - not from Supabase");
-        }
 
         // Generate unique filenames
-        const videoFilename = `shorts/videos/${Date.now()}-${
-          videoFile.originalname
-        }`;
-        const thumbnailFilename = `shorts/thumbnails/${Date.now()}-${
-          thumbnailFile.originalname
-        }`;
+        const timestamp = Date.now();
+        const videoFilename = `shorts/videos/${timestamp}-${videoFile.originalname}`;
+        const thumbnailFilename = `shorts/thumbnails/${timestamp}-${thumbnailFile.originalname}`;
 
         console.log("📤 Uploading to Supabase...");
 
         // Upload video
-        const { data: videoData, error: videoError } = await supabase.storage
+        const { error: videoError } = await supabase.storage
           .from(bucketName)
           .upload(videoFilename, videoFile.buffer, {
             contentType: videoFile.mimetype,
@@ -152,25 +95,20 @@ router.post(
             upsert: false,
           });
 
-        if (videoError) {
-          console.error("❌ Video upload error:", videoError);
+        if (videoError)
           throw new Error(`Video upload failed: ${videoError.message}`);
-        }
 
         // Upload thumbnail
-        const { data: thumbnailData, error: thumbnailError } =
-          await supabase.storage
-            .from(bucketName)
-            .upload(thumbnailFilename, thumbnailFile.buffer, {
-              contentType: thumbnailFile.mimetype,
-              cacheControl: "3600",
-              upsert: false,
-            });
+        const { error: thumbnailError } = await supabase.storage
+          .from(bucketName)
+          .upload(thumbnailFilename, thumbnailFile.buffer, {
+            contentType: thumbnailFile.mimetype,
+            cacheControl: "3600",
+            upsert: false,
+          });
 
-        if (thumbnailError) {
-          console.error("❌ Thumbnail upload error:", thumbnailError);
+        if (thumbnailError)
           throw new Error(`Thumbnail upload failed: ${thumbnailError.message}`);
-        }
 
         // Get public URLs
         const { data: videoUrlData } = supabase.storage
@@ -188,6 +126,14 @@ router.post(
         console.log("   Video:", videoUrl.substring(0, 80));
         console.log("   Thumbnail:", thumbnailUrl.substring(0, 80));
 
+        // ✅ CRITICAL: Validate Supabase URLs
+        if (
+          !videoUrl.includes("supabase.co") ||
+          !thumbnailUrl.includes("supabase.co")
+        ) {
+          throw new Error("Invalid upload URLs - not from Supabase");
+        }
+
         // Attach URLs for controller
         req.files.video[0].path = videoUrl;
         req.files.video[0].filename = videoFilename;
@@ -200,9 +146,6 @@ router.post(
         return res.status(500).json({
           success: false,
           message: `Upload failed: ${uploadError.message}`,
-          code: "UPLOAD_ERROR",
-          details:
-            process.env.NODE_ENV === "development" ? uploadError : undefined,
         });
       }
     });
@@ -713,44 +656,78 @@ router.get("/admin/check-shorts", async (req, res) => {
   }
 });
 
-// ✅ Delete all shorts with local /uploads/ paths
-// ✅ NEW: Delete all shorts with invalid video URLs
-router.post("/admin/delete-invalid-shorts", async (req, res) => {
+router.post("/admin/delete-cloudinary-401", async (req, res) => {
   try {
-    console.log("\n🗑️ ===== DELETING INVALID SHORTS =====");
+    console.log("\n🗑️ ===== DELETING 401 CLOUDINARY SHORTS =====");
 
-    // Find shorts with local paths or missing URLs
-    const invalidShorts = await Short.find({
-      $or: [
-        { videoUrl: { $regex: "^/uploads/" } },
-        { videoUrl: { $regex: "^/videos/" } },
-        { videoUrl: { $exists: false } },
-        { videoUrl: null },
-        { videoUrl: "" },
-      ],
-    });
+    // Find all shorts with Cloudinary URLs
+    const cloudinaryShorts = await Short.find({
+      videoUrl: { $regex: "cloudinary.com" },
+    }).lean();
 
-    console.log(`Found ${invalidShorts.length} invalid shorts`);
+    console.log(`Found ${cloudinaryShorts.length} Cloudinary shorts`);
 
     const deleted = [];
-    for (const short of invalidShorts) {
-      deleted.push({
-        id: short._id,
-        title: short.title,
-        videoUrl: short.videoUrl?.substring(0, 60),
-      });
-      await Short.findByIdAndDelete(short._id);
+    const failed = [];
+
+    for (const short of cloudinaryShorts) {
+      try {
+        // Test if video URL is accessible
+        const response = await fetch(short.videoUrl, { method: "HEAD" });
+
+        if (response.status === 401 || response.status === 403) {
+          console.log(`❌ 401/403 error for: ${short.title}`);
+
+          // Delete the short
+          await Short.findByIdAndDelete(short._id);
+
+          // Delete associated comments
+          await Comment.deleteMany({
+            $or: [{ videoid: short._id }, { shortId: short._id }],
+          });
+
+          deleted.push({
+            id: short._id,
+            title: short.title,
+            videoUrl: short.videoUrl.substring(0, 60),
+            reason: "401/403 Unauthorized",
+          });
+        } else {
+          console.log(`✅ Accessible: ${short.title} (${response.status})`);
+        }
+      } catch (error) {
+        console.error(`⚠️ Error checking ${short.title}:`, error.message);
+
+        // If fetch fails, likely a 401 issue - delete it
+        await Short.findByIdAndDelete(short._id);
+        await Comment.deleteMany({
+          $or: [{ videoid: short._id }, { shortId: short._id }],
+        });
+
+        deleted.push({
+          id: short._id,
+          title: short.title,
+          videoUrl: short.videoUrl.substring(0, 60),
+          reason: "Fetch failed (likely 401)",
+        });
+      }
     }
 
-    console.log(`✅ Deleted ${deleted.length} invalid shorts`);
+    console.log(`\n✅ Deleted: ${deleted.length}`);
+    console.log(`⚠️ Failed: ${failed.length}`);
 
     res.json({
       success: true,
-      deleted: deleted.length,
-      shorts: deleted,
+      summary: {
+        total: cloudinaryShorts.length,
+        deleted: deleted.length,
+        failed: failed.length,
+      },
+      deleted,
+      failed,
     });
   } catch (error) {
-    console.error("❌ Delete error:", error);
+    console.error("❌ Error:", error);
     res.status(500).json({
       success: false,
       error: error.message,
