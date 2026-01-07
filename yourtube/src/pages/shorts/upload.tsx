@@ -13,6 +13,8 @@ import {
   Loader2,
 } from "lucide-react";
 import axios from "axios";
+import { GetServerSideProps } from "next";
+
 
 const getApiUrl = () =>
   process.env.NEXT_PUBLIC_API_URL ||
@@ -743,6 +745,11 @@ Watch till the end! Don't forget to like and subscribe!
       </div>
     </>
   );
+};
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
 };
 
 export default ShortsUploadPage;
