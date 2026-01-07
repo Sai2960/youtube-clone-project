@@ -20,6 +20,7 @@ import { VideoGridSkeleton } from "@/components/VideoSkeleton";
 import { getThumbnailUrl as getThumbnailUrlHelper } from "@/lib/urlHelper";
 import ProtectedRoute from "@/components/ProtectedRoute"; // ✅ NEW IMPORT
 import { useUser } from "@/lib/AuthContext"; // ✅ NEW IMPORT
+import { GetServerSideProps } from "next";
 
 interface Video {
   videoLink: string;
@@ -1096,6 +1097,15 @@ const Home: NextPage = () => {
       </>
     </ProtectedRoute>
   );
+};
+
+// ✅ CRITICAL FIX: Disable static generation for home page
+// This prevents the "Cannot find module 'critters'" error during build
+// Home page requires user authentication and dynamic content
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles all user-specific data and content
+  };
 };
 
 export default Home;
