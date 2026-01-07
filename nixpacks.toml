@@ -1,12 +1,11 @@
-# nixpacks.toml
 [phases.setup]
 nixPkgs = ["nodejs_22", "npm-9_x"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["npm ci --legacy-peer-deps"]
 
 [phases.build]
-cmds = ["npm install --production"]
+cmds = ["npm install --production --legacy-peer-deps"]
 
 [start]
 cmd = "node server/index.js"
