@@ -1,0 +1,15 @@
+# nixpacks.toml
+[phases.setup]
+nixPkgs = ["nodejs_22", "npm-9_x"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm install --production"]
+
+[start]
+cmd = "node server/index.js"
+
+[variables]
+NODE_ENV = "production"
