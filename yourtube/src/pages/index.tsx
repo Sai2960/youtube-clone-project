@@ -421,97 +421,68 @@ const Home: NextPage = () => {
     return "/video/vdo.mp4";
   };
   const getThumbnailUrl = (video: Video) => {
-    // ✅ Priority 1: Use helper function first
-    const helperThumbnail = getThumbnailUrlHelper(video);
-    if (helperThumbnail && !helperThumbnail.includes("placeholder")) {
+    // ✅ Priority 1: Explicit thumbnails
+    const explicitThumbnail =
+      video?.thumbnailUrl ||
+      video?.thumbnail ||
+      video?.videothumbnail ||
+      video?.videothumb;
+
+    if (explicitThumbnail?.startsWith("http")) {
       console.log(
-        "✅ Thumbnail from helper:",
-        helperThumbnail.substring(0, 60)
+        "✅ Using explicit thumbnail:",
+        explicitThumbnail.substring(0, 60)
       );
-      return helperThumbnail;
+      return explicitThumbnail;
     }
 
-    // ✅ Priority 2: Check explicit thumbnail fields
-    if (video?.thumbnailUrl) {
-      if (video.thumbnailUrl.startsWith("http")) {
-        console.log(
-          "✅ Using video.thumbnailUrl:",
-          video.thumbnailUrl.substring(0, 60)
-        );
-        return video.thumbnailUrl;
-      }
-      const backend = "https://youtube-clone-project-production.up.railway.app";
-      return `${backend}${video.thumbnailUrl}`;
-    }
-
-    if (video?.thumbnail) {
-      if (video.thumbnail.startsWith("http")) {
-        console.log(
-          "✅ Using video.thumbnail:",
-          video.thumbnail.substring(0, 60)
-        );
-        return video.thumbnail;
-      }
-      const backend = "https://youtube-clone-project-production.up.railway.app";
-      return `${backend}${video.thumbnail}`;
-    }
-
-    if (video?.videothumbnail) {
-      if (video.videothumbnail.startsWith("http")) {
-        return video.videothumbnail;
-      }
-      const backend = "https://youtube-clone-project-production.up.railway.app";
-      return `${backend}${video.videothumbnail}`;
-    }
-
-    if (video?.videothumb) {
-      if (video.videothumb.startsWith("http")) {
-        return video.videothumb;
-      }
-      const backend = "https://youtube-clone-project-production.up.railway.app";
-      return `${backend}${video.videothumb}`;
-    }
-
-    // ✅ Priority 3: Generate from video URL
+    // ✅ Priority 2: Supabase videos
     const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
 
+    if (videoUrl?.includes("supabase.co")) {
+      console.log("📦 Supabase video - using video URL as thumbnail");
+      // For Supabase, use the video URL itself (browsers will show first frame)
+      return videoUrl;
+    }
+
+    // ✅ Priority 3: Cloudinary videos (legacy)
     if (
-      videoUrl &&
-      videoUrl.includes("res.cloudinary.com") &&
+      videoUrl?.includes("cloudinary.com") &&
       videoUrl.includes("/video/upload/")
     ) {
       try {
-        const parts = videoUrl.split("/video/upload/");
-        if (parts.length === 2) {
-          const pathAfterUpload = parts[1]
+        const match = videoUrl.match(
+          /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/
+        );
+
+        if (match) {
+          const cloudName = match[1];
+          let publicId = match[2];
+
+          publicId = publicId
             .split("/")
             .filter(
-              (part) =>
-                !part.includes("f_") &&
-                !part.includes("vc_") &&
-                !part.includes("ac_")
+              (segment) =>
+                !segment.match(/^(f_|vc_|ac_|af_|br_|q_|w_|h_|c_|so_|t_)/)
             )
             .join("/");
 
-          const generatedThumbnail =
-            `https://res.cloudinary.com/dxuxxk0ss/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${pathAfterUpload}`.replace(
-              /\.(mp4|mov|avi|mkv|webm)$/i,
-              ".jpg"
-            );
+          publicId = publicId.replace(/\.(mp4|mov|avi|mkv|webm)$/i, "");
 
+          const thumbnail = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
           console.log(
-            "🖼️ Generated thumbnail from video:",
-            generatedThumbnail.substring(0, 80)
+            "🖼️ Generated Cloudinary thumbnail:",
+            thumbnail.substring(0, 80)
           );
-          return generatedThumbnail;
+          return thumbnail;
         }
       } catch (error) {
-        console.error("❌ Error generating thumbnail:", error);
+        console.error("❌ Thumbnail generation error:", error);
       }
     }
 
     // ✅ Fallback
-    console.warn("⚠️ No thumbnail available for video:", video?._id);
+    console.warn("⚠️ No thumbnail for video:", video?._id);
     return "/placeholder-thumbnail.jpg";
   };
 
@@ -1064,5 +1035,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: {}, // Client-side handles all user-specific data and content
   };
 };
-
+<style jsx>{`
+  video[poster] {
+    object-fit: cover;
+    background: #000;
+  }
+  
+  /* Show first frame for videos without poster */
+  video:not([poster]) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+`}</style>
 export default Home;

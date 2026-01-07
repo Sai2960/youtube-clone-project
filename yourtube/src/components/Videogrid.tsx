@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useEffect, useState } from "react";
 import Videocard from "./videocard";
 import axiosInstance from "@/lib/axiosinstance";

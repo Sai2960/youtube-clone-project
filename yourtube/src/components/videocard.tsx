@@ -15,20 +15,20 @@ const fallbackThumbnail = "/placeholder-thumbnail.jpg";
 export default function VideoCard({ video }: any) {
   const router = useRouter();
   const [imageKey, setImageKey] = useState(Date.now());
-const [thumbnailError, setThumbnailError] = useState(false);
-const [thumbnailRetryCount, setThumbnailRetryCount] = useState(0);
+  const [thumbnailError, setThumbnailError] = useState(false);
+  const [thumbnailRetryCount, setThumbnailRetryCount] = useState(0);
   // ========== Avatar Cache Management ==========
   useEffect(() => {
     const handleUpdate = () => {
       setImageKey(Date.now());
     };
 
-    window.addEventListener('avatarUpdated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-    
+    window.addEventListener("avatarUpdated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
     return () => {
-      window.removeEventListener('avatarUpdated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener("avatarUpdated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
     };
   }, []);
 
@@ -45,10 +45,16 @@ const [thumbnailRetryCount, setThumbnailRetryCount] = useState(0);
     if (videoUrl.includes("cloudinary.com")) {
       if (videoUrl.includes("/video/upload/")) {
         const normalized = normalizeURL(videoUrl);
-        console.log("✅ Valid Cloudinary URL normalized:", normalized?.substring(0, 60));
+        console.log(
+          "✅ Valid Cloudinary URL normalized:",
+          normalized?.substring(0, 60)
+        );
         return normalized || fallbackVideo;
       } else {
-        console.warn("⚠️ Invalid Cloudinary URL format (missing /video/upload/):", videoUrl);
+        console.warn(
+          "⚠️ Invalid Cloudinary URL format (missing /video/upload/):",
+          videoUrl
+        );
         return fallbackVideo;
       }
     }
@@ -56,7 +62,10 @@ const [thumbnailRetryCount, setThumbnailRetryCount] = useState(0);
     // For non-Cloudinary URLs, normalize them
     const normalized = normalizeURL(videoUrl);
     if (normalized) {
-      console.log("✅ Non-Cloudinary URL normalized:", normalized.substring(0, 60));
+      console.log(
+        "✅ Non-Cloudinary URL normalized:",
+        normalized.substring(0, 60)
+      );
       return normalized;
     }
 
@@ -65,7 +74,72 @@ const [thumbnailRetryCount, setThumbnailRetryCount] = useState(0);
   })();
 
   // ========== Get Thumbnail URL ==========
-  const thumbnailUrl = getThumbnailUrl(video);
+  // ========== Get Thumbnail URL with Supabase Support ==========
+  const thumbnailUrl = (() => {
+    // ✅ Priority 1: Check explicit thumbnail fields
+    const explicitThumbnail =
+      video?.thumbnailUrl ||
+      video?.thumbnail ||
+      video?.videothumbnail ||
+      video?.videothumb;
+
+    if (explicitThumbnail?.startsWith("http")) {
+      console.log(
+        "✅ Using explicit thumbnail:",
+        explicitThumbnail.substring(0, 60)
+      );
+      return explicitThumbnail;
+    }
+
+    // ✅ Priority 2: Check if video is from Supabase
+    const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
+
+    if (videoUrl?.includes("supabase.co")) {
+      console.log("📦 Supabase video detected - using video URL as thumbnail");
+      return videoUrl; // Supabase doesn't generate thumbnails, use video URL
+    }
+
+    // ✅ Priority 3: Generate from Cloudinary (legacy videos)
+    if (
+      videoUrl?.includes("cloudinary.com") &&
+      videoUrl.includes("/video/upload/")
+    ) {
+      try {
+        const match = videoUrl.match(
+          /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/
+        );
+
+        if (match) {
+          const cloudName = match[1];
+          let publicId = match[2];
+
+          // Remove transformations
+          publicId = publicId
+            .split("/")
+            .filter(
+              (segment) =>
+                !segment.match(/^(f_|vc_|ac_|af_|br_|q_|w_|h_|c_|so_|t_)/)
+            )
+            .join("/");
+
+          publicId = publicId.replace(/\.(mp4|mov|avi|mkv|webm)$/i, "");
+
+          const thumbnail = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+          console.log(
+            "🖼️ Generated Cloudinary thumbnail:",
+            thumbnail.substring(0, 80)
+          );
+          return thumbnail;
+        }
+      } catch (error) {
+        console.error("❌ Thumbnail generation error:", error);
+      }
+    }
+
+    // ✅ Fallback
+    console.warn("⚠️ No thumbnail available, using fallback");
+    return fallbackThumbnail;
+  })();
 
   // ========== Channel Navigation Handler ==========
   const handleChannelClick = (e: React.MouseEvent) => {
@@ -83,51 +157,52 @@ const [thumbnailRetryCount, setThumbnailRetryCount] = useState(0);
   // ========== Get Channel Image ==========
   // Check multiple possible sources for channel image
   const channelImage =
-    video?.uploadedBy?.image || 
+    video?.uploadedBy?.image ||
     video?.uploadedBy?.avatar ||
-    video?.videoowner?.image || 
+    video?.videoowner?.image ||
     video?.videoowner?.avatar ||
     video?.channelImage;
 
   const channelImageUrl = getImageUrl(channelImage, true);
 
   // ========== Get Channel Name ==========
-  const channelName = 
+  const channelName =
     video?.uploadedBy?.channelname ||
     video?.uploadedBy?.name ||
-    video?.videochanel || 
+    video?.videochanel ||
     video?.videoowner?.name ||
     "Unknown Channel";
 
   const channelInitial = channelName?.[0]?.toUpperCase() || "U";
 
-  
   // ========== Thumbnail Error Handler ==========
-// Get thumbnail with retry logic
-const validatedThumbnailUrl = (() => {
-  if (!thumbnailUrl) {
-    console.warn('⚠️ No thumbnail URL for video:', video?._id);
-    return fallbackThumbnail;
-  }
-  
-  console.log('✅ Using thumbnail:', thumbnailUrl.substring(0, 60));
-  return thumbnailUrl;
-})();
+  // Get thumbnail with retry logic
+  const validatedThumbnailUrl = (() => {
+    if (!thumbnailUrl) {
+      console.warn("⚠️ No thumbnail URL for video:", video?._id);
+      return fallbackThumbnail;
+    }
 
-const handleThumbnailError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-  console.error('❌ Thumbnail failed:', validatedThumbnailUrl);
-  
-  if (thumbnailRetryCount < 2) {
-    setThumbnailRetryCount(prev => prev + 1);
-    setThumbnailError(true);
-  } else {
-    e.currentTarget.src = fallbackThumbnail;
-  }
-};
+    console.log("✅ Using thumbnail:", thumbnailUrl.substring(0, 60));
+    return thumbnailUrl;
+  })();
 
-const handleThumbnailLoad = () => {
+  const handleThumbnailError = (
+    e: React.SyntheticEvent<HTMLImageElement, Event>
+  ) => {
+    console.error("❌ Thumbnail failed:", validatedThumbnailUrl);
+
+    if (thumbnailRetryCount < 2) {
+      setThumbnailRetryCount((prev) => prev + 1);
+      setThumbnailError(true);
+    } else {
+      e.currentTarget.src = fallbackThumbnail;
+    }
+  };
+
+  const handleThumbnailLoad = () => {
     if (thumbnailUrl) {
-      console.log('✅ Thumbnail loaded successfully:', video?._id);
+      console.log("✅ Thumbnail loaded successfully:", video?._id);
     }
   };
 
@@ -140,7 +215,7 @@ const handleThumbnailLoad = () => {
           {validatedThumbnailUrl && !thumbnailError ? (
             <img
               src={validatedThumbnailUrl}
-              alt={video?.videotitle || 'Video thumbnail'}
+              alt={video?.videotitle || "Video thumbnail"}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
               loading="lazy"
               onError={handleThumbnailError}
@@ -150,9 +225,9 @@ const handleThumbnailLoad = () => {
             // Fallback placeholder with better styling
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-900 dark:to-black text-white">
               <div className="text-center">
-                <svg 
-                  className="w-12 h-12 mx-auto mb-2 opacity-50" 
-                  fill="currentColor" 
+                <svg
+                  className="w-12 h-12 mx-auto mb-2 opacity-50"
+                  fill="currentColor"
                   viewBox="0 0 20 20"
                 >
                   <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
@@ -161,7 +236,7 @@ const handleThumbnailLoad = () => {
               </div>
             </div>
           )}
-          
+
           {/* Duration Badge */}
           {video?.duration && (
             <div className="absolute bottom-1.5 right-1.5 bg-black/90 backdrop-blur-sm text-white text-xs font-semibold px-1.5 py-0.5 rounded shadow-lg">
@@ -180,7 +255,7 @@ const handleThumbnailLoad = () => {
             tabIndex={0}
             aria-label={`Go to ${channelName} channel`}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 handleChannelClick(e as any);
               }
             }}
@@ -191,10 +266,13 @@ const handleThumbnailLoad = () => {
                 src={channelImageUrl}
                 alt={channelName}
                 onError={() => {
-                  console.error('❌ Channel avatar failed to load:', channelImageUrl);
+                  console.error(
+                    "❌ Channel avatar failed to load:",
+                    channelImageUrl
+                  );
                 }}
                 onLoad={() => {
-                  console.log('✅ Channel avatar loaded:', video?._id);
+                  console.log("✅ Channel avatar loaded:", video?._id);
                 }}
               />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-medium">
@@ -217,7 +295,7 @@ const handleThumbnailLoad = () => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   handleChannelClick(e as any);
                 }
               }}
@@ -243,3 +321,14 @@ const handleThumbnailLoad = () => {
     </Link>
   );
 }
+<style jsx>{`
+  video[poster] {
+    object-fit: cover;
+    background: #000;
+  }
+  
+  /* Show first frame for videos without poster */
+  video:not([poster]) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+`}</style>
