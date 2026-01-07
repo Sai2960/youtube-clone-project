@@ -116,8 +116,14 @@ const server = http.createServer(app);
 
 // ✅ CRITICAL FIX: Ultra-fast health check FIRST (before ANY middleware)
 // This MUST be the first route to respond instantly to Railway health checks
+// ✅ FIXED: Health check with CORS headers
 app.get("/health", (req, res) => {
-  // Bypass ALL middleware - respond immediately
+  // Set CORS headers FIRST
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Then respond immediately
   res.statusCode = 200;
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "no-cache");
