@@ -561,7 +561,9 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                   <span>Uploading...</span>
                   <span>{uploadProgress}%</span>
                 </div>
-                <Progress value={uploadProgress} className="h-2" />
+                <div className="h-2">
+                  <Progress value={uploadProgress} />
+                </div>
               </div>
             )}
 
