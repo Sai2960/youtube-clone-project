@@ -12,6 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
+    "@radix-ui/react-avatar": "^1.1.11",
     "axios": "^1.7.9",
     "date-fns": "^4.1.0",
     "firebase": "^11.2.0",
