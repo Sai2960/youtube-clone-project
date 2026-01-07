@@ -117,56 +117,89 @@ const getImageURL = (imagePath) => {
   return `${BASE_URL}/${cleanPath}`;
 };
 
-// ✅ CRITICAL FIX: Enhanced transformVideoURLs with better handling
-// ✅ CRITICAL FIX: Enhanced transformVideoURLs with better handling
 const transformVideoURLs = (video) => {
   if (!video) {
     console.log("⚠️ transformVideoURLs: video is null/undefined");
     return null;
   }
 
-  // Handle both Mongoose documents and plain objects
   const videoObj = video.toObject ? video.toObject() : { ...video };
 
   console.log("🔄 Transforming video URLs:", {
     id: videoObj._id,
     hasFilepath: !!videoObj.filepath,
-    hasVideofile: !!videoObj.videofile,
-    hasVideoLink: !!videoObj.videoLink,
-    hasThumbnail: !!videoObj.videothumbnail || !!videoObj.thumbnail,
   });
 
-  // ✅ Support multiple field name conventions
+  // ✅ Get video URL
   const videoPath =
     videoObj.filepath || videoObj.videofile || videoObj.videoLink;
-  const thumbnailPath =
+  const transformedVideoUrl = getVideoURL(videoPath);
+
+  // ✅ CRITICAL: Handle thumbnails for both Supabase and Cloudinary
+  let transformedThumbnailUrl = null;
+
+  // Check explicit thumbnails
+  const explicitThumbnail =
     videoObj.videothumbnail || videoObj.thumbnail || videoObj.videothumb;
 
-  // ✅ CRITICAL: Use the fixed getVideoURL function
-  const transformedVideoUrl = getVideoURL(videoPath);
-  const transformedThumbnailUrl = getImageURL(thumbnailPath);
+  if (explicitThumbnail?.startsWith("http")) {
+    transformedThumbnailUrl = explicitThumbnail;
+  }
+  // ✅ SUPABASE: Use video URL as thumbnail (no thumbnail generation)
+  else if (transformedVideoUrl?.includes("supabase.co")) {
+    transformedThumbnailUrl = transformedVideoUrl;
+    console.log("📦 Supabase video - using video URL as thumbnail");
+  }
+  // ✅ CLOUDINARY: Generate thumbnail (legacy videos)
+  else if (transformedVideoUrl?.includes("cloudinary.com")) {
+    try {
+      const match = transformedVideoUrl.match(
+        /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/
+      );
 
-  console.log("✅ Transformed URLs:", {
+      if (match) {
+        const cloudName = match[1];
+        let publicId = match[2];
+
+        publicId = publicId
+          .split("/")
+          .filter((seg) => !seg.match(/^(f_|vc_|ac_|af_|br_|q_)/))
+          .join("/");
+
+        publicId = publicId.replace(/\.(mp4|mov|avi|mkv|webm)$/i, "");
+
+        transformedThumbnailUrl = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+
+        console.log(
+          "🖼️ Generated Cloudinary thumbnail:",
+          transformedThumbnailUrl.substring(0, 80)
+        );
+      }
+    } catch (error) {
+      console.error("❌ Thumbnail generation error:", error);
+    }
+  }
+
+  console.log("✅ Final URLs:", {
     video: transformedVideoUrl?.substring(0, 60),
     thumbnail: transformedThumbnailUrl?.substring(0, 60),
-    isCloudinary: transformedVideoUrl?.includes("cloudinary.com"),
   });
 
   return {
     ...videoObj,
-    // Set ALL possible video field names with the SAME URL
+    // Video URLs
     filepath: transformedVideoUrl,
     videofile: transformedVideoUrl,
     videoLink: transformedVideoUrl,
-    videoUrl: transformedVideoUrl, // ✅ ADD THIS FIELD
+    videoUrl: transformedVideoUrl,
 
-    // Set ALL possible thumbnail field names
+    // Thumbnail URLs
     videothumbnail: transformedThumbnailUrl,
     thumbnail: transformedThumbnailUrl,
     videothumb: transformedThumbnailUrl,
-    thumbnailUrl: transformedThumbnailUrl, // ✅ ADD THIS FIELD
+    thumbnailUrl: transformedThumbnailUrl,
 
-    // Transform channel/user info
+    // Transform user info
     uploadedBy:
       videoObj.uploadedBy && typeof videoObj.uploadedBy === "object"
         ? {
