@@ -5,6 +5,7 @@ import VideoCall from "@/components/ui/VideoCall";
 import { useUser } from "@/lib/AuthContext";
 import Head from "next/head";
 import initializeSocket from "@/lib/socket";
+import { GetServerSideProps } from "next";
 
 const CallPage = () => {
   const router = useRouter();
@@ -160,6 +161,14 @@ const CallPage = () => {
       </div>
     </>
   );
+};
+
+// ✅ CRITICAL FIX: This disables static generation and forces server-side rendering
+// This prevents the "Cannot find module 'critters'" error during build
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    props: {}, // Empty props - we get everything from router query params
+  };
 };
 
 export default CallPage;
