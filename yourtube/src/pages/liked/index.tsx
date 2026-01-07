@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import LikedContent from "@/components/LikedContent";
 import React, { Suspense } from "react";
 
