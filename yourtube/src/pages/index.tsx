@@ -206,42 +206,6 @@ const Home: NextPage = () => {
   }, [backendReady]);
   // pages/index.tsx - After line 133
 
-  useEffect(() => {
-    fetchVideos();
-    fetchShorts();
-
-    // Mobile-specific: Log when component mounts
-    console.log("📱 Home page mounted, viewport:", {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      isMobile: window.innerWidth < 1024,
-    });
-
-    // ✅ CRITICAL FIX: Refresh on window focus
-    const handleFocus = () => {
-      console.log("🔄 Window focused - refreshing data");
-      fetchVideos();
-    };
-
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-
-    // Listen for avatar updates
-    const handleAvatarUpdate = () => {
-      const newKeys: Record<string, number> = {};
-      videos.forEach((video) => {
-        if (video.uploadedBy?._id) {
-          newKeys[video.uploadedBy._id] = Date.now();
-        }
-      });
-      setImageKeys(newKeys);
-    };
-
-    window.addEventListener("avatarUpdated", handleAvatarUpdate);
-    return () =>
-      window.removeEventListener("avatarUpdated", handleAvatarUpdate);
-  }, []);
-
   const fetchVideos = async () => {
     try {
       setLoadingVideos(true);
@@ -327,27 +291,6 @@ const Home: NextPage = () => {
     }
     startY.current = 0;
   };
-
-  useEffect(() => {
-    const loadVideos = async () => {
-      try {
-        const response = await axiosInstance.get("/video/getall");
-        console.log("📊 Videos loaded:", {
-          total: response.data.videos?.length,
-          success: response.data.success,
-          firstVideo: response.data.videos?.[0],
-        });
-
-        if (response.data.success && response.data.videos) {
-          setVideos(response.data.videos);
-        }
-      } catch (error) {
-        console.error("❌ Load videos error:", error);
-      }
-    };
-
-    loadVideos();
-  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
