@@ -7,6 +7,7 @@ import { useSubscription } from '../../lib/SubscriptionContext';
 import { useState, useEffect } from 'react';
 import { Download, Crown, Calendar, FileVideo, Trash2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { GetServerSideProps } from 'next';
 
 interface DownloadItem {
   _id: string;
@@ -219,3 +220,10 @@ export default function DownloadsPage() {
     </div>
   );
 }
+// ✅ CRITICAL FIX: Disable static generation for downloads page
+// This prevents the "Cannot find module 'critters'" error during build
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user downloads data
+  };
+};
