@@ -2435,7 +2435,7 @@ router.get("/refresh/:id", async (req, res) => {
     });
   }
 });
-// ✅ FIX ALL SUPABASE THUMBNAILS - ADD THIS ROUTE
+// ✅ FIX: Add this route RIGHT BEFORE export default router;
 router.post('/admin/fix-supabase-thumbnails', async (req, res) => {
   try {
     console.log('\n🖼️ ===== FIXING SUPABASE THUMBNAILS =====');
@@ -2448,6 +2448,8 @@ router.post('/admin/fix-supabase-thumbnails', async (req, res) => {
       ]
     });
 
+    console.log(`Found ${videos.length} Supabase videos`);
+
     let fixed = 0;
     const results = [];
 
@@ -2455,7 +2457,7 @@ router.post('/admin/fix-supabase-thumbnails', async (req, res) => {
       const videoUrl = video.filepath || video.videofile || video.videoLink;
       
       if (videoUrl && videoUrl.includes('supabase.co')) {
-        // ✅ For Supabase, use video URL as thumbnail
+        // ✅ Use video URL as thumbnail for Supabase
         video.thumbnail = videoUrl;
         video.thumbnailUrl = videoUrl;
         video.videothumbnail = videoUrl;
@@ -2467,21 +2469,22 @@ router.post('/admin/fix-supabase-thumbnails', async (req, res) => {
         results.push({
           id: video._id,
           title: video.videotitle,
-          url: videoUrl
+          videoUrl: videoUrl.substring(0, 80),
+          thumbnailUrl: videoUrl.substring(0, 80)
         });
         
         console.log(`✅ Fixed: ${video.videotitle}`);
       }
     }
 
-    console.log(`\n✅ Fixed ${fixed} videos`);
+    console.log(`\n✅ Total fixed: ${fixed}/${videos.length}`);
 
     res.json({
       success: true,
       message: `Fixed ${fixed} Supabase video thumbnails`,
       fixed,
       total: videos.length,
-      results: results.slice(0, 10)
+      results: results
     });
   } catch (error) {
     console.error('❌ Fix error:', error);
