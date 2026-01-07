@@ -128,67 +128,7 @@ const Home: NextPage = () => {
   const [backendReady, setBackendReady] = useState(false);
   const [backendCheckAttempts, setBackendCheckAttempts] = useState(0);
 
-  useEffect(() => {
-    let isMounted = true;
 
-    const pingBackend = async (attempt = 1): Promise<void> => {
-      if (!isMounted) return;
-
-      console.log(`🔍 Checking backend availability (attempt ${attempt})...`);
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-        const response = await fetch(
-          `${
-            process.env.NEXT_PUBLIC_API_URL ||
-            "https://youtube-clone-project-production.up.railway.app"
-          }/api/health`,
-          {
-            signal: controller.signal,
-            method: "GET",
-            cache: "no-cache",
-          }
-        );
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          console.log("✅ Backend is ready!");
-          if (isMounted) {
-            setBackendReady(true);
-            setConnectionError(null);
-            fetchVideos();
-            fetchShorts();
-          }
-          return;
-        }
-      } catch (error) {
-        console.warn(`⚠️ Backend check ${attempt} failed:`, error);
-      }
-
-      // Retry with exponential backoff (max 5 attempts)
-      if (attempt < 5 && isMounted) {
-        setBackendCheckAttempts(attempt);
-    // REPLACE lines 186-188 with:
-setConnectionError(
-  `Server is warming up... (attempt ${attempt}/5)`
-);
-
-        const delay = Math.min(5000 * Math.pow(1.5, attempt - 1), 15000);
-        setTimeout(() => pingBackend(attempt + 1), delay);
-      } else if (isMounted) {
-        setConnectionError("Server is not responding. Please try again later.");
-      }
-    };
-
-    pingBackend();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Only fetch data after backend is ready
   useEffect(() => {
