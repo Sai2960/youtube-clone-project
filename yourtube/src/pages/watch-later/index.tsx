@@ -1,6 +1,8 @@
 // pages/watchlater/index.tsx - FIXED FOR MOBILE
 import WatchLaterContent from "@/components/WatchLaterContent";
 import { Suspense } from "react";
+import { GetServerSideProps } from "next";
+
 
 export default function WatchLaterPage() {
   return (
@@ -20,3 +22,8 @@ export default function WatchLaterPage() {
     </div>
   );
 }
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
+};
