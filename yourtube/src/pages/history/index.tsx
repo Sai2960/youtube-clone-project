@@ -1,6 +1,7 @@
 // pages/history/index.tsx - FIXED WITH OVERFLOW CONTROL
 import HistoryContent from "@/components/HistoryContent";
 import React, { Suspense } from "react";
+import { GetServerSideProps } from "next";
 
 const HistoryPage = () => {
   return (
@@ -19,6 +20,14 @@ const HistoryPage = () => {
       </main>
     </div>
   );
+};
+
+// ✅ CRITICAL FIX: Disable static generation for history page
+// This prevents the "Cannot find module 'critters'" error during build
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {}, // Client-side handles user history data
+  };
 };
 
 export default HistoryPage;
