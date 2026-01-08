@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/pages/index.tsx - COMPLETE FIXED VERSION (NO NESTED LINKS)
+// src/pages/index.tsx - ENHANCED VERSION WITH IMPROVED TEXT VISIBILITY
 
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
@@ -16,12 +16,38 @@ import {
   getShortChannelName,
 } from "@/lib/imageUtils";
 import { VideoGridSkeleton } from "@/components/VideoSkeleton";
-// Line ~10 - ADD this import
 import { getThumbnailUrl as getThumbnailUrlHelper } from "@/lib/urlHelper";
-import ProtectedRoute from "@/components/ProtectedRoute"; // ✅ NEW IMPORT
-import { useUser } from "@/lib/AuthContext"; // ✅ NEW IMPORT
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { useUser } from "@/lib/AuthContext";
 import { GetServerSideProps } from "next";
 import { BACKEND_URL } from "@/lib/axiosinstance";
+
+// ✅ TYPOGRAPHY CONSTANTS - YouTube-aligned
+const TYPOGRAPHY = {
+  // Video Cards
+  videoTitle: {
+    mobile: "text-sm leading-5", // 14px, line-height: 20px
+    desktop: "text-base leading-6 lg:text-[15px] lg:leading-[21px]", // 16px -> 15px on desktop for better fit
+  },
+  channelName: {
+    mobile: "text-xs leading-4", // 12px
+    desktop: "text-sm leading-5", // 14px
+  },
+  videoMeta: {
+    mobile: "text-[11px] leading-4", // 11px for views/date
+    desktop: "text-xs leading-5", // 12px
+  },
+
+  // Shorts
+  shortTitle: {
+    mobile: "text-sm leading-5", // 14px
+    desktop: "text-base leading-6", // 16px
+  },
+  shortMeta: {
+    mobile: "text-[12px] leading-4",
+    desktop: "text-sm leading-5",
+  },
+};
 
 interface Video {
   videoLink: string;
@@ -65,7 +91,6 @@ interface Short {
   };
 }
 
-// Dynamic API URL based on hostname
 const getApiUrl = () => {
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
@@ -76,7 +101,6 @@ const getApiUrl = () => {
   return process.env.NEXT_PUBLIC_API_URL || "http://192.168.0.181:5000";
 };
 
-// Dynamic backend URL based on hostname
 const getBackendUrl = () => {
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
@@ -87,7 +111,6 @@ const getBackendUrl = () => {
   return process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.0.181:5000";
 };
 
-// Haptic Feedback Utility
 const hapticFeedback = {
   light: () => {
     if ("vibrate" in navigator) {
@@ -119,17 +142,14 @@ const Home: NextPage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const shortsScrollRef = useRef<HTMLDivElement>(null);
 
-  // Touch scroll states
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const isDragging = useRef(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
-  // pages/index.tsx - Lines 133-155
   const [backendReady, setBackendReady] = useState(false);
   const [backendCheckAttempts, setBackendCheckAttempts] = useState(0);
 
-  // ADD THIS ENTIRE BLOCK after line 133
   useEffect(() => {
     let isMounted = true;
 
@@ -142,7 +162,6 @@ const Home: NextPage = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-        // REPLACE lines 155-162 with this:
         const response = await fetch(`${BACKEND_URL}/health`, {
           signal: controller.signal,
           method: "GET",
@@ -163,7 +182,6 @@ const Home: NextPage = () => {
         console.warn(`⚠️ Backend check ${attempt} failed:`, error);
       }
 
-      // Retry with exponential backoff (max 5 attempts)
       if (attempt < 5 && isMounted) {
         setBackendCheckAttempts(attempt);
         setConnectionError(`Server is warming up... (attempt ${attempt}/5)`);
@@ -182,7 +200,6 @@ const Home: NextPage = () => {
     };
   }, []);
 
-  // Only fetch data after backend is ready
   useEffect(() => {
     if (backendReady) {
       fetchVideos();
@@ -203,7 +220,6 @@ const Home: NextPage = () => {
       setLoadingVideos(true);
       console.log("📹 Fetching videos...");
 
-      // ✅ CRITICAL FIX: Add timestamp to prevent caching
       const res = await axiosInstance.get("/video/getall", {
         params: { _t: Date.now() },
       });
@@ -211,7 +227,6 @@ const Home: NextPage = () => {
         setVideos(res.data.videos);
         console.log("✅ Loaded", res.data.videos.length, "videos");
 
-        // Initialize image keys
         const newKeys: Record<string, number> = {};
         res.data.videos.forEach((video: Video) => {
           if (video.uploadedBy?._id) {
@@ -241,7 +256,6 @@ const Home: NextPage = () => {
       if (response.data.success && Array.isArray(response.data.data)) {
         setShorts(response.data.data);
         console.log("✅ Loaded", response.data.data.length, "shorts");
-        console.log("📱 First short:", response.data.data[0]);
       } else {
         setShorts([]);
         console.warn("⚠️ No shorts data");
@@ -251,7 +265,6 @@ const Home: NextPage = () => {
       setShorts([]);
     } finally {
       setLoadingShorts(false);
-      console.log("🏁 Shorts loading finished");
     }
   };
 
@@ -283,27 +296,6 @@ const Home: NextPage = () => {
     }
     startY.current = 0;
   };
-
-  useEffect(() => {
-    const loadVideos = async () => {
-      try {
-        const response = await axiosInstance.get("/video/getall");
-        console.log("📊 Videos loaded:", {
-          total: response.data.videos?.length,
-          success: response.data.success,
-          firstVideo: response.data.videos?.[0],
-        });
-
-        if (response.data.success && response.data.videos) {
-          setVideos(response.data.videos);
-        }
-      } catch (error) {
-        console.error("❌ Load videos error:", error);
-      }
-    };
-
-    loadVideos();
-  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -358,20 +350,16 @@ const Home: NextPage = () => {
     return "Just now";
   };
 
-  // REPLACE lines 54-68 (the getVideoUrl function) with:
   const getVideoUrl = (video: Video) => {
     const backend = "https://youtube-clone-project-production.up.railway.app";
 
-    // Priority order for video URL
     if (video?.videofilename) {
       return `${backend}/uploads/videos/${video.videofilename}`;
     }
     if (video?.filepath) {
-      // If filepath is already a full URL, return it
       if (video.filepath.startsWith("http")) {
         return video.filepath;
       }
-      // Otherwise, construct the URL
       const filename = video.filepath.split(/[\\/]/).pop();
       return `${backend}/uploads/videos/${filename}`;
     }
@@ -383,8 +371,8 @@ const Home: NextPage = () => {
 
     return "/video/vdo.mp4";
   };
+
   const getThumbnailUrl = (video: Video) => {
-    // ✅ Priority 1: Explicit thumbnails
     const explicitThumbnail =
       video?.thumbnailUrl ||
       video?.thumbnail ||
@@ -392,19 +380,15 @@ const Home: NextPage = () => {
       video?.videothumb;
 
     if (explicitThumbnail?.startsWith("http")) {
-      console.log("✅ Using explicit thumbnail:", explicitThumbnail); // ✅ REMOVED .substring()
       return explicitThumbnail;
     }
 
-    // ✅ Priority 2: Check if it's a Supabase video
     const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
 
     if (videoUrl?.includes("supabase.co")) {
-      console.log("📦 Supabase video - using video URL as thumbnail");
       return videoUrl;
     }
 
-    // ✅ Priority 3: Cloudinary videos (legacy)
     if (
       videoUrl?.includes("cloudinary.com") &&
       videoUrl.includes("/video/upload/")
@@ -429,7 +413,6 @@ const Home: NextPage = () => {
           publicId = publicId.replace(/\.(mp4|mov|avi|mkv|webm)$/i, "");
 
           const thumbnail = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-          console.log("🖼️ Generated Cloudinary thumbnail:", thumbnail); // ✅ Full URL
           return thumbnail;
         }
       } catch (error) {
@@ -437,8 +420,6 @@ const Home: NextPage = () => {
       }
     }
 
-    // ✅ Fallback
-    console.warn("⚠️ No thumbnail for video:", video?._id);
     return "/placeholder-thumbnail.jpg";
   };
 
@@ -451,7 +432,6 @@ const Home: NextPage = () => {
     setThumbnailErrors((prev) => new Set(prev).add(videoId));
   };
 
-  const isThumbnailError = (videoId: string) => thumbnailErrors.has(videoId);
   const scrollShorts = (direction: "left" | "right") => {
     if (shortsScrollRef.current) {
       const scrollAmount = 300;
@@ -507,7 +487,7 @@ const Home: NextPage = () => {
     hapticFeedback.light();
     router.push({
       pathname: "/shorts",
-      query: { id: shortId }, // Use ID instead of index
+      query: { id: shortId },
     });
   };
 
@@ -517,7 +497,7 @@ const Home: NextPage = () => {
         <Head>
           <title>YourTube - Home</title>
         </Head>
-        {/* Connection Error Banner */}
+
         {connectionError && (
           <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white px-4 py-3 text-center text-sm lg:text-base">
             <div className="flex items-center justify-center gap-2">
@@ -548,7 +528,6 @@ const Home: NextPage = () => {
           </div>
         )}
 
-        {/* Backend Loading Screen */}
         {!backendReady && !connectionError && (
           <div className="fixed inset-0 z-40 bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
             <div className="text-center px-4">
@@ -577,14 +556,12 @@ const Home: NextPage = () => {
             overflow: "visible",
           }}
         >
-          {/* Debug Info - Remove after testing */}
           {process.env.NODE_ENV === "development" && (
             <div className="lg:hidden fixed top-2 right-2 z-50 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg">
               Shorts: {shorts.length} | Loading: {loadingShorts ? "Y" : "N"}
             </div>
           )}
 
-          {/* Pull to Refresh Indicator */}
           {pullDistance > 0 && (
             <div
               className="fixed top-0 left-0 right-0 flex justify-center items-center z-50 transition-all"
@@ -613,9 +590,7 @@ const Home: NextPage = () => {
             </div>
           )}
 
-          {/* Shorts Section - YouTube Style */}
-          {/* Shorts Section - YouTube Style */}
-          {/* Shorts Section - YouTube Style */}
+          {/* ✅ IMPROVED SHORTS SECTION */}
           {shorts.length > 0 && (
             <section
               className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
@@ -664,7 +639,6 @@ const Home: NextPage = () => {
                 </div>
               ) : (
                 <div className="relative group/container">
-                  {/* Desktop Navigation Buttons */}
                   <button
                     onClick={() => scrollShorts("left")}
                     className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
@@ -687,7 +661,7 @@ const Home: NextPage = () => {
                     />
                   </button>
 
-                  {/* Shorts Container */}
+                  {/* ✅ IMPROVED SHORTS CONTAINER WITH BETTER TEXT LAYOUT */}
                   <div
                     ref={shortsScrollRef}
                     className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
@@ -717,7 +691,7 @@ const Home: NextPage = () => {
                               handleShortClick(e, short._id, index);
                             }
                           }}
-                          className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
+                          className="cursor-pointer group/short flex-shrink-0 transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
                           style={{
                             minWidth: "160px",
                             userSelect: "none",
@@ -744,7 +718,6 @@ const Home: NextPage = () => {
                                   short.thumbnailUrl
                                 );
 
-                                // For Supabase videos, create a video element as fallback
                                 if (
                                   short.thumbnailUrl.includes("supabase.co")
                                 ) {
@@ -765,7 +738,6 @@ const Home: NextPage = () => {
                                     parent.appendChild(video);
                                   }
                                 } else {
-                                  // Fallback to placeholder for non-Supabase URLs
                                   target.src = "/placeholder-thumbnail.jpg";
                                 }
                               }}
@@ -805,27 +777,28 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                        <h3
-  className="text-sm font-semibold text-gray-900 dark:text-white leading-snug mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
-  style={{
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    wordBreak: "break-word",
-    overflowWrap: "break-word",
-    minHeight: "2.8rem", // ✅ INCREASED from 2.5rem
-    maxWidth: "100%",
-    lineHeight: "1.4", // ✅ ADDED explicit line height
-  }}
-  title={short.title}
->
-  {short.title}
-</h3>
+                          {/* ✅ IMPROVED SHORT TITLE - PROPER TEXT VISIBILITY */}
+                          <h3
+                            className={`${TYPOGRAPHY.shortTitle.mobile} lg:${TYPOGRAPHY.shortTitle.desktop} font-semibold text-gray-900 dark:text-white mb-2 w-full px-0.5 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150`}
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              wordBreak: "break-word",
+                              overflowWrap: "break-word",
+                              minHeight: "2.5rem",
+                              maxWidth: "100%",
+                              lineHeight: "1.25",
+                            }}
+                            title={short.title}
+                          >
+                            {short.title}
+                          </h3>
 
-                          {/* Channel Info */}
-                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
+                          {/* ✅ IMPROVED CHANNEL INFO - BETTER SPACING */}
+                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5 px-0.5">
                             {/* Avatar */}
                             <div
                               className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
@@ -849,15 +822,15 @@ const Home: NextPage = () => {
                               />
                             </div>
 
-                            {/* Channel Name */}
+                            {/* ✅ IMPROVED CHANNEL NAME - PROPER TRUNCATION */}
                             <span
-  className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0 lg:text-sm lg:font-bold"
-  style={{
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    maxWidth: "calc(160px - 48px)", // ✅ FIXED: Account for avatar + padding
-  }}
+                              className={`${TYPOGRAPHY.shortMeta.mobile} lg:${TYPOGRAPHY.shortMeta.desktop} text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0`}
+                              style={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: "100%",
+                              }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 hapticFeedback.selection();
@@ -876,7 +849,8 @@ const Home: NextPage = () => {
               )}
             </section>
           )}
-          {/* Videos Section - FIXED MOBILE LAYOUT */}
+
+          {/* ✅ IMPROVED VIDEOS SECTION */}
           <section className="px-3 py-4 pb-20 lg:px-6 lg:pb-8">
             {loadingVideos ? (
               <div className="space-y-3 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
@@ -908,7 +882,6 @@ const Home: NextPage = () => {
                       {/* Video Thumbnail */}
                       <Link href={`/watch/${video._id}`} className="block mb-3">
                         <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
-                          {/* Use img for Supabase, video for others */}
                           {getThumbnailUrl(video).includes("supabase.co") ? (
                             <img
                               src={getThumbnailUrl(video)}
@@ -918,7 +891,7 @@ const Home: NextPage = () => {
                               onError={(e) => {
                                 const target =
                                   e.currentTarget as HTMLImageElement;
-                                const currentVideo = video; // ✅ FIXED: Store video reference
+                                const currentVideo = video;
                                 console.error(
                                   "❌ Thumbnail failed, trying video element"
                                 );
@@ -928,7 +901,7 @@ const Home: NextPage = () => {
                                   const videoElement =
                                     document.createElement("video");
                                   videoElement.src =
-                                    getThumbnailUrl(currentVideo); // ✅ FIXED: Use currentVideo
+                                    getThumbnailUrl(currentVideo);
                                   videoElement.className =
                                     "w-full h-full object-cover";
                                   videoElement.preload = "metadata";
@@ -955,7 +928,8 @@ const Home: NextPage = () => {
                           )}
                         </div>
                       </Link>
-                      {/* Video Info - FIXED for mobile */}
+
+                      {/* ✅ IMPROVED VIDEO INFO - PROPER TEXT LAYOUT */}
                       <div className="flex gap-2.5 w-full overflow-hidden">
                         {/* Avatar */}
                         <div
@@ -998,29 +972,30 @@ const Home: NextPage = () => {
                           </div>
                         </div>
 
-                        {/* Text Info - FIXED overflow */}
-                        <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+                        {/* ✅ IMPROVED TEXT INFO - BETTER OVERFLOW HANDLING */}
+                        <div className="flex-1 min-w-0">
                           <Link href={`/watch/${video._id}`}>
                             <h3
-  className="font-semibold text-sm text-gray-900 dark:text-white mb-1 lg:text-[15px] lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
-  style={{
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    wordBreak: "break-word",
-    overflowWrap: "break-word",
-    maxWidth: "100%",
-    lineHeight: "1.4", // ✅ ADDED explicit line height
-    minHeight: "2.8rem", // ✅ ADDED minimum height for 2 lines
-  }}
-  title={video?.videotitle || "Untitled Video"}
->
-  {video?.videotitle || "Untitled Video"}
-</h3>
+                              className={`${TYPOGRAPHY.videoTitle.mobile} lg:${TYPOGRAPHY.videoTitle.desktop} font-semibold text-gray-900 dark:text-white mb-1 lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors`}
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                wordBreak: "break-word",
+                                overflowWrap: "break-word",
+                                maxWidth: "100%",
+                                lineHeight: "1.375",
+                                minHeight: "2.75rem",
+                              }}
+                              title={video?.videotitle || "Untitled Video"}
+                            >
+                              {video?.videotitle || "Untitled Video"}
+                            </h3>
                           </Link>
 
+                          {/* ✅ IMPROVED CHANNEL NAME */}
                           <p
                             onClick={(e) => {
                               e.preventDefault();
@@ -1028,7 +1003,7 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className="text-xs text-gray-600 dark:text-gray-400 mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                            className={`${TYPOGRAPHY.channelName.mobile} lg:${TYPOGRAPHY.channelName.desktop} text-gray-600 dark:text-gray-400 mb-1 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer`}
                             style={{
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -1040,7 +1015,10 @@ const Home: NextPage = () => {
                             {channelName}
                           </p>
 
-                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium flex-wrap">
+                          {/* ✅ IMPROVED VIDEO METADATA */}
+                          <div
+                            className={`${TYPOGRAPHY.videoMeta.mobile} lg:${TYPOGRAPHY.videoMeta.desktop} text-gray-500 dark:text-gray-500 font-medium flex-wrap flex items-center gap-1.5`}
+                          >
                             <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
@@ -1065,7 +1043,7 @@ const Home: NextPage = () => {
           </section>
         </div>
 
-        {/* 🔥 COMBINED STYLES - SINGLE BLOCK AT THE END */}
+        {/* ✅ CONSOLIDATED TYPOGRAPHY STYLES */}
         <style jsx>{`
           .scrollbar-hide::-webkit-scrollbar {
             display: none;
@@ -1086,70 +1064,117 @@ const Home: NextPage = () => {
               opacity: 0.5;
             }
           }
+
+          /* ✅ TYPOGRAPHY SYSTEM - YOUTUBE-ALIGNED */
+          h3 {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+              "Helvetica Neue", Arial, sans-serif;
+          }
+
+          /* Video Title: 2 lines max */
+          .video-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.375;
+            min-height: 2.75rem;
+          }
+
+          /* Short Title: 2 lines max */
+          .short-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.25;
+            min-height: 2.5rem;
+          }
+
+          /* Channel Name: 1 line max */
+          .channel-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+          }
+
+          /* Metadata: Single line with ellipsis */
+          .video-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            flex-wrap: wrap;
+            overflow: hidden;
+          }
+
+          .video-meta span:last-child {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+          }
+
+          /* Proper text truncation in flex containers */
+          .min-w-0 {
+            min-width: 0;
+          }
+
+          /* Ensure consistent text rendering */
+          * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+          }
+
+          /* Responsive text sizing helpers */
+          @media (max-width: 640px) {
+            h3 {
+              font-size: 0.875rem;
+              line-height: 1.25rem;
+            }
+            p {
+              font-size: 0.75rem;
+              line-height: 1rem;
+            }
+          }
+
+          @media (min-width: 1024px) {
+            h3 {
+              font-size: 0.9375rem;
+              line-height: 1.3125rem;
+            }
+          }
+
+          /* Video card proper spacing */
+          .video-card-content {
+            display: flex;
+            gap: 0.625rem;
+            width: 100%;
+            overflow: hidden;
+          }
+
+          .video-card-text {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+          }
         `}</style>
       </>
     </ProtectedRoute>
   );
 };
 
-// ✅ CRITICAL FIX: Disable static generation for home page
-// This prevents the "Cannot find module 'critters'" error during build
-// Home page requires user authentication and dynamic content
 export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
-    props: {}, // Client-side handles all user-specific data and content
+    props: {},
   };
 };
-<style jsx>{`
-  video[poster] {
-    object-fit: cover;
-    background: #000;
-  }
 
-  /* Show first frame for videos without poster */
-  video:not([poster]) {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
-`}</style>;
-<style jsx>{`
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .skeleton {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-  
-  /* Text truncation helpers */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  /* Prevent text overflow in flex containers */
-  .min-w-0 {
-    min-width: 0;
-  }
-  
-  /* Ensure proper word breaking */
-  h3, p, span {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-`}</style>
 export default Home;
