@@ -930,7 +930,6 @@ const Home: NextPage = () => {
                         {/* ✅ FIXED: Text container with min-w-0 for flex overflow */}
                         <div className="flex-1 min-w-0">
                           <Link href={`/watch/${video._id}`}>
-                            {/* ✅ FIXED: Video title with proper line clamping */}
                             <h3
                               className="video-title font-semibold text-gray-900 dark:text-white mb-1 lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
                               title={video?.videotitle || "Untitled Video"}
@@ -939,7 +938,6 @@ const Home: NextPage = () => {
                             </h3>
                           </Link>
 
-                          {/* ✅ FIXED: Channel name with proper truncation */}
                           <p
                             onClick={(e) => {
                               e.preventDefault();
@@ -953,7 +951,6 @@ const Home: NextPage = () => {
                             {channelName}
                           </p>
 
-                          {/* Video metadata */}
                           <div className="video-metadata text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
                             <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
@@ -981,127 +978,205 @@ const Home: NextPage = () => {
 
         {/* ✅ FIXED: Combined styles with all text display fixes */}
         <style jsx>{`
-          /* Scrollbar hiding */
-          .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-          }
-          .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
+      /* Scrollbar hiding */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-          /* Skeleton loading animation */
-          .skeleton {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-          }
-          @keyframes pulse {
-            0%,
-            100% {
-              opacity: 1;
-            }
-            50% {
-              opacity: 0.5;
-            }
-          }
+/* Skeleton loading animation */
+.skeleton {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
 
-          /* ===== TEXT DISPLAY FIXES ===== */
+/* ===== COMPREHENSIVE TEXT DISPLAY FIXES ===== */
 
-          /* Shorts title - 2 lines with ellipsis */
-          .shorts-title {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            line-height: 1.3;
-            min-height: 2.6em;
-            font-size: 14px;
-          }
+/* ===== SHORTS TITLE STYLING ===== */
+.shorts-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  font-size: 13px;
+  min-height: 2.8em;
+  max-height: 2.8em;
+  margin-bottom: 8px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  word-spacing: -0.05em;
+}
 
-          /* Shorts channel name - single line truncate */
-          .shorts-channel-name {
-            display: block;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 100%;
-            font-size: 12px;
-          }
+/* ===== SHORTS CHANNEL NAME STYLING ===== */
+.shorts-channel-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  height: 1.4em;
+}
 
-          /* Video title - 2 lines with ellipsis */
-          .video-title {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            line-height: 1.35;
-            max-height: 2.7em;
-            font-size: 14px;
-          }
+/* ===== VIDEO TITLE STYLING ===== */
+.video-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  font-size: 13px;
+  max-height: 2.8em;
+  min-height: 2.8em;
+  margin-bottom: 4px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
 
-          /* Video channel name - single line truncate */
-          .video-channel-name {
-            display: block;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 100%;
-            font-size: 12px;
-          }
+/* ===== VIDEO CHANNEL NAME STYLING ===== */
+.video-channel-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  height: 1.4em;
+}
 
-          /* Video metadata row */
-          .video-metadata {
-            display: flex;
-            flex-wrap: nowrap;
-            align-items: center;
-          }
+/* ===== VIDEO METADATA STYLING ===== */
+.video-metadata {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+  overflow: hidden;
+}
 
-          /* Mobile adjustments (< 1024px) */
-          @media (max-width: 1023px) {
-            .shorts-title {
-              font-size: 13px;
-              min-height: 2.4em;
-            }
+.video-metadata span {
+  flex-shrink: 0;
+}
 
-            .shorts-channel-name {
-              font-size: 11px;
-            }
+.video-metadata span:first-child {
+  font-weight: 600;
+}
 
-            .video-title {
-              font-size: 13px;
-              max-height: 2.5em;
-            }
+.video-metadata span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-w-0;
+}
 
-            .video-channel-name {
-              font-size: 11px;
-            }
-          }
+/* ===== TEXT CONTAINER FIX (Critical for Flex Overflow) ===== */
+.flex-1 {
+  min-w-0;
+}
 
-          /* Desktop adjustments (>= 1024px) */
-          @media (min-width: 1024px) {
-            .shorts-title {
-              font-size: 15px;
-              min-height: 2.6em;
-            }
+/* ===== MOBILE OPTIMIZATIONS (< 1024px) ===== */
+@media (max-width: 1023px) {
+  .shorts-title {
+    font-size: 13px;
+    line-height: 1.35;
+    min-height: 2.7em;
+    max-height: 2.7em;
+    margin-bottom: 8px;
+  }
 
-            .shorts-channel-name {
-              font-size: 13px;
-            }
+  .shorts-channel-name {
+    font-size: 11px;
+    height: 1.35em;
+  }
 
-            .video-title {
-              font-size: 15px;
-              max-height: 2.7em;
-            }
+  .video-title {
+    font-size: 13px;
+    line-height: 1.35;
+    min-height: 2.7em;
+    max-height: 2.7em;
+    margin-bottom: 4px;
+  }
 
-            .video-channel-name {
-              font-size: 12px;
-            }
-          }
+  .video-channel-name {
+    font-size: 11px;
+    height: 1.35em;
+  }
+
+  .video-metadata {
+    font-size: 11px;
+    gap: 3px;
+  }
+}
+
+/* ===== DESKTOP OPTIMIZATIONS (>= 1024px) ===== */
+@media (min-width: 1024px) {
+  .shorts-title {
+    font-size: 14px;
+    line-height: 1.4;
+    min-height: 2.8em;
+    max-height: 2.8em;
+    margin-bottom: 12px;
+  }
+
+  .shorts-channel-name {
+    font-size: 12px;
+    height: 1.4em;
+  }
+
+  .video-title {
+    font-size: 14px;
+    line-height: 1.4;
+    min-height: 2.8em;
+    max-height: 2.8em;
+    margin-bottom: 6px;
+  }
+
+  .video-channel-name {
+    font-size: 12px;
+    height: 1.4em;
+  }
+
+  .video-metadata {
+    font-size: 12px;
+    gap: 4px;
+  }
+}
+
+/* ===== DARK MODE CONSISTENCY ===== */
+.dark .shorts-title,
+.dark .video-title {
+  color: inherit;
+}
+
+.dark .shorts-channel-name,
+.dark .video-channel-name {
+  color: inherit;
+}
+
         `}</style>
       </>
     </ProtectedRoute>
