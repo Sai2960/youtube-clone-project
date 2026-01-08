@@ -25,7 +25,7 @@ const getShortThumbnail = (short: any): string => {
     videoUrl: short.videoUrl?.substring(0, 100),
   });
 
-  // ✅ Check for Supabase thumbnail URLs ONLY
+  // ✅ PRIORITY 1: Check explicit thumbnail fields
   const thumbnailCandidates = [
     short.thumbnailUrl,
     short.thumbnail,
@@ -33,60 +33,28 @@ const getShortThumbnail = (short: any): string => {
     short.videothumb,
   ];
 
-  // ✅ PRIORITY: Look for Supabase URLs first
   for (const thumb of thumbnailCandidates) {
-    if (thumb && typeof thumb === "string") {
-      // Only accept Supabase URLs
-      if (thumb.includes("supabase.co") || thumb.includes("supabase.in")) {
-        console.log("✅ Using Supabase thumbnail:", thumb.substring(0, 80));
-        return thumb;
-      }
+    if (thumb && typeof thumb === "string" && thumb.startsWith("http")) {
+      console.log("✅ Using explicit thumbnail:", thumb.substring(0, 80));
+      return thumb;
     }
   }
 
-  // ✅ IGNORE legacy Cloudinary URLs - they're expired
-  console.warn(
-    "⚠️ No Supabase thumbnail found, trying to generate from video URL"
-  );
-
-  // ✅ Try to construct thumbnail from Supabase video URL
+  // ✅ PRIORITY 2: For Supabase videos, use video URL directly
   if (short.videoUrl && typeof short.videoUrl === "string") {
     if (
       short.videoUrl.includes("supabase.co") ||
       short.videoUrl.includes("supabase.in")
     ) {
-      try {
-        // Extract the storage path and try common thumbnail patterns
-        const url = new URL(short.videoUrl);
-        const pathParts = url.pathname.split("/");
-
-        // Try multiple possible thumbnail constructions
-        const possibleThumbnails = [
-          // Pattern 1: Replace /videos/ with /thumbnails/
-          short.videoUrl
-            .replace(/\/videos\//, "/thumbnails/")
-            .replace(/\.[^.]+$/, ".jpg"),
-          // Pattern 2: Replace /videos/ with /thumbnails/ and keep original extension
-          short.videoUrl.replace(/\/videos\//, "/thumbnails/"),
-          // Pattern 3: Same directory, add _thumbnail suffix
-          short.videoUrl.replace(/\.[^.]+$/, "_thumbnail.jpg"),
-        ];
-
-        console.log(
-          "🔄 Trying thumbnail URLs:",
-          possibleThumbnails[0].substring(0, 80)
-        );
-        return possibleThumbnails[0]; // Return first option, error handler will try others
-      } catch (error) {
-        console.error("❌ Error generating Supabase thumbnail:", error);
-      }
+      console.log("📦 Using Supabase video URL as thumbnail");
+      return short.videoUrl;
     }
   }
 
+  // ✅ Fallback placeholder
   console.warn("⚠️ No thumbnail available for short:", short._id);
   return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
 };
-
 // ============================================================================
 // MAIN COMPONENT - STATE & REFS
 // ============================================================================
@@ -962,79 +930,65 @@ const ChannelPage = () => {
                                       onError={(e) => {
                                         const target =
                                           e.currentTarget as HTMLImageElement;
+                                        const currentShort = short; // ✅ FIXED: Capture short reference
+
+                                        // Don't retry if already showing placeholder
                                         if (
                                           target.src.includes("data:image/svg")
                                         )
                                           return;
 
-                                        console.log(
-                                          "❌ Thumbnail load failed:",
+                                        console.error(
+                                          "❌ Thumbnail failed:",
                                           target.src.substring(0, 100)
                                         );
 
-                                        // ✅ Try alternative Supabase thumbnail constructions
+                                        // ✅ For Supabase videos, try creating a video element
                                         if (
-                                          short.videoUrl &&
-                                          (short.videoUrl.includes(
+                                          currentShort.videoUrl &&
+                                          (currentShort.videoUrl.includes(
                                             "supabase.co"
                                           ) ||
-                                            short.videoUrl.includes(
+                                            currentShort.videoUrl.includes(
                                               "supabase.in"
                                             ))
                                         ) {
-                                          try {
-                                            // Try different thumbnail naming patterns
-                                            const alternatives = [
-                                              short.videoUrl
-                                                .replace(
-                                                  /\/videos\//,
-                                                  "/thumbnails/"
-                                                )
-                                                .replace(/\.[^.]+$/, ".jpg"),
-                                              short.videoUrl
-                                                .replace(
-                                                  /\/videos\//,
-                                                  "/thumbnails/"
-                                                )
-                                                .replace(/\.[^.]+$/, ".png"),
-                                              short.videoUrl.replace(
-                                                /\.[^.]+$/,
-                                                "_thumbnail.jpg"
-                                              ),
-                                              short.videoUrl.replace(
-                                                /\.[^.]+$/,
-                                                "_thumb.jpg"
-                                              ),
-                                            ];
+                                          console.log(
+                                            "🔄 Trying video element for Supabase short"
+                                          );
+                                          target.style.display = "none";
+                                          const parent = target.parentElement;
 
-                                            // Try the next alternative
-                                            for (const alt of alternatives) {
-                                              if (target.src !== alt) {
-                                                console.log(
-                                                  "🔄 Trying alternative:",
-                                                  alt.substring(0, 100)
-                                                );
-                                                target.src = alt;
-                                                return;
-                                              }
-                                            }
-                                          } catch (error) {
-                                            console.error(
-                                              "❌ Error trying alternatives:",
-                                              error
-                                            );
+                                          if (
+                                            parent &&
+                                            !parent.querySelector("video")
+                                          ) {
+                                            const videoElement =
+                                              document.createElement("video");
+                                            videoElement.src =
+                                              currentShort.videoUrl;
+                                            videoElement.className =
+                                              "absolute inset-0 w-full h-full object-cover";
+                                            videoElement.preload = "metadata";
+                                            videoElement.muted = true;
+                                            videoElement.playsInline = true;
+                                            parent.appendChild(videoElement);
+                                            return;
                                           }
                                         }
 
                                         // ✅ Final fallback to placeholder
-                                        console.log(
-                                          "⚠️ All alternatives failed, using placeholder"
-                                        );
+                                        console.log("⚠️ Using placeholder SVG");
                                         target.src =
                                           'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
                                       }}
+                                      onLoad={() => {
+                                        console.log(
+                                          "✅ Thumbnail loaded for short:",
+                                          short._id
+                                        );
+                                      }}
                                     />
-
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300" />
 
