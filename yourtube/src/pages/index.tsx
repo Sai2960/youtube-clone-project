@@ -744,7 +744,6 @@ const Home: NextPage = () => {
                                   short.thumbnailUrl
                                 );
 
-                                // For Supabase videos, create a video element as fallback
                                 if (
                                   short.thumbnailUrl.includes("supabase.co")
                                 ) {
@@ -765,7 +764,6 @@ const Home: NextPage = () => {
                                     parent.appendChild(video);
                                   }
                                 } else {
-                                  // Fallback to placeholder for non-Supabase URLs
                                   target.src = "/placeholder-thumbnail.jpg";
                                 }
                               }}
@@ -805,9 +803,9 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                          {/* Title */}
+                          {/* Title - IMPROVED FIX */}
                           <h3
-                            className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                            className="text-sm font-semibold text-gray-900 dark:text-white mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
                             style={{
                               display: "-webkit-box",
                               WebkitLineClamp: 2,
@@ -815,15 +813,15 @@ const Home: NextPage = () => {
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               wordBreak: "break-word",
-                              minHeight: "2.8rem",
-                              maxHeight: "2.8rem",
+                              height: "2.8rem",
                               lineHeight: "1.4rem",
                             }}
+                            title={short.title}
                           >
                             {short.title}
                           </h3>
 
-                          {/* Channel Info */}
+                          {/* Channel Info - IMPROVED FIX */}
                           <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
                             {/* Avatar */}
                             <div
@@ -848,15 +846,15 @@ const Home: NextPage = () => {
                               />
                             </div>
 
-                            {/* Channel Name - FIXED */}
+                            {/* Channel Name */}
                             <span
-                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0 lg:text-sm lg:font-bold"
+                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 lg:text-sm lg:font-bold"
                               style={{
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
-                                display: "block",
-                                maxWidth: "calc(100% - 8px)",
+                                flex: "1",
+                                minWidth: "0",
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
