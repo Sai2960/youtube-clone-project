@@ -803,8 +803,7 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                         
-                          {/* Title - HANDLES LONG WORDS */}
+                          {/* Title - IMPROVED FIX */}
                           <h3
                             className="text-sm font-semibold text-gray-900 dark:text-white mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
                             style={{
@@ -813,9 +812,10 @@ const Home: NextPage = () => {
                               WebkitBoxOrient: "vertical",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
-                              wordBreak: "break-all", // Changed from break-word to break-all
-                              height: "2.8rem",
-                              lineHeight: "1.4rem",
+                              wordBreak: "break-word",
+                              minHeight: "2.6em", // ✅ CHANGED: Better height calculation
+                              maxHeight: "2.6em",
+                              lineHeight: "1.3em", // ✅ CHANGED: Smoother line height
                             }}
                             title={short.title}
                           >
@@ -823,7 +823,9 @@ const Home: NextPage = () => {
                           </h3>
 
                           {/* Channel Info - IMPROVED FIX */}
-                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
+                          <div className="flex items-center gap-2.5 no-click w-full lg:gap-3">
+                            {" "}
+                            {/* ✅ CHANGED: gap-2 to gap-2.5 */}
                             {/* Avatar */}
                             <div
                               className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
@@ -839,21 +841,17 @@ const Home: NextPage = () => {
                                   true
                                 )}
                                 alt={shortChannelName}
-                                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                                className="w-7 h-7 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-8 lg:h-8 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
                                 onError={(e) => {
                                   e.currentTarget.src =
                                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
                                 }}
                               />
                             </div>
-
                             {/* Channel Name */}
                             <span
-                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 lg:text-sm lg:font-bold"
+                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 lg:text-sm lg:font-bold truncate"
                               style={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
                                 flex: "1",
                                 minWidth: "0",
                               }}
@@ -968,7 +966,9 @@ const Home: NextPage = () => {
                           }}
                           className="flex-shrink-0 cursor-pointer"
                         >
-                          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-500 transition-all">
+                          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 ring-2 ring-transparent hover:ring-blue-400 transition-all lg:w-10 lg:h-10">
+                            {" "}
+                            {/* ✅ ADDED: lg sizing */}
                             <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
                               {channelInitial}
                             </div>
@@ -979,7 +979,7 @@ const Home: NextPage = () => {
                               }`}
                               src={getImageUrl(video.uploadedBy?.image, true)}
                               alt={channelName}
-                              className="absolute inset-0 w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200"
                               crossOrigin="anonymous"
                               loading="eager"
                               onError={(e) => {
@@ -1002,7 +1002,7 @@ const Home: NextPage = () => {
                         <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                           <Link href={`/watch/${video._id}`}>
                             <h3
-                              className="font-semibold text-sm text-gray-900 dark:text-white mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
+                              className="font-semibold text-sm text-gray-900 dark:text-white mb-1.5 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
                               style={{
                                 display: "-webkit-box",
                                 WebkitLineClamp: 2,
@@ -1010,9 +1010,9 @@ const Home: NextPage = () => {
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 wordBreak: "break-word",
-                                minHeight: "2.5rem",
-                                maxHeight: "2.5rem",
-                                lineHeight: "1.25rem",
+                                lineHeight: "1.3em", // ✅ CHANGED: Match real YouTube
+                                minHeight: "2.6em", // ✅ CHANGED: Better spacing
+                                maxHeight: "2.6em",
                               }}
                             >
                               {video?.videotitle || "Untitled Video"}
@@ -1026,28 +1026,18 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className="text-xs text-gray-600 dark:text-gray-400 mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
-                            style={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              display: "block",
-                              maxWidth: "100%",
-                            }}
+                            className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer truncate" // ✅ ADDED: truncate class, increased mb
                             title={channelName}
                           >
                             {channelName}
                           </p>
 
-                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
-                            <span className="font-semibold whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-500 font-medium">
+                            <span className="whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
-                            <span className="font-bold flex-shrink-0">•</span>
-                            <span
-                              className="truncate"
-                              style={{ maxWidth: "calc(100% - 80px)" }}
-                            >
+                            <span className="flex-shrink-0">•</span>
+                            <span className="truncate">
                               {formatTimeAgo(video?.createdAt)}
                             </span>
                           </div>
