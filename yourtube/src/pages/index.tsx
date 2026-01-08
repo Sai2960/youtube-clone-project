@@ -815,8 +815,9 @@ const Home: NextPage = () => {
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               wordBreak: "break-word",
-                              minHeight: "2.5rem",
-                              textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                              minHeight: "2.8rem",
+                              maxHeight: "2.8rem",
+                              lineHeight: "1.4rem",
                             }}
                           >
                             {short.title}
@@ -847,11 +848,15 @@ const Home: NextPage = () => {
                               />
                             </div>
 
-                            {/* Channel Name */}
+                            {/* Channel Name - FIXED */}
                             <span
-                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
+                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0 lg:text-sm lg:font-bold"
                               style={{
-                                textShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                display: "block",
+                                maxWidth: "calc(100% - 8px)",
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -997,7 +1002,20 @@ const Home: NextPage = () => {
                         {/* Text Info - FIXED overflow */}
                         <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                           <Link href={`/watch/${video._id}`}>
-                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors break-words">
+                            <h3
+                              className="font-semibold text-sm text-gray-900 dark:text-white mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                wordBreak: "break-word",
+                                minHeight: "2.5rem",
+                                maxHeight: "2.5rem",
+                                lineHeight: "1.25rem",
+                              }}
+                            >
                               {video?.videotitle || "Untitled Video"}
                             </h3>
                           </Link>
@@ -1009,17 +1027,28 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer max-w-full"
+                            className="text-xs text-gray-600 dark:text-gray-400 mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              display: "block",
+                              maxWidth: "100%",
+                            }}
+                            title={channelName}
                           >
                             {channelName}
                           </p>
 
-                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium flex-wrap">
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
                             <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
                             <span className="font-bold flex-shrink-0">•</span>
-                            <span className="truncate">
+                            <span
+                              className="truncate"
+                              style={{ maxWidth: "calc(100% - 80px)" }}
+                            >
                               {formatTimeAgo(video?.createdAt)}
                             </span>
                           </div>
