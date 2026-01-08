@@ -756,23 +756,29 @@ const Home: NextPage = () => {
                           </div>
 
                           {/* FIX: Title with full width */}
-                          <h3
-                            className="text-sm font-semibold text-gray-900 dark:text-white mb-2 leading-snug"
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              wordBreak: "break-word",
-                              minHeight: "2.6em",
-                              lineHeight: "1.3",
-                            }}
-                            title={short.title}
+                          {/* Title - FIXED */}
+                          <div
+                            className="w-full mb-2"
+                            style={{ minHeight: "2.6em" }}
                           >
-                            {short.title}
-                          </h3>
-
+                            <h3
+                              className="text-sm font-semibold text-gray-900 dark:text-white"
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: "2",
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                wordBreak: "break-word",
+                                lineHeight: "1.3",
+                                height: "auto",
+                                maxHeight: "2.6em",
+                              }}
+                              title={short.title}
+                            >
+                              {short.title}
+                            </h3>
+                          </div>
                           {/* FIX: Channel Info Row */}
                           <div
                             className="flex items-center gap-2 no-click w-full"
@@ -1020,68 +1026,6 @@ const Home: NextPage = () => {
             50% {
               opacity: 0.5;
             }
-          }
-
-          /* ===== SHORTS TITLE - ENHANCED ===== */
-          /* ===== SHORTS TITLE - FIXED ===== */
-          .shorts-title {
-            display: -webkit-box !important;
-            -webkit-line-clamp: 2 !important;
-            -webkit-box-orient: vertical !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            word-break: break-word !important;
-
-            /* Fixed height to prevent cutoff */
-            min-height: 2.6em !important;
-            line-height: 1.3 !important;
-            height: auto !important;
-
-            /* Typography */
-            font-size: 14px !important;
-            font-weight: 600 !important;
-
-            /* Spacing */
-            margin: 0 0 8px 0 !important;
-            padding: 0 !important;
-
-            /* Width */
-            width: 100% !important;
-
-            /* Color */
-            color: rgb(17, 24, 39) !important;
-          }
-
-          .dark .shorts-title {
-            color: rgb(255, 255, 255) !important;
-          }
-
-          /* ===== SHORTS CHANNEL NAME - ENHANCED ===== */
-          .shorts-channel-name {
-            display: block !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            white-space: nowrap !important;
-
-            /* Size */
-            width: 100%;
-            max-width: 100%;
-            min-width: 0;
-            flex: 1;
-
-            /* Typography */
-            font-size: 11px;
-            font-weight: 600;
-            line-height: 1.3;
-
-            /* Spacing */
-            margin: 0;
-            padding: 0;
-            height: auto;
-
-            /* Visibility */
-            color: inherit;
-            opacity: 1;
           }
 
           /* ===== VIDEO TITLE - ENHANCED ===== */
