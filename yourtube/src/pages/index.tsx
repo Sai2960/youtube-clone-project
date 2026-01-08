@@ -564,6 +564,7 @@ const Home: NextPage = () => {
           )}
 
           {/* ========== SHORTS SECTION WITH TEXT FIXES ========== */}
+          {/* ========== SHORTS SECTION - COMPLETELY FIXED LAYOUT ========== */}
           {shorts.length > 0 && (
             <section
               className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
@@ -591,18 +592,19 @@ const Home: NextPage = () => {
               {loadingShorts ? (
                 <div
                   className="overflow-x-hidden px-4 lg:px-6 bg-white dark:bg-gray-900"
-                  style={{ display: "flex", gap: "12px" }}
+                  style={{ display: "flex", gap: "16px" }}
                 >
                   {[...Array(6)].map((_, i) => (
                     <div
                       key={i}
-                      className="flex-shrink-0 w-[160px] lg:w-[200px]"
+                      className="flex-shrink-0"
                       style={{
-                        minWidth: "160px",
+                        minWidth: "200px",
+                        width: "200px",
                       }}
                     >
                       <div
-                        className="bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-2"
+                        className="bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-3"
                         style={{ width: "100%", paddingBottom: "177.5%" }}
                       />
                       <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-2" />
@@ -634,13 +636,13 @@ const Home: NextPage = () => {
                     />
                   </button>
 
-                  {/* Shorts Container */}
+                  {/* Shorts Container - FIXED WIDTH */}
                   <div
                     ref={shortsScrollRef}
                     className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
                     style={{
                       display: "flex",
-                      gap: "12px",
+                      gap: "16px",
                       padding: "0 16px",
                       scrollBehavior: "smooth",
                       WebkitOverflowScrolling: "touch",
@@ -655,6 +657,7 @@ const Home: NextPage = () => {
                       const shortChannelName = getShortChannelName(short);
 
                       return (
+                        // FIX: Use fixed width container - NOT flex-shrink-0 with small width
                         <div
                           key={short._id}
                           onClick={(e) => {
@@ -664,9 +667,11 @@ const Home: NextPage = () => {
                               handleShortClick(e, short._id, index);
                             }
                           }}
-                          className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
+                          className="cursor-pointer group/short transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
                           style={{
-                            minWidth: "160px",
+                            minWidth: "200px",
+                            width: "200px",
+                            flexShrink: 0,
                             userSelect: "none",
                             WebkitTapHighlightColor: "transparent",
                           }}
@@ -750,18 +755,37 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                          {/* FIX: Shorts Title - Constrained width wrapper */}
-                          <div className="shorts-text-wrapper w-full">
-                            <h3
-                              className="shorts-title font-semibold text-gray-900 dark:text-white mb-2 w-full active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
-                              title={short.title}
-                            >
-                              {short.title}
-                            </h3>
-                          </div>
+                          {/* FIX: Title with full width */}
+                          <h3
+                            className="shorts-title font-semibold text-gray-900 dark:text-white mb-2 w-full active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                            title={short.title}
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              wordBreak: "break-word",
+                              lineHeight: "1.3",
+                              minHeight: "2.6em",
+                              maxHeight: "2.6em",
+                              margin: 0,
+                              padding: 0,
+                              fontSize: "13px",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {short.title}
+                          </h3>
 
-                          {/* FIX: Channel Info - Flex with proper width constraints */}
-                          <div className="shorts-channel-wrapper flex items-center gap-2 no-click w-full">
+                          {/* FIX: Channel Info Row */}
+                          <div
+                            className="flex items-center gap-2 no-click w-full"
+                            style={{
+                              minWidth: 0,
+                              overflow: "hidden",
+                            }}
+                          >
                             {/* Avatar */}
                             <div
                               className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
@@ -785,15 +809,26 @@ const Home: NextPage = () => {
                               />
                             </div>
 
-                            {/* FIX: Channel Name - Truncate within constrained container */}
+                            {/* FIX: Channel Name with proper flex shrinking */}
                             <span
-                              className="shorts-channel-name text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0"
+                              className="text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 hapticFeedback.selection();
                                 router.push(`/channel/${short.userId?._id}`);
                               }}
                               title={shortChannelName}
+                              style={{
+                                display: "block",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                lineHeight: "1.2",
+                                margin: 0,
+                                padding: 0,
+                              }}
                             >
                               {shortChannelName}
                             </span>
@@ -1216,6 +1251,28 @@ const Home: NextPage = () => {
           .dark .shorts-channel-name,
           .dark .video-channel-name {
             color: inherit;
+          }
+          .shorts-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            line-height: 1.3;
+            min-height: 2.6em;
+            max-height: 2.6em;
+            margin: 0;
+            padding: 0;
+            font-size: 13px;
+            font-weight: 600;
+            width: 100%;
+          }
+
+          @media (min-width: 1024px) {
+            .shorts-title {
+              font-size: 14px;
+            }
           }
         `}</style>
       </>
