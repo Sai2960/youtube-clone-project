@@ -1329,19 +1329,6 @@ const Home: NextPage = () => {
             }
           }
 
-          /* ===== HOVER STATES (Desktop only) ===== */
-          @media (hover: hover) and (pointer: fine) {
-            .video-title:hover,
-            .shorts-title:hover {
-              color: rgb(37, 99, 235);
-            }
-
-            .dark .video-title:hover,
-            .dark .shorts-title:hover {
-              color: rgb(96, 165, 250);
-            }
-          }
-
           /* ===== ACCESSIBILITY ===== */
           .shorts-title,
           .video-title,
