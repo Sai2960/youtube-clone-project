@@ -803,7 +803,8 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                          {/* Title - IMPROVED FIX */}
+                         
+                          {/* Title - HANDLES LONG WORDS */}
                           <h3
                             className="text-sm font-semibold text-gray-900 dark:text-white mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
                             style={{
@@ -812,7 +813,7 @@ const Home: NextPage = () => {
                               WebkitBoxOrient: "vertical",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
-                              wordBreak: "break-word",
+                              wordBreak: "break-all", // Changed from break-word to break-all
                               height: "2.8rem",
                               lineHeight: "1.4rem",
                             }}
