@@ -73,8 +73,6 @@ export default function VideoCard({ video }: any) {
     return fallbackVideo;
   })();
 
-  // ========== Get Thumbnail URL ==========
-  // ========== Get Thumbnail URL with Supabase Support ==========
   const thumbnailUrl = (() => {
     // ✅ Priority 1: Check explicit thumbnail fields
     const explicitThumbnail =
@@ -84,7 +82,10 @@ export default function VideoCard({ video }: any) {
       video?.videothumb;
 
     if (explicitThumbnail?.startsWith("http")) {
-      console.log("✅ Using explicit thumbnail:", explicitThumbnail); // ✅ REMOVED .substring(0, 60)
+      console.log(
+        "✅ Using explicit thumbnail:",
+        explicitThumbnail.substring(0, 60)
+      );
       return explicitThumbnail;
     }
 

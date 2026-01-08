@@ -429,17 +429,19 @@ const Home: NextPage = () => {
       video?.videothumb;
 
     if (explicitThumbnail?.startsWith("http")) {
-      console.log("✅ Using explicit thumbnail:", explicitThumbnail); // ✅ REMOVED .substring(0, 60)
+      console.log(
+        "✅ Using explicit thumbnail:",
+        explicitThumbnail.substring(0, 60)
+      );
       return explicitThumbnail;
     }
 
-    // ✅ Priority 2: Supabase videos
+    // ✅ Priority 2: Check if it's a Supabase video
     const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
 
     if (videoUrl?.includes("supabase.co")) {
       console.log("📦 Supabase video - using video URL as thumbnail");
-      // For Supabase, use the video URL itself (browsers will show first frame)
-      return videoUrl;
+      return videoUrl; // For Supabase, browsers will show first frame
     }
 
     // ✅ Priority 3: Cloudinary videos (legacy)
