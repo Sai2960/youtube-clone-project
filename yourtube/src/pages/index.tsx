@@ -177,14 +177,6 @@ const Home: NextPage = () => {
     if (backendReady) {
       fetchVideos();
       fetchShorts();
-
-      const handleFocus = () => {
-        console.log("🔄 Window focused - refreshing data");
-        fetchVideos();
-      };
-
-      window.addEventListener("focus", handleFocus);
-      return () => window.removeEventListener("focus", handleFocus);
     }
   }, [backendReady]);
 
