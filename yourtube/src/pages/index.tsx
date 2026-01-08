@@ -1150,13 +1150,11 @@ const Home: NextPage = () => {
 
           /* ===== RESPONSIVE BREAKPOINTS ===== */
 
-          /* Mobile (< 640px) */
-          /* Mobile (< 640px) */
           @media (max-width: 639px) {
             .shorts-title,
             .video-title {
-              font-size: 13px;
-              line-height: 1.4;
+              font-size: 13px !important;
+              line-height: 1.4 !important;
               min-height: 54px !important;
               max-height: 54px !important;
               -webkit-line-clamp: 3 !important;
@@ -1164,38 +1162,39 @@ const Home: NextPage = () => {
               -webkit-box-orient: vertical !important;
               overflow: hidden !important;
               text-overflow: ellipsis !important;
+              word-break: break-word !important;
+              overflow-wrap: break-word !important;
+              width: 100% !important;
+              max-width: 100% !important;
             }
 
             .shorts-channel-name,
             .video-channel-name {
-              font-size: 11px;
+              font-size: 11px !important;
+              display: block !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
+              white-space: nowrap !important;
+              max-width: 100% !important;
             }
 
             .video-metadata {
-              font-size: 11px;
+              font-size: 11px !important;
               gap: 3px;
-            }
-          }
-
-          /* Tablet (640px - 1023px) */
-          @media (min-width: 640px) and (max-width: 1023px) {
-            .shorts-title,
-            .video-title {
-              font-size: 14px;
-              line-height: 1.4;
+              display: flex !important;
+              flex-wrap: wrap !important;
+              max-width: 100% !important;
             }
 
-            .shorts-channel-name {
-              font-size: 12px;
+            .video-info-container {
+              width: 100% !important;
+              max-width: 100% !important;
             }
 
-            .video-channel-name {
-              font-size: 12px;
-            }
-
-            .video-metadata {
-              font-size: 12px;
-              gap: 4px;
+            .video-text-content {
+              min-width: 0 !important;
+              flex: 1 !important;
+              max-width: 100% !important;
             }
           }
 
