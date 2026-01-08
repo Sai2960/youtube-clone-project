@@ -9,20 +9,6 @@ import {
   isSupabaseConfigured,
 } from "../config/supabase.js";
 
-// ✅ ADD: Rate limiting for video operations
-const videoOperationLimiter = new Map();
-
-const canPerformOperation = (userId) => {
-  const now = Date.now();
-  const lastOp = videoOperationLimiter.get(userId);
-
-  if (!lastOp || now - lastOp > 1000) {
-    // 1 second cooldown
-    videoOperationLimiter.set(userId, now);
-    return true;
-  }
-  return false;
-};
 const getVideoURL = (filepath) => {
   if (!filepath) return null;
 
@@ -117,88 +103,56 @@ const getImageURL = (imagePath) => {
   return `${BASE_URL}/${cleanPath}`;
 };
 
+// ✅ CRITICAL FIX: Enhanced transformVideoURLs with better handling
+// ✅ CRITICAL FIX: Enhanced transformVideoURLs with better handling
 const transformVideoURLs = (video) => {
   if (!video) {
     console.log("⚠️ transformVideoURLs: video is null/undefined");
     return null;
   }
 
+  // Handle both Mongoose documents and plain objects
   const videoObj = video.toObject ? video.toObject() : { ...video };
 
   console.log("🔄 Transforming video URLs:", {
     id: videoObj._id,
     hasFilepath: !!videoObj.filepath,
+    hasVideofile: !!videoObj.videofile,
+    hasVideoLink: !!videoObj.videoLink,
+    hasThumbnail: !!videoObj.videothumbnail || !!videoObj.thumbnail,
   });
 
-  // ✅ Get video URL
+  // ✅ Support multiple field name conventions
   const videoPath =
     videoObj.filepath || videoObj.videofile || videoObj.videoLink;
-  const transformedVideoUrl = getVideoURL(videoPath);
-
-  // ✅ CRITICAL: Handle thumbnails for both Supabase and Cloudinary
-  let transformedThumbnailUrl = null;
-
-  // Check explicit thumbnails
-  const explicitThumbnail =
+  const thumbnailPath =
     videoObj.videothumbnail || videoObj.thumbnail || videoObj.videothumb;
 
-  if (explicitThumbnail?.startsWith("http")) {
-    transformedThumbnailUrl = explicitThumbnail;
-  }
-  // ✅ SUPABASE: Use video URL as thumbnail (no thumbnail generation)
-  else if (transformedVideoUrl?.includes("supabase.co")) {
-    transformedThumbnailUrl = transformedVideoUrl;
-    console.log("📦 Supabase video - using video URL as thumbnail");
-  }
-  // ✅ CLOUDINARY: Generate thumbnail (legacy videos)
-  else if (transformedVideoUrl?.includes("cloudinary.com")) {
-    try {
-      const match = transformedVideoUrl.match(
-        /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/
-      );
-
-      if (match) {
-        const cloudName = match[1];
-        let publicId = match[2];
-
-        publicId = publicId
-          .split("/")
-          .filter((seg) => !seg.match(/^(f_|vc_|ac_|af_|br_|q_)/))
-          .join("/");
-
-        publicId = publicId.replace(/\.(mp4|mov|avi|mkv|webm)$/i, "");
-
-        transformedThumbnailUrl = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-
-        console.log(
-          "🖼️ Generated Cloudinary thumbnail:",
-          transformedThumbnailUrl.substring(0, 80)
-        );
-      }
-    } catch (error) {
-      console.error("❌ Thumbnail generation error:", error);
-    }
-  }
+  // ✅ CRITICAL: Use the fixed getVideoURL function
+  const transformedVideoUrl = getVideoURL(videoPath);
+  const transformedThumbnailUrl = getImageURL(thumbnailPath);
 
   console.log("✅ Transformed URLs:", {
-    video: transformedVideoUrl,
-    thumbnail: transformedThumbnailUrl,
+    video: transformedVideoUrl?.substring(0, 60),
+    thumbnail: transformedThumbnailUrl?.substring(0, 60),
+    isCloudinary: transformedVideoUrl?.includes("cloudinary.com"),
   });
+
   return {
     ...videoObj,
-    // Video URLs
+    // Set ALL possible video field names with the SAME URL
     filepath: transformedVideoUrl,
     videofile: transformedVideoUrl,
     videoLink: transformedVideoUrl,
-    videoUrl: transformedVideoUrl,
+    videoUrl: transformedVideoUrl, // ✅ ADD THIS FIELD
 
-    // Thumbnail URLs
+    // Set ALL possible thumbnail field names
     videothumbnail: transformedThumbnailUrl,
     thumbnail: transformedThumbnailUrl,
     videothumb: transformedThumbnailUrl,
-    thumbnailUrl: transformedThumbnailUrl,
+    thumbnailUrl: transformedThumbnailUrl, // ✅ ADD THIS FIELD
 
-    // Transform user info
+    // Transform channel/user info
     uploadedBy:
       videoObj.uploadedBy && typeof videoObj.uploadedBy === "object"
         ? {
@@ -337,6 +291,8 @@ const generateSampleComments = (videoTitle) => {
 export const uploadvideo = async (req, res) => {
   try {
     console.log("\n📤 ===== VIDEO UPLOAD STARTED =====");
+    console.log("   req.file exists:", !!req.file);
+    console.log("   req.userId:", req.userId);
 
     if (!req.file) {
       return res.status(400).json({
@@ -347,23 +303,23 @@ export const uploadvideo = async (req, res) => {
 
     let videoUrl = null;
     let publicId = null;
-    let thumbnailUrl = null; // ✅ Will be a REAL image
+    let thumbnailUrl = null;
     const storageType = "supabase";
 
+    // ✅ ONLY USE SUPABASE - NO CLOUDINARY
     if (!isSupabaseConfigured()) {
       console.error("❌ Supabase not configured!");
       return res.status(500).json({
         success: false,
-        message: "Upload service not available.",
+        message: "Upload service not available. Contact administrator.",
       });
     }
 
     try {
-      console.log("📤 Uploading video to Supabase...");
+      console.log("📤 Uploading to Supabase...");
 
       const fileName = `videos/${Date.now()}-${req.file.originalname}`;
 
-      // Upload video
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(fileName, req.file.buffer, {
@@ -372,79 +328,40 @@ export const uploadvideo = async (req, res) => {
           upsert: false,
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("❌ Supabase upload error:", uploadError);
+        throw uploadError;
+      }
 
-      // Get video URL
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(fileName);
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(bucketName).getPublicUrl(fileName);
 
       videoUrl = publicUrl;
       publicId = fileName;
+      thumbnailUrl = publicUrl;
 
-      // ✅ GENERATE THUMBNAIL IMAGE
-      const sharp = require('sharp'); // Add this: npm install sharp
-      const ffmpeg = require('fluent-ffmpeg'); // Add this: npm install fluent-ffmpeg
-      const { Readable } = require('stream');
-
-      console.log("🖼️ Generating thumbnail...");
-
-      // Create temporary file from buffer
-      const tempVideoPath = `/tmp/${Date.now()}-video.mp4`;
-      const tempThumbPath = `/tmp/${Date.now()}-thumb.jpg`;
-      
-      const fs = require('fs');
-      fs.writeFileSync(tempVideoPath, req.file.buffer);
-
-      // Extract frame at 1 second using ffmpeg
-      await new Promise((resolve, reject) => {
-        ffmpeg(tempVideoPath)
-          .screenshots({
-            timestamps: ['1'], // 1 second into video
-            filename: 'thumb.jpg',
-            folder: '/tmp',
-            size: '1280x720'
-          })
-          .on('end', resolve)
-          .on('error', reject);
-      });
-
-      // Upload thumbnail to Supabase
-      const thumbnailFileName = `thumbnails/${Date.now()}-thumb.jpg`;
-      const thumbnailBuffer = fs.readFileSync(tempThumbPath);
-
-      const { error: thumbError } = await supabase.storage
-        .from(bucketName)
-        .upload(thumbnailFileName, thumbnailBuffer, {
-          contentType: 'image/jpeg',
-          cacheControl: '31536000', // 1 year
-        });
-
-      if (thumbError) throw thumbError;
-
-      // Get thumbnail URL
-      const { data: { publicUrl: thumbUrl } } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(thumbnailFileName);
-
-      thumbnailUrl = thumbUrl;
-
-      // Cleanup temp files
-      fs.unlinkSync(tempVideoPath);
-      fs.unlinkSync(tempThumbPath);
-
-      console.log("✅ Thumbnail generated:", thumbnailUrl);
-
+      console.log("✅ Supabase upload successful:", publicUrl);
     } catch (supabaseError) {
-      console.error("❌ Upload failed:", supabaseError.message);
+      console.error("❌ Supabase upload failed:", supabaseError.message);
+
       return res.status(500).json({
         success: false,
-        message: "Upload failed",
+        message: "Upload failed - storage service error",
         error: supabaseError.message,
       });
     }
 
-    // Save to database
+    // ✅ Validate we have a video URL
+    if (!videoUrl || !publicId) {
+      return res.status(500).json({
+        success: false,
+        message: "Upload failed - no video URL generated",
+      });
+    }
+
+    // ✅ SAVE VIDEO TO DATABASE
     const { videotitle, videodescription, videochanel } = req.body;
     const uploadedBy = req.userId;
 
@@ -463,22 +380,29 @@ export const uploadvideo = async (req, res) => {
       });
     }
 
-    const channelName = user?.channelname || videochanel || user?.name || "Unknown Channel";
+    const channelName =
+      user?.channelname || videochanel || user?.name || "Unknown Channel";
     const title = videotitle || req.file.originalname;
-    const autoDescription = videodescription?.trim() || `Watch "${title}"`;
+    const autoDescription =
+      videodescription?.trim() ||
+      `Watch this amazing video about ${title}. Don't forget to like and subscribe!`;
 
     const newVideo = new videofiles({
       videotitle: title,
       videodescription: autoDescription,
       videofilename: publicId,
+
+      // Store SAME URL in all fields
       filepath: videoUrl,
       videofile: videoUrl,
       videoLink: videoUrl,
       videoUrl: videoUrl,
-      thumbnail: thumbnailUrl, // ✅ REAL image URL
+
+      // Thumbnails
+      thumbnail: thumbnailUrl,
       videothumbnail: thumbnailUrl,
       thumbnailUrl: thumbnailUrl,
-      videothumb: thumbnailUrl,
+
       filename: req.file.originalname,
       filetype: req.file.mimetype,
       filesize: `${(req.file.size / (1024 * 1024)).toFixed(2)} MB`,
@@ -490,28 +414,49 @@ export const uploadvideo = async (req, res) => {
       views: 0,
       Like: 0,
       Dislike: 0,
+      likes: 0,
+      dislikes: 0,
       storageType,
     });
 
     const savedVideo = await newVideo.save();
 
-    console.log("✅ Video saved with thumbnail");
+    console.log("✅ Video saved:", {
+      _id: savedVideo._id,
+      title: savedVideo.videotitle,
+      url: videoUrl,
+      storage: storageType,
+    });
+
+    // Clear cache
+    try {
+      const { clearCachePattern } = await import("../middleware/cache.js");
+      clearCachePattern(/\/video/);
+    } catch (e) {
+      console.log("⚠️ Cache clear skipped:", e.message);
+    }
+
+    console.log("===== VIDEO UPLOAD COMPLETE =====\n");
 
     res.status(201).json({
       success: true,
       message: "Video uploaded successfully",
       video: savedVideo,
       videoUrl: videoUrl,
-      thumbnailUrl: thumbnailUrl, // ✅ Returns image URL
+      thumbnailUrl: thumbnailUrl,
       publicId: publicId,
       storage: storageType,
     });
   } catch (error) {
     console.error("\n❌ VIDEO UPLOAD ERROR:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to upload video",
-      error: error.message,
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -521,10 +466,10 @@ export const uploadvideo = async (req, res) => {
 export const getallvideo = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 12; // ✅ REDUCED from 20
+    const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    // ✅ ADD: Aggressive indexing hints
+    // ✅ CRITICAL FIX: Better projection + validation
     const videos = await videofiles
       .find()
       .select(
@@ -539,36 +484,40 @@ export const getallvideo = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .lean()
-      .hint({ createdAt: -1 }) // ✅ FORCE index usage
-      .maxTimeMS(3000); // ✅ REDUCED from 5000
+      .maxTimeMS(5000);
 
-    // ✅ Use cached count (update every 5 minutes)
-    const cacheKey = "video_total_count";
-    let total;
+    const total = await videofiles.countDocuments();
 
-    try {
-      const { cache } = await import("../middleware/cache.js");
-      const cached = cache.get(cacheKey);
+    console.log(`📹 Retrieved ${videos.length} videos`);
 
-      if (cached && Date.now() < cached.expiry) {
-        total = cached.data;
-      } else {
-        total = await videofiles.countDocuments();
-        cache.set(cacheKey, {
-          data: total,
-          expiry: Date.now() + 300000, // 5 minutes
-          timestamp: Date.now(),
-        });
+    // ✅ Validate each video has an _id
+    const validVideos = videos.filter((video) => {
+      if (!video._id) {
+        console.warn("⚠️ Video missing _id:", video.videotitle);
+        return false;
       }
-    } catch (e) {
-      total = await videofiles.countDocuments();
-    }
+      return true;
+    });
 
-    const validVideos = videos.filter((video) => video._id);
-    const videosWithAbsoluteURLs = validVideos.map(transformVideoURLs);
+    // ✅ Transform URLs
+    const videosWithAbsoluteURLs = validVideos.map((video) => {
+      const transformed = transformVideoURLs(video);
 
-    // ✅ Cache for 2 minutes (down from no cache)
-    res.setHeader("Cache-Control", "public, max-age=120, s-maxage=300");
+      if (
+        transformed.uploadedBy &&
+        typeof transformed.uploadedBy === "object"
+      ) {
+        transformed.uploadedBy.image = getImageURL(
+          transformed.uploadedBy.image
+        );
+      }
+
+      return transformed;
+    });
+    // ✅ CRITICAL FIX: No caching for fresh data
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
 
     res.status(200).json({
       success: true,
@@ -585,6 +534,7 @@ export const getallvideo = async (req, res) => {
     });
   }
 };
+
 // ==============================
 // 🎬 Get Video By ID
 // ==============================
