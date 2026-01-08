@@ -979,126 +979,130 @@ const Home: NextPage = () => {
           </section>
         </div>
 
-       <style jsx>{`
-  /* Scrollbar hiding */
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+        {/* ✅ FIXED: Combined styles with all text display fixes */}
+        <style jsx>{`
+          /* Scrollbar hiding */
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
 
-  /* Skeleton loading animation */
-  .skeleton {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
+          /* Skeleton loading animation */
+          .skeleton {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+          @keyframes pulse {
+            0%,
+            100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
+          }
 
-  /* ===== TEXT DISPLAY FIXES ===== */
+          /* ===== TEXT DISPLAY FIXES ===== */
 
-  /* Shorts title - 2 lines with robust wrapping */
-  .shorts-title {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    /* robust wrapping for long strings/filenames */
-    word-break: break-word;
-    overflow-wrap: anywhere; 
-    /* Spacing adjustments */
-    line-height: 1.4;
-    min-height: 2.8em; /* Keeps grid aligned */
-    padding-right: 2px;
-    font-weight: 600;
-  }
+          /* Shorts title - 2 lines with ellipsis */
+          .shorts-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.3;
+            min-height: 2.6em;
+            font-size: 14px;
+          }
 
-  /* Shorts channel name - single line truncate */
-  .shorts-channel-name {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-    line-height: 1.2;
-  }
+          /* Shorts channel name - single line truncate */
+          .shorts-channel-name {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+            font-size: 12px;
+          }
 
-  /* Video title - 2 lines with robust wrapping */
-  .video-title {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    /* robust wrapping for long strings/filenames */
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    /* Spacing adjustments */
-    line-height: 1.4;
-    max-height: 2.8em; /* 1.4em * 2 lines = 2.8em */
-    margin-bottom: 4px;
-    padding-right: 4px;
-  }
+          /* Video title - 2 lines with ellipsis */
+          .video-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.35;
+            max-height: 2.7em;
+            font-size: 14px;
+          }
 
-  /* Video channel name - single line truncate */
-  .video-channel-name {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-    line-height: 1.2;
-  }
+          /* Video channel name - single line truncate */
+          .video-channel-name {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+            font-size: 12px;
+          }
 
-  /* Video metadata row */
-  .video-metadata {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    line-height: 1.2;
-    margin-top: 2px;
-  }
+          /* Video metadata row */
+          .video-metadata {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+          }
 
-  /* Mobile adjustments (< 1024px) */
-  @media (max-width: 1023px) {
-    .shorts-title {
-      font-size: 14px;
-      min-height: 2.8em;
-    }
-    .shorts-channel-name {
-      font-size: 12px;
-    }
-    .video-title {
-      font-size: 14px;
-      max-height: 2.8em;
-    }
-    .video-channel-name {
-      font-size: 12px;
-    }
-  }
+          /* Mobile adjustments (< 1024px) */
+          @media (max-width: 1023px) {
+            .shorts-title {
+              font-size: 13px;
+              min-height: 2.4em;
+            }
 
-  /* Desktop adjustments (>= 1024px) */
-  @media (min-width: 1024px) {
-    .shorts-title {
-      font-size: 16px;
-      min-height: 2.8em;
-    }
-    .shorts-channel-name {
-      font-size: 13px;
-    }
-    .video-title {
-      font-size: 16px;
-      max-height: 2.8em;
-    }
-    .video-channel-name {
-      font-size: 13px;
-    }
-  }
-`}</style>
+            .shorts-channel-name {
+              font-size: 11px;
+            }
+
+            .video-title {
+              font-size: 13px;
+              max-height: 2.5em;
+            }
+
+            .video-channel-name {
+              font-size: 11px;
+            }
+          }
+
+          /* Desktop adjustments (>= 1024px) */
+          @media (min-width: 1024px) {
+            .shorts-title {
+              font-size: 15px;
+              min-height: 2.6em;
+            }
+
+            .shorts-channel-name {
+              font-size: 13px;
+            }
+
+            .video-title {
+              font-size: 15px;
+              max-height: 2.7em;
+            }
+
+            .video-channel-name {
+              font-size: 12px;
+            }
+          }
+        `}</style>
       </>
     </ProtectedRoute>
   );
