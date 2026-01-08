@@ -1,4 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+// src/pages/index.tsx - COMPLETE FIXED VERSION WITH TEXT DISPLAY FIXES
+
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
@@ -561,7 +563,7 @@ const Home: NextPage = () => {
             </div>
           )}
 
-          {/* ✅ IMPROVED SHORTS SECTION */}
+          {/* ========== SHORTS SECTION WITH TEXT FIXES ========== */}
           {shorts.length > 0 && (
             <section
               className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
@@ -594,9 +596,9 @@ const Home: NextPage = () => {
                   {[...Array(6)].map((_, i) => (
                     <div
                       key={i}
-                      className="flex-shrink-0 w-[140px] lg:w-[180px]"
+                      className="flex-shrink-0 w-[160px] lg:w-[200px]"
                       style={{
-                        minWidth: "140px",
+                        minWidth: "160px",
                       }}
                     >
                       <div
@@ -632,13 +634,13 @@ const Home: NextPage = () => {
                     />
                   </button>
 
-                  {/* ✅ IMPROVED SHORTS CONTAINER WITH BETTER TEXT LAYOUT */}
+                  {/* Shorts Container */}
                   <div
                     ref={shortsScrollRef}
                     className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
                     style={{
                       display: "flex",
-                      gap: "10px",
+                      gap: "12px",
                       padding: "0 16px",
                       scrollBehavior: "smooth",
                       WebkitOverflowScrolling: "touch",
@@ -662,17 +664,16 @@ const Home: NextPage = () => {
                               handleShortClick(e, short._id, index);
                             }
                           }}
-                          className="cursor-pointer group/short flex-shrink-0 w-[140px] lg:w-[180px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
+                          className="cursor-pointer group/short flex-shrink-0 w-[160px] lg:w-[200px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
                           style={{
-                            minWidth: "140px",
+                            minWidth: "160px",
                             userSelect: "none",
                             WebkitTapHighlightColor: "transparent",
                           }}
                         >
                           {/* Thumbnail Card */}
-                          {/* Thumbnail Card */}
                           <div
-                            className="relative rounded-xl overflow-hidden bg-gray-900 mb-2.5 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
+                            className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
                             style={{
                               paddingBottom: "177.5%",
                             }}
@@ -749,19 +750,16 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                          {/* ✅ IMPROVED SHORT TITLE - PROPER TEXT VISIBILITY */}
-                          {/* Title */}
-                          {/* Title */}
+                          {/* ✅ FIXED: Shorts Title with proper text wrapping */}
                           <h3
-                            className="shorts-title font-semibold text-gray-900 dark:text-white mb-1.5 w-full lg:font-bold lg:mb-2 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                            className="shorts-title font-semibold text-gray-900 dark:text-white mb-2 w-full px-0.5 lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
                             title={short.title}
                           >
                             {short.title}
                           </h3>
 
                           {/* Channel Info */}
-                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5 text-container">
-                            {/* Avatar */}
+                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5 overflow-hidden">
                             {/* Avatar */}
                             <div
                               className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
@@ -777,7 +775,7 @@ const Home: NextPage = () => {
                                   true
                                 )}
                                 alt={shortChannelName}
-                                className="w-5 h-5 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-6 lg:h-6 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
                                 onError={(e) => {
                                   e.currentTarget.src =
                                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
@@ -785,8 +783,7 @@ const Home: NextPage = () => {
                               />
                             </div>
 
-                            {/* Channel Name */}
-                            {/* Channel Name */}
+                            {/* ✅ FIXED: Channel Name with proper truncation */}
                             <span
                               className="shorts-channel-name text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0 lg:font-bold"
                               onClick={(e) => {
@@ -808,7 +805,7 @@ const Home: NextPage = () => {
             </section>
           )}
 
-          {/* ✅ IMPROVED VIDEOS SECTION */}
+          {/* ========== VIDEOS SECTION WITH TEXT FIXES ========== */}
           <section className="px-3 py-4 pb-20 lg:px-6 lg:pb-8">
             {loadingVideos ? (
               <div className="space-y-3 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
@@ -887,7 +884,7 @@ const Home: NextPage = () => {
                         </div>
                       </Link>
 
-                      {/* ✅ IMPROVED VIDEO INFO - PROPER TEXT LAYOUT */}
+                      {/* ✅ FIXED: Video Info with proper text overflow handling */}
                       <div className="flex gap-2.5 w-full overflow-hidden">
                         {/* Avatar */}
                         <div
@@ -930,9 +927,10 @@ const Home: NextPage = () => {
                           </div>
                         </div>
 
-                        {/* ✅ IMPROVED TEXT INFO - BETTER OVERFLOW HANDLING */}
-                        <div className="flex-1 min-w-0 text-container">
+                        {/* ✅ FIXED: Text container with min-w-0 for flex overflow */}
+                        <div className="flex-1 min-w-0">
                           <Link href={`/watch/${video._id}`}>
+                            {/* ✅ FIXED: Video title with proper line clamping */}
                             <h3
                               className="video-title font-semibold text-gray-900 dark:text-white mb-1 lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
                               title={video?.videotitle || "Untitled Video"}
@@ -941,7 +939,7 @@ const Home: NextPage = () => {
                             </h3>
                           </Link>
 
-                          {/* ✅ IMPROVED CHANNEL NAME */}
+                          {/* ✅ FIXED: Channel name with proper truncation */}
                           <p
                             onClick={(e) => {
                               e.preventDefault();
@@ -955,13 +953,13 @@ const Home: NextPage = () => {
                             {channelName}
                           </p>
 
-                          {/* ✅ IMPROVED VIDEO METADATA */}
-                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium flex-wrap">
+                          {/* Video metadata */}
+                          <div className="video-metadata text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
                             <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
-                            <span className="font-bold flex-shrink-0">•</span>
-                            <span className="truncate">
+                            <span className="font-bold mx-1.5">•</span>
+                            <span className="whitespace-nowrap">
                               {formatTimeAgo(video?.createdAt)}
                             </span>
                           </div>
@@ -981,6 +979,7 @@ const Home: NextPage = () => {
           </section>
         </div>
 
+        {/* ✅ FIXED: Combined styles with all text display fixes */}
         <style jsx>{`
           /* Scrollbar hiding */
           .scrollbar-hide::-webkit-scrollbar {
@@ -1007,7 +1006,7 @@ const Home: NextPage = () => {
 
           /* ===== TEXT DISPLAY FIXES ===== */
 
-          /* Fix for shorts title - ensure proper line clamping with word wrapping */
+          /* Shorts title - 2 lines with ellipsis */
           .shorts-title {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -1016,21 +1015,22 @@ const Home: NextPage = () => {
             text-overflow: ellipsis;
             word-break: break-word;
             overflow-wrap: break-word;
-            hyphens: auto;
-            min-height: 2.5em;
-            line-height: 1.25;
+            line-height: 1.3;
+            min-height: 2.6em;
+            font-size: 14px;
           }
 
-          /* Fix for shorts channel name - prevent overflow */
+          /* Shorts channel name - single line truncate */
           .shorts-channel-name {
             display: block;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             max-width: 100%;
+            font-size: 12px;
           }
 
-          /* Fix for video title - ensure proper multi-line display */
+          /* Video title - 2 lines with ellipsis */
           .video-title {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -1039,65 +1039,65 @@ const Home: NextPage = () => {
             text-overflow: ellipsis;
             word-break: break-word;
             overflow-wrap: break-word;
-            line-height: 1.3;
-            max-height: 2.6em;
+            line-height: 1.35;
+            max-height: 2.7em;
+            font-size: 14px;
           }
 
-          /* Fix for video channel name */
+          /* Video channel name - single line truncate */
           .video-channel-name {
             display: block;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             max-width: 100%;
+            font-size: 12px;
           }
 
-          /* Fix for video metadata row */
+          /* Video metadata row */
           .video-metadata {
             display: flex;
             flex-wrap: nowrap;
             align-items: center;
-            overflow: hidden;
           }
 
-          /* Container width fix for text blocks */
-          .text-container {
-            min-width: 0;
-            max-width: 100%;
-            overflow: hidden;
-          }
-
-          /* Mobile-specific adjustments */
+          /* Mobile adjustments (< 1024px) */
           @media (max-width: 1023px) {
             .shorts-title {
               font-size: 13px;
-              min-height: 2.25rem;
+              min-height: 2.4em;
+            }
+
+            .shorts-channel-name {
+              font-size: 11px;
             }
 
             .video-title {
-              font-size: 14px;
-              max-height: 2.4em;
+              font-size: 13px;
+              max-height: 2.5em;
             }
 
-            .shorts-channel-name,
             .video-channel-name {
               font-size: 11px;
             }
           }
 
-          /* Desktop adjustments */
+          /* Desktop adjustments (>= 1024px) */
           @media (min-width: 1024px) {
             .shorts-title {
               font-size: 15px;
-              min-height: 2.5rem;
+              min-height: 2.6em;
+            }
+
+            .shorts-channel-name {
+              font-size: 13px;
             }
 
             .video-title {
               font-size: 15px;
-              max-height: 2.6em;
+              max-height: 2.7em;
             }
 
-            .shorts-channel-name,
             .video-channel-name {
               font-size: 12px;
             }
