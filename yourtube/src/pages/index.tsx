@@ -594,9 +594,9 @@ const Home: NextPage = () => {
                   {[...Array(6)].map((_, i) => (
                     <div
                       key={i}
-                      className="flex-shrink-0 w-[160px] lg:w-[200px]"
+                      className="flex-shrink-0 w-[140px] lg:w-[180px]"
                       style={{
-                        minWidth: "160px",
+                        minWidth: "140px",
                       }}
                     >
                       <div
@@ -638,7 +638,7 @@ const Home: NextPage = () => {
                     className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
                     style={{
                       display: "flex",
-                      gap: "12px",
+                      gap: "10px",
                       padding: "0 16px",
                       scrollBehavior: "smooth",
                       WebkitOverflowScrolling: "touch",
@@ -662,16 +662,17 @@ const Home: NextPage = () => {
                               handleShortClick(e, short._id, index);
                             }
                           }}
-                          className="cursor-pointer group/short flex-shrink-0 transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
+                          className="cursor-pointer group/short flex-shrink-0 w-[140px] lg:w-[180px] transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
                           style={{
-                            minWidth: "160px",
+                            minWidth: "140px",
                             userSelect: "none",
                             WebkitTapHighlightColor: "transparent",
                           }}
                         >
                           {/* Thumbnail Card */}
+                          {/* Thumbnail Card */}
                           <div
-                            className="relative rounded-xl overflow-hidden bg-gray-900 mb-3 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
+                            className="relative rounded-xl overflow-hidden bg-gray-900 mb-2.5 shadow-md w-full group/thumbnail transition-all duration-300 hover:shadow-2xl hover:ring-2 hover:ring-red-500/30 active:shadow-xl active:ring-2 active:ring-red-500/50"
                             style={{
                               paddingBottom: "177.5%",
                             }}
@@ -750,8 +751,9 @@ const Home: NextPage = () => {
 
                           {/* ✅ IMPROVED SHORT TITLE - PROPER TEXT VISIBILITY */}
                           {/* Title */}
+                          {/* Title */}
                           <h3
-                            className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                            className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-1.5 w-full lg:text-[15px] lg:font-bold lg:mb-2 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
                             style={{
                               display: "-webkit-box",
                               WebkitLineClamp: 2,
@@ -759,8 +761,7 @@ const Home: NextPage = () => {
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               wordBreak: "break-word",
-                              minHeight: "2.5rem",
-                              textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                              minHeight: "2.25rem",
                             }}
                           >
                             {short.title}
@@ -768,6 +769,7 @@ const Home: NextPage = () => {
 
                           {/* Channel Info */}
                           <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
+                            {/* Avatar */}
                             {/* Avatar */}
                             <div
                               className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
@@ -783,7 +785,7 @@ const Home: NextPage = () => {
                                   true
                                 )}
                                 alt={shortChannelName}
-                                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                                className="w-5 h-5 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-6 lg:h-6 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
                                 onError={(e) => {
                                   e.currentTarget.src =
                                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
@@ -792,8 +794,9 @@ const Home: NextPage = () => {
                             </div>
 
                             {/* Channel Name */}
+                            {/* Channel Name */}
                             <span
-                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
+                              className="text-[11px] text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-xs lg:font-bold"
                               style={{
                                 textShadow: "0 1px 2px rgba(0,0,0,0.05)",
                               }}
