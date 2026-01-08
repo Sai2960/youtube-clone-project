@@ -197,43 +197,6 @@ const Home: NextPage = () => {
       return () => window.removeEventListener("focus", handleFocus);
     }
   }, [backendReady]);
-  // pages/index.tsx - After line 133
-
-  useEffect(() => {
-    fetchVideos();
-    fetchShorts();
-
-    // Mobile-specific: Log when component mounts
-    console.log("📱 Home page mounted, viewport:", {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      isMobile: window.innerWidth < 1024,
-    });
-
-    // ✅ CRITICAL FIX: Refresh on window focus
-    const handleFocus = () => {
-      console.log("🔄 Window focused - refreshing data");
-      fetchVideos();
-    };
-
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-
-    // Listen for avatar updates
-    const handleAvatarUpdate = () => {
-      const newKeys: Record<string, number> = {};
-      videos.forEach((video) => {
-        if (video.uploadedBy?._id) {
-          newKeys[video.uploadedBy._id] = Date.now();
-        }
-      });
-      setImageKeys(newKeys);
-    };
-
-    window.addEventListener("avatarUpdated", handleAvatarUpdate);
-    return () =>
-      window.removeEventListener("avatarUpdated", handleAvatarUpdate);
-  }, []);
 
   const fetchVideos = async () => {
     try {
@@ -429,10 +392,7 @@ const Home: NextPage = () => {
       video?.videothumb;
 
     if (explicitThumbnail?.startsWith("http")) {
-      console.log(
-        "✅ Using explicit thumbnail:",
-        explicitThumbnail.substring(0, 60)
-      );
+      console.log("✅ Using explicit thumbnail:", explicitThumbnail); // ✅ REMOVED .substring()
       return explicitThumbnail;
     }
 
@@ -441,7 +401,7 @@ const Home: NextPage = () => {
 
     if (videoUrl?.includes("supabase.co")) {
       console.log("📦 Supabase video - using video URL as thumbnail");
-      return videoUrl; // For Supabase, browsers will show first frame
+      return videoUrl;
     }
 
     // ✅ Priority 3: Cloudinary videos (legacy)
@@ -469,10 +429,7 @@ const Home: NextPage = () => {
           publicId = publicId.replace(/\.(mp4|mov|avi|mkv|webm)$/i, "");
 
           const thumbnail = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-          console.log(
-            "🖼️ Generated Cloudinary thumbnail:",
-            thumbnail.substring(0, 80)
-          );
+          console.log("🖼️ Generated Cloudinary thumbnail:", thumbnail); // ✅ Full URL
           return thumbnail;
         }
       } catch (error) {
@@ -485,6 +442,16 @@ const Home: NextPage = () => {
     return "/placeholder-thumbnail.jpg";
   };
 
+  const [thumbnailErrors, setThumbnailErrors] = useState<Set<string>>(
+    new Set()
+  );
+
+  const handleThumbnailError = (videoId: string, url: string) => {
+    console.error(`❌ Thumbnail failed for ${videoId}:`, url);
+    setThumbnailErrors((prev) => new Set(prev).add(videoId));
+  };
+
+  const isThumbnailError = (videoId: string) => thumbnailErrors.has(videoId);
   const scrollShorts = (direction: "left" | "right") => {
     if (shortsScrollRef.current) {
       const scrollAmount = 300;
@@ -769,6 +736,45 @@ const Home: NextPage = () => {
                               alt={short.title}
                               className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105"
                               loading="lazy"
+                              onError={(e) => {
+                                const target =
+                                  e.currentTarget as HTMLImageElement;
+                                console.error(
+                                  "❌ Short thumbnail failed:",
+                                  short.thumbnailUrl
+                                );
+
+                                // For Supabase videos, create a video element as fallback
+                                if (
+                                  short.thumbnailUrl.includes("supabase.co")
+                                ) {
+                                  target.style.display = "none";
+                                  const parent = target.parentElement;
+                                  if (
+                                    parent &&
+                                    !parent.querySelector("video")
+                                  ) {
+                                    const video =
+                                      document.createElement("video");
+                                    video.src = short.thumbnailUrl;
+                                    video.className =
+                                      "absolute inset-0 w-full h-full object-cover";
+                                    video.muted = true;
+                                    video.preload = "metadata";
+                                    video.playsInline = true;
+                                    parent.appendChild(video);
+                                  }
+                                } else {
+                                  // Fallback to placeholder for non-Supabase URLs
+                                  target.src = "/placeholder-thumbnail.jpg";
+                                }
+                              }}
+                              onLoad={() => {
+                                console.log(
+                                  "✅ Short thumbnail loaded:",
+                                  short._id
+                                );
+                              }}
                             />
 
                             {/* Play Icon Overlay */}
@@ -897,12 +903,46 @@ const Home: NextPage = () => {
                       {/* Video Thumbnail */}
                       <Link href={`/watch/${video._id}`} className="block mb-3">
                         <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
-                          <video
-                            src={getVideoUrl(video)}
-                            className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-                            preload="metadata"
-                            poster={getThumbnailUrl(video)}
-                          />
+                          {/* Use img for Supabase, video for others */}
+                          {getThumbnailUrl(video).includes("supabase.co") ? (
+                            <img
+                              src={getThumbnailUrl(video)}
+                              alt={video?.videotitle || "Video thumbnail"}
+                              className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
+                              loading="lazy"
+                              onError={(e) => {
+                                const target =
+                                  e.currentTarget as HTMLImageElement;
+                                const currentVideo = video; // ✅ FIXED: Store video reference
+                                console.error(
+                                  "❌ Thumbnail failed, trying video element"
+                                );
+                                target.style.display = "none";
+                                const parent = target.parentElement;
+                                if (parent && !parent.querySelector("video")) {
+                                  const videoElement =
+                                    document.createElement("video");
+                                  videoElement.src =
+                                    getThumbnailUrl(currentVideo); // ✅ FIXED: Use currentVideo
+                                  videoElement.className =
+                                    "w-full h-full object-cover";
+                                  videoElement.preload = "metadata";
+                                  videoElement.muted = true;
+                                  videoElement.playsInline = true;
+                                  parent.appendChild(videoElement);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <video
+                              src={getVideoUrl(video)}
+                              className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
+                              preload="metadata"
+                              poster={getThumbnailUrl(video)}
+                              muted
+                              playsInline
+                            />
+                          )}
                           {video?.duration && (
                             <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
                               {video.duration}
