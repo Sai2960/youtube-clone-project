@@ -803,24 +803,23 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                         {/* Title - IMPROVED FIX */}
-<h3
-  className="text-sm font-semibold text-gray-900 dark:text-white mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
-  style={{
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    wordBreak: "break-word",
-    minHeight: "2.6em", // ✅ CHANGED: Better height calculation
-    maxHeight: "2.6em",
-    lineHeight: "1.3em", // ✅ CHANGED: Smoother line height
-  }}
-  title={short.title}
->
-  {short.title}
-</h3>
+                          {/* Title - IMPROVED FIX */}
+                          <h3
+                            className="text-sm font-semibold text-gray-900 dark:text-white mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              wordBreak: "break-word",
+                              height: "2.8rem",
+                              lineHeight: "1.4rem",
+                            }}
+                            title={short.title}
+                          >
+                            {short.title}
+                          </h3>
 
                           {/* Channel Info - IMPROVED FIX */}
                           <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
@@ -998,50 +997,61 @@ const Home: NextPage = () => {
                           </div>
                         </div>
 
-                      {/* Text Info - FIXED overflow */}
-<div className="flex-1 min-w-0 max-w-full overflow-hidden">
-  <Link href={`/watch/${video._id}`}>
-    <h3
-      className="font-semibold text-sm text-gray-900 dark:text-white mb-1.5 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
-      style={{
-        display: "-webkit-box",
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        wordBreak: "break-word",
-        lineHeight: "1.3em", // ✅ CHANGED: Match real YouTube
-        minHeight: "2.6em",  // ✅ CHANGED: Better spacing
-        maxHeight: "2.6em",
-      }}
-    >
-      {video?.videotitle || "Untitled Video"}
-    </h3>
-  </Link>
+                        {/* Text Info - FIXED overflow */}
+                        <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+                          <Link href={`/watch/${video._id}`}>
+                            <h3
+                              className="font-semibold text-sm text-gray-900 dark:text-white mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                wordBreak: "break-word",
+                                minHeight: "2.5rem",
+                                maxHeight: "2.5rem",
+                                lineHeight: "1.25rem",
+                              }}
+                            >
+                              {video?.videotitle || "Untitled Video"}
+                            </h3>
+                          </Link>
 
-  <p
-    onClick={(e) => {
-      e.preventDefault();
-      router.push(
-        `/channel/${video.uploadedBy?._id || "unknown"}`
-      );
-    }}
-    className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer truncate" // ✅ ADDED: truncate class, increased mb
-    title={channelName}
-  >
-    {channelName}
-  </p>
+                          <p
+                            onClick={(e) => {
+                              e.preventDefault();
+                              router.push(
+                                `/channel/${video.uploadedBy?._id || "unknown"}`
+                              );
+                            }}
+                            className="text-xs text-gray-600 dark:text-gray-400 mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              display: "block",
+                              maxWidth: "100%",
+                            }}
+                            title={channelName}
+                          >
+                            {channelName}
+                          </p>
 
-  <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-500 font-medium"> {/* ✅ CHANGED: text-[11px] to text-xs */}
-    <span className="whitespace-nowrap">
-      {formatViews(video?.views)}
-    </span>
-    <span className="flex-shrink-0">•</span>
-    <span className="truncate">
-      {formatTimeAgo(video?.createdAt)}
-    </span>
-  </div>
-</div>  </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium">
+                            <span className="font-semibold whitespace-nowrap">
+                              {formatViews(video?.views)}
+                            </span>
+                            <span className="font-bold flex-shrink-0">•</span>
+                            <span
+                              className="truncate"
+                              style={{ maxWidth: "calc(100% - 80px)" }}
+                            >
+                              {formatTimeAgo(video?.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
