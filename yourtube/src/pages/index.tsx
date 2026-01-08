@@ -755,28 +755,31 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                         <div className="w-full" style={{ marginBottom: "8px" }}>
-  <p
-    className="font-semibold text-gray-900 dark:text-white"
-    style={{
-      fontSize: "13px",
-      lineHeight: "18px",
-      display: "-webkit-box",
-      WebkitLineClamp: 3,  // ← Changed from 2 to 3
-      WebkitBoxOrient: "vertical",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      wordBreak: "break-word",
-      minHeight: "54px",  // ← Changed from 36px (18px × 3 lines)
-      maxHeight: "54px",  // ← Changed from 36px
-      margin: 0,
-      padding: 0,
-    }}
-    title={short.title}
-  >
-    {short.title}
-  </p>
-</div>
+                          <div
+                            className="w-full"
+                            style={{ marginBottom: "8px" }}
+                          >
+                            <p
+                              className="font-semibold text-gray-900 dark:text-white"
+                              style={{
+                                fontSize: "13px",
+                                lineHeight: "18px",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 3, // ← Changed from 2 to 3
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                wordBreak: "break-word",
+                                minHeight: "54px", // ← Changed from 36px (18px × 3 lines)
+                                maxHeight: "54px", // ← Changed from 36px
+                                margin: 0,
+                                padding: 0,
+                              }}
+                              title={short.title}
+                            >
+                              {short.title}
+                            </p>
+                          </div>
                           {/* FIX: Channel Info Row */}
                           <div
                             className="flex items-center gap-2 no-click w-full"
@@ -1026,10 +1029,10 @@ const Home: NextPage = () => {
             }
           }
 
-          /* ===== VIDEO TITLE - ENHANCED ===== */
+          /* ===== VIDEO TITLE - ENHANCED (3 LINES) ===== */
           .video-title {
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1037,10 +1040,10 @@ const Home: NextPage = () => {
             overflow-wrap: break-word;
             hyphens: auto;
 
-            /* Dynamic height */
+            /* Dynamic height for 3 lines */
             line-height: 1.4;
-            min-height: auto !important;
-            max-height: none !important;
+            min-height: 54px;
+            max-height: 54px;
             height: auto !important;
 
             /* Typography */
