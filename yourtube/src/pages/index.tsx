@@ -753,22 +753,14 @@ const Home: NextPage = () => {
                           {/* Title */}
                           {/* Title */}
                           <h3
-                            className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-1.5 w-full lg:text-[15px] lg:font-bold lg:mb-2 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              wordBreak: "break-word",
-                              minHeight: "2.25rem",
-                            }}
+                            className="shorts-title font-semibold text-gray-900 dark:text-white mb-1.5 w-full lg:font-bold lg:mb-2 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                            title={short.title}
                           >
                             {short.title}
                           </h3>
 
                           {/* Channel Info */}
-                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
+                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5 text-container">
                             {/* Avatar */}
                             {/* Avatar */}
                             <div
@@ -796,10 +788,7 @@ const Home: NextPage = () => {
                             {/* Channel Name */}
                             {/* Channel Name */}
                             <span
-                              className="text-[11px] text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-xs lg:font-bold"
-                              style={{
-                                textShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                              }}
+                              className="shorts-channel-name text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0 lg:font-bold"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 hapticFeedback.selection();
@@ -942,9 +931,12 @@ const Home: NextPage = () => {
                         </div>
 
                         {/* ✅ IMPROVED TEXT INFO - BETTER OVERFLOW HANDLING */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 text-container">
                           <Link href={`/watch/${video._id}`}>
-                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors break-words">
+                            <h3
+                              className="video-title font-semibold text-gray-900 dark:text-white mb-1 lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
+                              title={video?.videotitle || "Untitled Video"}
+                            >
                               {video?.videotitle || "Untitled Video"}
                             </h3>
                           </Link>
@@ -957,7 +949,8 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer max-w-full"
+                            className="video-channel-name text-gray-600 dark:text-gray-400 mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                            title={channelName}
                           >
                             {channelName}
                           </p>
@@ -988,8 +981,8 @@ const Home: NextPage = () => {
           </section>
         </div>
 
-        {/* ✅ CONSOLIDATED TYPOGRAPHY STYLES */}
         <style jsx>{`
+          /* Scrollbar hiding */
           .scrollbar-hide::-webkit-scrollbar {
             display: none;
           }
@@ -997,6 +990,8 @@ const Home: NextPage = () => {
             -ms-overflow-style: none;
             scrollbar-width: none;
           }
+
+          /* Skeleton loading animation */
           .skeleton {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
           }
@@ -1007,6 +1002,104 @@ const Home: NextPage = () => {
             }
             50% {
               opacity: 0.5;
+            }
+          }
+
+          /* ===== TEXT DISPLAY FIXES ===== */
+
+          /* Fix for shorts title - ensure proper line clamping with word wrapping */
+          .shorts-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            min-height: 2.5em;
+            line-height: 1.25;
+          }
+
+          /* Fix for shorts channel name - prevent overflow */
+          .shorts-channel-name {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+          }
+
+          /* Fix for video title - ensure proper multi-line display */
+          .video-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.3;
+            max-height: 2.6em;
+          }
+
+          /* Fix for video channel name */
+          .video-channel-name {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+          }
+
+          /* Fix for video metadata row */
+          .video-metadata {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            overflow: hidden;
+          }
+
+          /* Container width fix for text blocks */
+          .text-container {
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+          }
+
+          /* Mobile-specific adjustments */
+          @media (max-width: 1023px) {
+            .shorts-title {
+              font-size: 13px;
+              min-height: 2.25rem;
+            }
+
+            .video-title {
+              font-size: 14px;
+              max-height: 2.4em;
+            }
+
+            .shorts-channel-name,
+            .video-channel-name {
+              font-size: 11px;
+            }
+          }
+
+          /* Desktop adjustments */
+          @media (min-width: 1024px) {
+            .shorts-title {
+              font-size: 15px;
+              min-height: 2.5rem;
+            }
+
+            .video-title {
+              font-size: 15px;
+              max-height: 2.6em;
+            }
+
+            .shorts-channel-name,
+            .video-channel-name {
+              font-size: 12px;
             }
           }
         `}</style>
