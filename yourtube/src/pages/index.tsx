@@ -755,32 +755,28 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                          {/* Title - FIXED */}
-                          <div
-                            className="w-full"
-                            style={{ marginBottom: "8px" }}
-                          >
-                            <p
-                              className="font-semibold text-gray-900 dark:text-white"
-                              style={{
-                                fontSize: "13px",
-                                lineHeight: "18px",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                wordBreak: "break-word",
-                                minHeight: "36px",
-                                maxHeight: "36px",
-                                margin: 0,
-                                padding: 0,
-                              }}
-                              title={short.title}
-                            >
-                              {short.title}
-                            </p>
-                          </div>
+                         <div className="w-full" style={{ marginBottom: "8px" }}>
+  <p
+    className="font-semibold text-gray-900 dark:text-white"
+    style={{
+      fontSize: "13px",
+      lineHeight: "18px",
+      display: "-webkit-box",
+      WebkitLineClamp: 3,  // ← Changed from 2 to 3
+      WebkitBoxOrient: "vertical",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      wordBreak: "break-word",
+      minHeight: "54px",  // ← Changed from 36px (18px × 3 lines)
+      maxHeight: "54px",  // ← Changed from 36px
+      margin: 0,
+      padding: 0,
+    }}
+    title={short.title}
+  >
+    {short.title}
+  </p>
+</div>
                           {/* FIX: Channel Info Row */}
                           <div
                             className="flex items-center gap-2 no-click w-full"
