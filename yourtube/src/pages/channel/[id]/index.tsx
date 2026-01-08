@@ -829,8 +829,186 @@ const ChannelPage = () => {
                       </p>
                     </div>
                   ) : videos.length > 0 ? (
-                    <div className="w-full overflow-visible">
-                      <ChannelVideos videos={videos} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {videos.map((video) => {
+                        // ✅ SAME THUMBNAIL LOGIC AS HOME PAGE
+                        const getVideoThumbnail = (video: any): string => {
+                          const explicitThumbnail =
+                            video?.thumbnailUrl ||
+                            video?.thumbnail ||
+                            video?.videothumbnail ||
+                            video?.videothumb;
+
+                          if (explicitThumbnail?.startsWith("http")) {
+                            return explicitThumbnail;
+                          }
+
+                          const videoUrl =
+                            video?.filepath ||
+                            video?.videofile ||
+                            video?.videoLink;
+                          if (videoUrl?.includes("supabase.co")) {
+                            return videoUrl;
+                          }
+
+                          if (
+                            videoUrl?.includes("cloudinary.com") &&
+                            videoUrl.includes("/video/upload/")
+                          ) {
+                            try {
+                              const match = videoUrl.match(
+                                /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/
+                              );
+                              if (match) {
+                                const cloudName = match[1];
+                                let publicId = match[2];
+                                publicId = publicId
+                                  .split("/")
+                                  .filter(
+                                    (segment) =>
+                                      !segment.match(
+                                        /^(f_|vc_|ac_|af_|br_|q_|w_|h_|c_|so_|t_)/
+                                      )
+                                  )
+                                  .join("/");
+                                publicId = publicId.replace(
+                                  /\.(mp4|mov|avi|mkv|webm)$/i,
+                                  ""
+                                );
+                                return `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+                              }
+                            } catch (error) {
+                              console.error(
+                                "❌ Thumbnail generation error:",
+                                error
+                              );
+                            }
+                          }
+
+                          return "/placeholder-thumbnail.jpg";
+                        };
+
+                        const channelName =
+                          video.uploadedBy?.channelname ||
+                          video.uploadedBy?.name ||
+                          video?.videochanel ||
+                          "Unknown Channel";
+
+                        return (
+                          <div
+                            key={video._id}
+                            onClick={() => router.push(`/watch/${video._id}`)}
+                            className="cursor-pointer group"
+                          >
+                            {/* Thumbnail */}
+                            <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3 shadow-sm hover:shadow-lg transition-shadow">
+                              {getVideoThumbnail(video).includes(
+                                "supabase.co"
+                              ) ? (
+                                <img
+                                  src={getVideoThumbnail(video)}
+                                  alt={video?.videotitle || "Video thumbnail"}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    const target =
+                                      e.currentTarget as HTMLImageElement;
+                                    const currentVideo = video;
+                                    console.error(
+                                      "❌ Thumbnail failed, trying video element"
+                                    );
+                                    target.style.display = "none";
+                                    const parent = target.parentElement;
+                                    if (
+                                      parent &&
+                                      !parent.querySelector("video")
+                                    ) {
+                                      const videoElement =
+                                        document.createElement("video");
+                                      videoElement.src =
+                                        getVideoThumbnail(currentVideo);
+                                      videoElement.className =
+                                        "w-full h-full object-cover";
+                                      videoElement.preload = "metadata";
+                                      videoElement.muted = true;
+                                      videoElement.playsInline = true;
+                                      parent.appendChild(videoElement);
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <video
+                                  src={getVideoThumbnail(video)}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  preload="metadata"
+                                  poster={getVideoThumbnail(video)}
+                                  muted
+                                  playsInline
+                                />
+                              )}
+                              {video?.duration && (
+                                <div className="absolute bottom-2 right-2 bg-black/90 text-white text-xs font-bold px-2 py-0.5 rounded">
+                                  {video.duration}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Video Info */}
+                            <div className="flex gap-3">
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(
+                                    `/channel/${video.uploadedBy?._id}`
+                                  );
+                                }}
+                                className="flex-shrink-0"
+                              >
+                                <Avatar className="w-9 h-9 ring-2 ring-transparent hover:ring-blue-500 transition-all">
+                                  <AvatarImage
+                                    src={getImageUrl(
+                                      video.uploadedBy?.image,
+                                      true
+                                    )}
+                                    alt={channelName}
+                                  />
+                                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
+                                    {channelName[0]?.toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">
+                                  {video?.videotitle || "Untitled Video"}
+                                </h3>
+                                <p
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(
+                                      `/channel/${video.uploadedBy?._id}`
+                                    );
+                                  }}
+                                  className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-1 cursor-pointer"
+                                >
+                                  {channelName}
+                                </p>
+                                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
+                                  <span>{video.views || 0} views</span>
+                                  <span>•</span>
+                                  <span>
+                                    {video.createdAt
+                                      ? new Date(
+                                          video.createdAt
+                                        ).toLocaleDateString()
+                                      : "Recently"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-12">
