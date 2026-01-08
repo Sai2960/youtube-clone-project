@@ -1151,11 +1151,19 @@ const Home: NextPage = () => {
           /* ===== RESPONSIVE BREAKPOINTS ===== */
 
           /* Mobile (< 640px) */
+          /* Mobile (< 640px) */
           @media (max-width: 639px) {
             .shorts-title,
             .video-title {
               font-size: 13px;
               line-height: 1.4;
+              min-height: 54px !important;
+              max-height: 54px !important;
+              -webkit-line-clamp: 3 !important;
+              display: -webkit-box !important;
+              -webkit-box-orient: vertical !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
             }
 
             .shorts-channel-name,
