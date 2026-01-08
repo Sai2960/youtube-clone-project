@@ -805,24 +805,24 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                          <h3
-                            className="text-sm font-semibold text-gray-900 dark:text-white leading-snug mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              wordBreak: "break-word",
-                              overflowWrap: "break-word",
-                              minHeight: "2.8rem", // ✅ INCREASED from 2.5rem
-                              maxWidth: "100%",
-                              lineHeight: "1.4", // ✅ ADDED explicit line height
-                            }}
-                            title={short.title}
-                          >
-                            {short.title}
-                          </h3>
+                        <h3
+  className="text-sm font-semibold text-gray-900 dark:text-white leading-snug mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+  style={{
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    wordBreak: "break-word",
+    overflowWrap: "break-word",
+    minHeight: "2.8rem", // ✅ INCREASED from 2.5rem
+    maxWidth: "100%",
+    lineHeight: "1.4", // ✅ ADDED explicit line height
+  }}
+  title={short.title}
+>
+  {short.title}
+</h3>
 
                           {/* Channel Info */}
                           <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
@@ -851,13 +851,13 @@ const Home: NextPage = () => {
 
                             {/* Channel Name */}
                             <span
-                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0 lg:text-sm lg:font-bold"
-                              style={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                maxWidth: "calc(160px - 48px)", // ✅ FIXED: Account for avatar + padding
-                              }}
+  className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0 lg:text-sm lg:font-bold"
+  style={{
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    maxWidth: "calc(160px - 48px)", // ✅ FIXED: Account for avatar + padding
+  }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 hapticFeedback.selection();
@@ -1002,23 +1002,23 @@ const Home: NextPage = () => {
                         <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                           <Link href={`/watch/${video._id}`}>
                             <h3
-                              className="font-semibold text-sm text-gray-900 dark:text-white mb-1 lg:text-[15px] lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
-                              style={{
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                wordBreak: "break-word",
-                                overflowWrap: "break-word",
-                                maxWidth: "100%",
-                                lineHeight: "1.4", // ✅ ADDED explicit line height
-                                minHeight: "2.8rem", // ✅ ADDED minimum height for 2 lines
-                              }}
-                              title={video?.videotitle || "Untitled Video"}
-                            >
-                              {video?.videotitle || "Untitled Video"}
-                            </h3>
+  className="font-semibold text-sm text-gray-900 dark:text-white mb-1 lg:text-[15px] lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
+  style={{
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    wordBreak: "break-word",
+    overflowWrap: "break-word",
+    maxWidth: "100%",
+    lineHeight: "1.4", // ✅ ADDED explicit line height
+    minHeight: "2.8rem", // ✅ ADDED minimum height for 2 lines
+  }}
+  title={video?.videotitle || "Untitled Video"}
+>
+  {video?.videotitle || "Untitled Video"}
+</h3>
                           </Link>
 
                           <p
@@ -1034,7 +1034,6 @@ const Home: NextPage = () => {
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
                               maxWidth: "100%",
-                              display: "block", // ✅ ADDED to ensure proper block rendering
                             }}
                             title={channelName}
                           >
@@ -1113,6 +1112,26 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 `}</style>;
 <style jsx>{`
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .skeleton {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
   /* Text truncation helpers */
   .line-clamp-2 {
     display: -webkit-box;
@@ -1120,35 +1139,17 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.4; /* ✅ ADDED */
-    min-height: 2.8rem; /* ✅ ADDED */
   }
-
+  
   /* Prevent text overflow in flex containers */
   .min-w-0 {
     min-width: 0;
   }
-
+  
   /* Ensure proper word breaking */
-  h3,
-  p,
-  span {
+  h3, p, span {
     word-wrap: break-word;
     overflow-wrap: break-word;
-    hyphens: auto; /* ✅ ADDED for better text breaking */
   }
-
-  /* ✅ NEW: Fix for short card text container */
-  .short-text-container {
-    width: 100%;
-    max-width: 160px;
-    min-width: 0;
-  }
-
-  @media (min-width: 1024px) {
-    .short-text-container {
-      max-width: 200px;
-    }
-  }
-`}</style>;
+`}</style>
 export default Home;
