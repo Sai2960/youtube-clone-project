@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/pages/index.tsx - FIXED SHORTS SIZING FOR MOBILE & DESKTOP
+// src/pages/index.tsx - FIXED: LARGER DESKTOP SHORTS + BETTER VIDEO TEXT VISIBILITY
 
 import { NextPage } from "next";
 import { useState, useEffect, useRef } from "react";
@@ -22,30 +22,35 @@ import { useUser } from "@/lib/AuthContext";
 import { GetServerSideProps } from "next";
 import { BACKEND_URL } from "@/lib/axiosinstance";
 
-// ✅ FIXED TYPOGRAPHY CONSTANTS WITH PROPER SHORT SIZING
+// ✅ FIXED TYPOGRAPHY CONSTANTS - BETTER VIDEO TEXT VISIBILITY
 const TYPOGRAPHY = {
-  // Video Cards
+  // Video Cards - IMPROVED FOR BETTER VISIBILITY
   videoTitle: {
     mobile: "text-sm leading-5",
-    desktop: "text-base leading-6 lg:text-[15px] lg:leading-[21px]",
+    tablet: "text-sm leading-5",
+    desktop: "text-base leading-6",
   },
   channelName: {
     mobile: "text-xs leading-4",
+    tablet: "text-xs leading-4",
     desktop: "text-sm leading-5",
   },
   videoMeta: {
     mobile: "text-[11px] leading-4",
+    tablet: "text-[11px] leading-4",
     desktop: "text-xs leading-5",
   },
 
-  // ✅ FIXED SHORTS - MUCH SMALLER ON MOBILE
+  // ✅ SHORTS - RESPONSIVE SIZING
   shortTitle: {
-    mobile: "text-xs leading-4", // ✅ REDUCED from text-sm
-    desktop: "text-sm leading-5", // ✅ Slightly reduced
+    mobile: "text-xs leading-4",
+    tablet: "text-xs leading-4",
+    desktop: "text-sm leading-5", // ✅ LARGER on desktop
   },
   shortMeta: {
-    mobile: "text-[10px] leading-3", // ✅ REDUCED from text-[12px]
-    desktop: "text-xs leading-4", // ✅ Reduced
+    mobile: "text-[10px] leading-3",
+    tablet: "text-[10px] leading-3",
+    desktop: "text-xs leading-4", // ✅ LARGER on desktop
   },
 };
 
@@ -590,7 +595,7 @@ const Home: NextPage = () => {
             </div>
           )}
 
-          {/* ✅ FIXED SHORTS SECTION WITH PROPER MOBILE SIZING */}
+          {/* ✅ FIXED SHORTS SECTION - RESPONSIVE SIZING */}
           {shorts.length > 0 && (
             <section
               className="py-3 md:py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
@@ -622,7 +627,7 @@ const Home: NextPage = () => {
                   {[...Array(6)].map((_, i) => (
                     <div
                       key={i}
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 short-skeleton"
                       style={{
                         width: "120px",
                       }}
@@ -660,7 +665,7 @@ const Home: NextPage = () => {
                     />
                   </button>
 
-                  {/* ✅ FIXED SHORTS CONTAINER - PROPER RESPONSIVE SIZING */}
+                  {/* ✅ FIXED SHORTS CONTAINER - RESPONSIVE WIDTH */}
                   <div
                     ref={shortsScrollRef}
                     className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
@@ -690,14 +695,13 @@ const Home: NextPage = () => {
                               handleShortClick(e, short._id, index);
                             }
                           }}
-                          className="cursor-pointer group/short flex-shrink-0 transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
+                          className="cursor-pointer group/short flex-shrink-0 transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95 short-card"
                           style={{
-                            width: "120px", // ✅ FIXED: Mobile width 120px
                             userSelect: "none",
                             WebkitTapHighlightColor: "transparent",
                           }}
                         >
-                          {/* ✅ THUMBNAIL - COMPACT SIZE */}
+                          {/* ✅ THUMBNAIL - RESPONSIVE */}
                           <div
                             className="relative rounded-lg overflow-hidden bg-gray-900 mb-2 shadow-sm w-full group/thumbnail transition-all duration-300 hover:shadow-lg hover:ring-2 hover:ring-red-500/30 active:shadow-md active:ring-2 active:ring-red-500/50"
                             style={{
@@ -748,7 +752,7 @@ const Home: NextPage = () => {
                               }}
                             />
 
-                            {/* Play Icon - Smaller */}
+                            {/* Play Icon */}
                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 active:opacity-100 transition-all duration-300 bg-black/40 pointer-events-none">
                               <div className="bg-white backdrop-blur-sm rounded-full p-2 shadow-md transform scale-90 group-hover/short:scale-100 active:scale-105 transition-transform duration-300">
                                 <Play
@@ -762,7 +766,7 @@ const Home: NextPage = () => {
                             {/* Bottom Gradient */}
                             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-                            {/* Views Badge - Compact */}
+                            {/* Views Badge */}
                             <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1 shadow-md">
                               <svg
                                 className="w-2.5 h-2.5 fill-white"
@@ -770,34 +774,21 @@ const Home: NextPage = () => {
                               >
                                 <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
                               </svg>
-                              <span className="text-[9px] font-bold text-white whitespace-nowrap">
+                              <span className="text-[9px] font-bold text-white whitespace-nowrap short-views">
                                 {formatViewsShort(short.views)}
                               </span>
                             </div>
                           </div>
 
-                          {/* ✅ FIXED SHORT TITLE - COMPACT */}
+                          {/* ✅ FIXED SHORT TITLE */}
                           <h3
-                            className={`${TYPOGRAPHY.shortTitle.mobile} md:${TYPOGRAPHY.shortTitle.desktop} font-semibold text-gray-900 dark:text-white mb-1 w-full active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150`}
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              wordBreak: "break-word",
-                              overflowWrap: "break-word",
-                              minHeight: "2rem",
-                              maxWidth: "100%",
-                              lineHeight: "1rem",
-                              fontSize: "0.75rem",
-                            }}
+                            className="short-title font-semibold text-gray-900 dark:text-white mb-1 w-full active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
                             title={short.title}
                           >
                             {short.title}
                           </h3>
 
-                          {/* ✅ FIXED CHANNEL INFO - COMPACT */}
+                          {/* ✅ FIXED CHANNEL INFO */}
                           <div className="flex items-center gap-1.5 no-click w-full md:gap-2">
                             {/* Avatar */}
                             <div
@@ -814,7 +805,7 @@ const Home: NextPage = () => {
                                   true
                                 )}
                                 alt={shortChannelName}
-                                className="w-5 h-5 rounded-full object-cover border border-gray-200 dark:border-gray-700 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                                className="w-5 h-5 rounded-full object-cover border border-gray-200 dark:border-gray-700 active:ring-2 active:ring-blue-500/50 transition-all duration-150 short-avatar"
                                 onError={(e) => {
                                   e.currentTarget.src =
                                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
@@ -822,15 +813,14 @@ const Home: NextPage = () => {
                               />
                             </div>
 
-                            {/* ✅ CHANNEL NAME - COMPACT */}
+                            {/* Channel Name */}
                             <span
-                              className={`${TYPOGRAPHY.shortMeta.mobile} md:${TYPOGRAPHY.shortMeta.desktop} text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0`}
+                              className="short-meta text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0"
                               style={{
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
                                 maxWidth: "100%",
-                                fontSize: "0.7rem",
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -851,7 +841,7 @@ const Home: NextPage = () => {
             </section>
           )}
 
-          {/* ✅ VIDEOS SECTION (UNCHANGED) */}
+          {/* ✅ IMPROVED VIDEOS SECTION - BETTER TEXT VISIBILITY */}
           <section className="px-3 py-4 pb-20 lg:px-6 lg:pb-8">
             {loadingVideos ? (
               <div className="space-y-3 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
@@ -880,6 +870,7 @@ const Home: NextPage = () => {
 
                   return (
                     <div key={video._id} className="block group w-full">
+                      {/* Video Thumbnail */}
                       <Link href={`/watch/${video._id}`} className="block mb-3">
                         <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
                           {getThumbnailUrl(video).includes("supabase.co") ? (
@@ -929,7 +920,9 @@ const Home: NextPage = () => {
                         </div>
                       </Link>
 
+                      {/* ✅ IMPROVED VIDEO INFO - BETTER SPACING & TEXT VISIBILITY */}
                       <div className="flex gap-2.5 w-full overflow-hidden">
+                        {/* Avatar */}
                         <div
                           onClick={(e) => {
                             e.preventDefault();
@@ -970,22 +963,11 @@ const Home: NextPage = () => {
                           </div>
                         </div>
 
-                        <div className="flex-1 min-w-0">
+                        {/* ✅ TEXT INFO - BETTER SPACING */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                           <Link href={`/watch/${video._id}`}>
                             <h3
-                              className={`${TYPOGRAPHY.videoTitle.mobile} lg:${TYPOGRAPHY.videoTitle.desktop} font-semibold text-gray-900 dark:text-white mb-1 lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors`}
-                              style={{
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                wordBreak: "break-word",
-                                overflowWrap: "break-word",
-                                maxWidth: "100%",
-                                lineHeight: "1.375",
-                                minHeight: "2.75rem",
-                              }}
+                              className="video-title font-semibold text-gray-900 dark:text-white lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors"
                               title={video?.videotitle || "Untitled Video"}
                             >
                               {video?.videotitle || "Untitled Video"}
@@ -999,7 +981,7 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className={`${TYPOGRAPHY.channelName.mobile} lg:${TYPOGRAPHY.channelName.desktop} text-gray-600 dark:text-gray-400 mb-1 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer`}
+                            className="video-channel text-gray-600 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
                             style={{
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -1011,9 +993,7 @@ const Home: NextPage = () => {
                             {channelName}
                           </p>
 
-                          <div
-                            className={`${TYPOGRAPHY.videoMeta.mobile} lg:${TYPOGRAPHY.videoMeta.desktop} text-gray-500 dark:text-gray-500 font-medium flex-wrap flex items-center gap-1.5`}
-                          >
+                          <div className="video-meta text-gray-500 dark:text-gray-500 font-medium flex flex-wrap items-center gap-1.5">
                             <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
@@ -1038,7 +1018,7 @@ const Home: NextPage = () => {
           </section>
         </div>
 
-        {/* ✅ FIXED STYLES */}
+        {/* ✅ COMPREHENSIVE STYLES - MOBILE, TABLET, DESKTOP */}
         <style jsx>{`
           .scrollbar-hide::-webkit-scrollbar {
             display: none;
@@ -1060,45 +1040,167 @@ const Home: NextPage = () => {
             }
           }
 
-          /* ✅ RESPONSIVE SHORTS SIZING */
-          @media (max-width: 640px) {
-            /* Mobile: Compact shorts */
-            .short-card {
-              width: 120px;
-            }
-            .short-title {
-              font-size: 0.75rem;
-              line-height: 1rem;
-              max-height: 2rem;
-            }
-            .short-meta {
-              font-size: 0.7rem;
-            }
+          /* ✅ SHORTS RESPONSIVE SIZING */
+          .short-card {
+            width: 120px; /* Mobile */
           }
 
+          .short-title {
+            font-size: 0.75rem;
+            line-height: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            min-height: 2rem;
+            max-width: 100%;
+          }
+
+          .short-meta {
+            font-size: 0.7rem;
+            line-height: 0.875rem;
+          }
+
+          .short-avatar {
+            width: 20px;
+            height: 20px;
+          }
+
+          .short-views {
+            font-size: 0.5625rem;
+          }
+
+          .short-skeleton {
+            width: 120px;
+          }
+
+          /* ✅ VIDEO TEXT STYLES - IMPROVED VISIBILITY */
+          .video-title {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            min-height: 2.5rem;
+            max-width: 100%;
+            margin-bottom: 0.25rem;
+          }
+
+          .video-channel {
+            font-size: 0.8125rem;
+            line-height: 1rem;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+          }
+
+          .video-meta {
+            font-size: 0.75rem;
+            line-height: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            flex-wrap: wrap;
+            color: #757575;
+          }
+
+          .video-meta span:last-child {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          /* ✅ TABLET BREAKPOINT (641px - 1023px) */
           @media (min-width: 641px) and (max-width: 1023px) {
-            /* Tablet: Medium shorts */
             .short-card {
               width: 140px;
             }
+
             .short-title {
+              font-size: 0.8125rem;
+              line-height: 1.125rem;
+              min-height: 2.25rem;
+            }
+
+            .short-meta {
+              font-size: 0.75rem;
+            }
+
+            .short-avatar {
+              width: 22px;
+              height: 22px;
+            }
+
+            .video-title {
+              font-size: 0.9375rem;
+              line-height: 1.375rem;
+              min-height: 2.75rem;
+            }
+
+            .video-channel {
+              font-size: 0.875rem;
+              line-height: 1.125rem;
+            }
+
+            .video-meta {
               font-size: 0.8125rem;
               line-height: 1.125rem;
             }
           }
 
+          /* ✅ DESKTOP BREAKPOINT (1024px+) */
           @media (min-width: 1024px) {
-            /* Desktop: Larger shorts */
             .short-card {
-              width: 160px;
+              width: 180px; /* ✅ INCREASED from 160px */
             }
+
             .short-title {
+              font-size: 0.875rem;
+              line-height: 1.25rem;
+              min-height: 2.5rem;
+            }
+
+            .short-meta {
+              font-size: 0.8125rem;
+              line-height: 1rem;
+            }
+
+            .short-avatar {
+              width: 24px;
+              height: 24px;
+            }
+
+            .short-views {
+              font-size: 0.625rem;
+            }
+
+            .video-title {
+              font-size: 1rem;
+              line-height: 1.375rem;
+              min-height: 2.75rem;
+            }
+
+            .video-channel {
+              font-size: 0.9375rem;
+              line-height: 1.25rem;
+            }
+
+            .video-meta {
               font-size: 0.875rem;
               line-height: 1.25rem;
             }
           }
 
-          /* Ensure consistent text rendering */
+          /* ✅ Ensure consistent text rendering */
           * {
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
