@@ -755,32 +755,31 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                          {/* FIX: Title with full width */}
                           {/* Title - FIXED */}
-                          {/* Title - DEFINITIVE FIX */}
                           <div
-                            className="w-full mb-2"
-                            style={{
-                              minHeight: "36px", // Fixed pixel height for exactly 2 lines
-                              display: "flex",
-                              alignItems: "flex-start",
-                            }}
+                            className="w-full"
+                            style={{ marginBottom: "8px" }}
                           >
-                            <h3
-                              className="text-[13px] leading-[18px] font-semibold text-gray-900 dark:text-white"
+                            <p
+                              className="font-semibold text-gray-900 dark:text-white"
                               style={{
+                                fontSize: "13px",
+                                lineHeight: "18px",
                                 display: "-webkit-box",
-                                WebkitLineClamp: "2",
+                                WebkitLineClamp: 2,
                                 WebkitBoxOrient: "vertical",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 wordBreak: "break-word",
-                                width: "100%",
+                                minHeight: "36px",
+                                maxHeight: "36px",
+                                margin: 0,
+                                padding: 0,
                               }}
                               title={short.title}
                             >
                               {short.title}
-                            </h3>
+                            </p>
                           </div>
                           {/* FIX: Channel Info Row */}
                           <div
