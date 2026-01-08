@@ -657,7 +657,6 @@ const Home: NextPage = () => {
                       const shortChannelName = getShortChannelName(short);
 
                       return (
-                        // FIX: Use fixed width container - NOT flex-shrink-0 with small width
                         <div
                           key={short._id}
                           onClick={(e) => {
@@ -667,14 +666,14 @@ const Home: NextPage = () => {
                               handleShortClick(e, short._id, index);
                             }
                           }}
-                          className="cursor-pointer group/short transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
                           style={{
-                            minWidth: "200px",
-                            width: "200px",
+                            minWidth: "240px",
+                            width: "240px",
                             flexShrink: 0,
                             userSelect: "none",
                             WebkitTapHighlightColor: "transparent",
                           }}
+                          className="cursor-pointer group/short transition-all duration-200 ease-out touch-manipulation hover:scale-[0.97] active:scale-95"
                         >
                           {/* Thumbnail Card */}
                           <div
@@ -755,10 +754,8 @@ const Home: NextPage = () => {
                             </div>
                           </div>
 
-                          {/* FIX: Title with full width */}
+                          {/* TITLE - NO TAILWIND, PURE INLINE STYLES */}
                           <h3
-                            className="shorts-title font-semibold text-gray-900 dark:text-white mb-2 w-full active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
-                            title={short.title}
                             style={{
                               display: "-webkit-box",
                               WebkitLineClamp: 2,
@@ -766,25 +763,33 @@ const Home: NextPage = () => {
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               wordBreak: "break-word",
-                              lineHeight: "1.3",
-                              minHeight: "2.6em",
-                              maxHeight: "2.6em",
-                              margin: 0,
-                              padding: 0,
+                              lineHeight: "1.35",
+                              minHeight: "2.7em",
+                              maxHeight: "2.7em",
+                              margin: "0 0 8px 0",
+                              padding: "0",
                               fontSize: "13px",
                               fontWeight: 600,
+                              width: "100%",
+                              color: "rgb(55, 65, 81)",
                             }}
+                            className="dark:text-white"
+                            title={short.title}
                           >
                             {short.title}
                           </h3>
 
-                          {/* FIX: Channel Info Row */}
+                          {/* CHANNEL INFO - FLEX WITH MIN-W-0 */}
                           <div
-                            className="flex items-center gap-2 no-click w-full"
                             style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              width: "100%",
                               minWidth: 0,
                               overflow: "hidden",
                             }}
+                            className="no-click"
                           >
                             {/* Avatar */}
                             <div
@@ -801,7 +806,7 @@ const Home: NextPage = () => {
                                   true
                                 )}
                                 alt={shortChannelName}
-                                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
                                 onError={(e) => {
                                   e.currentTarget.src =
                                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
@@ -809,15 +814,8 @@ const Home: NextPage = () => {
                               />
                             </div>
 
-                            {/* FIX: Channel Name with proper flex shrinking */}
+                            {/* CHANNEL NAME - NO TAILWIND, PURE STYLES */}
                             <span
-                              className="text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                hapticFeedback.selection();
-                                router.push(`/channel/${short.userId?._id}`);
-                              }}
-                              title={shortChannelName}
                               style={{
                                 display: "block",
                                 overflow: "hidden",
@@ -828,7 +826,17 @@ const Home: NextPage = () => {
                                 lineHeight: "1.2",
                                 margin: 0,
                                 padding: 0,
+                                flex: 1,
+                                minWidth: 0,
+                                color: "rgb(60, 79, 98)",
                               }}
+                              className="dark:text-gray-300 cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                hapticFeedback.selection();
+                                router.push(`/channel/${short.userId?._id}`);
+                              }}
+                              title={shortChannelName}
                             >
                               {shortChannelName}
                             </span>
@@ -1015,7 +1023,7 @@ const Home: NextPage = () => {
 
         {/* FIX: AGGRESSIVE TEXT DISPLAY FIXES WITH ALL CONSTRAINTS */}
         <style jsx>{`
-          /* Scrollbar hiding */
+          /* Keep only this for scrollbar and skeleton */
           .scrollbar-hide::-webkit-scrollbar {
             display: none;
           }
@@ -1024,7 +1032,6 @@ const Home: NextPage = () => {
             scrollbar-width: none;
           }
 
-          /* Skeleton loading animation */
           .skeleton {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
           }
@@ -1038,61 +1045,7 @@ const Home: NextPage = () => {
             }
           }
 
-          /* ===== FIX: SHORTS TITLE - AGGRESSIVE CONSTRAINTS ===== */
-          .shorts-text-wrapper {
-            width: 100%;
-            min-width: 0;
-            overflow: hidden;
-            display: block;
-          }
-
-          .shorts-title {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            line-height: 1.3;
-            font-size: 13px;
-            min-height: 2.6em;
-            max-height: 2.6em;
-            margin: 0;
-            padding: 0;
-            font-weight: 600;
-            width: 100%;
-            min-width: 0;
-            word-spacing: -0.05em;
-          }
-
-          /* ===== FIX: SHORTS CHANNEL - AGGRESSIVE TRUNCATION ===== */
-          .shorts-channel-wrapper {
-            width: 100%;
-            min-width: 0;
-            overflow: hidden !important;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .shorts-channel-name {
-            display: block;
-            overflow: hidden !important;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 100%;
-            min-width: 0;
-            font-size: 11px;
-            font-weight: 600;
-            line-height: 1.2;
-            height: auto;
-            padding: 0;
-            margin: 0;
-            flex: 1;
-          }
-
-          /* ===== FIX: VIDEO INFO CONTAINER ===== */
+          /* Video styles only */
           .video-info-container {
             display: flex;
             gap: 10px;
@@ -1111,19 +1064,17 @@ const Home: NextPage = () => {
             width: 100%;
           }
 
-          /* ===== FIX: VIDEO TITLE - AGGRESSIVE CONSTRAINTS ===== */
           .video-title {
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-            overflow: hidden !important;
+            overflow: hidden;
             text-overflow: ellipsis;
             word-break: break-word;
-            overflow-wrap: break-word;
-            line-height: 1.3;
+            line-height: 1.35;
             font-size: 13px;
-            max-height: 2.6em;
-            min-height: 2.6em;
+            max-height: 2.7em;
+            min-height: 2.7em;
             margin: 0 0 4px 0;
             padding: 0;
             font-weight: 600;
@@ -1131,10 +1082,9 @@ const Home: NextPage = () => {
             min-width: 0;
           }
 
-          /* ===== FIX: VIDEO CHANNEL NAME - AGGRESSIVE TRUNCATION ===== */
           .video-channel-name {
             display: block;
-            overflow: hidden !important;
+            overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             max-width: 100%;
@@ -1144,11 +1094,9 @@ const Home: NextPage = () => {
             line-height: 1.2;
             margin: 0 0 4px 0;
             padding: 0;
-            height: auto;
             width: 100%;
           }
 
-          /* ===== FIX: VIDEO METADATA - FLEX PROPER HANDLING ===== */
           .video-metadata {
             display: flex;
             flex-wrap: nowrap;
@@ -1156,7 +1104,7 @@ const Home: NextPage = () => {
             gap: 4px;
             font-size: 11px;
             line-height: 1.2;
-            overflow: hidden !important;
+            overflow: hidden;
             width: 100%;
             min-width: 0;
             margin: 0;
@@ -1166,112 +1114,25 @@ const Home: NextPage = () => {
           .video-metadata span {
             flex-shrink: 0;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-
-          .video-metadata span:first-child {
-            font-weight: 600;
           }
 
           .video-metadata span:last-child {
             flex-shrink: 1;
             min-width: 0;
-            overflow: hidden !important;
+            overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
           }
 
-          /* ===== MOBILE OPTIMIZATIONS (< 1024px) ===== */
-          @media (max-width: 1023px) {
-            .shorts-title {
-              font-size: 13px;
-              line-height: 1.3;
-              min-height: 2.6em;
-              max-height: 2.6em;
-            }
-
-            .shorts-channel-name {
-              font-size: 11px;
-            }
-
-            .video-title {
-              font-size: 13px;
-              line-height: 1.3;
-              min-height: 2.6em;
-              max-height: 2.6em;
-            }
-
-            .video-channel-name {
-              font-size: 11px;
-            }
-
-            .video-metadata {
-              font-size: 11px;
-              gap: 3px;
-            }
-          }
-
-          /* ===== DESKTOP OPTIMIZATIONS (>= 1024px) ===== */
           @media (min-width: 1024px) {
-            .shorts-title {
-              font-size: 14px;
-              line-height: 1.3;
-              min-height: 2.6em;
-              max-height: 2.6em;
-            }
-
-            .shorts-channel-name {
-              font-size: 12px;
-            }
-
             .video-title {
               font-size: 14px;
-              line-height: 1.3;
-              min-height: 2.6em;
-              max-height: 2.6em;
             }
-
             .video-channel-name {
               font-size: 12px;
             }
-
             .video-metadata {
               font-size: 12px;
-              gap: 4px;
-            }
-          }
-
-          /* ===== DARK MODE CONSISTENCY ===== */
-          .dark .shorts-title,
-          .dark .video-title {
-            color: inherit;
-          }
-
-          .dark .shorts-channel-name,
-          .dark .video-channel-name {
-            color: inherit;
-          }
-          .shorts-title {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            word-break: break-word;
-            line-height: 1.3;
-            min-height: 2.6em;
-            max-height: 2.6em;
-            margin: 0;
-            padding: 0;
-            font-size: 13px;
-            font-weight: 600;
-            width: 100%;
-          }
-
-          @media (min-width: 1024px) {
-            .shorts-title {
-              font-size: 14px;
             }
           }
         `}</style>
