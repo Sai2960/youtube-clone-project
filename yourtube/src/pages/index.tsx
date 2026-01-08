@@ -792,28 +792,17 @@ const Home: NextPage = () => {
                             </div>
 
                             {/* FIX: Channel Name with proper flex shrinking */}
-                            <span
-                              className="text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                hapticFeedback.selection();
-                                router.push(`/channel/${short.userId?._id}`);
-                              }}
-                              title={shortChannelName}
-                              style={{
-                                display: "block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                fontSize: "11px",
-                                fontWeight: 600,
-                                lineHeight: "1.2",
-                                margin: 0,
-                                padding: 0,
-                              }}
-                            >
-                              {shortChannelName}
-                            </span>
+                           <span
+  className="shorts-channel-name text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0"
+  onClick={(e) => {
+    e.stopPropagation();
+    hapticFeedback.selection();
+    router.push(`/channel/${short.userId?._id}`);
+  }}
+  title={shortChannelName}
+>
+  {shortChannelName}
+</span>
                           </div>
                         </div>
                       );
