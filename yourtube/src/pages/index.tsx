@@ -20,33 +20,6 @@ import { useUser } from "@/lib/AuthContext";
 import { GetServerSideProps } from "next";
 import { BACKEND_URL } from "@/lib/axiosinstance";
 
-// ✅ TYPOGRAPHY CONSTANTS - YouTube-aligned
-const TYPOGRAPHY = {
-  // Video Cards
-  videoTitle: {
-    mobile: "text-sm leading-5", // 14px, line-height: 20px
-    desktop: "text-base leading-6 lg:text-[15px] lg:leading-[21px]", // 16px -> 15px on desktop for better fit
-  },
-  channelName: {
-    mobile: "text-xs leading-4", // 12px
-    desktop: "text-sm leading-5", // 14px
-  },
-  videoMeta: {
-    mobile: "text-[11px] leading-4", // 11px for views/date
-    desktop: "text-xs leading-5", // 12px
-  },
-
-  // Shorts
-  shortTitle: {
-    mobile: "text-sm leading-5", // 14px
-    desktop: "text-base leading-6", // 16px
-  },
-  shortMeta: {
-    mobile: "text-[12px] leading-4",
-    desktop: "text-sm leading-5",
-  },
-};
-
 interface Video {
   videoLink: string;
   videofile: string;
@@ -776,8 +749,9 @@ const Home: NextPage = () => {
                           </div>
 
                           {/* ✅ IMPROVED SHORT TITLE - PROPER TEXT VISIBILITY */}
+                          {/* Title */}
                           <h3
-                            className={`${TYPOGRAPHY.shortTitle.mobile} lg:${TYPOGRAPHY.shortTitle.desktop} font-semibold text-gray-900 dark:text-white mb-2 w-full px-0.5 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150`}
+                            className="text-sm font-semibold text-gray-900 dark:text-white leading-tight mb-2 w-full px-0.5 lg:text-base lg:font-bold lg:mb-3 active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150"
                             style={{
                               display: "-webkit-box",
                               WebkitLineClamp: 2,
@@ -785,18 +759,15 @@ const Home: NextPage = () => {
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               wordBreak: "break-word",
-                              overflowWrap: "break-word",
                               minHeight: "2.5rem",
-                              maxWidth: "100%",
-                              lineHeight: "1.25",
+                              textShadow: "0 1px 2px rgba(0,0,0,0.1)",
                             }}
-                            title={short.title}
                           >
                             {short.title}
                           </h3>
 
-                          {/* ✅ IMPROVED CHANNEL INFO - BETTER SPACING */}
-                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5 px-0.5">
+                          {/* Channel Info */}
+                          <div className="flex items-center gap-2 no-click w-full lg:gap-2.5">
                             {/* Avatar */}
                             <div
                               className="cursor-pointer flex-shrink-0 active:scale-95 transition-transform duration-150"
@@ -820,14 +791,11 @@ const Home: NextPage = () => {
                               />
                             </div>
 
-                            {/* ✅ IMPROVED CHANNEL NAME - PROPER TRUNCATION */}
+                            {/* Channel Name */}
                             <span
-                              className={`${TYPOGRAPHY.shortMeta.mobile} lg:${TYPOGRAPHY.shortMeta.desktop} text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0`}
+                              className="text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 truncate flex-1 min-w-0 lg:text-sm lg:font-bold"
                               style={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                maxWidth: "100%",
+                                textShadow: "0 1px 2px rgba(0,0,0,0.05)",
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -973,22 +941,7 @@ const Home: NextPage = () => {
                         {/* ✅ IMPROVED TEXT INFO - BETTER OVERFLOW HANDLING */}
                         <div className="flex-1 min-w-0">
                           <Link href={`/watch/${video._id}`}>
-                            <h3
-                              className={`${TYPOGRAPHY.videoTitle.mobile} lg:${TYPOGRAPHY.videoTitle.desktop} font-semibold text-gray-900 dark:text-white mb-1 lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors`}
-                              style={{
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                wordBreak: "break-word",
-                                overflowWrap: "break-word",
-                                maxWidth: "100%",
-                                lineHeight: "1.375",
-                                minHeight: "2.75rem",
-                              }}
-                              title={video?.videotitle || "Untitled Video"}
-                            >
+                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-tight lg:text-[15px] lg:leading-snug lg:group-hover:text-blue-600 dark:lg:group-hover:text-blue-400 lg:transition-colors break-words">
                               {video?.videotitle || "Untitled Video"}
                             </h3>
                           </Link>
@@ -1001,22 +954,13 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className={`${TYPOGRAPHY.channelName.mobile} lg:${TYPOGRAPHY.channelName.desktop} text-gray-600 dark:text-gray-400 mb-1 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer`}
-                            style={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              maxWidth: "100%",
-                            }}
-                            title={channelName}
+                            className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer max-w-full"
                           >
                             {channelName}
                           </p>
 
                           {/* ✅ IMPROVED VIDEO METADATA */}
-                          <div
-                            className={`${TYPOGRAPHY.videoMeta.mobile} lg:${TYPOGRAPHY.videoMeta.desktop} text-gray-500 dark:text-gray-500 font-medium flex-wrap flex items-center gap-1.5`}
-                          >
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium flex-wrap">
                             <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
@@ -1061,107 +1005,6 @@ const Home: NextPage = () => {
             50% {
               opacity: 0.5;
             }
-          }
-
-          /* ✅ TYPOGRAPHY SYSTEM - YOUTUBE-ALIGNED */
-          h3 {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-              "Helvetica Neue", Arial, sans-serif;
-          }
-
-          /* Video Title: 2 lines max */
-          .video-title {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            line-height: 1.375;
-            min-height: 2.75rem;
-          }
-
-          /* Short Title: 2 lines max */
-          .short-title {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            line-height: 1.25;
-            min-height: 2.5rem;
-          }
-
-          /* Channel Name: 1 line max */
-          .channel-name {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 100%;
-          }
-
-          /* Metadata: Single line with ellipsis */
-          .video-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-            flex-wrap: wrap;
-            overflow: hidden;
-          }
-
-          .video-meta span:last-child {
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
-          }
-
-          /* Proper text truncation in flex containers */
-          .min-w-0 {
-            min-width: 0;
-          }
-
-          /* Ensure consistent text rendering */
-          * {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-          }
-
-          /* Responsive text sizing helpers */
-          @media (max-width: 640px) {
-            h3 {
-              font-size: 0.875rem;
-              line-height: 1.25rem;
-            }
-            p {
-              font-size: 0.75rem;
-              line-height: 1rem;
-            }
-          }
-
-          @media (min-width: 1024px) {
-            h3 {
-              font-size: 0.9375rem;
-              line-height: 1.3125rem;
-            }
-          }
-
-          /* Video card proper spacing */
-          .video-card-content {
-            display: flex;
-            gap: 0.625rem;
-            width: 100%;
-            overflow: hidden;
-          }
-
-          .video-card-text {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
           }
         `}</style>
       </>
