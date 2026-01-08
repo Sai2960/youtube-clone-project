@@ -1021,7 +1021,7 @@ const Home: NextPage = () => {
             }
           }
 
-          /* ===== VIDEO TITLE - PREMIUM BOLD STYLE ===== */
+          /* ===== VIDEO TITLE - ENHANCED (3 LINES) ===== */
           .video-title {
             display: -webkit-box;
             -webkit-line-clamp: 3;
@@ -1038,13 +1038,12 @@ const Home: NextPage = () => {
             max-height: 54px;
             height: auto !important;
 
-            /* Typography - BOLD & PREMIUM */
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: -0.01em;
+            /* Typography */
+            font-size: 13px;
+            font-weight: 600;
 
             /* Spacing */
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
             padding: 0;
 
             /* Width */
@@ -1052,16 +1051,16 @@ const Home: NextPage = () => {
             min-width: 0;
             max-width: 100%;
 
-            /* Colors - Premium contrast */
-            color: #0f0f0f;
+            /* Visibility */
+            color: inherit;
+            opacity: 1;
 
-            /* Text rendering */
+            /* Force text rendering */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
           }
 
-          /* ===== VIDEO CHANNEL NAME - PREMIUM BOLD ===== */
+          /* ===== VIDEO CHANNEL NAME - ENHANCED ===== */
           .video-channel-name {
             display: block !important;
             overflow: hidden !important;
@@ -1073,37 +1072,50 @@ const Home: NextPage = () => {
             min-width: 0;
             width: 100%;
 
-            /* Typography - BOLD */
-            font-size: 12px;
-            font-weight: 600;
-            line-height: 1.4;
-            letter-spacing: 0.01em;
+            /* Typography */
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.3;
 
             /* Spacing */
             margin: 0 0 4px 0;
             padding: 0;
             height: auto;
 
-            /* Color */
-            color: #606060;
-
-            /* Text rendering */
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            /* Visibility */
+            color: inherit;
+            opacity: 1;
           }
 
-          /* ===== VIDEO METADATA - PREMIUM BOLD ===== */
+          /* ===== CONTAINER FIXES ===== */
+          .video-info-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            min-width: 0;
+            overflow: visible;
+            align-items: flex-start;
+          }
+
+          .video-text-content {
+            flex: 1;
+            min-width: 0;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+          }
+
+          /* ===== VIDEO METADATA - ENHANCED ===== */
           .video-metadata {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
 
-            /* Typography - BOLD */
-            font-size: 12px;
-            line-height: 1.4;
-            font-weight: 600;
-            letter-spacing: 0.01em;
+            /* Typography */
+            font-size: 11px;
+            line-height: 1.3;
 
             /* Size */
             width: 100%;
@@ -1114,85 +1126,26 @@ const Home: NextPage = () => {
             margin: 0;
             padding: 0;
 
-            /* Color */
-            color: #606060;
+            /* Visibility */
+            color: inherit;
+            opacity: 1;
           }
 
           .video-metadata span {
             white-space: nowrap;
             flex-shrink: 0;
-            font-weight: 600;
           }
 
           .video-metadata span:first-child {
-            font-weight: 700;
+            font-weight: 600;
           }
 
-          /* ===== SHORTS TITLE - PREMIUM BOLD ===== */
-          .shorts-title {
-            display: -webkit-box !important;
-            -webkit-line-clamp: 3 !important;
-            -webkit-box-orient: vertical !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            word-break: break-word !important;
+          /* ===== RESPONSIVE BREAKPOINTS ===== */
 
-            font-size: 14px !important;
-            font-weight: 700 !important;
-            line-height: 1.4 !important;
-            letter-spacing: -0.01em !important;
-            color: #0f0f0f !important;
-
-            min-height: 54px !important;
-            max-height: 54px !important;
-            margin: 0 0 8px 0 !important;
-
-            -webkit-font-smoothing: antialiased !important;
-            -moz-osx-font-smoothing: grayscale !important;
-          }
-
-          /* ===== SHORTS CHANNEL NAME - PREMIUM BOLD ===== */
-          .shorts-channel-name {
-            display: block !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            white-space: nowrap !important;
-
-            font-size: 12px !important;
-            font-weight: 600 !important;
-            line-height: 1.4 !important;
-            letter-spacing: 0.01em !important;
-            color: #606060 !important;
-
-            max-width: 100% !important;
-            flex: 1 !important;
-            min-width: 0 !important;
-          }
-
-          /* ===== DARK MODE - PREMIUM COLORS ===== */
-          .dark .video-title,
-          .dark .shorts-title {
-            color: #f1f1f1 !important;
-            font-weight: 700 !important;
-          }
-
-          .dark .video-channel-name,
-          .dark .shorts-channel-name {
-            color: #aaaaaa !important;
-            font-weight: 600 !important;
-          }
-
-          .dark .video-metadata {
-            color: #aaaaaa !important;
-            font-weight: 600 !important;
-          }
-
-          /* ===== MOBILE RESPONSIVE - PREMIUM BOLD ===== */
           @media (max-width: 639px) {
             .shorts-title,
             .video-title {
               font-size: 13px !important;
-              font-weight: 700 !important;
               line-height: 1.4 !important;
               min-height: 54px !important;
               max-height: 54px !important;
@@ -1205,26 +1158,21 @@ const Home: NextPage = () => {
               overflow-wrap: break-word !important;
               width: 100% !important;
               max-width: 100% !important;
-              letter-spacing: -0.01em !important;
-              margin: 0 0 6px 0 !important;
             }
 
             .shorts-channel-name,
             .video-channel-name {
               font-size: 11px !important;
-              font-weight: 600 !important;
               display: block !important;
               overflow: hidden !important;
               text-overflow: ellipsis !important;
               white-space: nowrap !important;
               max-width: 100% !important;
-              letter-spacing: 0.01em !important;
             }
 
             .video-metadata {
               font-size: 11px !important;
-              font-weight: 600 !important;
-              gap: 4px !important;
+              gap: 3px;
               display: flex !important;
               flex-wrap: wrap !important;
               max-width: 100% !important;
@@ -1242,90 +1190,63 @@ const Home: NextPage = () => {
             }
           }
 
-          /* ===== TABLET (640px - 1023px) ===== */
-          @media (min-width: 640px) and (max-width: 1023px) {
-            .shorts-title,
-            .video-title {
-              font-size: 14px !important;
-              font-weight: 700 !important;
-            }
-
-            .shorts-channel-name,
-            .video-channel-name {
-              font-size: 12px !important;
-              font-weight: 600 !important;
-            }
-
-            .video-metadata {
-              font-size: 12px !important;
-              font-weight: 600 !important;
-            }
-          }
-
-          /* ===== DESKTOP (>= 1024px) ===== */
+          /* Desktop (>= 1024px) */
           @media (min-width: 1024px) {
             .shorts-title,
             .video-title {
-              font-size: 15px !important;
-              font-weight: 700 !important;
-              line-height: 1.4 !important;
-              letter-spacing: -0.01em !important;
+              font-size: 14px;
+              line-height: 1.4;
             }
 
+            /* ===== SHORTS CHANNEL NAME - ENHANCED ===== */
             .shorts-channel-name {
-              font-size: 12px !important;
-              font-weight: 600 !important;
+              display: block !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
+              white-space: nowrap !important;
+              font-size: 11px !important;
+              line-height: 16px !important;
+              max-width: 100%;
             }
 
             .video-channel-name {
-              font-size: 13px !important;
-              font-weight: 600 !important;
+              font-size: 12px;
             }
 
             .video-metadata {
-              font-size: 13px !important;
-              font-weight: 600 !important;
-              gap: 6px !important;
+              font-size: 12px;
+              gap: 4px;
             }
           }
 
-          /* ===== LARGE DESKTOP (>= 1280px) ===== */
+          /* Large Desktop (>= 1280px) */
           @media (min-width: 1280px) {
             .shorts-title,
             .video-title {
-              font-size: 16px !important;
-              font-weight: 700 !important;
-            }
-
-            .video-channel-name {
-              font-size: 13px !important;
-            }
-
-            .video-metadata {
-              font-size: 13px !important;
+              font-size: 15px;
             }
           }
 
-          /* ===== HOVER STATES - PREMIUM INTERACTION ===== */
+          /* ===== DARK MODE ===== */
+          .dark .shorts-title,
+          .dark .video-title,
+          .dark .shorts-channel-name,
+          .dark .video-channel-name,
+          .dark .video-metadata {
+            color: inherit;
+            opacity: 1;
+          }
+
+          /* ===== HOVER STATES (Desktop only) ===== */
           @media (hover: hover) and (pointer: fine) {
             .video-title:hover,
             .shorts-title:hover {
-              color: #065fd4 !important;
+              color: rgb(37, 99, 235);
             }
 
             .dark .video-title:hover,
             .dark .shorts-title:hover {
-              color: #3ea6ff !important;
-            }
-
-            .video-channel-name:hover,
-            .shorts-channel-name:hover {
-              color: #0f0f0f !important;
-            }
-
-            .dark .video-channel-name:hover,
-            .dark .shorts-channel-name:hover {
-              color: #ffffff !important;
+              color: rgb(96, 165, 250);
             }
           }
 
