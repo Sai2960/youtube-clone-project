@@ -384,6 +384,8 @@ const Home: NextPage = () => {
     return "/video/vdo.mp4";
   };
   const getThumbnailUrl = (video: Video) => {
+    const backend = getBackendUrl();
+
     // ✅ Priority 1: Explicit thumbnails
     const explicitThumbnail =
       video?.thumbnailUrl ||
@@ -391,17 +393,24 @@ const Home: NextPage = () => {
       video?.videothumbnail ||
       video?.videothumb;
 
-    if (explicitThumbnail?.startsWith("http")) {
-      console.log("✅ Using explicit thumbnail:", explicitThumbnail); // ✅ REMOVED .substring()
-      return explicitThumbnail;
+    if (explicitThumbnail) {
+      // If it's a full URL, return it
+      if (explicitThumbnail.startsWith("http")) {
+        return explicitThumbnail;
+      }
+      // If it's a relative path, construct full URL
+      return `${backend}${
+        explicitThumbnail.startsWith("/") ? "" : "/"
+      }${explicitThumbnail}`;
     }
 
-    // ✅ Priority 2: Check if it's a Supabase video
+    // ✅ Priority 2: Check if it's a Supabase video - DON'T use video URL as thumbnail
     const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
 
     if (videoUrl?.includes("supabase.co")) {
-      console.log("📦 Supabase video - using video URL as thumbnail");
-      return videoUrl;
+      // For Supabase videos without explicit thumbnail, return placeholder
+      console.warn("⚠️ Supabase video without thumbnail:", video?._id);
+      return "/placeholder-thumbnail.jpg";
     }
 
     // ✅ Priority 3: Cloudinary videos (legacy)
@@ -428,9 +437,7 @@ const Home: NextPage = () => {
 
           publicId = publicId.replace(/\.(mp4|mov|avi|mkv|webm)$/i, "");
 
-          const thumbnail = `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-          console.log("🖼️ Generated Cloudinary thumbnail:", thumbnail); // ✅ Full URL
-          return thumbnail;
+          return `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
         }
       } catch (error) {
         console.error("❌ Thumbnail generation error:", error);
@@ -438,10 +445,8 @@ const Home: NextPage = () => {
     }
 
     // ✅ Fallback
-    console.warn("⚠️ No thumbnail for video:", video?._id);
     return "/placeholder-thumbnail.jpg";
   };
-
   const [thumbnailErrors, setThumbnailErrors] = useState<Set<string>>(
     new Set()
   );
@@ -741,39 +746,9 @@ const Home: NextPage = () => {
                                   e.currentTarget as HTMLImageElement;
                                 console.error(
                                   "❌ Short thumbnail failed:",
-                                  short.thumbnailUrl
-                                );
-
-                                // For Supabase videos, create a video element as fallback
-                                if (
-                                  short.thumbnailUrl.includes("supabase.co")
-                                ) {
-                                  target.style.display = "none";
-                                  const parent = target.parentElement;
-                                  if (
-                                    parent &&
-                                    !parent.querySelector("video")
-                                  ) {
-                                    const video =
-                                      document.createElement("video");
-                                    video.src = short.thumbnailUrl;
-                                    video.className =
-                                      "absolute inset-0 w-full h-full object-cover";
-                                    video.muted = true;
-                                    video.preload = "metadata";
-                                    video.playsInline = true;
-                                    parent.appendChild(video);
-                                  }
-                                } else {
-                                  // Fallback to placeholder for non-Supabase URLs
-                                  target.src = "/placeholder-thumbnail.jpg";
-                                }
-                              }}
-                              onLoad={() => {
-                                console.log(
-                                  "✅ Short thumbnail loaded:",
                                   short._id
                                 );
+                                target.src = "/placeholder-thumbnail.jpg";
                               }}
                             />
 
@@ -901,48 +876,24 @@ const Home: NextPage = () => {
                   return (
                     <div key={video._id} className="block group w-full">
                       {/* Video Thumbnail */}
+                      {/* Video Thumbnail */}
                       <Link href={`/watch/${video._id}`} className="block mb-3">
                         <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
-                          {/* Use img for Supabase, video for others */}
-                          {getThumbnailUrl(video).includes("supabase.co") ? (
-                            <img
-                              src={getThumbnailUrl(video)}
-                              alt={video?.videotitle || "Video thumbnail"}
-                              className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-                              loading="lazy"
-                              onError={(e) => {
-                                const target =
-                                  e.currentTarget as HTMLImageElement;
-                                const currentVideo = video; // ✅ FIXED: Store video reference
-                                console.error(
-                                  "❌ Thumbnail failed, trying video element"
-                                );
-                                target.style.display = "none";
-                                const parent = target.parentElement;
-                                if (parent && !parent.querySelector("video")) {
-                                  const videoElement =
-                                    document.createElement("video");
-                                  videoElement.src =
-                                    getThumbnailUrl(currentVideo); // ✅ FIXED: Use currentVideo
-                                  videoElement.className =
-                                    "w-full h-full object-cover";
-                                  videoElement.preload = "metadata";
-                                  videoElement.muted = true;
-                                  videoElement.playsInline = true;
-                                  parent.appendChild(videoElement);
-                                }
-                              }}
-                            />
-                          ) : (
-                            <video
-                              src={getVideoUrl(video)}
-                              className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
-                              preload="metadata"
-                              poster={getThumbnailUrl(video)}
-                              muted
-                              playsInline
-                            />
-                          )}
+                          <img
+                            src={getThumbnailUrl(video)}
+                            alt={video?.videotitle || "Video thumbnail"}
+                            className="w-full h-full object-cover lg:group-hover:scale-105 lg:transition-transform lg:duration-200"
+                            loading="lazy"
+                            onError={(e) => {
+                              const target =
+                                e.currentTarget as HTMLImageElement;
+                              console.error(
+                                "❌ Thumbnail load failed for:",
+                                video._id
+                              );
+                              target.src = "/placeholder-thumbnail.jpg";
+                            }}
+                          />
                           {video?.duration && (
                             <div className="absolute bottom-1.5 right-1.5 bg-black/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded lg:px-2">
                               {video.duration}
