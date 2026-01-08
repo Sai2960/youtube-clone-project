@@ -757,12 +757,17 @@ const Home: NextPage = () => {
 
                           {/* FIX: Title with full width */}
                           {/* Title - FIXED */}
+                          {/* Title - DEFINITIVE FIX */}
                           <div
                             className="w-full mb-2"
-                            style={{ minHeight: "2.6em" }}
+                            style={{
+                              minHeight: "36px", // Fixed pixel height for exactly 2 lines
+                              display: "flex",
+                              alignItems: "flex-start",
+                            }}
                           >
                             <h3
-                              className="text-sm font-semibold text-gray-900 dark:text-white"
+                              className="text-[13px] leading-[18px] font-semibold text-gray-900 dark:text-white"
                               style={{
                                 display: "-webkit-box",
                                 WebkitLineClamp: "2",
@@ -770,9 +775,7 @@ const Home: NextPage = () => {
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 wordBreak: "break-word",
-                                lineHeight: "1.3",
-                                height: "auto",
-                                maxHeight: "2.6em",
+                                width: "100%",
                               }}
                               title={short.title}
                             >
@@ -1198,8 +1201,15 @@ const Home: NextPage = () => {
               line-height: 1.4;
             }
 
+            /* ===== SHORTS CHANNEL NAME - ENHANCED ===== */
             .shorts-channel-name {
-              font-size: 12px;
+              display: block !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
+              white-space: nowrap !important;
+              font-size: 11px !important;
+              line-height: 16px !important;
+              max-width: 100%;
             }
 
             .video-channel-name {
