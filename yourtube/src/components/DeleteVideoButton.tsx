@@ -54,10 +54,10 @@ export default function DeleteVideoButton({
           onClick={() => setShowConfirm(false)}
         >
           <div
-            className="bg-white dark:bg-neutral-900 rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-neutral-700 animate-in zoom-in duration-200 mx-auto max-h-[90vh] flex flex-col"
+            className="bg-white dark:bg-neutral-900 rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-neutral-700 animate-in zoom-in duration-200 mx-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-4 flex-shrink-0">
+            <div className="flex justify-between items-start mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 pr-2">
                 Delete Video?
               </h3>
@@ -70,17 +70,15 @@ export default function DeleteVideoButton({
               </button>
             </div>
 
-            <div className="overflow-y-auto flex-1 min-h-0 pr-2 -mr-2 scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-              <p className="text-sm text-gray-600 dark:text-neutral-400 mb-6 break-words leading-relaxed">
-                Are you sure you want to delete{" "}
-                <span className="font-medium text-gray-900 dark:text-white break-words block mt-1 mb-1">
-                  &quot;{videoTitle}&quot;
-                </span>
-                ? This action cannot be undone.
-              </p>
-            </div>
+            <p className="text-sm text-gray-600 dark:text-neutral-400 mb-6 break-words leading-relaxed">
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-gray-900 dark:text-white break-words block mt-1 mb-1">
+                &quot;{videoTitle}&quot;
+              </span>
+              ? This action cannot be undone.
+            </p>
 
-            <div className="flex justify-end gap-3 flex-shrink-0 mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
                 disabled={isDeleting}
