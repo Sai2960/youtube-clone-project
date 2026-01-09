@@ -925,7 +925,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
 
             <button
-              className="px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-youtube-primary hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm"
+              className="px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-youtube-primary hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0"
               onClick={handleShare}
             >
               <Share2 className="w-5 h-5" />
@@ -943,7 +943,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
             {user && (
               <button
-                className={`px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm ${
+                className={`px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0 ${
                   isWatchLater
                     ? "text-blue-600 dark:text-blue-500"
                     : "text-youtube-primary"
@@ -966,7 +966,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 videoTitle={video.videotitle}
                 onDeleted={handleVideoDeleted}
                 variant="icon"
-                className="px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-youtube-primary hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm"
               />
             )}
           </div>
@@ -1264,8 +1263,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       Delete Video?
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-neutral-400 text-center">
-                      Are you sure you want to delete "{video.videotitle}"? This
-                      action cannot be undone.
+                      Are you sure you want to delete &quot;{video.videotitle}
+                      &quot;? This action cannot be undone.
                     </p>
                     <div className="flex gap-3 justify-center">
                       <button
