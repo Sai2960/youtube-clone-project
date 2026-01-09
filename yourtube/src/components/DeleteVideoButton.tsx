@@ -147,7 +147,7 @@ export default function DeleteVideoButton({
       <button
         onClick={handleDelete}
         disabled={isDeleting}
-        className="min-w-[100px] px-6 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-base transition-all active:scale-95 flex items-center gap-2 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-6 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition-all active:scale-95 flex items-center gap-2 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isDeleting ? (
           <>
