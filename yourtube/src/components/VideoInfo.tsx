@@ -1256,17 +1256,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       )}
 
-     {/* Delete Confirmation Modal */}
+       {/* Delete Confirmation Modal */}
 {showDeleteModal && (
-  <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+  <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
     <div
-      className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+      className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={() => setShowDeleteModal(false)}
     />
     
     {/* DESKTOP ONLY - Modal Container */}
     <div 
-      className="hidden md:flex relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 mx-auto flex-col border border-gray-200 dark:border-neutral-800"
+      className="hidden md:flex relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 mx-auto flex-col border border-gray-200 dark:border-neutral-800 z-10"
       style={{ maxHeight: 'calc(100vh - 120px)' }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -1329,7 +1329,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       </div>
     </div>
-
+    
     {/* MOBILE - Keep Original Style - NO CHANGES */}
     <div 
       className="md:hidden relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] animate-in fade-in zoom-in duration-200 mx-auto flex flex-col overflow-hidden"
