@@ -21,6 +21,7 @@ import DownloadButton from "./DownloadButton";
 import { formatViews, formatTimeAgo } from "@/lib/formatUtils";
 import { getImageUrl } from "@/lib/imageUtils";
 
+
 interface VideoInfoProps {
   video: any;
   onShare?: (currentTime?: number) => void;
@@ -1268,11 +1269,11 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             style={{ zIndex: 2147483646 }}
           />
 
-          {/* DESKTOP ONLY - Modal Container */}
+        {/* DESKTOP ONLY - Modal Container */}
           <div
             className="hidden md:flex relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 mx-auto flex-col border border-gray-200 dark:border-neutral-800"
             style={{
-              maxHeight: "calc(100vh - 120px)",
+              maxHeight: "90vh",
               zIndex: 2147483647,
             }}
             onClick={(e) => e.stopPropagation()}
@@ -1313,7 +1314,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 </p>
 
                 {/* Video Title Box */}
-                <div className="max-h-[180px] overflow-y-auto px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 custom-scrollbar">
+                <div className="max-h-[120px] overflow-y-auto px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 custom-scrollbar">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white break-words leading-relaxed">
                     "{video.videotitle}"
                   </p>
@@ -1326,7 +1327,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
 
             {/* Footer - Fixed with better spacing */}
-            <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900">
+            <div className="flex-shrink-0 px-6 pb-5 pt-4 border-t border-gray-200 dark:border-neutral-800">
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setShowDeleteModal(false)}
@@ -1347,6 +1348,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
 
+          
           {/* MOBILE - Keep Original Style - NO CHANGES */}
           <div
             className="md:hidden relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] animate-in fade-in zoom-in duration-200 mx-auto flex flex-col overflow-hidden"
