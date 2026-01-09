@@ -1264,21 +1264,21 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     className="fixed inset-0 flex items-center justify-center p-4"
     style={{ zIndex: 2147483647 }} // Maximum possible z-index value
   >
-    <div
-      className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-      onClick={() => setShowDeleteModal(false)}
-      style={{ zIndex: 2147483646 }}
-    />
-    
+   <div
+  className="absolute inset-0 bg-black/80 animate-in fade-in duration-200"
+  onClick={() => setShowDeleteModal(false)}
+  style={{ zIndex: 2147483646 }}
+/>
     {/* DESKTOP ONLY - Modal Container */}
     <div 
-      className="hidden md:flex relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 mx-auto flex-col border border-gray-200 dark:border-neutral-800"
-      style={{ 
-        maxHeight: 'calc(100vh - 120px)',
-        zIndex: 2147483647 
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
+  className="hidden md:flex relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 mx-auto flex-col border border-gray-200 dark:border-neutral-800 isolation-isolate"
+  style={{ 
+    maxHeight: 'calc(100vh - 120px)',
+    zIndex: 2147483647,
+    position: 'relative'
+  }}
+  onClick={(e) => e.stopPropagation()}
+>
       {/* Header - Fixed */}
       <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 dark:border-neutral-800">
         <div className="flex items-center justify-between">
