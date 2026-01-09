@@ -47,62 +47,65 @@ export default function DeleteVideoButton({
   };
 
   const ConfirmModal = () => (
-    <>
-      {showConfirm && (
+  <>
+    {showConfirm && (
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60000] p-4 animate-in fade-in duration-200"
+        onClick={() => setShowConfirm(false)}
+      >
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60000] p-4 animate-in fade-in duration-200"
-          onClick={() => setShowConfirm(false)}
+          className="bg-white dark:bg-neutral-900 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-neutral-700 animate-in zoom-in duration-200"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="bg-white dark:bg-neutral-900 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl border border-gray-200 dark:border-neutral-700 animate-in zoom-in duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
-                Delete Video?
-              </h3>
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
-                disabled={isDeleting}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
+              Delete Video?
+            </h3>
+            <button
+              onClick={() => setShowConfirm(false)}
+              className="text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
+              disabled={isDeleting}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-            <p className="text-sm text-gray-600 dark:text-neutral-400 mb-6">
-              Are you sure you want to delete &quot;{videoTitle}&quot;? This
-              action cannot be undone.
-            </p>
+          <p className="text-sm text-gray-600 dark:text-neutral-400 mb-6 break-words">
+            Are you sure you want to delete &quot;
+            <span className="font-medium break-all line-clamp-2">
+              {videoTitle}
+            </span>
+            &quot;? This action cannot be undone.
+          </p>
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                disabled={isDeleting}
-                className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition-all active:scale-95 flex items-center gap-2"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  "Delete"
-                )}
-              </button>
-            </div>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowConfirm(false)}
+              disabled={isDeleting}
+              className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </button>
           </div>
         </div>
-      )}
-    </>
-  );
+      </div>
+    )}
+  </>
+);
   // ✅ MOBILE VARIANT - Compact button with icon
   if (variant === "mobile") {
     return (
@@ -136,6 +139,25 @@ export default function DeleteVideoButton({
       </>
     );
   }
+  // MODAL VARIANT - Just the delete button for use inside modals
+if (variant === "modal") {
+  return (
+    <button
+      onClick={handleDelete}
+      disabled={isDeleting}
+      className="px-6 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition-all active:scale-95 flex items-center gap-2 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {isDeleting ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Deleting...
+        </>
+      ) : (
+        "Delete"
+      )}
+    </button>
+  );
+}
 
   // DEFAULT BUTTON VARIANT
   return (

@@ -1256,41 +1256,44 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal - MOVED OUTSIDE */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={() => setShowDeleteModal(false)}
-          />
-          <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
-              Delete Video?
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-neutral-400 text-center">
-              Are you sure you want to delete &quot;{video.videotitle}&quot;?
-              This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
-              >
-                Cancel
-              </button>
-              <DeleteVideoButton
-                videoId={video._id}
-                videoTitle={video.videotitle}
-                onDeleted={() => {
-                  setShowDeleteModal(false);
-                  handleVideoDeleted();
-                }}
-                variant="modal"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+     {/* Delete Confirmation Modal */}
+{showDeleteModal && (
+  <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
+    <div
+      className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={() => setShowDeleteModal(false)}
+    />
+    <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
+        Delete Video?
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-neutral-400 text-center break-words">
+        Are you sure you want to delete &quot;
+        <span className="font-medium break-all line-clamp-2 inline">
+          {video.videotitle}
+        </span>
+        &quot;? This action cannot be undone.
+      </p>
+      <div className="flex gap-3 justify-center">
+        <button
+          onClick={() => setShowDeleteModal(false)}
+          className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
+        >
+          Cancel
+        </button>
+        <DeleteVideoButton
+          videoId={video._id}
+          videoTitle={video.videotitle}
+          onDeleted={() => {
+            setShowDeleteModal(false);
+            handleVideoDeleted();
+          }}
+          variant="modal"
+        />
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
