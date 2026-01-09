@@ -1267,38 +1267,36 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     {/* DESKTOP ONLY - Modal Container */}
     <div 
       className="hidden md:flex relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 mx-auto flex-col border border-gray-200 dark:border-neutral-800"
-      style={{ maxHeight: 'calc(100vh - 80px)' }}
+      style={{ maxHeight: 'calc(100vh - 120px)' }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header - Fixed */}
-      <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 dark:border-neutral-800 flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex-1 text-center pr-8">
-          Delete Video?
-        </h3>
-        <button
-          onClick={() => setShowDeleteModal(false)}
-          className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
-          aria-label="Close"
-        >
-          <svg className="w-5 h-5 text-gray-500 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+      <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 dark:border-neutral-800">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex-1 text-center">
+            Delete Video?
+          </h3>
+          <button
+            onClick={() => setShowDeleteModal(false)}
+            className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors ml-4"
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5 text-gray-500 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Scrollable Content Area - FIXED */}
-      <div 
-        className="flex-1 overflow-y-auto min-h-0 px-6 py-5 custom-scrollbar"
-      >
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5 custom-scrollbar">
         <div className="space-y-4">
           <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
             Are you sure you want to delete this video?
           </p>
           
-          {/* Video Title Box - FIXED with visible scrollbar */}
-          <div 
-            className="max-h-[200px] overflow-y-auto px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 custom-scrollbar"
-          >
+          {/* Video Title Box */}
+          <div className="max-h-[180px] overflow-y-auto px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 custom-scrollbar">
             <p className="text-sm font-semibold text-gray-900 dark:text-white break-words leading-relaxed">
               &quot;{video.videotitle}&quot;
             </p>
@@ -1310,8 +1308,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       </div>
 
-      {/* Footer - Fixed */}
-      <div className="flex-shrink-0 px-6 pb-5 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900">
+      {/* Footer - Fixed with better spacing */}
+      <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900">
         <div className="flex gap-3 justify-center">
           <button
             onClick={() => setShowDeleteModal(false)}
