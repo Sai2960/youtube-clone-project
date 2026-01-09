@@ -1263,6 +1263,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setShowDeleteModal(false)}
           />
+          {/* Desktop Modal - with scrollbar */}
           <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] animate-in fade-in zoom-in duration-200 mx-auto flex flex-col overflow-hidden">
             {/* Header - Fixed */}
             <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
@@ -1271,12 +1272,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </h3>
             </div>
 
-            {/* Scrollable Content */}
+            {/* Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
               <div className="space-y-3">
                 <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                   Are you sure you want to delete
                 </p>
+                {/* Video Title Box with scrollbar */}
                 <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg custom-scrollbar">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
                     &quot;{video.videotitle}&quot;
@@ -1311,6 +1313,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       )}
+      {/* Custom Scrollbar Styles */}
       {/* Custom Scrollbar Styles */}
       <style jsx global>{`
         .custom-scrollbar {
