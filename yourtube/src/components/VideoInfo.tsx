@@ -1263,28 +1263,28 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setShowDeleteModal(false)}
           />
-          {/* Desktop Modal - with scrollbar */}
-          <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] animate-in fade-in zoom-in duration-200 mx-auto flex flex-col overflow-hidden">
+          {/* Desktop Modal - Improved visibility */}
+          <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] animate-in fade-in zoom-in duration-200 mx-auto flex flex-col overflow-hidden">
             {/* Header - Fixed */}
             <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white text-center">
                 Delete Video?
               </h3>
             </div>
 
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
+            <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
+              <div className="space-y-4">
+                <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                   Are you sure you want to delete
                 </p>
                 {/* Video Title Box with scrollbar */}
-                <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg custom-scrollbar">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
+                <div className="max-h-[180px] overflow-y-auto px-4 py-4 bg-gray-100 dark:bg-neutral-800 rounded-lg custom-scrollbar">
+                  <p className="text-base font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
                     &quot;{video.videotitle}&quot;
                   </p>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
+                <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                   This action cannot be undone.
                 </p>
               </div>
@@ -1295,7 +1295,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
+                  className="min-w-[100px] px-6 py-2.5 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-base transition-all"
                 >
                   Cancel
                 </button>
