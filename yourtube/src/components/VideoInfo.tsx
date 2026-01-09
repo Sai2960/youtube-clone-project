@@ -1263,18 +1263,22 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setShowDeleteModal(false)}
           />
-          <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in duration-200 mx-auto">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
+          <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in duration-200 mx-auto max-h-[90vh] flex flex-col">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center flex-shrink-0">
               Delete Video?
             </h3>
-            <p className="text-sm text-gray-600 dark:text-neutral-400 text-center break-words leading-relaxed px-2">
-              Are you sure you want to delete{" "}
-              <span className="font-medium text-gray-900 dark:text-white break-words block mt-1 mb-1">
-                &quot;{video.videotitle}&quot;
-              </span>
-              ? This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-center pt-2">
+
+            <div className="overflow-y-auto flex-1 min-h-0 px-2 -mx-2 scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+              <p className="text-sm text-gray-600 dark:text-neutral-400 text-center break-words leading-relaxed">
+                Are you sure you want to delete{" "}
+                <span className="font-medium text-gray-900 dark:text-white break-words block mt-1 mb-1">
+                  &quot;{video.videotitle}&quot;
+                </span>
+                ? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-center pt-4 flex-shrink-0 border-t border-gray-200 dark:border-neutral-800">
               <button
                 onClick={() => setShowDeleteModal(false)}
                 className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
