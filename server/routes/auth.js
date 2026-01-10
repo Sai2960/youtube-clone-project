@@ -1092,10 +1092,20 @@ router.get("/subscription-status/:channelId", verifyToken, async (req, res) => {
       (id) => id.toString() === channelId
     );
 
+    // Get notification preference for this channel
+    let notificationPreference = "all"; // Default
+    if (
+      user.notificationPreferences &&
+      user.notificationPreferences.has(channelId)
+    ) {
+      notificationPreference = user.notificationPreferences.get(channelId);
+    }
+
     res.json({
       success: true,
       isSubscribed,
       subscriberCount: channel.subscribers || 0,
+      notificationPreference, // ✅ Add this
     });
   } catch (error) {
     console.error("❌ Status check error:", error);
@@ -1105,6 +1115,87 @@ router.get("/subscription-status/:channelId", verifyToken, async (req, res) => {
     });
   }
 });
+// ==================== NOTIFICATION PREFERENCE ROUTE ====================
+
+router.post(
+  "/notification-preference/:channelId",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const { channelId } = req.params;
+      const { preference } = req.body;
+      const userId = req.user.id;
+
+      console.log("🔔 Update notification preference:", {
+        userId,
+        channelId,
+        preference,
+      });
+
+      if (!mongoose.Types.ObjectId.isValid(channelId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid channel ID",
+        });
+      }
+
+      if (!["all", "personalized", "none"].includes(preference)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid preference. Must be 'all', 'personalized', or 'none'",
+        });
+      }
+
+      // Find the user who is updating their preference
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Check if user is subscribed to this channel
+      const isSubscribed = user.subscribedChannels.some(
+        (id) => id.toString() === channelId
+      );
+
+      if (!isSubscribed) {
+        return res.status(400).json({
+          success: false,
+          message: "You must be subscribed to change notification preferences",
+        });
+      }
+
+      // Store notification preference in user's document
+      // We'll store it as a map of channelId -> preference
+      if (!user.notificationPreferences) {
+        user.notificationPreferences = new Map();
+      }
+
+      user.notificationPreferences.set(channelId, preference);
+      user.markModified("notificationPreferences"); // Tell Mongoose the Map changed
+      await user.save();
+
+      console.log("✅ Notification preference updated:", preference);
+
+      res.json({
+        success: true,
+        notificationPreference: preference,
+        message: "Notification preference updated successfully",
+      });
+    } catch (error) {
+      console.error("❌ Update notification preference error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update notification preference",
+        error: error.message,
+      });
+    }
+  }
+);
 
 router.get("/subscribed-channels", verifyToken, async (req, res) => {
   try {
