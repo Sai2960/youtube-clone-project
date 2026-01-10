@@ -1280,13 +1280,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               style={{ zIndex: 1, pointerEvents: "auto" }}
             />
 
-            {/* Modal Container - MOBILE ONLY */}
+         {/* Modal Container - DESKTOP ONLY */}
             <div
-              className="md:hidden flex absolute inset-0 items-center justify-center p-4"
+              className="hidden md:flex absolute inset-0 items-center justify-center p-4"
               style={{ zIndex: 2, pointerEvents: "auto" }}
             >
               <div
-                className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
+                className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-neutral-800 overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
                 style={{ pointerEvents: "auto" }}
               >
@@ -1351,11 +1351,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             {/* Modal Container - MOBILE ONLY */}
             <div
               className="md:hidden flex absolute inset-0 items-center justify-center p-4"
-              style={{ zIndex: 2 }}
+              style={{ zIndex: 2, pointerEvents: "auto" }}
             >
               <div
                 className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
+                style={{ pointerEvents: "auto" }}
               >
                 <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
