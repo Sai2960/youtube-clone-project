@@ -1259,26 +1259,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
   
 {/* Delete Confirmation Modal - COMPLETE REWRITE */}
+{/* Delete Confirmation Modal - FIXED */}
 {showDeleteModal && (
   <>
-    {/* Backdrop - Separate Portal Layer */}
+    {/* Backdrop */}
     <div 
-      className="fixed inset-0 bg-black/80 z-[99998]"
+      className="fixed inset-0 bg-black/70 z-[9998]"
       onClick={() => setShowDeleteModal(false)}
-      style={{ 
-        backdropFilter: 'none',
-        WebkitBackdropFilter: 'none'
-      }}
     />
     
-    {/* Modal Container - Above Backdrop */}
+    {/* Modal Container */}
     <div 
-      className="fixed inset-0 flex items-center justify-center p-4 z-[99999] pointer-events-none"
-      style={{ 
-        backdropFilter: 'none',
-        WebkitBackdropFilter: 'none',
-        isolation: 'isolate'
-      }}
+      className="fixed inset-0 flex items-center justify-center p-4 z-[9999] pointer-events-none"
     >
       {/* DESKTOP Modal */}
       <div 
