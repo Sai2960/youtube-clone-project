@@ -1280,7 +1280,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               style={{ zIndex: 1 }}
             />
 
-      {/* Modal Container - DESKTOP & MOBILE - Unified Design */}
+   {/* Modal Container - DESKTOP & MOBILE - Unified Design */}
 <div
   className="flex absolute inset-0 items-center justify-center p-4"
   style={{ zIndex: 2 }}
@@ -1296,9 +1296,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           Are you sure you want to delete
         </p>
         
-        <p className="text-sm font-semibold text-white break-words leading-relaxed">
-          &quot;{video.videotitle}&quot;
-        </p>
+        {/* Scrollable video title */}
+        <div className="max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+          <p className="text-sm font-semibold text-white break-words leading-relaxed">
+            &quot;{video.videotitle}&quot;
+          </p>
+        </div>
         
         <p className="text-sm text-neutral-300 leading-relaxed">
           ? This action cannot be undone.
