@@ -1308,24 +1308,28 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar"
   style={{ minHeight: 0 }}
 >
-            <div className="space-y-3">
-              <p className="text-sm text-neutral-300 leading-relaxed">
-                Are you sure you want to delete
-              </p>
+     <div className="space-y-2">
+  <p className="text-sm text-neutral-300 leading-relaxed">
+    Are you sure you want to delete
+  </p>
 
-<div
-  className="max-h-[180px] overflow-y-auto pr-2 custom-scrollbar"
-  style={{ wordBreak: "break-word" }}
->
-<p className="text-sm font-semibold text-white leading-relaxed break-all">
-                  &quot;{video.videotitle}&quot;
-                </p>
-              </div>
+  <div className="max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+    <p
+      className="text-sm font-semibold text-white leading-relaxed"
+      style={{
+        overflowWrap: "anywhere",
+        wordBreak: "break-word",
+      }}
+    >
+      &quot;{video.videotitle}&quot;
+    </p>
+  </div>
 
-              <p className="text-sm text-neutral-300 leading-relaxed">
-                ? This action cannot be undone.
-              </p>
-            </div>
+  <p className="text-sm text-neutral-300 leading-relaxed">
+    This action cannot be undone.
+  </p>
+</div>
+
           </div>
 
           {/* Footer - ALWAYS VISIBLE */}
