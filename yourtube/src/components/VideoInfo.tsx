@@ -1257,8 +1257,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       )}
-      {/* Delete Confirmation Modal - Desktop & Mobile with Portal */}
-     {typeof window !== "undefined" &&
+    {/* Delete Confirmation Modal - Desktop & Mobile with Portal */}
+{typeof window !== "undefined" &&
   showDeleteModal &&
   ReactDOM.createPortal(
     <div
@@ -1269,124 +1269,138 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 2147483647, // ✅ MAX z-index value
+        width: "100vw",
+        height: "100vh",
+        zIndex: 2147483647,
         isolation: "isolate",
       }}
     >
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-              onClick={() => setShowDeleteModal(false)}
-              style={{ zIndex: 1 }}
-            />
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={() => setShowDeleteModal(false)}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 1,
+        }}
+      />
 
-   {/* Modal Container - DESKTOP & MOBILE - Unified Design */}
-<div
-  className="flex absolute inset-0 items-center justify-center p-4"
-  style={{ zIndex: 2 }}
->
-  <div
-    className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm overflow-hidden"
-    onClick={(e) => e.stopPropagation()}
-  >
-    {/* Content */}
-    <div className="px-6 py-5">
-      <div className="space-y-3">
-        <p className="text-sm text-neutral-300 leading-relaxed">
-          Are you sure you want to delete
-        </p>
-        
-        {/* Scrollable video title */}
-        <div className="max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
-          <p className="text-sm font-semibold text-white break-words leading-relaxed">
-            &quot;{video.videotitle}&quot;
-          </p>
-        </div>
-        
-        <p className="text-sm text-neutral-300 leading-relaxed">
-          ? This action cannot be undone.
-        </p>
-      </div>
-    </div>
-
-    {/* Footer */}
-    <div className="px-6 pb-5 pt-2">
-      <div className="flex gap-3 justify-end">
-        <button
-          onClick={() => setShowDeleteModal(false)}
-          className="px-4 py-2 rounded text-blue-500 hover:bg-neutral-800 font-medium text-sm transition-all"
-        >
-          Cancel
-        </button>
-        <DeleteVideoButton
-          videoId={video._id}
-          videoTitle={video.videotitle}
-          onDeleted={() => {
-            setShowDeleteModal(false);
-            handleVideoDeleted();
+      {/* Modal Container - DESKTOP ONLY */}
+      <div
+        className="hidden md:flex fixed inset-0 items-center justify-center p-4"
+        style={{ zIndex: 2 }}
+      >
+        <div
+          className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            transform: "translateZ(0)",
+            willChange: "transform",
           }}
-          variant="modal"
-        />
-      </div>
-    </div>
-  </div>
-</div>
+        >
+          {/* Content */}
+          <div className="px-6 py-5">
+            <div className="space-y-3">
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                Are you sure you want to delete
+              </p>
 
-            {/* Modal Container - MOBILE ONLY */}
-            <div
-              className="md:hidden flex absolute inset-0 items-center justify-center p-4"
-              style={{ zIndex: 2 }}
-            >
-              <div
-                className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
-                    Delete Video?
-                  </h3>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-6 py-4">
-                  <div className="space-y-3">
-                    <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-                      Are you sure you want to delete
-                    </p>
-                    <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
-                        &quot;{video.videotitle}&quot;
-                      </p>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-                      This action cannot be undone.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800">
-                  <div className="flex gap-3 justify-center">
-                    <button
-                      onClick={() => setShowDeleteModal(false)}
-                      className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
-                    >
-                      Cancel
-                    </button>
-                    <DeleteVideoButton
-                      videoId={video._id}
-                      videoTitle={video.videotitle}
-                      onDeleted={() => {
-                        setShowDeleteModal(false);
-                        handleVideoDeleted();
-                      }}
-                      variant="modal"
-                    />
-                  </div>
-                </div>
+              {/* Scrollable video title */}
+              <div className="max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+                <p className="text-sm font-semibold text-white break-words leading-relaxed">
+                  &quot;{video.videotitle}&quot;
+                </p>
               </div>
+
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                ? This action cannot be undone.
+              </p>
             </div>
-          </div>,
-          document.body
-        )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 pb-5 pt-2">
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 rounded text-blue-500 hover:bg-neutral-800 font-medium text-sm transition-all"
+              >
+                Cancel
+              </button>
+              <DeleteVideoButton
+                videoId={video._id}
+                videoTitle={video.videotitle}
+                onDeleted={() => {
+                  setShowDeleteModal(false);
+                  handleVideoDeleted();
+                }}
+                variant="modal"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Container - MOBILE ONLY */}
+      <div
+        className="md:hidden flex fixed inset-0 items-center justify-center p-4"
+        style={{ zIndex: 2 }}
+      >
+        <div
+          className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
+              Delete Video?
+            </h3>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
+                Are you sure you want to delete
+              </p>
+              <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
+                  &quot;{video.videotitle}&quot;
+                </p>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
+                This action cannot be undone.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800">
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
+              >
+                Cancel
+              </button>
+              <DeleteVideoButton
+                videoId={video._id}
+                videoTitle={video.videotitle}
+                onDeleted={() => {
+                  setShowDeleteModal(false);
+                  handleVideoDeleted();
+                }}
+                variant="modal"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )}
+
       {/* Custom Scrollbar Styles */}
       <style jsx global>{`
         /* Webkit browsers (Chrome, Safari, Edge) */
