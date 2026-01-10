@@ -57,72 +57,41 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   useEffect(() => {
     const checkDarkMode = () => {
-      // Method 1: Check if YouTube has dark theme class
-      const ytdApp = document.querySelector("ytd-app");
-      if (ytdApp) {
-        const isDark = ytdApp.hasAttribute("dark");
-        console.log("🎨 YouTube theme detection:", { isDark });
-        setIsDarkMode(isDark);
-        return;
-      }
+      // Check if the document has the 'dark' class (Tailwind dark mode)
+      const isDark =
+        document.documentElement.classList.contains("dark") ||
+        document.body.classList.contains("dark");
 
-      // Method 2: Check body/html background color
-      const bodyBg = window.getComputedStyle(document.body).backgroundColor;
-      const htmlBg = window.getComputedStyle(
-        document.documentElement
-      ).backgroundColor;
+      console.log("🎨 Theme detection:", {
+        htmlHasDark: document.documentElement.classList.contains("dark"),
+        bodyHasDark: document.body.classList.contains("dark"),
+        isDark,
+      });
 
-      const bgToCheck = bodyBg !== "rgba(0, 0, 0, 0)" ? bodyBg : htmlBg;
-      const rgbMatch = bgToCheck.match(/\d+/g);
-
-      if (rgbMatch) {
-        const [r, g, b] = rgbMatch.map(Number);
-        const brightness = (r + g + b) / 3;
-        const isDark = brightness < 128;
-        console.log("🎨 Background theme detection:", {
-          bgToCheck,
-          brightness,
-          isDark,
-        });
-        setIsDarkMode(isDark);
-      } else {
-        // Method 3: Fallback to class/media query check
-        const isDark =
-          document.documentElement.classList.contains("dark") ||
-          document.body.classList.contains("dark") ||
-          window.matchMedia("(prefers-color-scheme: dark)").matches;
-        console.log("🎨 Fallback theme detection:", isDark);
-        setIsDarkMode(isDark);
-      }
+      setIsDarkMode(isDark);
     };
 
+    // Initial check
     checkDarkMode();
 
-    // Check again after delays to ensure styles are loaded
+    // Check again after small delays to ensure DOM is ready
     setTimeout(checkDarkMode, 100);
     setTimeout(checkDarkMode, 500);
 
-    // Listen for theme changes
+    // Observe theme changes on html and body elements
     const observer = new MutationObserver(checkDarkMode);
-
-    // Observe ytd-app specifically for YouTube
-    const ytdApp = document.querySelector("ytd-app");
-    if (ytdApp) {
-      observer.observe(ytdApp, {
-        attributes: true,
-        attributeFilter: ["dark"],
-      });
-    }
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["class", "style"],
-    });
-    observer.observe(document.body, {
-      attributes: true,
-      attributeFilter: ["class", "style"],
+      attributeFilter: ["class"],
     });
 
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    // Listen for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     mediaQuery.addEventListener("change", checkDarkMode);
 
@@ -201,12 +170,11 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     console.log("📖 Opening quality menu");
 
     // Force theme check when opening menu
-    const ytdApp = document.querySelector("ytd-app");
-    if (ytdApp) {
-      const isDark = ytdApp.hasAttribute("dark");
-      console.log("🎨 Force check on menu open:", { isDark });
-      setIsDarkMode(isDark);
-    }
+    const isDark =
+      document.documentElement.classList.contains("dark") ||
+      document.body.classList.contains("dark");
+    console.log("🎨 Force check on menu open:", { isDark });
+    setIsDarkMode(isDark);
 
     setIsOpen(true);
     setShowQualityMenu(false);
