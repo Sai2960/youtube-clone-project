@@ -1315,14 +1315,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
   <div className="max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
     <p
-      className="text-sm font-semibold text-white leading-relaxed"
-      style={{
-        overflowWrap: "anywhere",
-        wordBreak: "break-word",
-      }}
-    >
-      &quot;{video.videotitle}&quot;
-    </p>
+  className="text-sm font-semibold text-white leading-relaxed break-words"
+  style={{
+    overflowWrap: "anywhere",
+  }}
+>
+  &quot;{video.videotitle}&quot;
+</p>
+
   </div>
 
   <p className="text-sm text-neutral-300 leading-relaxed">
