@@ -68,6 +68,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
+  
   // Helper functions
   const getUserId = () => {
     if (!user) {
@@ -141,6 +142,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
     return match;
   })();
+
   const handleChannelClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     const channelId = video?.uploadedBy?._id || video?.uploadedBy;
@@ -207,6 +209,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       router.events.off("routeChangeComplete", handleRouteChange);
     };
   }, [router.events, user?._id, video?._id]);
+
   // Scroll indicator effect
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -283,6 +286,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       document.body.classList.remove("notification-open");
     };
   }, [showSubscribeMenu, showMoreMenu]);
+
   // Fetch subscription status
   useEffect(() => {
     const fetchSubscriptionStatus = async () => {
@@ -346,6 +350,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       router.events.off("routeChangeComplete", handleRouteChange);
     };
   }, [router.events, videoUploaderId]);
+
   // Fetch reaction status (likes/dislikes)
   useEffect(() => {
     const fetchReactionStatus = async () => {
@@ -450,6 +455,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     };
     handleViews();
   }, [user, video?._id]);
+
   // Subscribe/Unsubscribe handler
   const handleSubscribe = async () => {
     if (!user) {
@@ -496,6 +502,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     e.stopPropagation();
     setShowSubscribeMenu(!showSubscribeMenu);
   };
+
   // Like button handler
   const handleLike = async () => {
     if (!user?._id) {
@@ -661,6 +668,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     setShowMoreMenu(false);
     window.location.href = "/";
   };
+
   return (
     <div className="w-full space-y-0 overflow-x-hidden bg-white dark:bg-[#0f0f0f]">
       {/* 1. Title and Views Section */}
@@ -877,6 +885,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               )}
             </div>
           )}
+
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0 ml-4">
             <div className="flex items-center bg-youtube-secondary dark:bg-neutral-800 rounded-full overflow-hidden shadow-sm">
@@ -963,16 +972,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             )}
 
             {isOwner && (
-              <DeleteVideoButton
-                videoId={video._id}
-                videoTitle={video.videotitle}
-                onDeleted={handleVideoDeleted}
-                variant="icon"
-              />
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 shadow-sm flex-shrink-0"
+              >
+                <Trash2 className="w-5 h-5" />
+                <span className="text-sm font-medium">Delete</span>
+              </button>
             )}
           </div>
         </div>
       </div>
+
       {/* Mobile Action Buttons - YouTube Flat Design */}
       <div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-neutral-800">
         <div
@@ -1084,6 +1095,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </span>
             </button>
           )}
+
           {/* More Menu (Non-Owners) */}
           {user && !isOwner && (
             <div className="relative flex-shrink-0" ref={menuRef}>
@@ -1193,6 +1205,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           }
         }
       `}</style>
+
       {/* Description */}
       <div className="px-3 md:px-0">
         <div
@@ -1225,6 +1238,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </button>
         </div>
       </div>
+
       {/* Unsubscribe Modal */}
       {showUnsubscribeModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
@@ -1257,223 +1271,93 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       )}
-  {/* Delete Confirmation Modal - Desktop & Mobile with Portal */}
-{typeof window !== "undefined" &&
-  showDeleteModal &&
-  ReactDOM.createPortal(
-    <div
-      className="fixed inset-0"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 2147483647,
-        isolation: "isolate",
-      }}
-    >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={() => setShowDeleteModal(false)}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          zIndex: 1,
-        }}
-      />
 
-  {/* Modal Container - DESKTOP */}
-<div
-  className="hidden md:flex fixed inset-0 items-center justify-center p-6"
-  style={{ zIndex: 2 }}
->
-  <div
-    className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-lg flex flex-col"
-    onClick={(e) => e.stopPropagation()}
-    style={{ 
-      maxHeight: "90vh",
-      minHeight: "400px" 
-    }}
-  >
-    {/* ========== HEADER ========== */}
-    <div className="flex-shrink-0 px-8 pt-8 pb-5 border-b border-gray-200 dark:border-neutral-700">
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center">
-        Delete Video?
-      </h3>
-    </div>
-
-{/* ========== CONTENT ========== */}
-    <div className="flex-1 overflow-y-auto px-8 pt-10 pb-8" style={{ minHeight: 0 }}>
-      <div className="space-y-5">
-        <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-          Are you sure you want to delete
-        </p>
-        
-        <div className="max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-          <p
-            className="text-base font-semibold text-gray-900 dark:text-white leading-relaxed text-center px-2"
+      {/* Delete Confirmation Modal - Same design for both Desktop & Mobile */}
+      {typeof window !== "undefined" &&
+        showDeleteModal &&
+        ReactDOM.createPortal(
+          <div
+            className="fixed inset-0 flex items-center justify-center p-4"
             style={{
-              overflowWrap: "anywhere",
-              wordBreak: "break-word",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100vw",
+              height: "100vh",
+              zIndex: 2147483647,
+              isolation: "isolate",
             }}
           >
-            &quot;{video.videotitle}&quot;
-          </p>
-        </div>
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/70"
+              onClick={() => setShowDeleteModal(false)}
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                zIndex: 1,
+              }}
+            />
 
-        <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-          This action cannot be undone.
-        </p>
-      </div>
-    </div>
+            {/* Modal - Unified design matching the first image */}
+            <div
+              className="relative bg-[#282828] rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+              style={{ zIndex: 2 }}
+            >
+              {/* Header */}
+              <div className="px-6 pt-6 pb-4">
+                <h3 className="text-lg font-medium text-white">
+                  Delete Video?
+                </h3>
+              </div>
 
-   {/* ========== FOOTER WITH BUTTONS ========== */}
-    <div className="flex-shrink-0 px-8 pb-8 pt-6 border-t border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
-      <div className="flex gap-4 justify-center">
-        <button
-          onClick={() => setShowDeleteModal(false)}
-          className="min-w-[140px] px-10 py-3.5 rounded-lg bg-gray-200 dark:bg-neutral-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-neutral-600 font-bold text-base transition-all active:scale-95 shadow-md hover:shadow-lg"
-        >
-          Cancel
-        </button>
-        <DeleteVideoButton
-          videoId={video._id}
-          videoTitle={video.videotitle}
-          onDeleted={() => {
-            setShowDeleteModal(false);
-            handleVideoDeleted();
-          }}
-          variant="modal"
-        />
-      </div>
-    </div>
-  </div>
-</div>
-      {/* Modal Container - MOBILE */}
-      <div
-        className="md:hidden flex fixed inset-0 items-center justify-center p-4"
-        style={{ zIndex: 2 }}
-      >
-        <div
-          className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            maxHeight: "85vh",
-            height: "auto",
-            minHeight: "300px",
-          }}
-        >
-          <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
-              Delete Video?
-            </h3>
-          </div>
+              {/* Content */}
+              <div className="px-6 pb-4">
+                <p className="text-sm text-gray-300 mb-3">
+                  Are you sure you want to delete
+                </p>
+                <p
+                  className="text-sm text-red-400 font-medium break-words"
+                  style={{
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  &quot;{video.videotitle}&quot;
+                </p>
+                <p className="text-sm text-gray-400 mt-4">
+                  This action cannot be undone.
+                </p>
+              </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-                Are you sure you want to delete
-              </p>
-          <div className="max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
-  <p
-    className="text-sm font-semibold text-white leading-relaxed"
-    style={{
-      overflowWrap: "anywhere",
-      wordBreak: "break-word",
-    }}
-  >
-    &quot;{video.videotitle}&quot;
-  </p>
-</div>
-
-              <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-                This action cannot be undone.
-              </p>
+              {/* Footer with Buttons */}
+              <div className="px-6 pb-6 pt-2 flex justify-center gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-6 py-2.5 rounded-full bg-transparent border border-gray-600 text-white hover:bg-gray-700 font-medium text-sm transition-all"
+                >
+                  Cancel
+                </button>
+                <DeleteVideoButton
+                  videoId={video._id}
+                  videoTitle={video.videotitle}
+                  onDeleted={() => {
+                    setShowDeleteModal(false);
+                    handleVideoDeleted();
+                  }}
+                  variant="modal"
+                />
+              </div>
             </div>
-          </div>
-
-          {/* Footer - ALWAYS VISIBLE */}
-          <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
-              >
-                Cancel
-              </button>
-              <DeleteVideoButton
-                videoId={video._id}
-                videoTitle={video.videotitle}
-                onDeleted={() => {
-                  setShowDeleteModal(false);
-                  handleVideoDeleted();
-                }}
-                variant="modal"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  )}
-
-      {/* Custom Scrollbar Styles */}
-      <style jsx global>{`
-        /* Webkit browsers (Chrome, Safari, Edge) */
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(243, 244, 246, 0.5);
-          border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(156, 163, 175, 0.6);
-          border-radius: 10px;
-          border: 2px solid transparent;
-          background-clip: padding-box;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(156, 163, 175, 0.8);
-          background-clip: padding-box;
-        }
-
-        /* Dark mode scrollbar - IMPROVED */
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(64, 64, 64, 0.3);
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(156, 163, 175, 0.5);
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(156, 163, 175, 0.7);
-        }
-
-        /* Firefox */
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(156, 163, 175, 0.6) rgba(243, 244, 246, 0.5);
-        }
-
-        .dark .custom-scrollbar {
-          scrollbar-color: rgba(156, 163, 175, 0.5) rgba(64, 64, 64, 0.3);
-        }
-        
-      `}</style>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
