@@ -744,170 +744,142 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
               </Button>
 
-              {isSubscribed && (
-                <div className="relative" ref={menuRef}>
-                  <Button
-                    onClick={handleBellClick}
-                    className="h-9 w-9 p-0 rounded-full bg-youtube-hover dark:bg-neutral-800 hover:bg-youtube-tertiary dark:hover:bg-neutral-700 transition-all flex items-center justify-center flex-shrink-0"
-                    title="Notification preferences"
-                  >
-                    {notificationPreference === "none" ? (
-                      <BellOff className="w-5 h-5 text-youtube-primary" />
-                    ) : (
-                      <Bell className="w-5 h-5 text-youtube-primary" />
-                    )}
-                  </Button>
-                  {showSubscribeMenu && (
-                    <>
-                      {/* Backdrop for mobile */}
-                      <div
-                        className="md:hidden fixed inset-0 bg-black/50 z-[9998]"
-                        onClick={() => setShowSubscribeMenu(false)}
-                      />
-                      {/* Invisible backdrop for desktop */}
-                      <div
-                        className="hidden md:block fixed inset-0 z-[9998]"
-                        onClick={() => setShowSubscribeMenu(false)}
-                      />
-                      {/* ✅ FIXED: Menu now stays on page in both mobile and desktop */}
-                      <div
-                        className="
-            fixed md:absolute 
-            bottom-0 md:bottom-auto 
-            left-0 right-0 md:left-auto md:right-0 
-            md:top-full md:mt-2
-            w-full md:w-64 
-            bg-youtube-secondary dark:bg-neutral-900 
-            rounded-t-2xl md:rounded-xl 
-            shadow-2xl 
-            border-t md:border 
-            border-youtube dark:border-neutral-800 
-            py-2 
-            z-[9999] 
-            animate-in slide-in-from-bottom md:slide-in-from-top-2 fade-in duration-200 
-            max-h-[70vh] overflow-y-auto
-          "
-                      >
-                        {/* Mobile handle */}
-                        <div className="md:hidden flex justify-center py-2">
-                          <div className="w-10 h-1 bg-youtube-disabled dark:bg-neutral-700 rounded-full" />
-                        </div>
+          
+{isSubscribed && (
+  <div className="relative" ref={menuRef}>
+    <Button
+      onClick={handleBellClick}
+      className="h-9 w-9 p-0 rounded-full bg-youtube-hover dark:bg-neutral-800 hover:bg-youtube-tertiary dark:hover:bg-neutral-700 transition-all flex items-center justify-center flex-shrink-0"
+      title="Notification preferences"
+    >
+      {notificationPreference === "none" ? (
+        <BellOff className="w-5 h-5 text-youtube-primary" />
+      ) : (
+        <Bell className="w-5 h-5 text-youtube-primary" />
+      )}
+    </Button>
+    {showSubscribeMenu && (
+      <>
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-[9998]"
+          onClick={() => setShowSubscribeMenu(false)}
+        />
+        <div
+          className="hidden md:block fixed inset-0 z-[9998]"
+          onClick={() => setShowSubscribeMenu(false)}
+        />
+        <div className="fixed md:absolute bottom-0 md:bottom-auto left-0 right-0 md:left-auto md:right-0 md:top-full md:mt-2 w-full md:w-64 bg-youtube-secondary dark:bg-neutral-900 rounded-t-2xl md:rounded-xl shadow-2xl border-t md:border border-youtube dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom md:slide-in-from-top-2 fade-in duration-200 max-h-[70vh] overflow-y-auto">
+          <div className="md:hidden flex justify-center py-2">
+            <div className="w-10 h-1 bg-youtube-disabled dark:bg-neutral-700 rounded-full" />
+          </div>
 
-                        {/* Header */}
-                        <div className="px-4 py-2 text-xs text-youtube-disabled dark:text-neutral-500 font-semibold uppercase tracking-wide">
-                          Notifications
-                        </div>
+          <div className="px-4 py-2 text-xs text-youtube-disabled dark:text-neutral-500 font-semibold uppercase tracking-wide">
+            Notifications
+          </div>
 
-                        {/* All Notifications Option */}
-                        <button
-                          onClick={() => handleNotificationChange("all")}
-                          className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
-                            notificationPreference === "all"
-                              ? "bg-youtube-hover dark:bg-neutral-800"
-                              : ""
-                          }`}
-                        >
-                          <Bell className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-youtube-primary">
-                              All
-                            </div>
-                          </div>
-                          {notificationPreference === "all" && (
-                            <svg
-                              className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          )}
-                        </button>
+          <button
+            onClick={() => handleNotificationChange("all")}
+            className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
+              notificationPreference === "all"
+                ? "bg-youtube-hover dark:bg-neutral-800"
+                : ""
+            }`}
+          >
+            <Bell className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm text-youtube-primary">
+                All
+              </div>
+            </div>
+            {notificationPreference === "all" && (
+              <svg
+                className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </button>
 
-                        {/* Personalized Notifications Option */}
-                        <button
-                          onClick={() =>
-                            handleNotificationChange("personalized")
-                          }
-                          className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
-                            notificationPreference === "personalized"
-                              ? "bg-youtube-hover dark:bg-neutral-800"
-                              : ""
-                          }`}
-                        >
-                          <Bell className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-youtube-primary">
-                              Personalized
-                            </div>
-                          </div>
-                          {notificationPreference === "personalized" && (
-                            <svg
-                              className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          )}
-                        </button>
+          <button
+            onClick={() => handleNotificationChange("personalized")}
+            className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
+              notificationPreference === "personalized"
+                ? "bg-youtube-hover dark:bg-neutral-800"
+                : ""
+            }`}
+          >
+            <Bell className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm text-youtube-primary">
+                Personalized
+              </div>
+            </div>
+            {notificationPreference === "personalized" && (
+              <svg
+                className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </button>
 
-                        {/* None Notifications Option */}
-                        <button
-                          onClick={() => handleNotificationChange("none")}
-                          className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
-                            notificationPreference === "none"
-                              ? "bg-youtube-hover dark:bg-neutral-800"
-                              : ""
-                          }`}
-                        >
-                          <BellOff className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm text-youtube-primary">
-                              None
-                            </div>
-                          </div>
-                          {notificationPreference === "none" && (
-                            <svg
-                              className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          )}
-                        </button>
+          <button
+            onClick={() => handleNotificationChange("none")}
+            className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
+              notificationPreference === "none"
+                ? "bg-youtube-hover dark:bg-neutral-800"
+                : ""
+            }`}
+          >
+            <BellOff className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm text-youtube-primary">
+                None
+              </div>
+            </div>
+            {notificationPreference === "none" && (
+              <svg
+                className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </button>
 
-                        {/* Divider */}
-                        <div className="border-t border-youtube dark:border-neutral-800 my-2"></div>
+          <div className="border-t border-youtube dark:border-neutral-800 my-2"></div>
 
-                        {/* Unsubscribe Button */}
-                        <button
-                          onClick={() => {
-                            setShowSubscribeMenu(false);
-                            setShowUnsubscribeModal(true);
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 text-youtube-primary font-medium transition-colors text-sm"
-                        >
-                          Unsubscribe
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+          <button
+            onClick={() => {
+              setShowSubscribeMenu(false);
+              setShowUnsubscribeModal(true);
+            }}
+            className="w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 text-youtube-primary font-medium transition-colors text-sm"
+          >
+            Unsubscribe
+          </button>
+        </div>
+      </>
+    )}
+  </div>
+)}
             </div>
           )}
 
