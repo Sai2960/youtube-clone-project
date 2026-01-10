@@ -1412,17 +1412,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           background-clip: padding-box;
         }
 
-        /* Dark mode scrollbar */
+        /* Dark mode scrollbar - IMPROVED */
         .dark .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(38, 38, 38, 0.5);
+          background: rgba(64, 64, 64, 0.3);
         }
 
         .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(115, 115, 115, 0.6);
+          background: rgba(156, 163, 175, 0.5);
         }
 
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(115, 115, 115, 0.8);
+          background: rgba(156, 163, 175, 0.7);
         }
 
         /* Firefox */
@@ -1432,8 +1432,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         }
 
         .dark .custom-scrollbar {
-          scrollbar-color: rgba(115, 115, 115, 0.6) rgba(38, 38, 38, 0.5);
+          scrollbar-color: rgba(156, 163, 175, 0.5) rgba(64, 64, 64, 0.3);
         }
+        
       `}</style>
     </div>
   );
