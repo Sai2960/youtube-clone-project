@@ -1309,14 +1309,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       </h3>
     </div>
 
-    {/* ========== CONTENT ========== */}
-    <div className="flex-1 overflow-y-auto px-8 py-6" style={{ minHeight: 0 }}>
-      <div className="space-y-4">
+   {/* ========== CONTENT ========== */}
+    <div className="flex-1 overflow-y-auto px-8 py-8" style={{ minHeight: 0 }}>
+      <div className="space-y-5">
         <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
           Are you sure you want to delete
         </p>
         
-        <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
           <p
             className="text-base font-semibold text-gray-900 dark:text-white leading-relaxed text-center px-2"
             style={{
@@ -1334,12 +1334,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       </div>
     </div>
 
-    {/* ========== FOOTER WITH BUTTONS ========== */}
-    <div className="flex-shrink-0 px-8 pb-8 pt-5 border-t border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
+   {/* ========== FOOTER WITH BUTTONS ========== */}
+    <div className="flex-shrink-0 px-8 pb-8 pt-6 border-t border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
       <div className="flex gap-4 justify-center">
         <button
           onClick={() => setShowDeleteModal(false)}
-          className="min-w-[140px] px-8 py-3.5 rounded-lg bg-gray-200 dark:bg-neutral-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-neutral-600 font-bold text-base transition-all active:scale-95 shadow-md hover:shadow-lg"
+          className="min-w-[140px] px-10 py-3.5 rounded-lg bg-gray-200 dark:bg-neutral-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-neutral-600 font-bold text-base transition-all active:scale-95 shadow-md hover:shadow-lg"
         >
           Cancel
         </button>

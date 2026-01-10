@@ -49,11 +49,11 @@ export default function DeleteVideoButton({
   const ConfirmModal = () => (
     <>
       {showConfirm && (
-     <div
-  className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
-  style={{ zIndex: 2147483647 }}
-  onClick={() => setShowConfirm(false)}
->
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          style={{ zIndex: 2147483647 }}
+          onClick={() => setShowConfirm(false)}
+        >
           <div
             className="bg-white dark:bg-neutral-900 rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-neutral-700 animate-in zoom-in duration-200 mx-auto"
             onClick={(e) => e.stopPropagation()}
@@ -146,7 +146,7 @@ export default function DeleteVideoButton({
       <button
         onClick={handleDelete}
         disabled={isDeleting}
-        className="px-6 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition-all active:scale-95 flex items-center gap-2 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        className="min-w-[140px] px-10 py-3.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-base transition-all active:scale-95 flex items-center gap-2 justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
       >
         {isDeleting ? (
           <>
