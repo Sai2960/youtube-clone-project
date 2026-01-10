@@ -1289,81 +1289,37 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         }}
       />
 
-   {/* Modal Container - DESKTOP */}
-<div
-  className="hidden md:flex fixed inset-0 items-center justify-center p-6"
-  style={{ zIndex: 2 }}
->
-  <div
-    className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden"
-    onClick={(e) => e.stopPropagation()}
-    style={{ 
-      width: "90%",
-      maxWidth: "520px",
-      maxHeight: "85vh", 
-      display: "flex", 
-      flexDirection: "column" 
-    }}
-  >
-    {/* Header */}
-    <div className="flex-shrink-0 px-8 pt-8 pb-5 border-b border-gray-200 dark:border-neutral-800">
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center">
-        Delete Video?
-      </h3>
-    </div>
-
-    {/* Content - Scrollable if needed */}
-    <div 
-      className="flex-1 overflow-y-auto px-8 py-6" 
-      style={{ minHeight: "0" }}
-    >
-      <div className="space-y-5">
-        <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-          Are you sure you want to delete this video?
-        </p>
-        
-        <div className="bg-gray-50 dark:bg-neutral-800/50 rounded-lg p-4 max-h-[180px] overflow-y-auto custom-scrollbar">
-          <p
-            className="text-base font-semibold text-gray-900 dark:text-white leading-relaxed text-center break-words"
-            style={{
-              overflowWrap: "anywhere",
-              wordBreak: "break-word",
-              hyphens: "auto",
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            &quot;{video.videotitle}&quot;
-          </p>
-        </div>
-
-        <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed font-medium">
-          This action cannot be undone.
-        </p>
-      </div>
-    </div>
-
-    {/* Footer with Buttons - FIXED */}
-    <div className="flex-shrink-0 px-8 pb-8 pt-6 border-t border-gray-200 dark:border-neutral-800">
-      <div className="grid grid-cols-2 gap-4 w-full max-w-[320px] mx-auto">
-        <button
-          onClick={() => setShowDeleteModal(false)}
-          className="px-6 py-3 rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-semibold text-base transition-all active:scale-95 whitespace-nowrap"
+     {/* Modal Container - DESKTOP */}
+      <div
+        className="hidden md:flex fixed inset-0 items-center justify-center p-4"
+        style={{ zIndex: 2 }}
+      >
+        <div
+          className="relative bg-youtube-secondary dark:bg-neutral-900 rounded-xl shadow-2xl max-w-[280px] w-full p-3 space-y-2 animate-in fade-in zoom-in duration-200"
+          onClick={(e) => e.stopPropagation()}
         >
-          Cancel
-        </button>
-        <DeleteVideoButton
-          videoId={video._id}
-          videoTitle={video.videotitle}
-          onDeleted={() => {
-            setShowDeleteModal(false);
-            handleVideoDeleted();
-          }}
-          variant="modal"
-        />
+          <p className="text-[11px] text-youtube-primary text-center leading-snug">
+            Are you sure you want to delete &quot;{video.videotitle}&quot;? This action cannot be undone.
+          </p>
+          <div className="flex gap-1.5 justify-center pt-1">
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-[11px] transition-all"
+            >
+              Cancel
+            </button>
+            <DeleteVideoButton
+              videoId={video._id}
+              videoTitle={video.videotitle}
+              onDeleted={() => {
+                setShowDeleteModal(false);
+                handleVideoDeleted();
+              }}
+              variant="modal"
+            />
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
 
       {/* Modal Container - MOBILE */}
       <div
