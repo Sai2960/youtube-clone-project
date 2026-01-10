@@ -514,7 +514,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   };
 
   // Notification preference handler - Updated to persist and work correctly
-  // Notification preference handler - Updated to persist and work correctly
   const handleNotificationChange = useCallback(
     async (pref: "all" | "personalized" | "none") => {
       if (isUpdatingNotification) return;
@@ -770,7 +769,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           />
           {/* Bottom Sheet */}
           <div
-            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#282828] rounded-t-2xl shadow-2xl overflow-hidden"
+            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#212121] rounded-t-3xl shadow-2xl overflow-hidden"
             style={{
               animation: "slideUpSheet 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
               maxHeight: "85vh",
@@ -778,14 +777,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Handle Bar */}
-            <div className="flex justify-center py-3 bg-white dark:bg-[#282828]">
-              <div className="w-10 h-1 bg-gray-300 dark:bg-neutral-600 rounded-full" />
+            <div className="flex justify-center py-3 bg-white dark:bg-[#212121]">
+              <div className="w-9 h-1 bg-gray-300 dark:bg-neutral-600 rounded-full" />
             </div>
 
             {/* Header */}
-            <div className="px-5 pb-3 border-b border-gray-100 dark:border-neutral-700">
+            <div className="px-5 pb-4 border-b border-gray-200 dark:border-neutral-700/50">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                   Notifications
                 </h3>
                 <button
@@ -794,19 +793,20 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     e.preventDefault();
                     closeNotificationMenu();
                   }}
-                  className="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+                  className="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700/50 transition-colors"
                   type="button"
                 >
                   <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 Choose how often you want to be notified
               </p>
             </div>
 
             {/* Options */}
-            <div className="py-2">
+            <div className="py-2 px-2">
+              {/* All Option */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -815,19 +815,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("all");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex items-center gap-4 transition-all ${
+                className={`w-full px-4 py-3.5 flex items-center gap-4 rounded-xl transition-all mb-1 ${
                   notificationPreference === "all"
-                    ? "bg-blue-50 dark:bg-blue-900/20"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50 active:bg-gray-100 dark:active:bg-neutral-700"
+                    ? "bg-blue-50 dark:bg-blue-500/10"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-800"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     notificationPreference === "all"
-                      ? "bg-blue-100 dark:bg-blue-900/40"
-                      : "bg-gray-100 dark:bg-neutral-700"
+                      ? "bg-blue-100 dark:bg-blue-500/20"
+                      : "bg-gray-100 dark:bg-neutral-700/50"
                   }`}
                 >
                   <Bell
@@ -840,7 +840,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 </div>
                 <div className="flex-1 text-left">
                   <div
-                    className={`font-medium ${
+                    className={`font-medium text-[15px] ${
                       notificationPreference === "all"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -848,14 +848,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   >
                     All
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-[13px] text-gray-500 dark:text-gray-400">
                     Get notified for every upload
                   </div>
                 </div>
                 {notificationPreference === "all" && (
-                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-4 h-4 text-white"
+                      className="w-3 h-3 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -871,6 +871,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
               </button>
 
+              {/* Personalized Option */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -879,19 +880,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("personalized");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex items-center gap-4 transition-all ${
+                className={`w-full px-4 py-3.5 flex items-center gap-4 rounded-xl transition-all mb-1 ${
                   notificationPreference === "personalized"
-                    ? "bg-blue-50 dark:bg-blue-900/20"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50 active:bg-gray-100 dark:active:bg-neutral-700"
+                    ? "bg-blue-50 dark:bg-blue-500/10"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-800"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     notificationPreference === "personalized"
-                      ? "bg-blue-100 dark:bg-blue-900/40"
-                      : "bg-gray-100 dark:bg-neutral-700"
+                      ? "bg-blue-100 dark:bg-blue-500/20"
+                      : "bg-gray-100 dark:bg-neutral-700/50"
                   }`}
                 >
                   <Bell
@@ -904,7 +905,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 </div>
                 <div className="flex-1 text-left">
                   <div
-                    className={`font-medium ${
+                    className={`font-medium text-[15px] ${
                       notificationPreference === "personalized"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -912,14 +913,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   >
                     Personalized
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-[13px] text-gray-500 dark:text-gray-400">
                     Only occasional highlights
                   </div>
                 </div>
                 {notificationPreference === "personalized" && (
-                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-4 h-4 text-white"
+                      className="w-3 h-3 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -935,6 +936,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
               </button>
 
+              {/* None Option */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -943,19 +945,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("none");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex items-center gap-4 transition-all ${
+                className={`w-full px-4 py-3.5 flex items-center gap-4 rounded-xl transition-all ${
                   notificationPreference === "none"
-                    ? "bg-blue-50 dark:bg-blue-900/20"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50 active:bg-gray-100 dark:active:bg-neutral-700"
+                    ? "bg-blue-50 dark:bg-blue-500/10"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-800"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     notificationPreference === "none"
-                      ? "bg-blue-100 dark:bg-blue-900/40"
-                      : "bg-gray-100 dark:bg-neutral-700"
+                      ? "bg-blue-100 dark:bg-blue-500/20"
+                      : "bg-gray-100 dark:bg-neutral-700/50"
                   }`}
                 >
                   <BellOff
@@ -968,7 +970,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 </div>
                 <div className="flex-1 text-left">
                   <div
-                    className={`font-medium ${
+                    className={`font-medium text-[15px] ${
                       notificationPreference === "none"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -976,14 +978,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   >
                     None
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-[13px] text-gray-500 dark:text-gray-400">
                     Don&apos;t notify me
                   </div>
                 </div>
                 {notificationPreference === "none" && (
-                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-4 h-4 text-white"
+                      className="w-3 h-3 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -1001,7 +1003,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
 
             {/* Unsubscribe Section */}
-            <div className="border-t border-gray-100 dark:border-neutral-700 p-4">
+            <div className="border-t border-gray-200 dark:border-neutral-700/50 p-4 mt-2">
               <button
                 type="button"
                 onClick={() => {
@@ -1013,7 +1015,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   closeNotificationMenu();
                   setTimeout(() => setShowUnsubscribeModal(true), 100);
                 }}
-                className="w-full py-3 px-4 text-center text-red-600 dark:text-red-400 font-medium rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 dark:active:bg-red-900/40 transition-all"
+                className="w-full py-3 px-4 text-center text-red-600 dark:text-red-400 font-semibold text-[15px] rounded-xl bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 active:bg-red-200 dark:active:bg-red-500/25 transition-all"
               >
                 Unsubscribe
               </button>
@@ -1021,7 +1023,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
             {/* Safe area padding for iOS */}
             <div
-              className="bg-white dark:bg-[#282828]"
+              className="bg-white dark:bg-[#212121]"
               style={{ height: "env(safe-area-inset-bottom, 0px)" }}
             />
           </div>
@@ -1403,10 +1405,30 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           {/* Subscribe + Bell */}
           {!isOwner && user && videoUploaderId && (
             <div className="flex items-center gap-2 flex-shrink-0 self-center">
+              {/* Mobile Subscribe Button - Theme Compatible */}
               <Button
                 onClick={handleSubscribe}
                 disabled={isSubscribing}
-                className={`h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
+                className={`md:hidden h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
+                  isSubscribed
+                    ? "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-900 dark:text-white border border-gray-300 dark:border-neutral-600"
+                    : "bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900"
+                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
+              >
+                {isSubscribing ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  </span>
+                ) : (
+                  <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
+                )}
+              </Button>
+
+              {/* Desktop Subscribe Button */}
+              <Button
+                onClick={handleSubscribe}
+                disabled={isSubscribing}
+                className={`hidden md:flex h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
                   isSubscribed
                     ? "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white"
                     : "bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
@@ -1425,25 +1447,23 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </Button>
 
               {isSubscribed && (
-                <div className="relative flex items-center">
-                  <button
-                    ref={bellButtonRef}
-                    type="button"
-                    onClick={handleBellClick}
-                    onTouchEnd={(e) => {
-                      e.preventDefault();
-                      handleBellClick(e);
-                    }}
-                    className="h-9 w-9 p-0 rounded-full bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all flex items-center justify-center flex-shrink-0"
-                    title="Notification preferences"
-                  >
-                    {notificationPreference === "none" ? (
-                      <BellOff className="w-5 h-5 text-gray-700 dark:text-white" />
-                    ) : (
-                      <Bell className="w-5 h-5 text-gray-700 dark:text-white" />
-                    )}
-                  </button>
-                </div>
+                <button
+                  ref={bellButtonRef}
+                  type="button"
+                  onClick={handleBellClick}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleBellClick(e);
+                  }}
+                  className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600"
+                  title="Notification preferences"
+                >
+                  {notificationPreference === "none" ? (
+                    <BellOff className="w-[18px] h-[18px] text-gray-700 dark:text-white" />
+                  ) : (
+                    <Bell className="w-[18px] h-[18px] text-gray-700 dark:text-white" />
+                  )}
+                </button>
               )}
             </div>
           )}
@@ -1722,15 +1742,15 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               onClick={() => setShowUnsubscribeModal(false)}
             />
 
-            <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-6">
+            <div className="relative bg-white dark:bg-[#212121] rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-6 border border-gray-200 dark:border-neutral-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
                 Unsubscribe from {video.videochanel || "this channel"}?
               </h3>
 
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-3 justify-center">
                 <Button
                   onClick={() => setShowUnsubscribeModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-white bg-gray-100 dark:bg-neutral-700 hover:bg-gray-200 dark:hover:bg-neutral-600 rounded-full transition-colors border border-gray-200 dark:border-neutral-600"
                   variant="ghost"
                 >
                   Cancel
@@ -1738,7 +1758,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 <Button
                   onClick={handleSubscribe}
                   disabled={isSubscribing}
-                  className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
                 >
                   {isSubscribing ? "Unsubscribing..." : "Unsubscribe"}
                 </Button>
@@ -1782,7 +1802,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
             {/* Modal - Theme Compatible Design */}
             <div
-              className="relative bg-white dark:bg-[#282828] rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-neutral-700"
+              className="relative bg-white dark:bg-[#212121] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-neutral-700"
               onClick={(e) => e.stopPropagation()}
               style={{ zIndex: 2 }}
             >
@@ -1799,7 +1819,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   Are you sure you want to delete
                 </p>
                 <p
-                  className="text-sm text-red-600 dark:text-red-400 font-semibold break-words bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800"
+                  className="text-sm text-red-600 dark:text-red-400 font-semibold break-words bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg border border-red-200 dark:border-red-500/30"
                   style={{
                     overflowWrap: "anywhere",
                     wordBreak: "break-word",
@@ -1816,10 +1836,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </div>
 
               {/* Footer with Buttons */}
-              <div className="px-6 pb-6 pt-2 flex justify-center gap-3 bg-gray-50 dark:bg-neutral-800/50">
+              <div className="px-6 pb-6 pt-2 flex justify-center gap-3 bg-gray-50 dark:bg-neutral-800/30">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-6 py-2.5 rounded-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 font-medium text-sm transition-all shadow-sm dark:shadow-none"
+                  className="px-6 py-2.5 rounded-full bg-gray-100 dark:bg-neutral-700 border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-600 font-medium text-sm transition-all"
                 >
                   Cancel
                 </button>
