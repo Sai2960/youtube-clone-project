@@ -49,10 +49,11 @@ export default function DeleteVideoButton({
   const ConfirmModal = () => (
     <>
       {showConfirm && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60000] p-4 animate-in fade-in duration-200"
-          onClick={() => setShowConfirm(false)}
-        >
+     <div
+  className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+  style={{ zIndex: 2147483647 }}
+  onClick={() => setShowConfirm(false)}
+>
           <div
             className="bg-white dark:bg-neutral-900 rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-neutral-700 animate-in zoom-in duration-200 mx-auto"
             onClick={(e) => e.stopPropagation()}

@@ -468,14 +468,13 @@ function AppContent({ Component, pageProps }: AppProps) {
       document.documentElement.style.inset = "0";
       document.documentElement.style.zIndex = "0";
       document.documentElement.style.background = "transparent";
+      // ✅ REMOVED pointer-events blocking
 
       document.body.style.position = "fixed";
       document.body.style.inset = "0";
       document.body.style.zIndex = "0";
       document.body.style.background = "transparent";
-
-      // ✅ FIX: Don't block pointer events - let modals work
-      // document.body.style.pointerEvents = "none"; // REMOVED
+      // ✅ REMOVED pointer-events blocking
 
       const nextDiv = document.getElementById("__next");
       if (nextDiv) {
@@ -483,13 +482,12 @@ function AppContent({ Component, pageProps }: AppProps) {
         nextDiv.style.inset = "0";
         nextDiv.style.zIndex = "0";
         nextDiv.style.background = "transparent";
-        // ✅ FIX: Don't block pointer events
-        // nextDiv.style.pointerEvents = "none"; // REMOVED
+        // ✅ REMOVED pointer-events blocking
       }
 
       console.log("✅ Shorts overrides applied (modals enabled)");
     } else {
-      // ✅ Reset when leaving shorts
+      // Reset when leaving shorts
       document.documentElement.style.position = "";
       document.documentElement.style.inset = "";
       document.documentElement.style.zIndex = "";

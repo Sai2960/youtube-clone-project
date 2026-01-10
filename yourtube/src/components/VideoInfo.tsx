@@ -1258,21 +1258,21 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       )}
       {/* Delete Confirmation Modal - Desktop & Mobile with Portal */}
-      {typeof window !== "undefined" &&
-        showDeleteModal &&
-        ReactDOM.createPortal(
-          <div
-            className="fixed inset-0"
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 999999,
-              isolation: "isolate",
-            }}
-          >
+     {typeof window !== "undefined" &&
+  showDeleteModal &&
+  ReactDOM.createPortal(
+    <div
+      className="fixed inset-0"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 2147483647, // ✅ MAX z-index value
+        isolation: "isolate",
+      }}
+    >
             {/* Backdrop */}
             <div
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
