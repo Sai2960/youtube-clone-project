@@ -1295,16 +1295,16 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         style={{ zIndex: 2 }}
       >
         <div
-          className="relative bg-youtube-secondary dark:bg-neutral-900 rounded-xl shadow-2xl max-w-[320px] w-full p-4 space-y-3 animate-in fade-in zoom-in duration-200"
+          className="relative bg-youtube-secondary dark:bg-neutral-900 rounded-xl shadow-2xl max-w-[280px] w-full p-3 space-y-2 animate-in fade-in zoom-in duration-200"
           onClick={(e) => e.stopPropagation()}
         >
-          <p className="text-xs text-youtube-primary text-center leading-relaxed">
+          <p className="text-[11px] text-youtube-primary text-center leading-snug">
             Are you sure you want to delete &quot;{video.videotitle}&quot;? This action cannot be undone.
           </p>
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-1.5 justify-center pt-1">
             <button
               onClick={() => setShowDeleteModal(false)}
-              className="px-4 py-1.5 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-xs transition-all"
+              className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-[11px] transition-all"
             >
               Cancel
             </button>
