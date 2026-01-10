@@ -453,6 +453,9 @@ function AppContent({ Component, pageProps }: AppProps) {
   // ============================================================================
   // 🔴 CRITICAL: SHORTS PAGE VISIBILITY OVERRIDES
   // ============================================================================
+  // ============================================================================
+  // 🔴 CRITICAL: SHORTS PAGE VISIBILITY OVERRIDES (WITH MODAL EXCEPTION)
+  // ============================================================================
   useEffect(() => {
     const isShortsPlayer =
       router.pathname === "/shorts" || router.pathname === "/shorts/";
@@ -463,27 +466,28 @@ function AppContent({ Component, pageProps }: AppProps) {
 
       document.documentElement.style.position = "fixed";
       document.documentElement.style.inset = "0";
-
       document.documentElement.style.zIndex = "0";
-      document.documentElement.style.pointerEvents = "none";
       document.documentElement.style.background = "transparent";
 
       document.body.style.position = "fixed";
       document.body.style.inset = "0";
       document.body.style.zIndex = "0";
-      document.body.style.pointerEvents = "none";
       document.body.style.background = "transparent";
+
+      // ✅ FIX: Don't block pointer events - let modals work
+      // document.body.style.pointerEvents = "none"; // REMOVED
 
       const nextDiv = document.getElementById("__next");
       if (nextDiv) {
         nextDiv.style.position = "fixed";
         nextDiv.style.inset = "0";
         nextDiv.style.zIndex = "0";
-        nextDiv.style.pointerEvents = "none";
         nextDiv.style.background = "transparent";
+        // ✅ FIX: Don't block pointer events
+        // nextDiv.style.pointerEvents = "none"; // REMOVED
       }
 
-      console.log("✅ Shorts overrides applied");
+      console.log("✅ Shorts overrides applied (modals enabled)");
     } else {
       // ✅ Reset when leaving shorts
       document.documentElement.style.position = "";
