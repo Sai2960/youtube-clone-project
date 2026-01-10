@@ -68,6 +68,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
+  const bellButtonRef = useRef<HTMLButtonElement>(null);
 
   // Helper functions
   const getUserId = () => {
@@ -499,6 +500,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
   // Bell icon click handler
   const handleBellClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setShowSubscribeMenu(!showSubscribeMenu);
   };
@@ -669,8 +671,575 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     window.location.href = "/";
   };
 
+  // Notification Menu Component - Renders via Portal
+  const NotificationMenu = () => {
+    if (!showSubscribeMenu) return null;
+
+    return ReactDOM.createPortal(
+      <>
+        {/* Mobile Bottom Sheet */}
+        <div className="md:hidden fixed inset-0 z-[99999]">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowSubscribeMenu(false);
+            }}
+          />
+          {/* Bottom Sheet */}
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#282828] rounded-t-2xl shadow-2xl overflow-hidden"
+            style={{
+              animation: "slideUpSheet 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
+              maxHeight: "85vh",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle Bar */}
+            <div className="flex justify-center py-3 bg-white dark:bg-[#282828]">
+              <div className="w-10 h-1 bg-gray-300 dark:bg-neutral-600 rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div className="px-5 pb-3 border-b border-gray-100 dark:border-neutral-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Notifications
+                </h3>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowSubscribeMenu(false);
+                  }}
+                  className="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Choose how often you want to be notified
+              </p>
+            </div>
+
+            {/* Options */}
+            <div className="py-2">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("all");
+                }}
+                className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
+                  notificationPreference === "all"
+                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    notificationPreference === "all"
+                      ? "bg-blue-100 dark:bg-blue-900/40"
+                      : "bg-gray-100 dark:bg-neutral-700"
+                  }`}
+                >
+                  <Bell
+                    className={`w-5 h-5 ${
+                      notificationPreference === "all"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-600 dark:text-gray-400"
+                    }`}
+                  />
+                </div>
+                <div className="flex-1 text-left">
+                  <div
+                    className={`font-medium ${
+                      notificationPreference === "all"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-900 dark:text-white"
+                    }`}
+                  >
+                    All
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Get notified for every upload
+                  </div>
+                </div>
+                {notificationPreference === "all" && (
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={3}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("personalized");
+                }}
+                className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
+                  notificationPreference === "personalized"
+                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    notificationPreference === "personalized"
+                      ? "bg-blue-100 dark:bg-blue-900/40"
+                      : "bg-gray-100 dark:bg-neutral-700"
+                  }`}
+                >
+                  <Bell
+                    className={`w-5 h-5 ${
+                      notificationPreference === "personalized"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-600 dark:text-gray-400"
+                    }`}
+                  />
+                </div>
+                <div className="flex-1 text-left">
+                  <div
+                    className={`font-medium ${
+                      notificationPreference === "personalized"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-900 dark:text-white"
+                    }`}
+                  >
+                    Personalized
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Only occasional highlights
+                  </div>
+                </div>
+                {notificationPreference === "personalized" && (
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={3}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("none");
+                }}
+                className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
+                  notificationPreference === "none"
+                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                    notificationPreference === "none"
+                      ? "bg-blue-100 dark:bg-blue-900/40"
+                      : "bg-gray-100 dark:bg-neutral-700"
+                  }`}
+                >
+                  <BellOff
+                    className={`w-5 h-5 ${
+                      notificationPreference === "none"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-600 dark:text-gray-400"
+                    }`}
+                  />
+                </div>
+                <div className="flex-1 text-left">
+                  <div
+                    className={`font-medium ${
+                      notificationPreference === "none"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-900 dark:text-white"
+                    }`}
+                  >
+                    None
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Don't notify me
+                  </div>
+                </div>
+                {notificationPreference === "none" && (
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={3}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            </div>
+
+            {/* Unsubscribe Section */}
+            <div className="border-t border-gray-100 dark:border-neutral-700 p-4">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowSubscribeMenu(false);
+                  setShowUnsubscribeModal(true);
+                }}
+                className="w-full py-3 px-4 text-center text-red-600 dark:text-red-400 font-medium rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 dark:active:bg-red-900/40 transition-all"
+              >
+                Unsubscribe
+              </button>
+            </div>
+
+            {/* Safe area padding for iOS */}
+            <div className="h-safe-area-inset-bottom bg-white dark:bg-[#282828]" />
+          </div>
+        </div>
+
+        {/* Desktop Dropdown */}
+        <div className="hidden md:block fixed inset-0 z-[99999]">
+          {/* Invisible backdrop */}
+          <div
+            className="absolute inset-0"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowSubscribeMenu(false);
+            }}
+          />
+          {/* Dropdown positioned relative to bell button */}
+          <div
+            className="absolute bg-white dark:bg-[#282828] rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-700 overflow-hidden"
+            style={{
+              width: "280px",
+              top: bellButtonRef.current
+                ? bellButtonRef.current.getBoundingClientRect().bottom + 8
+                : "100px",
+              left: bellButtonRef.current
+                ? Math.min(
+                    bellButtonRef.current.getBoundingClientRect().left,
+                    window.innerWidth - 296
+                  )
+                : "100px",
+              animation: "fadeInScale 0.2s ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Notification Preferences
+              </h4>
+            </div>
+
+            {/* Options */}
+            <div className="py-1">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("all");
+                }}
+                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                  notificationPreference === "all"
+                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                }`}
+              >
+                <Bell
+                  className={`w-5 h-5 flex-shrink-0 ${
+                    notificationPreference === "all"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`flex-1 text-left text-sm ${
+                    notificationPreference === "all"
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  All
+                </span>
+                {notificationPreference === "all" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("personalized");
+                }}
+                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                  notificationPreference === "personalized"
+                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                }`}
+              >
+                <Bell
+                  className={`w-5 h-5 flex-shrink-0 ${
+                    notificationPreference === "personalized"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`flex-1 text-left text-sm ${
+                    notificationPreference === "personalized"
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  Personalized
+                </span>
+                {notificationPreference === "personalized" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("none");
+                }}
+                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                  notificationPreference === "none"
+                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                }`}
+              >
+                <BellOff
+                  className={`w-5 h-5 flex-shrink-0 ${
+                    notificationPreference === "none"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`flex-1 text-left text-sm ${
+                    notificationPreference === "none"
+                      ? "text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  None
+                </span>
+                {notificationPreference === "none" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
+
+            {/* Unsubscribe */}
+            <div className="border-t border-gray-100 dark:border-neutral-700">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowSubscribeMenu(false);
+                  setShowUnsubscribeModal(true);
+                }}
+                className="w-full px-4 py-3 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium"
+              >
+                Unsubscribe
+              </button>
+            </div>
+          </div>
+        </div>
+      </>,
+      document.body
+    );
+  };
+
   return (
     <div className="w-full space-y-0 overflow-x-hidden bg-white dark:bg-[#0f0f0f]">
+      {/* Animation Keyframes */}
+      <style jsx global>{`
+        @keyframes slideUpSheet {
+          from {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes fadeInScale {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        .h-safe-area-inset-bottom {
+          height: env(safe-area-inset-bottom, 0px);
+        }
+
+        .md\\:hidden .flex.items-center.gap-4::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+
+        .md\\:hidden .flex.items-center.gap-4 {
+          -ms-overflow-style: none;
+          scrollbar-width: none !important;
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* Remove any dots/indicators on mobile */
+        @media (max-width: 768px) {
+          .overflow-x-auto::after,
+          .overflow-x-auto::before {
+            display: none !important;
+          }
+
+          /* Mobile-only Like/Dislike animations */
+          @keyframes mobile-like-pulse {
+            0% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.4);
+              filter: drop-shadow(0 0 8px rgba(6, 95, 212, 0.6));
+            }
+            100% {
+              transform: scale(1);
+            }
+          }
+
+          @keyframes mobile-dislike-pulse {
+            0% {
+              transform: scale(1) rotate(0deg);
+            }
+            50% {
+              transform: scale(1.4) rotate(-15deg);
+              filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
+            }
+            100% {
+              transform: scale(1) rotate(0deg);
+            }
+          }
+
+          @keyframes mobile-like-ripple {
+            0% {
+              transform: scale(0);
+              opacity: 0.8;
+            }
+            50% {
+              opacity: 0.5;
+            }
+            100% {
+              transform: scale(3);
+              opacity: 0;
+            }
+          }
+
+          @keyframes mobile-dislike-ripple {
+            0% {
+              transform: scale(0);
+              opacity: 0.8;
+            }
+            50% {
+              opacity: 0.5;
+            }
+            100% {
+              transform: scale(3);
+              opacity: 0;
+            }
+          }
+
+          .mobile-like-animate {
+            animation: mobile-like-pulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+
+          .mobile-dislike-animate {
+            animation: mobile-dislike-pulse 0.6s
+              cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+
+          .mobile-like-ripple {
+            animation: mobile-like-ripple 0.7s ease-out forwards;
+          }
+
+          .mobile-dislike-ripple {
+            animation: mobile-dislike-ripple 0.7s ease-out forwards;
+          }
+        }
+      `}</style>
+
       {/* 1. Title and Views Section */}
       <div className="px-3 pt-3 pb-1 md:px-0 md:pt-0">
         <h1 className="text-[18px] md:text-xl font-semibold text-youtube-primary mb-1 leading-snug line-clamp-2">
@@ -744,142 +1313,22 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
               </Button>
 
-          
-{isSubscribed && (
-  <div className="relative" ref={menuRef}>
-    <Button
-      onClick={handleBellClick}
-      className="h-9 w-9 p-0 rounded-full bg-youtube-hover dark:bg-neutral-800 hover:bg-youtube-tertiary dark:hover:bg-neutral-700 transition-all flex items-center justify-center flex-shrink-0"
-      title="Notification preferences"
-    >
-      {notificationPreference === "none" ? (
-        <BellOff className="w-5 h-5 text-youtube-primary" />
-      ) : (
-        <Bell className="w-5 h-5 text-youtube-primary" />
-      )}
-    </Button>
-    {showSubscribeMenu && (
-      <>
-        <div
-          className="md:hidden fixed inset-0 bg-black/50 z-[9998]"
-          onClick={() => setShowSubscribeMenu(false)}
-        />
-        <div
-          className="hidden md:block fixed inset-0 z-[9998]"
-          onClick={() => setShowSubscribeMenu(false)}
-        />
-        <div className="fixed md:absolute bottom-0 md:bottom-auto left-0 right-0 md:left-auto md:right-0 md:top-full md:mt-2 w-full md:w-64 bg-youtube-secondary dark:bg-neutral-900 rounded-t-2xl md:rounded-xl shadow-2xl border-t md:border border-youtube dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom md:slide-in-from-top-2 fade-in duration-200 max-h-[70vh] overflow-y-auto">
-          <div className="md:hidden flex justify-center py-2">
-            <div className="w-10 h-1 bg-youtube-disabled dark:bg-neutral-700 rounded-full" />
-          </div>
-
-          <div className="px-4 py-2 text-xs text-youtube-disabled dark:text-neutral-500 font-semibold uppercase tracking-wide">
-            Notifications
-          </div>
-
-          <button
-            onClick={() => handleNotificationChange("all")}
-            className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
-              notificationPreference === "all"
-                ? "bg-youtube-hover dark:bg-neutral-800"
-                : ""
-            }`}
-          >
-            <Bell className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm text-youtube-primary">
-                All
-              </div>
-            </div>
-            {notificationPreference === "all" && (
-              <svg
-                className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-          </button>
-
-          <button
-            onClick={() => handleNotificationChange("personalized")}
-            className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
-              notificationPreference === "personalized"
-                ? "bg-youtube-hover dark:bg-neutral-800"
-                : ""
-            }`}
-          >
-            <Bell className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm text-youtube-primary">
-                Personalized
-              </div>
-            </div>
-            {notificationPreference === "personalized" && (
-              <svg
-                className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-          </button>
-
-          <button
-            onClick={() => handleNotificationChange("none")}
-            className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
-              notificationPreference === "none"
-                ? "bg-youtube-hover dark:bg-neutral-800"
-                : ""
-            }`}
-          >
-            <BellOff className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm text-youtube-primary">
-                None
-              </div>
-            </div>
-            {notificationPreference === "none" && (
-              <svg
-                className="w-5 h-5 text-youtube-primary flex-shrink-0 mt-0.5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-          </button>
-
-          <div className="border-t border-youtube dark:border-neutral-800 my-2"></div>
-
-          <button
-            onClick={() => {
-              setShowSubscribeMenu(false);
-              setShowUnsubscribeModal(true);
-            }}
-            className="w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 text-youtube-primary font-medium transition-colors text-sm"
-          >
-            Unsubscribe
-          </button>
-        </div>
-      </>
-    )}
-  </div>
-)}
+              {isSubscribed && (
+                <div className="relative" ref={menuRef}>
+                  <Button
+                    ref={bellButtonRef}
+                    onClick={handleBellClick}
+                    className="h-9 w-9 p-0 rounded-full bg-youtube-hover dark:bg-neutral-800 hover:bg-youtube-tertiary dark:hover:bg-neutral-700 transition-all flex items-center justify-center flex-shrink-0"
+                    title="Notification preferences"
+                  >
+                    {notificationPreference === "none" ? (
+                      <BellOff className="w-5 h-5 text-youtube-primary" />
+                    ) : (
+                      <Bell className="w-5 h-5 text-youtube-primary" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
@@ -1107,102 +1556,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       </div>
 
-      {/* Scrollbar styling */}
-      <style jsx global>{`
-        .md\\:hidden .flex.items-center.gap-4::-webkit-scrollbar {
-          display: none !important;
-          width: 0 !important;
-          height: 0 !important;
-        }
-
-        .md\\:hidden .flex.items-center.gap-4 {
-          -ms-overflow-style: none;
-          scrollbar-width: none !important;
-          scroll-behavior: smooth;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* Remove any dots/indicators on mobile */
-        @media (max-width: 768px) {
-          .overflow-x-auto::after,
-          .overflow-x-auto::before {
-            display: none !important;
-          }
-
-          /* Mobile-only Like/Dislike animations */
-          @keyframes mobile-like-pulse {
-            0% {
-              transform: scale(1);
-            }
-            50% {
-              transform: scale(1.4);
-              filter: drop-shadow(0 0 8px rgba(6, 95, 212, 0.6));
-            }
-            100% {
-              transform: scale(1);
-            }
-          }
-
-          @keyframes mobile-dislike-pulse {
-            0% {
-              transform: scale(1) rotate(0deg);
-            }
-            50% {
-              transform: scale(1.4) rotate(-15deg);
-              filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
-            }
-            100% {
-              transform: scale(1) rotate(0deg);
-            }
-          }
-
-          @keyframes mobile-like-ripple {
-            0% {
-              transform: scale(0);
-              opacity: 0.8;
-            }
-            50% {
-              opacity: 0.5;
-            }
-            100% {
-              transform: scale(3);
-              opacity: 0;
-            }
-          }
-
-          @keyframes mobile-dislike-ripple {
-            0% {
-              transform: scale(0);
-              opacity: 0.8;
-            }
-            50% {
-              opacity: 0.5;
-            }
-            100% {
-              transform: scale(3);
-              opacity: 0;
-            }
-          }
-
-          .mobile-like-animate {
-            animation: mobile-like-pulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-
-          .mobile-dislike-animate {
-            animation: mobile-dislike-pulse 0.6s
-              cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-
-          .mobile-like-ripple {
-            animation: mobile-like-ripple 0.7s ease-out forwards;
-          }
-
-          .mobile-dislike-ripple {
-            animation: mobile-dislike-ripple 0.7s ease-out forwards;
-          }
-        }
-      `}</style>
-
       {/* Description */}
       <div className="px-3 md:px-0">
         <div
@@ -1235,6 +1588,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </button>
         </div>
       </div>
+
+      {/* Notification Menu Portal */}
+      <NotificationMenu />
 
       {/* Unsubscribe Modal */}
       {showUnsubscribeModal && (
