@@ -1317,7 +1317,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   className="max-h-[180px] overflow-y-auto pr-2 custom-scrollbar"
   style={{ wordBreak: "break-word" }}
 >
-                <p className="text-sm font-semibold text-white break-words leading-relaxed">
+<p className="text-sm font-semibold text-white leading-relaxed break-all">
                   &quot;{video.videotitle}&quot;
                 </p>
               </div>
@@ -1376,11 +1376,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                 Are you sure you want to delete
               </p>
-              <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
-                  &quot;{video.videotitle}&quot;
-                </p>
-              </div>
+          <div className="max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
+  <p
+    className="text-sm font-semibold text-white leading-relaxed"
+    style={{
+      overflowWrap: "anywhere",
+      wordBreak: "break-word",
+    }}
+  >
+    &quot;{video.videotitle}&quot;
+  </p>
+</div>
+
               <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                 This action cannot be undone.
               </p>
