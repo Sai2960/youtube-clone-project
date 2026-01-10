@@ -1,4 +1,4 @@
-// src/pages/shorts/upload.tsx - MOBILE FIXED VERSION
+// src/pages/shorts/upload.tsx - FULLY FIXED VERSION
 import { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { GetServerSideProps } from "next";
-
 
 const getApiUrl = () =>
   process.env.NEXT_PUBLIC_API_URL ||
@@ -67,7 +66,6 @@ const ShortsUploadPage = () => {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
   useEffect(() => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -153,7 +151,6 @@ Watch till the end! Don't forget to like and subscribe!
       setAutoGenerating(false);
     }, 800);
   };
-
   const handleVideoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -169,9 +166,8 @@ Watch till the end! Don't forget to like and subscribe!
     }
 
     setError("");
-    setVideoFile(file); // ✅ Store the actual File object
+    setVideoFile(file);
 
-    // ✅ Create preview URL (for display only, NOT for upload)
     const url = URL.createObjectURL(file);
     setVideoPreview(url);
 
@@ -189,12 +185,6 @@ Watch till the end! Don't forget to like and subscribe!
       }
 
       setVideoDuration(duration);
-
-      if (!formData.title) {
-        const filename = file.name.replace(/\.[^/.]+$/, "");
-        const cleanTitle = filename.substring(0, 95).trim(); // ✅ Trim to 95 chars
-        //         setFormData((prev) => ({ ...prev, title: cleanTitle }));
-      }
     };
     video.src = url;
   };
@@ -213,10 +203,9 @@ Watch till the end! Don't forget to like and subscribe!
       return;
     }
 
-    setThumbnailFile(file); // ✅ Store the actual File object
+    setThumbnailFile(file);
     setError("");
 
-    // ✅ Create preview URL (for display only, NOT for upload)
     const url = URL.createObjectURL(file);
     setThumbnailPreview(url);
   };
@@ -265,7 +254,6 @@ Watch till the end! Don't forget to like and subscribe!
       thumbnailInputRef.current.value = "";
     }
   };
-
   const handleUpload = async (e?: FormEvent) => {
     if (e) e.preventDefault();
 
@@ -302,7 +290,6 @@ Watch till the end! Don't forget to like and subscribe!
       const uploadData = new FormData();
       uploadData.append("video", videoFile);
       uploadData.append("thumbnail", thumbnailFile);
-      // ✅ CRITICAL: Trim title to max 100 chars (safe limit)
       const safeTitle = formData.title.trim().substring(0, 100);
       uploadData.append("title", safeTitle);
       uploadData.append("description", formData.description.trim());
@@ -340,7 +327,6 @@ Watch till the end! Don't forget to like and subscribe!
 
       if (response.data.success) {
         setSuccess(true);
-
         setTimeout(() => {
           router.push("/shorts");
         }, 2000);
@@ -356,21 +342,18 @@ Watch till the end! Don't forget to like and subscribe!
         const responseData = error.response.data;
         errorMessage = responseData?.message || errorMessage;
 
-        // ✅ BETTER ERROR MESSAGES
         if (error.response.status === 401) {
           errorMessage = "Session expired. Please login again.";
           setTimeout(() => router.push("/login?redirect=/shorts/upload"), 2000);
         } else if (errorMessage.includes("Title")) {
-          // Title validation error
           const titleLength =
             responseData?.titleLength || formData.title.length;
           const maxLength = responseData?.maxLength || 200;
           errorMessage = `Title too long (${titleLength} chars). Please shorten to ${maxLength} characters or less.`;
 
-          // Auto-trim the title
           setFormData((prev) => ({
             ...prev,
-            title: prev.title.substring(0, maxLength - 5), // Leave some buffer
+            title: prev.title.substring(0, maxLength - 5),
           }));
         }
       } else if (error.request) {
@@ -385,7 +368,6 @@ Watch till the end! Don't forget to like and subscribe!
       setUploading(false);
     }
   };
-
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -409,16 +391,16 @@ Watch till the end! Don't forget to like and subscribe!
       </div>
     );
   }
-
   return (
     <>
       <Head>
         <title>Upload Short - YourTube</title>
       </Head>
 
-      <div className="min-h-screen bg-black text-white pb-24 md:pb-20">
-        <div className="max-w-6xl mx-auto px-3 py-4 md:px-4 md:py-8">
-          {/* ✅ FIXED MOBILE HEADER */}
+      {/* ✅ FIXED: Proper container with bottom padding */}
+      <div className="min-h-screen bg-black text-white">
+        <div className="max-w-6xl mx-auto px-3 py-4 pb-28 md:px-4 md:py-8 md:pb-32">
+          {/* Header */}
           <div className="mb-6 md:mb-8">
             <button
               onClick={() => router.push("/shorts")}
@@ -438,7 +420,7 @@ Watch till the end! Don't forget to like and subscribe!
                 </p>
               </div>
 
-              {/* ✅ FIXED AUTO-GENERATE BUTTON - FULL WIDTH ON MOBILE */}
+              {/* Auto-Generate Button */}
               {videoFile && (
                 <button
                   type="button"
@@ -462,6 +444,7 @@ Watch till the end! Don't forget to like and subscribe!
             </div>
           </div>
 
+          {/* Error Alert */}
           {error && (
             <div className="mb-4 bg-red-500/20 border border-red-500 rounded-lg p-3 flex items-start gap-2 md:mb-6 md:p-4 md:gap-3">
               <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5 md:w-5 md:h-5" />
@@ -535,8 +518,7 @@ Watch till the end! Don't forget to like and subscribe!
                     disabled={uploading}
                   />
                 </div>
-
-                {/* Thumbnail Upload */}
+                {/* ✅ FIXED: Thumbnail Upload with proper height and scrollability */}
                 <div>
                   <label className="block text-xs font-semibold mb-2 md:text-sm md:mb-3">
                     Thumbnail <span className="text-red-500">*</span>
@@ -547,7 +529,7 @@ Watch till the end! Don't forget to like and subscribe!
                       onClick={() => thumbnailInputRef.current?.click()}
                       onDrop={(e) => handleDrop(e, "thumbnail")}
                       onDragOver={handleDragOver}
-                      className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center cursor-pointer hover:border-red-600 transition-colors bg-gray-900/50 md:p-8 md:rounded-xl"
+                      className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center cursor-pointer hover:border-red-600 transition-colors bg-gray-900/50 min-h-[160px] flex flex-col items-center justify-center md:p-8 md:rounded-xl md:min-h-[200px]"
                     >
                       <Upload className="mx-auto w-8 h-8 text-gray-400 mb-2 md:w-12 md:h-12 md:mb-3" />
                       <p className="text-xs text-gray-400 mb-1 md:text-sm">
@@ -584,7 +566,6 @@ Watch till the end! Don't forget to like and subscribe!
                   />
                 </div>
               </div>
-
               {/* Right Column - Details */}
               <div className="space-y-4 md:space-y-6">
                 {/* Title */}
@@ -667,14 +648,13 @@ Watch till the end! Don't forget to like and subscribe!
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-red-600 focus:outline-none transition text-sm md:text-base md:px-4 md:py-3"
                   />
                 </div>
-
-                {/* Tips */}
+                {/* ✅ FIXED: Tips Box - Fully Visible on Mobile */}
                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 md:p-4">
-                  <h4 className="font-semibold mb-1.5 flex items-center gap-2 text-sm md:text-base md:mb-2">
-                    <Play className="w-4 h-4 text-blue-500 md:w-5 md:h-5" />
+                  <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm md:text-base">
+                    <Play className="w-4 h-4 text-blue-500 flex-shrink-0 md:w-5 md:h-5" />
                     Tips for Shorts
                   </h4>
-                  <ul className="text-xs text-gray-300 space-y-0.5 md:text-sm md:space-y-1">
+                  <ul className="text-xs text-gray-300 space-y-1 md:text-sm">
                     <li>• Keep it under 60 seconds</li>
                     <li>• Use vertical format (9:16)</li>
                     <li>• Hook viewers in first 3 seconds</li>
@@ -703,8 +683,7 @@ Watch till the end! Don't forget to like and subscribe!
                 )}
               </div>
             </div>
-
-            {/* ✅ FIXED SUBMIT BUTTONS - BETTER MOBILE LAYOUT */}
+            {/* ✅ FIXED: Submit Buttons - Always Visible at Bottom */}
             <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-lg border-t border-gray-800 p-3 z-50 md:p-4">
               <div className="max-w-6xl mx-auto flex gap-2 md:gap-4">
                 <button
@@ -746,9 +725,10 @@ Watch till the end! Don't forget to like and subscribe!
     </>
   );
 };
+
 export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
-    props: {}, // Client-side handles user history data
+    props: {},
   };
 };
 
