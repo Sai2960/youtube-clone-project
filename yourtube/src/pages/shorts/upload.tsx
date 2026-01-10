@@ -524,26 +524,21 @@ Watch till the end! Don't forget to like and subscribe!
                     Thumbnail <span className="text-red-500">*</span>
                   </label>
 
-               {!thumbnailPreview ? (
-  <div
-    onClick={() => thumbnailInputRef.current?.click()}
-    onDrop={(e) => handleDrop(e, "thumbnail")}
-    onDragOver={handleDragOver}
-    className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-red-600 transition-colors bg-gray-900/50 min-h-[180px] flex flex-col items-center justify-center md:p-12 md:rounded-xl md:min-h-[240px]"
-  >
-    <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 md:w-20 md:h-20">
-      <Upload className="w-8 h-8 text-gray-400 md:w-12 md:h-12" />
-    </div>
-    <p className="text-sm font-semibold text-white mb-2 md:text-base">
-      Upload Thumbnail
-    </p>
-    <p className="text-xs text-gray-400 mb-1 md:text-sm">
-      Drag and drop or click to browse
-    </p>
-    <p className="text-[10px] text-gray-500 md:text-xs">
-      JPG, PNG • Max 5MB
-    </p>
-  </div>
+                  {!thumbnailPreview ? (
+                    <div
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      onDrop={(e) => handleDrop(e, "thumbnail")}
+                      onDragOver={handleDragOver}
+                      className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center cursor-pointer hover:border-red-600 transition-colors bg-gray-900/50 min-h-[160px] flex flex-col items-center justify-center md:p-8 md:rounded-xl md:min-h-[200px]"
+                    >
+                      <Upload className="mx-auto w-8 h-8 text-gray-400 mb-2 md:w-12 md:h-12 md:mb-3" />
+                      <p className="text-xs text-gray-400 mb-1 md:text-sm">
+                        Upload Thumbnail
+                      </p>
+                      <p className="text-[10px] text-gray-500 md:text-xs">
+                        JPG, PNG • Max 5MB
+                      </p>
+                    </div>
                   ) : (
                     <div className="relative rounded-lg overflow-hidden md:rounded-xl">
                       <img
