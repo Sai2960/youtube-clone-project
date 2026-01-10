@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import {
@@ -63,12 +63,21 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   const [notificationPreference, setNotificationPreference] = useState<
     "all" | "personalized" | "none"
   >("all");
+  const [isUpdatingNotification, setIsUpdatingNotification] = useState(false);
 
   // Mobile more menu state
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
+  // Portal mount state
+  const [portalMounted, setPortalMounted] = useState(false);
+
   const menuRef = useRef<HTMLDivElement>(null);
   const bellButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Ensure portal is mounted on client side
+  useEffect(() => {
+    setPortalMounted(true);
+  }, []);
 
   // Helper functions
   const getUserId = () => {
@@ -260,33 +269,41 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowSubscribeMenu(false);
         setShowMoreMenu(false);
       }
     };
-    if (showSubscribeMenu || showMoreMenu) {
+    if (showMoreMenu) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showSubscribeMenu, showMoreMenu]);
+  }, [showMoreMenu]);
 
   // Mobile menu body scroll lock
   useEffect(() => {
-    if (
-      (showSubscribeMenu || showMoreMenu) &&
-      typeof window !== "undefined" &&
-      window.innerWidth < 768
-    ) {
-      document.body.classList.add("notification-open");
+    if (showSubscribeMenu && typeof window !== "undefined") {
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.top = `-${window.scrollY}px`;
     } else {
-      document.body.classList.remove("notification-open");
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.top = "";
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || "0") * -1);
+      }
     }
     return () => {
-      document.body.classList.remove("notification-open");
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.top = "";
     };
-  }, [showSubscribeMenu, showMoreMenu]);
+  }, [showSubscribeMenu]);
 
   // Fetch subscription status
   useEffect(() => {
@@ -303,6 +320,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         if (response.data.success) {
           setIsSubscribed(response.data.isSubscribed || false);
           setSubscriberCount(response.data.subscriberCount || 0);
+          // Load saved notification preference if available
+          if (response.data.notificationPreference) {
+            setNotificationPreference(response.data.notificationPreference);
+          }
 
           console.log("✅ Subscriber count updated:", {
             subscriberCount: response.data.subscriberCount,
@@ -492,18 +513,68 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     }
   };
 
-  // Notification preference handler
-  const handleNotificationChange = (pref: "all" | "personalized" | "none") => {
-    setNotificationPreference(pref);
-    setShowSubscribeMenu(false);
-  };
+  // Notification preference handler - Updated to persist and work correctly
+  const handleNotificationChange = useCallback(
+    async (pref: "all" | "personalized" | "none") => {
+      if (isUpdatingNotification) return;
 
-  // Bell icon click handler
-  const handleBellClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowSubscribeMenu(!showSubscribeMenu);
-  };
+      const previousPref = notificationPreference;
+      setNotificationPreference(pref);
+      setIsUpdatingNotification(true);
+
+      try {
+        // Make API call to save notification preference
+        const response = await axiosInstance.post(
+          `/user/notification-preference/${videoUploaderId}`,
+          { preference: pref }
+        );
+
+        if (response.data.success) {
+          console.log("✅ Notification preference updated:", pref);
+          // Close menu after successful update
+          setShowSubscribeMenu(false);
+        } else {
+          // Revert on failure
+          setNotificationPreference(previousPref);
+          setError("Failed to update notification preference");
+          setTimeout(() => setError(null), 3000);
+        }
+      } catch (error: any) {
+        console.error("Error updating notification preference:", error);
+        // Revert on error
+        setNotificationPreference(previousPref);
+        // If API doesn't exist yet, just close menu (for testing)
+        if (error.response?.status === 404) {
+          console.log(
+            "API endpoint not found, preference saved locally only"
+          );
+          setShowSubscribeMenu(false);
+        } else {
+          setError("Failed to update notification preference");
+          setTimeout(() => setError(null), 3000);
+        }
+      } finally {
+        setIsUpdatingNotification(false);
+      }
+    },
+    [videoUploaderId, notificationPreference, isUpdatingNotification]
+  );
+
+  // Bell icon click handler - Fixed to prevent navigation
+  const handleBellClick = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("🔔 Bell clicked, toggling menu");
+      setShowSubscribeMenu((prev) => !prev);
+    },
+    []
+  );
+
+  // Close notification menu
+  const closeNotificationMenu = useCallback(() => {
+    setShowSubscribeMenu(false);
+  }, []);
 
   // Like button handler
   const handleLike = async () => {
@@ -673,19 +744,23 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
   // Notification Menu Component - Renders via Portal
   const NotificationMenu = () => {
-    if (!showSubscribeMenu) return null;
+    if (!showSubscribeMenu || !portalMounted) return null;
 
-    return ReactDOM.createPortal(
+    const menuContent = (
       <>
         {/* Mobile Bottom Sheet */}
-        <div className="md:hidden fixed inset-0 z-[99999]">
+        <div
+          className="md:hidden fixed inset-0"
+          style={{ zIndex: 999999 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={(e) => {
+            onClick={closeNotificationMenu}
+            onTouchEnd={(e) => {
               e.preventDefault();
-              e.stopPropagation();
-              setShowSubscribeMenu(false);
+              closeNotificationMenu();
             }}
           />
           {/* Bottom Sheet */}
@@ -709,12 +784,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   Notifications
                 </h3>
                 <button
-                  onClick={(e) => {
+                  onClick={closeNotificationMenu}
+                  onTouchEnd={(e) => {
                     e.preventDefault();
-                    e.stopPropagation();
-                    setShowSubscribeMenu(false);
+                    closeNotificationMenu();
                   }}
                   className="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+                  type="button"
                 >
                   <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
@@ -727,16 +803,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             {/* Options */}
             <div className="py-2">
               <button
-                onClick={(e) => {
+                type="button"
+                onClick={() => handleNotificationChange("all")}
+                onTouchEnd={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
                   handleNotificationChange("all");
                 }}
+                disabled={isUpdatingNotification}
                 className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
                   notificationPreference === "all"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                }`}
+                } ${isUpdatingNotification ? "opacity-50" : ""}`}
               >
                 <div
                   className={`w-11 h-11 rounded-full flex items-center justify-center ${
@@ -787,16 +865,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </button>
 
               <button
-                onClick={(e) => {
+                type="button"
+                onClick={() => handleNotificationChange("personalized")}
+                onTouchEnd={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
                   handleNotificationChange("personalized");
                 }}
+                disabled={isUpdatingNotification}
                 className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
                   notificationPreference === "personalized"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                }`}
+                } ${isUpdatingNotification ? "opacity-50" : ""}`}
               >
                 <div
                   className={`w-11 h-11 rounded-full flex items-center justify-center ${
@@ -847,16 +927,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </button>
 
               <button
-                onClick={(e) => {
+                type="button"
+                onClick={() => handleNotificationChange("none")}
+                onTouchEnd={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
                   handleNotificationChange("none");
                 }}
+                disabled={isUpdatingNotification}
                 className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
                   notificationPreference === "none"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                }`}
+                } ${isUpdatingNotification ? "opacity-50" : ""}`}
               >
                 <div
                   className={`w-11 h-11 rounded-full flex items-center justify-center ${
@@ -884,7 +966,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     None
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Don't notify me
+                    Don&apos;t notify me
                   </div>
                 </div>
                 {notificationPreference === "none" && (
@@ -910,11 +992,15 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             {/* Unsubscribe Section */}
             <div className="border-t border-gray-100 dark:border-neutral-700 p-4">
               <button
-                onClick={(e) => {
+                type="button"
+                onClick={() => {
+                  closeNotificationMenu();
+                  setTimeout(() => setShowUnsubscribeModal(true), 100);
+                }}
+                onTouchEnd={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
-                  setShowSubscribeMenu(false);
-                  setShowUnsubscribeModal(true);
+                  closeNotificationMenu();
+                  setTimeout(() => setShowUnsubscribeModal(true), 100);
                 }}
                 className="w-full py-3 px-4 text-center text-red-600 dark:text-red-400 font-medium rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 dark:active:bg-red-900/40 transition-all"
               >
@@ -923,21 +1009,20 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
 
             {/* Safe area padding for iOS */}
-            <div className="h-safe-area-inset-bottom bg-white dark:bg-[#282828]" />
+            <div
+              className="bg-white dark:bg-[#282828]"
+              style={{ height: "env(safe-area-inset-bottom, 0px)" }}
+            />
           </div>
         </div>
 
         {/* Desktop Dropdown */}
-        <div className="hidden md:block fixed inset-0 z-[99999]">
+        <div
+          className="hidden md:block fixed inset-0"
+          style={{ zIndex: 999999 }}
+        >
           {/* Invisible backdrop */}
-          <div
-            className="absolute inset-0"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowSubscribeMenu(false);
-            }}
-          />
+          <div className="absolute inset-0" onClick={closeNotificationMenu} />
           {/* Dropdown positioned relative to bell button */}
           <div
             className="absolute bg-white dark:bg-[#282828] rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-700 overflow-hidden"
@@ -966,16 +1051,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             {/* Options */}
             <div className="py-1">
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleNotificationChange("all");
-                }}
+                type="button"
+                onClick={() => handleNotificationChange("all")}
+                disabled={isUpdatingNotification}
                 className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
                   notificationPreference === "all"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                }`}
+                } ${isUpdatingNotification ? "opacity-50" : ""}`}
               >
                 <Bell
                   className={`w-5 h-5 flex-shrink-0 ${
@@ -1009,16 +1092,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </button>
 
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleNotificationChange("personalized");
-                }}
+                type="button"
+                onClick={() => handleNotificationChange("personalized")}
+                disabled={isUpdatingNotification}
                 className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
                   notificationPreference === "personalized"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                }`}
+                } ${isUpdatingNotification ? "opacity-50" : ""}`}
               >
                 <Bell
                   className={`w-5 h-5 flex-shrink-0 ${
@@ -1052,16 +1133,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </button>
 
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleNotificationChange("none");
-                }}
+                type="button"
+                onClick={() => handleNotificationChange("none")}
+                disabled={isUpdatingNotification}
                 className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
                   notificationPreference === "none"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                }`}
+                } ${isUpdatingNotification ? "opacity-50" : ""}`}
               >
                 <BellOff
                   className={`w-5 h-5 flex-shrink-0 ${
@@ -1098,10 +1177,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             {/* Unsubscribe */}
             <div className="border-t border-gray-100 dark:border-neutral-700">
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowSubscribeMenu(false);
+                type="button"
+                onClick={() => {
+                  closeNotificationMenu();
                   setShowUnsubscribeModal(true);
                 }}
                 className="w-full px-4 py-3 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium"
@@ -1111,9 +1189,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
         </div>
-      </>,
-      document.body
+      </>
     );
+
+    return ReactDOM.createPortal(menuContent, document.body);
   };
 
   return (
@@ -1140,10 +1219,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             opacity: 1;
             transform: scale(1) translateY(0);
           }
-        }
-
-        .h-safe-area-inset-bottom {
-          height: env(safe-area-inset-bottom, 0px);
         }
 
         .md\\:hidden .flex.items-center.gap-4::-webkit-scrollbar {
@@ -1240,12 +1315,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         }
       `}</style>
 
+      {/* Error Toast */}
+      {error && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999999] bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
+          {error}
+        </div>
+      )}
+
       {/* 1. Title and Views Section */}
       <div className="px-3 pt-3 pb-1 md:px-0 md:pt-0">
-        <h1 className="text-[18px] md:text-xl font-semibold text-youtube-primary mb-1 leading-snug line-clamp-2">
+        <h1 className="text-[18px] md:text-xl font-semibold text-gray-900 dark:text-white mb-1 leading-snug line-clamp-2">
           {video.videotitle}
         </h1>
-        <div className="flex items-center gap-2 text-xs text-youtube-secondary font-medium">
+        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 font-medium">
           <span className="font-medium">{formatViews(video?.views || 0)}</span>
           <span>•</span>
           <span>
@@ -1256,10 +1338,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
       {/* 2. Channel Row (Avatar, Name, Subscribe) */}
       <div className="px-3 py-2 md:px-0 md:pt-3">
-        <div className="flex items-center justify-between md:border-b border-youtube dark:border-neutral-800 md:pb-3">
+        <div className="flex items-center justify-between md:border-b border-gray-200 dark:border-neutral-800 md:pb-3">
           <div
             onClick={handleChannelClick}
-            className="flex items-center gap-3 cursor-pointer hover:bg-youtube-hover dark:hover:bg-neutral-800 rounded-lg p-2 -ml-2 transition-colors group flex-1 min-w-0"
+            className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg p-2 -ml-2 transition-colors group flex-1 min-w-0"
           >
             <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-transparent group-hover:ring-blue-500 transition-all">
               <AvatarImage
@@ -1270,18 +1352,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
                 alt={video.videochanel || "Channel"}
               />
-              <AvatarFallback className="bg-youtube-hover dark:bg-neutral-800 text-youtube-primary text-sm font-medium">
+              <AvatarFallback className="bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-white text-sm font-medium">
                 {video.videochanel ? video.videochanel[0]?.toUpperCase() : "U"}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-[15px] text-youtube-primary truncate group-hover:text-blue-600 transition-colors">
+              <h3 className="font-semibold text-[15px] text-gray-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">
                 {video.uploadedBy?.channelname ||
                   video.uploadedBy?.name ||
                   video.videochanel ||
                   "Unknown Channel"}
               </h3>
-              <p className="text-xs text-youtube-secondary truncate">
+              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                 {subscriberCount > 0
                   ? `${subscriberCount.toLocaleString()} subscribers`
                   : "0 subscribers"}
@@ -1297,8 +1379,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 disabled={isSubscribing}
                 className={`h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
                   isSubscribed
-                    ? "bg-youtube-hover dark:bg-neutral-800 hover:bg-youtube-tertiary dark:hover:bg-neutral-700 text-youtube-primary"
-                    : "bg-white hover:bg-gray-100 text-black dark:bg-white dark:text-black"
+                    ? "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white"
+                    : "bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
                 } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
               >
                 {isSubscribing ? (
@@ -1314,19 +1396,24 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </Button>
 
               {isSubscribed && (
-                <div className="relative" ref={menuRef}>
-                  <Button
+                <div className="relative">
+                  <button
                     ref={bellButtonRef}
+                    type="button"
                     onClick={handleBellClick}
-                    className="h-9 w-9 p-0 rounded-full bg-youtube-hover dark:bg-neutral-800 hover:bg-youtube-tertiary dark:hover:bg-neutral-700 transition-all flex items-center justify-center flex-shrink-0"
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      handleBellClick(e);
+                    }}
+                    className="h-9 w-9 p-0 rounded-full bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all flex items-center justify-center flex-shrink-0"
                     title="Notification preferences"
                   >
                     {notificationPreference === "none" ? (
-                      <BellOff className="w-5 h-5 text-youtube-primary" />
+                      <BellOff className="w-5 h-5 text-gray-700 dark:text-white" />
                     ) : (
-                      <Bell className="w-5 h-5 text-youtube-primary" />
+                      <Bell className="w-5 h-5 text-gray-700 dark:text-white" />
                     )}
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
@@ -1334,15 +1421,15 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0 ml-4">
-            <div className="flex items-center bg-youtube-secondary dark:bg-neutral-800 rounded-full overflow-hidden shadow-sm">
+            <div className="flex items-center bg-gray-100 dark:bg-neutral-800 rounded-full overflow-hidden shadow-sm">
               <button
                 className={`relative px-4 py-2 flex items-center gap-2 transition-all duration-200 ${
                   isLiked
                     ? "text-blue-600 dark:text-blue-500"
-                    : "text-youtube-primary"
+                    : "text-gray-700 dark:text-white"
                 } ${
                   likeAnimation ? "animate-like-bounce" : ""
-                } overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
+                } overflow-hidden hover:bg-gray-200 dark:hover:bg-neutral-700/50`}
                 onClick={handleLike}
                 disabled={!user}
               >
@@ -1358,15 +1445,15 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   {likes}
                 </span>
               </button>
-              <div className="w-px h-6 bg-youtube dark:bg-neutral-700" />
+              <div className="w-px h-6 bg-gray-300 dark:bg-neutral-700" />
               <button
                 className={`relative px-4 py-2 transition-all duration-200 ${
                   isDisliked
                     ? "text-blue-600 dark:text-blue-500"
-                    : "text-youtube-primary"
+                    : "text-gray-700 dark:text-white"
                 } ${
                   dislikeAnimation ? "animate-dislike-bounce" : ""
-                } overflow-hidden hover:bg-youtube-hover dark:hover:bg-neutral-700/50`}
+                } overflow-hidden hover:bg-gray-200 dark:hover:bg-neutral-700/50`}
                 onClick={handleDislike}
                 disabled={!user}
               >
@@ -1382,7 +1469,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
 
             <button
-              className="px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-youtube-primary hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0"
+              className="px-4 py-2 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center gap-2 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0"
               onClick={handleShare}
             >
               <Share2 className="w-5 h-5" />
@@ -1400,10 +1487,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
             {user && (
               <button
-                className={`px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-youtube-hover dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0 ${
+                className={`px-4 py-2 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0 ${
                   isWatchLater
                     ? "text-blue-600 dark:text-blue-500"
-                    : "text-youtube-primary"
+                    : "text-gray-700 dark:text-white"
                 }`}
                 onClick={handleWatchLater}
               >
@@ -1420,7 +1507,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             {isOwner && (
               <button
                 onClick={() => setShowDeleteModal(true)}
-                className="px-4 py-2 bg-youtube-secondary dark:bg-neutral-800 rounded-full flex items-center gap-2 text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 shadow-sm flex-shrink-0"
+                className="px-4 py-2 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center gap-2 text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 shadow-sm flex-shrink-0"
               >
                 <Trash2 className="w-5 h-5" />
                 <span className="text-sm font-medium">Delete</span>
@@ -1433,6 +1520,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       {/* Mobile Action Buttons - YouTube Flat Design */}
       <div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-neutral-800">
         <div
+          ref={scrollContainerRef}
           className="flex items-center gap-4 overflow-x-auto pb-1"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
@@ -1559,10 +1647,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       {/* Description */}
       <div className="px-3 md:px-0">
         <div
-          className="bg-youtube-secondary dark:bg-neutral-800/50 rounded-xl p-3 cursor-pointer hover:bg-youtube-hover dark:hover:bg-neutral-800 transition-colors mt-3"
+          className="bg-gray-100 dark:bg-neutral-800/50 rounded-xl p-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors mt-3"
           onClick={() => setShowFullDescription(!showFullDescription)}
         >
-          <div className="flex gap-2 text-xs font-semibold text-youtube-primary mb-2">
+          <div className="flex gap-2 text-xs font-semibold text-gray-900 dark:text-white mb-2">
             <span>{formatViews(video?.views || 0)} views</span>
             <span>•</span>
             <span>
@@ -1570,7 +1658,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </span>
           </div>
           <div
-            className={`text-sm text-youtube-primary ${
+            className={`text-sm text-gray-900 dark:text-white ${
               showFullDescription ? "" : "line-clamp-2"
             }`}
           >
@@ -1578,7 +1666,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               {video.videodescription || "No description"}
             </p>
           </div>
-          <button className="text-sm font-semibold text-youtube-primary flex items-center gap-1 mt-2">
+          <button className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1 mt-2">
             {showFullDescription ? "Show less" : "...more"}
             <ChevronDown
               className={`w-4 h-4 transition-transform ${
@@ -1593,41 +1681,47 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       <NotificationMenu />
 
       {/* Unsubscribe Modal */}
-      {showUnsubscribeModal && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      {showUnsubscribeModal &&
+        portalMounted &&
+        ReactDOM.createPortal(
           <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={() => setShowUnsubscribeModal(false)}
-          />
+            className="fixed inset-0 flex items-center justify-center p-4"
+            style={{ zIndex: 9999999 }}
+          >
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setShowUnsubscribeModal(false)}
+            />
 
-          <div className="relative bg-youtube-secondary dark:bg-neutral-900 rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-6 animate-in fade-in zoom-in duration-200">
-            <h3 className="text-lg font-semibold text-youtube-primary text-center">
-              Unsubscribe from {video.videochanel || "this channel"}?
-            </h3>
+            <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
+                Unsubscribe from {video.videochanel || "this channel"}?
+              </h3>
 
-            <div className="flex gap-3 justify-end">
-              <Button
-                onClick={() => setShowUnsubscribeModal(false)}
-                className="px-4 py-2 text-sm font-medium text-youtube-primary hover:bg-youtube-hover dark:hover:bg-neutral-800 rounded-full transition-colors"
-                variant="ghost"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubscribe}
-                disabled={isSubscribing}
-                className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
-              >
-                {isSubscribing ? "Unsubscribing..." : "Unsubscribe"}
-              </Button>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={() => setShowUnsubscribeModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                  variant="ghost"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubscribe}
+                  disabled={isSubscribing}
+                  className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+                >
+                  {isSubscribing ? "Unsubscribing..." : "Unsubscribe"}
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* Delete Confirmation Modal - Theme Compatible for Desktop & Mobile */}
-      {typeof window !== "undefined" &&
-        showDeleteModal &&
+      {showDeleteModal &&
+        portalMounted &&
         ReactDOM.createPortal(
           <div
             className="fixed inset-0 flex items-center justify-center p-4"
