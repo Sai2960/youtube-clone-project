@@ -1286,18 +1286,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   style={{ zIndex: 2 }}
 >
   <div
-    className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm overflow-hidden"
+    className="relative bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
     onClick={(e) => e.stopPropagation()}
   >
     {/* Content */}
-    <div className="px-6 py-5">
-      <div className="space-y-3">
+    <div className="px-6 py-6">
+      <div className="space-y-4">
         <p className="text-sm text-neutral-300 leading-relaxed">
           Are you sure you want to delete
         </p>
         
         {/* Scrollable video title */}
-        <div className="max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
           <p className="text-sm font-semibold text-white break-words leading-relaxed">
             &quot;{video.videotitle}&quot;
           </p>
@@ -1310,24 +1310,22 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     </div>
 
     {/* Footer */}
-    <div className="px-6 pb-5 pt-2">
-      <div className="flex gap-3 justify-end">
-        <button
-          onClick={() => setShowDeleteModal(false)}
-          className="px-4 py-2 rounded text-blue-500 hover:bg-neutral-800 font-medium text-sm transition-all"
-        >
-          Cancel
-        </button>
-        <DeleteVideoButton
-          videoId={video._id}
-          videoTitle={video.videotitle}
-          onDeleted={() => {
-            setShowDeleteModal(false);
-            handleVideoDeleted();
-          }}
-          variant="modal"
-        />
-      </div>
+    <div className="px-6 pb-6 pt-2 flex gap-3 justify-end">
+      <button
+        onClick={() => setShowDeleteModal(false)}
+        className="px-5 py-2.5 rounded-lg text-blue-500 hover:bg-neutral-800 font-medium text-sm transition-all"
+      >
+        Cancel
+      </button>
+      <DeleteVideoButton
+        videoId={video._id}
+        videoTitle={video.videotitle}
+        onDeleted={() => {
+          setShowDeleteModal(false);
+          handleVideoDeleted();
+        }}
+        variant="modal"
+      />
     </div>
   </div>
 </div>
