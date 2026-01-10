@@ -1402,7 +1402,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
           {/* Subscribe + Bell */}
           {!isOwner && user && videoUploaderId && (
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0 self-center">
               <Button
                 onClick={handleSubscribe}
                 disabled={isSubscribing}
@@ -1425,7 +1425,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </Button>
 
               {isSubscribed && (
-                <div className="relative">
+                <div className="relative flex items-center">
                   <button
                     ref={bellButtonRef}
                     type="button"
