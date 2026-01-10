@@ -1262,33 +1262,32 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         showDeleteModal &&
         ReactDOM.createPortal(
           <div
+            className="fixed inset-0"
             style={{
               position: "fixed",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              zIndex: 2147483647, // Maximum safe z-index
+              zIndex: 999999,
               isolation: "isolate",
-              pointerEvents: "auto",
             }}
           >
             {/* Backdrop */}
             <div
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
               onClick={() => setShowDeleteModal(false)}
-              style={{ zIndex: 1, pointerEvents: "auto" }}
+              style={{ zIndex: 1 }}
             />
 
-            {/* Modal Container - MOBILE ONLY */}
+            {/* Modal Container - DESKTOP ONLY */}
             <div
-              className="md:hidden flex absolute inset-0 items-center justify-center p-4"
-              style={{ zIndex: 2, pointerEvents: "auto" }}
+              className="hidden md:flex absolute inset-0 items-center justify-center p-4"
+              style={{ zIndex: 2 }}
             >
               <div
-                className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
+                className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-neutral-800 overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
-                style={{ pointerEvents: "auto" }}
               >
                 {/* Header */}
                 <div className="px-6 pt-5 pb-4 border-b border-gray-200 dark:border-neutral-800">
