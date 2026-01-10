@@ -1297,20 +1297,26 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         <div
           className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
-          style={{
-            maxHeight: "90vh",
-            height: "auto",
-            minHeight: "280px",
-          }}
+         style={{
+  height: "auto",
+  maxHeight: "calc(100vh - 80px)",
+}}
+
         >
           {/* Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto px-6 py-5">
+<div
+  className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar"
+  style={{ minHeight: 0 }}
+>
             <div className="space-y-3">
               <p className="text-sm text-neutral-300 leading-relaxed">
                 Are you sure you want to delete
               </p>
 
-              <div className="max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+<div
+  className="max-h-[180px] overflow-y-auto pr-2 custom-scrollbar"
+  style={{ wordBreak: "break-word" }}
+>
                 <p className="text-sm font-semibold text-white break-words leading-relaxed">
                   &quot;{video.videotitle}&quot;
                 </p>
@@ -1323,7 +1329,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
 
           {/* Footer - ALWAYS VISIBLE */}
-          <div className="flex-shrink-0 px-6 pb-5 pt-2 border-t border-neutral-800 bg-neutral-900">
+<div className="sticky bottom-0 flex-shrink-0 px-6 pb-5 pt-3 border-t border-neutral-800 bg-neutral-900">
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteModal(false)}
