@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from "react";
 import { Settings, Check, ChevronLeft, ChevronRight } from "lucide-react";
-import { createPortal } from "react-dom";
 
 // Quality type definition
 type QualityType =
@@ -31,7 +30,6 @@ interface QualitySelectorProps {
   availableQualities?: QualityType[];
   isMobile: boolean;
 }
-
 const QualitySelector: React.FC<QualitySelectorProps> = ({
   currentQuality,
   onQualityChange,
@@ -52,12 +50,10 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
 
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   // Detect if dark mode is active
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark
-
   useEffect(() => {
     const checkDarkMode = () => {
-      // Check if the document has the 'dark' class (Tailwind dark mode)
       const isDark =
         document.documentElement.classList.contains("dark") ||
         document.body.classList.contains("dark");
@@ -71,27 +67,20 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       setIsDarkMode(isDark);
     };
 
-    // Initial check
     checkDarkMode();
-
-    // Check again after small delays to ensure DOM is ready
     setTimeout(checkDarkMode, 100);
     setTimeout(checkDarkMode, 500);
 
-    // Observe theme changes on html and body elements
     const observer = new MutationObserver(checkDarkMode);
-
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class"],
     });
-
     observer.observe(document.body, {
       attributes: true,
       attributeFilter: ["class"],
     });
 
-    // Listen for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     mediaQuery.addEventListener("change", checkDarkMode);
 
@@ -100,7 +89,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       mediaQuery.removeEventListener("change", checkDarkMode);
     };
   }, []);
-
   // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
@@ -137,7 +125,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen]);
-
   // Prevent body scroll on mobile
   useEffect(() => {
     if (isMobile && isOpen) {
@@ -165,24 +152,21 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       };
     }
   }, [isMobile, isOpen]);
-
   const openMenu = () => {
     console.log("📖 Opening quality menu");
-
-    // Force theme check when opening menu
     const isDark =
       document.documentElement.classList.contains("dark") ||
       document.body.classList.contains("dark");
     console.log("🎨 Force check on menu open:", { isDark });
     setIsDarkMode(isDark);
-
     setIsOpen(true);
     setShowQualityMenu(false);
   };
+
   const closeMenu = () => {
     console.log("📕 Closing quality menu");
     setIsOpen(false);
-    setShowQualityMenu(false); // KEEP THIS
+    setShowQualityMenu(false);
   };
 
   const toggleMenu = (e: React.MouseEvent | React.TouchEvent) => {
@@ -193,8 +177,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     }
 
     console.log("🔄 Toggle menu - currently open:", isOpen);
-    console.log("📍 About to set isOpen to:", !isOpen);
-
     if (isOpen) {
       closeMenu();
     } else {
@@ -217,25 +199,21 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     }
   };
 
-  // Calculate menu position for mobile
   const getMobileMenuPosition = () => {
     if (!buttonRef.current) return { top: "calc(100% + 12px)" };
 
     const rect = buttonRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    const menuHeight = 320;
+    const menuHeight = 400;
     const spaceBelow = viewportHeight - rect.bottom;
     const spaceAbove = rect.top;
 
-    // If more space above (like inside video player), position above
     if (spaceAbove > spaceBelow && spaceAbove > menuHeight) {
       return { bottom: "calc(100% + 12px)", top: "auto" };
     }
 
-    // Otherwise position below (normal case)
     return { top: "calc(100% + 12px)", bottom: "auto" };
   };
-
   return (
     <div
       className="relative"
@@ -252,7 +230,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
         onClick={(e) => {
           e.stopPropagation();
           console.log("🎯 Settings button clicked! isOpen:", isOpen);
-          console.log("🎯 Settings button clicked!");
           if (!isChanging) {
             toggleMenu(e);
           }
@@ -274,36 +251,34 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
       >
         <Settings className={isMobile ? "w-6 h-6" : "w-5 h-5"} />
       </button>
-
-      {/* MOBILE VIEW - Two-step menu like desktop */}
+      {/* MOBILE VIEW - Two-step menu */}
       {isMobile && isOpen && (
         <div
           ref={menuRef}
-          className="rounded-xl shadow-2xl"
+          className="rounded-2xl shadow-2xl"
           style={{
             position: "absolute",
             ...getMobileMenuPosition(),
             right: 0,
             background: isDarkMode
-              ? "rgba(28, 28, 30, 0.98)"
+              ? "rgba(40, 40, 43, 0.98)"
               : "rgba(255, 255, 255, 0.98)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: isDarkMode
-              ? "1px solid rgba(255, 255, 255, 0.15)"
-              : "1px solid rgba(0, 0, 0, 0.15)",
-            width: "240px",
-            minWidth: "240px",
-            maxHeight: "min(55vh, 320px)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: `1px solid ${
+              isDarkMode ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)"
+            }`,
+            width: "260px",
+            minWidth: "260px",
+            maxHeight: "min(60vh, 450px)",
             zIndex: 2147483647,
             boxShadow: isDarkMode
-              ? "0 8px 32px rgba(0, 0, 0, 0.7)"
-              : "0 8px 32px rgba(0, 0, 0, 0.2)",
+              ? "0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.05)"
+              : "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.05)",
             overflow: "visible",
             pointerEvents: "auto",
             display: "flex",
             flexDirection: "column",
-            borderRadius: "12px",
             isolation: "isolate",
             willChange: "transform",
           }}
@@ -321,7 +296,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
               onPointerDown={(e) => {
                 e.stopPropagation();
               }}
-              className={`w-full px-5 py-3 text-left transition-colors flex items-center justify-between rounded-xl touch-manipulation ${
+              className={`w-full px-5 py-3 text-left transition-colors flex items-center justify-between rounded-2xl touch-manipulation ${
                 isDarkMode
                   ? "text-white hover:bg-white/10 active:bg-white/15"
                   : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
@@ -358,15 +333,14 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <>
               {/* Back button header */}
               <div
-                className="px-4 py-2 sticky top-0 rounded-t-xl"
+                className="flex items-center gap-3 px-5 py-4 border-b rounded-t-2xl"
                 style={{
+                  borderColor: isDarkMode
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(0, 0, 0, 0.08)",
                   background: isDarkMode
-                    ? "rgba(28, 28, 30, 1)"
-                    : "rgba(255, 255, 255, 1)",
-                  borderBottom: isDarkMode
-                    ? "1px solid rgba(255, 255, 255, 0.1)"
-                    : "1px solid rgba(0, 0, 0, 0.1)",
-                  zIndex: 10,
+                    ? "rgba(50, 50, 53, 0.5)"
+                    : "rgba(248, 249, 250, 0.8)",
                 }}
               >
                 <button
@@ -374,42 +348,41 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     e.stopPropagation();
                     setShowQualityMenu(false);
                   }}
-                  className={`w-full text-left flex items-center gap-2 transition-colors touch-manipulation rounded ${
-                    isDarkMode
-                      ? "text-white hover:bg-white/10 active:bg-white/15"
-                      : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
-                  }`}
+                  className="flex items-center justify-center -ml-2 p-2 rounded-lg transition-all hover:bg-white/10 active:scale-95"
                   style={{
-                    minHeight: "28px",
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
                   <ChevronLeft
-                    className={`w-5 h-5 ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
+                    className="w-5 h-5"
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#1a1a1a",
+                    }}
                   />
-                  <span
-                    className={`text-sm font-semibold whitespace-nowrap ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    Quality
-                  </span>
                 </button>
+                <h3
+                  className="text-base font-semibold flex-1"
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#1a1a1a",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Video Quality
+                </h3>
               </div>
-
               {/* Quality options list */}
               <div
-                className="overflow-y-auto overflow-x-hidden"
+                className="overflow-y-auto overflow-x-hidden py-2"
                 style={{
                   flex: 1,
-                  maxHeight: "min(45vh, 260px)",
+                  maxHeight: "min(50vh, 380px)",
                   minHeight: "140px",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
+                  scrollbarWidth: "thin",
+                  scrollbarColor: isDarkMode
+                    ? "rgba(255, 255, 255, 0.2) transparent"
+                    : "rgba(0, 0, 0, 0.2) transparent",
                   paddingBottom: "8px",
                   paddingTop: "4px",
                 }}
@@ -429,56 +402,91 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         e.stopPropagation();
                       }}
                       disabled={isChanging}
-                      className={`w-full px-5 py-2.5 text-left transition-colors flex items-center justify-between touch-manipulation ${
-                        isDarkMode
-                          ? "text-white hover:bg-white/10 active:bg-white/15"
-                          : "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
-                      }`}
+                      className="w-full px-5 py-3.5 text-left transition-all flex items-center justify-between group"
                       style={{
                         background: isActive
                           ? isDarkMode
-                            ? "rgba(255, 255, 255, 0.08)"
-                            : "rgba(0, 0, 0, 0.06)"
+                            ? "rgba(59, 130, 246, 0.15)"
+                            : "rgba(59, 130, 246, 0.1)"
                           : "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
-                        minHeight: "36px",
                         WebkitTapHighlightColor: "transparent",
+                        borderLeft: isActive
+                          ? `3px solid ${isDarkMode ? "#3b82f6" : "#2563eb"}`
+                          : "3px solid transparent",
                       }}
-                      role="menuitemradio"
-                      aria-checked={isActive}
+                      onMouseEnter={(e) => {
+                        if (!isChanging && !isActive) {
+                          const target = e.currentTarget as HTMLButtonElement;
+                          target.style.background = isDarkMode
+                            ? "rgba(255, 255, 255, 0.05)"
+                            : "rgba(0, 0, 0, 0.03)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          const target = e.currentTarget as HTMLButtonElement;
+                          target.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <div className="flex items-center justify-between w-full gap-3">
-                        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                      <div className="flex flex-col gap-1 flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
                           <span
-                            className={`text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis ${
-                              isDarkMode ? "text-white" : "text-gray-900"
-                            }`}
+                            className="text-base font-semibold"
+                            style={{
+                              color: isActive
+                                ? isDarkMode
+                                  ? "#60a5fa"
+                                  : "#2563eb"
+                                : isDarkMode
+                                ? "#ffffff"
+                                : "#1a1a1a",
+                              letterSpacing: "-0.01em",
+                            }}
                           >
                             {label.full}
                           </span>
+                          {q === "auto" && (
+                            <span
+                              className="text-xs px-2 py-0.5 rounded-full font-medium"
+                              style={{
+                                background: isDarkMode
+                                  ? "rgba(34, 197, 94, 0.15)"
+                                  : "rgba(34, 197, 94, 0.1)",
+                                color: isDarkMode ? "#4ade80" : "#16a34a",
+                              }}
+                            >
+                              Recommended
+                            </span>
+                          )}
                         </div>
-                        {q === "auto" && (
-                          <span
-                            className={`text-xs ${
-                              isDarkMode ? "text-gray-400" : "text-gray-600"
-                            }`}
-                          >
-                            Recommended
-                          </span>
-                        )}
+                        <span
+                          className="text-xs"
+                          style={{
+                            color: isDarkMode ? "#9ca3af" : "#6b7280",
+                          }}
+                        >
+                          {label.desc}
+                        </span>
                       </div>
                       {isActive && !isChanging && (
                         <Check
-                          className="w-5 h-5 flex-shrink-0"
-                          style={{ color: "#ef4444", strokeWidth: 2.5 }}
+                          className="w-5 h-5 flex-shrink-0 ml-3"
+                          style={{
+                            color: isDarkMode ? "#3b82f6" : "#2563eb",
+                            strokeWidth: 2.5,
+                          }}
                         />
                       )}
                       {isChanging && isActive && (
                         <div
-                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
+                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0 ml-3"
                           style={{
-                            border: "2px solid #ef4444",
+                            border: `2px solid ${
+                              isDarkMode ? "#3b82f6" : "#2563eb"
+                            }`,
                             borderTopColor: "transparent",
                           }}
                         />
@@ -491,7 +499,6 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
           )}
         </div>
       )}
-
       {/* DESKTOP VIEW - Two-step dropdown menu */}
       {!isMobile && isOpen && (
         <div
@@ -503,20 +510,22 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             right: 0,
             left: "auto",
             background: isDarkMode
-              ? "rgba(28, 28, 30, 0.98)"
+              ? "rgba(40, 40, 43, 0.98)"
               : "rgba(255, 255, 255, 0.98)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: isDarkMode
-              ? "1px solid rgba(255, 255, 255, 0.15)"
-              : "1px solid rgba(0, 0, 0, 0.15)",
-            width: "220px",
-
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: `1px solid ${
+              isDarkMode ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)"
+            }`,
+            width: "240px",
+            maxHeight: "min(55vh, 420px)",
             zIndex: 999999,
             boxShadow: isDarkMode
-              ? "0 8px 32px rgba(0, 0, 0, 0.7)"
-              : "0 8px 32px rgba(0, 0, 0, 0.2)",
+              ? "0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.05)"
+              : "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.05)",
             overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -572,10 +581,16 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
             <>
               {/* Back button header */}
               <div
-                className="px-4 py-2.5 sticky top-0"
+                className="flex items-center gap-3 px-4 py-3 border-b"
                 style={{
-                  borderTopLeftRadius: "8px",
-                  borderTopRightRadius: "8px",
+                  borderColor: isDarkMode
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(0, 0, 0, 0.08)",
+                  background: isDarkMode
+                    ? "rgba(50, 50, 53, 0.5)"
+                    : "rgba(248, 249, 250, 0.8)",
+                  borderTopLeftRadius: "12px",
+                  borderTopRightRadius: "12px",
                 }}
               >
                 <button
@@ -583,49 +598,39 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                     e.stopPropagation();
                     setShowQualityMenu(false);
                   }}
-                  className="w-full py-1 text-left flex items-center gap-2 transition-colors rounded"
-                  style={{
-                    minHeight: "32px",
-                  }}
-                  onMouseEnter={(e) => {
-                    const target = e.currentTarget as HTMLButtonElement;
-                    target.style.backgroundColor = isDarkMode
-                      ? "rgba(255, 255, 255, 0.1)"
-                      : "rgba(0, 0, 0, 0.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    const target = e.currentTarget as HTMLButtonElement;
-                    target.style.backgroundColor = "transparent";
-                  }}
+                  className="flex items-center justify-center -ml-1 p-1.5 rounded-lg transition-all hover:bg-white/10 active:scale-95"
                 >
                   <ChevronLeft
                     className="w-4 h-4"
                     style={{
-                      color: isDarkMode ? "#ffffff" : "#000000",
+                      color: isDarkMode ? "#ffffff" : "#1a1a1a",
                     }}
                   />
-                  <span
-                    className="text-sm font-semibold"
-                    style={{
-                      color: isDarkMode ? "#ffffff" : "#000000",
-                    }}
-                  >
-                    Quality
-                  </span>
                 </button>
+                <h3
+                  className="text-sm font-semibold flex-1"
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#1a1a1a",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Video Quality
+                </h3>
               </div>
-
               {/* Quality options */}
               <div
-                className="overflow-y-auto overflow-x-hidden"
+                className="overflow-y-auto overflow-x-hidden py-1"
                 style={{
-                  maxHeight: "min(50vh, 350px)",
+                  maxHeight: "min(50vh, 360px)",
+                  scrollbarWidth: "thin",
+                  scrollbarColor: isDarkMode
+                    ? "rgba(255, 255, 255, 0.2) transparent"
+                    : "rgba(0, 0, 0, 0.2) transparent",
                 }}
               >
-                {availableQualities.map((q, index) => {
+                {availableQualities.map((q) => {
                   const isActive = q === currentQuality;
                   const label = qualityLabels[q];
-                  const isLast = index === availableQualities.length - 1;
 
                   return (
                     <button
@@ -635,24 +640,26 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                         handleQualitySelect(q);
                       }}
                       disabled={isChanging}
-                      className="w-full px-4 py-2.5 text-left transition-colors flex items-center justify-between"
+                      className="w-full px-4 py-3 text-left transition-all flex items-center justify-between"
                       style={{
                         background: isActive
                           ? isDarkMode
-                            ? "rgba(255, 255, 255, 0.08)"
-                            : "rgba(0, 0, 0, 0.06)"
+                            ? "rgba(59, 130, 246, 0.15)"
+                            : "rgba(59, 130, 246, 0.1)"
                           : "transparent",
                         opacity: isChanging ? 0.5 : 1,
                         cursor: isChanging ? "not-allowed" : "pointer",
                         minHeight: "44px",
-                        color: isDarkMode ? "#ffffff" : "#000000",
+                        borderLeft: isActive
+                          ? `3px solid ${isDarkMode ? "#3b82f6" : "#2563eb"}`
+                          : "3px solid transparent",
                       }}
                       onMouseEnter={(e) => {
-                        if (!isChanging) {
+                        if (!isChanging && !isActive) {
                           const target = e.currentTarget as HTMLButtonElement;
                           target.style.backgroundColor = isDarkMode
-                            ? "rgba(255, 255, 255, 0.1)"
-                            : "rgba(0, 0, 0, 0.05)";
+                            ? "rgba(255, 255, 255, 0.05)"
+                            : "rgba(0, 0, 0, 0.03)";
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -661,42 +668,67 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
                           target.style.backgroundColor = "transparent";
                         } else {
                           target.style.backgroundColor = isDarkMode
-                            ? "rgba(255, 255, 255, 0.08)"
-                            : "rgba(0, 0, 0, 0.06)";
+                            ? "rgba(59, 130, 246, 0.15)"
+                            : "rgba(59, 130, 246, 0.1)";
                         }
                       }}
                     >
-                      <div className="flex flex-col gap-0.5">
-                        <span
-                          className="text-sm font-medium"
-                          style={{
-                            color: isDarkMode ? "#ffffff" : "#000000",
-                          }}
-                        >
-                          {label.full}
-                        </span>
-                        {q === "auto" && (
+                      <div className="flex flex-col gap-1 flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
                           <span
-                            className="text-xs"
+                            className="text-sm font-semibold"
                             style={{
-                              color: isDarkMode ? "#9ca3af" : "#666666",
+                              color: isActive
+                                ? isDarkMode
+                                  ? "#60a5fa"
+                                  : "#2563eb"
+                                : isDarkMode
+                                ? "#ffffff"
+                                : "#1a1a1a",
+                              letterSpacing: "-0.01em",
                             }}
                           >
-                            Recommended
+                            {label.full}
                           </span>
-                        )}
+                          {q === "auto" && (
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                              style={{
+                                background: isDarkMode
+                                  ? "rgba(34, 197, 94, 0.15)"
+                                  : "rgba(34, 197, 94, 0.1)",
+                                color: isDarkMode ? "#4ade80" : "#16a34a",
+                              }}
+                            >
+                              Recommended
+                            </span>
+                          )}
+                        </div>
+                        <span
+                          className="text-xs"
+                          style={{
+                            color: isDarkMode ? "#9ca3af" : "#6b7280",
+                          }}
+                        >
+                          {label.desc}
+                        </span>
                       </div>
                       {isActive && !isChanging && (
                         <Check
                           className="w-5 h-5 flex-shrink-0 ml-2"
-                          style={{ color: "#ef4444", strokeWidth: 2.5 }}
+                          style={{
+                            color: isDarkMode ? "#3b82f6" : "#2563eb",
+                            strokeWidth: 2.5,
+                          }}
                         />
                       )}
                       {isChanging && isActive && (
                         <div
-                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0"
+                          className="w-5 h-5 rounded-full animate-spin flex-shrink-0 ml-2"
                           style={{
-                            border: "2px solid #ef4444",
+                            border: `2px solid ${
+                              isDarkMode ? "#3b82f6" : "#2563eb"
+                            }`,
                             borderTopColor: "transparent",
                           }}
                         />
@@ -712,6 +744,5 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({
     </div>
   );
 };
-
 export default QualitySelector;
 export type { QualityType, QualitySelectorProps };
