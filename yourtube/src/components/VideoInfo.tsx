@@ -1295,11 +1295,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   style={{ zIndex: 2 }}
 >
   <div
-    className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full"
+    className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden"
     onClick={(e) => e.stopPropagation()}
     style={{ 
-      maxWidth: "500px",
-      maxHeight: "90vh", 
+      width: "90%",
+      maxWidth: "520px",
+      maxHeight: "85vh", 
       display: "flex", 
       flexDirection: "column" 
     }}
@@ -1314,16 +1315,16 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     {/* Content - Scrollable if needed */}
     <div 
       className="flex-1 overflow-y-auto px-8 py-6" 
-      style={{ minHeight: 0 }}
+      style={{ minHeight: "0" }}
     >
       <div className="space-y-5">
         <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
           Are you sure you want to delete this video?
         </p>
         
-        <div className="bg-gray-50 dark:bg-neutral-800/50 rounded-lg p-4 max-h-[200px] overflow-y-auto custom-scrollbar">
+        <div className="bg-gray-50 dark:bg-neutral-800/50 rounded-lg p-4 max-h-[180px] overflow-y-auto custom-scrollbar">
           <p
-            className="text-base font-semibold text-gray-900 dark:text-white leading-relaxed text-center"
+            className="text-base font-semibold text-gray-900 dark:text-white leading-relaxed text-center break-words"
             style={{
               overflowWrap: "anywhere",
               wordBreak: "break-word",
@@ -1341,26 +1342,24 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       </div>
     </div>
 
-    {/* Footer with Buttons */}
+    {/* Footer with Buttons - FIXED */}
     <div className="flex-shrink-0 px-8 pb-8 pt-6 border-t border-gray-200 dark:border-neutral-800">
-      <div className="flex gap-4 justify-center">
+      <div className="grid grid-cols-2 gap-4 w-full max-w-[320px] mx-auto">
         <button
           onClick={() => setShowDeleteModal(false)}
-          className="flex-1 max-w-[140px] px-6 py-3 rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-semibold text-base transition-all active:scale-95"
+          className="px-6 py-3 rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-semibold text-base transition-all active:scale-95 whitespace-nowrap"
         >
           Cancel
         </button>
-        <div className="flex-1 max-w-[140px]">
-          <DeleteVideoButton
-            videoId={video._id}
-            videoTitle={video.videotitle}
-            onDeleted={() => {
-              setShowDeleteModal(false);
-              handleVideoDeleted();
-            }}
-            variant="modal"
-          />
-        </div>
+        <DeleteVideoButton
+          videoId={video._id}
+          videoTitle={video.videotitle}
+          onDeleted={() => {
+            setShowDeleteModal(false);
+            handleVideoDeleted();
+          }}
+          variant="modal"
+        />
       </div>
     </div>
   </div>
