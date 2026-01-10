@@ -68,7 +68,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
-  
+
   // Helper functions
   const getUserId = () => {
     if (!user) {
@@ -1272,7 +1272,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal - Same design for both Desktop & Mobile */}
+      {/* Delete Confirmation Modal - Theme Compatible for Desktop & Mobile */}
       {typeof window !== "undefined" &&
         showDeleteModal &&
         ReactDOM.createPortal(
@@ -1292,7 +1292,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           >
             {/* Backdrop */}
             <div
-              className="absolute inset-0 bg-black/70"
+              className="absolute inset-0 bg-black/70 dark:bg-black/80 backdrop-blur-sm"
               onClick={() => setShowDeleteModal(false)}
               style={{
                 position: "fixed",
@@ -1304,26 +1304,26 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               }}
             />
 
-            {/* Modal - Unified design matching the first image */}
+            {/* Modal - Theme Compatible Design */}
             <div
-              className="relative bg-[#282828] rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+              className="relative bg-white dark:bg-[#282828] rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-neutral-700"
               onClick={(e) => e.stopPropagation()}
               style={{ zIndex: 2 }}
             >
               {/* Header */}
-              <div className="px-6 pt-6 pb-4">
-                <h3 className="text-lg font-medium text-white">
+              <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-neutral-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Delete Video?
                 </h3>
               </div>
 
               {/* Content */}
-              <div className="px-6 pb-4">
-                <p className="text-sm text-gray-300 mb-3">
+              <div className="px-6 py-5">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
                   Are you sure you want to delete
                 </p>
                 <p
-                  className="text-sm text-red-400 font-medium break-words"
+                  className="text-sm text-red-600 dark:text-red-400 font-semibold break-words bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800"
                   style={{
                     overflowWrap: "anywhere",
                     wordBreak: "break-word",
@@ -1331,16 +1331,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 >
                   &quot;{video.videotitle}&quot;
                 </p>
-                <p className="text-sm text-gray-400 mt-4">
-                  This action cannot be undone.
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-4 flex items-start gap-2">
+                  <span className="text-yellow-600 dark:text-yellow-500 text-lg leading-none">
+                    ⚠️
+                  </span>
+                  <span>This action cannot be undone.</span>
                 </p>
               </div>
 
               {/* Footer with Buttons */}
-              <div className="px-6 pb-6 pt-2 flex justify-center gap-3">
+              <div className="px-6 pb-6 pt-2 flex justify-center gap-3 bg-gray-50 dark:bg-neutral-800/50">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-6 py-2.5 rounded-full bg-transparent border border-gray-600 text-white hover:bg-gray-700 font-medium text-sm transition-all"
+                  className="px-6 py-2.5 rounded-full bg-white dark:bg-transparent border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 font-medium text-sm transition-all shadow-sm dark:shadow-none"
                 >
                   Cancel
                 </button>
