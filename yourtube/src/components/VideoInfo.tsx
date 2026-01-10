@@ -1257,7 +1257,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       )}
-    {/* Delete Confirmation Modal - Desktop & Mobile with Portal */}
+  {/* Delete Confirmation Modal - Desktop & Mobile with Portal */}
 {typeof window !== "undefined" &&
   showDeleteModal &&
   ReactDOM.createPortal(
@@ -1289,17 +1289,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         }}
       />
 
-      {/* Modal Container - DESKTOP ONLY */}
+      {/* Modal Container - DESKTOP */}
       <div
         className="hidden md:flex fixed inset-0 items-center justify-center p-4"
         style={{ zIndex: 2 }}
       >
         <div
-          className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm max-h-[90vh] flex flex-col overflow-hidden"
+          className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
           style={{
-            transform: "translateZ(0)",
-            willChange: "transform",
+            maxHeight: "90vh",
+            height: "auto",
+            minHeight: "280px",
           }}
         >
           {/* Content - Scrollable */}
@@ -1309,7 +1310,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 Are you sure you want to delete
               </p>
 
-              {/* Scrollable video title */}
               <div className="max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
                 <p className="text-sm font-semibold text-white break-words leading-relaxed">
                   &quot;{video.videotitle}&quot;
@@ -1322,8 +1322,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
 
-          {/* Footer - Fixed at bottom */}
-          <div className="flex-shrink-0 px-6 pb-5 pt-2 border-t border-neutral-800">
+          {/* Footer - ALWAYS VISIBLE */}
+          <div className="flex-shrink-0 px-6 pb-5 pt-2 border-t border-neutral-800 bg-neutral-900">
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -1344,14 +1344,20 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-      {/* Modal Container - MOBILE ONLY */}
+
+      {/* Modal Container - MOBILE */}
       <div
         className="md:hidden flex fixed inset-0 items-center justify-center p-4"
         style={{ zIndex: 2 }}
       >
         <div
-          className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
+          className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
+          style={{
+            maxHeight: "85vh",
+            height: "auto",
+            minHeight: "300px",
+          }}
         >
           <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
@@ -1375,7 +1381,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
 
-          <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800">
+          {/* Footer - ALWAYS VISIBLE */}
+          <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowDeleteModal(false)}
