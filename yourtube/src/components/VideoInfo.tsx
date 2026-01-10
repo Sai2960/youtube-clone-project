@@ -514,9 +514,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   };
 
   // Notification preference handler - Updated to persist and work correctly
+  // Notification preference handler - Updated to persist and work correctly
   const handleNotificationChange = useCallback(
     async (pref: "all" | "personalized" | "none") => {
       if (isUpdatingNotification) return;
+
+      console.log("🔔 Notification preference changing to:", pref);
 
       const previousPref = notificationPreference;
       setNotificationPreference(pref);
@@ -531,8 +534,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
         if (response.data.success) {
           console.log("✅ Notification preference updated:", pref);
-          // Close menu after successful update
-          setShowSubscribeMenu(false);
+          // Close menu after successful update with delay for visual feedback
+          setTimeout(() => {
+            setShowSubscribeMenu(false);
+          }, 300);
         } else {
           // Revert on failure
           setNotificationPreference(previousPref);
@@ -545,10 +550,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         setNotificationPreference(previousPref);
         // If API doesn't exist yet, just close menu (for testing)
         if (error.response?.status === 404) {
-          console.log(
-            "API endpoint not found, preference saved locally only"
-          );
-          setShowSubscribeMenu(false);
+          console.log("API endpoint not found, preference saved locally only");
+          setTimeout(() => {
+            setShowSubscribeMenu(false);
+          }, 300);
         } else {
           setError("Failed to update notification preference");
           setTimeout(() => setError(null), 3000);
@@ -804,17 +809,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             <div className="py-2">
               <button
                 type="button"
-                onClick={() => handleNotificationChange("all")}
-                onTouchEnd={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleNotificationChange("all");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
+                className={`w-full px-5 py-4 flex items-center gap-4 transition-all ${
                   notificationPreference === "all"
                     ? "bg-blue-50 dark:bg-blue-900/20"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                } ${isUpdatingNotification ? "opacity-50" : ""}`}
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50 active:bg-gray-100 dark:active:bg-neutral-700"
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <div
                   className={`w-11 h-11 rounded-full flex items-center justify-center ${
@@ -866,17 +873,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
               <button
                 type="button"
-                onClick={() => handleNotificationChange("personalized")}
-                onTouchEnd={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleNotificationChange("personalized");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
+                className={`w-full px-5 py-4 flex items-center gap-4 transition-all ${
                   notificationPreference === "personalized"
                     ? "bg-blue-50 dark:bg-blue-900/20"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                } ${isUpdatingNotification ? "opacity-50" : ""}`}
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50 active:bg-gray-100 dark:active:bg-neutral-700"
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <div
                   className={`w-11 h-11 rounded-full flex items-center justify-center ${
@@ -928,17 +937,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
               <button
                 type="button"
-                onClick={() => handleNotificationChange("none")}
-                onTouchEnd={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleNotificationChange("none");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex items-center gap-4 transition-all active:bg-gray-100 dark:active:bg-neutral-700 ${
+                className={`w-full px-5 py-4 flex items-center gap-4 transition-all ${
                   notificationPreference === "none"
                     ? "bg-blue-50 dark:bg-blue-900/20"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                } ${isUpdatingNotification ? "opacity-50" : ""}`}
+                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50 active:bg-gray-100 dark:active:bg-neutral-700"
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <div
                   className={`w-11 h-11 rounded-full flex items-center justify-center ${
@@ -1052,13 +1063,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             <div className="py-1">
               <button
                 type="button"
-                onClick={() => handleNotificationChange("all")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("all");
+                }}
                 disabled={isUpdatingNotification}
                 className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
                   notificationPreference === "all"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                } ${isUpdatingNotification ? "opacity-50" : ""}`}
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <Bell
                   className={`w-5 h-5 flex-shrink-0 ${
@@ -1093,13 +1110,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
               <button
                 type="button"
-                onClick={() => handleNotificationChange("personalized")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("personalized");
+                }}
                 disabled={isUpdatingNotification}
                 className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
                   notificationPreference === "personalized"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                } ${isUpdatingNotification ? "opacity-50" : ""}`}
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <Bell
                   className={`w-5 h-5 flex-shrink-0 ${
@@ -1134,13 +1157,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
               <button
                 type="button"
-                onClick={() => handleNotificationChange("none")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("none");
+                }}
                 disabled={isUpdatingNotification}
                 className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
                   notificationPreference === "none"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
-                } ${isUpdatingNotification ? "opacity-50" : ""}`}
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <BellOff
                   className={`w-5 h-5 flex-shrink-0 ${
