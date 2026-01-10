@@ -1257,7 +1257,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       )}
-   {/* Delete Confirmation Modal - Desktop & Mobile with Portal */}
+    {/* Delete Confirmation Modal - Desktop & Mobile with Portal */}
 {typeof window !== "undefined" &&
   showDeleteModal &&
   ReactDOM.createPortal(
@@ -1295,14 +1295,11 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         style={{ zIndex: 2 }}
       >
         <div
-          className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm"
+          className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
           style={{
             transform: "translateZ(0)",
             willChange: "transform",
-            maxHeight: "90vh",
-            display: "flex",
-            flexDirection: "column",
           }}
         >
           {/* Content - Scrollable */}
@@ -1325,12 +1322,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
 
-          {/* Footer - Always visible, never cut off */}
-          <div className="flex-shrink-0 px-6 pb-5 pt-3 border-t border-neutral-800">
+          {/* Footer - Fixed at bottom */}
+          <div className="flex-shrink-0 px-6 pb-5 pt-2 border-t border-neutral-800">
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded text-blue-500 hover:bg-neutral-800 font-medium text-sm transition-all"
+                className="px-4 py-2 rounded text-blue-500 hover:bg-neutral-800 font-medium text-sm transition-all min-h-[44px]"
               >
                 Cancel
               </button>
@@ -1347,35 +1344,27 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
       </div>
-
       {/* Modal Container - MOBILE ONLY */}
       <div
-        className="md:hidden flex fixed inset-0 items-end sm:items-center justify-center p-0 sm:p-4"
+        className="md:hidden flex fixed inset-0 items-center justify-center p-4"
         style={{ zIndex: 2 }}
       >
         <div
-          className="relative bg-white dark:bg-neutral-900 rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:max-w-md"
+          className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
-          style={{
-            maxHeight: "90vh",
-            display: "flex",
-            flexDirection: "column",
-          }}
         >
-          {/* Header - Fixed */}
           <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
               Delete Video?
             </h3>
           </div>
 
-          {/* Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-3">
               <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                 Are you sure you want to delete
               </p>
-              <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg custom-scrollbar">
+              <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
                   &quot;{video.videotitle}&quot;
                 </p>
@@ -1386,26 +1375,23 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
 
-          {/* Footer - Always visible, never cut off */}
-          <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+          <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800">
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 sm:flex-none px-6 py-2.5 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
+                className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
               >
                 Cancel
               </button>
-              <div className="flex-1 sm:flex-none">
-                <DeleteVideoButton
-                  videoId={video._id}
-                  videoTitle={video.videotitle}
-                  onDeleted={() => {
-                    setShowDeleteModal(false);
-                    handleVideoDeleted();
-                  }}
-                  variant="modal"
-                />
-              </div>
+              <DeleteVideoButton
+                videoId={video._id}
+                videoTitle={video.videotitle}
+                onDeleted={() => {
+                  setShowDeleteModal(false);
+                  handleVideoDeleted();
+                }}
+                variant="modal"
+              />
             </div>
           </div>
         </div>
