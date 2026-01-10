@@ -772,19 +772,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#212121] rounded-t-3xl shadow-2xl overflow-hidden"
             style={{
               animation: "slideUpSheet 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-              maxHeight: "85vh",
+              maxHeight: "80vh",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Handle Bar */}
             <div className="flex justify-center py-3 bg-white dark:bg-[#212121]">
-              <div className="w-9 h-1 bg-gray-300 dark:bg-neutral-600 rounded-full" />
+              <div className="w-10 h-1 bg-gray-300 dark:bg-neutral-600 rounded-full" />
             </div>
 
             {/* Header */}
-            <div className="px-5 pb-4 border-b border-gray-200 dark:border-neutral-700/50">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+            <div className="px-5 pb-3 border-b border-gray-200 dark:border-neutral-700/50">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white">
                   Notifications
                 </h3>
                 <button
@@ -799,13 +799,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              <p className="text-[13px] text-gray-500 dark:text-gray-400">
                 Choose how often you want to be notified
               </p>
             </div>
 
-            {/* Options */}
-            <div className="py-2 px-2">
+            {/* Options Container with proper spacing */}
+            <div className="py-3 px-3 space-y-2">
               {/* All Option */}
               <button
                 type="button"
@@ -815,19 +815,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("all");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3.5 flex items-center gap-4 rounded-xl transition-all mb-1 ${
+                className={`w-full px-4 py-3.5 flex items-center gap-3.5 rounded-xl transition-all ${
                   notificationPreference === "all"
-                    ? "bg-blue-50 dark:bg-blue-500/10"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-800"
+                    ? "bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-500 dark:ring-blue-400"
+                    : "bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 active:bg-gray-200 dark:active:bg-neutral-700"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                     notificationPreference === "all"
                       ? "bg-blue-100 dark:bg-blue-500/20"
-                      : "bg-gray-100 dark:bg-neutral-700/50"
+                      : "bg-gray-100 dark:bg-neutral-700"
                   }`}
                 >
                   <Bell
@@ -838,9 +838,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     }`}
                   />
                 </div>
-                <div className="flex-1 text-left">
+                <div className="flex-1 text-left min-w-0">
                   <div
-                    className={`font-medium text-[15px] ${
+                    className={`font-semibold text-[15px] ${
                       notificationPreference === "all"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -848,18 +848,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   >
                     All
                   </div>
-                  <div className="text-[13px] text-gray-500 dark:text-gray-400">
+                  <div className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
                     Get notified for every upload
                   </div>
                 </div>
                 {notificationPreference === "all" && (
-                  <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-3 h-3 text-white"
+                      className="w-3.5 h-3.5 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      strokeWidth={3}
+                      strokeWidth={3.5}
                     >
                       <path
                         strokeLinecap="round"
@@ -880,19 +880,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("personalized");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3.5 flex items-center gap-4 rounded-xl transition-all mb-1 ${
+                className={`w-full px-4 py-3.5 flex items-center gap-3.5 rounded-xl transition-all ${
                   notificationPreference === "personalized"
-                    ? "bg-blue-50 dark:bg-blue-500/10"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-800"
+                    ? "bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-500 dark:ring-blue-400"
+                    : "bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 active:bg-gray-200 dark:active:bg-neutral-700"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                     notificationPreference === "personalized"
                       ? "bg-blue-100 dark:bg-blue-500/20"
-                      : "bg-gray-100 dark:bg-neutral-700/50"
+                      : "bg-gray-100 dark:bg-neutral-700"
                   }`}
                 >
                   <Bell
@@ -903,9 +903,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     }`}
                   />
                 </div>
-                <div className="flex-1 text-left">
+                <div className="flex-1 text-left min-w-0">
                   <div
-                    className={`font-medium text-[15px] ${
+                    className={`font-semibold text-[15px] ${
                       notificationPreference === "personalized"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -913,18 +913,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   >
                     Personalized
                   </div>
-                  <div className="text-[13px] text-gray-500 dark:text-gray-400">
+                  <div className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
                     Only occasional highlights
                   </div>
                 </div>
                 {notificationPreference === "personalized" && (
-                  <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-3 h-3 text-white"
+                      className="w-3.5 h-3.5 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      strokeWidth={3}
+                      strokeWidth={3.5}
                     >
                       <path
                         strokeLinecap="round"
@@ -945,19 +945,19 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("none");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3.5 flex items-center gap-4 rounded-xl transition-all ${
+                className={`w-full px-4 py-3.5 flex items-center gap-3.5 rounded-xl transition-all ${
                   notificationPreference === "none"
-                    ? "bg-blue-50 dark:bg-blue-500/10"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-800"
+                    ? "bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-500 dark:ring-blue-400"
+                    : "bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 active:bg-gray-200 dark:active:bg-neutral-700"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                     notificationPreference === "none"
                       ? "bg-blue-100 dark:bg-blue-500/20"
-                      : "bg-gray-100 dark:bg-neutral-700/50"
+                      : "bg-gray-100 dark:bg-neutral-700"
                   }`}
                 >
                   <BellOff
@@ -968,9 +968,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     }`}
                   />
                 </div>
-                <div className="flex-1 text-left">
+                <div className="flex-1 text-left min-w-0">
                   <div
-                    className={`font-medium text-[15px] ${
+                    className={`font-semibold text-[15px] ${
                       notificationPreference === "none"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -978,18 +978,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   >
                     None
                   </div>
-                  <div className="text-[13px] text-gray-500 dark:text-gray-400">
+                  <div className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
                     Don&apos;t notify me
                   </div>
                 </div>
                 {notificationPreference === "none" && (
-                  <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-3 h-3 text-white"
+                      className="w-3.5 h-3.5 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      strokeWidth={3}
+                      strokeWidth={3.5}
                     >
                       <path
                         strokeLinecap="round"
@@ -1003,15 +1003,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
 
             {/* Unsubscribe Section */}
-            <div className="border-t border-gray-200 dark:border-neutral-700/50 p-4 mt-2">
+            <div className="border-t border-gray-200 dark:border-neutral-700/50 px-3 py-4">
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   closeNotificationMenu();
                   setTimeout(() => setShowUnsubscribeModal(true), 100);
                 }}
                 onTouchEnd={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   closeNotificationMenu();
                   setTimeout(() => setShowUnsubscribeModal(true), 100);
                 }}
@@ -1028,7 +1031,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             />
           </div>
         </div>
-
         {/* Desktop Dropdown */}
         <div
           className="hidden md:block fixed inset-0"
