@@ -759,29 +759,46 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   </Button>
                   {showSubscribeMenu && (
                     <>
+                      {/* Backdrop for mobile */}
                       <div
                         className="md:hidden fixed inset-0 bg-black/50 z-[9998]"
                         onClick={() => setShowSubscribeMenu(false)}
                       />
+                      {/* Invisible backdrop for desktop */}
                       <div
                         className="hidden md:block fixed inset-0 z-[9998]"
                         onClick={() => setShowSubscribeMenu(false)}
                       />
+                      {/* ✅ FIXED: Menu now stays on page in both mobile and desktop */}
                       <div
-                        className="fixed md:absolute bottom-0 md:bottom-auto left-0 right-0 md:left-auto md:right-0 w-full md:w-64 bg-youtube-secondary dark:bg-neutral-900 rounded-t-2xl md:rounded-xl shadow-2xl border-t md:border border-youtube dark:border-neutral-800 py-2 z-[9999] animate-in slide-in-from-bottom md:slide-in-from-top-2 fade-in duration-200 max-h-[70vh] overflow-y-auto"
-                        style={
-                          typeof window !== "undefined" &&
-                          window.innerWidth >= 768
-                            ? { top: "calc(100% + 8px)" }
-                            : {}
-                        }
+                        className="
+            fixed md:absolute 
+            bottom-0 md:bottom-auto 
+            left-0 right-0 md:left-auto md:right-0 
+            md:top-full md:mt-2
+            w-full md:w-64 
+            bg-youtube-secondary dark:bg-neutral-900 
+            rounded-t-2xl md:rounded-xl 
+            shadow-2xl 
+            border-t md:border 
+            border-youtube dark:border-neutral-800 
+            py-2 
+            z-[9999] 
+            animate-in slide-in-from-bottom md:slide-in-from-top-2 fade-in duration-200 
+            max-h-[70vh] overflow-y-auto
+          "
                       >
+                        {/* Mobile handle */}
                         <div className="md:hidden flex justify-center py-2">
                           <div className="w-10 h-1 bg-youtube-disabled dark:bg-neutral-700 rounded-full" />
                         </div>
+
+                        {/* Header */}
                         <div className="px-4 py-2 text-xs text-youtube-disabled dark:text-neutral-500 font-semibold uppercase tracking-wide">
                           Notifications
                         </div>
+
+                        {/* All Notifications Option */}
                         <button
                           onClick={() => handleNotificationChange("all")}
                           className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
@@ -810,6 +827,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                             </svg>
                           )}
                         </button>
+
+                        {/* Personalized Notifications Option */}
                         <button
                           onClick={() =>
                             handleNotificationChange("personalized")
@@ -840,6 +859,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                             </svg>
                           )}
                         </button>
+
+                        {/* None Notifications Option */}
                         <button
                           onClick={() => handleNotificationChange("none")}
                           className={`w-full px-4 py-3 text-left hover:bg-youtube-hover dark:hover:bg-neutral-800 flex items-start gap-3 transition-colors ${
@@ -868,7 +889,11 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                             </svg>
                           )}
                         </button>
+
+                        {/* Divider */}
                         <div className="border-t border-youtube dark:border-neutral-800 my-2"></div>
+
+                        {/* Unsubscribe Button */}
                         <button
                           onClick={() => {
                             setShowSubscribeMenu(false);
