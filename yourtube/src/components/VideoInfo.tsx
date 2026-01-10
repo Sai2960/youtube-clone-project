@@ -1268,204 +1268,69 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               left: 0,
               right: 0,
               bottom: 0,
-              zIndex: 2147483647,
+              zIndex: 2147483647, // Maximum safe z-index
               isolation: "isolate",
               pointerEvents: "auto",
-              transform: "translateZ(0)",
-              willChange: "transform",
             }}
           >
             {/* Backdrop */}
             <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
-                zIndex: 1,
-                pointerEvents: "auto",
-              }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
               onClick={() => setShowDeleteModal(false)}
+              style={{ zIndex: 1, pointerEvents: "auto" }}
             />
 
-            {/* DESKTOP Modal */}
+            {/* Modal Container - MOBILE ONLY */}
             <div
-              className="hidden md:flex"
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "16px",
-                zIndex: 2,
-                pointerEvents: "none",
-              }}
+              className="md:hidden flex absolute inset-0 items-center justify-center p-4"
+              style={{ zIndex: 2, pointerEvents: "auto" }}
             >
               <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  maxWidth: "448px",
-                  backgroundColor: "white",
-                  borderRadius: "16px",
-                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                  border: "1px solid rgba(229, 231, 235, 1)",
-                  overflow: "hidden",
-                  pointerEvents: "auto",
-                }}
-                className="dark:bg-neutral-900 dark:border-neutral-800"
+                className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
+                style={{ pointerEvents: "auto" }}
               >
                 {/* Header */}
-                <div
-                  style={{
-                    padding: "24px 24px 16px 24px",
-                    borderBottom: "1px solid rgba(229, 231, 235, 1)",
-                  }}
-                  className="dark:border-neutral-800"
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: "20px",
-                        fontWeight: 600,
-                        color: "rgb(17, 24, 39)",
-                        flex: 1,
-                        textAlign: "center",
-                      }}
-                      className="dark:text-white"
-                    >
+                <div className="px-6 pt-5 pb-4 border-b border-gray-200 dark:border-neutral-800">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex-1 text-center">
                       Delete Video?
                     </h3>
                     <button
                       onClick={() => setShowDeleteModal(false)}
-                      style={{
-                        padding: "6px",
-                        borderRadius: "9999px",
-                        marginLeft: "16px",
-                        transition: "background-color 0.2s",
-                      }}
-                      className="hover:bg-gray-100 dark:hover:bg-neutral-800"
+                      className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors ml-4"
                       aria-label="Close"
                     >
-                      <X
-                        style={{
-                          width: "20px",
-                          height: "20px",
-                          color: "rgb(107, 114, 128)",
-                        }}
-                        className="dark:text-neutral-400"
-                      />
+                      <X className="w-5 h-5 text-gray-500 dark:text-neutral-400" />
                     </button>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div style={{ padding: "24px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "16px",
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontSize: "16px",
-                        color: "rgb(75, 85, 99)",
-                        textAlign: "center",
-                        lineHeight: "1.625",
-                      }}
-                      className="dark:text-neutral-400"
-                    >
+                <div className="px-6 py-5">
+                  <div className="space-y-4">
+                    <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                       Are you sure you want to delete this video?
                     </p>
 
-                    <div
-                      style={{
-                        maxHeight: "180px",
-                        overflowY: "auto",
-                        padding: "12px 16px",
-                        backgroundColor: "rgb(249, 250, 251)",
-                        borderRadius: "8px",
-                        border: "1px solid rgb(229, 231, 235)",
-                      }}
-                      className="dark:bg-neutral-800 dark:border-neutral-700"
-                    >
-                      <p
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: "rgb(17, 24, 39)",
-                          wordBreak: "break-word",
-                          lineHeight: "1.625",
-                        }}
-                        className="dark:text-white"
-                      >
+                    <div className="max-h-[180px] overflow-y-auto px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white break-words leading-relaxed">
                         &quot;{video.videotitle}&quot;
                       </p>
                     </div>
 
-                    <p
-                      style={{
-                        fontSize: "14px",
-                        color: "rgb(220, 38, 38)",
-                        textAlign: "center",
-                        fontWeight: 500,
-                        lineHeight: "1.625",
-                      }}
-                      className="dark:text-red-400"
-                    >
+                    <p className="text-sm text-red-600 dark:text-red-400 text-center font-medium leading-relaxed">
                       ⚠️ This action cannot be undone
                     </p>
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div
-                  style={{
-                    padding: "16px 24px 24px 24px",
-                    borderTop: "1px solid rgb(229, 231, 235)",
-                    backgroundColor: "rgb(249, 250, 251)",
-                  }}
-                  className="dark:border-neutral-800 dark:bg-neutral-900"
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "12px",
-                      justifyContent: "center",
-                    }}
-                  >
+                <div className="px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900">
+                  <div className="flex gap-3 justify-center">
                     <button
                       onClick={() => setShowDeleteModal(false)}
-                      style={{
-                        minWidth: "110px",
-                        padding: "10px 20px",
-                        borderRadius: "8px",
-                        backgroundColor: "white",
-                        color: "rgb(55, 65, 81)",
-                        fontWeight: 500,
-                        fontSize: "14px",
-                        border: "1px solid rgb(209, 213, 219)",
-                        boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                        transition: "all 0.2s",
-                        cursor: "pointer",
-                      }}
-                      className="hover:bg-gray-100 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-700 dark:hover:bg-neutral-700"
+                      className="min-w-[110px] px-5 py-2.5 rounded-lg bg-white dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-700 font-medium text-sm border border-gray-300 dark:border-neutral-700 transition-all shadow-sm"
                     >
                       Cancel
                     </button>
@@ -1483,152 +1348,42 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </div>
             </div>
 
-            {/* MOBILE Modal */}
+            {/* Modal Container - MOBILE ONLY */}
             <div
-              className="md:hidden flex"
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "16px",
-                zIndex: 2,
-                pointerEvents: "none",
-              }}
+              className="md:hidden flex absolute inset-0 items-center justify-center p-4"
+              style={{ zIndex: 2 }}
             >
               <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  maxWidth: "448px",
-                  maxHeight: "85vh",
-                  display: "flex",
-                  flexDirection: "column",
-                  backgroundColor: "white",
-                  borderRadius: "12px",
-                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                  overflow: "hidden",
-                  pointerEvents: "auto",
-                }}
-                className="dark:bg-neutral-900"
+                className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div
-                  style={{
-                    flexShrink: 0,
-                    padding: "24px 24px 16px 24px",
-                    borderBottom: "1px solid rgb(229, 231, 235)",
-                  }}
-                  className="dark:border-neutral-800"
-                >
-                  <h3
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      color: "rgb(17, 24, 39)",
-                      textAlign: "center",
-                    }}
-                    className="dark:text-white"
-                  >
+                <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
                     Delete Video?
                   </h3>
                 </div>
 
-                <div
-                  style={{
-                    flex: 1,
-                    overflowY: "auto",
-                    padding: "24px 24px 16px 24px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "12px",
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontSize: "14px",
-                        color: "rgb(75, 85, 99)",
-                        textAlign: "center",
-                        lineHeight: "1.625",
-                      }}
-                      className="dark:text-neutral-400"
-                    >
+                <div className="flex-1 overflow-y-auto px-6 py-4">
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                       Are you sure you want to delete
                     </p>
-                    <div
-                      style={{
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        padding: "12px",
-                        backgroundColor: "rgb(243, 244, 246)",
-                        borderRadius: "8px",
-                      }}
-                      className="dark:bg-neutral-800"
-                    >
-                      <p
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: "rgb(17, 24, 39)",
-                          textAlign: "center",
-                          wordBreak: "break-word",
-                          lineHeight: "1.625",
-                        }}
-                        className="dark:text-white"
-                      >
+                    <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
                         &quot;{video.videotitle}&quot;
                       </p>
                     </div>
-                    <p
-                      style={{
-                        fontSize: "14px",
-                        color: "rgb(75, 85, 99)",
-                        textAlign: "center",
-                        lineHeight: "1.625",
-                      }}
-                      className="dark:text-neutral-400"
-                    >
+                    <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
                       This action cannot be undone.
                     </p>
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    flexShrink: 0,
-                    padding: "16px 24px 24px 24px",
-                    borderTop: "1px solid rgb(229, 231, 235)",
-                  }}
-                  className="dark:border-neutral-800"
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "12px",
-                      justifyContent: "center",
-                    }}
-                  >
+                <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800">
+                  <div className="flex gap-3 justify-center">
                     <button
                       onClick={() => setShowDeleteModal(false)}
-                      style={{
-                        padding: "8px 24px",
-                        borderRadius: "8px",
-                        backgroundColor: "rgb(243, 244, 246)",
-                        color: "rgb(55, 65, 81)",
-                        fontWeight: 500,
-                        fontSize: "14px",
-                        transition: "all 0.2s",
-                        cursor: "pointer",
-                        border: "none",
-                      }}
-                      className="hover:bg-gray-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+                      className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
                     >
                       Cancel
                     </button>
