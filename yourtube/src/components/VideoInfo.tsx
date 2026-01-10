@@ -1289,68 +1289,34 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         }}
       />
 
-      {/* Modal Container - DESKTOP */}
+     {/* Modal Container - DESKTOP */}
       <div
         className="hidden md:flex fixed inset-0 items-center justify-center p-4"
         style={{ zIndex: 2 }}
       >
         <div
-          className="relative bg-neutral-900 rounded-lg shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
+          className="relative bg-youtube-secondary dark:bg-neutral-900 rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200"
           onClick={(e) => e.stopPropagation()}
-         style={{
-  height: "auto",
-  maxHeight: "calc(100vh - 80px)",
-}}
-
         >
-          {/* Content - Scrollable */}
-<div
-  className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar"
-  style={{ minHeight: 0 }}
->
-     <div className="space-y-2">
-  <p className="text-sm text-neutral-300 leading-relaxed">
-    Are you sure you want to delete
-  </p>
-
-  <div className="max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
-    <p
-  className="text-sm font-semibold text-white leading-relaxed break-words"
-  style={{
-    overflowWrap: "anywhere",
-  }}
->
-  &quot;{video.videotitle}&quot;
-</p>
-
-  </div>
-
-  <p className="text-sm text-neutral-300 leading-relaxed">
-    This action cannot be undone.
-  </p>
-</div>
-
-          </div>
-
-          {/* Footer - ALWAYS VISIBLE */}
-<div className="sticky bottom-0 flex-shrink-0 px-6 pb-5 pt-3 border-t border-neutral-800 bg-neutral-900">
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded text-blue-500 hover:bg-neutral-800 font-medium text-sm transition-all min-h-[44px]"
-              >
-                Cancel
-              </button>
-              <DeleteVideoButton
-                videoId={video._id}
-                videoTitle={video.videotitle}
-                onDeleted={() => {
-                  setShowDeleteModal(false);
-                  handleVideoDeleted();
-                }}
-                variant="modal"
-              />
-            </div>
+          <p className="text-sm text-youtube-primary text-center">
+            Are you sure you want to delete &quot;{video.videotitle}&quot;? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
+            >
+              Cancel
+            </button>
+            <DeleteVideoButton
+              videoId={video._id}
+              videoTitle={video.videotitle}
+              onDeleted={() => {
+                setShowDeleteModal(false);
+                handleVideoDeleted();
+              }}
+              variant="modal"
+            />
           </div>
         </div>
       </div>
