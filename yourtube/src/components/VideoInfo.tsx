@@ -1309,14 +1309,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       </h3>
     </div>
 
-   {/* ========== CONTENT ========== */}
-    <div className="flex-1 overflow-y-auto px-8 py-8" style={{ minHeight: 0 }}>
-      <div className="space-y-5">
+{/* ========== CONTENT ========== */}
+    <div className="flex-1 overflow-y-auto px-8 pt-12 pb-6" style={{ minHeight: 0 }}>
+      <div className="space-y-6">
         <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
           Are you sure you want to delete
         </p>
         
-        <div className="max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
           <p
             className="text-base font-semibold text-gray-900 dark:text-white leading-relaxed text-center px-2"
             style={{
