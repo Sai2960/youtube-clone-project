@@ -1332,58 +1332,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   </div>
 </div>
 
-            {/* Modal Container - MOBILE ONLY */}
-            <div
-              className="md:hidden flex absolute inset-0 items-center justify-center p-4"
-              style={{ zIndex: 2 }}
-            >
-              <div
-                className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
-                    Delete Video?
-                  </h3>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-6 py-4">
-                  <div className="space-y-3">
-                    <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-                      Are you sure you want to delete
-                    </p>
-                    <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
-                        &quot;{video.videotitle}&quot;
-                      </p>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-                      This action cannot be undone.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800">
-                  <div className="flex gap-3 justify-center">
-                    <button
-                      onClick={() => setShowDeleteModal(false)}
-                      className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
-                    >
-                      Cancel
-                    </button>
-                    <DeleteVideoButton
-                      videoId={video._id}
-                      videoTitle={video.videotitle}
-                      onDeleted={() => {
-                        setShowDeleteModal(false);
-                        handleVideoDeleted();
-                      }}
-                      variant="modal"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+        
           </div>,
           document.body
         )}
@@ -1434,7 +1383,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         .dark .custom-scrollbar {
           scrollbar-color: rgba(156, 163, 175, 0.5) rgba(64, 64, 64, 0.3);
         }
-        
+
       `}</style>
     </div>
   );
