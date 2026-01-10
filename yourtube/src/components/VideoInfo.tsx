@@ -1295,59 +1295,48 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   style={{ zIndex: 2 }}
 >
   <div
-    className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden"
+    className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
     onClick={(e) => e.stopPropagation()}
-    style={{ 
-      width: "90%",
-      maxWidth: "520px",
-      maxHeight: "85vh", 
-      display: "flex", 
-      flexDirection: "column" 
-    }}
+    style={{ maxHeight: "85vh" }}
   >
-    {/* Header */}
-    <div className="flex-shrink-0 px-8 pt-8 pb-5 border-b border-gray-200 dark:border-neutral-800">
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center">
+    {/* Header with border */}
+    <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
         Delete Video?
       </h3>
     </div>
 
-    {/* Content - Scrollable if needed */}
-    <div 
-      className="flex-1 overflow-y-auto px-8 py-6" 
-      style={{ minHeight: "0" }}
-    >
-      <div className="space-y-5">
-        <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
-          Are you sure you want to delete this video?
+    {/* Content - Scrollable */}
+    <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="space-y-3">
+        <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
+          Are you sure you want to delete
         </p>
         
-        <div className="bg-gray-50 dark:bg-neutral-800/50 rounded-lg p-4 max-h-[180px] overflow-y-auto custom-scrollbar">
+        <div className="max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
           <p
-            className="text-base font-semibold text-gray-900 dark:text-white leading-relaxed text-center break-words"
+            className="text-sm font-semibold text-gray-900 dark:text-white leading-relaxed text-center"
             style={{
               overflowWrap: "anywhere",
               wordBreak: "break-word",
-              hyphens: "auto",
-              whiteSpace: "pre-wrap",
             }}
           >
             &quot;{video.videotitle}&quot;
           </p>
         </div>
 
-        <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed font-medium">
+        <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
           This action cannot be undone.
         </p>
       </div>
     </div>
 
-    {/* Footer with Buttons */}
-    <div className="flex-shrink-0 px-8 pb-8 pt-6 border-t border-gray-200 dark:border-neutral-800">
-      <div className="grid grid-cols-2 gap-4 w-full max-w-[320px] mx-auto">
+    {/* Footer with buttons - ALWAYS VISIBLE */}
+    <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className="flex gap-3 justify-center">
         <button
           onClick={() => setShowDeleteModal(false)}
-          className="px-6 py-3 rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-semibold text-base transition-all active:scale-95 whitespace-nowrap"
+          className="px-6 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-sm transition-all"
         >
           Cancel
         </button>
