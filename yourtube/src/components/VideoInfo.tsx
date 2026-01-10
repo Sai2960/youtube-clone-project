@@ -1257,36 +1257,24 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       )}
 
-  
-{/* Delete Confirmation Modal - COMPLETE REWRITE */}
-{/* Delete Confirmation Modal - FIXED */}
+  {/* Delete Confirmation Modal - FIXED FOR DESKTOP */}
 {showDeleteModal && (
   <>
     {/* Backdrop */}
     <div 
-      className="fixed inset-0 bg-black/70 z-[9998]"
+      className="fixed inset-0 bg-black/80 z-[9998]"
       onClick={() => setShowDeleteModal(false)}
     />
     
     {/* Modal Container */}
-    <div 
-      className="fixed inset-0 flex items-center justify-center p-4 z-[9999] pointer-events-none"
-    >
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-[9999]">
       {/* DESKTOP Modal */}
       <div 
-        className="hidden md:flex relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md flex-col border border-gray-200 dark:border-neutral-800 pointer-events-auto"
-        style={{ 
-          maxHeight: 'calc(100vh - 120px)',
-          backdropFilter: 'none',
-          WebkitBackdropFilter: 'none',
-          filter: 'none',
-          transform: 'translateZ(0)',
-          willChange: 'transform'
-        }}
+        className="hidden md:block relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-neutral-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 dark:border-neutral-800">
+        <div className="px-6 pt-5 pb-4 border-b border-gray-200 dark:border-neutral-800">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex-1 text-center">
               Delete Video?
@@ -1301,16 +1289,16 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5 custom-scrollbar">
+        {/* Content */}
+        <div className="px-6 py-5">
           <div className="space-y-4">
             <p className="text-base text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
               Are you sure you want to delete this video?
             </p>
             
-            <div className="max-h-[180px] overflow-y-auto px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 custom-scrollbar">
+            <div className="max-h-[180px] overflow-y-auto px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700">
               <p className="text-sm font-semibold text-gray-900 dark:text-white break-words leading-relaxed">
-                "{video.videotitle}"
+                &quot;{video.videotitle}&quot;
               </p>
             </div>
             
@@ -1321,7 +1309,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900">
+        <div className="px-6 pb-6 pt-4 border-t border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900">
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => setShowDeleteModal(false)}
@@ -1342,16 +1330,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       </div>
 
-      {/* MOBILE Modal */}
+      {/* MOBILE Modal - UNCHANGED */}
       <div 
-        className="md:hidden relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden pointer-events-auto"
-        style={{ 
-          backdropFilter: 'none',
-          WebkitBackdropFilter: 'none',
-          filter: 'none',
-          transform: 'translateZ(0)',
-          willChange: 'transform'
-        }}
+        className="md:hidden relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-neutral-800">
@@ -1360,12 +1341,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </h3>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="space-y-3">
             <p className="text-sm text-gray-600 dark:text-neutral-400 text-center leading-relaxed">
               Are you sure you want to delete
             </p>
-            <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg custom-scrollbar">
+            <div className="max-h-[200px] overflow-y-auto px-3 py-3 bg-gray-100 dark:bg-neutral-800 rounded-lg">
               <p className="text-sm font-semibold text-gray-900 dark:text-white text-center break-words leading-relaxed">
                 &quot;{video.videotitle}&quot;
               </p>
