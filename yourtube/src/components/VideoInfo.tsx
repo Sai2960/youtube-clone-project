@@ -1402,25 +1402,27 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
               </Button>
 
-              {/* Bell Button - Mobile & Desktop - Centered */}
+              {/* Bell Button - Mobile & Desktop - Perfectly Centered */}
               {isSubscribed && (
-                <button
-                  ref={bellButtonRef}
-                  type="button"
-                  onClick={handleBellClick}
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    handleBellClick(e);
-                  }}
-                  className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600"
-                  title="Notification preferences"
-                >
-                  {notificationPreference === "none" ? (
-                    <BellOff className="w-5 h-5 text-gray-700 dark:text-white" />
-                  ) : (
-                    <Bell className="w-5 h-5 text-gray-700 dark:text-white" />
-                  )}
-                </button>
+                <div className="flex items-center justify-center self-center">
+                  <button
+                    ref={bellButtonRef}
+                    type="button"
+                    onClick={handleBellClick}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      handleBellClick(e);
+                    }}
+                    className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600"
+                    title="Notification preferences"
+                  >
+                    {notificationPreference === "none" ? (
+                      <BellOff className="w-5 h-5 text-gray-700 dark:text-white" />
+                    ) : (
+                      <Bell className="w-5 h-5 text-gray-700 dark:text-white" />
+                    )}
+                  </button>
+                </div>
               )}
             </div>
           )}
