@@ -753,11 +753,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     const menuContent = (
       <>
         {/* Mobile Bottom Sheet */}
-        <div
-          className="md:hidden fixed inset-0"
-          style={{ zIndex: 999999 }}
-          onClick={(e) => e.stopPropagation()}
-        >
+       <div
+  className="md:hidden fixed inset-0 yt-notification-sheet"
+  style={{ zIndex: 999999 }}
+  onClick={(e) => e.stopPropagation()}
+>
+
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -824,7 +825,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`relative w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0  ${
                     notificationPreference === "all"
                       ? "bg-blue-100 dark:bg-blue-500/20"
                       : "bg-gray-100 dark:bg-neutral-700"
@@ -889,7 +890,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`relative w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0  ${
                     notificationPreference === "personalized"
                       ? "bg-blue-100 dark:bg-blue-500/20"
                       : "bg-gray-100 dark:bg-neutral-700"
@@ -954,7 +955,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`relative w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 
+                     ${
                     notificationPreference === "none"
                       ? "bg-blue-100 dark:bg-blue-500/20"
                       : "bg-gray-100 dark:bg-neutral-700"
