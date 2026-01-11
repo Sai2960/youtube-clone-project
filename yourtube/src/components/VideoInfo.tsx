@@ -746,7 +746,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     window.location.href = "/";
   };
 
-const NotificationMenu = () => {
+  // Notification Menu Component - Renders via Portal
+  const NotificationMenu = () => {
     if (!showSubscribeMenu || !portalMounted) return null;
 
     const menuContent = (
