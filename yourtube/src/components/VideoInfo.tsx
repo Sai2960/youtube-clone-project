@@ -751,7 +751,7 @@ const NotificationMenu = () => {
 
   const menuContent = (
     <>
-      {/* Mobile Bottom Sheet */}
+    {/* Mobile Bottom Sheet */}
       <div
         className="md:hidden fixed inset-0 yt-notification-sheet"
         style={{ zIndex: 999999 }}
@@ -781,7 +781,7 @@ const NotificationMenu = () => {
           </div>
 
           {/* Header */}
-          <div className="px-5 pb-5 pt-1 border-b border-gray-200 dark:border-neutral-700/50">
+          <div className="px-5 pb-5 pt-1 border-b border-gray-200 dark:border-neutral-700">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-[18px] font-semibold text-gray-900 dark:text-white">
                 Notifications
@@ -792,7 +792,7 @@ const NotificationMenu = () => {
                   e.preventDefault();
                   closeNotificationMenu();
                 }}
-                className="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700/50 transition-colors"
+                className="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
                 type="button"
               >
                 <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
@@ -803,7 +803,7 @@ const NotificationMenu = () => {
             </p>
           </div>
 
-          {/* Options Container - Fixed Spacing & Alignment */}
+          {/* Options Container */}
           <div className="py-5 px-5 space-y-3">
             {/* All Option */}
             <button
@@ -816,8 +816,8 @@ const NotificationMenu = () => {
               disabled={isUpdatingNotification}
               className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                 notificationPreference === "all"
-                  ? "bg-blue-50 dark:bg-blue-500/15 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
-                  : "bg-gray-50 dark:bg-neutral-800/80 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80"
+                  ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                  : "bg-gray-50 dark:bg-neutral-800 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700"
               } ${
                 isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
               }`}
@@ -866,8 +866,8 @@ const NotificationMenu = () => {
               disabled={isUpdatingNotification}
               className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                 notificationPreference === "personalized"
-                  ? "bg-blue-50 dark:bg-blue-500/15 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
-                  : "bg-gray-50 dark:bg-neutral-800/80 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80"
+                  ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                  : "bg-gray-50 dark:bg-neutral-800 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700"
               } ${
                 isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
               }`}
@@ -916,8 +916,8 @@ const NotificationMenu = () => {
               disabled={isUpdatingNotification}
               className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                 notificationPreference === "none"
-                  ? "bg-blue-50 dark:bg-blue-500/15 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
-                  : "bg-gray-50 dark:bg-neutral-800/80 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80"
+                  ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                  : "bg-gray-50 dark:bg-neutral-800 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700"
               } ${
                 isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
               }`}
@@ -957,7 +957,7 @@ const NotificationMenu = () => {
           </div>
 
           {/* Unsubscribe Section */}
-          <div className="border-t border-gray-200 dark:border-neutral-700/50 px-5 py-5">
+          <div className="border-t border-gray-200 dark:border-neutral-700 px-5 py-5">
             <button
               type="button"
               onClick={(e) => {
@@ -972,7 +972,7 @@ const NotificationMenu = () => {
                 closeNotificationMenu();
                 setTimeout(() => setShowUnsubscribeModal(true), 100);
               }}
-              className="w-full py-4 px-5 text-center text-red-600 dark:text-red-400 font-semibold text-[15px] rounded-2xl bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 active:bg-red-200 dark:active:bg-red-500/25 transition-all border-2 border-red-200 dark:border-red-500/30"
+              className="w-full py-4 px-5 text-center text-red-600 dark:text-red-400 font-semibold text-[15px] rounded-2xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 dark:active:bg-red-900/40 transition-all border-2 border-red-200 dark:border-red-800"
             >
               Unsubscribe
             </button>
