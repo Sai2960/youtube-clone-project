@@ -841,7 +841,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     All
                   </div>
                   <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-                    Get notified for every upload
                   </div>
                 </div>
                 {notificationPreference === "all" && (
@@ -894,7 +893,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     Personalized
                   </div>
 <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-                      Only occasional highlights
                   </div>
                 </div>
                 {notificationPreference === "personalized" && (
@@ -947,7 +945,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     None
                   </div>
                   <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-                    Don&apos;t notify me
                   </div>
                 </div>
                 {notificationPreference === "none" && (
