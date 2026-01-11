@@ -746,7 +746,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     window.location.href = "/";
   };
 
-  const NotificationMenu = () => {
+const NotificationMenu = () => {
   if (!showSubscribeMenu || !portalMounted) return null;
 
   const menuContent = (
@@ -771,7 +771,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#212121] rounded-t-3xl shadow-2xl overflow-hidden"
           style={{
             animation: "slideUpSheet 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-            maxHeight: "80vh",
+            maxHeight: "85vh",
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -781,9 +781,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
 
           {/* Header */}
-          <div className="px-5 pb-4 pt-1 border-b border-gray-200 dark:border-neutral-700/50">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white">
+          <div className="px-5 pb-5 pt-1 border-b border-gray-200 dark:border-neutral-700/50">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[18px] font-semibold text-gray-900 dark:text-white">
                 Notifications
               </h3>
               <button
@@ -798,13 +798,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               </button>
             </div>
-            <p className="text-[13px] text-gray-500 dark:text-gray-400">
+            <p className="text-[14px] text-gray-500 dark:text-gray-400">
               Choose how often you want to be notified
             </p>
           </div>
 
-          {/* Options Container - Fixed Alignment */}
-          <div className="py-3 px-4">
+          {/* Options Container - Fixed Spacing & Alignment */}
+          <div className="py-5 px-5 space-y-3">
             {/* All Option */}
             <button
               type="button"
@@ -814,43 +814,45 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 handleNotificationChange("all");
               }}
               disabled={isUpdatingNotification}
-              className={`w-full px-4 py-4 flex items-center justify-center gap-3 rounded-xl transition-all mb-2 ${
+              className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                 notificationPreference === "all"
-                  ? "bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-500 dark:border-blue-400"
-                  : "bg-gray-50 dark:bg-neutral-800 border-2 border-transparent hover:bg-gray-100 dark:hover:bg-neutral-700"
+                  ? "bg-blue-50 dark:bg-blue-500/15 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                  : "bg-gray-50 dark:bg-neutral-800/80 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80"
               } ${
                 isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
-              <Bell
-                className={`w-5 h-5 flex-shrink-0 ${
-                  notificationPreference === "all"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }`}
-              />
-              <span
-                className={`font-medium text-[15px] ${
-                  notificationPreference === "all"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-900 dark:text-white"
-                }`}
-              >
-                All
-              </span>
-              {notificationPreference === "all" && (
-                <svg
-                  className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-auto"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+              <div className="flex items-center gap-3">
+                <Bell
+                  className={`w-5 h-5 ${
+                    notificationPreference === "all"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`font-semibold text-[15px] ${
+                    notificationPreference === "all"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-900 dark:text-white"
+                  }`}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
+                  All
+                </span>
+                {notificationPreference === "all" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </div>
             </button>
 
             {/* Personalized Option */}
@@ -862,43 +864,45 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 handleNotificationChange("personalized");
               }}
               disabled={isUpdatingNotification}
-              className={`w-full px-4 py-4 flex items-center justify-center gap-3 rounded-xl transition-all mb-2 ${
+              className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                 notificationPreference === "personalized"
-                  ? "bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-500 dark:border-blue-400"
-                  : "bg-gray-50 dark:bg-neutral-800 border-2 border-transparent hover:bg-gray-100 dark:hover:bg-neutral-700"
+                  ? "bg-blue-50 dark:bg-blue-500/15 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                  : "bg-gray-50 dark:bg-neutral-800/80 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80"
               } ${
                 isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
-              <Bell
-                className={`w-5 h-5 flex-shrink-0 ${
-                  notificationPreference === "personalized"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }`}
-              />
-              <span
-                className={`font-medium text-[15px] ${
-                  notificationPreference === "personalized"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-900 dark:text-white"
-                }`}
-              >
-                Personalized
-              </span>
-              {notificationPreference === "personalized" && (
-                <svg
-                  className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-auto"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+              <div className="flex items-center gap-3">
+                <Bell
+                  className={`w-5 h-5 ${
+                    notificationPreference === "personalized"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`font-semibold text-[15px] ${
+                    notificationPreference === "personalized"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-900 dark:text-white"
+                  }`}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
+                  Personalized
+                </span>
+                {notificationPreference === "personalized" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </div>
             </button>
 
             {/* None Option */}
@@ -910,48 +914,50 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 handleNotificationChange("none");
               }}
               disabled={isUpdatingNotification}
-              className={`w-full px-4 py-4 flex items-center justify-center gap-3 rounded-xl transition-all ${
+              className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                 notificationPreference === "none"
-                  ? "bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-500 dark:border-blue-400"
-                  : "bg-gray-50 dark:bg-neutral-800 border-2 border-transparent hover:bg-gray-100 dark:hover:bg-neutral-700"
+                  ? "bg-blue-50 dark:bg-blue-500/15 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                  : "bg-gray-50 dark:bg-neutral-800/80 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80"
               } ${
                 isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
-              <BellOff
-                className={`w-5 h-5 flex-shrink-0 ${
-                  notificationPreference === "none"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }`}
-              />
-              <span
-                className={`font-medium text-[15px] ${
-                  notificationPreference === "none"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-900 dark:text-white"
-                }`}
-              >
-                None
-              </span>
-              {notificationPreference === "none" && (
-                <svg
-                  className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-auto"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+              <div className="flex items-center gap-3">
+                <BellOff
+                  className={`w-5 h-5 ${
+                    notificationPreference === "none"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`font-semibold text-[15px] ${
+                    notificationPreference === "none"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-900 dark:text-white"
+                  }`}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
+                  None
+                </span>
+                {notificationPreference === "none" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </div>
             </button>
           </div>
 
-           {/* Unsubscribe Section */}
-          <div className="border-t border-gray-200 dark:border-neutral-700/50 px-4 py-4">
+          {/* Unsubscribe Section */}
+          <div className="border-t border-gray-200 dark:border-neutral-700/50 px-5 py-5">
             <button
               type="button"
               onClick={(e) => {
@@ -966,7 +972,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 closeNotificationMenu();
                 setTimeout(() => setShowUnsubscribeModal(true), 100);
               }}
-              className="w-full py-3.5 px-5 text-center text-red-600 dark:text-red-400 font-semibold text-[15px] rounded-xl bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 active:bg-red-200 dark:active:bg-red-500/25 transition-all border border-red-200 dark:border-red-500/30"
+              className="w-full py-4 px-5 text-center text-red-600 dark:text-red-400 font-semibold text-[15px] rounded-2xl bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 active:bg-red-200 dark:active:bg-red-500/25 transition-all border-2 border-red-200 dark:border-red-500/30"
             >
               Unsubscribe
             </button>
@@ -979,6 +985,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           />
         </div>
       </div>
+
       {/* Desktop Dropdown - UNCHANGED */}
       <div
         className="hidden md:block fixed inset-0"
@@ -1175,6 +1182,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
   return ReactDOM.createPortal(menuContent, document.body);
 };
+
 
   return (
     <div className="w-full space-y-0 overflow-x-hidden bg-white dark:bg-[#0f0f0f]">
