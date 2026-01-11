@@ -816,7 +816,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 disabled={isUpdatingNotification}
                 className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                   notificationPreference === "all"
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                    ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
                     : "bg-white dark:bg-neutral-800 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
@@ -866,7 +866,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 disabled={isUpdatingNotification}
                 className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                   notificationPreference === "personalized"
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                    ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
                     : "bg-white dark:bg-neutral-800 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
@@ -916,7 +916,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 disabled={isUpdatingNotification}
                 className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
                   notificationPreference === "none"
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
+                    ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
                     : "bg-white dark:bg-neutral-800 border-2 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
