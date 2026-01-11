@@ -803,7 +803,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </p>
             </div>
 
-          {/* Options Container - FIXED FOR DARK MODE */}
+          {/* Options Container - FIXED FOR BOTH LIGHT AND DARK MODE - MOBILE ONLY */}
 <div className="py-5 px-5 space-y-3">
   {/* All Option */}
   <button
@@ -814,10 +814,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       handleNotificationChange("all");
     }}
     disabled={isUpdatingNotification}
-    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
+    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
       notificationPreference === "all"
-        ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
-        : "bg-gray-100 dark:bg-[#272727] border-2 border-gray-200 dark:border-[#404040] hover:bg-gray-200 dark:hover:bg-[#323232]"
+        ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
+        : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -826,22 +826,22 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       <Bell
         className={`w-5 h-5 ${
           notificationPreference === "all"
-            ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-600 dark:text-[#aaaaaa]"
+            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+            : "text-[#606060] dark:text-[#aaaaaa]"
         }`}
       />
       <span
         className={`font-semibold text-[15px] ${
           notificationPreference === "all"
-            ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-900 dark:text-[#e5e5e5]"
+            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+            : "text-[#0f0f0f] dark:text-[#f1f1f1]"
         }`}
       >
         All
       </span>
       {notificationPreference === "all" && (
         <svg
-          className="w-5 h-5 text-blue-600 dark:text-blue-400"
+          className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -864,10 +864,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       handleNotificationChange("personalized");
     }}
     disabled={isUpdatingNotification}
-    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
+    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
       notificationPreference === "personalized"
-        ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
-        : "bg-gray-100 dark:bg-[#272727] border-2 border-gray-200 dark:border-[#404040] hover:bg-gray-200 dark:hover:bg-[#323232]"
+        ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
+        : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -876,22 +876,22 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       <Bell
         className={`w-5 h-5 ${
           notificationPreference === "personalized"
-            ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-600 dark:text-[#aaaaaa]"
+            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+            : "text-[#606060] dark:text-[#aaaaaa]"
         }`}
       />
       <span
         className={`font-semibold text-[15px] ${
           notificationPreference === "personalized"
-            ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-900 dark:text-[#e5e5e5]"
+            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+            : "text-[#0f0f0f] dark:text-[#f1f1f1]"
         }`}
       >
         Personalized
       </span>
       {notificationPreference === "personalized" && (
         <svg
-          className="w-5 h-5 text-blue-600 dark:text-blue-400"
+          className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -914,10 +914,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       handleNotificationChange("none");
     }}
     disabled={isUpdatingNotification}
-    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
+    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
       notificationPreference === "none"
-        ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
-        : "bg-gray-100 dark:bg-[#272727] border-2 border-gray-200 dark:border-[#404040] hover:bg-gray-200 dark:hover:bg-[#323232]"
+        ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
+        : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -926,22 +926,22 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       <BellOff
         className={`w-5 h-5 ${
           notificationPreference === "none"
-            ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-600 dark:text-[#aaaaaa]"
+            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+            : "text-[#606060] dark:text-[#aaaaaa]"
         }`}
       />
       <span
         className={`font-semibold text-[15px] ${
           notificationPreference === "none"
-            ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-900 dark:text-[#e5e5e5]"
+            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+            : "text-[#0f0f0f] dark:text-[#f1f1f1]"
         }`}
       >
         None
       </span>
       {notificationPreference === "none" && (
         <svg
-          className="w-5 h-5 text-blue-600 dark:text-blue-400"
+          className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
