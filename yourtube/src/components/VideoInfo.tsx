@@ -782,10 +782,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               <div className="w-10 h-1 bg-gray-300 dark:bg-neutral-600 rounded-full" />
             </div>
 
-            {/* Header */}
-            <div className="px-5 pb-3 border-b border-gray-200 dark:border-neutral-700/50">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white">
+           {/* Header */}
+            <div className="px-6 pb-4 pt-2 border-b border-gray-200 dark:border-neutral-700/50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[18px] font-semibold text-gray-900 dark:text-white">
                   Notifications
                 </h3>
                 <button
@@ -805,8 +805,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </p>
             </div>
 
-   {/* Options Container with proper spacing */}
-<div className="py-2 px-4 space-y-0">
+  {/* Options Container with proper spacing */}
+<div className="py-3 px-5 space-y-2">
   {/* All Option */}
   <button
     type="button"
@@ -816,7 +816,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       handleNotificationChange("all");
     }}
     disabled={isUpdatingNotification}
-    className={`w-full px-4 py-3 flex items-center gap-3.5 rounded-lg transition-all ${
+    className={`w-full px-5 py-4 flex items-center gap-4 rounded-xl transition-all ${
       notificationPreference === "all"
         ? "bg-blue-50 dark:bg-blue-900/20"
         : "bg-transparent hover:bg-gray-100 dark:hover:bg-neutral-800"
@@ -867,8 +867,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       handleNotificationChange("personalized");
     }}
     disabled={isUpdatingNotification}
-    className={`w-full px-4 py-3 flex items-center gap-3.5 rounded-lg transition-all ${
-      notificationPreference === "personalized"
+className={`w-full px-5 py-4 flex items-center gap-4 rounded-xl transition-all ${
+        notificationPreference === "personalized"
         ? "bg-blue-50 dark:bg-blue-900/20"
         : "bg-transparent hover:bg-gray-100 dark:hover:bg-neutral-800"
     } ${
@@ -882,16 +882,16 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           : "text-gray-600 dark:text-gray-400"
       }`}
     />
-    <div className="flex-1 text-left min-w-0">
-      <div className={`font-medium text-[15px] ${
+  <div className="flex-1 text-left min-w-0">
+      <div className={`font-semibold text-[16px] ${
         notificationPreference === "personalized"
           ? "text-blue-600 dark:text-blue-400"
           : "text-gray-900 dark:text-white"
       }`}>
         Personalized
       </div>
-      <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-        Only occasional highlights
+<div className="text-[13px] text-gray-500 dark:text-gray-400 leading-snug mt-1">
+          Only occasional highlights
       </div>
     </div>
     {notificationPreference === "personalized" && (
@@ -918,8 +918,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       handleNotificationChange("none");
     }}
     disabled={isUpdatingNotification}
-    className={`w-full px-4 py-3 flex items-center gap-3.5 rounded-lg transition-all ${
-      notificationPreference === "none"
+className={`w-full px-5 py-4 flex items-center gap-4 rounded-xl transition-all ${
+        notificationPreference === "none"
         ? "bg-blue-50 dark:bg-blue-900/20"
         : "bg-transparent hover:bg-gray-100 dark:hover:bg-neutral-800"
     } ${
@@ -962,7 +962,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 </div>
 
 {/* Unsubscribe Section */}
-<div className="border-t border-gray-200 dark:border-neutral-700/50 px-4 py-3">
+<div className="border-t border-gray-200 dark:border-neutral-700/50 px-5 py-4 mt-2">
   <button
     type="button"
     onClick={(e) => {
@@ -977,7 +977,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       closeNotificationMenu();
       setTimeout(() => setShowUnsubscribeModal(true), 100);
     }}
-    className="w-full py-2.5 px-4 text-center text-red-600 dark:text-red-400 font-semibold text-[14px] rounded-xl bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 active:bg-red-200 dark:active:bg-red-500/25 transition-all"
+className="w-full py-3.5 px-5 text-center text-red-600 dark:text-red-400 font-bold text-[15px] rounded-xl bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 active:bg-red-200 dark:active:bg-red-500/25 transition-all"
   >
     Unsubscribe
   </button>
