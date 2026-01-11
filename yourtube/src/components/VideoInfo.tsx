@@ -808,7 +808,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
   {/* Options Container with proper spacing */}
 <div className="py-3 px-5 space-y-2">
   {/* All Option */}
-  <button
+<button
     type="button"
     onClick={(e) => {
       e.preventDefault();
@@ -816,10 +816,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       handleNotificationChange("all");
     }}
     disabled={isUpdatingNotification}
-    className={`w-full px-5 py-4 flex items-center gap-4 rounded-xl transition-all ${
-      notificationPreference === "all"
+  className={`w-full px-5 py-4 flex items-center gap-4 rounded-xl transition-all ${
+        notificationPreference === "none"
         ? "bg-blue-50 dark:bg-blue-900/20"
-        : "bg-transparent hover:bg-gray-100 dark:hover:bg-neutral-800"
+        : "hover:bg-gray-100 dark:hover:bg-neutral-800"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
