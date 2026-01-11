@@ -830,9 +830,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-                <div className="flex-1 text-left min-w-0">
+               <div className="flex-1 text-left min-w-0">
                   <div
-                    className={`font-medium text-[15px] ${
+                    className={`font-semibold text-[15px] ${
                       notificationPreference === "all"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -883,9 +883,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-                <div className="flex-1 text-left min-w-0">
+              <div className="flex-1 text-left min-w-0">
                   <div
-                    className={`font-semibold text-[16px] ${
+                    className={`font-semibold text-[15px] ${
                       notificationPreference === "personalized"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -893,8 +893,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   >
                     Personalized
                   </div>
-                  <div className="text-[13px] text-gray-500 dark:text-gray-400 leading-snug mt-1">
-                    Only occasional highlights
+<div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+                      Only occasional highlights
                   </div>
                 </div>
                 {notificationPreference === "personalized" && (
@@ -936,9 +936,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-                <div className="flex-1 text-left min-w-0">
+              <div className="flex-1 text-left min-w-0">
                   <div
-                    className={`font-medium text-[15px] ${
+                    className={`font-semibold text-[15px] ${
                       notificationPreference === "none"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
