@@ -830,19 +830,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-               <div className="flex-1 text-left min-w-0">
-                  <div
-                    className={`font-semibold text-[15px] ${
-                      notificationPreference === "all"
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-900 dark:text-white"
-                    }`}
-                  >
-                    All
-                  </div>
-                  <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-                  </div>
-                </div>
+             <div className="flex-1 text-left min-w-0">
+  <div
+    className={`font-medium text-[15px] ${
+      notificationPreference === "all"
+        ? "text-blue-600 dark:text-blue-400"
+        : "text-gray-900 dark:text-white"
+    }`}
+  >
+    All
+  </div>
+</div>
                 {notificationPreference === "all" && (
                   <svg
                     className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0"
@@ -882,19 +880,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-              <div className="flex-1 text-left min-w-0">
-                  <div
-                    className={`font-semibold text-[15px] ${
-                      notificationPreference === "personalized"
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-900 dark:text-white"
-                    }`}
-                  >
-                    Personalized
-                  </div>
-<div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-                  </div>
-                </div>
+            <div className="flex-1 text-left min-w-0">
+  <div
+    className={`font-medium text-[15px] ${
+      notificationPreference === "personalized"
+        ? "text-blue-600 dark:text-blue-400"
+        : "text-gray-900 dark:text-white"
+    }`}
+  >
+    Personalized
+  </div>
+</div>
                 {notificationPreference === "personalized" && (
                   <svg
                     className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0"
@@ -934,19 +930,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-              <div className="flex-1 text-left min-w-0">
-                  <div
-                    className={`font-semibold text-[15px] ${
-                      notificationPreference === "none"
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-900 dark:text-white"
-                    }`}
-                  >
-                    None
-                  </div>
-                  <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-                  </div>
-                </div>
+          <div className="flex-1 text-left min-w-0">
+  <div
+    className={`font-medium text-[15px] ${
+      notificationPreference === "none"
+        ? "text-blue-600 dark:text-blue-400"
+        : "text-gray-900 dark:text-white"
+    }`}
+  >
+    None
+  </div>
+</div>
                 {notificationPreference === "none" && (
                   <svg
                     className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0"
