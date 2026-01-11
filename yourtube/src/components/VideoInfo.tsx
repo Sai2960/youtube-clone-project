@@ -746,8 +746,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     window.location.href = "/";
   };
 
-  // Notification Menu Component - Renders via Portal
-  const NotificationMenu = () => {
+const NotificationMenu = () => {
     if (!showSubscribeMenu || !portalMounted) return null;
 
     const menuContent = (
@@ -805,7 +804,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
 
             {/* Options Container with proper spacing */}
-<div className="py-2 px-4 space-y-2">
+            <div className="py-3 px-3 space-y-2">
               {/* All Option */}
               <button
                 type="button"
@@ -815,7 +814,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("all");
                 }}
                 disabled={isUpdatingNotification}
-className={`w-full px-4 py-3 flex items-center gap-3 rounded-xl transition-all ${
+                className={`w-full px-4 py-3.5 flex items-center gap-3.5 rounded-xl transition-all ${
                   notificationPreference === "all"
                     ? "bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-500 dark:ring-blue-400"
                     : "bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 active:bg-gray-200 dark:active:bg-neutral-700"
@@ -824,7 +823,7 @@ className={`w-full px-4 py-3 flex items-center gap-3 rounded-xl transition-all $
                 }`}
               >
                 <div
-className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                     notificationPreference === "all"
                       ? "bg-blue-100 dark:bg-blue-500/20"
                       : "bg-gray-100 dark:bg-neutral-700"
@@ -840,7 +839,7 @@ className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <div
-className={`font-semibold text-[14px] ${
+                    className={`font-semibold text-[15px] ${
                       notificationPreference === "all"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-900 dark:text-white"
@@ -848,14 +847,14 @@ className={`font-semibold text-[14px] ${
                   >
                     All
                   </div>
-<div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+                  <div className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
                     Get notified for every upload
                   </div>
                 </div>
                 {notificationPreference === "all" && (
-<div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
-                   <svg className="w-3 h-3 text-white"
-
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-3.5 h-3.5 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -1003,7 +1002,7 @@ className={`font-semibold text-[14px] ${
             </div>
 
             {/* Unsubscribe Section */}
-<div className="border-t border-gray-200 dark:border-neutral-700/50 px-4 py-3">
+            <div className="border-t border-gray-200 dark:border-neutral-700/50 px-3 py-4">
               <button
                 type="button"
                 onClick={(e) => {
