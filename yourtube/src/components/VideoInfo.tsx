@@ -1112,6 +1112,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
               </button>
 
+              {/* Personalized Option */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -1120,29 +1121,40 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("personalized");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                className={`w-full px-4 py-4 flex flex-row items-center rounded-2xl transition-all ${
                   notificationPreference === "personalized"
-                    ? "bg-blue-50 dark:bg-blue-900/20"
-                    : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                    ? "bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-500 dark:ring-blue-400"
+                    : "bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 active:bg-gray-200 dark:active:bg-neutral-700"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 mr-4 ${
+                    notificationPreference === "personalized"
+                      ? "bg-blue-100 dark:bg-blue-500/20"
+                      : "bg-gray-100 dark:bg-neutral-700"
+                  }`}
+                ></div>
                 <Bell
-                  className={`w-5 h-5 flex-shrink-0 ${
+                  className={`w-5 h-5 ${
                     notificationPreference === "personalized"
                       ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 dark:text-gray-400"
+                      : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
+
                 <span
-                  className={`flex-1 text-left text-sm ${
+                  className={`font-semibold text-[16px] ${
                     notificationPreference === "personalized"
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-gray-700 dark:text-gray-300"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-900 dark:text-white"
                   }`}
                 >
                   Personalized
+                  <div className="text-[14px] text-gray-500 dark:text-gray-400 leading-snug mt-1">
+                    Only occasional highlights
+                  </div>
                 </span>
                 {notificationPreference === "personalized" && (
                   <svg
