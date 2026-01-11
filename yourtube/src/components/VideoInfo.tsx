@@ -805,8 +805,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </p>
             </div>
 
-    {/* Options Container with proper spacing */}
-<div className="py-2 px-4 space-y-2.5">
+   {/* Options Container with proper spacing */}
+<div className="py-3 px-4 space-y-1">
   {/* All Option */}
   <button
     type="button"
@@ -816,10 +816,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       handleNotificationChange("all");
     }}
     disabled={isUpdatingNotification}
-    className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
+    className={`w-full px-4 py-3 flex items-center gap-3 rounded-xl transition-all ${
       notificationPreference === "all"
         ? "bg-blue-50 dark:bg-blue-500/10"
-        : "bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-700"
+        : "bg-transparent"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -832,7 +832,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       }`}
     >
       <Bell
-        className={`w-5 h-5 ${
+        className={`w-[18px] h-[18px] ${
           notificationPreference === "all"
             ? "text-white"
             : "text-gray-600 dark:text-gray-300"
@@ -840,17 +840,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       />
     </div>
     <div className="flex-1 text-left min-w-0">
-      <div className="font-semibold text-[15px] text-gray-900 dark:text-white">
+      <div className="font-medium text-[15px] text-gray-900 dark:text-white">
         All
       </div>
-      <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+      <div className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
         Get notified for every upload
       </div>
     </div>
     {notificationPreference === "all" && (
-      <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+      <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
         <svg
-          className="w-3.5 h-3.5 text-white"
+          className="w-3 h-3 text-white"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -866,127 +866,127 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     )}
   </button>
 
-{/* Personalized Option */}
-<button
-  type="button"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    handleNotificationChange("personalized");
-  }}
-  disabled={isUpdatingNotification}
-  className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
-    notificationPreference === "personalized"
-      ? "bg-blue-50 dark:bg-blue-500/10"
-      : "bg-transparent"
-  } ${
-    isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
-  }`}
->
-  <div
-    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+  {/* Personalized Option */}
+  <button
+    type="button"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleNotificationChange("personalized");
+    }}
+    disabled={isUpdatingNotification}
+    className={`w-full px-4 py-3 flex items-center gap-3 rounded-xl transition-all ${
       notificationPreference === "personalized"
-        ? "bg-blue-500 dark:bg-blue-500"
-        : "bg-gray-200 dark:bg-neutral-700"
+        ? "bg-blue-50 dark:bg-blue-500/10"
+        : "bg-transparent"
+    } ${
+      isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
   >
-    <Bell
-      className={`w-5 h-5 ${
+    <div
+      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
         notificationPreference === "personalized"
-          ? "text-white"
-          : "text-gray-600 dark:text-gray-300"
+          ? "bg-blue-500 dark:bg-blue-500"
+          : "bg-gray-200 dark:bg-neutral-700"
       }`}
-    />
-  </div>
-  <div className="flex-1 text-left min-w-0">
-    <div className="font-semibold text-[15px] text-gray-900 dark:text-white">
-      Personalized
+    >
+      <Bell
+        className={`w-[18px] h-[18px] ${
+          notificationPreference === "personalized"
+            ? "text-white"
+            : "text-gray-600 dark:text-gray-300"
+        }`}
+      />
     </div>
-    <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-      Only occasional highlights
+    <div className="flex-1 text-left min-w-0">
+      <div className="font-medium text-[15px] text-gray-900 dark:text-white">
+        Personalized
+      </div>
+      <div className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+        Only occasional highlights
+      </div>
     </div>
-  </div>
-  {notificationPreference === "personalized" && (
-    <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
-      <svg
-        className="w-3.5 h-3.5 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={3}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M5 13l4 4L19 7"
-        />
-      </svg>
-    </div>
-  )}
-</button>
+    {notificationPreference === "personalized" && (
+      <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+        <svg
+          className="w-3 h-3 text-white"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={3}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+      </div>
+    )}
+  </button>
 
   {/* None Option */}
-<button
-  type="button"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    handleNotificationChange("none");
-  }}
-  disabled={isUpdatingNotification}
-  className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
-    notificationPreference === "none"
-      ? "bg-blue-50 dark:bg-blue-500/10"
-      : "bg-transparent"
-  } ${
-    isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
-  }`}
->
-  <div
-    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+  <button
+    type="button"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleNotificationChange("none");
+    }}
+    disabled={isUpdatingNotification}
+    className={`w-full px-4 py-3 flex items-center gap-3 rounded-xl transition-all ${
       notificationPreference === "none"
-        ? "bg-blue-500 dark:bg-blue-500"
-        : "bg-gray-200 dark:bg-neutral-700"
+        ? "bg-blue-50 dark:bg-blue-500/10"
+        : "bg-transparent"
+    } ${
+      isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
   >
-    <BellOff
-      className={`w-5 h-5 ${
+    <div
+      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
         notificationPreference === "none"
-          ? "text-white"
-          : "text-gray-600 dark:text-gray-300"
+          ? "bg-blue-500 dark:bg-blue-500"
+          : "bg-gray-200 dark:bg-neutral-700"
       }`}
-    />
-  </div>
-  <div className="flex-1 text-left min-w-0">
-    <div className="font-semibold text-[15px] text-gray-900 dark:text-white">
-      None
+    >
+      <BellOff
+        className={`w-[18px] h-[18px] ${
+          notificationPreference === "none"
+            ? "text-white"
+            : "text-gray-600 dark:text-gray-300"
+        }`}
+      />
     </div>
-    <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-      Don&apos;t notify me
+    <div className="flex-1 text-left min-w-0">
+      <div className="font-medium text-[15px] text-gray-900 dark:text-white">
+        None
+      </div>
+      <div className="text-[13px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+        Don&apos;t notify me
+      </div>
     </div>
-  </div>
-  {notificationPreference === "none" && (
-    <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
-      <svg
-        className="w-3.5 h-3.5 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={3}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M5 13l4 4L19 7"
-        />
-      </svg>
-    </div>
-  )}
-</button>
+    {notificationPreference === "none" && (
+      <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+        <svg
+          className="w-3 h-3 text-white"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={3}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+      </div>
+    )}
+  </button>
 </div>
 
 {/* Unsubscribe Section */}
-<div className="border-t border-gray-200 dark:border-neutral-700/50 px-4 py-3 mt-2">
+<div className="border-t border-gray-200 dark:border-neutral-700/50 px-4 py-3 mt-1">
   <button
     type="button"
     onClick={(e) => {
