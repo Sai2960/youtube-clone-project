@@ -1272,18 +1272,21 @@ export default function CompleteVideoPlayer({
                   </button>
 
                   <div
-                    className={`hidden md:flex items-center transition-all duration-300 ${
-                      showVolumeSlider ? "w-28 opacity-100" : "w-0 opacity-0"
+                    className={`hidden md:flex items-center transition-all duration-200 ${
+                      showVolumeSlider ? "w-16 opacity-100" : "w-0 opacity-0"
                     }`}
                   >
-                    <div className="relative w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                      {/* Volume fill indicator */}
+                    <div className="relative w-full h-1 group/slider">
+                      {/* Background track */}
+                      <div className="absolute inset-0 bg-white/30 rounded-full" />
+
+                      {/* Filled volume bar */}
                       <div
-                        className="absolute left-0 top-0 h-full bg-gradient-to-r from-white to-white/90 rounded-full transition-all duration-150"
+                        className="absolute left-0 top-0 h-full bg-white rounded-full transition-all duration-100"
                         style={{ width: `${volume * 100}%` }}
                       />
 
-                      {/* Actual range input */}
+                      {/* Volume slider input */}
                       <input
                         type="range"
                         min="0"
@@ -1293,27 +1296,23 @@ export default function CompleteVideoPlayer({
                         onChange={handleVolumeChange}
                         className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer z-10
                         [&::-webkit-slider-thumb]:appearance-none 
-                        [&::-webkit-slider-thumb]:w-3.5 
-                        [&::-webkit-slider-thumb]:h-3.5 
+                        [&::-webkit-slider-thumb]:w-3 
+                        [&::-webkit-slider-thumb]:h-3 
                         [&::-webkit-slider-thumb]:rounded-full 
                         [&::-webkit-slider-thumb]:bg-white
                         [&::-webkit-slider-thumb]:cursor-pointer 
-                        [&::-webkit-slider-thumb]:shadow-lg
                         [&::-webkit-slider-thumb]:transition-transform
-                        [&::-webkit-slider-thumb]:duration-150
-                        [&::-webkit-slider-thumb]:hover:scale-125
-                        [&::-webkit-slider-thumb]:active:scale-110
-                        [&::-moz-range-thumb]:w-3.5 
-                        [&::-moz-range-thumb]:h-3.5 
+                        [&::-webkit-slider-thumb]:duration-100
+                        [&::-webkit-slider-thumb]:hover:scale-110
+                        [&::-moz-range-thumb]:w-3 
+                        [&::-moz-range-thumb]:h-3 
                         [&::-moz-range-thumb]:rounded-full 
                         [&::-moz-range-thumb]:bg-white
                         [&::-moz-range-thumb]:border-0
                         [&::-moz-range-thumb]:cursor-pointer 
-                        [&::-moz-range-thumb]:shadow-lg
                         [&::-moz-range-thumb]:transition-transform
-                        [&::-moz-range-thumb]:duration-150
-                        [&::-moz-range-thumb]:hover:scale-125
-                        [&::-moz-range-thumb]:active:scale-110"
+                        [&::-moz-range-thumb]:duration-100
+                        [&::-moz-range-thumb]:hover:scale-110"
                       />
                     </div>
                   </div>
