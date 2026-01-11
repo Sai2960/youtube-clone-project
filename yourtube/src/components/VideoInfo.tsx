@@ -805,7 +805,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </p>
             </div>
 
-       {/* Options Container with proper spacing */}
+    {/* Options Container with proper spacing */}
 <div className="py-2 px-4 space-y-2.5">
   {/* All Option */}
   <button
@@ -819,7 +819,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
       notificationPreference === "all"
         ? "bg-blue-50 dark:bg-blue-500/10"
-        : "bg-transparent active:bg-gray-100 dark:active:bg-neutral-700"
+        : "bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-700"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -866,7 +866,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     )}
   </button>
 
-  {/* Personalized Option */}
+ {/* Personalized Option */}
   <button
     type="button"
     onClick={(e) => {
@@ -878,7 +878,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
       notificationPreference === "personalized"
         ? "bg-blue-50 dark:bg-blue-500/10"
-        : "bg-transparent active:bg-gray-100 dark:active:bg-neutral-700"
+        : "bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-700"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -937,7 +937,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
       notificationPreference === "none"
         ? "bg-blue-50 dark:bg-blue-500/10"
-        : "bg-transparent active:bg-gray-100 dark:active:bg-neutral-700"
+        : "bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-700"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
