@@ -746,7 +746,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     window.location.href = "/";
   };
 
-const NotificationMenu = () => {
+  const NotificationMenu = () => {
     if (!showSubscribeMenu || !portalMounted) return null;
 
     const menuContent = (
@@ -814,7 +814,7 @@ const NotificationMenu = () => {
                   handleNotificationChange("all");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3.5 flex items-center gap-3.5 rounded-xl transition-all ${
+                className={`w-full px-4 py-3.5 flex flex-row items-center rounded-xl transition-all ${
                   notificationPreference === "all"
                     ? "bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-500 dark:ring-blue-400"
                     : "bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 active:bg-gray-200 dark:active:bg-neutral-700"
@@ -823,7 +823,7 @@ const NotificationMenu = () => {
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mr-3.5 ${
                     notificationPreference === "all"
                       ? "bg-blue-100 dark:bg-blue-500/20"
                       : "bg-gray-100 dark:bg-neutral-700"
@@ -837,7 +837,7 @@ const NotificationMenu = () => {
                     }`}
                   />
                 </div>
-                <div className="flex-1 text-left min-w-0">
+                <div className="flex-1 text-left">
                   <div
                     className={`font-semibold text-[15px] ${
                       notificationPreference === "all"
@@ -852,7 +852,7 @@ const NotificationMenu = () => {
                   </div>
                 </div>
                 {notificationPreference === "all" && (
-                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0 ml-3">
                     <svg
                       className="w-3.5 h-3.5 text-white"
                       fill="none"
@@ -879,7 +879,7 @@ const NotificationMenu = () => {
                   handleNotificationChange("personalized");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3.5 flex items-center gap-3.5 rounded-xl transition-all ${
+                className={`w-full px-4 py-3.5 flex flex-row items-center rounded-xl transition-all ${
                   notificationPreference === "personalized"
                     ? "bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-500 dark:ring-blue-400"
                     : "bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 active:bg-gray-200 dark:active:bg-neutral-700"
@@ -888,7 +888,7 @@ const NotificationMenu = () => {
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mr-3.5 ${
                     notificationPreference === "personalized"
                       ? "bg-blue-100 dark:bg-blue-500/20"
                       : "bg-gray-100 dark:bg-neutral-700"
@@ -902,7 +902,7 @@ const NotificationMenu = () => {
                     }`}
                   />
                 </div>
-                <div className="flex-1 text-left min-w-0">
+                <div className="flex-1 text-left">
                   <div
                     className={`font-semibold text-[15px] ${
                       notificationPreference === "personalized"
@@ -917,7 +917,7 @@ const NotificationMenu = () => {
                   </div>
                 </div>
                 {notificationPreference === "personalized" && (
-                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0 ml-3">
                     <svg
                       className="w-3.5 h-3.5 text-white"
                       fill="none"
@@ -944,7 +944,7 @@ const NotificationMenu = () => {
                   handleNotificationChange("none");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3.5 flex items-center gap-3.5 rounded-xl transition-all ${
+                className={`w-full px-4 py-3.5 flex flex-row items-center rounded-xl transition-all ${
                   notificationPreference === "none"
                     ? "bg-blue-50 dark:bg-blue-500/10 ring-2 ring-blue-500 dark:ring-blue-400"
                     : "bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 active:bg-gray-200 dark:active:bg-neutral-700"
@@ -953,7 +953,7 @@ const NotificationMenu = () => {
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mr-3.5 ${
                     notificationPreference === "none"
                       ? "bg-blue-100 dark:bg-blue-500/20"
                       : "bg-gray-100 dark:bg-neutral-700"
@@ -967,7 +967,7 @@ const NotificationMenu = () => {
                     }`}
                   />
                 </div>
-                <div className="flex-1 text-left min-w-0">
+                <div className="flex-1 text-left">
                   <div
                     className={`font-semibold text-[15px] ${
                       notificationPreference === "none"
@@ -982,7 +982,7 @@ const NotificationMenu = () => {
                   </div>
                 </div>
                 {notificationPreference === "none" && (
-                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0 ml-3">
                     <svg
                       className="w-3.5 h-3.5 text-white"
                       fill="none"
@@ -1030,6 +1030,7 @@ const NotificationMenu = () => {
             />
           </div>
         </div>
+
         {/* Desktop Dropdown */}
         <div
           className="hidden md:block fixed inset-0"
