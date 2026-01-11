@@ -1360,71 +1360,71 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
 
-          {/* Subscribe + Bell */}
-          {!isOwner && user && videoUploaderId && (
-            <div className="flex items-center gap-2 flex-shrink-0 self-center">
-              {/* Mobile Subscribe Button - Theme Compatible */}
-              <Button
-                onClick={handleSubscribe}
-                disabled={isSubscribing}
-                className={`md:hidden h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
-                  isSubscribed
-                    ? "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-900 dark:text-white border border-gray-300 dark:border-neutral-600"
-                    : "bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900"
-                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
-              >
-                {isSubscribing ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  </span>
-                ) : (
-                  <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
-                )}
-              </Button>
+         {!isOwner && user && videoUploaderId && (
+  <div className="flex items-center gap-2 flex-shrink-0">
+    {/* Mobile Subscribe Button - Theme Compatible */}
+    <Button
+      onClick={handleSubscribe}
+      disabled={isSubscribing}
+      className={`md:hidden h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
+        isSubscribed
+          ? "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-900 dark:text-white border border-gray-300 dark:border-neutral-600"
+          : "bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900"
+      } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
+    >
+      {isSubscribing ? (
+        <span className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        </span>
+      ) : (
+        <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
+      )}
+    </Button>
 
-              {/* Desktop Subscribe Button */}
-              <Button
-                onClick={handleSubscribe}
-                disabled={isSubscribing}
-                className={`hidden md:flex h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
-                  isSubscribed
-                    ? "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white"
-                    : "bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
-              >
-                {isSubscribing ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span className="hidden sm:inline">
-                      {isSubscribed ? "Unsubscribing" : "Subscribing"}
-                    </span>
-                  </span>
-                ) : (
-                  <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
-                )}
-              </Button>
+    {/* Desktop Subscribe Button */}
+    <Button
+      onClick={handleSubscribe}
+      disabled={isSubscribing}
+      className={`hidden md:flex h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
+        isSubscribed
+          ? "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white"
+          : "bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
+      } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
+    >
+      {isSubscribing ? (
+        <span className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          <span className="hidden sm:inline">
+            {isSubscribed ? "Unsubscribing" : "Subscribing"}
+          </span>
+        </span>
+      ) : (
+        <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
+      )}
+    </Button>
 
-              {isSubscribed && (
-                <button
-                  ref={bellButtonRef}
-                  type="button"
-                  onClick={handleBellClick}
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    handleBellClick(e);
-                  }}
-                  className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600"
-                  title="Notification preferences"
-                >
-                  {notificationPreference === "none" ? (
-                    <BellOff className="w-[18px] h-[18px] text-gray-700 dark:text-white" />
-                  ) : (
-                    <Bell className="w-[18px] h-[18px] text-gray-700 dark:text-white" />
-                  )}
-                </button>
-              )}
-            </div>
-          )}
+    {/* Bell Button - Mobile & Desktop - Centered */}
+    {isSubscribed && (
+      <button
+        ref={bellButtonRef}
+        type="button"
+        onClick={handleBellClick}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          handleBellClick(e);
+        }}
+        className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600"
+        title="Notification preferences"
+      >
+        {notificationPreference === "none" ? (
+          <BellOff className="w-5 h-5 text-gray-700 dark:text-white" />
+        ) : (
+          <Bell className="w-5 h-5 text-gray-700 dark:text-white" />
+        )}
+      </button>
+    )}
+  </div>
+)}
 
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0 ml-4">
