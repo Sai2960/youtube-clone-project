@@ -803,159 +803,158 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </p>
             </div>
 
-          {/* Options Container - FIXED FOR BOTH LIGHT AND DARK MODE - MOBILE ONLY */}
-<div className="py-5 px-5 space-y-3">
-  {/* All Option */}
-  <button
-    type="button"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleNotificationChange("all");
-    }}
-    disabled={isUpdatingNotification}
-    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
-      notificationPreference === "all"
-        ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
-        : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
-    } ${
-      isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <Bell
-        className={`w-5 h-5 ${
-          notificationPreference === "all"
-            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-            : "text-[#606060] dark:text-[#aaaaaa]"
-        }`}
-      />
-      <span
-        className={`font-semibold text-[15px] ${
-          notificationPreference === "all"
-            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-            : "text-[#0f0f0f] dark:text-[#f1f1f1]"
-        }`}
-      >
-        All
-      </span>
-      {notificationPreference === "all" && (
-        <svg
-          className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-            clipRule="evenodd"
-          />
-        </svg>
-      )}
-    </div>
-  </button>
+            {/* Options Container - FIXED FOR BOTH LIGHT AND DARK MODE - MOBILE ONLY */}
+            <div className="py-5 px-5 space-y-3">
+              {/* All Option */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("all");
+                }}
+                disabled={isUpdatingNotification}
+                className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
+                  notificationPreference === "all"
+                    ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
+                    : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Bell
+                    className={`w-5 h-5 ${
+                      notificationPreference === "all"
+                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+                        : "text-[#606060] dark:text-[#aaaaaa]"
+                    }`}
+                  />
+                  <span
+                    className={`font-semibold text-[15px] ${
+                      notificationPreference === "all"
+                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+                        : "text-[#0f0f0f] dark:text-[#f1f1f1]"
+                    }`}
+                  >
+                    All
+                  </span>
+                  {notificationPreference === "all" && (
+                    <svg
+                      className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                </div>
+              </button>
 
-  {/* Personalized Option */}
-  <button
-    type="button"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleNotificationChange("personalized");
-    }}
-    disabled={isUpdatingNotification}
-    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
-      notificationPreference === "personalized"
-        ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
-        : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
-    } ${
-      isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <Bell
-        className={`w-5 h-5 ${
-          notificationPreference === "personalized"
-            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-            : "text-[#606060] dark:text-[#aaaaaa]"
-        }`}
-      />
-      <span
-        className={`font-semibold text-[15px] ${
-          notificationPreference === "personalized"
-            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-            : "text-[#0f0f0f] dark:text-[#f1f1f1]"
-        }`}
-      >
-        Personalized
-      </span>
-      {notificationPreference === "personalized" && (
-        <svg
-          className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-            clipRule="evenodd"
-          />
-        </svg>
-      )}
-    </div>
-  </button>
+              {/* Personalized Option */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("personalized");
+                }}
+                disabled={isUpdatingNotification}
+                className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
+                  notificationPreference === "personalized"
+                    ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
+                    : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Bell
+                    className={`w-5 h-5 ${
+                      notificationPreference === "personalized"
+                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+                        : "text-[#606060] dark:text-[#aaaaaa]"
+                    }`}
+                  />
+                  <span
+                    className={`font-semibold text-[15px] ${
+                      notificationPreference === "personalized"
+                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+                        : "text-[#0f0f0f] dark:text-[#f1f1f1]"
+                    }`}
+                  >
+                    Personalized
+                  </span>
+                  {notificationPreference === "personalized" && (
+                    <svg
+                      className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                </div>
+              </button>
 
-  {/* None Option */}
-  <button
-    type="button"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleNotificationChange("none");
-    }}
-    disabled={isUpdatingNotification}
-    className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
-      notificationPreference === "none"
-        ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
-        : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
-    } ${
-      isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <BellOff
-        className={`w-5 h-5 ${
-          notificationPreference === "none"
-            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-            : "text-[#606060] dark:text-[#aaaaaa]"
-        }`}
-      />
-      <span
-        className={`font-semibold text-[15px] ${
-          notificationPreference === "none"
-            ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-            : "text-[#0f0f0f] dark:text-[#f1f1f1]"
-        }`}
-      >
-        None
-      </span>
-      {notificationPreference === "none" && (
-        <svg
-          className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-            clipRule="evenodd"
-          />
-        </svg>
-      )}
-    </div>
-  </button>
-</div>
-
+              {/* None Option */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNotificationChange("none");
+                }}
+                disabled={isUpdatingNotification}
+                className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
+                  notificationPreference === "none"
+                    ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
+                    : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
+                } ${
+                  isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <BellOff
+                    className={`w-5 h-5 ${
+                      notificationPreference === "none"
+                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+                        : "text-[#606060] dark:text-[#aaaaaa]"
+                    }`}
+                  />
+                  <span
+                    className={`font-semibold text-[15px] ${
+                      notificationPreference === "none"
+                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
+                        : "text-[#0f0f0f] dark:text-[#f1f1f1]"
+                    }`}
+                  >
+                    None
+                  </span>
+                  {notificationPreference === "none" && (
+                    <svg
+                      className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                </div>
+              </button>
+            </div>
 
             {/* Unsubscribe Section */}
             <div className="border-t border-gray-200 dark:border-neutral-700 px-5 py-5">
@@ -1360,71 +1359,71 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
 
-         {!isOwner && user && videoUploaderId && (
-  <div className="flex items-center gap-2 flex-shrink-0 self-center">
-    {/* Mobile Subscribe Button - Theme Compatible */}
-    <Button
-      onClick={handleSubscribe}
-      disabled={isSubscribing}
-      className={`md:hidden h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
-        isSubscribed
-          ? "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-900 dark:text-white border border-gray-300 dark:border-neutral-600"
-          : "bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900"
-      } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
-    >
-      {isSubscribing ? (
-        <span className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-        </span>
-      ) : (
-        <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
-      )}
-    </Button>
+          {!isOwner && user && videoUploaderId && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Mobile Subscribe Button - Theme Compatible */}
+              <Button
+                onClick={handleSubscribe}
+                disabled={isSubscribing}
+                className={`md:hidden h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
+                  isSubscribed
+                    ? "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-900 dark:text-white border border-gray-300 dark:border-neutral-600"
+                    : "bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900"
+                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
+              >
+                {isSubscribing ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  </span>
+                ) : (
+                  <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
+                )}
+              </Button>
 
-    {/* Desktop Subscribe Button */}
-    <Button
-      onClick={handleSubscribe}
-      disabled={isSubscribing}
-      className={`hidden md:flex h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
-        isSubscribed
-          ? "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white"
-          : "bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
-      } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
-    >
-      {isSubscribing ? (
-        <span className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          <span className="hidden sm:inline">
-            {isSubscribed ? "Unsubscribing" : "Subscribing"}
-          </span>
-        </span>
-      ) : (
-        <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
-      )}
-    </Button>
+              {/* Desktop Subscribe Button */}
+              <Button
+                onClick={handleSubscribe}
+                disabled={isSubscribing}
+                className={`hidden md:flex h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
+                  isSubscribed
+                    ? "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white"
+                    : "bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
+              >
+                {isSubscribing ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span className="hidden sm:inline">
+                      {isSubscribed ? "Unsubscribing" : "Subscribing"}
+                    </span>
+                  </span>
+                ) : (
+                  <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
+                )}
+              </Button>
 
-    {/* Bell Button - Mobile & Desktop - Centered */}
-    {isSubscribed && (
-      <button
-        ref={bellButtonRef}
-        type="button"
-        onClick={handleBellClick}
-        onTouchEnd={(e) => {
-          e.preventDefault();
-          handleBellClick(e);
-        }}
-        className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600"
-        title="Notification preferences"
-      >
-        {notificationPreference === "none" ? (
-          <BellOff className="w-5 h-5 text-gray-700 dark:text-white" />
-        ) : (
-          <Bell className="w-5 h-5 text-gray-700 dark:text-white" />
-        )}
-      </button>
-    )}
-  </div>
-)}
+              {/* Bell Button - Mobile & Desktop - Centered */}
+              {isSubscribed && (
+                <button
+                  ref={bellButtonRef}
+                  type="button"
+                  onClick={handleBellClick}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleBellClick(e);
+                  }}
+                  className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600"
+                  title="Notification preferences"
+                >
+                  {notificationPreference === "none" ? (
+                    <BellOff className="w-5 h-5 text-gray-700 dark:text-white" />
+                  ) : (
+                    <Bell className="w-5 h-5 text-gray-700 dark:text-white" />
+                  )}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0 ml-4">
