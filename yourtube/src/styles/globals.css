@@ -12505,12 +12505,3 @@ button span {
     transition: transform 100ms ease;
   }
 }
-.yt-notification-sheet svg.lucide {
-  position: static !important;
-  inset: auto !important;
-  top: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  left: auto !important;
-  transform: none !important;
-}
