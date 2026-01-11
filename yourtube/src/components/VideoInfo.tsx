@@ -830,9 +830,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-             <div className="flex-1 text-left min-w-0">
+          <div className="flex-1 text-left min-w-0 px-1">
   <div
-    className={`font-medium text-[15px] ${
+    className={`font-medium text-[15px] leading-tight truncate ${
       notificationPreference === "all"
         ? "text-blue-600 dark:text-blue-400"
         : "text-gray-900 dark:text-white"
@@ -880,9 +880,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-            <div className="flex-1 text-left min-w-0">
+        <div className="flex-1 text-left min-w-0 px-1">
   <div
-    className={`font-medium text-[15px] ${
+    className={`font-medium text-[15px] leading-tight truncate ${
       notificationPreference === "personalized"
         ? "text-blue-600 dark:text-blue-400"
         : "text-gray-900 dark:text-white"
@@ -930,9 +930,9 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                       : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
-          <div className="flex-1 text-left min-w-0">
+         <div className="flex-1 text-left min-w-0 px-1">
   <div
-    className={`font-medium text-[15px] ${
+    className={`font-medium text-[15px] leading-tight truncate ${
       notificationPreference === "none"
         ? "text-blue-600 dark:text-blue-400"
         : "text-gray-900 dark:text-white"
