@@ -1640,18 +1640,6 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </span>
             </button>
           )}
-
-          {/* More Menu (Non-Owners) */}
-          {user && !isOwner && (
-            <div className="relative flex-shrink-0" ref={menuRef}>
-              <button
-                onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="text-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white/80 transition-colors active:scale-95"
-              >
-                <MoreVertical className="w-6 h-6" strokeWidth={2} />
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
