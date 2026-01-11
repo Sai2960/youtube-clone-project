@@ -803,7 +803,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </p>
             </div>
 
-          {/* Options Container */}
+          {/* Options Container - FIXED FOR DARK MODE */}
 <div className="py-5 px-5 space-y-3">
   {/* All Option */}
   <button
@@ -817,7 +817,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
       notificationPreference === "all"
         ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
-        : "bg-gray-100 dark:bg-[#3f3f3f] border-2 border-gray-200 dark:border-[#5f5f5f] hover:bg-gray-200 dark:hover:bg-[#4a4a4a]"
+        : "bg-white dark:bg-[#272727] border-2 border-gray-200 dark:border-[#404040] hover:bg-gray-100 dark:hover:bg-[#323232]"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -827,14 +827,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         className={`w-5 h-5 ${
           notificationPreference === "all"
             ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-600 dark:text-gray-300"
+            : "text-gray-600 dark:text-[#aaaaaa]"
         }`}
       />
       <span
         className={`font-semibold text-[15px] ${
           notificationPreference === "all"
             ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-900 dark:text-gray-100"
+            : "text-gray-900 dark:text-[#e5e5e5]"
         }`}
       >
         All
@@ -867,7 +867,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
       notificationPreference === "personalized"
         ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
-        : "bg-gray-100 dark:bg-[#3f3f3f] border-2 border-gray-200 dark:border-[#5f5f5f] hover:bg-gray-200 dark:hover:bg-[#4a4a4a]"
+        : "bg-white dark:bg-[#272727] border-2 border-gray-200 dark:border-[#404040] hover:bg-gray-100 dark:hover:bg-[#323232]"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -877,14 +877,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         className={`w-5 h-5 ${
           notificationPreference === "personalized"
             ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-600 dark:text-gray-300"
+            : "text-gray-600 dark:text-[#aaaaaa]"
         }`}
       />
       <span
         className={`font-semibold text-[15px] ${
           notificationPreference === "personalized"
             ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-900 dark:text-gray-100"
+            : "text-gray-900 dark:text-[#e5e5e5]"
         }`}
       >
         Personalized
@@ -917,7 +917,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all ${
       notificationPreference === "none"
         ? "bg-blue-50 dark:bg-[#263850] border-2 border-blue-500 dark:border-blue-500 shadow-sm"
-        : "bg-gray-100 dark:bg-[#3f3f3f] border-2 border-gray-200 dark:border-[#5f5f5f] hover:bg-gray-200 dark:hover:bg-[#4a4a4a]"
+        : "bg-white dark:bg-[#272727] border-2 border-gray-200 dark:border-[#404040] hover:bg-gray-100 dark:hover:bg-[#323232]"
     } ${
       isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -927,14 +927,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         className={`w-5 h-5 ${
           notificationPreference === "none"
             ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-600 dark:text-gray-300"
+            : "text-gray-600 dark:text-[#aaaaaa]"
         }`}
       />
       <span
         className={`font-semibold text-[15px] ${
           notificationPreference === "none"
             ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-900 dark:text-gray-100"
+            : "text-gray-900 dark:text-[#e5e5e5]"
         }`}
       >
         None
@@ -955,6 +955,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     </div>
   </button>
 </div>
+
 
             {/* Unsubscribe Section */}
             <div className="border-t border-gray-200 dark:border-neutral-700 px-5 py-5">
