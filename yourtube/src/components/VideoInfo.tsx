@@ -1361,7 +1361,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
 
          {!isOwner && user && videoUploaderId && (
-  <div className="flex items-center gap-2 flex-shrink-0">
+  <div className="flex items-center gap-2 flex-shrink-0 self-center">
     {/* Mobile Subscribe Button - Theme Compatible */}
     <Button
       onClick={handleSubscribe}
