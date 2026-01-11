@@ -866,123 +866,123 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     )}
   </button>
 
- {/* Personalized Option */}
-  <button
-    type="button"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleNotificationChange("personalized");
-    }}
-    disabled={isUpdatingNotification}
-    className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
+{/* Personalized Option */}
+<button
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleNotificationChange("personalized");
+  }}
+  disabled={isUpdatingNotification}
+  className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
+    notificationPreference === "personalized"
+      ? "bg-blue-50 dark:bg-blue-500/10"
+      : "bg-transparent"
+  } ${
+    isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+>
+  <div
+    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
       notificationPreference === "personalized"
-        ? "bg-blue-50 dark:bg-blue-500/10"
-        : "bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-700"
-    } ${
-      isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+        ? "bg-blue-500 dark:bg-blue-500"
+        : "bg-gray-200 dark:bg-neutral-700"
     }`}
   >
-    <div
-      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+    <Bell
+      className={`w-5 h-5 ${
         notificationPreference === "personalized"
-          ? "bg-blue-500 dark:bg-blue-500"
-          : "bg-gray-200 dark:bg-neutral-700"
+          ? "text-white"
+          : "text-gray-600 dark:text-gray-300"
       }`}
-    >
-      <Bell
-        className={`w-5 h-5 ${
-          notificationPreference === "personalized"
-            ? "text-white"
-            : "text-gray-600 dark:text-gray-300"
-        }`}
-      />
+    />
+  </div>
+  <div className="flex-1 text-left min-w-0">
+    <div className="font-semibold text-[15px] text-gray-900 dark:text-white">
+      Personalized
     </div>
-    <div className="flex-1 text-left min-w-0">
-      <div className="font-semibold text-[15px] text-gray-900 dark:text-white">
-        Personalized
-      </div>
-      <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-        Only occasional highlights
-      </div>
+    <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+      Only occasional highlights
     </div>
-    {notificationPreference === "personalized" && (
-      <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
-        <svg
-          className="w-3.5 h-3.5 text-white"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={3}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
-      </div>
-    )}
-  </button>
+  </div>
+  {notificationPreference === "personalized" && (
+    <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+      <svg
+        className="w-3.5 h-3.5 text-white"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={3}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+    </div>
+  )}
+</button>
 
   {/* None Option */}
-  <button
-    type="button"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleNotificationChange("none");
-    }}
-    disabled={isUpdatingNotification}
-    className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
+<button
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleNotificationChange("none");
+  }}
+  disabled={isUpdatingNotification}
+  className={`w-full px-3 py-2.5 flex items-center gap-3 rounded-xl transition-all ${
+    notificationPreference === "none"
+      ? "bg-blue-50 dark:bg-blue-500/10"
+      : "bg-transparent"
+  } ${
+    isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+>
+  <div
+    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
       notificationPreference === "none"
-        ? "bg-blue-50 dark:bg-blue-500/10"
-        : "bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-800/50 active:bg-gray-100 dark:active:bg-neutral-700"
-    } ${
-      isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
+        ? "bg-blue-500 dark:bg-blue-500"
+        : "bg-gray-200 dark:bg-neutral-700"
     }`}
   >
-    <div
-      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+    <BellOff
+      className={`w-5 h-5 ${
         notificationPreference === "none"
-          ? "bg-blue-500 dark:bg-blue-500"
-          : "bg-gray-200 dark:bg-neutral-700"
+          ? "text-white"
+          : "text-gray-600 dark:text-gray-300"
       }`}
-    >
-      <BellOff
-        className={`w-5 h-5 ${
-          notificationPreference === "none"
-            ? "text-white"
-            : "text-gray-600 dark:text-gray-300"
-        }`}
-      />
+    />
+  </div>
+  <div className="flex-1 text-left min-w-0">
+    <div className="font-semibold text-[15px] text-gray-900 dark:text-white">
+      None
     </div>
-    <div className="flex-1 text-left min-w-0">
-      <div className="font-semibold text-[15px] text-gray-900 dark:text-white">
-        None
-      </div>
-      <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-        Don&apos;t notify me
-      </div>
+    <div className="text-[12px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+      Don&apos;t notify me
     </div>
-    {notificationPreference === "none" && (
-      <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
-        <svg
-          className="w-3.5 h-3.5 text-white"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={3}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
-      </div>
-    )}
-  </button>
+  </div>
+  {notificationPreference === "none" && (
+    <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
+      <svg
+        className="w-3.5 h-3.5 text-white"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={3}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+    </div>
+  )}
+</button>
 </div>
 
 {/* Unsubscribe Section */}
