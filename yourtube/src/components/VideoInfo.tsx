@@ -1360,7 +1360,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           </div>
 
           {!isOwner && user && videoUploaderId && (
-<div className="flex items-center justify-center gap-2 flex-shrink-0">
+            <div className="flex items-center justify-center gap-2 flex-shrink-0">
               {/* Mobile Subscribe Button - Theme Compatible */}
               <Button
                 onClick={handleSubscribe}
@@ -1402,33 +1402,31 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
               </Button>
 
-         {/* Bell Button - Mobile & Desktop - Perfectly Centered */}
-{isSubscribed && (
-  <button
-    ref={bellButtonRef}
-    type="button"
-    onClick={handleBellClick}
-    onTouchEnd={(e) => {
-      e.preventDefault();
-      handleBellClick(e);
-    }}
-    className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600 self-center"
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-    title="Notification preferences"
-  >
-    {notificationPreference === "none" ? (
-      <BellOff className="w-5 h-5 text-gray-700 dark:text-white m-auto" />
-    ) : (
-      <Bell className="w-5 h-5 text-gray-700 dark:text-white m-auto" />
-    )}
-  </button>
-)}
-
-
+              {/* Bell Button - Mobile & Desktop - Perfectly Centered */}
+              {isSubscribed && (
+                <button
+                  ref={bellButtonRef}
+                  type="button"
+                  onClick={handleBellClick}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleBellClick(e);
+                  }}
+                  className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600 self-center"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title="Notification preferences"
+                >
+                  {notificationPreference === "none" ? (
+                    <BellOff className="w-5 h-5 text-gray-700 dark:text-white m-auto" />
+                  ) : (
+                    <Bell className="w-5 h-5 text-gray-700 dark:text-white m-auto" />
+                  )}
+                </button>
+              )}
             </div>
           )}
 
@@ -1658,12 +1656,12 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       </div>
 
       {/* Description */}
-      <div className="px-3 md:px-0">
+      <div className="px-3 md:px-0 overflow-hidden">
         <div
-          className="bg-gray-100 dark:bg-neutral-800/50 rounded-xl p-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors mt-3"
+          className="bg-gray-100 dark:bg-neutral-800/50 rounded-xl p-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors mt-3 max-w-full overflow-hidden"
           onClick={() => setShowFullDescription(!showFullDescription)}
         >
-          <div className="flex gap-2 text-xs font-semibold text-gray-900 dark:text-white mb-2">
+          <div className="flex flex-wrap gap-2 text-xs font-semibold text-gray-900 dark:text-white mb-2">
             <span>{formatViews(video?.views || 0)} views</span>
             <span>•</span>
             <span>
@@ -1671,11 +1669,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </span>
           </div>
           <div
-            className={`text-sm text-gray-900 dark:text-white ${
+            className={`text-sm text-gray-900 dark:text-white max-w-full ${
               showFullDescription ? "" : "line-clamp-2"
             }`}
           >
-            <p className="whitespace-pre-wrap">
+            <p
+              className="whitespace-pre-wrap max-w-full"
+              style={{
+                wordBreak: "break-word",
+                overflowWrap: "anywhere",
+              }}
+            >
               {video.videodescription || "No description"}
             </p>
           </div>
