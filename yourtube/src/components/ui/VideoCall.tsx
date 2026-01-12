@@ -1066,6 +1066,7 @@ const VideoCall = ({
     return () => clearInterval(monitor);
   }, [connectionStatus]);
   // ✅ Auto-start for initiator who already initiated the call
+// ✅ Auto-start for initiator who already initiated the call
 useEffect(() => {
   if (isInitiator && !userInteracted && roomId && !initializingRef.current) {
     console.log("🤖 Auto-starting call for initiator after delay");
@@ -1076,11 +1077,12 @@ useEffect(() => {
         console.log("🤖 Auto-clicking START CALL for initiator");
         setUserInteracted(true);
       }
-    }, 1000);
+    }, 1000); // Reduced from any longer delay
 
     return () => clearTimeout(autoStartTimer);
   }
 }, [isInitiator, userInteracted, roomId]);
+
   // ✅ Socket event handlers
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
@@ -1944,10 +1946,20 @@ useEffect(() => {
         )}
       </div>
 
-     {/* OVERLAY 1: Start Call Screen - ALWAYS VISIBLE WHEN NEEDED */}
-{!userInteracted && (
-  <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 z-[9999] flex items-center justify-center">
-    <div className="text-center px-4 max-w-md">
+   {!userInteracted && (
+  <div 
+    className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center"
+    style={{ 
+      zIndex: 999999,
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      pointerEvents: 'auto'
+    }}
+  >
+    <div className="text-center px-4 max-w-md" style={{ position: 'relative', zIndex: 999999 }}>
       {/* Animated Icon */}
       <div className="mb-8 relative">
         <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-2xl">
@@ -1978,7 +1990,7 @@ useEffect(() => {
           : "Accept to enable camera and microphone"}
       </p>
 
-      {/* Call to Action Button */}
+      {/* Call to Action Button - ULTRA VISIBLE */}
       <button
         onClick={() => {
           console.log("🎬 ===== START CALL BUTTON CLICKED =====");
@@ -1987,13 +1999,20 @@ useEffect(() => {
           console.log("   Room ID:", roomId);
           setUserInteracted(true);
         }}
+        style={{
+          position: 'relative',
+          zIndex: 999999,
+          pointerEvents: 'auto',
+          cursor: 'pointer',
+          touchAction: 'manipulation'
+        }}
         className="group relative px-16 py-5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-2xl font-bold rounded-2xl shadow-2xl transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
       >
         {/* Button glow effect */}
         <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
         
         {/* Button text */}
-        <span className="relative z-10 flex items-center gap-3">
+        <span className="relative z-10 flex items-center gap-3 justify-center">
           {isInitiator ? (
             <>
               <Video className="w-8 h-8" />
@@ -2008,13 +2027,12 @@ useEffect(() => {
         </span>
       </button>
 
-      {/* Room info - debug */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-8 text-xs text-gray-600 font-mono">
-          <p>Room: {roomId.slice(-8)}</p>
-          <p>Role: {isInitiator ? 'Initiator' : 'Receiver'}</p>
-        </div>
-      )}
+      {/* Debug info */}
+      <div className="mt-8 text-xs text-gray-500">
+        <p>Room: {roomId.slice(-12)}</p>
+        <p>Role: {isInitiator ? 'Initiator' : 'Receiver'}</p>
+        <p className="text-yellow-500 mt-2">Click the green button above ⬆️</p>
+      </div>
     </div>
   </div>
 )}
@@ -2201,5 +2219,17 @@ useEffect(() => {
     </div>
   );
 };
-
+// ✅ EMERGENCY: Global click helper for debugging
+if (typeof window !== 'undefined') {
+  (window as any).forceStartCall = () => {
+    console.log('🚨 EMERGENCY START CALL TRIGGERED');
+    const button = document.querySelector('button') as HTMLButtonElement;
+    if (button) {
+      button.click();
+      console.log('✅ Button clicked programmatically');
+    } else {
+      console.error('❌ Button not found');
+    }
+  };
+}
 export default VideoCall;
