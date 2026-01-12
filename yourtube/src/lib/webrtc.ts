@@ -202,7 +202,7 @@ export class WebRTCService {
     console.log("\n🔧 Setting up event listeners (MERGED FIXED)");
 
     this.callbackFired = false;
-    
+
     // ✅ CRITICAL: Create fresh remote stream
     this.remoteStream = new MediaStream();
     console.log("🔄 Created fresh remote stream:", this.remoteStream.id);
@@ -228,11 +228,6 @@ export class WebRTCService {
       console.log("\n📥 ===== TRACK RECEIVED =====");
       console.log("   Kind:", event.track.kind);
       console.log("   ID:", event.track.id);
-      console.log("   Label:", event.track.label);
-      console.log("   Enabled:", event.track.enabled);
-      console.log("   Muted:", event.track.muted);
-      console.log("   ReadyState:", event.track.readyState);
-      console.log("   Streams in event:", event.streams.length);
 
       const track = event.track;
       track.enabled = true;
@@ -242,13 +237,11 @@ export class WebRTCService {
 
       if (event.streams && event.streams.length > 0) {
         targetStream = event.streams[0];
-        // ✅ Update our reference to use the same stream
         if (!this.remoteStream || this.remoteStream.id !== targetStream.id) {
           console.log("   ✅ Using NEW stream from event:", targetStream.id);
           this.remoteStream = targetStream;
         }
       } else {
-        // Fallback: add to our stream
         if (!this.remoteStream) {
           this.remoteStream = new MediaStream();
           console.log("   ✅ Created new remote stream:", this.remoteStream.id);
@@ -267,11 +260,9 @@ export class WebRTCService {
       // ✅ Mark which tracks we've received
       if (track.kind === "audio") {
         audioTrackReceived = true;
-        console.log("   ✅ Audio track marked as received");
       }
       if (track.kind === "video") {
         videoTrackReceived = true;
-        console.log("   ✅ Video track marked as received");
       }
 
       // ✅ Monitor track state changes
@@ -296,7 +287,10 @@ export class WebRTCService {
 
       // ✅ Function to check if we should fire callback
       const checkAndFireCallback = () => {
-        if (this.callbackFired) return;
+        if (this.callbackFired) {
+          console.log("   ⚠️ Callback already fired, skipping");
+          return;
+        }
 
         const audioTracks = targetStream.getAudioTracks();
         const videoTracks = targetStream.getVideoTracks();
@@ -304,28 +298,22 @@ export class WebRTCService {
         console.log(`   📊 Stream ${targetStream.id} now has:`);
         console.log(`      Audio: ${audioTracks.length}`);
         console.log(`      Video: ${videoTracks.length}`);
-        console.log(`   📊 Received flags: audio=${audioTrackReceived}, video=${videoTrackReceived}`);
 
         // ✅ CRITICAL: Fire callback when BOTH tracks are received
         if (audioTrackReceived && videoTrackReceived && !this.callbackFired) {
           this.callbackFired = true;
 
           console.log("\n🎉 ===== BOTH TRACKS READY =====");
-          console.log("   Audio tracks:", audioTracks.length);
-          console.log("   Video tracks:", videoTracks.length);
-          console.log("   Stream ID:", targetStream.id);
 
           // Force enable ALL tracks
           targetStream.getTracks().forEach((t) => {
             t.enabled = true;
-            console.log(`   ✅ Force enabled: ${t.kind} - ${t.label}`);
           });
 
           // ✅ Small delay for stability
           setTimeout(() => {
             console.log("   📤 Firing callback with stream:", targetStream.id);
             onRemoteStream(targetStream);
-            console.log("✅ Callback complete\n");
           }, 300);
         } else {
           console.log(
@@ -337,7 +325,6 @@ export class WebRTCService {
       // ✅ Check immediately and also after delays
       checkAndFireCallback();
       setTimeout(checkAndFireCallback, 500);
-      setTimeout(checkAndFireCallback, 1000);
     };
 
     // ✅ Attach the track handler

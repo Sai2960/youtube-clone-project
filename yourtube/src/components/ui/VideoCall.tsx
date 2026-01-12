@@ -420,81 +420,76 @@ const VideoCall = ({
   // ✅ CRITICAL: Setup Remote Audio with proper device routing
   // In VideoCall.tsx - Update the setupRemoteAudio function
 
-  const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
+  // Around line 370 in VideoCall.tsx
+const setupRemoteAudio = async (stream: MediaStream) => {
+  console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
 
-    const audioTracks = stream.getAudioTracks();
-    const videoTracks = stream.getVideoTracks();
+  const audioTracks = stream.getAudioTracks();
+  const videoTracks = stream.getVideoTracks();
 
-    console.log(
-      `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
-    );
+  console.log(
+    `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
+  );
 
-    if (audioTracks.length === 0 && videoTracks.length === 0) {
-      console.error("❌ No tracks in stream!");
-      return;
-    }
+  if (audioTracks.length === 0 && videoTracks.length === 0) {
+    console.error("❌ No tracks in stream!");
+    return;
+  }
 
-    // ✅ Force enable all tracks
-    stream.getTracks().forEach((track) => {
-      track.enabled = true;
-      console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
-    });
+  // ✅ FIX: Check if already set to prevent duplicate calls
+  if (remoteVideoRef.current?.srcObject === stream) {
+    console.log("⚠️ Stream already attached, skipping");
+    return;
+  }
 
-    // ✅ Attach to video element
-    if (remoteVideoRef.current) {
-      console.log("📹 Attaching stream to video element...");
+  // ✅ Force enable all tracks
+  stream.getTracks().forEach((track) => {
+    track.enabled = true;
+    console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
+  });
 
-      // ✅ FIX: Only set srcObject if different
-      if (remoteVideoRef.current.srcObject !== stream) {
-        remoteVideoRef.current.srcObject = stream;
-        console.log("   ✅ srcObject set");
-      } else {
-        console.log("   ℹ️ srcObject already correct");
-      }
+  // ✅ Attach to video element
+  if (remoteVideoRef.current) {
+    console.log("📹 Attaching stream to video element...");
 
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
+    // Set srcObject
+    remoteVideoRef.current.srcObject = stream;
+    remoteVideoRef.current.muted = false;
+    remoteVideoRef.current.volume = 1.0;
+    console.log("   ✅ srcObject set");
 
-      // ✅ FIX: Single play attempt with proper error handling
-      const playVideo = async () => {
-        try {
-          if (remoteVideoRef.current) {
-            await remoteVideoRef.current.play();
-            console.log("✅ Video playing!");
-            setConnectionStatus("connected");
-            setShowPlayButton(false);
-            setError(null);
-          }
-        } catch (err: any) {
-          console.error("❌ Play failed:", err.name);
-          if (err.name === "NotAllowedError") {
-            setShowPlayButton(true);
-            setError("Click to start video");
-          } else if (err.name === "AbortError") {
-            console.log("⏳ Play aborted, retrying in 500ms...");
-            setTimeout(playVideo, 500); // Retry once
-          }
-        }
-      };
-
-      // ✅ FIX: Wait for metadata OR immediate play
-      if (remoteVideoRef.current.readyState >= 1) {
-        // Metadata already loaded
-        console.log("✅ Metadata ready, playing immediately");
-        await playVideo();
-      } else {
-        // Wait for metadata
+    // ✅ FIX: Single play attempt with proper handling
+    try {
+      // Wait for metadata if not ready
+      if (remoteVideoRef.current.readyState < 1) {
         console.log("⏳ Waiting for metadata...");
-        remoteVideoRef.current.onloadedmetadata = () => {
-          console.log("✅ Metadata loaded");
-          playVideo();
-        };
+        await new Promise<void>((resolve) => {
+          if (!remoteVideoRef.current) return;
+          remoteVideoRef.current.onloadedmetadata = () => {
+            console.log("✅ Metadata loaded");
+            resolve();
+          };
+        });
       }
-    }
 
-    console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-  };
+      // Now play
+      await remoteVideoRef.current.play();
+      console.log("✅ Video playing!");
+      setConnectionStatus("connected");
+      setShowPlayButton(false);
+      setError(null);
+    } catch (err: any) {
+      console.error("❌ Play failed:", err.name);
+      if (err.name === "NotAllowedError") {
+        setShowPlayButton(true);
+        setError("Click to start video");
+      }
+      // Don't retry on AbortError - it means we're being called again
+    }
+  }
+
+  console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+};
 
   // ✅ Setup debug commands
   useEffect(() => {
