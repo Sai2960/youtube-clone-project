@@ -1617,9 +1617,9 @@ const VideoCall = ({
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
 if (isInitiator) {
-  console.log("👑 I am INITIATOR - waiting for peer to join...");
+  console.log("👑 INITIATOR - waiting for both-users-ready signal...");
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     let resolved = false;
 
     const safeResolve = () => {
@@ -1629,48 +1629,44 @@ if (isInitiator) {
       }
     };
 
-    // ✅ CRITICAL: 45-second timeout (gives receiver enough time)
+    // ✅ FIX: Increased timeout to 60 seconds for slow user acceptance
     const timeout = setTimeout(() => {
-      console.log("⏰ Timeout after 45s - receiver never joined");
-      safeResolve();
-    }, 45000);
+      console.error("❌ TIMEOUT: Receiver never joined after 60 seconds");
+      console.error("   Possible issues:");
+      console.error("   - User did not click Accept");
+      console.error("   - Camera/mic permissions blocked");
+      console.error("   - Network issues");
+      reject(new Error("Receiver did not join the call"));
+    }, 60000); // ✅ CHANGED: 60 seconds instead of 45
 
-    // ✅ BEST: Wait for both-users-ready signal
+    // ✅ PRIMARY: Wait for both-users-ready signal from server
     socket.once("both-users-ready", (data: any) => {
-      console.log("✅ Both users ready signal received!", data);
+      console.log("✅✅✅ Both users ready signal received!");
+      console.log("   Room:", data.roomId);
+      console.log("   User count:", data.userCount);
+      console.log("   Timestamp:", data.timestamp);
+      
       clearTimeout(timeout);
       
-      // Wait 2 more seconds for receiver to finish media setup
+      // ✅ CRITICAL: Wait additional 3 seconds for receiver media setup
+      console.log("⏳ Waiting 3 more seconds for receiver to finish media setup...");
       setTimeout(() => {
-        console.log("✅ Creating offer after both-users-ready + 2s delay");
+        console.log("✅ Creating offer NOW after both-users-ready + 3s delay");
         safeResolve();
-      }, 2000);
+      }, 3000); // ✅ CHANGED: 3 seconds instead of 2
     });
 
-    // ✅ FALLBACK: If both-users-ready doesn't fire, use user-joined-room
-    socket.once("user-joined-room", (data: any) => {
-      console.log("✅ Peer joined room:", data);
-      
-      // Don't clear timeout yet - wait for both-users-ready
-      // But if it doesn't come in 5 seconds, proceed anyway
-      setTimeout(() => {
-        if (!resolved) {
-          console.log("⚠️ both-users-ready didn't fire, proceeding with offer");
-          clearTimeout(timeout);
-          safeResolve();
-        }
-      }, 5000);
-    });
+    // ❌ REMOVED: No fallback logic that proceeds without both-users-ready
+    // The initiator MUST wait for the server signal
   });
 
-        console.log("📝 Creating offer...");
-        const offer = await webrtcServiceRef.current.createOffer();
-        console.log("📤 Sending offer...");
-        socket.emit("offer", roomId, offer);
-        console.log("✅ Offer sent");
-      } else {
-        console.log("🙋 I am RECEIVER - waiting for offer...");
-      }
+  console.log("📝 Creating offer...");
+  const offer = await webrtcServiceRef.current.createOffer();
+  console.log("📤 Sending offer...");
+  socket.emit("offer", roomId, offer);
+  console.log("✅ Offer sent");
+}
+   
 
       // Expose to window for debugging
       if (typeof window !== "undefined") {
