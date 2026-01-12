@@ -1083,145 +1083,17 @@ const VideoCall = ({
     }
   }, [isInitiator, userInteracted, roomId]);
 
-  // ✅ Socket event handlers
-  // ✅ Socket event handlers
+  // ✅ Socket cleanup on unmount
   useEffect(() => {
-    if (!webrtcServiceRef.current) return;
-
-    let socket: any;
-    let cleanupFn: (() => void) | undefined;
-
-    const setupHandlers = async () => {
-      try {
-        socket = await waitForSocket(15000);
-        console.log("✅ Socket ready for signaling:", socket.id);
-      } catch (err) {
-        console.error("❌ Socket timeout");
-        setError("Connection timeout");
-        return;
-      }
-
-      // ✅ CRITICAL: Handle offer
-      const handleOffer = async (data: {
-        offer: RTCSessionDescriptionInit;
-        from: string;
-      }) => {
-        console.log("\n📥 ===== RECEIVED OFFER =====");
-        console.log("   From:", data.from);
-        console.log("   Offer type:", data.offer?.type);
-
-        if (!webrtcServiceRef.current) {
-          console.error("❌ No WebRTC service");
-          return;
-        }
-
-        try {
-          console.log("🔧 Setting remote description (offer)...");
-          await webrtcServiceRef.current.setRemoteDescription(data.offer);
-          console.log("✅ Remote description (offer) set");
-
-          console.log("📝 Creating answer...");
-          const answer = await webrtcServiceRef.current.createAnswer();
-          console.log("✅ Answer created");
-
-          console.log("📤 Sending answer to room:", roomId);
-          socket.emit("answer", roomId, answer);
-          console.log("✅ Answer sent");
-          console.log("===========================\n");
-        } catch (error) {
-          console.error("❌ Error handling offer:", error);
-          setError("Failed to process incoming call");
-        }
-      };
-
-      // ✅ CRITICAL: Handle answer
-      const handleAnswer = async (data: {
-        answer: RTCSessionDescriptionInit;
-        from: string;
-      }) => {
-        console.log("\n📥 ===== RECEIVED ANSWER =====");
-        console.log("   From:", data.from);
-        console.log("   Answer type:", data.answer?.type);
-
-        if (!webrtcServiceRef.current) {
-          console.error("❌ No WebRTC service");
-          return;
-        }
-
-        try {
-          console.log("🔧 Setting remote description (answer)...");
-          await webrtcServiceRef.current.setRemoteDescription(data.answer);
-          console.log("✅ Remote description (answer) set");
-          console.log("===========================\n");
-        } catch (error) {
-          console.error("❌ Error handling answer:", error);
-        }
-      };
-
-      // ✅ CRITICAL: Handle ICE candidate
-      const handleIceCandidate = async (data: {
-        candidate: RTCIceCandidateInit;
-        from: string;
-      }) => {
-        if (!webrtcServiceRef.current) return;
-
-        if (data.candidate?.candidate) {
-          console.log("❄️ Received ICE from:", data.from);
-          try {
-            await webrtcServiceRef.current.addIceCandidate(data.candidate);
-            console.log("✅ ICE candidate added");
-          } catch (error) {
-            console.error("❌ ICE candidate error:", error);
-          }
-        }
-      };
-
-      // ✅ CRITICAL: Handle call ended
-      const handleCallEnded = (data: { endedBy?: string; reason?: string }) => {
-        console.log("📴 Call ended by remote");
-        if (!callEndedRef.current) {
-          callEndedRef.current = true;
-
-          if (isRecording && recordingServiceRef.current) {
-            recordingServiceRef.current.stopRecording();
-          }
-
-          if (recordingIntervalRef.current) {
-            clearInterval(recordingIntervalRef.current);
-          }
-
-          cleanup(false);
-          onEndCall();
-          setTimeout(() => router.push("/"), 300);
-        }
-      };
-
-      // ✅ CRITICAL: Register ALL handlers BEFORE anything else
-      console.log("🔧 Registering socket event handlers...");
-      socket.on("offer", handleOffer);
-      socket.on("answer", handleAnswer);
-      socket.on("ice-candidate", handleIceCandidate);
-      socket.on("call-ended", handleCallEnded);
-      console.log("✅ All handlers registered");
-
-      // ✅ Store cleanup function
-      cleanupFn = () => {
-        console.log("🧹 Cleaning up socket handlers");
-        socket.off("offer", handleOffer);
-        socket.off("answer", handleAnswer);
-        socket.off("ice-candidate", handleIceCandidate);
-        socket.off("call-ended", handleCallEnded);
-      };
-    };
-
-    setupHandlers();
-
     return () => {
-      if (cleanupFn) {
-        cleanupFn();
-      }
+      const socket = getSocket();
+      socket.off("offer");
+      socket.off("answer");
+      socket.off("ice-candidate");
+      console.log("🧹 Socket handlers cleaned up");
     };
-  }, [roomId, onEndCall, router, isRecording]);
+  }, []);
+
   // ✅ Main initialization effect
   useEffect(() => {
     console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
@@ -1550,6 +1422,7 @@ const VideoCall = ({
     console.log("✅ Cleanup complete");
   };
   // ✅ Initialize call function
+  // ✅ Initialize call function
   const initializeCall = async () => {
     console.log("\n🎥 ===== INITIALIZING CALL (COMPLETE) =====");
 
@@ -1580,6 +1453,80 @@ const VideoCall = ({
       console.log("🔧 Creating WebRTC service...");
       webrtcServiceRef.current = new WebRTCService();
       recordingServiceRef.current = new RecordingService();
+
+      // ✅ CRITICAL FIX: Register socket handlers BEFORE doing anything else
+      console.log("🔧 Registering socket handlers BEFORE media/joining...");
+
+      const handleOffer = async (data: {
+        offer: RTCSessionDescriptionInit;
+        from: string;
+      }) => {
+        console.log("\n📥 ===== RECEIVED OFFER =====");
+        console.log("   From:", data.from);
+
+        if (!webrtcServiceRef.current) {
+          console.error("❌ No WebRTC service");
+          return;
+        }
+
+        try {
+          await webrtcServiceRef.current.setRemoteDescription(data.offer);
+          console.log("✅ Remote description (offer) set");
+
+          const answer = await webrtcServiceRef.current.createAnswer();
+          console.log("✅ Answer created, sending...");
+
+          socket.emit("answer", roomId, answer);
+          console.log("📤 Answer sent");
+          console.log("===========================\n");
+        } catch (error) {
+          console.error("❌ Error handling offer:", error);
+          setError("Failed to process incoming call");
+        }
+      };
+
+      const handleAnswer = async (data: {
+        answer: RTCSessionDescriptionInit;
+        from: string;
+      }) => {
+        console.log("\n📥 ===== RECEIVED ANSWER =====");
+        console.log("   From:", data.from);
+
+        if (!webrtcServiceRef.current) {
+          console.error("❌ No WebRTC service");
+          return;
+        }
+
+        try {
+          await webrtcServiceRef.current.setRemoteDescription(data.answer);
+          console.log("✅ Remote description (answer) set");
+          console.log("===========================\n");
+        } catch (error) {
+          console.error("❌ Error handling answer:", error);
+        }
+      };
+
+      const handleIceCandidate = async (data: {
+        candidate: RTCIceCandidateInit;
+        from: string;
+      }) => {
+        if (!webrtcServiceRef.current) return;
+
+        if (data.candidate?.candidate) {
+          console.log("❄️ Received ICE from:", data.from);
+          try {
+            await webrtcServiceRef.current.addIceCandidate(data.candidate);
+          } catch (error) {
+            console.error("❌ ICE candidate error:", error);
+          }
+        }
+      };
+
+      // ✅ Register handlers NOW
+      socket.on("offer", handleOffer);
+      socket.on("answer", handleAnswer);
+      socket.on("ice-candidate", handleIceCandidate);
+      console.log("✅ Socket handlers registered");
 
       // Get media stream with Windows audio fix
       console.log("🎤 Getting media stream with audio fix...");
@@ -1655,13 +1602,9 @@ const VideoCall = ({
 
           console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
         },
-
         (candidate: RTCIceCandidate) => {
-          // ✅ CRITICAL: Send ICE candidates
-          console.log("❄️ Sending ICE candidate to room:", roomId);
           const socket = getSocket();
           socket.emit("ice-candidate", roomId, candidate);
-          console.log("✅ ICE candidate sent");
         }
       );
 
@@ -1672,18 +1615,6 @@ const VideoCall = ({
       // Join room
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
-      // Join room
-      console.log("🚪 Joining room:", roomId);
-      socket.emit("join-room", roomId, user._id);
-
-      // ✅ Wait for room join confirmation
-      socket.once("room-joined", (data: any) => {
-        console.log("✅ Room joined confirmed:", data);
-      });
-
-      socket.once("user-joined-room", (data: any) => {
-        console.log("✅ Other user in room:", data);
-      });
 
       // Handle signaling based on role
       if (isInitiator) {
