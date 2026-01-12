@@ -1156,6 +1156,7 @@ const VideoCall = ({
   }, [roomId, userInteracted]);
 
   // ✅ Monitor peer connection state
+  // ✅ Monitor peer connection state
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
 
@@ -1169,33 +1170,8 @@ const VideoCall = ({
         signaling: pc.signalingState,
       });
 
-      // ✅ Force refresh remote stream when connected
-      if (
-        pc.connectionState === "connected" &&
-        !remoteStreamReceivedRef.current
-      ) {
-        console.log(
-          "⚠️ Connected but no remote stream - checking transceivers..."
-        );
-
-        const remoteStream = new MediaStream();
-        pc.getTransceivers().forEach((transceiver) => {
-          if (
-            transceiver.receiver.track &&
-            transceiver.receiver.track.readyState === "live"
-          ) {
-            remoteStream.addTrack(transceiver.receiver.track);
-            console.log(
-              `✅ Manually added ${transceiver.receiver.track.kind} track`
-            );
-          }
-        });
-
-        if (remoteStream.getTracks().length > 0) {
-          console.log("🔧 Manually triggering remote stream callback");
-          setupRemoteAudio(remoteStream);
-        }
-      }
+      // ✅ REMOVED: The manual stream triggering that was causing double-calls
+      // The webrtc.ts trackHandler already handles this properly
     };
 
     pc.addEventListener("connectionstatechange", checkConnection);
