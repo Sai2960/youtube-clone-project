@@ -226,6 +226,7 @@ export class WebRTCService {
     // ✅ CRITICAL: Track handler with MERGED fixes
     const trackHandler = async (event: RTCTrackEvent) => {
       console.log("\n📥 ===== TRACK RECEIVED =====");
+
       console.log("   Kind:", event.track.kind);
       console.log("   ID:", event.track.id);
 
@@ -281,8 +282,40 @@ export class WebRTCService {
         track.addEventListener("unmute", handleUnmute);
       }
 
+      // ✅ Monitor track for ending
       track.onended = () => {
-        console.warn(`🛑 Remote ${track.kind} ENDED`);
+        console.warn(`🛑 Remote ${track.kind} ENDED - attempting recovery`);
+
+        // Try to get a fresh track from the transceiver
+        const pc = this.peerConnection;
+        if (pc) {
+          const transceivers = pc.getTransceivers();
+          const matchingTransceiver = transceivers.find(
+            (t) =>
+              t.receiver.track?.id === track.id ||
+              t.receiver.track?.kind === track.kind
+          );
+
+          if (matchingTransceiver && matchingTransceiver.receiver.track) {
+            const freshTrack = matchingTransceiver.receiver.track;
+            if (freshTrack.readyState === "live") {
+              console.log(
+                `✅ Found live ${freshTrack.kind} track, replacing in stream`
+              );
+
+              // Remove old track, add new one
+              if (targetStream.getTrackById(track.id)) {
+                targetStream.removeTrack(track);
+              }
+              targetStream.addTrack(freshTrack);
+
+              // Force callback with updated stream
+              setTimeout(() => {
+                onRemoteStream(targetStream);
+              }, 100);
+            }
+          }
+        }
       };
 
       // ✅ Function to check if we should fire callback
