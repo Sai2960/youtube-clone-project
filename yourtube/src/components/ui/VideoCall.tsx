@@ -418,72 +418,74 @@ const VideoCall = ({
   };
 
   // ✅ CRITICAL: Setup Remote Audio with proper device routing
-// In VideoCall.tsx - Update the setupRemoteAudio function
+  // In VideoCall.tsx - Update the setupRemoteAudio function
 
-const setupRemoteAudio = async (stream: MediaStream) => {
-  console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
+  const setupRemoteAudio = async (stream: MediaStream) => {
+    console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
 
-  const audioTracks = stream.getAudioTracks();
-  const videoTracks = stream.getVideoTracks();
+    const audioTracks = stream.getAudioTracks();
+    const videoTracks = stream.getVideoTracks();
 
-  console.log(`📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`);
+    console.log(
+      `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
+    );
 
-  if (audioTracks.length === 0 && videoTracks.length === 0) {
-    console.error("❌ No tracks in stream!");
-    return;
-  }
+    if (audioTracks.length === 0 && videoTracks.length === 0) {
+      console.error("❌ No tracks in stream!");
+      return;
+    }
 
-  // ✅ Force enable all tracks
-  stream.getTracks().forEach((track) => {
-    track.enabled = true;
-    console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
-  });
+    // ✅ Force enable all tracks
+    stream.getTracks().forEach((track) => {
+      track.enabled = true;
+      console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
+    });
 
-  // ✅ Attach to video element
-  if (remoteVideoRef.current) {
-    console.log("📹 Attaching stream to video element...");
-    
-    // ✅ CRITICAL: Clear any existing srcObject first
-    remoteVideoRef.current.srcObject = null;
-    
-    // ✅ Small delay then attach
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    remoteVideoRef.current.srcObject = stream;
-    remoteVideoRef.current.muted = false;
-    remoteVideoRef.current.volume = 1.0;
+    // ✅ Attach to video element
+    if (remoteVideoRef.current) {
+      console.log("📹 Attaching stream to video element...");
 
-    // ✅ Wait for loadedmetadata before playing
-    remoteVideoRef.current.onloadedmetadata = async () => {
-      console.log("✅ Video metadata loaded");
+      // ✅ CRITICAL: Clear any existing srcObject first
+      remoteVideoRef.current.srcObject = null;
+
+      // ✅ Small delay then attach
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      remoteVideoRef.current.srcObject = stream;
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.volume = 1.0;
+
+      // ✅ Wait for loadedmetadata before playing
+      remoteVideoRef.current.onloadedmetadata = async () => {
+        console.log("✅ Video metadata loaded");
+        try {
+          await remoteVideoRef.current?.play();
+          console.log("✅ Video playing!");
+          setConnectionStatus("connected");
+          setShowPlayButton(false);
+          setError(null);
+        } catch (err: any) {
+          console.error("❌ Play failed:", err.name);
+          if (err.name === "NotAllowedError") {
+            setShowPlayButton(true);
+            setError("Click to start video");
+          }
+        }
+      };
+
+      // ✅ Also try to play immediately
       try {
-        await remoteVideoRef.current?.play();
-        console.log("✅ Video playing!");
+        await remoteVideoRef.current.play();
+        console.log("✅ Immediate play succeeded");
         setConnectionStatus("connected");
         setShowPlayButton(false);
-        setError(null);
       } catch (err: any) {
-        console.error("❌ Play failed:", err.name);
-        if (err.name === "NotAllowedError") {
-          setShowPlayButton(true);
-          setError("Click to start video");
-        }
+        console.log("⏳ Immediate play failed, waiting for metadata...");
       }
-    };
-
-    // ✅ Also try to play immediately
-    try {
-      await remoteVideoRef.current.play();
-      console.log("✅ Immediate play succeeded");
-      setConnectionStatus("connected");
-      setShowPlayButton(false);
-    } catch (err: any) {
-      console.log("⏳ Immediate play failed, waiting for metadata...");
     }
-  }
 
-  console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-};
+    console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+  };
 
   // ✅ Setup debug commands
   useEffect(() => {
@@ -1102,7 +1104,6 @@ const setupRemoteAudio = async (stream: MediaStream) => {
 
         setInitStep("Initializing WebRTC");
         await initializeCall();
-        
 
         if (!mounted) {
           console.log("⚠️ Component unmounted during init");
@@ -1568,57 +1569,48 @@ const setupRemoteAudio = async (stream: MediaStream) => {
       // Join room
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
-if (isInitiator) {
-  console.log("👑 INITIATOR - waiting for both-users-ready signal...");
+      if (isInitiator) {
+        console.log("👑 INITIATOR - waiting for both-users-ready signal...");
 
-  await new Promise<void>((resolve, reject) => {
-    let resolved = false;
+        await new Promise<void>((resolve, reject) => {
+          let resolved = false;
 
-    const safeResolve = () => {
-      if (!resolved) {
-        resolved = true;
-        resolve();
+          const safeResolve = () => {
+            if (!resolved) {
+              resolved = true;
+              resolve();
+            }
+          };
+
+          // ✅ FIX: Increased to 90 seconds for slow devices
+          const timeout = setTimeout(() => {
+            console.error("❌ TIMEOUT: Receiver never joined after 90 seconds");
+            reject(new Error("Receiver did not join the call"));
+          }, 90000); // ✅ CHANGED: 90 seconds
+
+          socket.once("both-users-ready", (data: any) => {
+            console.log("✅✅✅ Both users ready signal received!");
+            clearTimeout(timeout);
+
+            // ✅ FIX: Wait 5 seconds instead of 3
+            console.log(
+              "⏳ Waiting 5 more seconds for receiver to stabilize..."
+            );
+            setTimeout(() => {
+              console.log(
+                "✅ Creating offer NOW after both-users-ready + 5s delay"
+              );
+              safeResolve();
+            }, 5000); // ✅ CHANGED: 5 seconds instead of 3
+          });
+        });
+
+        console.log("📝 Creating offer...");
+        const offer = await webrtcServiceRef.current.createOffer();
+        console.log("📤 Sending offer...");
+        socket.emit("offer", roomId, offer);
+        console.log("✅ Offer sent");
       }
-    };
-
-    // ✅ FIX: Increased timeout to 60 seconds for slow user acceptance
-    const timeout = setTimeout(() => {
-      console.error("❌ TIMEOUT: Receiver never joined after 60 seconds");
-      console.error("   Possible issues:");
-      console.error("   - User did not click Accept");
-      console.error("   - Camera/mic permissions blocked");
-      console.error("   - Network issues");
-      reject(new Error("Receiver did not join the call"));
-    }, 60000); // ✅ CHANGED: 60 seconds instead of 45
-
-    // ✅ PRIMARY: Wait for both-users-ready signal from server
-    socket.once("both-users-ready", (data: any) => {
-      console.log("✅✅✅ Both users ready signal received!");
-      console.log("   Room:", data.roomId);
-      console.log("   User count:", data.userCount);
-      console.log("   Timestamp:", data.timestamp);
-      
-      clearTimeout(timeout);
-      
-      // ✅ CRITICAL: Wait additional 3 seconds for receiver media setup
-      console.log("⏳ Waiting 3 more seconds for receiver to finish media setup...");
-      setTimeout(() => {
-        console.log("✅ Creating offer NOW after both-users-ready + 3s delay");
-        safeResolve();
-      }, 3000); // ✅ CHANGED: 3 seconds instead of 2
-    });
-
-    // ❌ REMOVED: No fallback logic that proceeds without both-users-ready
-    // The initiator MUST wait for the server signal
-  });
-
-  console.log("📝 Creating offer...");
-  const offer = await webrtcServiceRef.current.createOffer();
-  console.log("📤 Sending offer...");
-  socket.emit("offer", roomId, offer);
-  console.log("✅ Offer sent");
-}
-   
 
       // Expose to window for debugging
       if (typeof window !== "undefined") {
