@@ -421,71 +421,77 @@ const VideoCall = ({
   // In VideoCall.tsx - Update the setupRemoteAudio function
 
   // Around line 370 in VideoCall.tsx
-  const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
+const setupRemoteAudio = async (stream: MediaStream) => {
+  console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
 
-    const audioTracks = stream.getAudioTracks();
-    const videoTracks = stream.getVideoTracks();
+  const audioTracks = stream.getAudioTracks();
+  const videoTracks = stream.getVideoTracks();
 
-    console.log(
-      `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
-    );
+  console.log(
+    `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
+  );
 
-    if (audioTracks.length === 0 && videoTracks.length === 0) {
-      console.error("❌ No tracks in stream!");
-      return;
-    }
+  if (audioTracks.length === 0 && videoTracks.length === 0) {
+    console.error("❌ No tracks in stream!");
+    return;
+  }
 
-    // Force enable all tracks
-    stream.getTracks().forEach((track) => {
-      track.enabled = true;
-      console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
-    });
+  // Force enable all tracks
+  stream.getTracks().forEach((track) => {
+    track.enabled = true;
+    console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
+  });
 
-    // Attach to video element
-    if (remoteVideoRef.current) {
-      console.log("📹 Attaching stream to video element...");
-
-      // ✅ CRITICAL FIX: Stop any existing tracks first
-      if (remoteVideoRef.current.srcObject) {
-        const oldStream = remoteVideoRef.current.srcObject as MediaStream;
-        oldStream.getTracks().forEach((t) => t.stop());
-      }
-
+  // Attach to video element
+  if (remoteVideoRef.current) {
+    console.log("📹 Attaching stream to video element...");
+    
+    // ✅ FIX: Only clear srcObject if it's a DIFFERENT stream
+    const currentStream = remoteVideoRef.current.srcObject as MediaStream;
+    if (currentStream && currentStream.id !== stream.id) {
+      console.log("🔄 Different stream detected, clearing old one");
+      currentStream.getTracks().forEach((t) => {
+        console.log(`   🛑 Stopping old ${t.kind} track`);
+        t.stop();
+      });
       remoteVideoRef.current.srcObject = null;
+    } else if (currentStream && currentStream.id === stream.id) {
+      console.log("⚠️ Same stream already attached, skipping setup");
+      return; // ✅ CRITICAL: Don't re-attach the same stream!
+    }
+    
+    // ✅ Force layout recalculation
+    remoteVideoRef.current.style.visibility = "hidden";
+    void remoteVideoRef.current.offsetHeight;
+    
+    // Set new stream
+    remoteVideoRef.current.srcObject = stream;
+    remoteVideoRef.current.muted = false;
+    remoteVideoRef.current.volume = 1.0;
+    
+    // ✅ Force video element to re-composite
+    remoteVideoRef.current.style.visibility = "visible";
+    remoteVideoRef.current.style.transform = "translateZ(0)";
+    
+    console.log("   ✅ srcObject set");
 
-      // ✅ Force layout recalculation
-      remoteVideoRef.current.style.visibility = "hidden";
-      void remoteVideoRef.current.offsetHeight;
-
-      // Set new stream
-      remoteVideoRef.current.srcObject = stream;
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
-
-      // ✅ CRITICAL: Force video element to re-composite
-      remoteVideoRef.current.style.visibility = "visible";
-      remoteVideoRef.current.style.transform = "translateZ(0)";
-
-      console.log("   ✅ srcObject set");
-
-      try {
-        await remoteVideoRef.current.play();
-        console.log("✅ Video playing!");
-        setConnectionStatus("connected");
-        setShowPlayButton(false);
-        setError(null);
-      } catch (err: any) {
-        console.error(`❌ Play failed:`, err.name);
-        if (err.name === "NotAllowedError") {
-          setShowPlayButton(true);
-          setError("Click to start video");
-        }
+    try {
+      await remoteVideoRef.current.play();
+      console.log("✅ Video playing!");
+      setConnectionStatus("connected");
+      setShowPlayButton(false);
+      setError(null);
+    } catch (err: any) {
+      console.error(`❌ Play failed:`, err.name);
+      if (err.name === "NotAllowedError") {
+        setShowPlayButton(true);
+        setError("Click to start video");
       }
     }
+  }
 
-    console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-  };
+  console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+};
 
   // ✅ Setup debug commands
   useEffect(() => {
@@ -958,35 +964,6 @@ const VideoCall = ({
   useEffect(() => {
     if (connectionStatus !== "connected" || !webrtcServiceRef.current) return;
     // ✅ Force video element refresh when connected
-    if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
-      const stream = remoteVideoRef.current.srcObject as MediaStream;
-      const videoTrack = stream.getVideoTracks()[0];
-
-      if (videoTrack && videoTrack.readyState === "ended") {
-        console.warn("⚠️ Video track ended, attempting recovery...");
-
-        // Get fresh track from peer connection
-        const pc = webrtcServiceRef.current.getPeerConnection();
-        if (pc) {
-          pc.getTransceivers().forEach((t) => {
-            if (
-              t.receiver.track?.kind === "video" &&
-              t.receiver.track.readyState === "live"
-            ) {
-              console.log("✅ Found live video track, updating stream");
-              stream.removeTrack(videoTrack);
-              stream.addTrack(t.receiver.track);
-
-              // Force video element refresh
-              remoteVideoRef.current!.srcObject = null;
-              void remoteVideoRef.current!.offsetHeight;
-              remoteVideoRef.current!.srcObject = stream;
-              remoteVideoRef.current!.play().catch(console.error);
-            }
-          });
-        }
-      }
-    }
     const monitor = setInterval(async () => {
       // Check audio element
       const audioEl = remoteAudioRef.current;
