@@ -418,121 +418,73 @@ const VideoCall = ({
   };
 
   // ✅ CRITICAL: Setup Remote Audio with proper device routing
-  const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 ===== SETTING UP REMOTE AUDIO (SIMPLIFIED) =====");
+// In VideoCall.tsx - Update the setupRemoteAudio function
 
-    const audioTracks = stream.getAudioTracks();
-    const videoTracks = stream.getVideoTracks();
+const setupRemoteAudio = async (stream: MediaStream) => {
+  console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
 
-    console.log(
-      `📊 Remote stream: audio=${audioTracks.length}, video=${videoTracks.length}`
-    );
+  const audioTracks = stream.getAudioTracks();
+  const videoTracks = stream.getVideoTracks();
 
-    if (audioTracks.length === 0) {
-      console.error("❌ No audio tracks!");
-      return;
-    }
+  console.log(`📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`);
 
-    // Force enable all tracks
-    stream.getTracks().forEach((track) => {
-      track.enabled = true;
-      console.log(`   ✅ Enabled ${track.kind}: ${track.label}`);
-    });
+  if (audioTracks.length === 0 && videoTracks.length === 0) {
+    console.error("❌ No tracks in stream!");
+    return;
+  }
 
-    // Clean up old audio elements
-    document
-      .querySelectorAll("#remote-audio-element")
-      .forEach((el) => el.remove());
+  // ✅ Force enable all tracks
+  stream.getTracks().forEach((track) => {
+    track.enabled = true;
+    console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
+  });
 
-    // STEP 1: Attach to video element (primary method)
-    if (remoteVideoRef.current) {
-      console.log("📹 Attaching to video element...");
+  // ✅ Attach to video element
+  if (remoteVideoRef.current) {
+    console.log("📹 Attaching stream to video element...");
+    
+    // ✅ CRITICAL: Clear any existing srcObject first
+    remoteVideoRef.current.srcObject = null;
+    
+    // ✅ Small delay then attach
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    remoteVideoRef.current.srcObject = stream;
+    remoteVideoRef.current.muted = false;
+    remoteVideoRef.current.volume = 1.0;
 
-      remoteVideoRef.current.srcObject = stream;
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
-
+    // ✅ Wait for loadedmetadata before playing
+    remoteVideoRef.current.onloadedmetadata = async () => {
+      console.log("✅ Video metadata loaded");
       try {
-        await remoteVideoRef.current.play();
-        console.log("✅ Video playing with audio");
+        await remoteVideoRef.current?.play();
+        console.log("✅ Video playing!");
         setConnectionStatus("connected");
         setShowPlayButton(false);
         setError(null);
       } catch (err: any) {
-        console.error("❌ Autoplay blocked:", err.name);
+        console.error("❌ Play failed:", err.name);
         if (err.name === "NotAllowedError") {
           setShowPlayButton(true);
-          setError("Click ▶ to start audio");
+          setError("Click to start video");
         }
       }
+    };
+
+    // ✅ Also try to play immediately
+    try {
+      await remoteVideoRef.current.play();
+      console.log("✅ Immediate play succeeded");
+      setConnectionStatus("connected");
+      setShowPlayButton(false);
+    } catch (err: any) {
+      console.log("⏳ Immediate play failed, waiting for metadata...");
     }
+  }
 
-    // STEP 2: Create backup audio element (for better audio routing)
-    const audioEl = document.createElement("audio");
-    audioEl.id = "remote-audio-element";
-    audioEl.autoplay = true;
-    audioEl.setAttribute("playsinline", "true");
-    audioEl.muted = false;
-    audioEl.volume = 1.0;
-    audioEl.style.display = "none";
+  console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+};
 
-    const audioOnlyStream = new MediaStream([audioTracks[0]]);
-    audioEl.srcObject = audioOnlyStream;
-
-    remoteAudioRef.current = audioEl;
-    document.body.appendChild(audioEl);
-
-    console.log("🔊 Created backup audio element");
-
-    // STEP 3: Try to play with retry
-    const playWithRetry = async (attempts = 5) => {
-      for (let i = 0; i < attempts; i++) {
-        try {
-          await audioEl.play();
-          console.log(`✅ Audio playing (attempt ${i + 1})`);
-          setRemoteAudioStatus("active");
-          return;
-        } catch (err: any) {
-          console.log(`⏳ Play attempt ${i + 1} failed: ${err.name}`);
-          if (i < attempts - 1) {
-            await new Promise((r) => setTimeout(r, 200 * (i + 1)));
-          }
-        }
-      }
-
-      console.warn("⚠️ All play attempts failed - waiting for user click");
-      setError("🔊 Click anywhere to enable audio");
-
-      const enableAudio = async () => {
-        try {
-          await audioEl.play();
-          console.log("✅ Audio started after click");
-          setError(null);
-          setRemoteAudioStatus("active");
-        } catch (e) {
-          console.error("❌ Still failed:", e);
-        }
-      };
-
-      document.addEventListener("click", enableAudio, { once: true });
-    };
-
-    await playWithRetry();
-
-    // STEP 4: Monitor track state
-    audioTracks[0].onmute = () => {
-      console.warn("🔇 Audio muted");
-      setRemoteAudioStatus("muted");
-    };
-
-    audioTracks[0].onunmute = () => {
-      console.log("🔊 Audio unmuted");
-      setRemoteAudioStatus("active");
-      if (audioEl.paused) audioEl.play().catch(console.error);
-    };
-
-    console.log("===== REMOTE AUDIO SETUP COMPLETE =====\n");
-  };
   // ✅ Setup debug commands
   useEffect(() => {
     if (typeof window === "undefined") return;

@@ -1,4 +1,4 @@
-// lib/webrtc.ts - COMPLETE FIXED VERSION
+// lib/webrtc.ts - COMPLETE MERGED FIXED VERSION
 
 interface AudioDiagnostics {
   enabled: boolean;
@@ -47,7 +47,6 @@ const ICE_SERVERS: RTCConfiguration = {
   rtcpMuxPolicy: "require",
   iceTransportPolicy: "all",
 };
-
 export class WebRTCService {
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
@@ -64,7 +63,7 @@ export class WebRTCService {
   private eventCleanupHandlers: (() => void)[] = [];
 
   constructor() {
-    console.log("🔧 Creating WebRTCService (FIXED VERSION)");
+    console.log("🔧 Creating WebRTCService (MERGED FIXED VERSION)");
 
     try {
       this.peerConnection = new RTCPeerConnection(ICE_SERVERS);
@@ -97,7 +96,6 @@ export class WebRTCService {
       console.log("🧊 ICE Gathering:", this.peerConnection?.iceGatheringState);
     };
   }
-
   setLocalStream(stream: MediaStream): void {
     console.log("\n📹 Setting Local Stream");
     console.log("   Stream ID:", stream.id);
@@ -131,7 +129,6 @@ export class WebRTCService {
     return this.peerConnection;
   }
 
-  // ✅ CRITICAL FIX: Proper track addition with sendrecv
   async addLocalStreamToPeer(): Promise<void> {
     if (!this.localStream || !this.peerConnection) {
       throw new Error("Cannot add stream: missing stream or peer connection");
@@ -193,8 +190,6 @@ export class WebRTCService {
 
     console.log("✅ Local stream added\n");
   }
-
-  // ✅ CRITICAL FIX: Event listeners with proper track handling
   setupEventListeners(
     onRemoteStream: (stream: MediaStream) => void,
     onIceCandidate: (candidate: RTCIceCandidate) => void
@@ -204,16 +199,31 @@ export class WebRTCService {
       return;
     }
 
-    console.log("\n🔧 Setting up event listeners (FIXED)");
+    console.log("\n🔧 Setting up event listeners (MERGED FIXED)");
 
     this.callbackFired = false;
-    // ✅ CRITICAL: Clear and recreate remote stream
-    if (this.remoteStream) {
-      this.remoteStream.getTracks().forEach((t) => t.stop());
-    }
+    
+    // ✅ CRITICAL: Create fresh remote stream
     this.remoteStream = new MediaStream();
     console.log("🔄 Created fresh remote stream:", this.remoteStream.id);
-    // ✅ CRITICAL: Track handler
+
+    // ✅ Track which tracks we've received
+    let audioTrackReceived = false;
+    let videoTrackReceived = false;
+
+    // ✅ ICE candidate handler
+    const iceHandler = (event: RTCPeerConnectionIceEvent) => {
+      if (event.candidate) {
+        onIceCandidate(event.candidate);
+      }
+    };
+
+    this.peerConnection.addEventListener("icecandidate", iceHandler);
+    this.eventCleanupHandlers.push(() => {
+      this.peerConnection?.removeEventListener("icecandidate", iceHandler);
+    });
+
+    // ✅ CRITICAL: Track handler with MERGED fixes
     const trackHandler = async (event: RTCTrackEvent) => {
       console.log("\n📥 ===== TRACK RECEIVED =====");
       console.log("   Kind:", event.track.kind);
@@ -232,7 +242,7 @@ export class WebRTCService {
 
       if (event.streams && event.streams.length > 0) {
         targetStream = event.streams[0];
-        // ✅ CRITICAL: Update our reference to use the same stream
+        // ✅ Update our reference to use the same stream
         if (!this.remoteStream || this.remoteStream.id !== targetStream.id) {
           console.log("   ✅ Using NEW stream from event:", targetStream.id);
           this.remoteStream = targetStream;
@@ -254,66 +264,88 @@ export class WebRTCService {
         targetStream = this.remoteStream;
       }
 
-      // ✅ Monitor track state
+      // ✅ Mark which tracks we've received
+      if (track.kind === "audio") {
+        audioTrackReceived = true;
+        console.log("   ✅ Audio track marked as received");
+      }
+      if (track.kind === "video") {
+        videoTrackReceived = true;
+        console.log("   ✅ Video track marked as received");
+      }
+
+      // ✅ Monitor track state changes
       track.onmute = () => {
         console.warn(`⚠️ Remote ${track.kind} MUTED`);
         track.enabled = true;
       };
 
-      track.onunmute = () => {
-        console.log(`✅ Remote ${track.kind} UNMUTED`);
-        track.enabled = true;
+      const handleUnmute = () => {
+        console.log(`✅ Track ${track.kind} unmuted`);
+        track.removeEventListener("unmute", handleUnmute);
+        checkAndFireCallback();
       };
+
+      if (track.muted) {
+        track.addEventListener("unmute", handleUnmute);
+      }
 
       track.onended = () => {
         console.warn(`🛑 Remote ${track.kind} ENDED`);
       };
 
-      // ✅ Get current track counts from the actual stream being used
-      const audioTracks = targetStream.getAudioTracks();
-      const videoTracks = targetStream.getVideoTracks();
+      // ✅ Function to check if we should fire callback
+      const checkAndFireCallback = () => {
+        if (this.callbackFired) return;
 
-      console.log(`   📊 Stream ${targetStream.id} now has:`);
-      console.log(`      Audio: ${audioTracks.length}`);
-      console.log(`      Video: ${videoTracks.length}`);
+        const audioTracks = targetStream.getAudioTracks();
+        const videoTracks = targetStream.getVideoTracks();
 
-      // ✅ CRITICAL: Fire callback when BOTH tracks are present
-      if (
-        audioTracks.length > 0 &&
-        videoTracks.length > 0 &&
-        !this.callbackFired
-      ) {
-        this.callbackFired = true;
+        console.log(`   📊 Stream ${targetStream.id} now has:`);
+        console.log(`      Audio: ${audioTracks.length}`);
+        console.log(`      Video: ${videoTracks.length}`);
+        console.log(`   📊 Received flags: audio=${audioTrackReceived}, video=${videoTrackReceived}`);
 
-        console.log("\n🎉 ===== BOTH TRACKS READY =====");
-        console.log("   Audio tracks:", audioTracks.length);
-        console.log("   Video tracks:", videoTracks.length);
-        console.log("   Stream ID:", targetStream.id);
+        // ✅ CRITICAL: Fire callback when BOTH tracks are received
+        if (audioTrackReceived && videoTrackReceived && !this.callbackFired) {
+          this.callbackFired = true;
 
-        // Force enable ALL tracks
-        targetStream.getTracks().forEach((t) => {
-          t.enabled = true;
-          console.log(`   ✅ Force enabled: ${t.kind} - ${t.label}`);
-        });
+          console.log("\n🎉 ===== BOTH TRACKS READY =====");
+          console.log("   Audio tracks:", audioTracks.length);
+          console.log("   Video tracks:", videoTracks.length);
+          console.log("   Stream ID:", targetStream.id);
 
-        // Small delay for stability
-        await new Promise((resolve) => setTimeout(resolve, 200));
+          // Force enable ALL tracks
+          targetStream.getTracks().forEach((t) => {
+            t.enabled = true;
+            console.log(`   ✅ Force enabled: ${t.kind} - ${t.label}`);
+          });
 
-        console.log("   📤 Firing callback with stream:", targetStream.id);
-        onRemoteStream(targetStream);
-        console.log("✅ Callback complete\n");
-      } else {
-        console.log(
-          `   ⏳ Waiting for more tracks (audio=${audioTracks.length}, video=${videoTracks.length})`
-        );
-      }
+          // ✅ Small delay for stability
+          setTimeout(() => {
+            console.log("   📤 Firing callback with stream:", targetStream.id);
+            onRemoteStream(targetStream);
+            console.log("✅ Callback complete\n");
+          }, 300);
+        } else {
+          console.log(
+            `   ⏳ Waiting for more tracks (audio=${audioTracks.length}, video=${videoTracks.length})`
+          );
+        }
+      };
+
+      // ✅ Check immediately and also after delays
+      checkAndFireCallback();
+      setTimeout(checkAndFireCallback, 500);
+      setTimeout(checkAndFireCallback, 1000);
     };
 
-    // ✅ CRITICAL: Attach the handler
+    // ✅ Attach the track handler
     this.peerConnection.addEventListener("track", trackHandler);
     this.eventCleanupHandlers.push(() => {
       this.peerConnection?.removeEventListener("track", trackHandler);
     });
+
     // ✅ Connection state handler
     const connHandler = () => {
       const state = this.peerConnection?.connectionState;
@@ -333,8 +365,6 @@ export class WebRTCService {
 
     console.log("✅ Event listeners ready\n");
   }
-
-  // ✅ CRITICAL FIX: Offer creation
   async createOffer(): Promise<RTCSessionDescriptionInit> {
     if (!this.peerConnection) {
       throw new Error("No peer connection");
@@ -369,7 +399,6 @@ export class WebRTCService {
     return offer;
   }
 
-  // ✅ CRITICAL FIX: Answer creation
   async createAnswer(): Promise<RTCSessionDescriptionInit> {
     if (!this.peerConnection) {
       throw new Error("No peer connection");
@@ -398,8 +427,6 @@ export class WebRTCService {
     console.log("✅ Answer created");
     return answer;
   }
-
-  // ✅ CRITICAL FIX: Remote description with ICE queue processing
   async setRemoteDescription(
     description: RTCSessionDescriptionInit
   ): Promise<void> {
@@ -438,7 +465,6 @@ export class WebRTCService {
     }
   }
 
-  // ✅ CRITICAL FIX: ICE candidate with queuing
   async addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
     if (!this.peerConnection) {
       console.warn("⚠️ No peer connection for ICE candidate");
@@ -466,7 +492,6 @@ export class WebRTCService {
       console.error("❌ ICE candidate error:", error);
     }
   }
-
   async logConnectionStats(): Promise<void> {
     if (!this.peerConnection) return;
 
@@ -558,7 +583,6 @@ export class WebRTCService {
       };
     }
   }
-
   toggleAudio(enabled: boolean): void {
     this.localStream?.getAudioTracks().forEach((t) => (t.enabled = enabled));
     console.log(`🎤 Audio: ${enabled}`);
@@ -579,7 +603,6 @@ export class WebRTCService {
       videoMuted: video?.muted || true,
     };
   }
-
   async startScreenShare(preferCurrentTab = true): Promise<MediaStream> {
     const options: any = {
       video: {
@@ -626,7 +649,6 @@ export class WebRTCService {
   isScreenSharing(): boolean {
     return this.screenStream !== null;
   }
-
   close(): void {
     console.log("\n🧹 Closing WebRTC Service");
 
