@@ -434,88 +434,47 @@ const setupRemoteAudio = async (stream: MediaStream) => {
     return;
   }
 
-  // ✅ FIX: Check if already set to prevent duplicate calls
-  if (remoteVideoRef.current?.srcObject === stream) {
-    console.log("⚠️ Stream already attached, skipping");
-    return;
-  }
-
-  // ✅ Force enable all tracks
+  // Force enable all tracks
   stream.getTracks().forEach((track) => {
     track.enabled = true;
     console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
   });
 
-  // ✅ Attach to video element
+  // Attach to video element
   if (remoteVideoRef.current) {
     console.log("📹 Attaching stream to video element...");
     
-    // ✅ CRITICAL FIX: Clear existing srcObject first
+    // ✅ CRITICAL FIX: Stop any existing tracks first
+    if (remoteVideoRef.current.srcObject) {
+      const oldStream = remoteVideoRef.current.srcObject as MediaStream;
+      oldStream.getTracks().forEach(t => t.stop());
+    }
+    
     remoteVideoRef.current.srcObject = null;
     
-    // ✅ Force a reflow
+    // ✅ Force layout recalculation
+    remoteVideoRef.current.style.visibility = 'hidden';
     void remoteVideoRef.current.offsetHeight;
     
-    // ✅ Now set the new stream
+    // Set new stream
     remoteVideoRef.current.srcObject = stream;
     remoteVideoRef.current.muted = false;
     remoteVideoRef.current.volume = 1.0;
     
+    // ✅ CRITICAL: Force video element to re-composite
+    remoteVideoRef.current.style.visibility = 'visible';
+    remoteVideoRef.current.style.transform = 'translateZ(0)';
+    
     console.log("   ✅ srcObject set");
 
-    // ✅ CRITICAL: Force the video element to re-render
-    remoteVideoRef.current.style.display = 'none';
-    void remoteVideoRef.current.offsetHeight; // Force reflow
-    remoteVideoRef.current.style.display = 'block';
-
     try {
-      // Wait for metadata if not ready
-      if (remoteVideoRef.current.readyState < 1) {
-        console.log("⏳ Waiting for metadata...");
-        await new Promise<void>((resolve, reject) => {
-          if (!remoteVideoRef.current) return reject();
-          
-          const timeout = setTimeout(() => {
-            console.warn("⚠️ Metadata timeout, trying to play anyway");
-            resolve();
-          }, 3000);
-          
-          remoteVideoRef.current.onloadedmetadata = () => {
-            console.log("✅ Metadata loaded");
-            clearTimeout(timeout);
-            resolve();
-          };
-        });
-      }
-
-      // ✅ Force play with retry
-      let playAttempts = 0;
-      const tryPlay = async (): Promise<void> => {
-        try {
-          await remoteVideoRef.current?.play();
-          console.log("✅ Video playing!");
-          setConnectionStatus("connected");
-          setShowPlayButton(false);
-          setError(null);
-        } catch (err: any) {
-          playAttempts++;
-          console.error(`❌ Play attempt ${playAttempts} failed:`, err.name);
-          
-          if (err.name === "NotAllowedError") {
-            setShowPlayButton(true);
-            setError("Click to start video");
-          } else if (err.name === "AbortError" && playAttempts < 3) {
-            // Retry after a short delay
-            await new Promise(r => setTimeout(r, 500));
-            return tryPlay();
-          }
-        }
-      };
-      
-      await tryPlay();
-      
+      await remoteVideoRef.current.play();
+      console.log("✅ Video playing!");
+      setConnectionStatus("connected");
+      setShowPlayButton(false);
+      setError(null);
     } catch (err: any) {
-      console.error("❌ Play failed:", err.name);
+      console.error(`❌ Play failed:`, err.name);
       if (err.name === "NotAllowedError") {
         setShowPlayButton(true);
         setError("Click to start video");
@@ -1870,29 +1829,25 @@ const setupRemoteAudio = async (stream: MediaStream) => {
   };
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
-      {/* Video elements - ALWAYS in DOM from first render */}
-   <video
+    {/* Remote video - Fix positioning */}
+<video
   ref={remoteVideoRef}
   id="remote-video"
   autoPlay
   playsInline
   muted={false}
-  className="w-full h-full object-cover"
   style={{
     position: 'absolute',
     top: 0,
     left: 0,
-    right: 0,
-    bottom: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
     zIndex: 1,
     backgroundColor: '#000',
-    transform: 'translateZ(0)',
-    WebkitTransform: 'translateZ(0)',
-    backfaceVisibility: 'hidden',
-    WebkitBackfaceVisibility: 'hidden',
-    willChange: 'transform',
   }}
 />
+
 
       {/* Local video - ALWAYS in DOM */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
@@ -1912,12 +1867,11 @@ const setupRemoteAudio = async (stream: MediaStream) => {
       </div>
 
       {!userInteracted && (
-       <div 
+<div 
   className="w-screen h-screen bg-black relative overflow-hidden touch-none"
-  style={{
-    isolation: 'isolate', // Creates new stacking context
-  }}
+  style={{ position: 'relative' }}  // Add this explicitly
 >
+
 
           <div
             className="text-center px-4 max-w-md"
