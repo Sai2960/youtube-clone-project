@@ -1616,31 +1616,50 @@ const VideoCall = ({
       // Join room
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
-
-    if (isInitiator) {
+if (isInitiator) {
   console.log("👑 I am INITIATOR - waiting for peer to join...");
 
   await new Promise<void>((resolve) => {
-    const timeout = setTimeout(() => {
-      console.log("⏰ Timeout after 25s, creating offer anyway");
-      resolve();
-    }, 25000); // Increased timeout
+    let resolved = false;
 
-    socket.once("both-users-ready", () => {
-      console.log("✅ Both users ready signal received!");
-      clearTimeout(timeout);
-      // Add extra delay to ensure receiver has tracks
-      setTimeout(() => {
-        console.log("✅ Starting offer creation after safety delay");
+    const safeResolve = () => {
+      if (!resolved) {
+        resolved = true;
         resolve();
-      }, 1000); // Extra 1s safety delay
+      }
+    };
+
+    // ✅ CRITICAL: 45-second timeout (gives receiver enough time)
+    const timeout = setTimeout(() => {
+      console.log("⏰ Timeout after 45s - receiver never joined");
+      safeResolve();
+    }, 45000);
+
+    // ✅ BEST: Wait for both-users-ready signal
+    socket.once("both-users-ready", (data: any) => {
+      console.log("✅ Both users ready signal received!", data);
+      clearTimeout(timeout);
+      
+      // Wait 2 more seconds for receiver to finish media setup
+      setTimeout(() => {
+        console.log("✅ Creating offer after both-users-ready + 2s delay");
+        safeResolve();
+      }, 2000);
     });
 
+    // ✅ FALLBACK: If both-users-ready doesn't fire, use user-joined-room
     socket.once("user-joined-room", (data: any) => {
       console.log("✅ Peer joined room:", data);
-      clearTimeout(timeout);
-      // Longer delay before creating offer
-      setTimeout(resolve, 2000); // Increased from 1s to 2s
+      
+      // Don't clear timeout yet - wait for both-users-ready
+      // But if it doesn't come in 5 seconds, proceed anyway
+      setTimeout(() => {
+        if (!resolved) {
+          console.log("⚠️ both-users-ready didn't fire, proceeding with offer");
+          clearTimeout(timeout);
+          safeResolve();
+        }
+      }, 5000);
     });
   });
 
