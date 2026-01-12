@@ -362,7 +362,6 @@ const VideoCall = ({
   remotePeerName = "Remote User",
   callId = "",
 }: VideoCallProps) => {
-  
   const router = useRouter();
   const { user } = useUser();
   // ... rest of component
@@ -420,54 +419,38 @@ const VideoCall = ({
 
   // ✅ CRITICAL: Setup Remote Audio with proper device routing
   const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 ===== SETTING UP REMOTE AUDIO (ENHANCED) =====");
+    console.log("🔊 ===== SETTING UP REMOTE AUDIO (SIMPLIFIED) =====");
 
     const audioTracks = stream.getAudioTracks();
     const videoTracks = stream.getVideoTracks();
 
     console.log(
-      `📊 Remote stream tracks: audio=${audioTracks.length}, video=${videoTracks.length}`
+      `📊 Remote stream: audio=${audioTracks.length}, video=${videoTracks.length}`
     );
 
     if (audioTracks.length === 0) {
-      console.error("❌ No audio tracks in remote stream!");
+      console.error("❌ No audio tracks!");
       return;
     }
 
-    // Force enable ALL tracks
+    // Force enable all tracks
     stream.getTracks().forEach((track) => {
       track.enabled = true;
       console.log(`   ✅ Enabled ${track.kind}: ${track.label}`);
     });
 
-    // Remove old audio elements
+    // Clean up old audio elements
     document
-      .querySelectorAll("#remote-audio-element, #remote-audio-backup")
+      .querySelectorAll("#remote-audio-element")
       .forEach((el) => el.remove());
 
-    // STEP 1: Attach to video element (includes audio)
+    // STEP 1: Attach to video element (primary method)
     if (remoteVideoRef.current) {
-      console.log("📹 Attaching stream to video element...");
-
-      // Clean old stream
-      if (remoteVideoRef.current.srcObject) {
-        const oldStream = remoteVideoRef.current.srcObject as MediaStream;
-        oldStream.getTracks().forEach((t) => t.stop());
-      }
+      console.log("📹 Attaching to video element...");
 
       remoteVideoRef.current.srcObject = stream;
       remoteVideoRef.current.muted = false;
       remoteVideoRef.current.volume = 1.0;
-
-      // Set audio output to default speakers
-      if ("setSinkId" in HTMLMediaElement.prototype) {
-        try {
-          await (remoteVideoRef.current as any).setSinkId("");
-          console.log("✅ Video audio output set to default");
-        } catch (err) {
-          console.warn("⚠️ Could not set video audio output:", err);
-        }
-      }
 
       try {
         await remoteVideoRef.current.play();
@@ -476,255 +459,77 @@ const VideoCall = ({
         setShowPlayButton(false);
         setError(null);
       } catch (err: any) {
-        console.error("❌ Video play failed:", err.name);
+        console.error("❌ Autoplay blocked:", err.name);
         if (err.name === "NotAllowedError") {
           setShowPlayButton(true);
-          setError("Click play to start");
+          setError("Click ▶ to start audio");
         }
       }
     }
 
-    // STEP 2: Wait for audio track to be ready
-    const remoteAudio = audioTracks[0];
-    console.log("🎤 Remote audio track:", {
-      id: remoteAudio.id,
-      label: remoteAudio.label,
-      enabled: remoteAudio.enabled,
-      muted: remoteAudio.muted,
-      readyState: remoteAudio.readyState,
-    });
-
-    await new Promise<void>((resolve) => {
-      if (remoteAudio.readyState === "live" && !remoteAudio.muted) {
-        console.log("✅ Track ready immediately");
-        resolve();
-      } else {
-        console.log("⏳ Waiting for track to be ready...");
-
-        let resolved = false;
-        const checkReady = () => {
-          if (remoteAudio.readyState === "live" && !resolved) {
-            resolved = true;
-            console.log("✅ Track became ready");
-            resolve();
-          }
-        };
-
-        remoteAudio.addEventListener(
-          "unmute",
-          () => {
-            console.log("📢 Track unmuted");
-            checkReady();
-          },
-          { once: true }
-        );
-
-        const interval = setInterval(checkReady, 100);
-
-        setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            clearInterval(interval);
-            console.log("⏰ Timeout - proceeding anyway");
-            resolve();
-          }
-        }, 5000);
-      }
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // STEP 3: Create dedicated audio element
+    // STEP 2: Create backup audio element (for better audio routing)
     const audioEl = document.createElement("audio");
     audioEl.id = "remote-audio-element";
     audioEl.autoplay = true;
     audioEl.setAttribute("playsinline", "true");
     audioEl.muted = false;
     audioEl.volume = 1.0;
-    audioEl.controls = false;
-    audioEl.style.cssText = "position:fixed;left:-9999px;width:1px;height:1px;";
+    audioEl.style.display = "none";
 
-    // Create audio-only stream
-    const audioOnlyStream = new MediaStream([remoteAudio]);
+    const audioOnlyStream = new MediaStream([audioTracks[0]]);
     audioEl.srcObject = audioOnlyStream;
 
     remoteAudioRef.current = audioEl;
     document.body.appendChild(audioEl);
 
-    console.log("🔊 Created dedicated audio element");
+    console.log("🔊 Created backup audio element");
 
-    // STEP 4: Set audio output device
-    if ("setSinkId" in HTMLMediaElement.prototype) {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const audioOutputs = devices.filter((d) => d.kind === "audiooutput");
-
-        console.log("🔊 Available audio outputs:");
-        audioOutputs.forEach((d, i) => {
-          console.log(`   ${i + 1}. ${d.label} | ID: ${d.deviceId}`);
-        });
-
-        // Find target device (VG240Y or USB Speakers)
-        let targetDevice = audioOutputs.find((d) => {
-          const label = d.label.toLowerCase();
-          const isTarget =
-            label.includes("vg240y") ||
-            label.includes("nvidia high definition audio");
-          const isNotAlias =
-            d.deviceId !== "default" && d.deviceId !== "communications";
-          return isTarget && isNotAlias;
-        });
-
-        // Fallback: USB Speakers
-        if (!targetDevice) {
-          targetDevice = audioOutputs.find(
-            (d) => d.label.includes("USB Audio") && d.label.includes("Speakers")
-          );
-        }
-
-        // Last resort: First non-alias device
-        if (!targetDevice) {
-          targetDevice = audioOutputs.find(
-            (d) => d.deviceId !== "default" && d.deviceId !== "communications"
-          );
-        }
-
-        if (targetDevice) {
-          console.log("🎯 Setting audio output to:", targetDevice.label);
-          await (audioEl as any).setSinkId(targetDevice.deviceId);
-
-          const actualSinkId = (audioEl as any).sinkId;
-          console.log("✅ Audio routed to:", targetDevice.label);
-          console.log("✅ Verified sinkId:", actualSinkId);
-
-          if (actualSinkId === "default" || actualSinkId === "communications") {
-            console.error("❌ Still using alias device:", actualSinkId);
-            setError("⚠️ Audio routing may be incorrect");
-          } else {
-            console.log("🎉 Using actual device ID");
-            setError(`🔊 Audio: ${targetDevice.label}`);
-            setTimeout(() => setError(null), 3000);
+    // STEP 3: Try to play with retry
+    const playWithRetry = async (attempts = 5) => {
+      for (let i = 0; i < attempts; i++) {
+        try {
+          await audioEl.play();
+          console.log(`✅ Audio playing (attempt ${i + 1})`);
+          setRemoteAudioStatus("active");
+          return;
+        } catch (err: any) {
+          console.log(`⏳ Play attempt ${i + 1} failed: ${err.name}`);
+          if (i < attempts - 1) {
+            await new Promise((r) => setTimeout(r, 200 * (i + 1)));
           }
-        } else {
-          console.warn("⚠️ No suitable audio output found, using default");
-          await (audioEl as any).setSinkId("");
-        }
-      } catch (err: any) {
-        console.error("❌ setSinkId failed:", err.name, err.message);
-        setError(`⚠️ Audio routing failed: ${err.message}`);
-      }
-    }
-
-    // STEP 5: Force play with retries
-    const playAudio = async (attempt: number = 1): Promise<void> => {
-      if (attempt > 10) {
-        console.error("❌ Failed to play audio after 10 attempts");
-        setError("⚠️ Click anywhere to enable audio");
-        return;
-      }
-
-      try {
-        const delay = 100 * attempt;
-        console.log(`⏳ Play attempt ${attempt}/10 (waiting ${delay}ms)...`);
-
-        await new Promise((r) => setTimeout(r, delay));
-
-        // Resume audio context if suspended
-        const AudioCtx =
-          (window as any).AudioContext || (window as any).webkitAudioContext;
-        if (AudioCtx) {
-          const ctx = new AudioCtx();
-          if (ctx.state === "suspended") {
-            await ctx.resume();
-            console.log("✅ Audio context resumed");
-          }
-          ctx.close();
-        }
-
-        await audioEl.play();
-
-        console.log("✅ AUDIO PLAYING!", {
-          paused: audioEl.paused,
-          volume: audioEl.volume,
-          muted: audioEl.muted,
-          currentTime: audioEl.currentTime,
-          readyState: audioEl.readyState,
-          trackEnabled: remoteAudio.enabled,
-          trackMuted: remoteAudio.muted,
-        });
-
-        setRemoteAudioStatus("active");
-        setError(null);
-      } catch (err: any) {
-        console.error(`❌ Play attempt ${attempt} failed:`, err.name);
-
-        if (err.name === "NotAllowedError" && attempt >= 3) {
-          console.log("🖱️ Waiting for user click...");
-          setError("🔊 CLICK ANYWHERE to enable audio");
-
-          const enableAudio = async () => {
-            try {
-              await audioEl.play();
-              console.log("✅ Audio started after click!");
-              setError(null);
-              setRemoteAudioStatus("active");
-            } catch (e) {
-              console.error("❌ Still failed:", e);
-              setError("⚠️ Audio error - check system sound settings");
-            }
-          };
-
-          document.addEventListener("click", enableAudio, { once: true });
-          document.addEventListener(
-            "keydown",
-            (e) => {
-              if (e.code === "Space" || e.code === "Enter") {
-                enableAudio();
-              }
-            },
-            { once: true }
-          );
-        } else {
-          return playAudio(attempt + 1);
         }
       }
+
+      console.warn("⚠️ All play attempts failed - waiting for user click");
+      setError("🔊 Click anywhere to enable audio");
+
+      const enableAudio = async () => {
+        try {
+          await audioEl.play();
+          console.log("✅ Audio started after click");
+          setError(null);
+          setRemoteAudioStatus("active");
+        } catch (e) {
+          console.error("❌ Still failed:", e);
+        }
+      };
+
+      document.addEventListener("click", enableAudio, { once: true });
     };
 
-    await playAudio();
+    await playWithRetry();
 
-    // STEP 6: Monitor track state
-    remoteAudio.onmute = () => {
-      console.warn("🔇 Remote audio muted");
+    // STEP 4: Monitor track state
+    audioTracks[0].onmute = () => {
+      console.warn("🔇 Audio muted");
       setRemoteAudioStatus("muted");
     };
 
-    remoteAudio.onunmute = () => {
-      console.log("🔊 Remote audio unmuted");
+    audioTracks[0].onunmute = () => {
+      console.log("🔊 Audio unmuted");
       setRemoteAudioStatus("active");
-      if (audioEl.paused) {
-        audioEl.play().catch(console.error);
-      }
+      if (audioEl.paused) audioEl.play().catch(console.error);
     };
-
-    remoteAudio.onended = () => {
-      console.warn("⏹️ Remote audio ended");
-      setRemoteAudioStatus("ended");
-      audioEl.remove();
-    };
-
-    // STEP 7: Keep audio alive
-    const keepAlive = setInterval(() => {
-      if (
-        audioEl.paused &&
-        remoteAudio.readyState === "live" &&
-        !remoteAudio.muted
-      ) {
-        console.warn("⚠️ Audio paused unexpectedly, restarting...");
-        audioEl.play().catch(console.error);
-      }
-    }, 2000);
-
-    (audioEl as any)._keepAlive = keepAlive;
 
     console.log("===== REMOTE AUDIO SETUP COMPLETE =====\n");
   };
@@ -1818,7 +1623,6 @@ const VideoCall = ({
     }
   };
 
-
   // ✅ Toggle audio
   const toggleAudio = () => {
     if (webrtcServiceRef.current) {
@@ -1829,454 +1633,450 @@ const VideoCall = ({
     }
   };
 
-    // ✅ Toggle video
-    const toggleVideo = () => {
-      if (webrtcServiceRef.current) {
-        const newState = !isVideoEnabled;
-        webrtcServiceRef.current.toggleVideo(newState);
-        setIsVideoEnabled(newState);
-        console.log(`📹 Local video ${newState ? "enabled" : "disabled"}`);
+  // ✅ Toggle video
+  const toggleVideo = () => {
+    if (webrtcServiceRef.current) {
+      const newState = !isVideoEnabled;
+      webrtcServiceRef.current.toggleVideo(newState);
+      setIsVideoEnabled(newState);
+      console.log(`📹 Local video ${newState ? "enabled" : "disabled"}`);
+    }
+  };
+
+  // ✅ Toggle screen share
+  const toggleScreenShare = async () => {
+    try {
+      const socket = getSocket();
+      if (!isScreenSharing) {
+        await webrtcServiceRef.current?.startScreenShare(true);
+        socket.emit("start-screen-share", roomId);
+        setIsScreenSharing(true);
+        console.log("✅ Screen sharing started");
+      } else {
+        await webrtcServiceRef.current?.stopScreenShare();
+        socket.emit("stop-screen-share", roomId);
+        setIsScreenSharing(false);
+        console.log("✅ Screen sharing stopped");
       }
-    };
+    } catch (error) {
+      console.error("❌ Screen share error:", error);
+      setError("Screen sharing failed");
+    }
+  };
 
-    // ✅ Toggle screen share
-    const toggleScreenShare = async () => {
-      try {
-        const socket = getSocket();
-        if (!isScreenSharing) {
-          await webrtcServiceRef.current?.startScreenShare(true);
-          socket.emit("start-screen-share", roomId);
-          setIsScreenSharing(true);
-          console.log("✅ Screen sharing started");
-        } else {
-          await webrtcServiceRef.current?.stopScreenShare();
-          socket.emit("stop-screen-share", roomId);
-          setIsScreenSharing(false);
-          console.log("✅ Screen sharing stopped");
-        }
-      } catch (error) {
-        console.error("❌ Screen share error:", error);
-        setError("Screen sharing failed");
-      }
-    };
+  // ✅ Start recording
+  const startRecording = async () => {
+    try {
+      const localVideo = localVideoRef.current;
+      const remoteVideo = remoteVideoRef.current;
+      const localStream = webrtcServiceRef.current?.getLocalStream();
+      const remoteStream = webrtcServiceRef.current?.getRemoteStream();
 
-    // ✅ Start recording
-    const startRecording = async () => {
-      try {
-        const localVideo = localVideoRef.current;
-        const remoteVideo = remoteVideoRef.current;
-        const localStream = webrtcServiceRef.current?.getLocalStream();
-        const remoteStream = webrtcServiceRef.current?.getRemoteStream();
-
-        if (!localVideo || !remoteVideo || !localStream || !remoteStream) {
-          setError("Cannot start recording");
-          return;
-        }
-
-        await recordingServiceRef.current?.startRecording(
-          localVideo,
-          remoteVideo,
-          localStream,
-          remoteStream
-        );
-
-        setIsRecording(true);
-        setRecordingTime(0);
-
-        const socket = getSocket();
-        socket.emit("recording-started", roomId, user?._id);
-
-        recordingIntervalRef.current = setInterval(() => {
-          setRecordingTime((prev) => prev + 1);
-        }, 1000);
-
-        console.log("✅ Recording started");
-      } catch (error: any) {
-        console.error("❌ Recording error:", error);
-        setError("Failed to start recording");
-      }
-    };
-
-    // ✅ Stop recording
-    const stopRecording = () => {
-      if (recordingServiceRef.current) {
-        recordingServiceRef.current.stopRecording();
-      }
-      setIsRecording(false);
-
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
-
-      try {
-        const socket = getSocket();
-        socket.emit("recording-stopped", roomId, user?._id);
-        console.log("✅ Recording stopped");
-      } catch (error) {
-        console.error("Error emitting recording-stopped:", error);
-      }
-    };
-
-    // ✅ Handle end call
-    const handleEndCall = async () => {
-      if (callEndedRef.current) {
-        console.log("⚠️ Call already ended, skipping");
+      if (!localVideo || !remoteVideo || !localStream || !remoteStream) {
+        setError("Cannot start recording");
         return;
       }
-      console.log("📴 Ending call initiated by local user");
-      callEndedRef.current = true;
-      isEndingCallRef.current = true;
+
+      await recordingServiceRef.current?.startRecording(
+        localVideo,
+        remoteVideo,
+        localStream,
+        remoteStream
+      );
+
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      const socket = getSocket();
+      socket.emit("recording-started", roomId, user?._id);
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+
+      console.log("✅ Recording started");
+    } catch (error: any) {
+      console.error("❌ Recording error:", error);
+      setError("Failed to start recording");
+    }
+  };
+
+  // ✅ Stop recording
+  const stopRecording = () => {
+    if (recordingServiceRef.current) {
+      recordingServiceRef.current.stopRecording();
+    }
+    setIsRecording(false);
+
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+    }
+
+    try {
+      const socket = getSocket();
+      socket.emit("recording-stopped", roomId, user?._id);
+      console.log("✅ Recording stopped");
+    } catch (error) {
+      console.error("Error emitting recording-stopped:", error);
+    }
+  };
+
+  // ✅ Handle end call
+  const handleEndCall = async () => {
+    if (callEndedRef.current) {
+      console.log("⚠️ Call already ended, skipping");
+      return;
+    }
+    console.log("📴 Ending call initiated by local user");
+    callEndedRef.current = true;
+    isEndingCallRef.current = true;
+
+    try {
+      if (isRecording) {
+        stopRecording();
+      }
 
       try {
-        if (isRecording) {
-          stopRecording();
-        }
-
-        try {
-          const socket = getSocket();
-          socket.emit("end-call", roomId, { endedBy: user?._id });
-          console.log("📤 Sent end-call signal");
-        } catch (error) {
-          console.error("Socket emit error:", error);
-        }
-
-        if (callId) {
-          await axiosInstance
-            .put(`/call/${callId}/status`, {
-              status: "ended",
-              duration: Math.floor(recordingTime),
-            })
-            .catch((err) =>
-              console.error("Failed to update call status:", err)
-            );
-        }
-
-        cleanup(false);
-        onEndCall();
-
-        setTimeout(() => {
-          router.push("/");
-        }, 500);
+        const socket = getSocket();
+        socket.emit("end-call", roomId, { endedBy: user?._id });
+        console.log("📤 Sent end-call signal");
       } catch (error) {
-        console.error("Error ending call:", error);
-        cleanup(false);
-        onEndCall();
+        console.error("Socket emit error:", error);
+      }
+
+      if (callId) {
+        await axiosInstance
+          .put(`/call/${callId}/status`, {
+            status: "ended",
+            duration: Math.floor(recordingTime),
+          })
+          .catch((err) => console.error("Failed to update call status:", err));
+      }
+
+      cleanup(false);
+      onEndCall();
+
+      setTimeout(() => {
         router.push("/");
+      }, 500);
+    } catch (error) {
+      console.error("Error ending call:", error);
+      cleanup(false);
+      onEndCall();
+      router.push("/");
+    }
+  };
+
+  // ✅ Handle play button click
+  const handlePlayClick = async () => {
+    console.log("🎬 Manual play button clicked");
+
+    try {
+      await ensureAudioContextResumed();
+
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
+        await remoteVideoRef.current.play();
+        console.log("✅ Video playing with audio");
       }
-    };
 
-    // ✅ Handle play button click
-    const handlePlayClick = async () => {
-      console.log("🎬 Manual play button clicked");
-
-      try {
-        await ensureAudioContextResumed();
-
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.muted = false;
-          remoteVideoRef.current.volume = 1.0;
-          await remoteVideoRef.current.play();
-          console.log("✅ Video playing with audio");
-        }
-
-        if (remoteAudioRef.current) {
-          remoteAudioRef.current.muted = false;
-          remoteAudioRef.current.volume = 1.0;
-          await remoteAudioRef.current.play();
-          console.log("✅ Backup audio playing");
-        }
-
-        if (audioContextRef.current?.state === "suspended") {
-          await audioContextRef.current.resume();
-          console.log("✅ AudioContext resumed");
-        }
-
-        setConnectionStatus("connected");
-        setShowPlayButton(false);
-        setError(null);
-      } catch (err: any) {
-        console.error("❌ Manual play failed:", err);
-        setError("⚠️ Could not start playback - try again");
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.volume = 1.0;
+        await remoteAudioRef.current.play();
+        console.log("✅ Backup audio playing");
       }
-    };
 
-    // ✅ Toggle fullscreen
-    const toggleFullscreen = async () => {
-      try {
-        if (!document.fullscreenElement) {
-          await document.documentElement.requestFullscreen();
-          console.log("✅ Entered fullscreen");
-        } else {
-          await document.exitFullscreen();
-          console.log("✅ Exited fullscreen");
-        }
-      } catch (error) {
-        console.error("Fullscreen error:", error);
+      if (audioContextRef.current?.state === "suspended") {
+        await audioContextRef.current.resume();
+        console.log("✅ AudioContext resumed");
       }
-    };
 
-    // ✅ Format time
-    const formatTime = (seconds: number) => {
-      const mins = Math.floor(seconds / 60);
-      const secs = seconds % 60;
-      return `${mins.toString().padStart(2, "0")}:${secs
-        .toString()
-        .padStart(2, "0")}`;
-    };
-    return (
-      <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
-        {/* Video elements - ALWAYS in DOM from first render */}
+      setConnectionStatus("connected");
+      setShowPlayButton(false);
+      setError(null);
+    } catch (err: any) {
+      console.error("❌ Manual play failed:", err);
+      setError("⚠️ Could not start playback - try again");
+    }
+  };
+
+  // ✅ Toggle fullscreen
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+        console.log("✅ Entered fullscreen");
+      } else {
+        await document.exitFullscreen();
+        console.log("✅ Exited fullscreen");
+      }
+    } catch (error) {
+      console.error("Fullscreen error:", error);
+    }
+  };
+
+  // ✅ Format time
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
+  return (
+    <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
+      {/* Video elements - ALWAYS in DOM from first render */}
+      <video
+        ref={remoteVideoRef}
+        id="remote-video"
+        autoPlay
+        playsInline
+        muted={false}
+        className="w-full h-full object-cover absolute inset-0"
+        style={{
+          backgroundColor: "#000",
+        }}
+        onLoadedMetadata={async (e) => {
+          console.log("✅ Remote video metadata loaded");
+          const video = e.currentTarget;
+          try {
+            video.muted = false;
+            video.volume = 1.0;
+            await video.play();
+            console.log("✅ Remote video playing");
+          } catch (err: any) {
+            console.error("❌ Autoplay blocked:", err.name);
+            setShowPlayButton(true);
+          }
+        }}
+      />
+
+      {/* Local video - ALWAYS in DOM */}
+      <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
         <video
-          ref={remoteVideoRef}
-          id="remote-video"
+          ref={localVideoRef}
+          id="local-video"
           autoPlay
           playsInline
-          muted={false}
-          className="w-full h-full object-cover absolute inset-0"
-          style={{
-            backgroundColor: "#000",
-          }}
-          onLoadedMetadata={async (e) => {
-            console.log("✅ Remote video metadata loaded");
-            const video = e.currentTarget;
-            try {
-              video.muted = false;
-              video.volume = 1.0;
-              await video.play();
-              console.log("✅ Remote video playing");
-            } catch (err: any) {
-              console.error("❌ Autoplay blocked:", err.name);
-              setShowPlayButton(true);
-            }
-          }}
+          muted
+          className="w-full h-full object-cover"
         />
+        {!isVideoEnabled && (
+          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+            <VideoOff className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
+      </div>
 
-        {/* Local video - ALWAYS in DOM */}
-        <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
-          <video
-            ref={localVideoRef}
-            id="local-video"
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
-          {!isVideoEnabled && (
-            <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-              <VideoOff className="w-12 h-12 text-gray-400" />
+      {/* OVERLAY 1: Start Call Screen */}
+      {!userInteracted && (
+        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="mb-8">
+              <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
+                <Video className="w-12 h-12 text-white" />
+              </div>
+              <h1 className="text-white text-3xl font-bold mb-2">
+                Ready to join?
+              </h1>
+              <p className="text-gray-400 text-lg">Tap to start your call</p>
+            </div>
+            <button
+              onClick={() => {
+                console.log("🎬 ===== START CALL BUTTON CLICKED =====");
+                setUserInteracted(true);
+              }}
+              className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
+            >
+              🎥 START CALL
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* OVERLAY 2: Initializing Screen */}
+      {userInteracted && !isInitialized && (
+        <div className="absolute inset-0 bg-black/95 z-40 flex items-center justify-center">
+          <div className="text-center max-w-md px-4">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <h1 className="text-white text-2xl font-bold mb-2">
+              {initError ? "Initialization Failed" : "Initializing Call..."}
+            </h1>
+            <p className="text-gray-400 mb-4">{initStep}</p>
+
+            {initError && (
+              <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-4">
+                <p className="text-red-300 text-sm mb-3">{initError}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg">
+              <p className="text-xs text-gray-400 font-mono">
+                Step: {initStep}
+              </p>
+              <p className="text-xs text-gray-400 font-mono">
+                webrtcService: {String(!!webrtcServiceRef.current)}
+              </p>
+              <p className="text-xs text-gray-400 font-mono">
+                localVideoRef: {String(!!localVideoRef.current)}
+              </p>
+              <p className="text-xs text-gray-400 font-mono">
+                remoteVideoRef: {String(!!remoteVideoRef.current)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main UI - only visible when initialized */}
+      {isInitialized && (
+        <>
+          {/* Top Bar */}
+          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-white text-lg sm:text-2xl font-bold truncate">
+                  {remotePeerName}
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      connectionStatus === "connected"
+                        ? "bg-green-500"
+                        : connectionStatus === "connecting"
+                        ? "bg-yellow-500 animate-pulse"
+                        : "bg-red-500"
+                    }`}
+                  />
+                  <p className="text-gray-300 text-xs sm:text-sm capitalize">
+                    {connectionStatus}
+                  </p>
+                  {remoteAudioStatus === "muted" && (
+                    <span className="text-red-400 text-xs sm:text-sm">🔇</span>
+                  )}
+                  {remoteAudioStatus === "active" && (
+                    <span className="text-green-400 text-xs sm:text-sm">
+                      🔊
+                    </span>
+                  )}
+                </div>
+              </div>
+              {isRecording && (
+                <div className="flex items-center gap-2 sm:gap-3 bg-red-600/90 px-3 py-2 sm:px-6 sm:py-3 rounded-full animate-pulse">
+                  <Circle className="w-3 h-3 sm:w-4 sm:h-4 fill-white" />
+                  <span className="text-white text-sm sm:text-lg font-bold">
+                    {formatTime(recordingTime)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Play Button */}
+          {showPlayButton && (
+            <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
+              <button
+                onClick={handlePlayClick}
+                className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
+              >
+                <Play
+                  className="w-12 h-12 sm:w-16 sm:h-16 text-white"
+                  fill="currentColor"
+                />
+              </button>
             </div>
           )}
-        </div>
 
-        {/* OVERLAY 1: Start Call Screen */}
-        {!userInteracted && (
-          <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
-            <div className="text-center">
-              <div className="mb-8">
-                <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                  <Video className="w-12 h-12 text-white" />
-                </div>
-                <h1 className="text-white text-3xl font-bold mb-2">
-                  Ready to join?
-                </h1>
-                <p className="text-gray-400 text-lg">Tap to start your call</p>
-              </div>
+          {/* Error Banner */}
+          {error && !showPlayButton && (
+            <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg z-30 shadow-2xl text-center">
+              <p className="font-semibold text-sm sm:text-base">{error}</p>
+            </div>
+          )}
+
+          {/* Bottom Controls */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20">
+            <div className="flex items-center justify-center gap-2 sm:gap-4">
               <button
-                onClick={() => {
-                  console.log("🎬 ===== START CALL BUTTON CLICKED =====");
-                  setUserInteracted(true);
-                }}
-                className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
+                onClick={toggleAudio}
+                className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
+                  isAudioEnabled
+                    ? "bg-gray-700 hover:bg-gray-600"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
               >
-                🎥 START CALL
+                {isAudioEnabled ? (
+                  <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                ) : (
+                  <MicOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                )}
+              </button>
+              <button
+                onClick={toggleVideo}
+                className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
+                  isVideoEnabled
+                    ? "bg-gray-700 hover:bg-gray-600"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {isVideoEnabled ? (
+                  <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                ) : (
+                  <VideoOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                )}
+              </button>
+              <button
+                onClick={toggleScreenShare}
+                className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
+                  isScreenSharing
+                    ? "bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-400/50"
+                    : "bg-gray-700 hover:bg-gray-600"
+                }`}
+              >
+                <MonitorUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </button>
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={connectionStatus !== "connected"}
+                className={`p-3 sm:p-4 rounded-full transition-all shadow-lg disabled:opacity-50 ${
+                  isRecording
+                    ? "bg-red-600 hover:bg-red-700 ring-2 ring-red-400/50"
+                    : "bg-gray-700 hover:bg-gray-600"
+                }`}
+              >
+                <Circle
+                  className={`w-5 h-5 sm:w-6 sm:h-6 text-white ${
+                    isRecording ? "fill-white" : ""
+                  }`}
+                />
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="p-3 sm:p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-all shadow-lg"
+              >
+                <Maximize className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </button>
+              <button
+                onClick={handleEndCall}
+                disabled={isEndingCallRef.current}
+                className="p-4 sm:p-6 rounded-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 transition-all shadow-xl ml-2 sm:ml-4"
+              >
+                <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </button>
             </div>
           </div>
-        )}
-
-        {/* OVERLAY 2: Initializing Screen */}
-        {userInteracted && !isInitialized && (
-          <div className="absolute inset-0 bg-black/95 z-40 flex items-center justify-center">
-            <div className="text-center max-w-md px-4">
-              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <h1 className="text-white text-2xl font-bold mb-2">
-                {initError ? "Initialization Failed" : "Initializing Call..."}
-              </h1>
-              <p className="text-gray-400 mb-4">{initStep}</p>
-
-              {initError && (
-                <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-4">
-                  <p className="text-red-300 text-sm mb-3">{initError}</p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-
-              <div className="mt-6 text-left bg-gray-900 p-4 rounded-lg">
-                <p className="text-xs text-gray-400 font-mono">
-                  Step: {initStep}
-                </p>
-                <p className="text-xs text-gray-400 font-mono">
-                  webrtcService: {String(!!webrtcServiceRef.current)}
-                </p>
-                <p className="text-xs text-gray-400 font-mono">
-                  localVideoRef: {String(!!localVideoRef.current)}
-                </p>
-                <p className="text-xs text-gray-400 font-mono">
-                  remoteVideoRef: {String(!!remoteVideoRef.current)}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main UI - only visible when initialized */}
-        {isInitialized && (
-          <>
-            {/* Top Bar */}
-            <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-white text-lg sm:text-2xl font-bold truncate">
-                    {remotePeerName}
-                  </h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        connectionStatus === "connected"
-                          ? "bg-green-500"
-                          : connectionStatus === "connecting"
-                          ? "bg-yellow-500 animate-pulse"
-                          : "bg-red-500"
-                      }`}
-                    />
-                    <p className="text-gray-300 text-xs sm:text-sm capitalize">
-                      {connectionStatus}
-                    </p>
-                    {remoteAudioStatus === "muted" && (
-                      <span className="text-red-400 text-xs sm:text-sm">
-                        🔇
-                      </span>
-                    )}
-                    {remoteAudioStatus === "active" && (
-                      <span className="text-green-400 text-xs sm:text-sm">
-                        🔊
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {isRecording && (
-                  <div className="flex items-center gap-2 sm:gap-3 bg-red-600/90 px-3 py-2 sm:px-6 sm:py-3 rounded-full animate-pulse">
-                    <Circle className="w-3 h-3 sm:w-4 sm:h-4 fill-white" />
-                    <span className="text-white text-sm sm:text-lg font-bold">
-                      {formatTime(recordingTime)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Play Button */}
-            {showPlayButton && (
-              <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
-                <button
-                  onClick={handlePlayClick}
-                  className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
-                >
-                  <Play
-                    className="w-12 h-12 sm:w-16 sm:h-16 text-white"
-                    fill="currentColor"
-                  />
-                </button>
-              </div>
-            )}
-
-            {/* Error Banner */}
-            {error && !showPlayButton && (
-              <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg z-30 shadow-2xl text-center">
-                <p className="font-semibold text-sm sm:text-base">{error}</p>
-              </div>
-            )}
-
-            {/* Bottom Controls */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20">
-              <div className="flex items-center justify-center gap-2 sm:gap-4">
-                <button
-                  onClick={toggleAudio}
-                  className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
-                    isAudioEnabled
-                      ? "bg-gray-700 hover:bg-gray-600"
-                      : "bg-red-600 hover:bg-red-700"
-                  }`}
-                >
-                  {isAudioEnabled ? (
-                    <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  ) : (
-                    <MicOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  )}
-                </button>
-                <button
-                  onClick={toggleVideo}
-                  className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
-                    isVideoEnabled
-                      ? "bg-gray-700 hover:bg-gray-600"
-                      : "bg-red-600 hover:bg-red-700"
-                  }`}
-                >
-                  {isVideoEnabled ? (
-                    <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  ) : (
-                    <VideoOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  )}
-                </button>
-                <button
-                  onClick={toggleScreenShare}
-                  className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
-                    isScreenSharing
-                      ? "bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-400/50"
-                      : "bg-gray-700 hover:bg-gray-600"
-                  }`}
-                >
-                  <MonitorUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </button>
-                <button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  disabled={connectionStatus !== "connected"}
-                  className={`p-3 sm:p-4 rounded-full transition-all shadow-lg disabled:opacity-50 ${
-                    isRecording
-                      ? "bg-red-600 hover:bg-red-700 ring-2 ring-red-400/50"
-                      : "bg-gray-700 hover:bg-gray-600"
-                  }`}
-                >
-                  <Circle
-                    className={`w-5 h-5 sm:w-6 sm:h-6 text-white ${
-                      isRecording ? "fill-white" : ""
-                    }`}
-                  />
-                </button>
-                <button
-                  onClick={toggleFullscreen}
-                  className="p-3 sm:p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-all shadow-lg"
-                >
-                  <Maximize className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </button>
-                <button
-                  onClick={handleEndCall}
-                  disabled={isEndingCallRef.current}
-                  className="p-4 sm:p-6 rounded-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 transition-all shadow-xl ml-2 sm:ml-4"
-                >
-                  <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
+        </>
+      )}
+    </div>
+  );
+};
 
 export default VideoCall;

@@ -9,33 +9,26 @@ let isRegistered = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 // ✅ ENHANCED: Smart socket URL detection with environment support
+// In your socket.ts, update the SOCKET_URL detection:
 const getSocketURL = (): string => {
-  // Server-side rendering protection
   if (typeof window === "undefined") {
-    console.log("🖥️ SSR detected, using localhost");
     return "http://localhost:5000";
   }
 
-  // Check environment variable first (for flexibility)
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    const envURL = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
-    console.log("🔧 Using environment variable:", envURL);
-    return envURL;
-  }
-
-  const PRODUCTION_URL = "https://youtube-clone-project-production.up.railway.app";
   const hostname = window.location.hostname;
-
-  // ✅ Local development detection
+  
+  // ✅ CRITICAL: Local development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
-    console.log("🏠 Local development environment");
     return "http://localhost:5000";
   }
 
-  // ✅ Production (Vercel/Netlify/any deployment)
-  console.log("🌐 Production environment:", hostname);
-  console.log("🔧 Using Render backend:", PRODUCTION_URL);
-  return PRODUCTION_URL;
+  // ✅ CRITICAL: Production - use environment variable if available
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+  }
+
+  // ✅ CRITICAL: Railway production URL (hardcoded fallback)
+  return "https://youtube-clone-project-production.up.railway.app";
 };
 
 const SOCKET_URL = getSocketURL();
