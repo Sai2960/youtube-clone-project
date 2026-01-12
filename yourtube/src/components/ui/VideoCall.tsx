@@ -1617,29 +1617,30 @@ const VideoCall = ({
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
 
-      // Handle signaling based on role
-    // Handle signaling based on role
-if (isInitiator) {
+    if (isInitiator) {
   console.log("👑 I am INITIATOR - waiting for peer to join...");
 
   await new Promise<void>((resolve) => {
-    // ✅ INCREASED TIMEOUT to 20 seconds
     const timeout = setTimeout(() => {
-      console.log("⏰ Timeout after 20s, creating offer anyway");
+      console.log("⏰ Timeout after 25s, creating offer anyway");
       resolve();
-    }, 20000);  // Increased from 10s to 20s
+    }, 25000); // Increased timeout
 
     socket.once("both-users-ready", () => {
-      console.log("✅ Both users ready!");
+      console.log("✅ Both users ready signal received!");
       clearTimeout(timeout);
-      resolve();
+      // Add extra delay to ensure receiver has tracks
+      setTimeout(() => {
+        console.log("✅ Starting offer creation after safety delay");
+        resolve();
+      }, 1000); // Extra 1s safety delay
     });
 
     socket.once("user-joined-room", (data: any) => {
       console.log("✅ Peer joined room:", data);
       clearTimeout(timeout);
-      // ✅ INCREASED DELAY to 1 second
-      setTimeout(resolve, 1000);  // Increased from 500ms to 1000ms
+      // Longer delay before creating offer
+      setTimeout(resolve, 2000); // Increased from 1s to 2s
     });
   });
 
