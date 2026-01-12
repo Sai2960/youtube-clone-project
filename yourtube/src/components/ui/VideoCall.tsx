@@ -1512,6 +1512,14 @@ const VideoCall = ({
             console.log(`✅ Enabled ${t.kind}: ${t.label}`);
           });
 
+          // ✅ CRITICAL: Set connected status BEFORE attaching stream
+          setConnectionStatus("connected");
+          setShowPlayButton(false);
+          setError(null);
+
+          // ✅ CRITICAL: Wait for React to re-render and hide overlays
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
           // Attach to video element
           remoteVideoRef.current.srcObject = remoteStream;
           remoteVideoRef.current.muted = false;
@@ -1520,9 +1528,6 @@ const VideoCall = ({
           try {
             await remoteVideoRef.current.play();
             console.log("✅ Remote video playing");
-            setConnectionStatus("connected");
-            setShowPlayButton(false);
-            setError(null);
           } catch (err: any) {
             console.error("❌ Video play failed:", err.name);
             if (err.name === "NotAllowedError") {
