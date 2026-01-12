@@ -207,8 +207,12 @@ export class WebRTCService {
     console.log("\n🔧 Setting up event listeners (FIXED)");
 
     this.callbackFired = false;
+    // ✅ CRITICAL: Clear and recreate remote stream
+    if (this.remoteStream) {
+      this.remoteStream.getTracks().forEach((t) => t.stop());
+    }
     this.remoteStream = new MediaStream();
-
+    console.log("🔄 Created fresh remote stream:", this.remoteStream.id);
     // ✅ CRITICAL: Track handler
     const trackHandler = async (event: RTCTrackEvent) => {
       console.log("\n📥 ===== TRACK RECEIVED =====");
@@ -218,35 +222,42 @@ export class WebRTCService {
       console.log("   Enabled:", event.track.enabled);
       console.log("   Muted:", event.track.muted);
       console.log("   ReadyState:", event.track.readyState);
+      console.log("   Streams in event:", event.streams.length);
 
       const track = event.track;
-
-      // ✅ Force enable immediately
       track.enabled = true;
 
-      // ✅ CRITICAL FIX: Always use event.streams[0] if available
+      // ✅ CRITICAL FIX: Use event.streams[0] OR create/use remoteStream
       let targetStream: MediaStream;
 
       if (event.streams && event.streams.length > 0) {
         targetStream = event.streams[0];
-        this.remoteStream = targetStream;
-        console.log("   ✅ Using stream from event:", targetStream.id);
+        // ✅ CRITICAL: Update our reference to use the same stream
+        if (!this.remoteStream || this.remoteStream.id !== targetStream.id) {
+          console.log("   ✅ Using NEW stream from event:", targetStream.id);
+          this.remoteStream = targetStream;
+        }
       } else {
         // Fallback: add to our stream
-        const existing = this.remoteStream!.getTracks().find(
-          (t) => t.id === track.id
-        );
+        if (!this.remoteStream) {
+          this.remoteStream = new MediaStream();
+          console.log("   ✅ Created new remote stream:", this.remoteStream.id);
+        }
+
+        const existing = this.remoteStream
+          .getTracks()
+          .find((t) => t.id === track.id);
         if (!existing) {
-          this.remoteStream!.addTrack(track);
+          this.remoteStream.addTrack(track);
           console.log("   ✅ Added track to remoteStream");
         }
-        targetStream = this.remoteStream!;
+        targetStream = this.remoteStream;
       }
 
       // ✅ Monitor track state
       track.onmute = () => {
         console.warn(`⚠️ Remote ${track.kind} MUTED`);
-        track.enabled = true; // Try to re-enable
+        track.enabled = true;
       };
 
       track.onunmute = () => {
@@ -258,12 +269,13 @@ export class WebRTCService {
         console.warn(`🛑 Remote ${track.kind} ENDED`);
       };
 
-      // Check current track counts
+      // ✅ Get current track counts from the actual stream being used
       const audioTracks = targetStream.getAudioTracks();
       const videoTracks = targetStream.getVideoTracks();
-      console.log(
-        `   📊 Stream now has: audio=${audioTracks.length}, video=${videoTracks.length}`
-      );
+
+      console.log(`   📊 Stream ${targetStream.id} now has:`);
+      console.log(`      Audio: ${audioTracks.length}`);
+      console.log(`      Video: ${videoTracks.length}`);
 
       // ✅ CRITICAL: Fire callback when BOTH tracks are present
       if (
@@ -276,15 +288,16 @@ export class WebRTCService {
         console.log("\n🎉 ===== BOTH TRACKS READY =====");
         console.log("   Audio tracks:", audioTracks.length);
         console.log("   Video tracks:", videoTracks.length);
+        console.log("   Stream ID:", targetStream.id);
 
-        // Force enable ALL tracks one more time
+        // Force enable ALL tracks
         targetStream.getTracks().forEach((t) => {
           t.enabled = true;
-          console.log(`   ✅ Final enable: ${t.kind} - ${t.label}`);
+          console.log(`   ✅ Force enabled: ${t.kind} - ${t.label}`);
         });
 
-        // Small delay to ensure tracks are stable
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Small delay for stability
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
         console.log("   📤 Firing callback with stream:", targetStream.id);
         onRemoteStream(targetStream);
@@ -295,27 +308,12 @@ export class WebRTCService {
         );
       }
     };
-    // ✅ ICE candidate handler
-    const iceHandler = (event: RTCPeerConnectionIceEvent) => {
-      if (event.candidate) {
-        const c = event.candidate.candidate;
-        let type = c.includes("typ host")
-          ? "host"
-          : c.includes("typ srflx")
-          ? "srflx"
-          : c.includes("typ relay")
-          ? "relay"
-          : "?";
-        console.log(`❄️ ICE: ${type}`);
-        onIceCandidate(event.candidate);
-      }
-    };
 
-    this.peerConnection.addEventListener("icecandidate", iceHandler);
+    // ✅ CRITICAL: Attach the handler
+    this.peerConnection.addEventListener("track", trackHandler);
     this.eventCleanupHandlers.push(() => {
-      this.peerConnection?.removeEventListener("icecandidate", iceHandler);
+      this.peerConnection?.removeEventListener("track", trackHandler);
     });
-
     // ✅ Connection state handler
     const connHandler = () => {
       const state = this.peerConnection?.connectionState;

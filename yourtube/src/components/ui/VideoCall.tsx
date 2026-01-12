@@ -1287,6 +1287,63 @@ const VideoCall = ({
       }
     };
   }, [roomId, userInteracted]);
+
+  // ✅ Monitor peer connection state
+  useEffect(() => {
+    if (!webrtcServiceRef.current) return;
+
+    const pc = webrtcServiceRef.current.getPeerConnection();
+    if (!pc) return;
+
+    const checkConnection = () => {
+      console.log("🔍 Connection check:", {
+        connection: pc.connectionState,
+        ice: pc.iceConnectionState,
+        signaling: pc.signalingState,
+      });
+
+      // ✅ Force refresh remote stream when connected
+      if (
+        pc.connectionState === "connected" &&
+        !remoteStreamReceivedRef.current
+      ) {
+        console.log(
+          "⚠️ Connected but no remote stream - checking transceivers..."
+        );
+
+        const remoteStream = new MediaStream();
+        pc.getTransceivers().forEach((transceiver) => {
+          if (
+            transceiver.receiver.track &&
+            transceiver.receiver.track.readyState === "live"
+          ) {
+            remoteStream.addTrack(transceiver.receiver.track);
+            console.log(
+              `✅ Manually added ${transceiver.receiver.track.kind} track`
+            );
+          }
+        });
+
+        if (remoteStream.getTracks().length > 0) {
+          console.log("🔧 Manually triggering remote stream callback");
+          setupRemoteAudio(remoteStream);
+        }
+      }
+    };
+
+    pc.addEventListener("connectionstatechange", checkConnection);
+    pc.addEventListener("iceconnectionstatechange", checkConnection);
+
+    // Initial check
+    setTimeout(checkConnection, 2000);
+    const interval = setInterval(checkConnection, 5000);
+
+    return () => {
+      pc.removeEventListener("connectionstatechange", checkConnection);
+      pc.removeEventListener("iceconnectionstatechange", checkConnection);
+      clearInterval(interval);
+    };
+  }, [isInitialized]);
   // ✅ Cleanup function
   const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...", {
