@@ -1150,6 +1150,7 @@ const VideoCall = ({
 
         setInitStep("Initializing WebRTC");
         await initializeCall();
+        
 
         if (!mounted) {
           console.log("⚠️ Component unmounted during init");
@@ -1617,27 +1618,30 @@ const VideoCall = ({
       socket.emit("join-room", roomId, user._id);
 
       // Handle signaling based on role
-      if (isInitiator) {
-        console.log("👑 I am INITIATOR - waiting for peer to join...");
+    // Handle signaling based on role
+if (isInitiator) {
+  console.log("👑 I am INITIATOR - waiting for peer to join...");
 
-        await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => {
-            console.log("⏰ Timeout waiting for peer, creating offer anyway");
-            resolve();
-          }, 10000);
+  await new Promise<void>((resolve) => {
+    // ✅ INCREASED TIMEOUT to 20 seconds
+    const timeout = setTimeout(() => {
+      console.log("⏰ Timeout after 20s, creating offer anyway");
+      resolve();
+    }, 20000);  // Increased from 10s to 20s
 
-          socket.once("both-users-ready", () => {
-            console.log("✅ Both users ready!");
-            clearTimeout(timeout);
-            resolve();
-          });
+    socket.once("both-users-ready", () => {
+      console.log("✅ Both users ready!");
+      clearTimeout(timeout);
+      resolve();
+    });
 
-          socket.once("user-joined-room", (data: any) => {
-            console.log("✅ Peer joined room:", data);
-            clearTimeout(timeout);
-            setTimeout(resolve, 500);
-          });
-        });
+    socket.once("user-joined-room", (data: any) => {
+      console.log("✅ Peer joined room:", data);
+      clearTimeout(timeout);
+      // ✅ INCREASED DELAY to 1 second
+      setTimeout(resolve, 1000);  // Increased from 500ms to 1000ms
+    });
+  });
 
         console.log("📝 Creating offer...");
         const offer = await webrtcServiceRef.current.createOffer();
