@@ -38,38 +38,28 @@ export const setupCallHandlers = (io, socket) => {
       userCount,
     });
 
-    // ✅ FIXED: Wait before signaling - let receiver finish media setup
-  if (userCount === 2) {
-  console.log("✅ Both users in room!");
-  console.log("   Room members:", Array.from(room));
-  console.log("   Waiting 5 seconds for receiver media setup...");
+    if (userCount === 2) {
+      console.log("✅ Both users in room!");
+      console.log(
+        "   Waiting 12 seconds for BOTH users to finish media setup..."
+      );
 
-  // ✅ INCREASED: Give receiver MORE time to finish media acquisition
-  setTimeout(() => {
-    // ✅ CRITICAL: Verify both users still in room before sending signal
-    const currentRoom = io.sockets.adapter.rooms.get(roomId);
-    const currentCount = currentRoom ? currentRoom.size : 0;
-    
-    if (currentCount === 2) {
-      console.log("✅✅✅ SENDING both-users-ready SIGNAL");
-      console.log("   Room:", roomId);
-      console.log("   Users still connected:", currentCount);
-      console.log("   Timestamp:", Date.now());
-      
-      io.to(roomId).emit("both-users-ready", {
-        roomId,
-        userCount: 2,
-        timestamp: Date.now(),
-      });
-      
-      console.log("   ✅ Signal sent successfully!");
-    } else {
-      console.error("   ❌ User count changed! Not sending signal.");
-      console.error("   Expected 2, got:", currentCount);
-      console.error("   One user may have disconnected");
+      setTimeout(() => {
+        const currentRoom = io.sockets.adapter.rooms.get(roomId);
+        const currentCount = currentRoom ? currentRoom.size : 0;
+
+        if (currentCount === 2) {
+          console.log("✅✅✅ SENDING both-users-ready AFTER 12s delay");
+          io.to(roomId).emit("both-users-ready", {
+            roomId,
+            userCount: 2,
+            timestamp: Date.now(),
+          });
+        } else {
+          console.error("❌ User count changed during wait period!");
+        }
+      }, 12000); // ✅ CHANGED: 12 seconds instead of 3
     }
-  }, 5000); // ✅ CHANGED: 5 seconds instead of 3
-}
   });
 
   // ==========================================
