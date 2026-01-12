@@ -1065,6 +1065,22 @@ const VideoCall = ({
 
     return () => clearInterval(monitor);
   }, [connectionStatus]);
+  // ✅ Auto-start for initiator who already initiated the call
+useEffect(() => {
+  if (isInitiator && !userInteracted && roomId && !initializingRef.current) {
+    console.log("🤖 Auto-starting call for initiator after delay");
+    
+    // Give user 1 second to see the screen, then auto-start
+    const autoStartTimer = setTimeout(() => {
+      if (!userInteracted && !initializingRef.current) {
+        console.log("🤖 Auto-clicking START CALL for initiator");
+        setUserInteracted(true);
+      }
+    }, 1000);
+
+    return () => clearTimeout(autoStartTimer);
+  }
+}, [isInitiator, userInteracted, roomId]);
   // ✅ Socket event handlers
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
@@ -1082,6 +1098,7 @@ const VideoCall = ({
         return;
       }
 
+      
       const handleOffer = async (data: {
         offer: RTCSessionDescriptionInit;
         from: string;
@@ -1927,37 +1944,77 @@ const VideoCall = ({
         )}
       </div>
 
-     {/* OVERLAY 1: Start Call Screen */}
+     {/* OVERLAY 1: Start Call Screen - ALWAYS VISIBLE WHEN NEEDED */}
 {!userInteracted && (
-  <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
-    <div className="text-center px-4">
-      <div className="mb-8">
-        <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4 animate-pulse">
-          <Video className="w-12 h-12 text-white" />
+  <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 z-[9999] flex items-center justify-center">
+    <div className="text-center px-4 max-w-md">
+      {/* Animated Icon */}
+      <div className="mb-8 relative">
+        <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-2xl">
+          <Video className="w-16 h-16 text-white" />
         </div>
-        <h1 className="text-white text-3xl font-bold mb-2">
-          {isInitiator ? "Start Your Call" : "Join the Call"}
-        </h1>
-        <p className="text-gray-400 text-lg mb-2">
-          {isInitiator 
-            ? `Calling ${remotePeerName}...` 
-            : `${remotePeerName} is waiting`}
-        </p>
-        <p className="text-gray-500 text-sm">
-          Tap the button below to enable camera and microphone
-        </p>
+        {/* Ripple effect */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-32 h-32 bg-blue-500 rounded-full opacity-20 animate-ping"></div>
+        </div>
       </div>
+
+      {/* Title */}
+      <h1 className="text-white text-4xl font-bold mb-3 tracking-tight">
+        {isInitiator ? "Ready to Call?" : "Incoming Call"}
+      </h1>
+
+      {/* Subtitle */}
+      <p className="text-gray-300 text-xl mb-2 font-medium">
+        {isInitiator 
+          ? `${remotePeerName}` 
+          : `${remotePeerName} is calling...`}
+      </p>
+
+      {/* Permission notice */}
+      <p className="text-gray-400 text-sm mb-8 max-w-xs mx-auto">
+        {isInitiator 
+          ? "Click below to start the video call" 
+          : "Accept to enable camera and microphone"}
+      </p>
+
+      {/* Call to Action Button */}
       <button
         onClick={() => {
           console.log("🎬 ===== START CALL BUTTON CLICKED =====");
           console.log("   User role:", isInitiator ? "INITIATOR" : "RECEIVER");
           console.log("   User ID:", user?._id);
+          console.log("   Room ID:", roomId);
           setUserInteracted(true);
         }}
-        className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
+        className="group relative px-16 py-5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-2xl font-bold rounded-2xl shadow-2xl transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
       >
-        {isInitiator ? "🎥 START CALL" : "✅ JOIN CALL"}
+        {/* Button glow effect */}
+        <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
+        
+        {/* Button text */}
+        <span className="relative z-10 flex items-center gap-3">
+          {isInitiator ? (
+            <>
+              <Video className="w-8 h-8" />
+              START CALL
+            </>
+          ) : (
+            <>
+              <Video className="w-8 h-8" />
+              ACCEPT CALL
+            </>
+          )}
+        </span>
       </button>
+
+      {/* Room info - debug */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-8 text-xs text-gray-600 font-mono">
+          <p>Room: {roomId.slice(-8)}</p>
+          <p>Role: {isInitiator ? 'Initiator' : 'Receiver'}</p>
+        </div>
+      )}
     </div>
   </div>
 )}

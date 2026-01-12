@@ -1,5 +1,5 @@
 /* eslint-disable import/no-anonymous-default-export */
-// src/lib/socket.ts - FULLY MERGED AND FIXED VERSION
+// src/lib/socket.ts - FULLY MERGED AND FIXED VERSION WITH TIMEOUT
 import { io, Socket } from "socket.io-client";
 
 // ✅ State management for socket lifecycle
@@ -7,9 +7,11 @@ let socket: Socket | null = null;
 let currentUserId: string | null = null;
 let isRegistered = false;
 let reconnectAttempts = 0;
+let connectionTimeout: NodeJS.Timeout | null = null; // ✅ NEW: Track timeout
 const MAX_RECONNECT_ATTEMPTS = 10;
+const CONNECTION_TIMEOUT_MS = 10000; // ✅ NEW: 10 second timeout
+
 // ✅ ENHANCED: Smart socket URL detection with environment support
-// In your socket.ts, update the SOCKET_URL detection:
 const getSocketURL = (): string => {
   if (typeof window === "undefined") {
     return "http://localhost:5000";
@@ -22,11 +24,10 @@ const getSocketURL = (): string => {
     return "http://localhost:5000";
   }
 
-  // ✅ CRITICAL: Production - use environment variable if available
-  // ✅ Production - Railway
-  // CRITICAL: Use WSS (secure WebSocket) for HTTPS sites
+  // ✅ Production - Railway with WSS (secure WebSocket) for HTTPS sites
   return "https://youtube-clone-project-production.up.railway.app";
 };
+
 const SOCKET_URL = getSocketURL();
 
 console.log("🔧 Socket.IO Configuration:");
@@ -38,6 +39,12 @@ console.log(
 console.log("   Environment:", process.env.NODE_ENV || "development");
 // ✅ FEATURE-RICH: Initialize socket with user registration
 export const initializeSocket = (userId?: string): Socket => {
+  // ✅ Clear any existing timeout
+  if (connectionTimeout) {
+    clearTimeout(connectionTimeout);
+    connectionTimeout = null;
+  }
+
   // ✅ FEATURE 1: Return existing socket if conditions are met
   if (socket?.connected && currentUserId === userId && isRegistered) {
     console.log("✅ Socket already connected and registered");
@@ -104,7 +111,6 @@ export const initializeSocket = (userId?: string): Socket => {
     console.log("🔄 Forcing socket connection...");
     socket.connect();
   }
-
   // ✅ FEATURE 5: Expose socket to window for debugging
   if (typeof window !== "undefined") {
     (window as any).__socket = socket;
@@ -119,12 +125,47 @@ export const initializeSocket = (userId?: string): Socket => {
       }),
       forceReconnect: () => socket?.connect(),
       disconnect: () => socket?.disconnect(),
+      clearTimeout: () => {
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+          connectionTimeout = null;
+          console.log("✅ Connection timeout cleared");
+        }
+      },
     };
     console.log("✅ Socket exposed to window.__socket");
     console.log("✅ Debug tools available at window.__socketDebug");
   }
+  // ✅ NEW FEATURE: Connection timeout warning
+  connectionTimeout = setTimeout(() => {
+    if (!socket?.connected) {
+      console.error("⏰ Socket connection timeout after 10 seconds");
+      console.error("   URL:", SOCKET_URL);
+      console.error("   Current time:", new Date().toISOString());
+      console.error("   Possible issues:");
+      console.error("   1. Backend server is down or unreachable");
+      console.error("   2. CORS configuration blocking connection");
+      console.error("   3. Network/firewall blocking WebSocket");
+      console.error("   4. Wrong server URL configured");
+      console.error("   5. Server not accepting connections");
+      console.error("");
+      console.error("   Debug info:");
+      console.error("   - Socket ID:", socket?.id || "none");
+      console.error("   - User ID:", currentUserId || "none");
+      console.error("   - Reconnect attempts:", reconnectAttempts);
+      console.error("   - Is registered:", isRegistered);
+    }
+    connectionTimeout = null; // Clear reference after firing
+  }, CONNECTION_TIMEOUT_MS);
+
   // ✅ FEATURE 6: Connection success handler
   socket.on("connect", () => {
+    // ✅ Clear timeout on successful connection
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+      connectionTimeout = null;
+    }
+
     console.log("✅ Socket.IO connected successfully!");
     console.log("   Socket ID:", socket?.id);
     console.log("   Transport:", socket?.io.engine.transport.name);
@@ -171,9 +212,14 @@ export const initializeSocket = (userId?: string): Socket => {
       console.error("   - Backend server status");
       console.error("   - Network connectivity");
       console.error("   - CORS configuration");
+
+      // Clear timeout when giving up
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        connectionTimeout = null;
+      }
     }
   });
-
   // ✅ FEATURE 11: Disconnection handler
   socket.on("disconnect", (reason) => {
     console.log("❌ Socket.IO disconnected");
@@ -182,6 +228,12 @@ export const initializeSocket = (userId?: string): Socket => {
 
     // Reset registration flag
     isRegistered = false;
+
+    // Clear timeout on disconnect
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+      connectionTimeout = null;
+    }
 
     // ✅ Handle different disconnect reasons
     if (reason === "io server disconnect") {
@@ -204,6 +256,12 @@ export const initializeSocket = (userId?: string): Socket => {
   });
   // ✅ FEATURE 12: Reconnection success handler
   socket.on("reconnect", (attemptNumber) => {
+    // Clear timeout on reconnect
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+      connectionTimeout = null;
+    }
+
     console.log("✅ Socket.IO reconnected successfully!");
     console.log("   After attempts:", attemptNumber);
     console.log("   New Socket ID:", socket?.id);
@@ -234,6 +292,12 @@ export const initializeSocket = (userId?: string): Socket => {
   socket.on("reconnect_failed", () => {
     console.error("❌ All reconnection attempts failed");
     console.error("   Max attempts reached:", MAX_RECONNECT_ATTEMPTS);
+
+    // Clear timeout when all attempts fail
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+      connectionTimeout = null;
+    }
   });
 
   return socket;
@@ -263,6 +327,7 @@ export const getSocketInfo = () => {
     reconnectAttempts,
     transport: socket?.io.engine?.transport?.name ?? null,
     url: SOCKET_URL,
+    hasTimeout: connectionTimeout !== null,
   };
 };
 // ✅ FEATURE 19: Wait for socket connection with timeout
@@ -307,7 +372,6 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
 
       return;
     }
-
     // ✅ Case 3: Not connected yet - wait for connection
     console.log("⏳ Waiting for socket connection...");
     console.log("   Max wait time:", maxWaitMs, "ms");
@@ -354,6 +418,13 @@ export const waitForSocket = (maxWaitMs: number = 15000): Promise<Socket> => {
 };
 // ✅ FEATURE 20: Disconnect and cleanup socket
 export const disconnectSocket = (): void => {
+  // Clear any pending timeout
+  if (connectionTimeout) {
+    clearTimeout(connectionTimeout);
+    connectionTimeout = null;
+    console.log("✅ Connection timeout cleared during disconnect");
+  }
+
   if (socket) {
     console.log("🔌 Disconnecting Socket.IO");
     console.log("   Socket ID:", socket.id);
@@ -376,13 +447,39 @@ export const disconnectSocket = (): void => {
 
 // ✅ FEATURE 21: Force reconnect socket
 export const reconnectSocket = (): void => {
+  // Clear any existing timeout before reconnecting
+  if (connectionTimeout) {
+    clearTimeout(connectionTimeout);
+    connectionTimeout = null;
+  }
+
   if (socket) {
     console.log("🔄 Force reconnecting socket...");
     socket.connect();
+
+    // Set new timeout for this reconnection attempt
+    connectionTimeout = setTimeout(() => {
+      if (!socket?.connected) {
+        console.error("⏰ Reconnection timeout after 10 seconds");
+        console.error("   Manual reconnect failed");
+      }
+      connectionTimeout = null;
+    }, CONNECTION_TIMEOUT_MS);
   } else {
     console.warn("⚠️ No socket to reconnect");
   }
 };
+// ✅ FEATURE 22: Clear connection timeout (utility function)
+export const clearConnectionTimeout = (): void => {
+  if (connectionTimeout) {
+    clearTimeout(connectionTimeout);
+    connectionTimeout = null;
+    console.log("✅ Connection timeout manually cleared");
+  } else {
+    console.log("ℹ️ No active connection timeout to clear");
+  }
+};
+
 // ✅ Default export object with all functions
 export default {
   initializeSocket,
@@ -392,6 +489,7 @@ export default {
   waitForSocket,
   reconnectSocket,
   getSocketInfo,
+  clearConnectionTimeout,
 };
 
 // ✅ Export socket URL for reference
