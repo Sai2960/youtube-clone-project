@@ -1066,23 +1066,24 @@ const VideoCall = ({
     return () => clearInterval(monitor);
   }, [connectionStatus]);
   // ✅ Auto-start for initiator who already initiated the call
-// ✅ Auto-start for initiator who already initiated the call
-useEffect(() => {
-  if (isInitiator && !userInteracted && roomId && !initializingRef.current) {
-    console.log("🤖 Auto-starting call for initiator after delay");
-    
-    // Give user 1 second to see the screen, then auto-start
-    const autoStartTimer = setTimeout(() => {
-      if (!userInteracted && !initializingRef.current) {
-        console.log("🤖 Auto-clicking START CALL for initiator");
-        setUserInteracted(true);
-      }
-    }, 1000); // Reduced from any longer delay
+  // ✅ Auto-start for initiator who already initiated the call
+  useEffect(() => {
+    if (isInitiator && !userInteracted && roomId && !initializingRef.current) {
+      console.log("🤖 Auto-starting call for initiator after delay");
 
-    return () => clearTimeout(autoStartTimer);
-  }
-}, [isInitiator, userInteracted, roomId]);
+      // Give user 1 second to see the screen, then auto-start
+      const autoStartTimer = setTimeout(() => {
+        if (!userInteracted && !initializingRef.current) {
+          console.log("🤖 Auto-clicking START CALL for initiator");
+          setUserInteracted(true);
+        }
+      }, 1000); // Reduced from any longer delay
 
+      return () => clearTimeout(autoStartTimer);
+    }
+  }, [isInitiator, userInteracted, roomId]);
+
+  // ✅ Socket event handlers
   // ✅ Socket event handlers
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
@@ -1100,13 +1101,14 @@ useEffect(() => {
         return;
       }
 
-      
+      // ✅ CRITICAL: Handle offer
       const handleOffer = async (data: {
         offer: RTCSessionDescriptionInit;
         from: string;
       }) => {
         console.log("\n📥 ===== RECEIVED OFFER =====");
         console.log("   From:", data.from);
+        console.log("   Offer type:", data.offer?.type);
 
         if (!webrtcServiceRef.current) {
           console.error("❌ No WebRTC service");
@@ -1114,14 +1116,17 @@ useEffect(() => {
         }
 
         try {
+          console.log("🔧 Setting remote description (offer)...");
           await webrtcServiceRef.current.setRemoteDescription(data.offer);
           console.log("✅ Remote description (offer) set");
 
+          console.log("📝 Creating answer...");
           const answer = await webrtcServiceRef.current.createAnswer();
-          console.log("✅ Answer created, sending...");
+          console.log("✅ Answer created");
 
+          console.log("📤 Sending answer to room:", roomId);
           socket.emit("answer", roomId, answer);
-          console.log("📤 Answer sent");
+          console.log("✅ Answer sent");
           console.log("===========================\n");
         } catch (error) {
           console.error("❌ Error handling offer:", error);
@@ -1129,12 +1134,14 @@ useEffect(() => {
         }
       };
 
+      // ✅ CRITICAL: Handle answer
       const handleAnswer = async (data: {
         answer: RTCSessionDescriptionInit;
         from: string;
       }) => {
         console.log("\n📥 ===== RECEIVED ANSWER =====");
         console.log("   From:", data.from);
+        console.log("   Answer type:", data.answer?.type);
 
         if (!webrtcServiceRef.current) {
           console.error("❌ No WebRTC service");
@@ -1142,6 +1149,7 @@ useEffect(() => {
         }
 
         try {
+          console.log("🔧 Setting remote description (answer)...");
           await webrtcServiceRef.current.setRemoteDescription(data.answer);
           console.log("✅ Remote description (answer) set");
           console.log("===========================\n");
@@ -1150,6 +1158,7 @@ useEffect(() => {
         }
       };
 
+      // ✅ CRITICAL: Handle ICE candidate
       const handleIceCandidate = async (data: {
         candidate: RTCIceCandidateInit;
         from: string;
@@ -1160,12 +1169,14 @@ useEffect(() => {
           console.log("❄️ Received ICE from:", data.from);
           try {
             await webrtcServiceRef.current.addIceCandidate(data.candidate);
+            console.log("✅ ICE candidate added");
           } catch (error) {
             console.error("❌ ICE candidate error:", error);
           }
         }
       };
 
+      // ✅ CRITICAL: Handle call ended
       const handleCallEnded = (data: { endedBy?: string; reason?: string }) => {
         console.log("📴 Call ended by remote");
         if (!callEndedRef.current) {
@@ -1185,14 +1196,17 @@ useEffect(() => {
         }
       };
 
+      // ✅ CRITICAL: Register ALL handlers BEFORE anything else
+      console.log("🔧 Registering socket event handlers...");
       socket.on("offer", handleOffer);
       socket.on("answer", handleAnswer);
       socket.on("ice-candidate", handleIceCandidate);
       socket.on("call-ended", handleCallEnded);
+      console.log("✅ All handlers registered");
 
-      console.log("✅ Signaling handlers registered");
-
+      // ✅ Store cleanup function
       cleanupFn = () => {
+        console.log("🧹 Cleaning up socket handlers");
         socket.off("offer", handleOffer);
         socket.off("answer", handleAnswer);
         socket.off("ice-candidate", handleIceCandidate);
@@ -1203,7 +1217,9 @@ useEffect(() => {
     setupHandlers();
 
     return () => {
-      if (cleanupFn) cleanupFn();
+      if (cleanupFn) {
+        cleanupFn();
+      }
     };
   }, [roomId, onEndCall, router, isRecording]);
   // ✅ Main initialization effect
@@ -1639,9 +1655,13 @@ useEffect(() => {
 
           console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
         },
+
         (candidate: RTCIceCandidate) => {
+          // ✅ CRITICAL: Send ICE candidates
+          console.log("❄️ Sending ICE candidate to room:", roomId);
           const socket = getSocket();
           socket.emit("ice-candidate", roomId, candidate);
+          console.log("✅ ICE candidate sent");
         }
       );
 
@@ -1652,6 +1672,18 @@ useEffect(() => {
       // Join room
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
+      // Join room
+      console.log("🚪 Joining room:", roomId);
+      socket.emit("join-room", roomId, user._id);
+
+      // ✅ Wait for room join confirmation
+      socket.once("room-joined", (data: any) => {
+        console.log("✅ Room joined confirmed:", data);
+      });
+
+      socket.once("user-joined-room", (data: any) => {
+        console.log("✅ Other user in room:", data);
+      });
 
       // Handle signaling based on role
       if (isInitiator) {
@@ -1946,96 +1978,104 @@ useEffect(() => {
         )}
       </div>
 
-   {!userInteracted && (
-  <div 
-    className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center"
-    style={{ 
-      zIndex: 999999,
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      pointerEvents: 'auto'
-    }}
-  >
-    <div className="text-center px-4 max-w-md" style={{ position: 'relative', zIndex: 999999 }}>
-      {/* Animated Icon */}
-      <div className="mb-8 relative">
-        <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-2xl">
-          <Video className="w-16 h-16 text-white" />
+      {!userInteracted && (
+        <div
+          className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center"
+          style={{
+            zIndex: 999999,
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: "auto",
+          }}
+        >
+          <div
+            className="text-center px-4 max-w-md"
+            style={{ position: "relative", zIndex: 999999 }}
+          >
+            {/* Animated Icon */}
+            <div className="mb-8 relative">
+              <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-2xl">
+                <Video className="w-16 h-16 text-white" />
+              </div>
+              {/* Ripple effect */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-32 h-32 bg-blue-500 rounded-full opacity-20 animate-ping"></div>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h1 className="text-white text-4xl font-bold mb-3 tracking-tight">
+              {isInitiator ? "Ready to Call?" : "Incoming Call"}
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-gray-300 text-xl mb-2 font-medium">
+              {isInitiator
+                ? `${remotePeerName}`
+                : `${remotePeerName} is calling...`}
+            </p>
+
+            {/* Permission notice */}
+            <p className="text-gray-400 text-sm mb-8 max-w-xs mx-auto">
+              {isInitiator
+                ? "Click below to start the video call"
+                : "Accept to enable camera and microphone"}
+            </p>
+
+            {/* Call to Action Button - ULTRA VISIBLE */}
+            <button
+              onClick={() => {
+                console.log("🎬 ===== START CALL BUTTON CLICKED =====");
+                console.log(
+                  "   User role:",
+                  isInitiator ? "INITIATOR" : "RECEIVER"
+                );
+                console.log("   User ID:", user?._id);
+                console.log("   Room ID:", roomId);
+                setUserInteracted(true);
+              }}
+              style={{
+                position: "relative",
+                zIndex: 999999,
+                pointerEvents: "auto",
+                cursor: "pointer",
+                touchAction: "manipulation",
+              }}
+              className="group relative px-16 py-5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-2xl font-bold rounded-2xl shadow-2xl transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
+            >
+              {/* Button glow effect */}
+              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
+
+              {/* Button text */}
+              <span className="relative z-10 flex items-center gap-3 justify-center">
+                {isInitiator ? (
+                  <>
+                    <Video className="w-8 h-8" />
+                    START CALL
+                  </>
+                ) : (
+                  <>
+                    <Video className="w-8 h-8" />
+                    ACCEPT CALL
+                  </>
+                )}
+              </span>
+            </button>
+
+            {/* Debug info */}
+            <div className="mt-8 text-xs text-gray-500">
+              <p>Room: {roomId.slice(-12)}</p>
+              <p>Role: {isInitiator ? "Initiator" : "Receiver"}</p>
+              <p className="text-yellow-500 mt-2">
+                Click the green button above ⬆️
+              </p>
+            </div>
+          </div>
         </div>
-        {/* Ripple effect */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-32 h-32 bg-blue-500 rounded-full opacity-20 animate-ping"></div>
-        </div>
-      </div>
-
-      {/* Title */}
-      <h1 className="text-white text-4xl font-bold mb-3 tracking-tight">
-        {isInitiator ? "Ready to Call?" : "Incoming Call"}
-      </h1>
-
-      {/* Subtitle */}
-      <p className="text-gray-300 text-xl mb-2 font-medium">
-        {isInitiator 
-          ? `${remotePeerName}` 
-          : `${remotePeerName} is calling...`}
-      </p>
-
-      {/* Permission notice */}
-      <p className="text-gray-400 text-sm mb-8 max-w-xs mx-auto">
-        {isInitiator 
-          ? "Click below to start the video call" 
-          : "Accept to enable camera and microphone"}
-      </p>
-
-      {/* Call to Action Button - ULTRA VISIBLE */}
-      <button
-        onClick={() => {
-          console.log("🎬 ===== START CALL BUTTON CLICKED =====");
-          console.log("   User role:", isInitiator ? "INITIATOR" : "RECEIVER");
-          console.log("   User ID:", user?._id);
-          console.log("   Room ID:", roomId);
-          setUserInteracted(true);
-        }}
-        style={{
-          position: 'relative',
-          zIndex: 999999,
-          pointerEvents: 'auto',
-          cursor: 'pointer',
-          touchAction: 'manipulation'
-        }}
-        className="group relative px-16 py-5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-2xl font-bold rounded-2xl shadow-2xl transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
-      >
-        {/* Button glow effect */}
-        <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
-        
-        {/* Button text */}
-        <span className="relative z-10 flex items-center gap-3 justify-center">
-          {isInitiator ? (
-            <>
-              <Video className="w-8 h-8" />
-              START CALL
-            </>
-          ) : (
-            <>
-              <Video className="w-8 h-8" />
-              ACCEPT CALL
-            </>
-          )}
-        </span>
-      </button>
-
-      {/* Debug info */}
-      <div className="mt-8 text-xs text-gray-500">
-        <p>Room: {roomId.slice(-12)}</p>
-        <p>Role: {isInitiator ? 'Initiator' : 'Receiver'}</p>
-        <p className="text-yellow-500 mt-2">Click the green button above ⬆️</p>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* OVERLAY 2: Initializing Screen */}
       {userInteracted && !isInitialized && (
@@ -2220,15 +2260,15 @@ useEffect(() => {
   );
 };
 // ✅ EMERGENCY: Global click helper for debugging
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).forceStartCall = () => {
-    console.log('🚨 EMERGENCY START CALL TRIGGERED');
-    const button = document.querySelector('button') as HTMLButtonElement;
+    console.log("🚨 EMERGENCY START CALL TRIGGERED");
+    const button = document.querySelector("button") as HTMLButtonElement;
     if (button) {
       button.click();
-      console.log('✅ Button clicked programmatically');
+      console.log("✅ Button clicked programmatically");
     } else {
-      console.error('❌ Button not found');
+      console.error("❌ Button not found");
     }
   };
 }
