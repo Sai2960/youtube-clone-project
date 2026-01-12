@@ -40,30 +40,35 @@ export const setupCallHandlers = (io, socket) => {
 
     // ✅ FIXED: Wait before signaling - let receiver finish media setup
   if (userCount === 2) {
-  console.log(
-    "✅ Both users in room, waiting 3s for receiver media setup..."
-  );
+  console.log("✅ Both users in room!");
   console.log("   Room members:", Array.from(room));
+  console.log("   Waiting 5 seconds for receiver media setup...");
 
-  // Give receiver time to finish media acquisition
+  // ✅ INCREASED: Give receiver MORE time to finish media acquisition
   setTimeout(() => {
-    // Verify both users still in room
+    // ✅ CRITICAL: Verify both users still in room before sending signal
     const currentRoom = io.sockets.adapter.rooms.get(roomId);
     const currentCount = currentRoom ? currentRoom.size : 0;
     
     if (currentCount === 2) {
+      console.log("✅✅✅ SENDING both-users-ready SIGNAL");
+      console.log("   Room:", roomId);
+      console.log("   Users still connected:", currentCount);
+      console.log("   Timestamp:", Date.now());
+      
       io.to(roomId).emit("both-users-ready", {
         roomId,
         userCount: 2,
         timestamp: Date.now(),
       });
-      console.log("   ✅ both-users-ready sent after 3s delay");
-      console.log("   ✅ Both users confirmed in room");
+      
+      console.log("   ✅ Signal sent successfully!");
     } else {
-      console.log("   ⚠️ User count changed, not sending both-users-ready");
-      console.log("   Current count:", currentCount);
+      console.error("   ❌ User count changed! Not sending signal.");
+      console.error("   Expected 2, got:", currentCount);
+      console.error("   One user may have disconnected");
     }
-  }, 3000); // Increased from 2s to 3s
+  }, 5000); // ✅ CHANGED: 5 seconds instead of 3
 }
   });
 
