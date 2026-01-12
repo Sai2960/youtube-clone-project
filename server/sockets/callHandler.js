@@ -38,21 +38,20 @@ export const setupCallHandlers = (io, socket) => {
       userCount,
     });
 
-    // ✅ CRITICAL FIX: Emit immediately when 2nd user joins
+    // ✅ FIXED: Wait before signaling - let receiver finish media setup
     if (userCount === 2) {
       console.log(
-        "✅ Both users in room, emitting both-users-ready IMMEDIATELY"
+        "✅ Both users in room, waiting 2s for receiver media setup..."
       );
 
-      // Send to EVERYONE in the room including the sender
-      io.to(roomId).emit("both-users-ready", {
-        roomId,
-        userCount: 2,
-      });
-
-      console.log("   ✅ both-users-ready sent to all users in room");
-    } else if (userCount > 2) {
-      console.warn(`⚠️ More than 2 users in room: ${userCount}`);
+      // Give receiver time to finish media acquisition
+      setTimeout(() => {
+        io.to(roomId).emit("both-users-ready", {
+          roomId,
+          userCount: 2,
+        });
+        console.log("   ✅ both-users-ready sent after 2s delay");
+      }, 2000); // Wait 2 seconds for media setup
     }
   });
 
