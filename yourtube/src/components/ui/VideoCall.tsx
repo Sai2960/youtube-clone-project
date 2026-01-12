@@ -445,42 +445,51 @@ const VideoCall = ({
     if (remoteVideoRef.current) {
       console.log("📹 Attaching stream to video element...");
 
-      // ✅ CRITICAL: Clear any existing srcObject first
-      remoteVideoRef.current.srcObject = null;
+      // ✅ FIX: Only set srcObject if different
+      if (remoteVideoRef.current.srcObject !== stream) {
+        remoteVideoRef.current.srcObject = stream;
+        console.log("   ✅ srcObject set");
+      } else {
+        console.log("   ℹ️ srcObject already correct");
+      }
 
-      // ✅ Small delay then attach
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      remoteVideoRef.current.srcObject = stream;
       remoteVideoRef.current.muted = false;
       remoteVideoRef.current.volume = 1.0;
 
-      // ✅ Wait for loadedmetadata before playing
-      remoteVideoRef.current.onloadedmetadata = async () => {
-        console.log("✅ Video metadata loaded");
+      // ✅ FIX: Single play attempt with proper error handling
+      const playVideo = async () => {
         try {
-          await remoteVideoRef.current?.play();
-          console.log("✅ Video playing!");
-          setConnectionStatus("connected");
-          setShowPlayButton(false);
-          setError(null);
+          if (remoteVideoRef.current) {
+            await remoteVideoRef.current.play();
+            console.log("✅ Video playing!");
+            setConnectionStatus("connected");
+            setShowPlayButton(false);
+            setError(null);
+          }
         } catch (err: any) {
           console.error("❌ Play failed:", err.name);
           if (err.name === "NotAllowedError") {
             setShowPlayButton(true);
             setError("Click to start video");
+          } else if (err.name === "AbortError") {
+            console.log("⏳ Play aborted, retrying in 500ms...");
+            setTimeout(playVideo, 500); // Retry once
           }
         }
       };
 
-      // ✅ Also try to play immediately
-      try {
-        await remoteVideoRef.current.play();
-        console.log("✅ Immediate play succeeded");
-        setConnectionStatus("connected");
-        setShowPlayButton(false);
-      } catch (err: any) {
-        console.log("⏳ Immediate play failed, waiting for metadata...");
+      // ✅ FIX: Wait for metadata OR immediate play
+      if (remoteVideoRef.current.readyState >= 1) {
+        // Metadata already loaded
+        console.log("✅ Metadata ready, playing immediately");
+        await playVideo();
+      } else {
+        // Wait for metadata
+        console.log("⏳ Waiting for metadata...");
+        remoteVideoRef.current.onloadedmetadata = () => {
+          console.log("✅ Metadata loaded");
+          playVideo();
+        };
       }
     }
 
@@ -1841,19 +1850,7 @@ const VideoCall = ({
         style={{
           backgroundColor: "#000",
         }}
-        onLoadedMetadata={async (e) => {
-          console.log("✅ Remote video metadata loaded");
-          const video = e.currentTarget;
-          try {
-            video.muted = false;
-            video.volume = 1.0;
-            await video.play();
-            console.log("✅ Remote video playing");
-          } catch (err: any) {
-            console.error("❌ Autoplay blocked:", err.name);
-            setShowPlayButton(true);
-          }
-        }}
+        // ✅ FIX: Remove onLoadedMetadata - handled in setupRemoteAudio
       />
 
       {/* Local video - ALWAYS in DOM */}
