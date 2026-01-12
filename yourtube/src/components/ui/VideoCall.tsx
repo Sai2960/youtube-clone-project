@@ -427,9 +427,7 @@ const setupRemoteAudio = async (stream: MediaStream) => {
   const audioTracks = stream.getAudioTracks();
   const videoTracks = stream.getVideoTracks();
 
-  console.log(
-    `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
-  );
+  console.log(`📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`);
 
   if (audioTracks.length === 0 && videoTracks.length === 0) {
     console.error("❌ No tracks in stream!");
@@ -451,49 +449,83 @@ const setupRemoteAudio = async (stream: MediaStream) => {
   // ✅ Attach to video element
   if (remoteVideoRef.current) {
     console.log("📹 Attaching stream to video element...");
+    
+    // ✅ CRITICAL FIX: Clear existing srcObject first
+    remoteVideoRef.current.srcObject = null;
+    
+    // ✅ Force a reflow
+    void remoteVideoRef.current.offsetHeight;
+    
+    // ✅ Now set the new stream
+    remoteVideoRef.current.srcObject = stream;
+    remoteVideoRef.current.muted = false;
+    remoteVideoRef.current.volume = 1.0;
+    
+    console.log("   ✅ srcObject set");
 
-    // Set srcObject
-   // Set srcObject
-remoteVideoRef.current.srcObject = stream;
-remoteVideoRef.current.muted = false;
-remoteVideoRef.current.volume = 1.0;
-console.log("   ✅ srcObject set");
+    // ✅ CRITICAL: Force the video element to re-render
+    remoteVideoRef.current.style.display = 'none';
+    void remoteVideoRef.current.offsetHeight; // Force reflow
+    remoteVideoRef.current.style.display = 'block';
 
-// ✅ CRITICAL: Force refresh the video element
-remoteVideoRef.current.load();
-
-// ✅ FIX: Single play attempt with proper handling
-try {
-  // Wait for metadata if not ready
-  if (remoteVideoRef.current.readyState < 1) {
+    try {
+      // Wait for metadata if not ready
+      if (remoteVideoRef.current.readyState < 1) {
         console.log("⏳ Waiting for metadata...");
-        await new Promise<void>((resolve) => {
-          if (!remoteVideoRef.current) return;
+        await new Promise<void>((resolve, reject) => {
+          if (!remoteVideoRef.current) return reject();
+          
+          const timeout = setTimeout(() => {
+            console.warn("⚠️ Metadata timeout, trying to play anyway");
+            resolve();
+          }, 3000);
+          
           remoteVideoRef.current.onloadedmetadata = () => {
             console.log("✅ Metadata loaded");
+            clearTimeout(timeout);
             resolve();
           };
         });
       }
 
-      // Now play
-      await remoteVideoRef.current.play();
-      console.log("✅ Video playing!");
-      setConnectionStatus("connected");
-      setShowPlayButton(false);
-      setError(null);
+      // ✅ Force play with retry
+      let playAttempts = 0;
+      const tryPlay = async (): Promise<void> => {
+        try {
+          await remoteVideoRef.current?.play();
+          console.log("✅ Video playing!");
+          setConnectionStatus("connected");
+          setShowPlayButton(false);
+          setError(null);
+        } catch (err: any) {
+          playAttempts++;
+          console.error(`❌ Play attempt ${playAttempts} failed:`, err.name);
+          
+          if (err.name === "NotAllowedError") {
+            setShowPlayButton(true);
+            setError("Click to start video");
+          } else if (err.name === "AbortError" && playAttempts < 3) {
+            // Retry after a short delay
+            await new Promise(r => setTimeout(r, 500));
+            return tryPlay();
+          }
+        }
+      };
+      
+      await tryPlay();
+      
     } catch (err: any) {
       console.error("❌ Play failed:", err.name);
       if (err.name === "NotAllowedError") {
         setShowPlayButton(true);
         setError("Click to start video");
       }
-      // Don't retry on AbortError - it means we're being called again
     }
   }
 
   console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
 };
+
 
   // ✅ Setup debug commands
   useEffect(() => {
@@ -1839,17 +1871,26 @@ try {
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* Video elements - ALWAYS in DOM from first render */}
-     <video
+   <video
   ref={remoteVideoRef}
   id="remote-video"
   autoPlay
   playsInline
   muted={false}
-  className="w-full h-full object-cover absolute inset-0"
+  className="w-full h-full object-cover"
   style={{
-    backgroundColor: "#000",
-    transform: "translateZ(0)", // ✅ Force hardware acceleration
-    WebkitTransform: "translateZ(0)", // ✅ Safari support
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+    backgroundColor: '#000',
+    transform: 'translateZ(0)',
+    WebkitTransform: 'translateZ(0)',
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
+    willChange: 'transform',
   }}
 />
 
@@ -1871,18 +1912,13 @@ try {
       </div>
 
       {!userInteracted && (
-        <div
-          className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center"
-          style={{
-            zIndex: 999999,
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            pointerEvents: "auto",
-          }}
-        >
+       <div 
+  className="w-screen h-screen bg-black relative overflow-hidden touch-none"
+  style={{
+    isolation: 'isolate', // Creates new stacking context
+  }}
+>
+
           <div
             className="text-center px-4 max-w-md"
             style={{ position: "relative", zIndex: 999999 }}
