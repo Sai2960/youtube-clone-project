@@ -453,15 +453,19 @@ const setupRemoteAudio = async (stream: MediaStream) => {
     console.log("📹 Attaching stream to video element...");
 
     // Set srcObject
-    remoteVideoRef.current.srcObject = stream;
-    remoteVideoRef.current.muted = false;
-    remoteVideoRef.current.volume = 1.0;
-    console.log("   ✅ srcObject set");
+   // Set srcObject
+remoteVideoRef.current.srcObject = stream;
+remoteVideoRef.current.muted = false;
+remoteVideoRef.current.volume = 1.0;
+console.log("   ✅ srcObject set");
 
-    // ✅ FIX: Single play attempt with proper handling
-    try {
-      // Wait for metadata if not ready
-      if (remoteVideoRef.current.readyState < 1) {
+// ✅ CRITICAL: Force refresh the video element
+remoteVideoRef.current.load();
+
+// ✅ FIX: Single play attempt with proper handling
+try {
+  // Wait for metadata if not ready
+  if (remoteVideoRef.current.readyState < 1) {
         console.log("⏳ Waiting for metadata...");
         await new Promise<void>((resolve) => {
           if (!remoteVideoRef.current) return;
@@ -1835,18 +1839,19 @@ const setupRemoteAudio = async (stream: MediaStream) => {
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* Video elements - ALWAYS in DOM from first render */}
-      <video
-        ref={remoteVideoRef}
-        id="remote-video"
-        autoPlay
-        playsInline
-        muted={false}
-        className="w-full h-full object-cover absolute inset-0"
-        style={{
-          backgroundColor: "#000",
-        }}
-        // ✅ FIX: Remove onLoadedMetadata - handled in setupRemoteAudio
-      />
+     <video
+  ref={remoteVideoRef}
+  id="remote-video"
+  autoPlay
+  playsInline
+  muted={false}
+  className="w-full h-full object-cover absolute inset-0"
+  style={{
+    backgroundColor: "#000",
+    transform: "translateZ(0)", // ✅ Force hardware acceleration
+    WebkitTransform: "translateZ(0)", // ✅ Safari support
+  }}
+/>
 
       {/* Local video - ALWAYS in DOM */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
