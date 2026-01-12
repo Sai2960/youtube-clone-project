@@ -16,21 +16,17 @@ const getSocketURL = (): string => {
   }
 
   const hostname = window.location.hostname;
-  
-  // ✅ CRITICAL: Local development
+
+  // ✅ Local development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     return "http://localhost:5000";
   }
 
   // ✅ CRITICAL: Production - use environment variable if available
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
-  }
-
-  // ✅ CRITICAL: Railway production URL (hardcoded fallback)
+  // ✅ Production - Railway
+  // CRITICAL: Use WSS (secure WebSocket) for HTTPS sites
   return "https://youtube-clone-project-production.up.railway.app";
 };
-
 const SOCKET_URL = getSocketURL();
 
 console.log("🔧 Socket.IO Configuration:");

@@ -1927,31 +1927,40 @@ const VideoCall = ({
         )}
       </div>
 
-      {/* OVERLAY 1: Start Call Screen */}
-      {!userInteracted && (
-        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="mb-8">
-              <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                <Video className="w-12 h-12 text-white" />
-              </div>
-              <h1 className="text-white text-3xl font-bold mb-2">
-                Ready to join?
-              </h1>
-              <p className="text-gray-400 text-lg">Tap to start your call</p>
-            </div>
-            <button
-              onClick={() => {
-                console.log("🎬 ===== START CALL BUTTON CLICKED =====");
-                setUserInteracted(true);
-              }}
-              className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
-            >
-              🎥 START CALL
-            </button>
-          </div>
+     {/* OVERLAY 1: Start Call Screen */}
+{!userInteracted && (
+  <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
+    <div className="text-center px-4">
+      <div className="mb-8">
+        <div className="w-24 h-24 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4 animate-pulse">
+          <Video className="w-12 h-12 text-white" />
         </div>
-      )}
+        <h1 className="text-white text-3xl font-bold mb-2">
+          {isInitiator ? "Start Your Call" : "Join the Call"}
+        </h1>
+        <p className="text-gray-400 text-lg mb-2">
+          {isInitiator 
+            ? `Calling ${remotePeerName}...` 
+            : `${remotePeerName} is waiting`}
+        </p>
+        <p className="text-gray-500 text-sm">
+          Tap the button below to enable camera and microphone
+        </p>
+      </div>
+      <button
+        onClick={() => {
+          console.log("🎬 ===== START CALL BUTTON CLICKED =====");
+          console.log("   User role:", isInitiator ? "INITIATOR" : "RECEIVER");
+          console.log("   User ID:", user?._id);
+          setUserInteracted(true);
+        }}
+        className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105 active:scale-95"
+      >
+        {isInitiator ? "🎥 START CALL" : "✅ JOIN CALL"}
+      </button>
+    </div>
+  </div>
+)}
 
       {/* OVERLAY 2: Initializing Screen */}
       {userInteracted && !isInitialized && (
