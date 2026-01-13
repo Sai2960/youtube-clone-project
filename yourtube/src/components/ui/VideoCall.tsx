@@ -1836,20 +1836,24 @@ const VideoCall = ({
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* ✅ CRITICAL: Remote video MUST be rendered first and ALWAYS visible */}
-      <video
-        ref={remoteVideoRef}
-        id="remote-video"
-        autoPlay
-        playsInline
-        muted={false}
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{
-          zIndex: 1, // ← CHANGE FROM 0 TO 1
-          backgroundColor: "#000",
-          position: "relative", // ← ADD THIS
-          isolation: "isolate", // ← ADD THIS (creates new stacking context)
-        }}
-      />
+    <video
+  ref={remoteVideoRef}
+  id="remote-video"
+  autoPlay
+  playsInline
+  muted={false}
+  style={{
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    zIndex: 1,
+    backgroundColor: "#000",
+  }}
+/>
+
 
       {/* Local video */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
