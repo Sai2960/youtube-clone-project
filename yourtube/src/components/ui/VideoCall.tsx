@@ -416,85 +416,63 @@ const VideoCall = ({
     }
   };
 
-  // ✅ CRITICAL: Setup Remote Audio with proper device routing
-  // In VideoCall.tsx - Update the setupRemoteAudio function
-
-  // Around line 370 in VideoCall.tsx
   const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
+  console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
 
-    const audioTracks = stream.getAudioTracks();
-    const videoTracks = stream.getVideoTracks();
+  const audioTracks = stream.getAudioTracks();
+  const videoTracks = stream.getVideoTracks();
 
-    console.log(
-      `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
-    );
+  console.log(
+    `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
+  );
 
-    if (audioTracks.length === 0 && videoTracks.length === 0) {
-      console.error("❌ No tracks in stream!");
-      return;
+  if (audioTracks.length === 0 && videoTracks.length === 0) {
+    console.error("❌ No tracks in stream!");
+    return;
+  }
+
+  // Force enable all tracks
+  stream.getTracks().forEach((track) => {
+    track.enabled = true;
+    console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
+  });
+
+  // ✅ CRITICAL FIX: Attach stream to video element IMMEDIATELY
+  if (remoteVideoRef.current) {
+    console.log("📹 Attaching stream to video element...");
+    
+    // Stop any existing stream first
+    const currentStream = remoteVideoRef.current.srcObject as MediaStream;
+    if (currentStream && currentStream.id !== stream.id) {
+      console.log("🔄 Clearing old stream");
+      currentStream.getTracks().forEach((t) => t.stop());
     }
 
-    // Force enable all tracks
-    stream.getTracks().forEach((track) => {
-      track.enabled = true;
-      console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
-    });
+    // Attach new stream
+    remoteVideoRef.current.srcObject = stream;
+    remoteVideoRef.current.muted = false;
+    remoteVideoRef.current.volume = 1.0;
 
-    // Attach to video element
-    if (remoteVideoRef.current) {
-      console.log("📹 Attaching stream to video element...");
-
-      const currentStream = remoteVideoRef.current.srcObject as MediaStream;
-
-      // ✅ CRITICAL FIX: Always reattach if stream is different OR if video is paused
-      const shouldReattach =
-        !currentStream ||
-        currentStream.id !== stream.id ||
-        remoteVideoRef.current.paused ||
-        remoteVideoRef.current.readyState < 3;
-
-      if (shouldReattach) {
-        // Clear old stream if different
-        if (currentStream && currentStream.id !== stream.id) {
-          console.log("🔄 Different stream detected, clearing old one");
-          currentStream.getTracks().forEach((t) => {
-            console.log(`   🛑 Stopping old ${t.kind} track`);
-            t.stop();
-          });
-        }
-
-        try {
-          await remoteVideoRef.current.play();
-          console.log("✅ Video playing!");
-          setConnectionStatus("connected");
-          setShowPlayButton(false);
-          setError(null);
-        } catch (err: any) {
-          console.error(`❌ Play failed:`, err.name);
-          if (err.name === "NotAllowedError") {
-            setShowPlayButton(true);
-            setError("Click to start video");
-          }
-        }
-      } else {
-        console.log(
-          "ℹ️ Stream already attached and playing, ensuring playback"
-        );
-        // Just ensure it's playing
-        if (remoteVideoRef.current.paused) {
-          try {
-            await remoteVideoRef.current.play();
-            console.log("✅ Resumed paused video");
-          } catch (err) {
-            console.error("❌ Resume failed:", err);
-          }
-        }
+    // Force video element to load and play
+    remoteVideoRef.current.load();
+    
+    try {
+      await remoteVideoRef.current.play();
+      console.log("✅ Video playing!");
+      setConnectionStatus("connected");
+      setShowPlayButton(false);
+      setError(null);
+    } catch (err: any) {
+      console.error(`❌ Play failed:`, err.name);
+      if (err.name === "NotAllowedError") {
+        setShowPlayButton(true);
+        setError("Click to start video");
       }
     }
+  }
 
-    console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-  };
+  console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+};
   // ✅ Setup debug commands
   useEffect(() => {
     if (typeof window === "undefined") return;
