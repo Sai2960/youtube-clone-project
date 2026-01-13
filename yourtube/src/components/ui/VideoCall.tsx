@@ -446,53 +446,71 @@ const VideoCall = ({
     if (remoteVideoRef.current) {
       console.log("📹 Attaching stream to video element...");
 
-      // ✅ FIX: Only clear srcObject if it's a DIFFERENT stream
       const currentStream = remoteVideoRef.current.srcObject as MediaStream;
-      if (currentStream && currentStream.id !== stream.id) {
-        console.log("🔄 Different stream detected, clearing old one");
-        currentStream.getTracks().forEach((t) => {
-          console.log(`   🛑 Stopping old ${t.kind} track`);
-          t.stop();
-        });
-        remoteVideoRef.current.srcObject = null;
-      } else if (currentStream && currentStream.id === stream.id) {
-        console.log("⚠️ Same stream already attached, skipping setup");
-        return; // ✅ CRITICAL: Don't re-attach the same stream!
-      }
 
-      // ✅ Force layout recalculation
-      remoteVideoRef.current.style.visibility = "hidden";
-      void remoteVideoRef.current.offsetHeight;
+      // ✅ CRITICAL FIX: Always reattach if stream is different OR if video is paused
+      const shouldReattach =
+        !currentStream ||
+        currentStream.id !== stream.id ||
+        remoteVideoRef.current.paused ||
+        remoteVideoRef.current.readyState < 3;
 
-      // Set new stream
-      remoteVideoRef.current.srcObject = stream;
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
+      if (shouldReattach) {
+        // Clear old stream if different
+        if (currentStream && currentStream.id !== stream.id) {
+          console.log("🔄 Different stream detected, clearing old one");
+          currentStream.getTracks().forEach((t) => {
+            console.log(`   🛑 Stopping old ${t.kind} track`);
+            t.stop();
+          });
+        }
 
-      // ✅ Force video element to re-composite
-      remoteVideoRef.current.style.visibility = "visible";
-      remoteVideoRef.current.style.transform = "translateZ(0)";
+        // Force layout recalculation
+        remoteVideoRef.current.style.visibility = "hidden";
+        void remoteVideoRef.current.offsetHeight;
 
-      console.log("   ✅ srcObject set");
+        // Set new stream
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
 
-      try {
-        await remoteVideoRef.current.play();
-        console.log("✅ Video playing!");
-        setConnectionStatus("connected");
-        setShowPlayButton(false);
-        setError(null);
-      } catch (err: any) {
-        console.error(`❌ Play failed:`, err.name);
-        if (err.name === "NotAllowedError") {
-          setShowPlayButton(true);
-          setError("Click to start video");
+        // Force video element to re-composite
+        remoteVideoRef.current.style.visibility = "visible";
+        remoteVideoRef.current.style.transform = "translateZ(0)";
+
+        console.log("   ✅ srcObject set");
+
+        try {
+          await remoteVideoRef.current.play();
+          console.log("✅ Video playing!");
+          setConnectionStatus("connected");
+          setShowPlayButton(false);
+          setError(null);
+        } catch (err: any) {
+          console.error(`❌ Play failed:`, err.name);
+          if (err.name === "NotAllowedError") {
+            setShowPlayButton(true);
+            setError("Click to start video");
+          }
+        }
+      } else {
+        console.log(
+          "ℹ️ Stream already attached and playing, ensuring playback"
+        );
+        // Just ensure it's playing
+        if (remoteVideoRef.current.paused) {
+          try {
+            await remoteVideoRef.current.play();
+            console.log("✅ Resumed paused video");
+          } catch (err) {
+            console.error("❌ Resume failed:", err);
+          }
         }
       }
     }
 
     console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
   };
-
   // ✅ Setup debug commands
   useEffect(() => {
     if (typeof window === "undefined") return;
