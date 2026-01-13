@@ -21,7 +21,7 @@ import initializeSocket, {
 import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import { useUser } from "@/lib/AuthContext";
-import "../../styles/videocall.css";
+
 interface VideoCallProps {
   roomId: string;
   isInitiator: boolean;
@@ -1351,14 +1351,49 @@ const VideoCall = ({
     console.log("✅ Cleanup complete");
   };
 
-  useEffect(() => {
-    // Add class to HTML element
-    document.documentElement.classList.add("video-call-active");
-
-    return () => {
-      document.documentElement.classList.remove("video-call-active");
-    };
-  }, []);
+// ✅ Force video visibility by injecting CSS into document
+useEffect(() => {
+  // Create style element
+  const styleEl = document.createElement('style');
+  styleEl.id = 'video-call-override';
+  styleEl.innerHTML = `
+    html.dark,
+    body {
+      background: transparent !important;
+    }
+    
+    .video-call-active {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 2147483647 !important;
+      background: black !important;
+    }
+    
+    .video-call-active .video-call-remote {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 2147483647 !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      object-fit: cover !important;
+    }
+  `;
+  
+  document.head.appendChild(styleEl);
+  document.documentElement.classList.add('video-call-active');
+  
+  return () => {
+    styleEl.remove();
+    document.documentElement.classList.remove('video-call-active');
+  };
+}, []);
   // ✅ Initialize call function
   const initializeCall = async () => {
     console.log("\n🎥 ===== INITIALIZING CALL (COMPLETE) =====");
