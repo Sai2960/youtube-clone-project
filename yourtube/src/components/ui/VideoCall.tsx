@@ -21,8 +21,7 @@ import initializeSocket, {
 import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import { useUser } from "@/lib/AuthContext";
-import "@/styles/videocall.css";
-
+import "../../styles/videocall.css";
 interface VideoCallProps {
   roomId: string;
   isInitiator: boolean;
