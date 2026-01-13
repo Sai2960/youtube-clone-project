@@ -991,29 +991,58 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
 
   // ✅ Force video visibility after stream is attached
   useEffect(() => {
-    if (!remoteVideoRef.current || connectionStatus !== "connected") return;
+    if (!remoteVideoRef.current || connectionStatus !== "connected" || !hasRemoteStream) return;
 
     const video = remoteVideoRef.current;
 
-    console.log("🔄 Force video repaint effect triggered");
+    console.log("🔄 Force video visibility effect triggered");
 
-    // Force repaint
-    const forceRepaint = () => {
+    // Force visibility and repaint
+    const ensureVisible = () => {
+      video.style.visibility = "visible";
+      video.style.opacity = "1";
+      video.style.display = "block";
+      video.style.position = "absolute";
+      video.style.top = "0";
+      video.style.left = "0";
+      video.style.width = "100%";
+      video.style.height = "100%";
+      video.style.zIndex = "1";
+      video.style.objectFit = "cover";
+      
+      // Force repaint
       video.style.display = "none";
       video.offsetHeight; // Trigger reflow
       video.style.display = "block";
+      
+      console.log("✅ Video visibility forced:", {
+        display: video.style.display,
+        visibility: video.style.visibility,
+        opacity: video.style.opacity,
+        zIndex: video.style.zIndex,
+        hasSrcObject: !!video.srcObject,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight
+      });
     };
 
-    const timer = setTimeout(() => {
-      console.log("🔄 Forcing video repaint...");
-      forceRepaint();
+    // Immediate visibility
+    ensureVisible();
 
-      // Also try forcing play again
+    // Also try forcing play again
+    const playPromise = video.play().catch((e) => {
+      console.error("Play retry failed:", e);
+    });
+
+    // Retry after a short delay
+    const timer = setTimeout(() => {
+      console.log("🔄 Retrying video visibility...");
+      ensureVisible();
       video.play().catch((e) => console.error("Play retry failed:", e));
-    }, 1000);
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [connectionStatus]);
+  }, [connectionStatus, hasRemoteStream]);
   // ✅ Main initialization effect
   useEffect(() => {
     console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
@@ -1474,6 +1503,21 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
     video.srcObject = remoteStream;
     video.muted = true;  // Start muted for autoplay policy
 
+    // ✅ CRITICAL: Force video visibility
+    video.style.visibility = "visible";
+    video.style.opacity = "1";
+    video.style.display = "block";
+    video.style.position = "absolute";
+    video.style.top = "0";
+    video.style.left = "0";
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.zIndex = "1";
+    video.style.objectFit = "cover";
+    video.style.backgroundColor = "transparent";
+
+    console.log("✅ Video element visibility forced");
+
     try {
       await video.play();
       console.log("✅ Video playing");
@@ -1481,7 +1525,13 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
       // Unmute AFTER play succeeds
       video.muted = false;
       video.volume = 1.0;
-      console.log("✅ Audio unmuted");
+      
+      // Ensure still visible after play
+      video.style.visibility = "visible";
+      video.style.opacity = "1";
+      video.style.display = "block";
+      
+      console.log("✅ Audio unmuted and visibility confirmed");
     } catch (err: any) {
       console.error("❌ Play failed:", err.name);
       if (err.name === "NotAllowedError") {
@@ -1770,17 +1820,38 @@ const handlePlayClick = async () => {
         playsInline
         muted={true}
         className="w-full h-full object-cover bg-black absolute inset-0 z-[1] pointer-events-auto"
-        style={{ display: 'block' }}
+        style={{ 
+          display: 'block',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          visibility: 'visible',
+          opacity: 1,
+          zIndex: 1
+        }}
         onPlay={() => {
           console.log("📹 Remote video onPlay fired");
           // Unmute when playing
           if (remoteVideoRef.current) {
             remoteVideoRef.current.muted = false;
             remoteVideoRef.current.volume = 1.0;
+            // Force visibility
+            remoteVideoRef.current.style.visibility = 'visible';
+            remoteVideoRef.current.style.opacity = '1';
+            remoteVideoRef.current.style.display = 'block';
           }
         }}
         onLoadedMetadata={() => {
           console.log("📹 Remote video metadata loaded");
+          // Ensure video is visible after metadata loads
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.style.visibility = 'visible';
+            remoteVideoRef.current.style.opacity = '1';
+            remoteVideoRef.current.style.display = 'block';
+          }
         }}
       />
 
