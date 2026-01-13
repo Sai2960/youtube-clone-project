@@ -417,62 +417,62 @@ const VideoCall = ({
   };
 
   const setupRemoteAudio = async (stream: MediaStream) => {
-  console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
+    console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
 
-  const audioTracks = stream.getAudioTracks();
-  const videoTracks = stream.getVideoTracks();
+    const audioTracks = stream.getAudioTracks();
+    const videoTracks = stream.getVideoTracks();
 
-  console.log(
-    `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
-  );
+    console.log(
+      `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
+    );
 
-  if (audioTracks.length === 0 && videoTracks.length === 0) {
-    console.error("❌ No tracks in stream!");
-    return;
-  }
-
-  // Force enable all tracks
-  stream.getTracks().forEach((track) => {
-    track.enabled = true;
-    console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
-  });
-
-  // ✅ CRITICAL FIX: Attach stream to video element IMMEDIATELY
-  if (remoteVideoRef.current) {
-    console.log("📹 Attaching stream to video element...");
-    
-    // Stop any existing stream first
-    const currentStream = remoteVideoRef.current.srcObject as MediaStream;
-    if (currentStream && currentStream.id !== stream.id) {
-      console.log("🔄 Clearing old stream");
-      currentStream.getTracks().forEach((t) => t.stop());
+    if (audioTracks.length === 0 && videoTracks.length === 0) {
+      console.error("❌ No tracks in stream!");
+      return;
     }
 
-    // Attach new stream
-    remoteVideoRef.current.srcObject = stream;
-    remoteVideoRef.current.muted = false;
-    remoteVideoRef.current.volume = 1.0;
+    // Force enable all tracks
+    stream.getTracks().forEach((track) => {
+      track.enabled = true;
+      console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
+    });
 
-    // Force video element to load and play
-    remoteVideoRef.current.load();
-    
-    try {
-      await remoteVideoRef.current.play();
-      console.log("✅ Video playing!");
-      setConnectionStatus("connected");
-      setShowPlayButton(false);
-      setError(null);
-    } catch (err: any) {
-      console.error(`❌ Play failed:`, err.name);
-      if (err.name === "NotAllowedError") {
-        setShowPlayButton(true);
-        setError("Click to start video");
+    // ✅ CRITICAL FIX: Attach stream to video element IMMEDIATELY
+    if (remoteVideoRef.current) {
+      console.log("📹 Attaching stream to video element...");
+
+      // Stop any existing stream first
+      const currentStream = remoteVideoRef.current.srcObject as MediaStream;
+      if (currentStream && currentStream.id !== stream.id) {
+        console.log("🔄 Clearing old stream");
+        currentStream.getTracks().forEach((t) => t.stop());
+      }
+
+      // Attach new stream
+      remoteVideoRef.current.srcObject = stream;
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.volume = 1.0;
+
+      // Force video element to load and play
+      remoteVideoRef.current.load();
+
+      try {
+        await remoteVideoRef.current.play();
+        console.log("✅ Video playing!");
+        setConnectionStatus("connected");
+        setShowPlayButton(false);
+        setError(null);
+      } catch (err: any) {
+        console.error(`❌ Play failed:`, err.name);
+        if (err.name === "NotAllowedError") {
+          setShowPlayButton(true);
+          setError("Click to start video");
+        }
       }
     }
-  }
 
-  console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-};
+    console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
+  };
   // ✅ Setup debug commands
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1849,13 +1849,20 @@ const VideoCall = ({
           objectFit: "cover",
           backgroundColor: "#000",
           zIndex: 1,
+          display:
+            isInitialized && connectionStatus === "connected"
+              ? "block"
+              : "none", // ✅ CRITICAL FIX
         }}
       />
 
       {/* Local video - ABOVE remote */}
       <div
         className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black"
-        style={{ zIndex: 40 }}
+        style={{
+          zIndex: 40,
+          display: isInitialized ? "block" : "none", // ✅ Hide until initialized
+        }}
       >
         <video
           ref={localVideoRef}
@@ -1872,7 +1879,7 @@ const VideoCall = ({
         )}
       </div>
 
-      {/* Start Call Overlay */}
+      {/* Start Call Overlay - Only show if NOT interacted */}
       {!userInteracted && (
         <div
           className="absolute inset-0 bg-black flex items-center justify-center"
@@ -1920,7 +1927,7 @@ const VideoCall = ({
         </div>
       )}
 
-      {/* Initializing Overlay */}
+      {/* Initializing Overlay - Only show if interacted but not initialized */}
       {userInteracted && !isInitialized && (
         <div
           className="absolute inset-0 bg-black/95 flex items-center justify-center"
@@ -1948,7 +1955,7 @@ const VideoCall = ({
         </div>
       )}
 
-      {/* Main UI - Top Bar */}
+      {/* Main UI - Top Bar - Only show when initialized */}
       {isInitialized && (
         <>
           <div
@@ -1986,7 +1993,7 @@ const VideoCall = ({
             </div>
           </div>
 
-          {/* Play Button */}
+          {/* Play Button - Only show if needed */}
           {showPlayButton && (
             <div
               className="absolute inset-0 flex items-center justify-center bg-black/50"
@@ -2019,6 +2026,7 @@ const VideoCall = ({
             className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8"
             style={{ zIndex: 30 }}
           >
+            {/* ... rest of controls remain the same ... */}
             <div className="flex items-center justify-center gap-2 sm:gap-4">
               <button
                 onClick={toggleAudio}
