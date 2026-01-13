@@ -1832,49 +1832,46 @@ const initializeCall = async () => {
       {/* Override global video styles for video call */}
 
       {/* Remote Video - Full Screen Background */}
-      <video
-        ref={remoteVideoRef}
-        autoPlay
-        playsInline
-        muted={false}
-        className="remote-video-call w-full h-full bg-black absolute inset-0 z-[5] pointer-events-auto"
-        style={
-          {
-            display: "block",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            visibility: "visible",
-            opacity: 1,
-            zIndex: 5,
-            backgroundColor: "black",
-          } as React.CSSProperties
-        }
-        onPlay={() => {
-          console.log("📹 Remote video onPlay fired");
-          // Unmute when playing
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.muted = false;
-            remoteVideoRef.current.volume = 1.0;
-            // Force visibility
-            remoteVideoRef.current.style.visibility = "visible";
-            remoteVideoRef.current.style.opacity = "1";
-            remoteVideoRef.current.style.display = "block";
-          }
-        }}
-        onLoadedMetadata={() => {
-          console.log("📹 Remote video metadata loaded");
-          // Ensure video is visible after metadata loads
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.style.visibility = "visible";
-            remoteVideoRef.current.style.opacity = "1";
-            remoteVideoRef.current.style.display = "block";
-          }
-        }}
-      />
+     <video
+  ref={remoteVideoRef}
+  autoPlay
+  playsInline
+  muted={false}
+  className="remote-video-call w-full h-full bg-black absolute inset-0"
+  style={{
+    display: "block",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    visibility: "visible",
+    opacity: 1,
+    zIndex: 100,  // ✅ CHANGED from 5 to 100
+    backgroundColor: "black",
+  } as React.CSSProperties}
+  onPlay={() => {
+    console.log("📹 Remote video onPlay fired");
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.volume = 1.0;
+      remoteVideoRef.current.style.visibility = "visible";
+      remoteVideoRef.current.style.opacity = "1";
+      remoteVideoRef.current.style.display = "block";
+      remoteVideoRef.current.style.zIndex = "100"; // ✅ ADD THIS
+    }
+  }}
+  onLoadedMetadata={() => {
+    console.log("📹 Remote video metadata loaded");
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.style.visibility = "visible";
+      remoteVideoRef.current.style.opacity = "1";
+      remoteVideoRef.current.style.display = "block";
+      remoteVideoRef.current.style.zIndex = "100"; // ✅ ADD THIS
+    }
+  }}
+/>
 
      {/* Connection Status Overlay - Hide when local video is ready */}
 {connectionStatus === 'connecting' && !localVideoRef.current?.srcObject && (
