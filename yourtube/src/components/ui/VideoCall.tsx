@@ -403,7 +403,7 @@ const VideoCall = ({
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   // Add this state near other states:
-const [hasRemoteStream, setHasRemoteStream] = useState(false);
+  const [hasRemoteStream, setHasRemoteStream] = useState(false);
 
   // ✅ Force audio context resume on user interaction
   const ensureAudioContextResumed = async () => {
@@ -418,7 +418,6 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
       }
     }
   };
-
 
   // ✅ Setup debug commands
   useEffect(() => {
@@ -991,7 +990,12 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
 
   // ✅ Force video visibility after stream is attached
   useEffect(() => {
-    if (!remoteVideoRef.current || connectionStatus !== "connected" || !hasRemoteStream) return;
+    if (
+      !remoteVideoRef.current ||
+      connectionStatus !== "connected" ||
+      !hasRemoteStream
+    )
+      return;
 
     const video = remoteVideoRef.current;
 
@@ -1009,12 +1013,12 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
       video.style.height = "100%";
       video.style.zIndex = "1";
       video.style.objectFit = "cover";
-      
+
       // Force repaint
       video.style.display = "none";
       video.offsetHeight; // Trigger reflow
       video.style.display = "block";
-      
+
       console.log("✅ Video visibility forced:", {
         display: video.style.display,
         visibility: video.style.visibility,
@@ -1022,7 +1026,7 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
         zIndex: video.style.zIndex,
         hasSrcObject: !!video.srcObject,
         videoWidth: video.videoWidth,
-        videoHeight: video.videoHeight
+        videoHeight: video.videoHeight,
       });
     };
 
@@ -1482,81 +1486,80 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
       console.log("🔧 Setting up event listeners...");
       console.log("🔧 Setting up event listeners...");
 
-   webrtcServiceRef.current.setupEventListeners(
-  // Remote stream callback
-  async (remoteStream: MediaStream) => {
-    console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
-    
-    if (!remoteStream.active || !remoteVideoRef.current) {
-      console.error("❌ Invalid stream or no video element");
-      return;
-    }
+      webrtcServiceRef.current.setupEventListeners(
+        // Remote stream callback
+        async (remoteStream: MediaStream) => {
+          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
-    // Enable all tracks
-    remoteStream.getTracks().forEach((track) => {
-      track.enabled = true;
-      console.log(`✅ Enabled ${track.kind}: ${track.label}`);
-    });
+          if (!remoteStream.active || !remoteVideoRef.current) {
+            console.error("❌ Invalid stream or no video element");
+            return;
+          }
 
-    // Attach stream to video - DO THIS ONCE ONLY
-    const video = remoteVideoRef.current;
-    video.srcObject = remoteStream;
-    video.muted = true;  // Start muted for autoplay policy
+          // Enable all tracks
+          remoteStream.getTracks().forEach((track) => {
+            track.enabled = true;
+            console.log(`✅ Enabled ${track.kind}: ${track.label}`);
+          });
 
-    // ✅ CRITICAL: Force video visibility
-    video.style.visibility = "visible";
-    video.style.opacity = "1";
-    video.style.display = "block";
-    video.style.position = "absolute";
-    video.style.top = "0";
-    video.style.left = "0";
-    video.style.width = "100%";
-    video.style.height = "100%";
-    video.style.zIndex = "1";
-    video.style.objectFit = "cover";
-    video.style.backgroundColor = "transparent";
+          // Attach stream to video - DO THIS ONCE ONLY
+          const video = remoteVideoRef.current;
+          video.srcObject = remoteStream;
+          video.muted = true; // Start muted for autoplay policy
 
-    console.log("✅ Video element visibility forced");
+          // ✅ CRITICAL: Force video visibility
+          video.style.visibility = "visible";
+          video.style.opacity = "1";
+          video.style.display = "block";
+          video.style.position = "absolute";
+          video.style.top = "0";
+          video.style.left = "0";
+          video.style.width = "100%";
+          video.style.height = "100%";
+          video.style.zIndex = "1";
+          video.style.objectFit = "cover";
+          video.style.backgroundColor = "transparent";
 
-    try {
-      await video.play();
-      console.log("✅ Video playing");
-      
-      // Unmute AFTER play succeeds
-      video.muted = false;
-      video.volume = 1.0;
-      
-      // Ensure still visible after play
-      video.style.visibility = "visible";
-      video.style.opacity = "1";
-      video.style.display = "block";
-      
-      console.log("✅ Audio unmuted and visibility confirmed");
-    } catch (err: any) {
-      console.error("❌ Play failed:", err.name);
-      if (err.name === "NotAllowedError") {
-        setShowPlayButton(true);
-      }
-    }
+          console.log("✅ Video element visibility forced");
 
-    // Update states - THIS TRIGGERS RE-RENDER
-    setHasRemoteStream(true);
-    setConnectionStatus("connected");
-    setShowPlayButton(false);
-    setError(null);
+          try {
+            await video.play();
+            console.log("✅ Video playing");
 
-    // Mark ref too
-    remoteStreamReceivedRef.current = true;
+            // Unmute AFTER play succeeds
+            video.muted = false;
+            video.volume = 1.0;
 
-    console.log("===== REMOTE STREAM SETUP DONE =====\n");
-  },
-  // ICE candidate callback
-  (candidate: RTCIceCandidate) => {
-    const socket = getSocket();
-    socket.emit("ice-candidate", roomId, candidate);
-  }
-);
+            // Ensure still visible after play
+            video.style.visibility = "visible";
+            video.style.opacity = "1";
+            video.style.display = "block";
 
+            console.log("✅ Audio unmuted and visibility confirmed");
+          } catch (err: any) {
+            console.error("❌ Play failed:", err.name);
+            if (err.name === "NotAllowedError") {
+              setShowPlayButton(true);
+            }
+          }
+
+          // Update states - THIS TRIGGERS RE-RENDER
+          setHasRemoteStream(true);
+          setConnectionStatus("connected");
+          setShowPlayButton(false);
+          setError(null);
+
+          // Mark ref too
+          remoteStreamReceivedRef.current = true;
+
+          console.log("===== REMOTE STREAM SETUP DONE =====\n");
+        },
+        // ICE candidate callback
+        (candidate: RTCIceCandidate) => {
+          const socket = getSocket();
+          socket.emit("ice-candidate", roomId, candidate);
+        }
+      );
 
       // Add local stream to peer connection
       console.log("📤 Adding local stream to peer...");
@@ -1767,26 +1770,25 @@ const [hasRemoteStream, setHasRemoteStream] = useState(false);
   };
 
   // ✅ Handle play button click
-const handlePlayClick = async () => {
-  console.log("🎬 Manual play clicked");
+  const handlePlayClick = async () => {
+    console.log("🎬 Manual play clicked");
 
-  if (remoteVideoRef.current) {
-    try {
-      remoteVideoRef.current.muted = true;
-      await remoteVideoRef.current.play();
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
-      
-      setShowPlayButton(false);
-      setConnectionStatus("connected");
-      setHasRemoteStream(true);
-      console.log("✅ Playing with audio");
-    } catch (err) {
-      console.error("❌ Play failed:", err);
+    if (remoteVideoRef.current) {
+      try {
+        remoteVideoRef.current.muted = true;
+        await remoteVideoRef.current.play();
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
+
+        setShowPlayButton(false);
+        setConnectionStatus("connected");
+        setHasRemoteStream(true);
+        console.log("✅ Playing with audio");
+      } catch (err) {
+        console.error("❌ Play failed:", err);
+      }
     }
-  }
-};
-
+  };
 
   // ✅ Toggle fullscreen
   const toggleFullscreen = async () => {
@@ -1811,43 +1813,32 @@ const handlePlayClick = async () => {
       .toString()
       .padStart(2, "0")}`;
   };
-   return (
+  return (
     <div className="w-full h-screen bg-black relative overflow-hidden">
       {/* Override global video styles for video call */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .remote-video-call {
-          object-fit: cover !important;
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          width: 100% !important;
-          height: 100% !important;
-        }
-      `}} />
+
       {/* Remote Video - Full Screen Background */}
       <video
         ref={remoteVideoRef}
         autoPlay
         playsInline
-        muted={true}
-        className="remote-video-call w-full h-full bg-black absolute inset-0 z-[1] pointer-events-auto"
-        style={{ 
-          display: 'block',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          visibility: 'visible',
-          opacity: 1,
-          zIndex: 1,
-          backgroundColor: 'transparent',
-          minWidth: '100%',
-          minHeight: '100%',
-          maxWidth: '100%',
-          maxHeight: '100%'
-        } as React.CSSProperties}
+        muted={false}
+        className="remote-video-call w-full h-full bg-black absolute inset-0 z-[5] pointer-events-auto"
+        style={
+          {
+            display: "block",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            visibility: "visible",
+            opacity: 1,
+            zIndex: 5,
+            backgroundColor: "black",
+          } as React.CSSProperties
+        }
         onPlay={() => {
           console.log("📹 Remote video onPlay fired");
           // Unmute when playing
@@ -1855,38 +1846,42 @@ const handlePlayClick = async () => {
             remoteVideoRef.current.muted = false;
             remoteVideoRef.current.volume = 1.0;
             // Force visibility
-            remoteVideoRef.current.style.visibility = 'visible';
-            remoteVideoRef.current.style.opacity = '1';
-            remoteVideoRef.current.style.display = 'block';
+            remoteVideoRef.current.style.visibility = "visible";
+            remoteVideoRef.current.style.opacity = "1";
+            remoteVideoRef.current.style.display = "block";
           }
         }}
         onLoadedMetadata={() => {
           console.log("📹 Remote video metadata loaded");
           // Ensure video is visible after metadata loads
           if (remoteVideoRef.current) {
-            remoteVideoRef.current.style.visibility = 'visible';
-            remoteVideoRef.current.style.opacity = '1';
-            remoteVideoRef.current.style.display = 'block';
+            remoteVideoRef.current.style.visibility = "visible";
+            remoteVideoRef.current.style.opacity = "1";
+            remoteVideoRef.current.style.display = "block";
           }
         }}
       />
 
       {/* Connection Status Overlay - Hide when stream received */}
-      {connectionStatus === 'connecting' && !hasRemoteStream && (
-        <div 
+      {connectionStatus === "connecting" && !hasRemoteStream && (
+        <div
           id="connecting-overlay"
-          className="absolute inset-0 bg-black/80 flex items-center justify-center z-[15] pointer-events-none"
+          className="absolute inset-0 bg-black/80 flex items-center justify-center z-[30] pointer-events-none"
         >
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white text-xl">Connecting to {remotePeerName}...</p>
-            <p className="text-gray-400 text-sm mt-2">Establishing peer connection...</p>
+            <p className="text-white text-xl">
+              Connecting to {remotePeerName}...
+            </p>
+            <p className="text-gray-400 text-sm mt-2">
+              Establishing peer connection...
+            </p>
           </div>
         </div>
       )}
 
       {/* Local Video - Picture in Picture */}
-      <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black z-[25] pointer-events-auto">
+      <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black z-[40] pointer-events-auto">
         <video
           ref={localVideoRef}
           autoPlay
@@ -1902,27 +1897,35 @@ const handlePlayClick = async () => {
       </div>
 
       {/* Header - Call Info */}
-      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent p-3 sm:p-6 z-[10] pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent p-3 sm:p-6 z-[50] pointer-events-none">
         <div className="flex items-center justify-between pointer-events-auto">
           <div>
-            <h2 className="text-white text-xl sm:text-3xl font-bold">{remotePeerName}</h2>
+            <h2 className="text-white text-xl sm:text-3xl font-bold">
+              {remotePeerName}
+            </h2>
             <div className="flex items-center gap-2 mt-1">
-              <div className={`w-2 h-2 rounded-full ${
-                connectionStatus === 'connected' ? 'bg-green-500' : 
-                connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 
-                'bg-red-500'
-              }`} />
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  connectionStatus === "connected"
+                    ? "bg-green-500"
+                    : connectionStatus === "connecting"
+                    ? "bg-yellow-500 animate-pulse"
+                    : "bg-red-500"
+                }`}
+              />
               <p className="text-gray-300 text-xs sm:text-sm capitalize">
                 {connectionStatus}
               </p>
             </div>
           </div>
-          
+
           {/* Recording Indicator */}
           {isRecording && (
             <div className="flex items-center gap-2 sm:gap-3 bg-red-600/90 backdrop-blur-sm px-3 py-2 sm:px-6 sm:py-3 rounded-full animate-pulse shadow-lg">
               <Circle className="w-3 h-3 sm:w-4 sm:h-4 fill-white text-white" />
-              <span className="text-white text-sm sm:text-lg font-bold">{formatTime(recordingTime)}</span>
+              <span className="text-white text-sm sm:text-lg font-bold">
+                {formatTime(recordingTime)}
+              </span>
             </div>
           )}
         </div>
@@ -1942,23 +1945,26 @@ const handlePlayClick = async () => {
             onClick={handlePlayClick}
             className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
           >
-            <Play className="w-12 h-12 sm:w-16 sm:h-16 text-white" fill="currentColor" />
+            <Play
+              className="w-12 h-12 sm:w-16 sm:h-16 text-white"
+              fill="currentColor"
+            />
           </button>
         </div>
       )}
 
       {/* Control Bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[20] pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[50] pointer-events-none">
         <div className="flex items-center justify-center gap-2 sm:gap-4 pointer-events-auto">
           {/* Audio Toggle */}
           <button
             onClick={toggleAudio}
             className={`p-3 sm:p-5 rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-lg ${
-              isAudioEnabled 
-                ? 'bg-gray-700 hover:bg-gray-600' 
-                : 'bg-red-600 hover:bg-red-700'
+              isAudioEnabled
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-red-600 hover:bg-red-700"
             }`}
-            title={isAudioEnabled ? 'Mute Audio' : 'Unmute Audio'}
+            title={isAudioEnabled ? "Mute Audio" : "Unmute Audio"}
           >
             {isAudioEnabled ? (
               <Mic className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
@@ -1971,11 +1977,11 @@ const handlePlayClick = async () => {
           <button
             onClick={toggleVideo}
             className={`p-3 sm:p-5 rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-lg ${
-              isVideoEnabled 
-                ? 'bg-gray-700 hover:bg-gray-600' 
-                : 'bg-red-600 hover:bg-red-700'
+              isVideoEnabled
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-red-600 hover:bg-red-700"
             }`}
-            title={isVideoEnabled ? 'Turn Off Camera' : 'Turn On Camera'}
+            title={isVideoEnabled ? "Turn Off Camera" : "Turn On Camera"}
           >
             {isVideoEnabled ? (
               <Video className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
@@ -1988,11 +1994,11 @@ const handlePlayClick = async () => {
           <button
             onClick={toggleScreenShare}
             className={`p-3 sm:p-5 rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-lg ${
-              isScreenSharing 
-                ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-400/50' 
-                : 'bg-gray-700 hover:bg-gray-600'
+              isScreenSharing
+                ? "bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-400/50"
+                : "bg-gray-700 hover:bg-gray-600"
             }`}
-            title={isScreenSharing ? 'Stop Screen Share' : 'Share Screen'}
+            title={isScreenSharing ? "Stop Screen Share" : "Share Screen"}
           >
             <MonitorUp className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
           </button>
@@ -2000,15 +2006,19 @@ const handlePlayClick = async () => {
           {/* Record Toggle */}
           <button
             onClick={isRecording ? stopRecording : startRecording}
-            disabled={connectionStatus !== 'connected'}
+            disabled={connectionStatus !== "connected"}
             className={`p-3 sm:p-5 rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-lg disabled:opacity-50 ${
-              isRecording 
-                ? 'bg-red-600 hover:bg-red-700 ring-2 ring-red-400/50' 
-                : 'bg-gray-700 hover:bg-gray-600'
+              isRecording
+                ? "bg-red-600 hover:bg-red-700 ring-2 ring-red-400/50"
+                : "bg-gray-700 hover:bg-gray-600"
             }`}
-            title={isRecording ? 'Stop Recording' : 'Start Recording'}
+            title={isRecording ? "Stop Recording" : "Start Recording"}
           >
-            <Circle className={`w-5 h-5 sm:w-7 sm:h-7 text-white ${isRecording ? 'fill-white' : ''}`} />
+            <Circle
+              className={`w-5 h-5 sm:w-7 sm:h-7 text-white ${
+                isRecording ? "fill-white" : ""
+              }`}
+            />
           </button>
 
           {/* End Call */}
