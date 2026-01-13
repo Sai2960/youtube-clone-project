@@ -1821,7 +1821,15 @@ const VideoCall = ({
   return (
     <div
       className="w-screen h-screen bg-black relative touch-none"
-      style={{ overflow: "visible" }}
+      style={{
+        overflow: "visible",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 10000, // Higher than the 9999 parent
+      }}
     >
       {" "}
       {/* ✅ CRITICAL: Remote video MUST be rendered first and ALWAYS visible */}
@@ -1838,6 +1846,11 @@ const VideoCall = ({
           display: "block",
           visibility: "visible",
           opacity: 1,
+          position: "fixed", // CRITICAL: Break out of parent clipping
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
         }}
       />
       {/* Local video */}
