@@ -465,21 +465,7 @@ const VideoCall = ({
           });
         }
 
-        // Force layout recalculation
-        remoteVideoRef.current.style.visibility = "hidden";
-        void remoteVideoRef.current.offsetHeight;
-
-        // Set new stream
-        remoteVideoRef.current.srcObject = stream;
-        remoteVideoRef.current.muted = false;
-        remoteVideoRef.current.volume = 1.0;
-
-        // Force video element to re-composite
-        remoteVideoRef.current.style.visibility = "visible";
-        remoteVideoRef.current.style.transform = "translateZ(0)";
-
-        console.log("   ✅ srcObject set");
-
+      
         try {
           await remoteVideoRef.current.play();
           console.log("✅ Video playing!");
@@ -1836,23 +1822,25 @@ const VideoCall = ({
   return (
     <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
       {/* ✅ CRITICAL: Remote video MUST be rendered first and ALWAYS visible */}
-    <video
+   {/* Remote video - SIMPLIFIED */}
+<video
   ref={remoteVideoRef}
   id="remote-video"
   autoPlay
   playsInline
   muted={false}
   style={{
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
     zIndex: 1,
-    backgroundColor: "#000",
+    backgroundColor: '#000',
   }}
 />
+
 
 
       {/* Local video */}
