@@ -1832,34 +1832,36 @@ const initializeCall = async () => {
       {/* Override global video styles for video call */}
 
       {/* Remote Video - Full Screen Background */}
-     <video
+    <video
   ref={remoteVideoRef}
   autoPlay
   playsInline
   muted={false}
-  className="remote-video-call w-full h-full bg-black absolute inset-0"
+  className="remote-video-call"
   style={{
     display: "block",
-    position: "absolute",
+    position: "fixed",
     top: 0,
     left: 0,
-    width: "100%",
-    height: "100%",
+    width: "100vw",
+    height: "100vh",
     objectFit: "cover",
     visibility: "visible",
     opacity: 1,
-    zIndex: 100,  // ✅ CHANGED from 5 to 100
+    zIndex: 9999,
     backgroundColor: "black",
   } as React.CSSProperties}
   onPlay={() => {
     console.log("📹 Remote video onPlay fired");
     if (remoteVideoRef.current) {
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
-      remoteVideoRef.current.style.visibility = "visible";
-      remoteVideoRef.current.style.opacity = "1";
-      remoteVideoRef.current.style.display = "block";
-      remoteVideoRef.current.style.zIndex = "100"; // ✅ ADD THIS
+      const v = remoteVideoRef.current;
+      v.muted = false;
+      v.volume = 1.0;
+      v.style.zIndex = "9999";
+      v.style.display = "block";
+      v.style.visibility = "visible";
+      v.style.opacity = "1";
+      v.style.position = "fixed";
     }
   }}
   onLoadedMetadata={() => {
@@ -1868,7 +1870,7 @@ const initializeCall = async () => {
       remoteVideoRef.current.style.visibility = "visible";
       remoteVideoRef.current.style.opacity = "1";
       remoteVideoRef.current.style.display = "block";
-      remoteVideoRef.current.style.zIndex = "100"; // ✅ ADD THIS
+      remoteVideoRef.current.style.zIndex = "9999";
     }
   }}
 />
