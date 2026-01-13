@@ -1833,60 +1833,58 @@ const VideoCall = ({
       .padStart(2, "0")}`;
   };
   return (
-   <div
-  className="fixed inset-0"
-  style={{
-    width: "100vw",
-    height: "100vh",
-    overflow: "hidden",
-    position: "fixed",
-    top: 0,
-    left: 0,
-    zIndex: 9999,
-    backgroundColor: "#1a1a1a",  // Dark gray instead of pure black
-  }}
->
-   {/* ✅ Remote video - BASE LAYER */}
-<video
-  ref={remoteVideoRef}
-  id="remote-video"
-  autoPlay
-  playsInline
-  muted={false}
-  className="absolute inset-0 w-full h-full object-cover"
-  style={{
-    zIndex: 1,
-    display: connectionStatus === "connected" ? "block" : "none",
-  }}
-/>
+    <div
+      className="fixed inset-0"
+      style={{
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        zIndex: 9999,
+        backgroundColor: "#1a1a1a", // Dark gray instead of pure black
+      }}
+    >
+      {/* ✅ Remote video - BASE LAYER */}
+      <video
+        ref={remoteVideoRef}
+        id="remote-video"
+        autoPlay
+        playsInline
+        muted={false}
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{
+          zIndex: 1,
+          display: connectionStatus === "connected" ? "block" : "none",
+        }}
+      />
 
-
-   {/* Local video - ABOVE remote */}
-<div
-  className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black"
-  style={{
-    zIndex: 100,
-    display: isInitialized ? "block" : "none",
-  }}
->
-  <video
-    ref={localVideoRef}
-    id="local-video"
-    autoPlay
-    playsInline
-    muted
-    className="w-full h-full object-cover"
-  />
-  {!isVideoEnabled && (
-    <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-      <VideoOff className="w-12 h-12 text-gray-400" />
-    </div>
-  )}
-</div>
-
+      {/* Local video - ABOVE remote */}
+      <div
+        className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black"
+        style={{
+          zIndex: 100,
+          display: isInitialized ? "block" : "none",
+        }}
+      >
+        <video
+          ref={localVideoRef}
+          id="local-video"
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover"
+        />
+        {!isVideoEnabled && (
+          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+            <VideoOff className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
+      </div>
 
       {/* Start Call Overlay - Only show if NOT interacted */}
-      {!userInteracted && (
+      {!userInteracted && !isInitialized && (
         <div
           className="absolute inset-0 bg-black flex items-center justify-center"
           style={{ zIndex: 200 }}
@@ -1933,8 +1931,8 @@ const VideoCall = ({
         </div>
       )}
 
-      {/* Initializing Overlay - Only show if interacted but not initialized */}
-      {userInteracted && !isInitialized && (
+      {/* Initializing Overlay - Only show while connecting, hide when connected */}
+      {userInteracted && !isInitialized && connectionStatus !== "connected" && (
         <div
           className="absolute inset-0 bg-black/95 flex items-center justify-center"
           style={{ zIndex: 200 }}
@@ -1960,7 +1958,6 @@ const VideoCall = ({
           </div>
         </div>
       )}
-
       {/* Main UI - Top Bar - Only show when initialized */}
       {isInitialized && (
         <>
