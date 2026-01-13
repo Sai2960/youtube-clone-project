@@ -1829,49 +1829,39 @@ const initializeCall = async () => {
   };
   return (
     <div className="w-full h-screen bg-black relative overflow-hidden">
-      {/* Override global video styles for video call */}
+     {/* Add this style tag BEFORE the video element */}
+<style jsx>{`
+  .force-video-top {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    object-fit: cover !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+`}</style>
 
-      {/* Remote Video - Full Screen Background */}
-    <video
+{/* Remote Video - Full Screen Background */}
+<video
   ref={remoteVideoRef}
   autoPlay
   playsInline
   muted={false}
-  className="remote-video-call"
-  style={{
-    display: "block",
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    objectFit: "cover",
-    visibility: "visible",
-    opacity: 1,
-    zIndex: 9999,
-    backgroundColor: "black",
-  } as React.CSSProperties}
+  className="remote-video-call force-video-top"
   onPlay={() => {
     console.log("📹 Remote video onPlay fired");
     if (remoteVideoRef.current) {
       const v = remoteVideoRef.current;
       v.muted = false;
       v.volume = 1.0;
-      v.style.zIndex = "9999";
-      v.style.display = "block";
-      v.style.visibility = "visible";
-      v.style.opacity = "1";
-      v.style.position = "fixed";
     }
   }}
   onLoadedMetadata={() => {
     console.log("📹 Remote video metadata loaded");
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.style.visibility = "visible";
-      remoteVideoRef.current.style.opacity = "1";
-      remoteVideoRef.current.style.display = "block";
-      remoteVideoRef.current.style.zIndex = "9999";
-    }
   }}
 />
 
