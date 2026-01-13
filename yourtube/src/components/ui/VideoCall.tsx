@@ -1475,13 +1475,16 @@ const VideoCall = ({
       webrtcServiceRef.current.setLocalStream(stream);
 
       // Attach to local video
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-        localVideoRef.current.muted = true;
-        await localVideoRef.current.play().catch(console.error);
-        console.log("✅ Local video attached");
-      }
-
+   if (localVideoRef.current) {
+  localVideoRef.current.srcObject = stream;
+  localVideoRef.current.muted = true;
+  await localVideoRef.current.play().catch(console.error);
+  console.log("✅ Local video attached");
+  
+  // Update status so overlay disappears
+  setConnectionStatus("waiting");
+  setInitStep("Camera ready - waiting for other person...");
+}
       // Setup event listeners BEFORE adding tracks
       console.log("🔧 Setting up event listeners...");
       console.log("🔧 Setting up event listeners...");
@@ -1863,11 +1866,11 @@ const VideoCall = ({
       />
 
       {/* Connection Status Overlay - Hide when stream received */}
-      {connectionStatus === "connecting" && !hasRemoteStream && (
-        <div
-          id="connecting-overlay"
-          className="absolute inset-0 bg-black/80 flex items-center justify-center z-[30] pointer-events-none"
-        >
+     {connectionStatus === 'connecting' && !hasRemoteStream && !webrtcServiceRef.current?.getLocalStream() && (
+  <div 
+    id="connecting-overlay"
+    className="absolute inset-0 bg-black/80 flex items-center justify-center z-[30] pointer-events-none"
+  >
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-white text-xl">
@@ -1881,14 +1884,19 @@ const VideoCall = ({
       )}
 
       {/* Local Video - Picture in Picture */}
-      <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black z-[40] pointer-events-auto">
-        <video
-          ref={localVideoRef}
-          autoPlay
-          playsInline
-          muted={true}
-          className="w-full h-full object-cover"
-        />
+  <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black z-[40] pointer-events-auto">
+  <video
+    ref={localVideoRef}
+    autoPlay
+    playsInline
+    muted={true}
+    className="w-full h-full object-cover"
+    style={{
+      display: 'block',
+      visibility: 'visible',
+      opacity: 1
+    }}
+  />
         {!isVideoEnabled && (
           <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
             <VideoOff className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
