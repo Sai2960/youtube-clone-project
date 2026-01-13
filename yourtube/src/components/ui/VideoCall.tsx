@@ -21,6 +21,7 @@ import initializeSocket, {
 import axiosInstance from "@/lib/axiosinstance";
 import { useRouter } from "next/router";
 import { useUser } from "@/lib/AuthContext";
+import "@/styles/videocall.css";
 
 interface VideoCallProps {
   roomId: string;
@@ -1350,294 +1351,303 @@ const VideoCall = ({
 
     console.log("✅ Cleanup complete");
   };
+
+  useEffect(() => {
+    // Add class to HTML element
+    document.documentElement.classList.add("video-call-active");
+
+    return () => {
+      document.documentElement.classList.remove("video-call-active");
+    };
+  }, []);
   // ✅ Initialize call function
-const initializeCall = async () => {
-  console.log("\n🎥 ===== INITIALIZING CALL (COMPLETE) =====");
+  const initializeCall = async () => {
+    console.log("\n🎥 ===== INITIALIZING CALL (COMPLETE) =====");
 
-  try {
-    setError(null);
-
-    if (!user?._id) {
-      throw new Error("User not authenticated");
-    }
-
-    // Socket setup
-    if (!isSocketConnected()) {
-      console.log("🔌 Initializing socket...");
-      initializeSocket.initializeSocket(user._id);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    }
-
-    let socket;
     try {
-      socket = await waitForSocket(15000);
-      console.log("✅ Socket connected:", socket.id);
-    } catch (err) {
-      setError("Failed to connect. Please refresh.");
-      return;
-    }
+      setError(null);
 
-    // Create WebRTC service
-    console.log("🔧 Creating WebRTC service...");
-    webrtcServiceRef.current = new WebRTCService();
-    recordingServiceRef.current = new RecordingService();
+      if (!user?._id) {
+        throw new Error("User not authenticated");
+      }
 
-    // ✅ CRITICAL FIX: Register socket handlers BEFORE doing anything else
-    console.log("🔧 Registering socket handlers BEFORE media/joining...");
+      // Socket setup
+      if (!isSocketConnected()) {
+        console.log("🔌 Initializing socket...");
+        initializeSocket.initializeSocket(user._id);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
 
-    const handleOffer = async (data: {
-      offer: RTCSessionDescriptionInit;
-      from: string;
-    }) => {
-      console.log("\n📥 ===== RECEIVED OFFER =====");
-      console.log("   From:", data.from);
-
-      if (!webrtcServiceRef.current) {
-        console.error("❌ No WebRTC service");
+      let socket;
+      try {
+        socket = await waitForSocket(15000);
+        console.log("✅ Socket connected:", socket.id);
+      } catch (err) {
+        setError("Failed to connect. Please refresh.");
         return;
       }
 
-      try {
-        await webrtcServiceRef.current.setRemoteDescription(data.offer);
-        console.log("✅ Remote description (offer) set");
+      // Create WebRTC service
+      console.log("🔧 Creating WebRTC service...");
+      webrtcServiceRef.current = new WebRTCService();
+      recordingServiceRef.current = new RecordingService();
 
-        const answer = await webrtcServiceRef.current.createAnswer();
-        console.log("✅ Answer created, sending...");
+      // ✅ CRITICAL FIX: Register socket handlers BEFORE doing anything else
+      console.log("🔧 Registering socket handlers BEFORE media/joining...");
 
-        socket.emit("answer", roomId, answer);
-        console.log("📤 Answer sent");
-        console.log("===========================\n");
-      } catch (error) {
-        console.error("❌ Error handling offer:", error);
-        setError("Failed to process incoming call");
-      }
-    };
+      const handleOffer = async (data: {
+        offer: RTCSessionDescriptionInit;
+        from: string;
+      }) => {
+        console.log("\n📥 ===== RECEIVED OFFER =====");
+        console.log("   From:", data.from);
 
-    const handleAnswer = async (data: {
-      answer: RTCSessionDescriptionInit;
-      from: string;
-    }) => {
-      console.log("\n📥 ===== RECEIVED ANSWER =====");
-      console.log("   From:", data.from);
-
-      if (!webrtcServiceRef.current) {
-        console.error("❌ No WebRTC service");
-        return;
-      }
-
-      try {
-        await webrtcServiceRef.current.setRemoteDescription(data.answer);
-        console.log("✅ Remote description (answer) set");
-        console.log("===========================\n");
-      } catch (error) {
-        console.error("❌ Error handling answer:", error);
-      }
-    };
-
-    const handleIceCandidate = async (data: {
-      candidate: RTCIceCandidateInit;
-      from: string;
-    }) => {
-      if (!webrtcServiceRef.current) return;
-
-      if (data.candidate?.candidate) {
-        console.log("❄️ Received ICE from:", data.from);
-        try {
-          await webrtcServiceRef.current.addIceCandidate(data.candidate);
-        } catch (error) {
-          console.error("❌ ICE candidate error:", error);
-        }
-      }
-    };
-
-    // ✅ Register handlers NOW
-    socket.on("offer", handleOffer);
-    socket.on("answer", handleAnswer);
-    socket.on("ice-candidate", handleIceCandidate);
-    console.log("✅ Socket handlers registered");
-
-    // Get media stream with Windows audio fix
-    console.log("🎤 Getting media stream with audio fix...");
-    let stream: MediaStream;
-    try {
-      stream = await ensureAudioNotMuted();
-      console.log("✅ Media acquired:", {
-        audio: stream.getAudioTracks().length,
-        video: stream.getVideoTracks().length,
-      });
-    } catch (err: any) {
-      setError(err.message || "Camera/mic access failed");
-      return;
-    }
-
-    // Set local stream
-    webrtcServiceRef.current.setLocalStream(stream);
-
-    // ✅ THIS IS THE CRITICAL PART - Attach to local video WITH status update
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-      localVideoRef.current.muted = true;
-      
-      // ✅ Force video visibility
-      localVideoRef.current.style.display = 'block';
-      localVideoRef.current.style.visibility = 'visible';
-      localVideoRef.current.style.opacity = '1';
-      
-      await localVideoRef.current.play().catch(console.error);
-      console.log("✅ Local video attached and playing");
-      
-      // ✅ CRITICAL: Update status immediately to hide overlay
-      setConnectionStatus("waiting");
-      setInitStep("Camera ready - waiting for other person...");
-      
-      // Force re-render
-      setTimeout(() => {
-        if (connectionStatus === 'connecting') {
-          setConnectionStatus("waiting");
-        }
-      }, 100);
-    }
-
-    // Setup event listeners BEFORE adding tracks
-    console.log("🔧 Setting up event listeners...");
-
-    webrtcServiceRef.current.setupEventListeners(
-      // Remote stream callback
-      async (remoteStream: MediaStream) => {
-        console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
-
-        if (!remoteStream.active || !remoteVideoRef.current) {
-          console.error("❌ Invalid stream or no video element");
+        if (!webrtcServiceRef.current) {
+          console.error("❌ No WebRTC service");
           return;
         }
 
-        // Enable all tracks
-        remoteStream.getTracks().forEach((track) => {
-          track.enabled = true;
-          console.log(`✅ Enabled ${track.kind}: ${track.label}`);
-        });
+        try {
+          await webrtcServiceRef.current.setRemoteDescription(data.offer);
+          console.log("✅ Remote description (offer) set");
 
-        // Attach stream to video - DO THIS ONCE ONLY
-        const video = remoteVideoRef.current;
-        video.srcObject = remoteStream;
-        video.muted = true; // Start muted for autoplay policy
+          const answer = await webrtcServiceRef.current.createAnswer();
+          console.log("✅ Answer created, sending...");
 
-        // ✅ CRITICAL: Force video visibility
-        video.style.visibility = "visible";
-        video.style.opacity = "1";
-        video.style.display = "block";
-        video.style.position = "absolute";
-        video.style.top = "0";
-        video.style.left = "0";
-        video.style.width = "100%";
-        video.style.height = "100%";
-        video.style.zIndex = "5";
-        video.style.objectFit = "cover";
-        video.style.backgroundColor = "black";
+          socket.emit("answer", roomId, answer);
+          console.log("📤 Answer sent");
+          console.log("===========================\n");
+        } catch (error) {
+          console.error("❌ Error handling offer:", error);
+          setError("Failed to process incoming call");
+        }
+      };
 
-        console.log("✅ Video element visibility forced");
+      const handleAnswer = async (data: {
+        answer: RTCSessionDescriptionInit;
+        from: string;
+      }) => {
+        console.log("\n📥 ===== RECEIVED ANSWER =====");
+        console.log("   From:", data.from);
+
+        if (!webrtcServiceRef.current) {
+          console.error("❌ No WebRTC service");
+          return;
+        }
 
         try {
-          await video.play();
-          console.log("✅ Video playing");
+          await webrtcServiceRef.current.setRemoteDescription(data.answer);
+          console.log("✅ Remote description (answer) set");
+          console.log("===========================\n");
+        } catch (error) {
+          console.error("❌ Error handling answer:", error);
+        }
+      };
 
-          // Unmute AFTER play succeeds
-          video.muted = false;
-          video.volume = 1.0;
+      const handleIceCandidate = async (data: {
+        candidate: RTCIceCandidateInit;
+        from: string;
+      }) => {
+        if (!webrtcServiceRef.current) return;
 
-          // Ensure still visible after play
+        if (data.candidate?.candidate) {
+          console.log("❄️ Received ICE from:", data.from);
+          try {
+            await webrtcServiceRef.current.addIceCandidate(data.candidate);
+          } catch (error) {
+            console.error("❌ ICE candidate error:", error);
+          }
+        }
+      };
+
+      // ✅ Register handlers NOW
+      socket.on("offer", handleOffer);
+      socket.on("answer", handleAnswer);
+      socket.on("ice-candidate", handleIceCandidate);
+      console.log("✅ Socket handlers registered");
+
+      // Get media stream with Windows audio fix
+      console.log("🎤 Getting media stream with audio fix...");
+      let stream: MediaStream;
+      try {
+        stream = await ensureAudioNotMuted();
+        console.log("✅ Media acquired:", {
+          audio: stream.getAudioTracks().length,
+          video: stream.getVideoTracks().length,
+        });
+      } catch (err: any) {
+        setError(err.message || "Camera/mic access failed");
+        return;
+      }
+
+      // Set local stream
+      webrtcServiceRef.current.setLocalStream(stream);
+
+      // ✅ THIS IS THE CRITICAL PART - Attach to local video WITH status update
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+        localVideoRef.current.muted = true;
+
+        // ✅ Force video visibility
+        localVideoRef.current.style.display = "block";
+        localVideoRef.current.style.visibility = "visible";
+        localVideoRef.current.style.opacity = "1";
+
+        await localVideoRef.current.play().catch(console.error);
+        console.log("✅ Local video attached and playing");
+
+        // ✅ CRITICAL: Update status immediately to hide overlay
+        setConnectionStatus("waiting");
+        setInitStep("Camera ready - waiting for other person...");
+
+        // Force re-render
+        setTimeout(() => {
+          if (connectionStatus === "connecting") {
+            setConnectionStatus("waiting");
+          }
+        }, 100);
+      }
+
+      // Setup event listeners BEFORE adding tracks
+      console.log("🔧 Setting up event listeners...");
+
+      webrtcServiceRef.current.setupEventListeners(
+        // Remote stream callback
+        async (remoteStream: MediaStream) => {
+          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+
+          if (!remoteStream.active || !remoteVideoRef.current) {
+            console.error("❌ Invalid stream or no video element");
+            return;
+          }
+
+          // Enable all tracks
+          remoteStream.getTracks().forEach((track) => {
+            track.enabled = true;
+            console.log(`✅ Enabled ${track.kind}: ${track.label}`);
+          });
+
+          // Attach stream to video - DO THIS ONCE ONLY
+          const video = remoteVideoRef.current;
+          video.srcObject = remoteStream;
+          video.muted = true; // Start muted for autoplay policy
+
+          // ✅ CRITICAL: Force video visibility
           video.style.visibility = "visible";
           video.style.opacity = "1";
           video.style.display = "block";
+          video.style.position = "absolute";
+          video.style.top = "0";
+          video.style.left = "0";
+          video.style.width = "100%";
+          video.style.height = "100%";
+          video.style.zIndex = "5";
+          video.style.objectFit = "cover";
+          video.style.backgroundColor = "black";
 
-          console.log("✅ Audio unmuted and visibility confirmed");
-        } catch (err: any) {
-          console.error("❌ Play failed:", err.name);
-          if (err.name === "NotAllowedError") {
-            setShowPlayButton(true);
+          console.log("✅ Video element visibility forced");
+
+          try {
+            await video.play();
+            console.log("✅ Video playing");
+
+            // Unmute AFTER play succeeds
+            video.muted = false;
+            video.volume = 1.0;
+
+            // Ensure still visible after play
+            video.style.visibility = "visible";
+            video.style.opacity = "1";
+            video.style.display = "block";
+
+            console.log("✅ Audio unmuted and visibility confirmed");
+          } catch (err: any) {
+            console.error("❌ Play failed:", err.name);
+            if (err.name === "NotAllowedError") {
+              setShowPlayButton(true);
+            }
           }
+
+          // Update states - THIS TRIGGERS RE-RENDER
+          setHasRemoteStream(true);
+          setConnectionStatus("connected");
+          setShowPlayButton(false);
+          setError(null);
+
+          // Mark ref too
+          remoteStreamReceivedRef.current = true;
+
+          console.log("===== REMOTE STREAM SETUP DONE =====\n");
+        },
+        // ICE candidate callback
+        (candidate: RTCIceCandidate) => {
+          const socket = getSocket();
+          socket.emit("ice-candidate", roomId, candidate);
         }
+      );
 
-        // Update states - THIS TRIGGERS RE-RENDER
-        setHasRemoteStream(true);
-        setConnectionStatus("connected");
-        setShowPlayButton(false);
-        setError(null);
+      // Add local stream to peer connection
+      console.log("📤 Adding local stream to peer...");
+      await webrtcServiceRef.current.addLocalStreamToPeer();
 
-        // Mark ref too
-        remoteStreamReceivedRef.current = true;
+      // Join room
+      console.log("🚪 Joining room:", roomId);
+      socket.emit("join-room", roomId, user._id);
 
-        console.log("===== REMOTE STREAM SETUP DONE =====\n");
-      },
-      // ICE candidate callback
-      (candidate: RTCIceCandidate) => {
-        const socket = getSocket();
-        socket.emit("ice-candidate", roomId, candidate);
-      }
-    );
+      if (isInitiator) {
+        console.log("👑 INITIATOR - waiting for both-users-ready signal...");
 
-    // Add local stream to peer connection
-    console.log("📤 Adding local stream to peer...");
-    await webrtcServiceRef.current.addLocalStreamToPeer();
+        await new Promise<void>((resolve, reject) => {
+          let resolved = false;
 
-    // Join room
-    console.log("🚪 Joining room:", roomId);
-    socket.emit("join-room", roomId, user._id);
-    
-    if (isInitiator) {
-      console.log("👑 INITIATOR - waiting for both-users-ready signal...");
+          const safeResolve = () => {
+            if (!resolved) {
+              resolved = true;
+              resolve();
+            }
+          };
 
-      await new Promise<void>((resolve, reject) => {
-        let resolved = false;
+          const timeout = setTimeout(() => {
+            console.error("❌ TIMEOUT: Receiver never joined after 90 seconds");
+            reject(new Error("Receiver did not join the call"));
+          }, 90000);
 
-        const safeResolve = () => {
-          if (!resolved) {
-            resolved = true;
-            resolve();
-          }
-        };
+          socket.once("both-users-ready", (data: any) => {
+            console.log("✅✅✅ Both users ready signal received!");
+            clearTimeout(timeout);
 
-        const timeout = setTimeout(() => {
-          console.error("❌ TIMEOUT: Receiver never joined after 90 seconds");
-          reject(new Error("Receiver did not join the call"));
-        }, 90000);
-
-        socket.once("both-users-ready", (data: any) => {
-          console.log("✅✅✅ Both users ready signal received!");
-          clearTimeout(timeout);
-
-          console.log(
-            "⏳ Waiting 5 more seconds for receiver to stabilize..."
-          );
-          setTimeout(() => {
             console.log(
-              "✅ Creating offer NOW after both-users-ready + 5s delay"
+              "⏳ Waiting 5 more seconds for receiver to stabilize..."
             );
-            safeResolve();
-          }, 5000);
+            setTimeout(() => {
+              console.log(
+                "✅ Creating offer NOW after both-users-ready + 5s delay"
+              );
+              safeResolve();
+            }, 5000);
+          });
         });
-      });
 
-      console.log("📝 Creating offer...");
-      const offer = await webrtcServiceRef.current.createOffer();
-      console.log("📤 Sending offer...");
-      socket.emit("offer", roomId, offer);
-      console.log("✅ Offer sent");
+        console.log("📝 Creating offer...");
+        const offer = await webrtcServiceRef.current.createOffer();
+        console.log("📤 Sending offer...");
+        socket.emit("offer", roomId, offer);
+        console.log("✅ Offer sent");
+      }
+
+      // Expose to window for debugging
+      if (typeof window !== "undefined") {
+        (window as any).peerConnection =
+          webrtcServiceRef.current.getPeerConnection();
+        (window as any).webrtcService = webrtcServiceRef.current;
+      }
+
+      console.log("✅ Call initialization complete\n");
+    } catch (error: any) {
+      console.error("❌ Init failed:", error);
+      setError(error.message || "Initialization failed");
     }
-
-    // Expose to window for debugging
-    if (typeof window !== "undefined") {
-      (window as any).peerConnection =
-        webrtcServiceRef.current.getPeerConnection();
-      (window as any).webrtcService = webrtcServiceRef.current;
-    }
-
-    console.log("✅ Call initialization complete\n");
-  } catch (error: any) {
-    console.error("❌ Init failed:", error);
-    setError(error.message || "Initialization failed");
-  }
-};
+  };
 
   // ✅ Toggle audio
   const toggleAudio = () => {
@@ -1827,41 +1837,9 @@ const initializeCall = async () => {
       .toString()
       .padStart(2, "0")}`;
   };
-return (
-  <>
-    {/* Force remove HTML/body backgrounds and ensure video visibility */}
-    <style jsx global>{`
-      html.dark,
-      body {
-        background: transparent !important;
-      }
-      
-      .video-call-remote {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 999999 !important;
-        object-fit: cover !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-      }
-      
-      .video-call-container {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 999998 !important;
-        background: black !important;
-      }
-    `}</style>
-
+  return (
     <div className="video-call-container">
-      {/* Remote Video - Full Screen Background */}
+      {/* Remote Video */}
       <video
         ref={remoteVideoRef}
         autoPlay
@@ -1882,22 +1860,21 @@ return (
       />
 
       {/* Connection Status Overlay - Hide when local video is ready */}
-      {connectionStatus === 'connecting' && !localVideoRef.current?.srcObject && (
-        <div 
-          id="connecting-overlay"
-          className="absolute inset-0 bg-black/80 flex items-center justify-center z-[1000000] pointer-events-none"
-        >
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white text-xl">
-              Starting camera...
-            </p>
-            <p className="text-gray-400 text-sm mt-2">
-              Please allow camera access
-            </p>
+      {connectionStatus === "connecting" &&
+        !localVideoRef.current?.srcObject && (
+          <div
+            id="connecting-overlay"
+            className="absolute inset-0 bg-black/80 flex items-center justify-center z-[1000000] pointer-events-none"
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-white text-xl">Starting camera...</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Please allow camera access
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Local Video - Picture in Picture */}
       <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black z-[1000001] pointer-events-auto">
@@ -1908,9 +1885,9 @@ return (
           muted={true}
           className="w-full h-full object-cover"
           style={{
-            display: 'block',
-            visibility: 'visible',
-            opacity: 1
+            display: "block",
+            visibility: "visible",
+            opacity: 1,
           }}
         />
         {!isVideoEnabled && (
@@ -2057,8 +2034,7 @@ return (
         </div>
       </div>
     </div>
-  </>
-);
+  );
 };
 
 // ✅ EMERGENCY: Global click helper for debugging
