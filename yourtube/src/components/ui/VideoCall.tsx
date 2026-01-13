@@ -1763,47 +1763,43 @@ const handlePlayClick = async () => {
   };
    return (
     <div className="w-full h-screen bg-black relative overflow-hidden">
-      {/* Remote Video (Full Screen) */}
-     {/* Remote Video - Full Screen Background */}
-<video
-  ref={remoteVideoRef}
-  autoPlay
-  playsInline
-  muted={true}
-  className="w-full h-full object-cover bg-black absolute inset-0 z-0"
-  style={{ display: 'block' }}
-  onPlay={() => {
-    console.log("📹 Remote video onPlay fired");
-    // Unmute when playing
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
-    }
-  }}
-  onLoadedMetadata={() => {
-    console.log("📹 Remote video metadata loaded");
-  }}
-/>
+      {/* Remote Video - Full Screen Background */}
+      <video
+        ref={remoteVideoRef}
+        autoPlay
+        playsInline
+        muted={true}
+        className="w-full h-full object-cover bg-black absolute inset-0 z-[1] pointer-events-auto"
+        style={{ display: 'block' }}
+        onPlay={() => {
+          console.log("📹 Remote video onPlay fired");
+          // Unmute when playing
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.muted = false;
+            remoteVideoRef.current.volume = 1.0;
+          }
+        }}
+        onLoadedMetadata={() => {
+          console.log("📹 Remote video metadata loaded");
+        }}
+      />
 
-
-    {/* Connection Status Overlay - Hide when stream received */}
-{connectionStatus === 'connecting' && !hasRemoteStream && (
-  <div 
-    id="connecting-overlay"
-    className="absolute inset-0 bg-black/80 flex items-center justify-center z-10"
-  >
-    <div className="text-center">
-      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p className="text-white text-xl">Connecting to {remotePeerName}...</p>
-      <p className="text-gray-400 text-sm mt-2">Establishing peer connection...</p>
-    </div>
-  </div>
-
-
+      {/* Connection Status Overlay - Hide when stream received */}
+      {connectionStatus === 'connecting' && !hasRemoteStream && (
+        <div 
+          id="connecting-overlay"
+          className="absolute inset-0 bg-black/80 flex items-center justify-center z-[15] pointer-events-none"
+        >
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-xl">Connecting to {remotePeerName}...</p>
+            <p className="text-gray-400 text-sm mt-2">Establishing peer connection...</p>
+          </div>
+        </div>
       )}
 
       {/* Local Video - Picture in Picture */}
-      <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black z-20">
+      <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black z-[25] pointer-events-auto">
         <video
           ref={localVideoRef}
           autoPlay
@@ -1819,8 +1815,8 @@ const handlePlayClick = async () => {
       </div>
 
       {/* Header - Call Info */}
-      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 via-black/50 to-transparent p-3 sm:p-6 z-10">
-        <div className="flex items-center justify-between">
+      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent p-3 sm:p-6 z-[10] pointer-events-none">
+        <div className="flex items-center justify-between pointer-events-auto">
           <div>
             <h2 className="text-white text-xl sm:text-3xl font-bold">{remotePeerName}</h2>
             <div className="flex items-center gap-2 mt-1">
@@ -1847,14 +1843,14 @@ const handlePlayClick = async () => {
 
       {/* Error/Info Message */}
       {error && (
-        <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg z-20 shadow-xl max-w-md text-center text-sm sm:text-base">
+        <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg z-[30] shadow-xl max-w-md text-center text-sm sm:text-base pointer-events-auto">
           {error}
         </div>
       )}
 
       {/* Play Button - if autoplay blocked */}
       {showPlayButton && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-30">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-[35] pointer-events-auto">
           <button
             onClick={handlePlayClick}
             className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
@@ -1865,8 +1861,8 @@ const handlePlayClick = async () => {
       )}
 
       {/* Control Bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-3 sm:p-8 z-20">
-        <div className="flex items-center justify-center gap-2 sm:gap-4">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[20] pointer-events-none">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 pointer-events-auto">
           {/* Audio Toggle */}
           <button
             onClick={toggleAudio}
