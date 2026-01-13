@@ -389,10 +389,10 @@ const VideoCall = ({
   const [initError, setInitError] = useState<string | null>(null);
   const [initStep, setInitStep] = useState<string>("idle");
   const [remoteAudioStatus, setRemoteAudioStatus] = useState<string>("waiting");
-// ✅ Force remove all potential blocking styles
-useEffect(() => {
-  const style = document.createElement('style');
-  style.innerHTML = `
+  // ✅ Force remove all potential blocking styles
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
     #remote-video {
       position: fixed !important;
       top: 0 !important;
@@ -409,10 +409,10 @@ useEffect(() => {
       filter: none !important;
     }
   `;
-  document.head.appendChild(style);
-  
-  return () => style.remove();
-}, []);
+    document.head.appendChild(style);
+
+    return () => style.remove();
+  }, []);
   // Refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -1081,30 +1081,30 @@ useEffect(() => {
   }, []);
 
   // ✅ Force video visibility after stream is attached
-useEffect(() => {
-  if (!remoteVideoRef.current || connectionStatus !== "connected") return;
+  useEffect(() => {
+    if (!remoteVideoRef.current || connectionStatus !== "connected") return;
 
-  const video = remoteVideoRef.current;
-  
-  console.log("🔄 Force video repaint effect triggered");
-  
-  // Force repaint
-  const forceRepaint = () => {
-    video.style.display = 'none';
-    video.offsetHeight; // Trigger reflow
-    video.style.display = 'block';
-  };
+    const video = remoteVideoRef.current;
 
-  const timer = setTimeout(() => {
-    console.log("🔄 Forcing video repaint...");
-    forceRepaint();
-    
-    // Also try forcing play again
-    video.play().catch(e => console.error("Play retry failed:", e));
-  }, 1000);
+    console.log("🔄 Force video repaint effect triggered");
 
-  return () => clearTimeout(timer);
-}, [connectionStatus]);
+    // Force repaint
+    const forceRepaint = () => {
+      video.style.display = "none";
+      video.offsetHeight; // Trigger reflow
+      video.style.display = "block";
+    };
+
+    const timer = setTimeout(() => {
+      console.log("🔄 Forcing video repaint...");
+      forceRepaint();
+
+      // Also try forcing play again
+      video.play().catch((e) => console.error("Play retry failed:", e));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [connectionStatus]);
   // ✅ Main initialization effect
   useEffect(() => {
     console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
@@ -1867,46 +1867,23 @@ useEffect(() => {
       .padStart(2, "0")}`;
   };
   return (
-    <div
-      className="w-screen h-screen bg-black relative touch-none"
-      style={{
-        overflow: "visible",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 10000, // Higher than the 9999 parent
-      }}
-    >
+    <div className="fixed inset-0 w-screen h-screen bg-black overflow-hidden touch-none">
       {" "}
       {/* ✅ CRITICAL: Remote video MUST be rendered first and ALWAYS visible */}
-    <video
-  ref={remoteVideoRef}
-  id="remote-video"
-  autoPlay
-  playsInline
-  muted={false}
-  style={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    zIndex: 10001,
-    backgroundColor: "#000",
-    objectFit: "cover",
-    display: "block",
-    visibility: "visible",
-    opacity: 1,
-    transform: "none",
-    filter: "none",
-    mixBlendMode: "normal",
-    isolation: "auto"
-  }}
-/>
+      <video
+        ref={remoteVideoRef}
+        id="remote-video"
+        autoPlay
+        playsInline
+        muted={false}
+        className="fixed inset-0 w-full h-full object-cover bg-black"
+        style={{
+          zIndex: 1,
+        }}
+      />
       {/* Local video */}
-      <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
+      <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-40">
+        {" "}
         <video
           ref={localVideoRef}
           id="local-video"
@@ -2001,7 +1978,7 @@ useEffect(() => {
       {isInitialized && (
         <>
           {/* Top Bar */}
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-30 pointer-events-none">
             <div className="pointer-events-auto">
               {" "}
               <div className="flex items-center justify-between gap-2">
@@ -2038,7 +2015,7 @@ useEffect(() => {
 
           {/* Play Button */}
           {showPlayButton && (
-            <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
+            <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/50">
               <button
                 onClick={handlePlayClick}
                 className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
@@ -2053,13 +2030,13 @@ useEffect(() => {
 
           {/* Error Banner */}
           {error && !showPlayButton && (
-            <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg z-30 shadow-2xl text-center">
+            <div className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg z-50 shadow-2xl text-center">
               <p className="font-semibold text-sm sm:text-base">{error}</p>
             </div>
           )}
 
           {/* Bottom Controls */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 pointer-events-none">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-30 pointer-events-none">
             <div className="pointer-events-auto flex items-center justify-center gap-2 sm:gap-4">
               <div className="flex items-center justify-center gap-2 sm:gap-4">
                 <button
