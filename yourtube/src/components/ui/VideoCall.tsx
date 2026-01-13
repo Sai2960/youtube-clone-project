@@ -1938,35 +1938,38 @@ const VideoCall = ({
       {isInitialized && (
         <>
           {/* Top Bar */}
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-white text-lg sm:text-2xl font-bold truncate">
-                  {remotePeerName}
-                </h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      connectionStatus === "connected"
-                        ? "bg-green-500"
-                        : connectionStatus === "connecting"
-                        ? "bg-yellow-500 animate-pulse"
-                        : "bg-red-500"
-                    }`}
-                  />
-                  <p className="text-gray-300 text-xs sm:text-sm capitalize">
-                    {connectionStatus}
-                  </p>
+          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6 z-10 pointer-events-none">
+            <div className="pointer-events-auto">
+              {" "}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-white text-lg sm:text-2xl font-bold truncate">
+                    {remotePeerName}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        connectionStatus === "connected"
+                          ? "bg-green-500"
+                          : connectionStatus === "connecting"
+                          ? "bg-yellow-500 animate-pulse"
+                          : "bg-red-500"
+                      }`}
+                    />
+                    <p className="text-gray-300 text-xs sm:text-sm capitalize">
+                      {connectionStatus}
+                    </p>
+                  </div>
                 </div>
+                {isRecording && (
+                  <div className="flex items-center gap-2 sm:gap-3 bg-red-600/90 px-3 py-2 sm:px-6 sm:py-3 rounded-full animate-pulse">
+                    <Circle className="w-3 h-3 sm:w-4 sm:h-4 fill-white" />
+                    <span className="text-white text-sm sm:text-lg font-bold">
+                      {formatTime(recordingTime)}
+                    </span>
+                  </div>
+                )}
               </div>
-              {isRecording && (
-                <div className="flex items-center gap-2 sm:gap-3 bg-red-600/90 px-3 py-2 sm:px-6 sm:py-3 rounded-full animate-pulse">
-                  <Circle className="w-3 h-3 sm:w-4 sm:h-4 fill-white" />
-                  <span className="text-white text-sm sm:text-lg font-bold">
-                    {formatTime(recordingTime)}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -1993,74 +1996,76 @@ const VideoCall = ({
           )}
 
           {/* Bottom Controls */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20">
-            <div className="flex items-center justify-center gap-2 sm:gap-4">
-              <button
-                onClick={toggleAudio}
-                className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
-                  isAudioEnabled
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
-              >
-                {isAudioEnabled ? (
-                  <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                ) : (
-                  <MicOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                )}
-              </button>
-              <button
-                onClick={toggleVideo}
-                className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
-                  isVideoEnabled
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
-              >
-                {isVideoEnabled ? (
-                  <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                ) : (
-                  <VideoOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                )}
-              </button>
-              <button
-                onClick={toggleScreenShare}
-                className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
-                  isScreenSharing
-                    ? "bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-400/50"
-                    : "bg-gray-700 hover:bg-gray-600"
-                }`}
-              >
-                <MonitorUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </button>
-              <button
-                onClick={isRecording ? stopRecording : startRecording}
-                disabled={connectionStatus !== "connected"}
-                className={`p-3 sm:p-4 rounded-full transition-all shadow-lg disabled:opacity-50 ${
-                  isRecording
-                    ? "bg-red-600 hover:bg-red-700 ring-2 ring-red-400/50"
-                    : "bg-gray-700 hover:bg-gray-600"
-                }`}
-              >
-                <Circle
-                  className={`w-5 h-5 sm:w-6 sm:h-6 text-white ${
-                    isRecording ? "fill-white" : ""
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8 z-20 pointer-events-none">
+            <div className="pointer-events-auto flex items-center justify-center gap-2 sm:gap-4">
+              <div className="flex items-center justify-center gap-2 sm:gap-4">
+                <button
+                  onClick={toggleAudio}
+                  className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
+                    isAudioEnabled
+                      ? "bg-gray-700 hover:bg-gray-600"
+                      : "bg-red-600 hover:bg-red-700"
                   }`}
-                />
-              </button>
-              <button
-                onClick={toggleFullscreen}
-                className="p-3 sm:p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-all shadow-lg"
-              >
-                <Maximize className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </button>
-              <button
-                onClick={handleEndCall}
-                disabled={isEndingCallRef.current}
-                className="p-4 sm:p-6 rounded-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 transition-all shadow-xl ml-2 sm:ml-4"
-              >
-                <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-              </button>
+                >
+                  {isAudioEnabled ? (
+                    <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  ) : (
+                    <MicOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  )}
+                </button>
+                <button
+                  onClick={toggleVideo}
+                  className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
+                    isVideoEnabled
+                      ? "bg-gray-700 hover:bg-gray-600"
+                      : "bg-red-600 hover:bg-red-700"
+                  }`}
+                >
+                  {isVideoEnabled ? (
+                    <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  ) : (
+                    <VideoOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  )}
+                </button>
+                <button
+                  onClick={toggleScreenShare}
+                  className={`p-3 sm:p-4 rounded-full transition-all shadow-lg ${
+                    isScreenSharing
+                      ? "bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-400/50"
+                      : "bg-gray-700 hover:bg-gray-600"
+                  }`}
+                >
+                  <MonitorUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </button>
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={connectionStatus !== "connected"}
+                  className={`p-3 sm:p-4 rounded-full transition-all shadow-lg disabled:opacity-50 ${
+                    isRecording
+                      ? "bg-red-600 hover:bg-red-700 ring-2 ring-red-400/50"
+                      : "bg-gray-700 hover:bg-gray-600"
+                  }`}
+                >
+                  <Circle
+                    className={`w-5 h-5 sm:w-6 sm:h-6 text-white ${
+                      isRecording ? "fill-white" : ""
+                    }`}
+                  />
+                </button>
+                <button
+                  onClick={toggleFullscreen}
+                  className="p-3 sm:p-4 rounded-full bg-gray-700 hover:bg-gray-600 transition-all shadow-lg"
+                >
+                  <Maximize className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </button>
+                <button
+                  onClick={handleEndCall}
+                  disabled={isEndingCallRef.current}
+                  className="p-4 sm:p-6 rounded-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 transition-all shadow-xl ml-2 sm:ml-4"
+                >
+                  <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                </button>
+              </div>
             </div>
           </div>
         </>
