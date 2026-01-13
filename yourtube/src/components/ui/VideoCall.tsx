@@ -449,16 +449,32 @@ const VideoCall = ({
       }
 
       // Attach new stream
+      // Attach new stream
       remoteVideoRef.current.srcObject = stream;
       remoteVideoRef.current.muted = false;
       remoteVideoRef.current.volume = 1.0;
+      remoteVideoRef.current.setAttribute("muted", "false");
 
       // Force video element to load and play
       remoteVideoRef.current.load();
 
+      // Wait a bit for the stream to stabilize
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       try {
+        // Force unmute again right before play
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1.0;
+
         await remoteVideoRef.current.play();
         console.log("✅ Video playing!");
+
+        // Triple-check it's not muted after play
+        if (remoteVideoRef.current.muted) {
+          console.warn("⚠️ Video got muted after play, forcing unmute");
+          remoteVideoRef.current.muted = false;
+        }
+
         setConnectionStatus("connected");
         setShowPlayButton(false);
         setError(null);
@@ -982,6 +998,14 @@ const VideoCall = ({
       // Check video element
       if (remoteVideoRef.current) {
         const video = remoteVideoRef.current;
+
+        // Force unmute if it got muted somehow
+        if (video.muted) {
+          console.warn("⚠️ Video was muted, forcing unmute");
+          video.muted = false;
+          video.volume = 1.0;
+        }
+
         console.log("📹 Video state:", {
           paused: video.paused,
           muted: video.muted,
@@ -1853,10 +1877,18 @@ const VideoCall = ({
         autoPlay
         playsInline
         muted={false}
+        controls={false}
         className="absolute inset-0 w-full h-full object-cover"
         style={{
           zIndex: 1,
           display: connectionStatus === "connected" ? "block" : "none",
+        }}
+        onLoadedMetadata={(e) => {
+          console.log("📹 Remote video metadata loaded");
+          const video = e.currentTarget;
+          video.muted = false;
+          video.volume = 1.0;
+          video.play().catch((err) => console.error("Play error:", err));
         }}
       />
 
