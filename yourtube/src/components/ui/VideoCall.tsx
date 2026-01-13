@@ -1844,7 +1844,7 @@ const VideoCall = ({
         muted={false}
         className="absolute inset-0 w-full h-full object-cover"
         style={{
-          zIndex: 1,
+          zIndex: 0, // ✅ CHANGED: From 1 to 0 (lowest layer)
           backgroundColor: "#000",
         }}
         onLoadedMetadata={() => {
@@ -1874,7 +1874,7 @@ const VideoCall = ({
 
       {/* ✅ Start Call Overlay - ONLY show when NOT interacted */}
       {!userInteracted && (
-        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black z-[100] flex items-center justify-center">
           <div className="text-center px-4 max-w-md">
             {/* Animated Icon */}
             <div className="mb-8 relative">
@@ -1920,7 +1920,7 @@ const VideoCall = ({
 
       {/* ✅ Initializing Overlay - ONLY show when interacted but not initialized */}
       {userInteracted && !isInitialized && (
-        <div className="absolute inset-0 bg-black/95 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/95 z-[100] flex items-center justify-center">
           <div className="text-center max-w-md px-4">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <h1 className="text-white text-2xl font-bold mb-2">
