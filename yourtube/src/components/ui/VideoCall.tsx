@@ -1833,26 +1833,30 @@ const VideoCall = ({
     >
       {" "}
       {/* ✅ CRITICAL: Remote video MUST be rendered first and ALWAYS visible */}
-      <video
-        ref={remoteVideoRef}
-        id="remote-video"
-        autoPlay
-        playsInline
-        muted={false}
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{
-          zIndex: 5,
-          backgroundColor: "#000",
-          display: "block",
-          visibility: "visible",
-          opacity: 1,
-          position: "fixed", // CRITICAL: Break out of parent clipping
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-        }}
-      />
+    <video
+  ref={remoteVideoRef}
+  id="remote-video"
+  autoPlay
+  playsInline
+  muted={false}
+  style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    zIndex: 10001,
+    backgroundColor: "#000",
+    objectFit: "cover",
+    display: "block",
+    visibility: "visible",
+    opacity: 1,
+    transform: "none",
+    filter: "none",
+    mixBlendMode: "normal",
+    isolation: "auto"
+  }}
+/>
       {/* Local video */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
         <video
