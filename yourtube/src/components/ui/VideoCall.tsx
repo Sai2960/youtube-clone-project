@@ -1844,14 +1844,10 @@ const VideoCall = ({
         muted={false}
         className="absolute inset-0 w-full h-full object-cover"
         style={{
-          zIndex: 0, // ✅ CHANGED: From 1 to 0 (lowest layer)
+          zIndex: 1, // ← CHANGE FROM 0 TO 1
           backgroundColor: "#000",
-        }}
-        onLoadedMetadata={() => {
-          console.log("✅ Remote video metadata loaded:", {
-            width: remoteVideoRef.current?.videoWidth,
-            height: remoteVideoRef.current?.videoHeight,
-          });
+          position: "relative", // ← ADD THIS
+          isolation: "isolate", // ← ADD THIS (creates new stacking context)
         }}
       />
 
