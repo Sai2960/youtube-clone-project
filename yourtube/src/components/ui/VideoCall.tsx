@@ -1846,21 +1846,17 @@ const VideoCall = ({
     backgroundColor: "#1a1a1a",  // Dark gray instead of pure black
   }}
 >
-    <video
+   {/* ✅ Remote video - BASE LAYER */}
+<video
   ref={remoteVideoRef}
   id="remote-video"
   autoPlay
   playsInline
   muted={false}
+  className="absolute inset-0 w-full h-full object-cover"
   style={{
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    backgroundColor: "transparent",  // ✅ CHANGED
-    zIndex: 10,
+    zIndex: 1,
+    display: connectionStatus === "connected" ? "block" : "none",
   }}
 />
 
@@ -1869,7 +1865,7 @@ const VideoCall = ({
 <div
   className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black"
   style={{
-    zIndex: 50,
+    zIndex: 100,
     display: isInitialized ? "block" : "none",
   }}
 >
