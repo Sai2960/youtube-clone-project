@@ -1813,13 +1813,24 @@ const handlePlayClick = async () => {
   };
    return (
     <div className="w-full h-screen bg-black relative overflow-hidden">
+      {/* Override global video styles for video call */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .remote-video-call {
+          object-fit: cover !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+      `}} />
       {/* Remote Video - Full Screen Background */}
       <video
         ref={remoteVideoRef}
         autoPlay
         playsInline
         muted={true}
-        className="w-full h-full object-cover bg-black absolute inset-0 z-[1] pointer-events-auto"
+        className="remote-video-call w-full h-full bg-black absolute inset-0 z-[1] pointer-events-auto"
         style={{ 
           display: 'block',
           position: 'absolute',
@@ -1830,8 +1841,13 @@ const handlePlayClick = async () => {
           objectFit: 'cover',
           visibility: 'visible',
           opacity: 1,
-          zIndex: 1
-        }}
+          zIndex: 1,
+          backgroundColor: 'transparent',
+          minWidth: '100%',
+          minHeight: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%'
+        } as React.CSSProperties}
         onPlay={() => {
           console.log("📹 Remote video onPlay fired");
           // Unmute when playing
