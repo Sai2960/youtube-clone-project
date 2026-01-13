@@ -402,6 +402,9 @@ const VideoCall = ({
   const remoteStreamReceivedRef = useRef(false);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  // Add this state near other states:
+const [hasRemoteStream, setHasRemoteStream] = useState(false);
+
   // ✅ Force audio context resume on user interaction
   const ensureAudioContextResumed = async () => {
     if (!audioContextRef.current) return;
@@ -416,79 +419,7 @@ const VideoCall = ({
     }
   };
 
-  const setupRemoteAudio = async (stream: MediaStream) => {
-    console.log("🔊 ===== SETTING UP REMOTE STREAM =====");
 
-    const audioTracks = stream.getAudioTracks();
-    const videoTracks = stream.getVideoTracks();
-
-    console.log(
-      `📊 Stream: audio=${audioTracks.length}, video=${videoTracks.length}`
-    );
-
-    if (audioTracks.length === 0 && videoTracks.length === 0) {
-      console.error("❌ No tracks in stream!");
-      return;
-    }
-
-    // Force enable all tracks
-    stream.getTracks().forEach((track) => {
-      track.enabled = true;
-      console.log(`   ✅ Enabled ${track.kind}: ${track.label || track.id}`);
-    });
-
-    // ✅ CRITICAL FIX: Attach stream to video element IMMEDIATELY
-    if (remoteVideoRef.current) {
-      console.log("📹 Attaching stream to video element...");
-
-      // Stop any existing stream first
-      const currentStream = remoteVideoRef.current.srcObject as MediaStream;
-      if (currentStream && currentStream.id !== stream.id) {
-        console.log("🔄 Clearing old stream");
-        currentStream.getTracks().forEach((t) => t.stop());
-      }
-
-      // Attach new stream
-      // Attach new stream
-      remoteVideoRef.current.srcObject = stream;
-      remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.volume = 1.0;
-      remoteVideoRef.current.setAttribute("muted", "false");
-
-      // Force video element to load and play
-      remoteVideoRef.current.load();
-
-      // Wait a bit for the stream to stabilize
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      try {
-        // Force unmute again right before play
-        remoteVideoRef.current.muted = false;
-        remoteVideoRef.current.volume = 1.0;
-
-        await remoteVideoRef.current.play();
-        console.log("✅ Video playing!");
-
-        // Triple-check it's not muted after play
-        if (remoteVideoRef.current.muted) {
-          console.warn("⚠️ Video got muted after play, forcing unmute");
-          remoteVideoRef.current.muted = false;
-        }
-
-        setConnectionStatus("connected");
-        setShowPlayButton(false);
-        setError(null);
-      } catch (err: any) {
-        console.error(`❌ Play failed:`, err.name);
-        if (err.name === "NotAllowedError") {
-          setShowPlayButton(true);
-          setError("Click to start video");
-        }
-      }
-    }
-
-    console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-  };
   // ✅ Setup debug commands
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1522,73 +1453,60 @@ const VideoCall = ({
       console.log("🔧 Setting up event listeners...");
       console.log("🔧 Setting up event listeners...");
 
-      webrtcServiceRef.current.setupEventListeners(
-        // Remote stream callback
-        async (remoteStream: MediaStream) => {
-          console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
-          console.log("   Stream ID:", remoteStream.id);
-          console.log("   Active:", remoteStream.active);
-          console.log("   Audio tracks:", remoteStream.getAudioTracks().length);
-          console.log("   Video tracks:", remoteStream.getVideoTracks().length);
+   webrtcServiceRef.current.setupEventListeners(
+  // Remote stream callback
+  async (remoteStream: MediaStream) => {
+    console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+    
+    if (!remoteStream.active || !remoteVideoRef.current) {
+      console.error("❌ Invalid stream or no video element");
+      return;
+    }
 
-          if (!remoteStream.active) {
-            console.warn("⚠️ Received inactive stream, ignoring");
-            return;
-          }
-          if (!remoteVideoRef.current) {
-            console.error("❌ No video element ref!");
-            return;
-          }
+    // Enable all tracks
+    remoteStream.getTracks().forEach((track) => {
+      track.enabled = true;
+      console.log(`✅ Enabled ${track.kind}: ${track.label}`);
+    });
 
-          remoteStreamReceivedRef.current = true;
+    // Attach stream to video - DO THIS ONCE ONLY
+    const video = remoteVideoRef.current;
+    video.srcObject = remoteStream;
+    video.muted = true;  // Start muted for autoplay policy
 
-          if (!remoteStream || !remoteVideoRef.current) {
-            console.error("❌ Missing stream or video element");
-            return;
-          }
+    try {
+      await video.play();
+      console.log("✅ Video playing");
+      
+      // Unmute AFTER play succeeds
+      video.muted = false;
+      video.volume = 1.0;
+      console.log("✅ Audio unmuted");
+    } catch (err: any) {
+      console.error("❌ Play failed:", err.name);
+      if (err.name === "NotAllowedError") {
+        setShowPlayButton(true);
+      }
+    }
 
-          // Force enable all tracks
-          remoteStream.getTracks().forEach((t) => {
-            t.enabled = true;
-            console.log(`✅ Enabled ${t.kind}: ${t.label}`);
-          });
+    // Update states - THIS TRIGGERS RE-RENDER
+    setHasRemoteStream(true);
+    setConnectionStatus("connected");
+    setShowPlayButton(false);
+    setError(null);
 
-          // ✅ CRITICAL: Set connected status BEFORE attaching stream
-          setConnectionStatus("connected");
-          setShowPlayButton(false);
-          setError(null);
+    // Mark ref too
+    remoteStreamReceivedRef.current = true;
 
-          // ✅ CRITICAL: Wait for React to re-render and hide overlays
-          await new Promise((resolve) => setTimeout(resolve, 100));
+    console.log("===== REMOTE STREAM SETUP DONE =====\n");
+  },
+  // ICE candidate callback
+  (candidate: RTCIceCandidate) => {
+    const socket = getSocket();
+    socket.emit("ice-candidate", roomId, candidate);
+  }
+);
 
-          // Attach to video element
-          remoteVideoRef.current.srcObject = remoteStream;
-          remoteVideoRef.current.muted = false;
-          remoteVideoRef.current.volume = 1.0;
-
-          try {
-            await remoteVideoRef.current.play();
-            console.log("✅ Remote video playing");
-          } catch (err: any) {
-            console.error("❌ Video play failed:", err.name);
-            if (err.name === "NotAllowedError") {
-              setShowPlayButton(true);
-              setError("Click play to start");
-            }
-          }
-
-          // Setup audio
-          if (remoteStream.getAudioTracks().length > 0) {
-            await setupRemoteAudio(remoteStream);
-          }
-
-          console.log("===== REMOTE STREAM SETUP COMPLETE =====\n");
-        },
-        (candidate: RTCIceCandidate) => {
-          const socket = getSocket();
-          socket.emit("ice-candidate", roomId, candidate);
-        }
-      );
 
       // Add local stream to peer connection
       console.log("📤 Adding local stream to peer...");
@@ -1799,39 +1717,26 @@ const VideoCall = ({
   };
 
   // ✅ Handle play button click
-  const handlePlayClick = async () => {
-    console.log("🎬 Manual play button clicked");
+const handlePlayClick = async () => {
+  console.log("🎬 Manual play clicked");
 
+  if (remoteVideoRef.current) {
     try {
-      await ensureAudioContextResumed();
-
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.muted = false;
-        remoteVideoRef.current.volume = 1.0;
-        await remoteVideoRef.current.play();
-        console.log("✅ Video playing with audio");
-      }
-
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.muted = false;
-        remoteAudioRef.current.volume = 1.0;
-        await remoteAudioRef.current.play();
-        console.log("✅ Backup audio playing");
-      }
-
-      if (audioContextRef.current?.state === "suspended") {
-        await audioContextRef.current.resume();
-        console.log("✅ AudioContext resumed");
-      }
-
-      setConnectionStatus("connected");
+      remoteVideoRef.current.muted = true;
+      await remoteVideoRef.current.play();
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.volume = 1.0;
+      
       setShowPlayButton(false);
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Manual play failed:", err);
-      setError("⚠️ Could not start playback - try again");
+      setConnectionStatus("connected");
+      setHasRemoteStream(true);
+      console.log("✅ Playing with audio");
+    } catch (err) {
+      console.error("❌ Play failed:", err);
     }
-  };
+  }
+};
+
 
   // ✅ Toggle fullscreen
   const toggleFullscreen = async () => {
@@ -1859,30 +1764,42 @@ const VideoCall = ({
    return (
     <div className="w-full h-screen bg-black relative overflow-hidden">
       {/* Remote Video (Full Screen) */}
-      <video
-        ref={remoteVideoRef}
-        autoPlay
-        playsInline
-        muted={false}
-        className="w-full h-full object-cover bg-black absolute inset-0"
-        onLoadedMetadata={(e) => {
-          console.log("📹 Remote video metadata loaded");
-          const video = e.currentTarget;
-          video.muted = false;
-          video.volume = 1.0;
-          video.play().catch((err) => console.error("Play error:", err));
-        }}
-      />
+     {/* Remote Video - Full Screen Background */}
+<video
+  ref={remoteVideoRef}
+  autoPlay
+  playsInline
+  muted={true}
+  className="w-full h-full object-cover bg-black absolute inset-0 z-0"
+  style={{ display: 'block' }}
+  onPlay={() => {
+    console.log("📹 Remote video onPlay fired");
+    // Unmute when playing
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.volume = 1.0;
+    }
+  }}
+  onLoadedMetadata={() => {
+    console.log("📹 Remote video metadata loaded");
+  }}
+/>
 
-      {/* Connection Status Overlay - ONLY show while connecting */}
-      {connectionStatus === 'connecting' && (
-        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white text-xl">Connecting to {remotePeerName}...</p>
-            <p className="text-gray-400 text-sm mt-2">Establishing peer connection...</p>
-          </div>
-        </div>
+
+    {/* Connection Status Overlay - Hide when stream received */}
+{connectionStatus === 'connecting' && !hasRemoteStream && (
+  <div 
+    id="connecting-overlay"
+    className="absolute inset-0 bg-black/80 flex items-center justify-center z-10"
+  >
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-white text-xl">Connecting to {remotePeerName}...</p>
+      <p className="text-gray-400 text-sm mt-2">Establishing peer connection...</p>
+    </div>
+  </div>
+
+
       )}
 
       {/* Local Video - Picture in Picture */}
