@@ -1819,7 +1819,11 @@ const VideoCall = ({
       .padStart(2, "0")}`;
   };
   return (
-    <div className="w-screen h-screen bg-black relative overflow-hidden touch-none">
+    <div
+      className="w-screen h-screen bg-black relative touch-none"
+      style={{ overflow: "visible" }}
+    >
+      {" "}
       {/* ✅ CRITICAL: Remote video MUST be rendered first and ALWAYS visible */}
       <video
         ref={remoteVideoRef}
@@ -1827,18 +1831,15 @@ const VideoCall = ({
         autoPlay
         playsInline
         muted={false}
+        className="absolute inset-0 w-full h-full object-cover"
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
           zIndex: 5,
           backgroundColor: "#000",
+          display: "block",
+          visibility: "visible",
+          opacity: 1,
         }}
       />
-
       {/* Local video */}
       <div className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black z-20">
         <video
@@ -1855,7 +1856,6 @@ const VideoCall = ({
           </div>
         )}
       </div>
-
       {/* ✅ Start Call Overlay - ONLY show when NOT interacted */}
       {!userInteracted && (
         <div className="absolute inset-0 bg-black z-[100] flex items-center justify-center">
@@ -1901,7 +1901,6 @@ const VideoCall = ({
           </div>
         </div>
       )}
-
       {/* ✅ Initializing Overlay - ONLY show when interacted but not initialized */}
       {userInteracted && !isInitialized && (
         <div className="absolute inset-0 bg-black/95 z-[100] flex items-center justify-center">
@@ -1933,7 +1932,6 @@ const VideoCall = ({
           </div>
         </div>
       )}
-
       {/* ✅ Main UI - ONLY show when initialized */}
       {isInitialized && (
         <>
