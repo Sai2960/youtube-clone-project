@@ -1496,14 +1496,26 @@ const VideoCall = ({
 
       // Setup event listeners BEFORE adding tracks
       console.log("🔧 Setting up event listeners...");
+      console.log("🔧 Setting up event listeners...");
+
       webrtcServiceRef.current.setupEventListeners(
+        // Remote stream callback
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM CALLBACK =====");
+          console.log("   Stream ID:", remoteStream.id);
+          console.log("   Active:", remoteStream.active);
+          console.log("   Audio tracks:", remoteStream.getAudioTracks().length);
+          console.log("   Video tracks:", remoteStream.getVideoTracks().length);
 
-          if (remoteStreamReceivedRef.current) {
-            console.log("⚠️ Already processed");
+          if (!remoteStream.active) {
+            console.warn("⚠️ Received inactive stream, ignoring");
             return;
           }
+          if (!remoteVideoRef.current) {
+            console.error("❌ No video element ref!");
+            return;
+          }
+
           remoteStreamReceivedRef.current = true;
 
           if (!remoteStream || !remoteVideoRef.current) {
@@ -1848,11 +1860,8 @@ const VideoCall = ({
           height: "100%",
           objectFit: "cover",
           backgroundColor: "#000",
-          zIndex: 1,
-          display:
-            isInitialized && connectionStatus === "connected"
-              ? "block"
-              : "none", // ✅ CRITICAL FIX
+          zIndex: 10,
+          display: isInitialized ? "block" : "none",
         }}
       />
 
@@ -1860,8 +1869,8 @@ const VideoCall = ({
       <div
         className="absolute bottom-24 sm:bottom-28 right-2 sm:right-6 w-32 h-24 sm:w-64 sm:h-48 rounded-lg overflow-hidden border-2 border-white shadow-2xl bg-black"
         style={{
-          zIndex: 40,
-          display: isInitialized ? "block" : "none", // ✅ Hide until initialized
+          zIndex: 50,
+          display: isInitialized ? "block" : "none",
         }}
       >
         <video
@@ -1883,7 +1892,7 @@ const VideoCall = ({
       {!userInteracted && (
         <div
           className="absolute inset-0 bg-black flex items-center justify-center"
-          style={{ zIndex: 100 }}
+          style={{ zIndex: 200 }}
         >
           <div className="text-center px-4 max-w-md">
             <div className="mb-8 relative">
@@ -1931,7 +1940,7 @@ const VideoCall = ({
       {userInteracted && !isInitialized && (
         <div
           className="absolute inset-0 bg-black/95 flex items-center justify-center"
-          style={{ zIndex: 100 }}
+          style={{ zIndex: 200 }}
         >
           <div className="text-center max-w-md px-4">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -1960,7 +1969,7 @@ const VideoCall = ({
         <>
           <div
             className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 to-transparent p-3 sm:p-6"
-            style={{ zIndex: 30 }}
+            style={{ zIndex: 60 }}
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
@@ -1997,7 +2006,7 @@ const VideoCall = ({
           {showPlayButton && (
             <div
               className="absolute inset-0 flex items-center justify-center bg-black/50"
-              style={{ zIndex: 50 }}
+              style={{ zIndex: 70 }}
             >
               <button
                 onClick={handlePlayClick}
@@ -2015,7 +2024,7 @@ const VideoCall = ({
           {error && !showPlayButton && (
             <div
               className="absolute top-14 sm:top-24 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-red-600/95 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-2xl text-center"
-              style={{ zIndex: 50 }}
+              style={{ zIndex: 70 }}
             >
               <p className="font-semibold text-sm sm:text-base">{error}</p>
             </div>
@@ -2024,7 +2033,7 @@ const VideoCall = ({
           {/* Bottom Controls */}
           <div
             className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 to-transparent px-2 py-3 sm:p-8"
-            style={{ zIndex: 30 }}
+            style={{ zIndex: 60 }}
           >
             {/* ... rest of controls remain the same ... */}
             <div className="flex items-center justify-center gap-2 sm:gap-4">
