@@ -389,7 +389,30 @@ const VideoCall = ({
   const [initError, setInitError] = useState<string | null>(null);
   const [initStep, setInitStep] = useState<string>("idle");
   const [remoteAudioStatus, setRemoteAudioStatus] = useState<string>("waiting");
-
+// ✅ Force remove all potential blocking styles
+useEffect(() => {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    #remote-video {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 999999 !important;
+      object-fit: cover !important;
+      background: #000 !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      transform: none !important;
+      filter: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+  
+  return () => style.remove();
+}, []);
   // Refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -1057,6 +1080,31 @@ const VideoCall = ({
     };
   }, []);
 
+  // ✅ Force video visibility after stream is attached
+useEffect(() => {
+  if (!remoteVideoRef.current || connectionStatus !== "connected") return;
+
+  const video = remoteVideoRef.current;
+  
+  console.log("🔄 Force video repaint effect triggered");
+  
+  // Force repaint
+  const forceRepaint = () => {
+    video.style.display = 'none';
+    video.offsetHeight; // Trigger reflow
+    video.style.display = 'block';
+  };
+
+  const timer = setTimeout(() => {
+    console.log("🔄 Forcing video repaint...");
+    forceRepaint();
+    
+    // Also try forcing play again
+    video.play().catch(e => console.error("Play retry failed:", e));
+  }, 1000);
+
+  return () => clearTimeout(timer);
+}, [connectionStatus]);
   // ✅ Main initialization effect
   useEffect(() => {
     console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
