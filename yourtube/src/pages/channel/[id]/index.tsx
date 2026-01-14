@@ -1095,10 +1095,10 @@ const ChannelPage = () => {
                                 </Avatar>
                               </div>
 
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">
-                                  {video?.videotitle || "Untitled Video"}
-                                </h3>
+                          <div className="flex-1 min-w-0">
+  <h3 className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-snug group-hover:text-blue-600 transition-colors" style={{ wordBreak: "break-word" }}>
+    {video?.videotitle || "Untitled Video"}
+  </h3>
                                 <p
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1335,11 +1335,11 @@ const ChannelPage = () => {
                                   </div>
                                 </div>
 
-                                {/* Title & Channel Info */}
-                                <div className="mt-2 sm:mt-3 px-1">
-                                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1.5 sm:mb-1 group-active:text-red-600 dark:group-active:text-red-500 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300">
-                                    {short.title}
-                                  </h3>
+                              {/* Title & Channel Info */}
+<div className="mt-2 sm:mt-3 px-1">
+  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-1 group-active:text-red-600 dark:group-active:text-red-500 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300" style={{ wordBreak: "break-word" }}>
+    {short.title}
+  </h3>
 
                                   <div className="flex items-center gap-2">
                                     <div
