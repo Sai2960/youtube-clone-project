@@ -549,163 +549,183 @@ const ChannelPage = () => {
             onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
           />
 
-    {/* ✅ CHANNEL INFO BAR - WITH VERTICAL SEPARATORS */}
-{channel && isMounted && (
-  <div
-    ref={infoBarRef}
-    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-    className="w-full bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-800"
-    style={{
-      position: "relative",
-      zIndex: 10,
-      marginBottom: "20px",
-    }}
-  >
-    <div className="px-3 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
-      {/* Scrollable container */}
-      <div 
-        className="flex items-center overflow-x-auto scrollbar-hide"
-        style={{ gap: "0px" }}
-      >
-        
-        {/* Channel Name */}
-        <div 
-          className="flex items-center"
-          style={{ gap: "8px", paddingRight: "12px", paddingLeft: "4px", flexShrink: 0 }}
-        >
-          <div 
-            className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
-            style={{ width: "28px", height: "28px", minWidth: "28px" }}
-          >
-            <User style={{ width: "14px", height: "14px", color: "white" }} />
-          </div>
-          <span 
-            className="font-semibold text-gray-900 dark:text-white"
-            style={{ fontSize: "13px", whiteSpace: "nowrap" }}
-          >
-            {channel.channelname || channel.name || "Unknown"}
-          </span>
-        </div>
+          {/* ✅ CHANNEL INFO BAR - WITH VERTICAL SEPARATORS */}
+          {channel && isMounted && (
+            <div
+              ref={infoBarRef}
+              key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+              className="w-full bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-800"
+              style={{
+                position: "relative",
+                zIndex: 10,
+                marginBottom: "20px",
+              }}
+            >
+              <div className="px-3 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
+                {/* Scrollable container */}
+                <div
+                  className="flex items-center overflow-x-auto scrollbar-hide"
+                  style={{ gap: "0px" }}
+                >
+                  {/* Channel Name */}
+                  <div
+                    className="flex items-center"
+                    style={{
+                      gap: "8px",
+                      paddingRight: "12px",
+                      paddingLeft: "4px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div
+                      className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        minWidth: "28px",
+                      }}
+                    >
+                      <User
+                        style={{
+                          width: "14px",
+                          height: "14px",
+                          color: "white",
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="font-semibold text-gray-900 dark:text-white"
+                      style={{ fontSize: "13px", whiteSpace: "nowrap" }}
+                    >
+                      {channel.channelname || channel.name || "Unknown"}
+                    </span>
+                  </div>
 
-        {/* SEPARATOR LINE 1 */}
-        <div 
-          className="h-6 w-px bg-gray-300 dark:bg-gray-700"
-          style={{ margin: "0 12px", flexShrink: 0 }}
-        />
+                  {/* SEPARATOR LINE 1 */}
+                  <div
+                    className="h-6 w-px bg-gray-300 dark:bg-gray-700"
+                    style={{ margin: "0 12px", flexShrink: 0 }}
+                  />
 
-        {/* Joined Date */}
-        <div 
-          className="flex items-center"
-          style={{ gap: "6px", paddingRight: "12px", flexShrink: 0 }}
-        >
-          <Calendar 
-            className="text-gray-400 dark:text-gray-500" 
-            style={{ width: "14px", height: "14px", minWidth: "14px" }} 
-          />
-          <span 
-            className="text-gray-600 dark:text-gray-400"
-            style={{ fontSize: "12px", whiteSpace: "nowrap" }}
-          >
-            Joined{" "}
-            {channel.joinedon
-              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
-                  month: "short",
-                  year: "numeric",
-                })
-              : "Recently"}
-          </span>
-        </div>
+                  {/* Joined Date */}
+                  <div
+                    className="flex items-center"
+                    style={{ gap: "6px", paddingRight: "12px", flexShrink: 0 }}
+                  >
+                    <Calendar
+                      className="text-gray-400 dark:text-gray-500"
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        minWidth: "14px",
+                      }}
+                    />
+                    <span
+                      className="text-gray-600 dark:text-gray-400"
+                      style={{ fontSize: "12px", whiteSpace: "nowrap" }}
+                    >
+                      Joined{" "}
+                      {channel.joinedon
+                        ? new Date(channel.joinedon).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )
+                        : "Recently"}
+                    </span>
+                  </div>
 
-        {/* SEPARATOR LINE 2 */}
-        <div 
-          className="h-6 w-px bg-gray-300 dark:bg-gray-700"
-          style={{ margin: "0 12px", flexShrink: 0 }}
-        />
+                  {/* SEPARATOR LINE 2 */}
+                  <div
+                    className="h-6 w-px bg-gray-300 dark:bg-gray-700"
+                    style={{ margin: "0 12px", flexShrink: 0 }}
+                  />
 
-        {/* Video Count */}
-        <div
-          key={`video-${videos.length}-${renderKey}`}
-          className="flex items-center"
-          style={{ 
-            gap: "8px", 
-            paddingRight: "12px", 
-            flexShrink: 0,
-            minWidth: "fit-content"
-          }}
-        >
-          <div 
-            className="rounded bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center"
-            style={{ 
-              width: "24px", 
-              height: "24px", 
-              minWidth: "24px",
-              flexShrink: 0
-            }}
-          >
-            <Video 
-              className="text-blue-600 dark:text-blue-400" 
-              style={{ width: "14px", height: "14px" }} 
-            />
-          </div>
-          <span 
-            className="font-medium text-gray-700 dark:text-gray-300"
-            style={{ 
-              fontSize: "13px", 
-              whiteSpace: "nowrap",
-              minWidth: "max-content"
-            }}
-          >
-            {videos.length} {videos.length === 1 ? "video" : "videos"}
-          </span>
-        </div>
+                  {/* Video Count */}
+                  <div
+                    key={`video-${videos.length}-${renderKey}`}
+                    className="flex items-center"
+                    style={{
+                      gap: "8px",
+                      paddingRight: "12px",
+                      flexShrink: 0,
+                      minWidth: "fit-content",
+                    }}
+                  >
+                    <div
+                      className="rounded bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center"
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        minWidth: "24px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Video
+                        className="text-blue-600 dark:text-blue-400"
+                        style={{ width: "14px", height: "14px" }}
+                      />
+                    </div>
+                    <span
+                      className="font-medium text-gray-700 dark:text-gray-300"
+                      style={{
+                        fontSize: "13px",
+                        whiteSpace: "nowrap",
+                        minWidth: "max-content",
+                      }}
+                    >
+                      {videos.length} {videos.length === 1 ? "video" : "videos"}
+                    </span>
+                  </div>
 
-        {/* SEPARATOR LINE 3 */}
-        <div 
-          className="h-6 w-px bg-gray-300 dark:bg-gray-700"
-          style={{ margin: "0 12px", flexShrink: 0 }}
-        />
+                  {/* SEPARATOR LINE 3 */}
+                  <div
+                    className="h-6 w-px bg-gray-300 dark:bg-gray-700"
+                    style={{ margin: "0 12px", flexShrink: 0 }}
+                  />
 
-        {/* Shorts Count */}
-        <div
-          key={`shorts-${shorts.length}-${renderKey}`}
-          className="flex items-center"
-          style={{ 
-            gap: "8px", 
-            paddingRight: "4px",
-            flexShrink: 0,
-            minWidth: "fit-content"
-          }}
-        >
-          <div 
-            className="rounded bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center"
-            style={{ 
-              width: "24px", 
-              height: "24px", 
-              minWidth: "24px",
-              flexShrink: 0
-            }}
-          >
-            <Film 
-              className="text-red-600 dark:text-red-400" 
-              style={{ width: "14px", height: "14px" }} 
-            />
-          </div>
-          <span 
-            className="font-medium text-gray-700 dark:text-gray-300"
-            style={{ 
-              fontSize: "13px", 
-              whiteSpace: "nowrap",
-              minWidth: "max-content"
-            }}
-          >
-            {shorts.length} {shorts.length === 1 ? "short" : "shorts"}
-          </span>
-        </div>
-
-      </div>
-    </div>
-  </div>
-)}
+                  {/* Shorts Count */}
+                  <div
+                    key={`shorts-${shorts.length}-${renderKey}`}
+                    className="flex items-center"
+                    style={{
+                      gap: "8px",
+                      paddingRight: "4px",
+                      flexShrink: 0,
+                      minWidth: "fit-content",
+                    }}
+                  >
+                    <div
+                      className="rounded bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center"
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        minWidth: "24px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Film
+                        className="text-red-600 dark:text-red-400"
+                        style={{ width: "14px", height: "14px" }}
+                      />
+                    </div>
+                    <span
+                      className="font-medium text-gray-700 dark:text-gray-300"
+                      style={{
+                        fontSize: "13px",
+                        whiteSpace: "nowrap",
+                        minWidth: "max-content",
+                      }}
+                    >
+                      {shorts.length} {shorts.length === 1 ? "short" : "shorts"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
           {process.env.NODE_ENV === "development" && (
@@ -868,72 +888,82 @@ const ChannelPage = () => {
               ============================================================================ */}
           <div className="w-full pb-32 sm:pb-8 overflow-hidden">
             <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
-            {/* Tab Navigation - YouTube Style */}
-<div className="w-full border-b border-gray-200 dark:border-gray-700 mb-6">
-  <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide px-4 sm:px-0">
-    {/* Videos Tab */}
-    <button
-      onClick={() => setContentTab("videos")}
-      className={`
+              {/* Tab Navigation - YouTube Style */}
+              <div className="w-full border-b border-gray-200 dark:border-gray-700 mb-6">
+                <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide px-4 sm:px-0">
+                  {/* Videos Tab */}
+                  <button
+                    onClick={() => setContentTab("videos")}
+                    className={`
         flex items-center gap-2 px-6 py-3 
         font-semibold text-sm
         transition-all relative whitespace-nowrap
-        ${contentTab === "videos"
-          ? "text-gray-900 dark:text-white"
-          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+        ${
+          contentTab === "videos"
+            ? "text-gray-900 dark:text-white"
+            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
         }
       `}
-      style={{
-        borderBottom: contentTab === "videos" 
-          ? "2px solid #3b82f6" 
-          : "2px solid transparent"
-      }}
-    >
-      <Grid className="w-5 h-5" />
-      <span>Videos</span>
-      <span className={`
+                    style={{
+                      borderBottom:
+                        contentTab === "videos"
+                          ? "2px solid #3b82f6"
+                          : "2px solid transparent",
+                    }}
+                  >
+                    <Grid className="w-5 h-5" />
+                    <span>Videos</span>
+                    <span
+                      className={`
         text-xs font-bold px-2 py-0.5 rounded-full
-        ${contentTab === "videos"
-          ? "bg-blue-600 text-white"
-          : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+        ${
+          contentTab === "videos"
+            ? "bg-blue-600 text-white"
+            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
         }
-      `}>
-        {videos.length}
-      </span>
-    </button>
+      `}
+                    >
+                      {videos.length}
+                    </span>
+                  </button>
 
-    {/* Shorts Tab */}
-    <button
-      onClick={() => setContentTab("shorts")}
-      className={`
+                  {/* Shorts Tab */}
+                  <button
+                    onClick={() => setContentTab("shorts")}
+                    className={`
         flex items-center gap-2 px-6 py-3 
         font-semibold text-sm
         transition-all relative whitespace-nowrap
-        ${contentTab === "shorts"
-          ? "text-gray-900 dark:text-white"
-          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+        ${
+          contentTab === "shorts"
+            ? "text-gray-900 dark:text-white"
+            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
         }
       `}
-      style={{
-        borderBottom: contentTab === "shorts" 
-          ? "2px solid #dc2626" 
-          : "2px solid transparent"
-      }}
-    >
-      <Film className="w-5 h-5" />
-      <span>Shorts</span>
-      <span className={`
+                    style={{
+                      borderBottom:
+                        contentTab === "shorts"
+                          ? "2px solid #dc2626"
+                          : "2px solid transparent",
+                    }}
+                  >
+                    <Film className="w-5 h-5" />
+                    <span>Shorts</span>
+                    <span
+                      className={`
         text-xs font-bold px-2 py-0.5 rounded-full
-        ${contentTab === "shorts"
-          ? "bg-red-600 text-white"
-          : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+        ${
+          contentTab === "shorts"
+            ? "bg-red-600 text-white"
+            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
         }
-      `}>
-        {shorts.length}
-      </span>
-    </button>
-  </div>
-</div>
+      `}
+                    >
+                      {shorts.length}
+                    </span>
+                  </button>
+                </div>
+              </div>
 
               {/* Videos Content */}
               {contentTab === "videos" && (
@@ -1095,10 +1125,17 @@ const ChannelPage = () => {
                                 </Avatar>
                               </div>
 
-                          <div className="flex-1 min-w-0">
-<h3 className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 leading-snug group-hover:text-blue-600 transition-colors" style={{ wordBreak: "break-all", overflowWrap: "anywhere" }}>
-  {video?.videotitle || "Untitled Video"}
-</h3>
+                              <div className="flex-1 min-w-0">
+                                <h3
+                                  className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-3 mb-1 leading-snug group-hover:text-blue-600 transition-colors"
+                                  style={{
+                                    wordBreak: "break-all",
+                                    overflowWrap: "anywhere",
+                                    hyphens: "auto",
+                                  }}
+                                >
+                                  {video?.videotitle || "Untitled Video"}
+                                </h3>
 
                                 <p
                                   onClick={(e) => {
@@ -1336,12 +1373,18 @@ const ChannelPage = () => {
                                   </div>
                                 </div>
 
-                              {/* Title & Channel Info */}
-<div className="mt-2 sm:mt-3 px-1">
-<h3 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-1 group-active:text-red-600 dark:group-active:text-red-500 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300" style={{ wordBreak: "break-all", overflowWrap: "anywhere" }}>
-  {short.title}
-</h3>
-
+                                {/* Title & Channel Info */}
+                                <div className="mt-2 sm:mt-3 px-1">
+                                  <h3
+                                    className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-3 leading-snug mb-1 group-active:text-red-600 dark:group-active:text-red-500 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300"
+                                    style={{
+                                      wordBreak: "break-all",
+                                      overflowWrap: "anywhere",
+                                      hyphens: "auto",
+                                    }}
+                                  >
+                                    {short.title}
+                                  </h3>
 
                                   <div className="flex items-center gap-2">
                                     <div
