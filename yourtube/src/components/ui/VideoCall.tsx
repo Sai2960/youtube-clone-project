@@ -1352,61 +1352,23 @@ const VideoCall = ({
   };
 
   // ✅ Force video visibility by injecting CSS into document
+  // ✅ SIMPLIFIED: Just ensure video is visible
   useEffect(() => {
-    console.log("🎨 Injecting video visibility CSS");
+    if (!remoteVideoRef.current) return;
 
-    const styleEl = document.createElement("style");
-    styleEl.id = "video-call-override";
-    styleEl.innerHTML = `
-    /* CRITICAL: Reset HTML positioning to allow video to be on top */
-    html, html.dark, html.light {
-      background: transparent !important;
-      background-color: transparent !important;
-      position: static !important;  /* ← THIS IS THE KEY! */
-      isolation: auto !important;
-    }
-    
-    body {
-      background: transparent !important;
-      background-color: transparent !important;
-      position: static !important;  /* ← THIS TOO! */
-    }
-    
-    /* Force video to render ON TOP of everything */
-    .video-call-remote,
-    video[class*="video-call-remote"] {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      object-fit: cover !important;
-      z-index: 2147483647 !important;
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      background: black !important;
-      isolation: isolate !important;  /* Create new stacking context */
-    }
-    
-    /* Container must also be static */
-    div[class*="video-call"] {
-      position: static !important;
-      z-index: auto !important;
-    }
-  `;
+    const video = remoteVideoRef.current;
+    video.style.position = "fixed";
+    video.style.top = "0";
+    video.style.left = "0";
+    video.style.width = "100vw";
+    video.style.height = "100vh";
+    video.style.zIndex = "2147483646";
+    video.style.objectFit = "cover";
+    video.style.visibility = "visible";
+    video.style.opacity = "1";
+    video.style.display = "block";
 
-    document.head.appendChild(styleEl);
-
-    // Force inline as backup
-    document.documentElement.style.position = "static";
-    document.body.style.position = "static";
-
-    console.log("✅ Video visibility CSS injected with position fixes");
-
-    return () => {
-      styleEl.remove();
-    };
+    console.log("✅ Video forced to front");
   }, []);
 
   // ✅ Initialize call function
@@ -1900,6 +1862,7 @@ const VideoCall = ({
       }}
     >
       {/* Remote Video */}
+      {/* Remote Video - SIMPLIFIED */}
       <video
         ref={remoteVideoRef}
         autoPlay
@@ -1913,21 +1876,18 @@ const VideoCall = ({
           width: "100vw",
           height: "100vh",
           objectFit: "cover",
-          zIndex: 999999,
+          zIndex: 2147483646,
           backgroundColor: "black",
-          display: "block",
-          visibility: "visible",
         }}
         onPlay={() => {
-          console.log("📹 Remote video onPlay fired");
-          if (remoteVideoRef.current) {
-            const v = remoteVideoRef.current;
+          console.log("📹 Remote video playing");
+          const v = remoteVideoRef.current;
+          if (v) {
             v.muted = false;
             v.volume = 1.0;
+            v.style.visibility = "visible";
+            v.style.opacity = "1";
           }
-        }}
-        onLoadedMetadata={() => {
-          console.log("📹 Remote video metadata loaded");
         }}
       />
 
