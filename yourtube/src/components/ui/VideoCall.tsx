@@ -1353,13 +1353,20 @@ const VideoCall = ({
 
   // ✅ Force video visibility by injecting CSS into document
   // ✅ Force video visibility by injecting CSS into document
-  useEffect(() => {
-    // Create style element
-    const styleEl = document.createElement("style");
-    styleEl.id = "video-call-override";
-    styleEl.innerHTML = `
-    /* CRITICAL: Force HTML/body to be transparent */
-    html, body {
+useEffect(() => {
+  console.log("🎨 Injecting video visibility CSS");
+  
+  // Create style element
+  const styleEl = document.createElement("style");
+  styleEl.id = "video-call-override";
+  styleEl.innerHTML = `
+    /* CRITICAL: Force HTML/body to be transparent - THIS IS THE KEY FIX */
+    html, html.dark, html.light {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+    
+    body {
       background: transparent !important;
       background-color: transparent !important;
     }
@@ -1395,15 +1402,24 @@ const VideoCall = ({
       background: black !important;
     }
   `;
+  
+  document.head.appendChild(styleEl);
+  document.documentElement.classList.add("video-call-active");
+  
+  // Also force inline styles as backup
+  document.documentElement.style.background = 'transparent';
+  document.documentElement.style.backgroundColor = 'transparent';
+  document.body.style.background = 'transparent';
+  document.body.style.backgroundColor = 'transparent';
 
-    document.head.appendChild(styleEl);
-    document.documentElement.classList.add("video-call-active");
+  console.log("✅ Video visibility CSS injected");
 
-    return () => {
-      styleEl.remove();
-      document.documentElement.classList.remove("video-call-active");
-    };
-  }, []);
+  return () => {
+    styleEl.remove();
+    document.documentElement.classList.remove("video-call-active");
+  };
+}, []);
+
   // ✅ Initialize call function
   const initializeCall = async () => {
     console.log("\n🎥 ===== INITIALIZING CALL (COMPLETE) =====");
