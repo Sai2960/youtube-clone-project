@@ -549,75 +549,76 @@ const ChannelPage = () => {
             onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
           />
 
-          {/* ✅ CHANNEL INFO BAR - FIXED FOR MOBILE WITH HIDDEN SCROLLBAR & THEME SUPPORT */}
-          {channel && isMounted && (
-            <div
-              ref={infoBarRef}
-              key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-              className="w-full bg-gray-100 dark:bg-gray-800/80 border-y border-gray-200 dark:border-gray-700/50"
-              style={{
-                position: "relative",
-                zIndex: 10,
-                minHeight: "56px",
-                marginTop: "0",
-                marginBottom: "16px",
-              }}
-            >
-              <div className="px-3 sm:px-6 py-3 max-w-7xl mx-auto">
-                {/* Scrollable container with hidden scrollbar */}
-                <div className="flex items-center gap-4 sm:gap-5 overflow-x-auto scrollbar-hide">
-                  {/* Channel Name */}
-                  <div className="flex items-center gap-2 min-w-fit flex-shrink-0">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      <User className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-600 dark:text-gray-300" />
-                    </div>
-                    <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                      {channel.channelname || channel.name || "Unknown"}
-                    </span>
-                  </div>
+        {/* ✅ CHANNEL INFO BAR - PREMIUM DESIGN, THEME COMPATIBLE, MOBILE FIXED */}
+{channel && isMounted && (
+  <div
+    ref={infoBarRef}
+    key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
+    className="w-full bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-800"
+    style={{
+      position: "relative",
+      zIndex: 10,
+      marginBottom: "20px",
+    }}
+  >
+    <div className="px-4 sm:px-6 py-4 max-w-7xl mx-auto">
+      {/* Scrollable container with hidden scrollbar */}
+      <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto scrollbar-hide">
+        
+        {/* Channel Name */}
+        <div className="flex items-center gap-2 flex-shrink-0 pr-3 sm:pr-4 border-r border-gray-200 dark:border-gray-700">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+            <User className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+            {channel.channelname || channel.name || "Unknown"}
+          </span>
+        </div>
 
-                  {/* Joined Date */}
-                  <div className="flex items-center gap-1.5 bg-gray-200/70 dark:bg-gray-700/50 px-2.5 py-1.5 rounded-full min-w-fit flex-shrink-0">
-                    <Calendar className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                    <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap font-medium">
-                      Joined{" "}
-                      {channel.joinedon
-                        ? new Date(channel.joinedon).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )
-                        : "Recently"}
-                    </span>
-                  </div>
+        {/* Joined Date */}
+        <div className="flex items-center gap-2 flex-shrink-0 pr-3 sm:pr-4 border-r border-gray-200 dark:border-gray-700">
+          <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+            Joined{" "}
+            {channel.joinedon
+              ? new Date(channel.joinedon).toLocaleDateString("en-US", {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "Recently"}
+          </span>
+        </div>
 
-                  {/* Video Count */}
-                  <div
-                    key={`video-${videos.length}-${renderKey}`}
-                    className="flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1.5 rounded-full min-w-fit flex-shrink-0"
-                  >
-                    <Video className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    <span className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 whitespace-nowrap font-medium">
-                      {videos.length} video{videos.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
+        {/* Video Count - FIXED LAYOUT */}
+        <div
+          key={`video-${videos.length}-${renderKey}`}
+          className="flex items-center gap-2 flex-shrink-0 pr-3 sm:pr-4 border-r border-gray-200 dark:border-gray-700"
+        >
+          <div className="w-6 h-6 rounded bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+            <Video className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+            {videos.length} {videos.length === 1 ? "video" : "videos"}
+          </span>
+        </div>
 
-                  {/* Shorts Count */}
-                  <div
-                    key={`shorts-${shorts.length}-${renderKey}`}
-                    className="flex items-center gap-1.5 bg-red-100 dark:bg-red-900/30 px-2.5 py-1.5 rounded-full min-w-fit flex-shrink-0"
-                  >
-                    <Film className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                    <span className="text-xs sm:text-sm text-red-700 dark:text-red-300 whitespace-nowrap font-medium">
-                      {shorts.length} short{shorts.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* Shorts Count - FIXED LAYOUT */}
+        <div
+          key={`shorts-${shorts.length}-${renderKey}`}
+          className="flex items-center gap-2 flex-shrink-0"
+        >
+          <div className="w-6 h-6 rounded bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
+            <Film className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+          </div>
+          <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+            {shorts.length} {shorts.length === 1 ? "short" : "shorts"}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
 
           {/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
           {process.env.NODE_ENV === "development" && (
