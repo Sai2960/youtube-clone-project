@@ -69,24 +69,52 @@ export default function CustomDocument() {
             __html: `
       (function() {
         try {
+          // ✅ CRITICAL: Don't apply dark background on call pages
           const isCallPage = window.location.pathname.startsWith('/call/');
           
           if (isCallPage) {
-            console.log('📞 Call page detected - using black background');
-            document.documentElement.style.backgroundColor = '#000000';
-            document.body.style.backgroundColor = '#000000';
+            console.log('⏭️ Skipping dark background on call page');
+            const html = document.documentElement;
+            html.classList.add('dark');
+            html.style.backgroundColor = 'transparent'; // <-- TRANSPARENT for calls
+            if (document.body) {
+              document.body.style.backgroundColor = 'transparent'; // <-- TRANSPARENT for calls
+            }
             return;
           }
           
-          // Normal theme code for other pages...
+          // Normal theme initialization for other pages
           const storedTheme = localStorage.getItem('theme');
           const theme = (storedTheme === 'light' || storedTheme === 'dark') ? storedTheme : 'dark';
-          const bgColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
-          document.documentElement.style.backgroundColor = bgColor;
-          document.body.style.backgroundColor = bgColor;
+          
+          const html = document.documentElement;
+          if (html) {
+            html.classList.remove('light', 'dark');
+            html.classList.add(theme);
+            html.setAttribute('data-theme', theme);
+            
+            const bgColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
+            html.style.backgroundColor = bgColor;
+            
+            if (document.body) {
+              document.body.style.backgroundColor = bgColor;
+            }
+            
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) {
+              metaTheme.setAttribute('content', bgColor);
+            }
+          }
         } catch (e) {
-          document.documentElement.style.backgroundColor = '#0f0f0f';
-          document.body.style.backgroundColor = '#0f0f0f';
+          console.error('Theme initialization error:', e);
+          const html = document.documentElement;
+          if (html) {
+            html.classList.add('dark');
+            html.style.backgroundColor = '#0f0f0f';
+          }
+          if (document.body) {
+            document.body.style.backgroundColor = '#0f0f0f';
+          }
         }
       })();
     `,

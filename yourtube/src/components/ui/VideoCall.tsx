@@ -1352,23 +1352,72 @@ const VideoCall = ({
   };
 
   // ✅ Force video visibility by injecting CSS into document
-  // ✅ SIMPLIFIED: Just ensure video is visible
+  // ✅ Force video visibility by injecting CSS into document
   useEffect(() => {
-    if (!remoteVideoRef.current) return;
+    console.log("🎨 Injecting video visibility CSS");
 
-    const video = remoteVideoRef.current;
-    video.style.position = "fixed";
-    video.style.top = "0";
-    video.style.left = "0";
-    video.style.width = "100vw";
-    video.style.height = "100vh";
-    video.style.zIndex = "2147483646";
-    video.style.objectFit = "cover";
-    video.style.visibility = "visible";
-    video.style.opacity = "1";
-    video.style.display = "block";
+    // Create style element
+    const styleEl = document.createElement("style");
+    styleEl.id = "video-call-override";
+    styleEl.innerHTML = `
+    /* CRITICAL: Force HTML/body to be transparent - THIS IS THE KEY FIX */
+    html, html.dark, html.light {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+    
+    body {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+    
+    /* Force video visibility */
+    .video-call-remote,
+    video[class*="video-call-remote"] {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: cover !important;
+      z-index: 2147483647 !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      background: black !important;
+    }
+    
+    /* Hide any overlays that might be blocking */
+    .dark-mode-overlay,
+    .app-overlay,
+    [class*="overlay"]:not([class*="video"]) {
+      display: none !important;
+    }
+    
+    /* Ensure container is visible */
+    div[class*="video-call"] {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 2147483646 !important;
+      background: black !important;
+    }
+  `;
 
-    console.log("✅ Video forced to front");
+    document.head.appendChild(styleEl);
+    document.documentElement.classList.add("video-call-active");
+
+    // Also force inline styles as backup
+    document.documentElement.style.background = "transparent";
+    document.documentElement.style.backgroundColor = "transparent";
+    document.body.style.background = "transparent";
+    document.body.style.backgroundColor = "transparent";
+
+    console.log("✅ Video visibility CSS injected");
+
+    return () => {
+      styleEl.remove();
+      document.documentElement.classList.remove("video-call-active");
+    };
   }, []);
 
   // ✅ Initialize call function
@@ -1862,7 +1911,6 @@ const VideoCall = ({
       }}
     >
       {/* Remote Video */}
-      {/* Remote Video - SIMPLIFIED */}
       <video
         ref={remoteVideoRef}
         autoPlay
@@ -1876,18 +1924,21 @@ const VideoCall = ({
           width: "100vw",
           height: "100vh",
           objectFit: "cover",
-          zIndex: 2147483646,
+          zIndex: 999999,
           backgroundColor: "black",
+          display: "block",
+          visibility: "visible",
         }}
         onPlay={() => {
-          console.log("📹 Remote video playing");
-          const v = remoteVideoRef.current;
-          if (v) {
+          console.log("📹 Remote video onPlay fired");
+          if (remoteVideoRef.current) {
+            const v = remoteVideoRef.current;
             v.muted = false;
             v.volume = 1.0;
-            v.style.visibility = "visible";
-            v.style.opacity = "1";
           }
+        }}
+        onLoadedMetadata={() => {
+          console.log("📹 Remote video metadata loaded");
         }}
       />
 
@@ -1915,7 +1966,7 @@ const VideoCall = ({
           position: "fixed",
           bottom: "6rem",
           right: "1rem",
-          zIndex: 10, // Changed from 1000001
+          zIndex: 1000001,
           backgroundColor: "black",
         }}
       >
@@ -1997,7 +2048,7 @@ const VideoCall = ({
       )}
 
       {/* Control Bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[20] pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[1000005] pointer-events-none">
         <div className="flex items-center justify-center gap-2 sm:gap-4 pointer-events-auto">
           {/* Audio Toggle */}
           <button

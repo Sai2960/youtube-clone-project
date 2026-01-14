@@ -65,73 +65,61 @@ const CallPage = () => {
     }
   }, [mounted, roomId, callId, remoteName, initiator, user, socketReady]);
 
-  // 1. Remove Razorpay blocker
+  // Add this RIGHT AFTER line 73 (after the isReady useEffect)
+  // ✅ CRITICAL: Remove Razorpay overlay that blocks video
   useEffect(() => {
     if (!isReady) return;
 
-    const removeBlockers = () => {
+    console.log("🗑️ Removing Razorpay overlays from call page");
+
+    const removeRazorpayElements = () => {
+      // Remove all Razorpay containers
       document
-        .querySelectorAll('[class*="razorpay"], iframe[src*="razorpay"]')
+        .querySelectorAll('.razorpay-container, [class*="razorpay"]')
         .forEach((el) => {
-          (el as HTMLElement).remove();
+          (el as HTMLElement).style.display = "none";
+          console.log("   ✅ Hidden Razorpay element:", el.className);
         });
 
-      document.querySelectorAll('[style*="z-index"]').forEach((el) => {
-        const htmlEl = el as HTMLElement;
-        const zIndex = parseInt(getComputedStyle(htmlEl).zIndex || "0");
-        if (
-          zIndex > 2147483640 &&
-          !htmlEl.classList.contains("video-call-remote")
-        ) {
-          htmlEl.style.display = "none";
-        }
+      // Remove Razorpay iframes
+      document.querySelectorAll('iframe[src*="razorpay"]').forEach((el) => {
+        (el as HTMLElement).style.display = "none";
+        console.log("   ✅ Hidden Razorpay iframe");
       });
     };
 
-    removeBlockers();
-    const interval = setInterval(removeBlockers, 500);
-    return () => clearInterval(interval);
+    // Remove immediately
+    removeRazorpayElements();
+
+    // Keep checking every second in case it re-appears
+    const interval = setInterval(removeRazorpayElements, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, [isReady]);
 
-  // 2. Force video CSS
+  // ✅ CRITICAL: Force transparent backgrounds and remove blockers
   useEffect(() => {
     if (!isReady) return;
 
-    const style = document.createElement("style");
-    style.id = "call-page-override";
-    style.innerHTML = `
-      html, body, #__next {
-        background: black !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-      }
-      
-      video.video-call-remote {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 2147483647 !important;
-        object-fit: cover !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => style.remove();
-  }, [isReady]);
+    console.log("🎨 Removing background blockers for video call");
 
-  // 3. Clear backgrounds
-  useEffect(() => {
-    if (!isReady) return;
-
+    // Save original styles
     const htmlEl = document.documentElement;
     const bodyEl = document.body;
     const nextDiv = document.getElementById("__next");
 
+    const originalStyles = {
+      htmlBg: htmlEl.style.background,
+      htmlBgColor: htmlEl.style.backgroundColor,
+      bodyBg: bodyEl.style.background,
+      bodyBgColor: bodyEl.style.backgroundColor,
+      nextBg: nextDiv?.style.background,
+      nextBgColor: nextDiv?.style.backgroundColor,
+    };
+
+    // Force transparent backgrounds
     htmlEl.style.background = "transparent";
     htmlEl.style.backgroundColor = "transparent";
     bodyEl.style.background = "transparent";
@@ -142,14 +130,27 @@ const CallPage = () => {
       nextDiv.style.backgroundColor = "transparent";
     }
 
+    // Force video container to be on top
+    const videoContainer = document.querySelector(
+      ".fixed.inset-0.w-screen.h-screen"
+    );
+    if (videoContainer) {
+      (videoContainer as HTMLElement).style.zIndex = "2147483647";
+      (videoContainer as HTMLElement).style.background = "black";
+    }
+
+    console.log("✅ Backgrounds cleared for video call");
+
     return () => {
-      htmlEl.style.background = "";
-      htmlEl.style.backgroundColor = "";
-      bodyEl.style.background = "";
-      bodyEl.style.backgroundColor = "";
+      // Restore on unmount
+      htmlEl.style.background = originalStyles.htmlBg;
+      htmlEl.style.backgroundColor = originalStyles.htmlBgColor;
+      bodyEl.style.background = originalStyles.bodyBg;
+      bodyEl.style.backgroundColor = originalStyles.bodyBgColor;
+
       if (nextDiv) {
-        nextDiv.style.background = "";
-        nextDiv.style.backgroundColor = "";
+        nextDiv.style.background = originalStyles.nextBg || "";
+        nextDiv.style.backgroundColor = originalStyles.nextBgColor || "";
       }
     };
   }, [isReady]);
