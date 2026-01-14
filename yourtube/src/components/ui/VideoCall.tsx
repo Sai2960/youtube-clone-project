@@ -1358,26 +1358,47 @@ const VideoCall = ({
     const styleEl = document.createElement("style");
     styleEl.id = "video-call-override";
     styleEl.innerHTML = `
+    /* NUCLEAR OPTION - Remove all blockers */
+    body > *:not(#__next) {
+      display: none !important;
+    }
+    
+    html, body, #__next {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      overflow: hidden !important;
+      background: black !important;
+    }
+    
+    /* Force video container to be visible */
+    .fixed.inset-0.w-screen.h-screen {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 2147483647 !important;
+      background: black !important;
+      overflow: hidden !important;
+    }
+    
     /* Force video element to be visible */
-    #remote-video-element,
-    .video-call-remote {
+    #remote-video-element {
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
       object-fit: cover !important;
-      z-index: 2147483647 !important;
+      z-index: 1 !important;
       background: black !important;
-    }
-    
-    /* Ensure container is visible */
-    .fixed.inset-0.w-screen.h-screen {
-      z-index: 2147483646 !important;
-      background: black !important;
+      transform: none !important;
     }
   `;
 
@@ -1902,15 +1923,18 @@ const VideoCall = ({
   };
   return (
     <div
-      className="fixed inset-0 w-screen h-screen bg-black z-[999999]"
+      className="fixed inset-0 w-screen h-screen bg-black"
       style={{
         position: "fixed",
         top: 0,
         left: 0,
-        width: "100vw",
-        height: "100vh",
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
         backgroundColor: "black",
-        zIndex: 999999,
+        zIndex: 2147483647,
+        overflow: "hidden",
       }}
     >
       {/* Remote Video */}
@@ -1925,10 +1949,12 @@ const VideoCall = ({
           position: "fixed",
           top: 0,
           left: 0,
-          width: "100vw",
-          height: "100vh",
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "100%",
           objectFit: "cover",
-          zIndex: 2147483647,
+          zIndex: 1,
           backgroundColor: "black",
           display: "block",
           visibility: "visible",
@@ -2066,7 +2092,7 @@ const VideoCall = ({
       )}
 
       {/* Control Bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[1000005] pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[2147483641] pointer-events-none">
         <div className="flex items-center justify-center gap-2 sm:gap-4 pointer-events-auto">
           {/* Audio Toggle */}
           <button
