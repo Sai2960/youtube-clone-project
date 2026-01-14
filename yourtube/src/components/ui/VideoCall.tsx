@@ -1573,60 +1573,82 @@ const VideoCall = ({
 
       webrtcServiceRef.current.setupEventListeners(
         // Remote stream callback
-        async (remoteStream: MediaStream) => {
-          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+     // Remote stream callback
+async (remoteStream: MediaStream) => {
+  console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
-          if (!remoteStream.active || !remoteVideoRef.current) {
-            console.error("❌ Invalid stream or no video element");
-            return;
-          }
+  if (!remoteStream.active || !remoteVideoRef.current) {
+    console.error("❌ Invalid stream or no video element");
+    return;
+  }
 
-          // Enable all tracks
-          remoteStream.getTracks().forEach((track) => {
-            track.enabled = true;
-            console.log(`✅ Enabled ${track.kind}: ${track.label}`);
-          });
+  // Enable all tracks
+  remoteStream.getTracks().forEach((track) => {
+    track.enabled = true;
+    console.log(`✅ Enabled ${track.kind}: ${track.label}`);
+  });
 
-          // Attach stream to video - DO THIS ONCE ONLY
-          const video = remoteVideoRef.current;
-          video.srcObject = remoteStream;
-          video.muted = true; // Start muted for autoplay policy
+  // Attach stream to video
+  const video = remoteVideoRef.current;
+  video.srcObject = remoteStream;
+  
+  // 🔥 CRITICAL FIX: Start MUTED to allow autoplay
+  video.muted = true;
+  video.volume = 1.0;
 
-          // ✅ CRITICAL: Force video visibility
-          video.style.visibility = "visible";
-          video.style.opacity = "1";
-          video.style.display = "block";
-          video.style.position = "absolute";
-          video.style.top = "0";
-          video.style.left = "0";
-          video.style.width = "100%";
-          video.style.height = "100%";
-          video.style.zIndex = "5";
-          video.style.objectFit = "cover";
-          video.style.backgroundColor = "black";
+  // Force video visibility
+  video.style.visibility = "visible";
+  video.style.opacity = "1";
+  video.style.display = "block";
+  video.style.position = "absolute";
+  video.style.top = "0";
+  video.style.left = "0";
+  video.style.width = "100%";
+  video.style.height = "100%";
+  video.style.zIndex = "5";
+  video.style.objectFit = "cover";
+  video.style.backgroundColor = "black";
 
-          console.log("✅ Video element visibility forced");
+  console.log("✅ Video element visibility forced");
 
-          try {
-            await video.play();
-            console.log("✅ Video playing");
-
-            // Unmute AFTER play succeeds
-            video.muted = false;
-            video.volume = 1.0;
-
-            // Ensure still visible after play
-            video.style.visibility = "visible";
-            video.style.opacity = "1";
-            video.style.display = "block";
-
-            console.log("✅ Audio unmuted and visibility confirmed");
-          } catch (err: any) {
-            console.error("❌ Play failed:", err.name);
-            if (err.name === "NotAllowedError") {
-              setShowPlayButton(true);
-            }
-          }
+  // 🔥 TRIPLE ATTEMPT TO PLAY
+  let playAttempts = 0;
+  const maxAttempts = 3;
+  
+  const attemptPlay = async () => {
+    playAttempts++;
+    console.log(`🎬 Play attempt ${playAttempts}/${maxAttempts}`);
+    
+    try {
+      // Force play with muted video
+      await video.play();
+      console.log("✅ Video playing (muted)");
+      
+      // Wait 500ms then unmute
+      setTimeout(() => {
+        video.muted = false;
+        console.log("🔊 Video UNMUTED");
+      }, 500);
+      
+      return true;
+    } catch (err: any) {
+      console.error(`❌ Play attempt ${playAttempts} failed:`, err.name);
+      
+      if (playAttempts < maxAttempts) {
+        // Wait 1 second and retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return attemptPlay();
+      } else {
+        // All attempts failed - show play button
+        console.error("❌ All play attempts failed, showing manual play button");
+        setShowPlayButton(true);
+        return false;
+      }
+    }
+  };
+  
+  // Start play attempts
+  await attemptPlay();
 
           // Update states - THIS TRIGGERS RE-RENDER
           setHasRemoteStream(true);
