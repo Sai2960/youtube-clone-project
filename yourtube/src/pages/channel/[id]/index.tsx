@@ -11,7 +11,17 @@ import axiosInstance from "@/lib/axiosinstance";
 import { getSocket, isSocketConnected } from "@/lib/socket";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/imageUtils";
-import { Calendar, Video, Upload, Play, Film, Grid, User, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Calendar,
+  Video,
+  Upload,
+  Play,
+  Film,
+  Grid,
+  User,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { GetServerSideProps } from "next";
 
@@ -534,9 +544,9 @@ const ChannelPage = () => {
   // ============================================================================
   return (
     <ProtectedRoute requireAuth={true}>
-      <div className="flex-1 min-h-screen bg-white dark:bg-gray-900">
+      <div className="flex-1 min-h-screen bg-white dark:bg-gray-900 pb-16 sm:pb-0">
         <div className="w-full">
-          {/* Channel Header */}
+          {/* Channel Header - Pass hideDescription prop to prevent duplicate */}
           <ChannelHeader
             channel={channel}
             user={user}
@@ -546,60 +556,76 @@ const ChannelPage = () => {
             onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
           />
 
-          {/* ✅ FIXED: CHANNEL DESCRIPTION - EXPANDABLE ON MOBILE */}
+          {/* ✅ FIXED: CHANNEL DESCRIPTION - ONLY SHOW HERE (Single Source) */}
           {channel?.description && isMounted && (
             <div className="w-full bg-white dark:bg-gray-900 px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
               <div className="relative">
-                {/* Description Text */}
-                <p
-                  className={`text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed ${
-                    !isDescriptionExpanded ? "line-clamp-2 sm:line-clamp-none" : ""
-                  }`}
-                >
+                {/* Desktop: Show full description */}
+                <p className="hidden sm:block text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
                   {channel.description}
                 </p>
-                
-                {/* Show More/Less Button - Only on mobile when description is long */}
-                {channel.description && channel.description.length > 100 && (
-                  <button
-                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                    className="sm:hidden mt-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
+
+                {/* Mobile: Expandable description */}
+                <div className="sm:hidden">
+                  <p
+                    className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed transition-all duration-300 ${
+                      !isDescriptionExpanded ? "line-clamp-2" : ""
+                    }`}
                   >
-                    {isDescriptionExpanded ? (
-                      <>
-                        Show less
-                        <ChevronUp className="w-4 h-4" />
-                      </>
-                    ) : (
-                      <>
-                        Show more
-                        <ChevronDown className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                )}
+                    {channel.description}
+                  </p>
+
+                  {/* Show More/Less Button - Only when description is long enough */}
+                  {channel.description.length > 80 && (
+                    <button
+                      onClick={() =>
+                        setIsDescriptionExpanded(!isDescriptionExpanded)
+                      }
+                      className="mt-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors active:scale-95"
+                    >
+                      {isDescriptionExpanded ? (
+                        <>
+                          Show less
+                          <ChevronUp className="w-4 h-4" />
+                        </>
+                      ) : (
+                        <>
+                          Show more
+                          <ChevronDown className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* ✅ FIXED: CHANNEL INFO BAR - PROPER LIGHT/DARK THEME SUPPORT */}
+          {/* ✅ FIXED: CHANNEL INFO BAR - HORIZONTALLY SCROLLABLE ON MOBILE */}
           {channel && isMounted && (
             <div
               ref={infoBarRef}
               key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-              className="w-full bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide"
+              className="w-full bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700"
               style={{
                 position: "relative",
                 zIndex: 10,
                 minHeight: "60px",
                 marginTop: "0",
                 marginBottom: "24px",
+                WebkitOverflowScrolling: "touch",
               }}
             >
-              <div className="px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
-                <div className="flex items-center gap-3 sm:gap-6 min-w-max">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto overflow-x-auto scrollbar-hide">
+                <div
+                  className="flex items-center gap-4 sm:gap-6"
+                  style={{
+                    minWidth: "max-content",
+                    width: "100%",
+                  }}
+                >
                   {/* Channel Name */}
-                  <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100 font-semibold min-w-fit">
+                  <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100 font-semibold flex-shrink-0">
                     <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-600 dark:text-gray-400" />
                     <span className="text-sm sm:text-base whitespace-nowrap">
                       {channel.channelname || channel.name || "Unknown"}
@@ -607,10 +633,10 @@ const ChannelPage = () => {
                   </div>
 
                   {/* Separator */}
-                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
 
                   {/* Joined Date */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 min-w-fit">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 flex-shrink-0">
                     <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-gray-500 dark:text-gray-400" />
                     <span className="text-xs sm:text-sm whitespace-nowrap">
                       Joined{" "}
@@ -627,12 +653,12 @@ const ChannelPage = () => {
                   </div>
 
                   {/* Separator */}
-                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
 
                   {/* Video Count */}
                   <div
                     key={`video-${videos.length}-${renderKey}`}
-                    className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 min-w-fit"
+                    className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 flex-shrink-0"
                   >
                     <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-blue-500 dark:text-blue-400" />
                     <span className="text-xs sm:text-sm whitespace-nowrap font-medium">
@@ -641,12 +667,12 @@ const ChannelPage = () => {
                   </div>
 
                   {/* Separator */}
-                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
 
                   {/* Shorts Count */}
                   <div
                     key={`shorts-${shorts.length}-${renderKey}`}
-                    className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 min-w-fit"
+                    className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 flex-shrink-0"
                   >
                     <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-red-500 dark:text-red-400" />
                     <span className="text-xs sm:text-sm whitespace-nowrap font-medium">
@@ -817,7 +843,7 @@ const ChannelPage = () => {
           {/* ============================================================================
               CONTENT TABS - VIEW VIDEOS & SHORTS
               ============================================================================ */}
-          <div className="w-full pb-32 sm:pb-8 overflow-hidden">
+          <div className="w-full pb-20 sm:pb-8 overflow-hidden">
             <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
               {/* Tab Navigation */}
               <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide px-4 sm:px-0">
