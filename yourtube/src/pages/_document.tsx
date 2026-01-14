@@ -67,57 +67,78 @@ export default function CustomDocument() {
         <script
           dangerouslySetInnerHTML={{
             __html: `
-      (function() {
-        try {
-          // ✅ CRITICAL: Don't apply dark background on call pages
-          const isCallPage = window.location.pathname.startsWith('/call/');
-          
-          if (isCallPage) {
-            console.log('⏭️ Skipping dark background on call page');
-            const html = document.documentElement;
-            html.classList.add('dark');
-            html.style.backgroundColor = 'transparent'; // <-- TRANSPARENT for calls
-            if (document.body) {
-              document.body.style.backgroundColor = 'transparent'; // <-- TRANSPARENT for calls
-            }
-            return;
-          }
-          
-          // Normal theme initialization for other pages
-          const storedTheme = localStorage.getItem('theme');
-          const theme = (storedTheme === 'light' || storedTheme === 'dark') ? storedTheme : 'dark';
-          
-          const html = document.documentElement;
-          if (html) {
-            html.classList.remove('light', 'dark');
-            html.classList.add(theme);
-            html.setAttribute('data-theme', theme);
-            
-            const bgColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
-            html.style.backgroundColor = bgColor;
-            
-            if (document.body) {
-              document.body.style.backgroundColor = bgColor;
-            }
-            
-            const metaTheme = document.querySelector('meta[name="theme-color"]');
-            if (metaTheme) {
-              metaTheme.setAttribute('content', bgColor);
-            }
-          }
-        } catch (e) {
-          console.error('Theme initialization error:', e);
-          const html = document.documentElement;
-          if (html) {
-            html.classList.add('dark');
-            html.style.backgroundColor = '#0f0f0f';
-          }
-          if (document.body) {
-            document.body.style.backgroundColor = '#0f0f0f';
-          }
+(function() {
+  try {
+    // ✅ CRITICAL: Detect call page FIRST
+    const isCallPage = window.location.pathname.startsWith('/call/');
+    
+    if (isCallPage) {
+      console.log('📞 CALL PAGE DETECTED - Using transparent mode');
+      const html = document.documentElement;
+      const body = document.body;
+      
+      // Remove ALL background styling
+      html.classList.add('dark', 'call-page-active');
+      html.style.background = 'none';
+      html.style.backgroundColor = 'transparent';
+      html.removeAttribute('style'); // Clear any inline styles
+      
+      if (body) {
+        body.style.background = 'none';
+        body.style.backgroundColor = 'transparent';
+        body.removeAttribute('style');
+      }
+      
+      // Force next wrapper transparent too
+      setTimeout(() => {
+        const next = document.getElementById('__next');
+        if (next) {
+          next.style.background = 'transparent';
+          next.style.backgroundColor = 'transparent';
         }
-      })();
-    `,
+      }, 0);
+      
+      return; // STOP HERE - don't apply theme colors
+    }
+    
+    // Normal theme initialization for other pages
+    const storedTheme = localStorage.getItem('theme');
+    const theme = (storedTheme === 'light' || storedTheme === 'dark') ? storedTheme : 'dark';
+    
+    const html = document.documentElement;
+    if (html) {
+      html.classList.remove('light', 'dark');
+      html.classList.add(theme);
+      html.setAttribute('data-theme', theme);
+      
+      const bgColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
+      html.style.backgroundColor = bgColor;
+      
+      if (document.body) {
+        document.body.style.backgroundColor = bgColor;
+      }
+      
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', bgColor);
+      }
+    }
+  } catch (e) {
+    console.error('Theme initialization error:', e);
+    // Fallback - but NOT on call pages
+    if (!window.location.pathname.startsWith('/call/')) {
+      const html = document.documentElement;
+      if (html) {
+        html.classList.add('dark');
+        html.style.backgroundColor = '#0f0f0f';
+      }
+      if (document.body) {
+        document.body.style.backgroundColor = '#0f0f0f';
+      }
+    }
+  }
+})();
+`,
           }}
         />
 
@@ -125,6 +146,26 @@ export default function CustomDocument() {
         <style
           dangerouslySetInnerHTML={{
             __html: `
+             /* ============================================================================
+       🔴 CALL PAGE OVERRIDE - MUST BE FIRST
+       ============================================================================ */
+    
+    html.call-page-active,
+    html.call-page-active body,
+    html.call-page-active #__next {
+      background: transparent !important;
+      background-color: transparent !important;
+      background-image: none !important;
+    }
+    
+    html.call-page-active .fixed.inset-0.bg-black {
+      z-index: 2147483647 !important;
+      background: black !important;
+    }
+
+    /* ============================================================================
+       BASE STYLES & MOBILE OPTIMIZATIONS
+       ============================================================================ */
             /* ============================================================================
                BASE STYLES & MOBILE OPTIMIZATIONS
                ============================================================================ */
