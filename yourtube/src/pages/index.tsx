@@ -464,7 +464,7 @@ const Home: NextPage = () => {
         </Head>
 
         {connectionError && (
-          <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-600 dark:bg-yellow-700 text-white px-4 py-3 text-center text-sm lg:text-base shadow-lg">
+          <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white px-4 py-3 text-center text-sm lg:text-base">
             <div className="flex items-center justify-center gap-2">
               <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24">
                 <circle
@@ -494,18 +494,18 @@ const Home: NextPage = () => {
         )}
 
         {!backendReady && !connectionError && (
-          <div className="fixed inset-0 z-40 bg-youtube-primary flex flex-col items-center justify-center">
+          <div className="fixed inset-0 z-40 bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
             <div className="text-center px-4">
               <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-youtube-primary mb-2">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                 Loading YourTube
               </h2>
-              <p className="text-youtube-secondary text-sm max-w-md">
+              <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
                 {backendCheckAttempts > 0
                   ? `Waking up server... (${backendCheckAttempts}/5)`
                   : "Connecting to server..."}
               </p>
-              <p className="text-youtube-secondary text-xs mt-2 opacity-75">
+              <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">
                 Free tier servers may take 30-60 seconds to wake up
               </p>
             </div>
@@ -514,7 +514,7 @@ const Home: NextPage = () => {
 
         <div
           ref={containerRef}
-          className="w-full bg-youtube-primary min-h-screen pb-16 lg:pb-0"
+          className="w-full bg-white dark:bg-gray-900 min-h-screen pb-16 lg:pb-0"
           style={{
             position: "relative",
             width: "100%",
@@ -532,12 +532,12 @@ const Home: NextPage = () => {
               className="fixed top-0 left-0 right-0 flex justify-center items-center z-50 transition-all"
               style={{ height: `${pullDistance}px` }}
             >
-              <div className="bg-youtube-secondary rounded-full p-3 shadow-lg">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-3">
                 {refreshing ? (
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500" />
                 ) : (
                   <svg
-                    className="w-6 h-6 text-youtube-primary transition-transform"
+                    className="w-6 h-6 text-gray-900 dark:text-white transition-transform"
                     style={{ transform: `rotate(${pullDistance * 3.6}deg)` }}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -555,10 +555,11 @@ const Home: NextPage = () => {
             </div>
           )}
 
+          {/* ========== SHORTS SECTION WITH TEXT FIXES ========== */}
           {/* ========== SHORTS SECTION - COMPLETELY FIXED LAYOUT ========== */}
           {shorts.length > 0 && (
             <section
-              className="py-4 border-b-8 border-youtube dark:border-youtube-hover lg:border-b lg:py-6 bg-youtube-primary"
+              className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
               style={{
                 display: "block",
                 width: "100%",
@@ -566,7 +567,7 @@ const Home: NextPage = () => {
               }}
             >
               {/* Header */}
-              <div className="flex items-center gap-3 px-4 mb-4 lg:px-6 bg-youtube-primary">
+              <div className="flex items-center gap-3 px-4 mb-4 lg:px-6 bg-white dark:bg-gray-900">
                 <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl shadow-md">
                   <svg
                     viewBox="0 0 24 24"
@@ -575,14 +576,14 @@ const Home: NextPage = () => {
                     <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-bold text-youtube-primary lg:text-2xl">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white lg:text-2xl">
                   Shorts
                 </h2>
               </div>
 
               {loadingShorts ? (
                 <div
-                  className="overflow-x-hidden px-4 lg:px-6 bg-youtube-primary"
+                  className="overflow-x-hidden px-4 lg:px-6 bg-white dark:bg-gray-900"
                   style={{ display: "flex", gap: "16px" }}
                 >
                   {[...Array(6)].map((_, i) => (
@@ -595,11 +596,11 @@ const Home: NextPage = () => {
                       }}
                     >
                       <div
-                        className="bg-youtube-hover rounded-xl skeleton mb-3"
+                        className="bg-gray-200 dark:bg-gray-800 rounded-xl skeleton mb-3"
                         style={{ width: "100%", paddingBottom: "177.5%" }}
                       />
-                      <div className="h-4 bg-youtube-hover rounded skeleton mb-2" />
-                      <div className="h-3 bg-youtube-hover rounded skeleton w-3/4" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton mb-2" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton w-3/4" />
                     </div>
                   ))}
                 </div>
@@ -607,27 +608,30 @@ const Home: NextPage = () => {
                 <div className="relative group/container">
                   <button
                     onClick={() => scrollShorts("left")}
-                    className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-youtube-secondary/95 hover:bg-youtube-secondary rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
+                    className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
                     aria-label="Scroll left"
                   >
                     <ChevronRight
                       size={20}
-                      className="rotate-180 text-youtube-primary"
+                      className="rotate-180 text-gray-900 dark:text-white"
                     />
                   </button>
 
                   <button
                     onClick={() => scrollShorts("right")}
-                    className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-youtube-secondary/95 hover:bg-youtube-secondary rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
+                    className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 dark:bg-gray-800/95 hover:bg-white dark:hover:bg-gray-800 rounded-full items-center justify-center opacity-0 group-hover/container:opacity-100 transition-opacity shadow-lg backdrop-blur-sm"
                     aria-label="Scroll right"
                   >
-                    <ChevronRight size={20} className="text-youtube-primary" />
+                    <ChevronRight
+                      size={20}
+                      className="text-gray-900 dark:text-white"
+                    />
                   </button>
 
                   {/* Shorts Container - FIXED WIDTH */}
                   <div
                     ref={shortsScrollRef}
-                    className="overflow-x-scroll scrollbar-hide bg-youtube-primary"
+                    className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
                     style={{
                       display: "flex",
                       gap: "16px",
@@ -674,7 +678,7 @@ const Home: NextPage = () => {
                             <img
                               src={short.thumbnailUrl}
                               alt={short.title}
-                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105 bg-youtube-hover"
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover/short:scale-110 active:scale-105 lg:group-hover/thumbnail:scale-105"
                               loading="lazy"
                               onError={(e) => {
                                 const target =
@@ -716,11 +720,11 @@ const Home: NextPage = () => {
                             />
 
                             {/* Play Icon Overlay */}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-300 bg-black/50 pointer-events-none">
-                              <div className="bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 group-hover/short:scale-100 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-300">
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/short:opacity-100 active:opacity-100 lg:group-hover/thumbnail:opacity-100 transition-all duration-300 bg-black/40 dark:bg-black/50 pointer-events-none">
+                              <div className="bg-white dark:bg-white/95 backdrop-blur-sm rounded-full p-3 lg:p-4 shadow-xl transform scale-90 group-hover/short:scale-100 active:scale-110 lg:group-hover/thumbnail:scale-100 transition-transform duration-300">
                                 <Play
                                   size={24}
-                                  className="text-gray-900 lg:w-8 lg:h-8"
+                                  className="text-gray-900 dark:text-gray-900 lg:w-8 lg:h-8"
                                   fill="currentColor"
                                 />
                               </div>
@@ -730,7 +734,7 @@ const Home: NextPage = () => {
                             <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
                             {/* Views Badge */}
-                            <div className="absolute bottom-3 left-3 bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg active:scale-105 transition-transform duration-150">
+                            <div className="absolute bottom-3 left-3 bg-black/80 dark:bg-black/85 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg active:scale-105 transition-transform duration-150">
                               <svg
                                 className="w-3.5 h-3.5 fill-white"
                                 viewBox="0 0 24 24"
@@ -748,7 +752,7 @@ const Home: NextPage = () => {
                             style={{ marginBottom: "8px" }}
                           >
                             <p
-                              className="font-semibold text-youtube-primary"
+                              className="font-semibold text-gray-900 dark:text-white"
                               style={{
                                 fontSize: "13px",
                                 lineHeight: "18px",
@@ -791,7 +795,7 @@ const Home: NextPage = () => {
                                   true
                                 )}
                                 alt={shortChannelName}
-                                className="w-6 h-6 rounded-full object-cover border border-youtube lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
+                                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700 lg:w-7 lg:h-7 lg:border-2 active:ring-2 active:ring-blue-500/50 transition-all duration-150"
                                 onError={(e) => {
                                   e.currentTarget.src =
                                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
@@ -801,7 +805,7 @@ const Home: NextPage = () => {
 
                             {/* FIX: Channel Name with proper flex shrinking */}
                             <span
-                              className="shorts-channel-name text-youtube-secondary font-semibold cursor-pointer hover:text-youtube-primary active:text-blue-600 transition-colors duration-150 flex-1 min-w-0"
+                              className="shorts-channel-name text-gray-700 dark:text-gray-300 font-semibold cursor-pointer hover:text-gray-900 dark:hover:text-white active:text-blue-600 dark:active:text-blue-400 transition-colors duration-150 flex-1 min-w-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 hapticFeedback.selection();
@@ -827,12 +831,12 @@ const Home: NextPage = () => {
               <div className="space-y-3 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:space-y-0">
                 {[...Array(8)].map((_, i) => (
                   <div key={i} className="block">
-                    <div className="w-full aspect-video bg-youtube-hover rounded-lg skeleton mb-3" />
+                    <div className="w-full aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg skeleton mb-3" />
                     <div className="space-y-2">
-                      <div className="h-4 bg-youtube-hover rounded skeleton" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded skeleton" />
                       <div className="flex gap-2 items-center">
-                        <div className="w-8 h-8 bg-youtube-hover rounded-full skeleton" />
-                        <div className="flex-1 h-3 bg-youtube-hover rounded skeleton" />
+                        <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-full skeleton" />
+                        <div className="flex-1 h-3 bg-gray-200 dark:bg-gray-800 rounded skeleton" />
                       </div>
                     </div>
                   </div>
@@ -852,7 +856,7 @@ const Home: NextPage = () => {
                     <div key={video._id} className="block group w-full">
                       {/* Video Thumbnail */}
                       <Link href={`/watch/${video._id}`} className="block mb-3">
-                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-youtube-hover lg:rounded-xl shadow-sm">
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 lg:rounded-xl shadow-sm">
                           {getThumbnailUrl(video).includes("supabase.co") ? (
                             <img
                               src={getThumbnailUrl(video)}
@@ -961,13 +965,13 @@ const Home: NextPage = () => {
                                 `/channel/${video.uploadedBy?._id || "unknown"}`
                               );
                             }}
-                            className="video-channel-name text-youtube-secondary mb-0.5 font-medium hover:text-youtube-primary transition-colors cursor-pointer w-full overflow-hidden"
+                            className="video-channel-name text-gray-600 dark:text-gray-400 mb-0.5 font-medium hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer w-full overflow-hidden"
                             title={channelName}
                           >
                             {channelName}
                           </p>
 
-                          <div className="video-metadata text-[11px] text-youtube-secondary lg:text-xs font-medium w-full overflow-hidden">
+                          <div className="video-metadata text-[11px] text-gray-500 dark:text-gray-500 lg:text-xs font-medium w-full overflow-hidden">
                             <span className="font-semibold whitespace-nowrap">
                               {formatViews(video?.views)}
                             </span>
@@ -984,7 +988,9 @@ const Home: NextPage = () => {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-youtube-secondary">No videos available</p>
+                <p className="text-gray-500 dark:text-gray-400">
+                  No videos available
+                </p>
               </div>
             )}
           </section>
@@ -1219,17 +1225,6 @@ const Home: NextPage = () => {
             .video-title {
               font-size: 15px;
             }
-          }
-          /* ===== THEME CONSISTENCY ===== */
-          .shorts-title,
-          .video-title {
-            color: var(--youtube-primary-text);
-          }
-
-          .shorts-channel-name,
-          .video-channel-name,
-          .video-metadata {
-            color: var(--youtube-secondary-text);
           }
 
           /* ===== DARK MODE ===== */
