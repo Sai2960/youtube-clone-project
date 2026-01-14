@@ -1352,11 +1352,18 @@ const VideoCall = ({
   };
 
   // ✅ Force video visibility by injecting CSS into document
+  // ✅ Force video visibility by injecting CSS into document
   useEffect(() => {
     // Create style element
     const styleEl = document.createElement("style");
     styleEl.id = "video-call-override";
     styleEl.innerHTML = `
+    /* CRITICAL: Force HTML/body to be transparent */
+    html, body {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+    
     /* Force video visibility */
     .video-call-remote,
     video[class*="video-call-remote"] {
@@ -1366,7 +1373,7 @@ const VideoCall = ({
       width: 100vw !important;
       height: 100vh !important;
       object-fit: cover !important;
-      z-index: 999999 !important;
+      z-index: 2147483647 !important;
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
@@ -1376,7 +1383,7 @@ const VideoCall = ({
     /* Hide any overlays that might be blocking */
     .dark-mode-overlay,
     .app-overlay,
-    [class*="overlay"] {
+    [class*="overlay"]:not([class*="video"]) {
       display: none !important;
     }
     
@@ -1384,10 +1391,11 @@ const VideoCall = ({
     div[class*="video-call"] {
       position: fixed !important;
       inset: 0 !important;
-      z-index: 999998 !important;
+      z-index: 2147483646 !important;
       background: black !important;
     }
   `;
+
     document.head.appendChild(styleEl);
     document.documentElement.classList.add("video-call-active");
 
