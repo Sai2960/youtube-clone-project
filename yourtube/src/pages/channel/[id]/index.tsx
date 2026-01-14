@@ -868,46 +868,72 @@ const ChannelPage = () => {
               ============================================================================ */}
           <div className="w-full pb-32 sm:pb-8 overflow-hidden">
             <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
-              {/* Tab Navigation */}
-              <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide px-4 sm:px-0">
-                {/* Videos Tab */}
-                <button
-                  onClick={() => setContentTab("videos")}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-3 font-semibold transition-all relative whitespace-nowrap ${
-                    contentTab === "videos"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Grid className="w-5 h-5" />
-                  <span>Videos</span>
-                  <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {videos.length}
-                  </span>
-                  {contentTab === "videos" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
-                  )}
-                </button>
+            {/* Tab Navigation - YouTube Style */}
+<div className="w-full border-b border-gray-200 dark:border-gray-700 mb-6">
+  <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide px-4 sm:px-0">
+    {/* Videos Tab */}
+    <button
+      onClick={() => setContentTab("videos")}
+      className={`
+        flex items-center gap-2 px-6 py-3 
+        font-semibold text-sm
+        transition-all relative whitespace-nowrap
+        ${contentTab === "videos"
+          ? "text-gray-900 dark:text-white"
+          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+        }
+      `}
+      style={{
+        borderBottom: contentTab === "videos" 
+          ? "2px solid #3b82f6" 
+          : "2px solid transparent"
+      }}
+    >
+      <Grid className="w-5 h-5" />
+      <span>Videos</span>
+      <span className={`
+        text-xs font-bold px-2 py-0.5 rounded-full
+        ${contentTab === "videos"
+          ? "bg-blue-600 text-white"
+          : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+        }
+      `}>
+        {videos.length}
+      </span>
+    </button>
 
-                {/* Shorts Tab */}
-                <button
-                  onClick={() => setContentTab("shorts")}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-3 font-semibold transition-all relative whitespace-nowrap ${
-                    contentTab === "shorts"
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Film className="w-5 h-5" />
-                  <span>Shorts</span>
-                  <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {shorts.length}
-                  </span>
-                  {contentTab === "shorts" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600 dark:bg-red-400" />
-                  )}
-                </button>
-              </div>
+    {/* Shorts Tab */}
+    <button
+      onClick={() => setContentTab("shorts")}
+      className={`
+        flex items-center gap-2 px-6 py-3 
+        font-semibold text-sm
+        transition-all relative whitespace-nowrap
+        ${contentTab === "shorts"
+          ? "text-gray-900 dark:text-white"
+          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+        }
+      `}
+      style={{
+        borderBottom: contentTab === "shorts" 
+          ? "2px solid #dc2626" 
+          : "2px solid transparent"
+      }}
+    >
+      <Film className="w-5 h-5" />
+      <span>Shorts</span>
+      <span className={`
+        text-xs font-bold px-2 py-0.5 rounded-full
+        ${contentTab === "shorts"
+          ? "bg-red-600 text-white"
+          : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+        }
+      `}>
+        {shorts.length}
+      </span>
+    </button>
+  </div>
+</div>
 
               {/* Videos Content */}
               {contentTab === "videos" && (
