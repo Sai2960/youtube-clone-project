@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/pages/channel/[id]/index.tsx - COMPLETE FINAL FIXED VERSION
+// src/pages/channel/[id]/index.tsx - COMPLETE FIXED VERSION
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
@@ -11,9 +11,10 @@ import axiosInstance from "@/lib/axiosinstance";
 import { getSocket, isSocketConnected } from "@/lib/socket";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/imageUtils";
-import { Calendar, Video, Upload, Play, Film, Grid, User } from "lucide-react";
+import { Calendar, Video, Upload, Play, Film, Grid, User, ChevronDown, ChevronUp } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { GetServerSideProps } from "next";
+
 // ============================================================================
 // THUMBNAIL HELPER - FIXED VERSION
 // ============================================================================
@@ -55,6 +56,7 @@ const getShortThumbnail = (short: any): string => {
   console.warn("⚠️ No thumbnail available for short:", short._id);
   return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
 };
+
 // ============================================================================
 // MAIN COMPONENT - STATE & REFS
 // ============================================================================
@@ -71,6 +73,9 @@ const ChannelPage = () => {
   // State: Channel Data
   const [channel, setChannel] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // State: Description expansion (for mobile)
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // State: Call Functionality
   const [isInitiatingCall, setIsInitiatingCall] = useState(false);
@@ -93,6 +98,7 @@ const ChannelPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [renderKey, setRenderKey] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+
   // ============================================================================
   // LIFECYCLE HOOKS - CLIENT MOUNTING & VISIBILITY
   // ============================================================================
@@ -254,7 +260,6 @@ const ChannelPage = () => {
 
         const timestamp = Date.now();
 
-        // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
         const response = await axiosInstance.get(`/video/channel/${id}`, {
           params: {
             _t: timestamp,
@@ -265,9 +270,7 @@ const ChannelPage = () => {
             "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
             Pragma: "no-cache",
             Expires: "0",
-            // ✅ REMOVED: "If-None-Match" - this was causing CORS error
           },
-          // ✅ CRITICAL: Disable Axios's automatic ETag handling
           transformRequest: [
             (data, headers) => {
               delete headers["If-None-Match"];
@@ -316,6 +319,7 @@ const ChannelPage = () => {
     const timer = setTimeout(fetchVideos, 150);
     return () => clearTimeout(timer);
   }, [id, refreshKey]);
+
   // ============================================================================
   // FETCH SHORTS
   // ============================================================================
@@ -334,7 +338,6 @@ const ChannelPage = () => {
 
         const timestamp = Date.now();
 
-        // ✅ CRITICAL FIX: Remove if-none-match header
         const response = await axiosInstance.get(`/shorts/channel/${id}`, {
           params: {
             page: 1,
@@ -347,9 +350,7 @@ const ChannelPage = () => {
             "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
             Pragma: "no-cache",
             Expires: "0",
-            // ✅ REMOVED: "If-None-Match" - this was causing CORS error
           },
-          // ✅ CRITICAL: Disable Axios's automatic ETag handling
           transformRequest: [
             (data, headers) => {
               delete headers["If-None-Match"];
@@ -401,6 +402,7 @@ const ChannelPage = () => {
     const timer = setTimeout(fetchShorts, 200);
     return () => clearTimeout(timer);
   }, [id, refreshKey]);
+
   // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
@@ -411,7 +413,6 @@ const ChannelPage = () => {
   };
 
   const handleStartCall = async () => {
-    // ✅ Validation checks
     if (!user) {
       setCallError("Please login to make calls");
       setTimeout(() => setCallError(null), 3000);
@@ -445,7 +446,6 @@ const ChannelPage = () => {
       const remotePersonImage =
         channel.image || "https://github.com/shadcn.png";
 
-      // ✅ Initiate call via API
       const response = await axiosInstance.post("/call/initiate", {
         receiverId: id,
       });
@@ -456,12 +456,10 @@ const ChannelPage = () => {
 
       const { call } = response.data;
 
-      // ✅ Check socket connection
       if (!isSocketConnected()) {
         throw new Error("Socket not connected. Please refresh the page.");
       }
 
-      // ✅ Emit socket event
       const socket = getSocket();
       socket.emit("call-user", {
         userToCall: id,
@@ -472,7 +470,6 @@ const ChannelPage = () => {
         callId: call._id,
       });
 
-      // ✅ Navigate to call page
       router.push({
         pathname: `/call/${call.roomId}`,
         query: {
@@ -549,33 +546,72 @@ const ChannelPage = () => {
             onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
           />
 
-          {/* ✅ CHANNEL INFO BAR - ALWAYS VISIBLE, NO OVERLAPPING */}
+          {/* ✅ FIXED: CHANNEL DESCRIPTION - EXPANDABLE ON MOBILE */}
+          {channel?.description && isMounted && (
+            <div className="w-full bg-white dark:bg-gray-900 px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
+              <div className="relative">
+                {/* Description Text */}
+                <p
+                  className={`text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed ${
+                    !isDescriptionExpanded ? "line-clamp-2 sm:line-clamp-none" : ""
+                  }`}
+                >
+                  {channel.description}
+                </p>
+                
+                {/* Show More/Less Button - Only on mobile when description is long */}
+                {channel.description && channel.description.length > 100 && (
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="sm:hidden mt-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
+                  >
+                    {isDescriptionExpanded ? (
+                      <>
+                        Show less
+                        <ChevronUp className="w-4 h-4" />
+                      </>
+                    ) : (
+                      <>
+                        Show more
+                        <ChevronDown className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ✅ FIXED: CHANNEL INFO BAR - PROPER LIGHT/DARK THEME SUPPORT */}
           {channel && isMounted && (
             <div
               ref={infoBarRef}
               key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-              className="w-full bg-gray-50 dark:bg-gray-900/50 border-y border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-hide"
+              className="w-full bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide"
               style={{
                 position: "relative",
                 zIndex: 10,
-                minHeight: "80px",
+                minHeight: "60px",
                 marginTop: "0",
                 marginBottom: "24px",
               }}
             >
-              <div className="px-4 sm:px-6 py-4 max-w-7xl mx-auto">
-                <div className="flex items-center gap-4 sm:gap-6 min-w-max">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
+                <div className="flex items-center gap-3 sm:gap-6 min-w-max">
                   {/* Channel Name */}
-                  <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold min-w-fit">
-                    <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100 font-semibold min-w-fit">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-600 dark:text-gray-400" />
                     <span className="text-sm sm:text-base whitespace-nowrap">
                       {channel.channelname || channel.name || "Unknown"}
                     </span>
                   </div>
 
+                  {/* Separator */}
+                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+
                   {/* Joined Date */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400 min-w-fit">
-                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 min-w-fit">
+                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-gray-500 dark:text-gray-400" />
                     <span className="text-xs sm:text-sm whitespace-nowrap">
                       Joined{" "}
                       {channel.joinedon
@@ -590,24 +626,30 @@ const ChannelPage = () => {
                     </span>
                   </div>
 
+                  {/* Separator */}
+                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+
                   {/* Video Count */}
                   <div
                     key={`video-${videos.length}-${renderKey}`}
-                    className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400 min-w-fit"
+                    className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 min-w-fit"
                   >
-                    <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm whitespace-nowrap">
+                    <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                    <span className="text-xs sm:text-sm whitespace-nowrap font-medium">
                       {videos.length} video{videos.length !== 1 ? "s" : ""}
                     </span>
                   </div>
 
+                  {/* Separator */}
+                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+
                   {/* Shorts Count */}
                   <div
                     key={`shorts-${shorts.length}-${renderKey}`}
-                    className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-400 min-w-fit"
+                    className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 min-w-fit"
                   >
-                    <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm whitespace-nowrap">
+                    <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-red-500 dark:text-red-400" />
+                    <span className="text-xs sm:text-sm whitespace-nowrap font-medium">
                       {shorts.length} short{shorts.length !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -618,18 +660,18 @@ const ChannelPage = () => {
 
           {/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
           {process.env.NODE_ENV === "development" && (
-            <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
+            <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-center border-b border-yellow-200 dark:border-yellow-800">
               <button
                 onClick={() => {
                   console.log("🔄 Force refresh triggered");
                   setRefreshKey((prev) => prev + 1);
                   setRenderKey((prev) => prev + 1);
                 }}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
+                className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 Force Refresh (Debug)
               </button>
-              <span className="ml-4 text-xs">
+              <span className="ml-4 text-xs text-gray-700 dark:text-gray-300">
                 Videos: {videos.length} | Shorts: {shorts.length} | Render:{" "}
                 {renderKey}
               </span>
@@ -646,7 +688,7 @@ const ChannelPage = () => {
             >
               <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                 {/* Upload Tabs */}
-                <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide bg-white dark:bg-gray-800">
+                <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
                   {/* Videos Upload Tab */}
                   <button
                     type="button"
@@ -743,7 +785,7 @@ const ChannelPage = () => {
                     </div>
 
                     <div className="text-center py-6 sm:py-8">
-                      <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 sm:p-8 max-w-md mx-auto">
+                      <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 sm:p-8 max-w-md mx-auto border border-red-100 dark:border-red-900/30">
                         <div className="bg-red-100 dark:bg-red-900/50 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                           <Play
                             className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-400"
@@ -790,7 +832,7 @@ const ChannelPage = () => {
                 >
                   <Grid className="w-5 h-5" />
                   <span>Videos</span>
-                  <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">
                     {videos.length}
                   </span>
                   {contentTab === "videos" && (
@@ -809,7 +851,7 @@ const ChannelPage = () => {
                 >
                   <Film className="w-5 h-5" />
                   <span>Shorts</span>
-                  <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">
                     {shorts.length}
                   </span>
                   {contentTab === "shorts" && (
@@ -831,7 +873,6 @@ const ChannelPage = () => {
                   ) : videos.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {videos.map((video) => {
-                        // ✅ SAME THUMBNAIL LOGIC AS HOME PAGE
                         const getVideoThumbnail = (video: any): string => {
                           const explicitThumbnail =
                             video?.thumbnailUrl ||
@@ -979,7 +1020,7 @@ const ChannelPage = () => {
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">
+                                <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                   {video?.videotitle || "Untitled Video"}
                                 </h3>
                                 <p
@@ -1013,7 +1054,7 @@ const ChannelPage = () => {
                   ) : (
                     <div className="text-center py-12">
                       <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4">
-                        <Video className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
+                        <Video className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 dark:text-gray-500" />
                       </div>
                       <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                         No videos yet
@@ -1042,7 +1083,7 @@ const ChannelPage = () => {
                     ) : shortsError ? (
                       <div className="text-center py-12">
                         <div className="bg-red-100 dark:bg-red-900/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                          <Film className="w-10 h-10 text-red-600" />
+                          <Film className="w-10 h-10 text-red-600 dark:text-red-400" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                           Error Loading Shorts
@@ -1070,7 +1111,7 @@ const ChannelPage = () => {
                             </div>
                             Shorts
                           </h2>
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
                             {shorts.length} short
                             {shorts.length !== 1 ? "s" : ""}
                           </span>
@@ -1094,7 +1135,7 @@ const ChannelPage = () => {
                                 className="group cursor-pointer w-full transform transition-all duration-300 active:scale-95 md:hover:scale-[1.02]"
                               >
                                 {/* Thumbnail Container */}
-                                <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-black shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 active:border-red-500 dark:active:border-red-500 md:hover:border-red-500 dark:md:hover:border-red-500 active:ring-2 active:ring-red-500/50 md:hover:ring-2 md:hover:ring-red-500/50">
+                                <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 active:border-red-500 dark:active:border-red-500 md:hover:border-red-500 dark:md:hover:border-red-500 active:ring-2 active:ring-red-500/50 md:hover:ring-2 md:hover:ring-red-500/50">
                                   <div
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
@@ -1108,9 +1149,8 @@ const ChannelPage = () => {
                                       onError={(e) => {
                                         const target =
                                           e.currentTarget as HTMLImageElement;
-                                        const currentShort = short; // ✅ FIXED: Capture short reference
+                                        const currentShort = short;
 
-                                        // Don't retry if already showing placeholder
                                         if (
                                           target.src.includes("data:image/svg")
                                         )
@@ -1121,7 +1161,6 @@ const ChannelPage = () => {
                                           target.src.substring(0, 100)
                                         );
 
-                                        // ✅ For Supabase videos, try creating a video element
                                         if (
                                           currentShort.videoUrl &&
                                           (currentShort.videoUrl.includes(
@@ -1155,7 +1194,6 @@ const ChannelPage = () => {
                                           }
                                         }
 
-                                        // ✅ Final fallback to placeholder
                                         console.log("⚠️ Using placeholder SVG");
                                         target.src =
                                           'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
@@ -1167,13 +1205,13 @@ const ChannelPage = () => {
                                         );
                                       }}
                                     />
-                                    {/* Gradient Overlay - MOBILE & DESKTOP */}
+                                    {/* Gradient Overlay */}
                                     <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300" />
 
-                                    {/* Red Overlay - MOBILE & DESKTOP */}
+                                    {/* Red Overlay */}
                                     <div className="absolute inset-0 bg-red-600/0 group-active:bg-red-600/15 md:group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none" />
 
-                                    {/* Views Badge - MOBILE & DESKTOP */}
+                                    {/* Views Badge */}
                                     <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
                                       <Play
                                         className="w-2.5 h-2.5 sm:w-3 sm:h-3"
@@ -1184,14 +1222,14 @@ const ChannelPage = () => {
                                       </span>
                                     </div>
 
-                                    {/* Duration Badge - MOBILE & DESKTOP */}
+                                    {/* Duration Badge */}
                                     {short.duration && (
                                       <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
                                         {short.duration}s
                                       </div>
                                     )}
 
-                                    {/* Play Button Overlay - MOBILE ACTIVE + DESKTOP HOVER */}
+                                    {/* Play Button Overlay */}
                                     <div className="absolute inset-0 bg-black/0 group-active:bg-black/40 md:group-hover:bg-black/50 transition-all duration-500 flex items-center justify-center">
                                       <div className="opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transform scale-50 group-active:scale-90 md:group-hover:scale-100 transition-all duration-500 ease-out">
                                         <div className="relative">
@@ -1206,12 +1244,12 @@ const ChannelPage = () => {
                                       </div>
                                     </div>
 
-                                    {/* Shine Effect - MOBILE ACTIVE + DESKTOP HOVER */}
+                                    {/* Shine Effect */}
                                     <div className="absolute inset-0 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
                                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-active:translate-x-full md:group-hover:translate-x-full transition-transform duration-1000"></div>
                                     </div>
 
-                                    {/* Index Badge - MOBILE ACTIVE + DESKTOP HOVER */}
+                                    {/* Index Badge */}
                                     <div className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-all duration-300 bg-black/70 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md">
                                       #{index + 1}
                                     </div>
@@ -1291,7 +1329,7 @@ const ChannelPage = () => {
                     ) : (
                       <div className="text-center py-12">
                         <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4">
-                          <Film className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
+                          <Film className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 dark:text-gray-500" />
                         </div>
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                           No shorts yet
@@ -1322,13 +1360,10 @@ const ChannelPage = () => {
     </ProtectedRoute>
   );
 };
-// ✅ CRITICAL FIX: Disable static generation for dynamic channel pages
-// This prevents the "Cannot find module 'critters'" error during build
+
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  // You could optionally fetch initial channel data here if needed
-  // For now, we'll let the client-side useEffect handle it
   return {
-    props: {}, // Empty props - we get everything client-side
+    props: {},
   };
 };
 
