@@ -1426,7 +1426,7 @@ const VideoCall = ({
       if (!isSocketConnected()) {
         console.log("🔌 Initializing socket...");
         initializeSocket.initializeSocket(user._id);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       let socket;
@@ -1699,16 +1699,8 @@ const VideoCall = ({
           socket.once("both-users-ready", (data: any) => {
             console.log("✅✅✅ Both users ready signal received!");
             clearTimeout(timeout);
-
-            console.log(
-              "⏳ Waiting 5 more seconds for receiver to stabilize..."
-            );
-            setTimeout(() => {
-              console.log(
-                "✅ Creating offer NOW after both-users-ready + 5s delay"
-              );
-              safeResolve();
-            }, 5000);
+            console.log("✅ Creating offer immediately");
+            safeResolve();
           });
         });
 
