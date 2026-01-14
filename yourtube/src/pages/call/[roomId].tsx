@@ -65,7 +65,94 @@ const CallPage = () => {
     }
   }, [mounted, roomId, callId, remoteName, initiator, user, socketReady]);
 
+  // 1. Remove Razorpay blocker
+  useEffect(() => {
+    if (!isReady) return;
 
+    const removeBlockers = () => {
+      document
+        .querySelectorAll('[class*="razorpay"], iframe[src*="razorpay"]')
+        .forEach((el) => {
+          (el as HTMLElement).remove();
+        });
+
+      document.querySelectorAll('[style*="z-index"]').forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        const zIndex = parseInt(getComputedStyle(htmlEl).zIndex || "0");
+        if (
+          zIndex > 2147483640 &&
+          !htmlEl.classList.contains("video-call-remote")
+        ) {
+          htmlEl.style.display = "none";
+        }
+      });
+    };
+
+    removeBlockers();
+    const interval = setInterval(removeBlockers, 500);
+    return () => clearInterval(interval);
+  }, [isReady]);
+
+  // 2. Force video CSS
+  useEffect(() => {
+    if (!isReady) return;
+
+    const style = document.createElement("style");
+    style.id = "call-page-override";
+    style.innerHTML = `
+      html, body, #__next {
+        background: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+      
+      video.video-call-remote {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 2147483647 !important;
+        object-fit: cover !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, [isReady]);
+
+  // 3. Clear backgrounds
+  useEffect(() => {
+    if (!isReady) return;
+
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const nextDiv = document.getElementById("__next");
+
+    htmlEl.style.background = "transparent";
+    htmlEl.style.backgroundColor = "transparent";
+    bodyEl.style.background = "transparent";
+    bodyEl.style.backgroundColor = "transparent";
+
+    if (nextDiv) {
+      nextDiv.style.background = "transparent";
+      nextDiv.style.backgroundColor = "transparent";
+    }
+
+    return () => {
+      htmlEl.style.background = "";
+      htmlEl.style.backgroundColor = "";
+      bodyEl.style.background = "";
+      bodyEl.style.backgroundColor = "";
+      if (nextDiv) {
+        nextDiv.style.background = "";
+        nextDiv.style.backgroundColor = "";
+      }
+    };
+  }, [isReady]);
 
   // Show loading screen until everything is ready
   if (!mounted || !isReady || !socketReady) {
