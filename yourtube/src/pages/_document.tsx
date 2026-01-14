@@ -67,48 +67,57 @@ export default function CustomDocument() {
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function() {
-                try {
-                  // Get stored theme or default to 'dark'
-                  const storedTheme = localStorage.getItem('theme');
-                  const theme = (storedTheme === 'light' || storedTheme === 'dark') ? storedTheme : 'dark';
-                  
-                  // Apply theme to HTML element
-                  const html = document.documentElement;
-                  if (html) {
-                    html.classList.remove('light', 'dark');
-                    html.classList.add(theme);
-                    html.setAttribute('data-theme', theme);
-                    
-                    // Set background color
-                    const bgColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
-                    html.style.backgroundColor = bgColor;
-                    
-                    // Apply to body if available
-                    if (document.body) {
-                      document.body.style.backgroundColor = bgColor;
-                    }
-                    
-                    // Update theme-color meta tag
-                    const metaTheme = document.querySelector('meta[name="theme-color"]');
-                    if (metaTheme) {
-                      metaTheme.setAttribute('content', bgColor);
-                    }
-                  }
-                } catch (e) {
-                  // Fallback to dark theme on error
-                  console.error('Theme initialization error:', e);
-                  const html = document.documentElement;
-                  if (html) {
-                    html.classList.add('dark');
-                    html.style.backgroundColor = '#0f0f0f';
-                  }
-                  if (document.body) {
-                    document.body.style.backgroundColor = '#0f0f0f';
-                  }
-                }
-              })();
-            `,
+      (function() {
+        try {
+          // ✅ CRITICAL: Don't apply dark background on call pages
+          const isCallPage = window.location.pathname.startsWith('/call/');
+          
+          if (isCallPage) {
+            console.log('⏭️ Skipping dark background on call page');
+            const html = document.documentElement;
+            html.classList.add('dark');
+            html.style.backgroundColor = 'transparent'; // <-- TRANSPARENT for calls
+            if (document.body) {
+              document.body.style.backgroundColor = 'transparent'; // <-- TRANSPARENT for calls
+            }
+            return;
+          }
+          
+          // Normal theme initialization for other pages
+          const storedTheme = localStorage.getItem('theme');
+          const theme = (storedTheme === 'light' || storedTheme === 'dark') ? storedTheme : 'dark';
+          
+          const html = document.documentElement;
+          if (html) {
+            html.classList.remove('light', 'dark');
+            html.classList.add(theme);
+            html.setAttribute('data-theme', theme);
+            
+            const bgColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
+            html.style.backgroundColor = bgColor;
+            
+            if (document.body) {
+              document.body.style.backgroundColor = bgColor;
+            }
+            
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) {
+              metaTheme.setAttribute('content', bgColor);
+            }
+          }
+        } catch (e) {
+          console.error('Theme initialization error:', e);
+          const html = document.documentElement;
+          if (html) {
+            html.classList.add('dark');
+            html.style.backgroundColor = '#0f0f0f';
+          }
+          if (document.body) {
+            document.body.style.backgroundColor = '#0f0f0f';
+          }
+        }
+      })();
+    `,
           }}
         />
 

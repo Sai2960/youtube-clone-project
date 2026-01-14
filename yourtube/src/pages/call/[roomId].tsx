@@ -98,6 +98,63 @@ const CallPage = () => {
       clearInterval(interval);
     };
   }, [isReady]);
+
+  // ✅ CRITICAL: Force transparent backgrounds and remove blockers
+  useEffect(() => {
+    if (!isReady) return;
+
+    console.log("🎨 Removing background blockers for video call");
+
+    // Save original styles
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const nextDiv = document.getElementById("__next");
+
+    const originalStyles = {
+      htmlBg: htmlEl.style.background,
+      htmlBgColor: htmlEl.style.backgroundColor,
+      bodyBg: bodyEl.style.background,
+      bodyBgColor: bodyEl.style.backgroundColor,
+      nextBg: nextDiv?.style.background,
+      nextBgColor: nextDiv?.style.backgroundColor,
+    };
+
+    // Force transparent backgrounds
+    htmlEl.style.background = "transparent";
+    htmlEl.style.backgroundColor = "transparent";
+    bodyEl.style.background = "transparent";
+    bodyEl.style.backgroundColor = "transparent";
+
+    if (nextDiv) {
+      nextDiv.style.background = "transparent";
+      nextDiv.style.backgroundColor = "transparent";
+    }
+
+    // Force video container to be on top
+    const videoContainer = document.querySelector(
+      ".fixed.inset-0.w-screen.h-screen"
+    );
+    if (videoContainer) {
+      (videoContainer as HTMLElement).style.zIndex = "2147483647";
+      (videoContainer as HTMLElement).style.background = "black";
+    }
+
+    console.log("✅ Backgrounds cleared for video call");
+
+    return () => {
+      // Restore on unmount
+      htmlEl.style.background = originalStyles.htmlBg;
+      htmlEl.style.backgroundColor = originalStyles.htmlBgColor;
+      bodyEl.style.background = originalStyles.bodyBg;
+      bodyEl.style.backgroundColor = originalStyles.bodyBgColor;
+
+      if (nextDiv) {
+        nextDiv.style.background = originalStyles.nextBg || "";
+        nextDiv.style.backgroundColor = originalStyles.nextBgColor || "";
+      }
+    };
+  }, [isReady]);
+
   // Show loading screen until everything is ready
   if (!mounted || !isReady || !socketReady) {
     return (
