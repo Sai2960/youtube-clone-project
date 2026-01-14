@@ -549,7 +549,7 @@ const ChannelPage = () => {
             onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
           />
 
-        {/* ✅ CHANNEL INFO BAR - PREMIUM DESIGN, THEME COMPATIBLE, MOBILE FIXED */}
+        {/* ✅ CHANNEL INFO BAR - MOBILE FIXED */}
 {channel && isMounted && (
   <div
     ref={infoBarRef}
@@ -561,24 +561,45 @@ const ChannelPage = () => {
       marginBottom: "20px",
     }}
   >
-    <div className="px-4 sm:px-6 py-4 max-w-7xl mx-auto">
-      {/* Scrollable container with hidden scrollbar */}
-      <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto scrollbar-hide">
+    <div className="px-3 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
+      {/* Scrollable container */}
+      <div 
+        className="flex items-center overflow-x-auto scrollbar-hide"
+        style={{ gap: "12px" }}
+      >
         
         {/* Channel Name */}
-        <div className="flex items-center gap-2 flex-shrink-0 pr-3 sm:pr-4 border-r border-gray-200 dark:border-gray-700">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-            <User className="w-4 h-4 text-white" />
+        <div 
+          className="flex items-center border-r border-gray-200 dark:border-gray-700"
+          style={{ gap: "8px", paddingRight: "12px", flexShrink: 0 }}
+        >
+          <div 
+            className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
+            style={{ width: "28px", height: "28px", minWidth: "28px" }}
+          >
+            <User style={{ width: "14px", height: "14px", color: "white" }} />
           </div>
-          <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+          <span 
+            className="font-semibold text-gray-900 dark:text-white"
+            style={{ fontSize: "13px", whiteSpace: "nowrap" }}
+          >
             {channel.channelname || channel.name || "Unknown"}
           </span>
         </div>
 
         {/* Joined Date */}
-        <div className="flex items-center gap-2 flex-shrink-0 pr-3 sm:pr-4 border-r border-gray-200 dark:border-gray-700">
-          <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+        <div 
+          className="flex items-center border-r border-gray-200 dark:border-gray-700"
+          style={{ gap: "6px", paddingRight: "12px", flexShrink: 0 }}
+        >
+          <Calendar 
+            className="text-gray-400 dark:text-gray-500" 
+            style={{ width: "14px", height: "14px", minWidth: "14px" }} 
+          />
+          <span 
+            className="text-gray-600 dark:text-gray-400"
+            style={{ fontSize: "12px", whiteSpace: "nowrap" }}
+          >
             Joined{" "}
             {channel.joinedon
               ? new Date(channel.joinedon).toLocaleDateString("en-US", {
@@ -589,28 +610,75 @@ const ChannelPage = () => {
           </span>
         </div>
 
-        {/* Video Count - FIXED LAYOUT */}
+        {/* Video Count - COMPLETELY FIXED */}
         <div
           key={`video-${videos.length}-${renderKey}`}
-          className="flex items-center gap-2 flex-shrink-0 pr-3 sm:pr-4 border-r border-gray-200 dark:border-gray-700"
+          className="flex items-center border-r border-gray-200 dark:border-gray-700"
+          style={{ 
+            gap: "8px", 
+            paddingRight: "12px", 
+            flexShrink: 0,
+            minWidth: "fit-content"
+          }}
         >
-          <div className="w-6 h-6 rounded bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-            <Video className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          <div 
+            className="rounded bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center"
+            style={{ 
+              width: "24px", 
+              height: "24px", 
+              minWidth: "24px",
+              flexShrink: 0
+            }}
+          >
+            <Video 
+              className="text-blue-600 dark:text-blue-400" 
+              style={{ width: "14px", height: "14px" }} 
+            />
           </div>
-          <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+          <span 
+            className="font-medium text-gray-700 dark:text-gray-300"
+            style={{ 
+              fontSize: "13px", 
+              whiteSpace: "nowrap",
+              minWidth: "max-content"
+            }}
+          >
             {videos.length} {videos.length === 1 ? "video" : "videos"}
           </span>
         </div>
 
-        {/* Shorts Count - FIXED LAYOUT */}
+        {/* Shorts Count - COMPLETELY FIXED */}
         <div
           key={`shorts-${shorts.length}-${renderKey}`}
-          className="flex items-center gap-2 flex-shrink-0"
+          className="flex items-center"
+          style={{ 
+            gap: "8px", 
+            flexShrink: 0,
+            minWidth: "fit-content"
+          }}
         >
-          <div className="w-6 h-6 rounded bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
-            <Film className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+          <div 
+            className="rounded bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center"
+            style={{ 
+              width: "24px", 
+              height: "24px", 
+              minWidth: "24px",
+              flexShrink: 0
+            }}
+          >
+            <Film 
+              className="text-red-600 dark:text-red-400" 
+              style={{ width: "14px", height: "14px" }} 
+            />
           </div>
-          <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap font-medium">
+          <span 
+            className="font-medium text-gray-700 dark:text-gray-300"
+            style={{ 
+              fontSize: "13px", 
+              whiteSpace: "nowrap",
+              minWidth: "max-content"
+            }}
+          >
             {shorts.length} {shorts.length === 1 ? "short" : "shorts"}
           </span>
         </div>
