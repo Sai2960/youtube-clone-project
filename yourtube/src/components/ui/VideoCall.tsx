@@ -1352,26 +1352,27 @@ const VideoCall = ({
   };
 
   // ✅ Force video visibility by injecting CSS into document
-  // ✅ Force video visibility by injecting CSS into document
-useEffect(() => {
-  console.log("🎨 Injecting video visibility CSS");
-  
-  // Create style element
-  const styleEl = document.createElement("style");
-  styleEl.id = "video-call-override";
-  styleEl.innerHTML = `
-    /* CRITICAL: Force HTML/body to be transparent - THIS IS THE KEY FIX */
+  useEffect(() => {
+    console.log("🎨 Injecting video visibility CSS");
+
+    const styleEl = document.createElement("style");
+    styleEl.id = "video-call-override";
+    styleEl.innerHTML = `
+    /* CRITICAL: Reset HTML positioning to allow video to be on top */
     html, html.dark, html.light {
       background: transparent !important;
       background-color: transparent !important;
+      position: static !important;  /* ← THIS IS THE KEY! */
+      isolation: auto !important;
     }
     
     body {
       background: transparent !important;
       background-color: transparent !important;
+      position: static !important;  /* ← THIS TOO! */
     }
     
-    /* Force video visibility */
+    /* Force video to render ON TOP of everything */
     .video-call-remote,
     video[class*="video-call-remote"] {
       position: fixed !important;
@@ -1385,40 +1386,28 @@ useEffect(() => {
       visibility: visible !important;
       opacity: 1 !important;
       background: black !important;
+      isolation: isolate !important;  /* Create new stacking context */
     }
     
-    /* Hide any overlays that might be blocking */
-    .dark-mode-overlay,
-    .app-overlay,
-    [class*="overlay"]:not([class*="video"]) {
-      display: none !important;
-    }
-    
-    /* Ensure container is visible */
+    /* Container must also be static */
     div[class*="video-call"] {
-      position: fixed !important;
-      inset: 0 !important;
-      z-index: 2147483646 !important;
-      background: black !important;
+      position: static !important;
+      z-index: auto !important;
     }
   `;
-  
-  document.head.appendChild(styleEl);
-  document.documentElement.classList.add("video-call-active");
-  
-  // Also force inline styles as backup
-  document.documentElement.style.background = 'transparent';
-  document.documentElement.style.backgroundColor = 'transparent';
-  document.body.style.background = 'transparent';
-  document.body.style.backgroundColor = 'transparent';
 
-  console.log("✅ Video visibility CSS injected");
+    document.head.appendChild(styleEl);
 
-  return () => {
-    styleEl.remove();
-    document.documentElement.classList.remove("video-call-active");
-  };
-}, []);
+    // Force inline as backup
+    document.documentElement.style.position = "static";
+    document.body.style.position = "static";
+
+    console.log("✅ Video visibility CSS injected with position fixes");
+
+    return () => {
+      styleEl.remove();
+    };
+  }, []);
 
   // ✅ Initialize call function
   const initializeCall = async () => {
