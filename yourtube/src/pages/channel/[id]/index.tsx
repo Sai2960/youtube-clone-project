@@ -1375,14 +1375,14 @@ const ChannelPage = () => {
 
                                 {/* Title & Channel Info */}
                                 <div className="mt-2 sm:mt-3 px-1">
-                                <h3
-  className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-1 group-active:text-red-600 dark:group-active:text-red-500 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300"
+<h3
+  className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-3 leading-snug mb-1 group-active:text-red-600 dark:group-active:text-red-500 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300"
   style={{
     wordBreak: "break-word",
     overflowWrap: "break-word",
     hyphens: "auto",
     display: "-webkit-box",
-    WebkitLineClamp: 2,
+    WebkitLineClamp: 3,
     WebkitBoxOrient: "vertical",
     overflow: "hidden",
   }}
