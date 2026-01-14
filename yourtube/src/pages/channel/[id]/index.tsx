@@ -549,7 +549,7 @@ const ChannelPage = () => {
             onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
           />
 
-      {/* ✅ CHANNEL INFO BAR - MOBILE FIXED */}
+    {/* ✅ CHANNEL INFO BAR - WITH VERTICAL SEPARATORS */}
 {channel && isMounted && (
   <div
     ref={infoBarRef}
@@ -565,13 +565,13 @@ const ChannelPage = () => {
       {/* Scrollable container */}
       <div 
         className="flex items-center overflow-x-auto scrollbar-hide"
-        style={{ gap: "12px" }}
+        style={{ gap: "0px" }}
       >
         
         {/* Channel Name */}
         <div 
-          className="flex items-center border-r border-gray-200 dark:border-gray-700"
-          style={{ gap: "8px", paddingRight: "12px", flexShrink: 0 }}
+          className="flex items-center"
+          style={{ gap: "8px", paddingRight: "12px", paddingLeft: "4px", flexShrink: 0 }}
         >
           <div 
             className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
@@ -587,9 +587,15 @@ const ChannelPage = () => {
           </span>
         </div>
 
+        {/* SEPARATOR LINE 1 */}
+        <div 
+          className="h-6 w-px bg-gray-300 dark:bg-gray-700"
+          style={{ margin: "0 12px", flexShrink: 0 }}
+        />
+
         {/* Joined Date */}
         <div 
-          className="flex items-center border-r border-gray-200 dark:border-gray-700"
+          className="flex items-center"
           style={{ gap: "6px", paddingRight: "12px", flexShrink: 0 }}
         >
           <Calendar 
@@ -610,10 +616,16 @@ const ChannelPage = () => {
           </span>
         </div>
 
-        {/* Video Count - COMPLETELY FIXED */}
+        {/* SEPARATOR LINE 2 */}
+        <div 
+          className="h-6 w-px bg-gray-300 dark:bg-gray-700"
+          style={{ margin: "0 12px", flexShrink: 0 }}
+        />
+
+        {/* Video Count */}
         <div
           key={`video-${videos.length}-${renderKey}`}
-          className="flex items-center border-r border-gray-200 dark:border-gray-700"
+          className="flex items-center"
           style={{ 
             gap: "8px", 
             paddingRight: "12px", 
@@ -647,12 +659,19 @@ const ChannelPage = () => {
           </span>
         </div>
 
-        {/* Shorts Count - COMPLETELY FIXED */}
+        {/* SEPARATOR LINE 3 */}
+        <div 
+          className="h-6 w-px bg-gray-300 dark:bg-gray-700"
+          style={{ margin: "0 12px", flexShrink: 0 }}
+        />
+
+        {/* Shorts Count */}
         <div
           key={`shorts-${shorts.length}-${renderKey}`}
           className="flex items-center"
           style={{ 
             gap: "8px", 
+            paddingRight: "4px",
             flexShrink: 0,
             minWidth: "fit-content"
           }}
@@ -687,7 +706,6 @@ const ChannelPage = () => {
     </div>
   </div>
 )}
-
 
           {/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
           {process.env.NODE_ENV === "development" && (
