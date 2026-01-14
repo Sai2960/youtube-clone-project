@@ -1351,6 +1351,26 @@ const VideoCall = ({
     console.log("✅ Cleanup complete");
   };
 
+  // ✅ Force video visibility by injecting CSS into document
+  // ✅ SIMPLIFIED: Just ensure video is visible
+  useEffect(() => {
+    if (!remoteVideoRef.current) return;
+
+    const video = remoteVideoRef.current;
+    video.style.position = "fixed";
+    video.style.top = "0";
+    video.style.left = "0";
+    video.style.width = "100vw";
+    video.style.height = "100vh";
+    video.style.zIndex = "2147483646";
+    video.style.objectFit = "cover";
+    video.style.visibility = "visible";
+    video.style.opacity = "1";
+    video.style.display = "block";
+
+    console.log("✅ Video forced to front");
+  }, []);
+
   // ✅ Initialize call function
   const initializeCall = async () => {
     console.log("\n🎥 ===== INITIALIZING CALL (COMPLETE) =====");
@@ -1503,17 +1523,12 @@ const VideoCall = ({
       console.log("🔧 Setting up event listeners...");
 
       webrtcServiceRef.current.setupEventListeners(
-        // Remote stream callback// Remote stream callback
+        // Remote stream callback
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
-          if (!remoteStream || !remoteStream.active) {
-            console.error("❌ Invalid stream received");
-            return;
-          }
-
-          if (!remoteVideoRef.current) {
-            console.error("❌ No video element");
+          if (!remoteStream.active || !remoteVideoRef.current) {
+            console.error("❌ Invalid stream or no video element");
             return;
           }
 
@@ -1523,46 +1538,58 @@ const VideoCall = ({
             console.log(`✅ Enabled ${track.kind}: ${track.label}`);
           });
 
+          // Attach stream to video - DO THIS ONCE ONLY
           const video = remoteVideoRef.current;
-
-          // Clear any existing stream first
-          if (video.srcObject) {
-            video.srcObject = null;
-          }
-
-          // Attach new stream
           video.srcObject = remoteStream;
           video.muted = true; // Start muted for autoplay policy
 
-          console.log("✅ Stream attached to video element");
+          // ✅ CRITICAL: Force video visibility
+          video.style.visibility = "visible";
+          video.style.opacity = "1";
+          video.style.display = "block";
+          video.style.position = "absolute";
+          video.style.top = "0";
+          video.style.left = "0";
+          video.style.width = "100%";
+          video.style.height = "100%";
+          video.style.zIndex = "5";
+          video.style.objectFit = "cover";
+          video.style.backgroundColor = "black";
+
+          console.log("✅ Video element visibility forced");
 
           try {
             await video.play();
-            console.log("✅ Video playing (muted)");
+            console.log("✅ Video playing");
 
-            // Unmute after successful play
-            setTimeout(() => {
-              video.muted = false;
-              video.volume = 1.0;
-              console.log("✅ Audio unmuted");
-            }, 100);
+            // Unmute AFTER play succeeds
+            video.muted = false;
+            video.volume = 1.0;
+
+            // Ensure still visible after play
+            video.style.visibility = "visible";
+            video.style.opacity = "1";
+            video.style.display = "block";
+
+            console.log("✅ Audio unmuted and visibility confirmed");
           } catch (err: any) {
-            console.error("❌ Autoplay failed:", err.name);
+            console.error("❌ Play failed:", err.name);
             if (err.name === "NotAllowedError") {
               setShowPlayButton(true);
             }
           }
 
-          // Update states
+          // Update states - THIS TRIGGERS RE-RENDER
           setHasRemoteStream(true);
           setConnectionStatus("connected");
           setShowPlayButton(false);
           setError(null);
+
+          // Mark ref too
           remoteStreamReceivedRef.current = true;
 
           console.log("===== REMOTE STREAM SETUP DONE =====\n");
         },
-
         // ICE candidate callback
         (candidate: RTCIceCandidate) => {
           const socket = getSocket();
@@ -1835,12 +1862,13 @@ const VideoCall = ({
       }}
     >
       {/* Remote Video */}
-      {/* Remote Video - FIXED */}
+      {/* Remote Video - SIMPLIFIED */}
       <video
         ref={remoteVideoRef}
         autoPlay
         playsInline
         muted={false}
+        className="video-call-remote"
         style={{
           position: "fixed",
           top: 0,
@@ -1848,17 +1876,8 @@ const VideoCall = ({
           width: "100vw",
           height: "100vh",
           objectFit: "cover",
-          zIndex: 1,
+          zIndex: 2147483646,
           backgroundColor: "black",
-          display: hasRemoteStream ? "block" : "none",
-        }}
-        onLoadedMetadata={() => {
-          console.log("📹 Remote video metadata loaded");
-          const v = remoteVideoRef.current;
-          if (v) {
-            v.style.display = "block";
-            v.play().catch(console.error);
-          }
         }}
         onPlay={() => {
           console.log("📹 Remote video playing");
@@ -1866,30 +1885,14 @@ const VideoCall = ({
           if (v) {
             v.muted = false;
             v.volume = 1.0;
+            v.style.visibility = "visible";
+            v.style.opacity = "1";
           }
-          setShowPlayButton(false);
         }}
       />
 
-      {/* Black background when no remote stream */}
-      {!hasRemoteStream && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "black",
-            zIndex: 0,
-          }}
-        />
-      )}
-
       {/* Connection Status Overlay - Hide when local video is ready */}
-      {/* Connection Status Overlay - Only show before ANY video is ready */}
       {connectionStatus === "connecting" &&
-        !hasRemoteStream &&
         !localVideoRef.current?.srcObject && (
           <div
             id="connecting-overlay"
@@ -1905,22 +1908,6 @@ const VideoCall = ({
           </div>
         )}
 
-      {/* Waiting for other person overlay */}
-      {connectionStatus === "waiting" && !hasRemoteStream && (
-        <div
-          id="waiting-overlay"
-          className="absolute inset-0 bg-black/60 flex items-center justify-center z-[999999] pointer-events-none"
-        >
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white text-xl">
-              Waiting for {remotePeerName}...
-            </p>
-            <p className="text-gray-400 text-sm mt-2">Your camera is ready</p>
-          </div>
-        </div>
-      )}
-
       {/* Local Video - Picture in Picture */}
       <div
         className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black pointer-events-auto"
@@ -1928,7 +1915,7 @@ const VideoCall = ({
           position: "fixed",
           bottom: "6rem",
           right: "1rem",
-          zIndex: 1000001,
+          zIndex: 10, // Changed from 1000001
           backgroundColor: "black",
         }}
       >
@@ -2010,7 +1997,7 @@ const VideoCall = ({
       )}
 
       {/* Control Bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[1000005] pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[20] pointer-events-none">
         <div className="flex items-center justify-center gap-2 sm:gap-4 pointer-events-auto">
           {/* Audio Toggle */}
           <button
