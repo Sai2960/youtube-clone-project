@@ -562,26 +562,22 @@ const ChannelPage = () => {
     }}
   >
     <div className="px-3 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
-      {/* Scrollable container */}
+      {/* ✅ FIXED: Changed to flex-wrap for mobile, no overflow hidden */}
       <div 
-        className="flex items-center overflow-x-auto scrollbar-hide"
-        style={{ gap: "12px" }}
+        className="flex flex-wrap items-center gap-3 sm:gap-4"
       >
         
         {/* Channel Name */}
         <div 
-          className="flex items-center border-r border-gray-200 dark:border-gray-700"
-          style={{ gap: "8px", paddingRight: "12px", flexShrink: 0 }}
+          className="flex items-center gap-2 pr-3 border-r border-gray-200 dark:border-gray-700"
         >
           <div 
-            className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
-            style={{ width: "28px", height: "28px", minWidth: "28px" }}
+            className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center w-7 h-7 min-w-[28px]"
           >
-            <User style={{ width: "14px", height: "14px", color: "white" }} />
+            <User className="w-3.5 h-3.5 text-white" />
           </div>
           <span 
-            className="font-semibold text-gray-900 dark:text-white"
-            style={{ fontSize: "13px", whiteSpace: "nowrap" }}
+            className="font-semibold text-gray-900 dark:text-white text-sm whitespace-nowrap"
           >
             {channel.channelname || channel.name || "Unknown"}
           </span>
@@ -589,16 +585,13 @@ const ChannelPage = () => {
 
         {/* Joined Date */}
         <div 
-          className="flex items-center border-r border-gray-200 dark:border-gray-700"
-          style={{ gap: "6px", paddingRight: "12px", flexShrink: 0 }}
+          className="flex items-center gap-1.5 pr-3 border-r border-gray-200 dark:border-gray-700"
         >
           <Calendar 
-            className="text-gray-400 dark:text-gray-500" 
-            style={{ width: "14px", height: "14px", minWidth: "14px" }} 
+            className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 min-w-[14px]" 
           />
           <span 
-            className="text-gray-600 dark:text-gray-400"
-            style={{ fontSize: "12px", whiteSpace: "nowrap" }}
+            className="text-gray-600 dark:text-gray-400 text-xs whitespace-nowrap"
           >
             Joined{" "}
             {channel.joinedon
@@ -610,74 +603,39 @@ const ChannelPage = () => {
           </span>
         </div>
 
-        {/* Video Count - COMPLETELY FIXED */}
+        {/* ✅ FIXED: Video Count - Full visibility */}
         <div
           key={`video-${videos.length}-${renderKey}`}
-          className="flex items-center border-r border-gray-200 dark:border-gray-700"
-          style={{ 
-            gap: "8px", 
-            paddingRight: "12px", 
-            flexShrink: 0,
-            minWidth: "fit-content"
-          }}
+          className="flex items-center gap-2 pr-3 border-r border-gray-200 dark:border-gray-700"
         >
           <div 
-            className="rounded bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center"
-            style={{ 
-              width: "24px", 
-              height: "24px", 
-              minWidth: "24px",
-              flexShrink: 0
-            }}
+            className="rounded bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center w-6 h-6 min-w-[24px]"
           >
             <Video 
-              className="text-blue-600 dark:text-blue-400" 
-              style={{ width: "14px", height: "14px" }} 
+              className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" 
             />
           </div>
           <span 
-            className="font-medium text-gray-700 dark:text-gray-300"
-            style={{ 
-              fontSize: "13px", 
-              whiteSpace: "nowrap",
-              minWidth: "max-content"
-            }}
+            className="font-medium text-gray-700 dark:text-gray-300 text-sm whitespace-nowrap"
           >
             {videos.length} {videos.length === 1 ? "video" : "videos"}
           </span>
         </div>
 
-        {/* Shorts Count - COMPLETELY FIXED */}
+        {/* ✅ FIXED: Shorts Count - Full visibility */}
         <div
           key={`shorts-${shorts.length}-${renderKey}`}
-          className="flex items-center"
-          style={{ 
-            gap: "8px", 
-            flexShrink: 0,
-            minWidth: "fit-content"
-          }}
+          className="flex items-center gap-2"
         >
           <div 
-            className="rounded bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center"
-            style={{ 
-              width: "24px", 
-              height: "24px", 
-              minWidth: "24px",
-              flexShrink: 0
-            }}
+            className="rounded bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center w-6 h-6 min-w-[24px]"
           >
             <Film 
-              className="text-red-600 dark:text-red-400" 
-              style={{ width: "14px", height: "14px" }} 
+              className="w-3.5 h-3.5 text-red-600 dark:text-red-400" 
             />
           </div>
           <span 
-            className="font-medium text-gray-700 dark:text-gray-300"
-            style={{ 
-              fontSize: "13px", 
-              whiteSpace: "nowrap",
-              minWidth: "max-content"
-            }}
+            className="font-medium text-gray-700 dark:text-gray-300 text-sm whitespace-nowrap"
           >
             {shorts.length} {shorts.length === 1 ? "short" : "shorts"}
           </span>
