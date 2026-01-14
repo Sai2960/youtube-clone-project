@@ -12505,3 +12505,15 @@ button span {
     transition: transform 100ms ease;
   }
 }
+/* Add to your globals.css or styles.css */
+.video-call-remote {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  object-fit: cover !important;
+  z-index: 2147483647 !important;
+  display: block !important;
+  visibility: visible !important;
+}

@@ -1351,49 +1351,51 @@ const VideoCall = ({
     console.log("✅ Cleanup complete");
   };
 
-// ✅ Force video visibility by injecting CSS into document
-useEffect(() => {
-  // Create style element
-  const styleEl = document.createElement('style');
-  styleEl.id = 'video-call-override';
-  styleEl.innerHTML = `
-    html.dark,
-    body {
-      background: transparent !important;
-    }
-    
-    .video-call-active {
+  // ✅ Force video visibility by injecting CSS into document
+  useEffect(() => {
+    // Create style element
+    const styleEl = document.createElement("style");
+    styleEl.id = "video-call-override";
+    styleEl.innerHTML = `
+    /* Force video visibility */
+    .video-call-remote,
+    video[class*="video-call-remote"] {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
-      z-index: 2147483647 !important;
-      background: black !important;
-    }
-    
-    .video-call-active .video-call-remote {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      z-index: 2147483647 !important;
+      object-fit: cover !important;
+      z-index: 999999 !important;
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
-      object-fit: cover !important;
+      background: black !important;
+    }
+    
+    /* Hide any overlays that might be blocking */
+    .dark-mode-overlay,
+    .app-overlay,
+    [class*="overlay"] {
+      display: none !important;
+    }
+    
+    /* Ensure container is visible */
+    div[class*="video-call"] {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 999998 !important;
+      background: black !important;
     }
   `;
-  
-  document.head.appendChild(styleEl);
-  document.documentElement.classList.add('video-call-active');
-  
-  return () => {
-    styleEl.remove();
-    document.documentElement.classList.remove('video-call-active');
-  };
-}, []);
+    document.head.appendChild(styleEl);
+    document.documentElement.classList.add("video-call-active");
+
+    return () => {
+      styleEl.remove();
+      document.documentElement.classList.remove("video-call-active");
+    };
+  }, []);
   // ✅ Initialize call function
   const initializeCall = async () => {
     console.log("\n🎥 ===== INITIALIZING CALL (COMPLETE) =====");
@@ -1872,7 +1874,18 @@ useEffect(() => {
       .padStart(2, "0")}`;
   };
   return (
-    <div className="video-call-container">
+    <div
+      className="fixed inset-0 w-screen h-screen bg-black z-[999999]"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "black",
+        zIndex: 999999,
+      }}
+    >
       {/* Remote Video */}
       <video
         ref={remoteVideoRef}
@@ -1880,6 +1893,18 @@ useEffect(() => {
         playsInline
         muted={false}
         className="video-call-remote"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          objectFit: "cover",
+          zIndex: 999999,
+          backgroundColor: "black",
+          display: "block",
+          visibility: "visible",
+        }}
         onPlay={() => {
           console.log("📹 Remote video onPlay fired");
           if (remoteVideoRef.current) {
@@ -1911,7 +1936,17 @@ useEffect(() => {
         )}
 
       {/* Local Video - Picture in Picture */}
-      <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black z-[1000001] pointer-events-auto">
+      <div
+        className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black pointer-events-auto"
+        style={{
+          position: "fixed",
+          bottom: "6rem",
+          right: "1rem",
+          zIndex: 1000001,
+          backgroundColor: "black",
+        }}
+      >
+        {" "}
         <video
           ref={localVideoRef}
           autoPlay
