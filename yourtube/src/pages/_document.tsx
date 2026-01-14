@@ -42,10 +42,26 @@ export default function CustomDocument() {
         />
 
         {/* External Scripts */}
+        {/* Conditionally load Razorpay - skip on call pages */}
         <script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          async
-        ></script>
+          dangerouslySetInnerHTML={{
+            __html: `
+      (function() {
+        // Don't load Razorpay on call pages to prevent z-index conflicts
+        if (window.location.pathname.startsWith('/call/')) {
+          console.log('⏭️ Skipping Razorpay on call page');
+          return;
+        }
+        
+        var script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.head.appendChild(script);
+        console.log('✅ Razorpay script loaded');
+      })();
+    `,
+          }}
+        />
 
         {/* Enhanced Theme Initialization - Prevents flash and hydration issues */}
         <script

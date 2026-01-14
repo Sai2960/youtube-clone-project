@@ -65,6 +65,39 @@ const CallPage = () => {
     }
   }, [mounted, roomId, callId, remoteName, initiator, user, socketReady]);
 
+  // Add this RIGHT AFTER line 73 (after the isReady useEffect)
+  // ✅ CRITICAL: Remove Razorpay overlay that blocks video
+  useEffect(() => {
+    if (!isReady) return;
+
+    console.log("🗑️ Removing Razorpay overlays from call page");
+
+    const removeRazorpayElements = () => {
+      // Remove all Razorpay containers
+      document
+        .querySelectorAll('.razorpay-container, [class*="razorpay"]')
+        .forEach((el) => {
+          (el as HTMLElement).style.display = "none";
+          console.log("   ✅ Hidden Razorpay element:", el.className);
+        });
+
+      // Remove Razorpay iframes
+      document.querySelectorAll('iframe[src*="razorpay"]').forEach((el) => {
+        (el as HTMLElement).style.display = "none";
+        console.log("   ✅ Hidden Razorpay iframe");
+      });
+    };
+
+    // Remove immediately
+    removeRazorpayElements();
+
+    // Keep checking every second in case it re-appears
+    const interval = setInterval(removeRazorpayElements, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isReady]);
   // Show loading screen until everything is ready
   if (!mounted || !isReady || !socketReady) {
     return (
