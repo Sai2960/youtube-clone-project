@@ -1679,36 +1679,14 @@ const VideoCall = ({
       socket.emit("join-room", roomId, user._id);
 
       if (isInitiator) {
-        console.log("👑 INITIATOR - waiting for both-users-ready signal...");
+        console.log("👑 INITIATOR - creating offer IMMEDIATELY");
 
-        await new Promise<void>((resolve, reject) => {
-          let resolved = false;
-
-          const safeResolve = () => {
-            if (!resolved) {
-              resolved = true;
-              resolve();
-            }
-          };
-
-          const timeout = setTimeout(() => {
-            console.error("❌ TIMEOUT: Receiver never joined after 90 seconds");
-            reject(new Error("Receiver did not join the call"));
-          }, 90000);
-
-          socket.once("both-users-ready", (data: any) => {
-            console.log("✅✅✅ Both users ready signal received!");
-            clearTimeout(timeout);
-            console.log("✅ Creating offer immediately");
-            safeResolve();
-          });
-        });
-
+        // ✅ CREATE OFFER INSTANTLY - Don't wait!
         console.log("📝 Creating offer...");
         const offer = await webrtcServiceRef.current.createOffer();
         console.log("📤 Sending offer...");
         socket.emit("offer", roomId, offer);
-        console.log("✅ Offer sent");
+        console.log("✅ Offer sent - receiver will get it when they join");
       }
 
       // Expose to window for debugging
