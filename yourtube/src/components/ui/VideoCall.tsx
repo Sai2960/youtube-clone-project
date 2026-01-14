@@ -1352,28 +1352,18 @@ const VideoCall = ({
   };
 
   // ✅ Force video visibility by injecting CSS into document
-  // ✅ Force video visibility by injecting CSS into document
   useEffect(() => {
     console.log("🎨 Injecting video visibility CSS");
 
-    // Create style element
     const styleEl = document.createElement("style");
     styleEl.id = "video-call-override";
     styleEl.innerHTML = `
-    /* CRITICAL: Force HTML/body to be transparent - THIS IS THE KEY FIX */
-    html, html.dark, html.light {
-      background: transparent !important;
-      background-color: transparent !important;
-    }
-    
-    body {
-      background: transparent !important;
-      background-color: transparent !important;
-    }
-    
-    /* Force video visibility */
-    .video-call-remote,
-    video[class*="video-call-remote"] {
+    /* Force video element to be visible */
+    #remote-video-element,
+    .video-call-remote {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
@@ -1381,42 +1371,22 @@ const VideoCall = ({
       height: 100vh !important;
       object-fit: cover !important;
       z-index: 2147483647 !important;
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
       background: black !important;
     }
     
-    /* Hide any overlays that might be blocking */
-    .dark-mode-overlay,
-    .app-overlay,
-    [class*="overlay"]:not([class*="video"]) {
-      display: none !important;
-    }
-    
     /* Ensure container is visible */
-    div[class*="video-call"] {
-      position: fixed !important;
-      inset: 0 !important;
+    .fixed.inset-0.w-screen.h-screen {
       z-index: 2147483646 !important;
       background: black !important;
     }
   `;
 
     document.head.appendChild(styleEl);
-    document.documentElement.classList.add("video-call-active");
-
-    // Also force inline styles as backup
-    document.documentElement.style.background = "transparent";
-    document.documentElement.style.backgroundColor = "transparent";
-    document.body.style.background = "transparent";
-    document.body.style.backgroundColor = "transparent";
 
     console.log("✅ Video visibility CSS injected");
 
     return () => {
       styleEl.remove();
-      document.documentElement.classList.remove("video-call-active");
     };
   }, []);
 
@@ -1573,82 +1543,93 @@ const VideoCall = ({
 
       webrtcServiceRef.current.setupEventListeners(
         // Remote stream callback
-     // Remote stream callback
-async (remoteStream: MediaStream) => {
-  console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
+        // Remote stream callback
+        async (remoteStream: MediaStream) => {
+          console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
-  if (!remoteStream.active || !remoteVideoRef.current) {
-    console.error("❌ Invalid stream or no video element");
-    return;
-  }
+          if (!remoteStream.active || !remoteVideoRef.current) {
+            console.error("❌ Invalid stream or no video element");
+            return;
+          }
 
-  // Enable all tracks
-  remoteStream.getTracks().forEach((track) => {
-    track.enabled = true;
-    console.log(`✅ Enabled ${track.kind}: ${track.label}`);
-  });
+          // Enable all tracks
+          remoteStream.getTracks().forEach((track) => {
+            track.enabled = true;
+            console.log(`✅ Enabled ${track.kind}: ${track.label}`);
+          });
 
-  // Attach stream to video
-  const video = remoteVideoRef.current;
-  video.srcObject = remoteStream;
-  
-  // 🔥 CRITICAL FIX: Start MUTED to allow autoplay
-  video.muted = true;
-  video.volume = 1.0;
+          // Attach stream to video
+          const video = remoteVideoRef.current;
+          video.srcObject = remoteStream;
 
-  // Force video visibility
-  video.style.visibility = "visible";
-  video.style.opacity = "1";
-  video.style.display = "block";
-  video.style.position = "absolute";
-  video.style.top = "0";
-  video.style.left = "0";
-  video.style.width = "100%";
-  video.style.height = "100%";
-  video.style.zIndex = "5";
-  video.style.objectFit = "cover";
-  video.style.backgroundColor = "black";
+          // 🔥 CRITICAL FIX: Start MUTED to allow autoplay
+          video.muted = true;
+          video.volume = 1.0;
 
-  console.log("✅ Video element visibility forced");
+          // Force video visibility
+          video.style.visibility = "visible";
+          video.style.opacity = "1";
+          video.style.display = "block";
+          video.style.position = "absolute";
+          video.style.top = "0";
+          video.style.left = "0";
+          video.style.width = "100%";
+          video.style.height = "100%";
+          video.style.zIndex = "5";
+          video.style.objectFit = "cover";
+          video.style.backgroundColor = "black";
 
-  // 🔥 TRIPLE ATTEMPT TO PLAY
-  let playAttempts = 0;
-  const maxAttempts = 3;
-  
-  const attemptPlay = async () => {
-    playAttempts++;
-    console.log(`🎬 Play attempt ${playAttempts}/${maxAttempts}`);
-    
-    try {
-      // Force play with muted video
-      await video.play();
-      console.log("✅ Video playing (muted)");
-      
-      // Wait 500ms then unmute
-      setTimeout(() => {
-        video.muted = false;
-        console.log("🔊 Video UNMUTED");
-      }, 500);
-      
-      return true;
-    } catch (err: any) {
-      console.error(`❌ Play attempt ${playAttempts} failed:`, err.name);
-      
-      if (playAttempts < maxAttempts) {
-        // Wait 1 second and retry
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return attemptPlay();
-      } else {
-        // All attempts failed - show play button
-        console.error("❌ All play attempts failed, showing manual play button");
-        setShowPlayButton(true);
-        return false;
-      }
-    }
-  };
-  
-  // Start play attempts
-  await attemptPlay();
+          console.log("✅ Video element visibility forced");
+          // 🔥 FORCE PLAY WITH MAXIMUM ATTEMPTS
+          let playAttempts = 0;
+          const maxAttempts = 5;
+
+          const attemptPlay = async () => {
+            playAttempts++;
+            console.log(`🎬 Play attempt ${playAttempts}/${maxAttempts}`);
+
+            try {
+              // Force video to be visible FIRST
+              video.style.display = "block";
+              video.style.visibility = "visible";
+              video.style.opacity = "1";
+              video.style.zIndex = "2147483647";
+
+              // Force play WITH audio
+              video.muted = false;
+              video.volume = 1.0;
+
+              await video.play();
+              console.log("✅ Video playing with audio!");
+
+              // Double-check it's still visible
+              setTimeout(() => {
+                video.style.display = "block";
+                video.style.visibility = "visible";
+                video.style.opacity = "1";
+              }, 100);
+
+              return true;
+            } catch (err: any) {
+              console.error(
+                `❌ Play attempt ${playAttempts} failed:`,
+                err.name
+              );
+
+              if (playAttempts < maxAttempts) {
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                return attemptPlay();
+              } else {
+                console.error(
+                  "❌ All play attempts failed, showing manual play button"
+                );
+                setShowPlayButton(true);
+                return false;
+              }
+            }
+          };
+
+          await attemptPlay();
 
           // Update states - THIS TRIGGERS RE-RENDER
           setHasRemoteStream(true);
@@ -1938,6 +1919,7 @@ async (remoteStream: MediaStream) => {
         autoPlay
         playsInline
         muted={false}
+        id="remote-video-element"
         className="video-call-remote"
         style={{
           position: "fixed",
@@ -1946,10 +1928,11 @@ async (remoteStream: MediaStream) => {
           width: "100vw",
           height: "100vh",
           objectFit: "cover",
-          zIndex: 999999,
+          zIndex: 2147483647,
           backgroundColor: "black",
           display: "block",
           visibility: "visible",
+          opacity: 1,
         }}
         onPlay={() => {
           console.log("📹 Remote video onPlay fired");
@@ -1957,10 +1940,23 @@ async (remoteStream: MediaStream) => {
             const v = remoteVideoRef.current;
             v.muted = false;
             v.volume = 1.0;
+            // Force visibility again
+            v.style.display = "block";
+            v.style.visibility = "visible";
+            v.style.opacity = "1";
+            v.style.zIndex = "2147483647";
           }
         }}
         onLoadedMetadata={() => {
           console.log("📹 Remote video metadata loaded");
+          // Force play and visibility
+          if (remoteVideoRef.current) {
+            const v = remoteVideoRef.current;
+            v.style.display = "block";
+            v.style.visibility = "visible";
+            v.style.opacity = "1";
+            v.play().catch((e) => console.error("Play error:", e));
+          }
         }}
       />
 
