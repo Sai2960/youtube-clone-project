@@ -124,6 +124,31 @@ const Home: NextPage = () => {
   const [backendCheckAttempts, setBackendCheckAttempts] = useState(0);
 
   useEffect(() => {
+    const applyTheme = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      const bgColor = isDark ? "#0f0f0f" : "#ffffff";
+
+      document.body.style.backgroundColor = bgColor;
+      document.documentElement.style.backgroundColor = bgColor;
+
+      const container = document.querySelector(".w-full.min-h-screen");
+      if (container instanceof HTMLElement) {
+        container.style.backgroundColor = bgColor;
+      }
+    };
+
+    applyTheme();
+
+    const observer = new MutationObserver(applyTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     let isMounted = true;
 
     const pingBackend = async (attempt = 1): Promise<void> => {
@@ -512,13 +537,15 @@ const Home: NextPage = () => {
           </div>
         )}
 
-      <div
-  ref={containerRef}
-  className="w-full bg-youtube-primary min-h-screen pb-16 lg:pb-0"
-  style={{
+        <div
+          ref={containerRef}
+          className="w-full min-h-screen pb-16 lg:pb-0"
+          style={{
+            backgroundColor: document.documentElement.classList.contains("dark")
+              ? "#0f0f0f"
+              : "#ffffff",
             position: "relative",
             width: "100%",
-            overflow: "visible",
           }}
         >
           {process.env.NODE_ENV === "development" && (
