@@ -196,13 +196,14 @@ export const checkSubscription = async (req, res, next) => {
       watchTimeLimit: user.watchTimeLimit,
     });
 
-    // Check if user has exceeded watch limit
+    // ✅ CRITICAL: Only block if FREE plan AND limit exceeded
     if (user.currentPlan === "FREE" && user.watchTimeLimit <= 0) {
       console.log("❌ Watch limit exceeded");
       return res.status(403).json({
         success: false,
         message: "Watch limit exceeded. Please upgrade your subscription.",
         code: "WATCH_LIMIT_EXCEEDED",
+        upgradeUrl: "/subscription", // ✅ Add upgrade URL
       });
     }
 
