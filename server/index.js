@@ -605,17 +605,29 @@ app.use("/subscription", (req, res, next) => {
   res.setTimeout(0);
   next();
 });
-// ✅ CRITICAL: Subscription routes FIRST with proper logging
+// ✅ CRITICAL: Subscription routes with enhanced logging and no timeout
 console.log("📋 Registering subscription routes...");
+
 app.use(
   "/subscription",
   (req, res, next) => {
-    console.log("🔍 Subscription route hit:", req.method, req.path);
+    console.log("\n🔍 ===== SUBSCRIPTION ROUTE HIT =====");
+    console.log("   Method:", req.method);
+    console.log("   Path:", req.path);
+    console.log("   Full URL:", req.originalUrl);
+    console.log("   Auth:", req.headers.authorization?.substring(0, 20));
+    console.log("=====================================\n");
+
+    // Remove timeouts
+    req.setTimeout(0);
+    res.setTimeout(0);
+
     next();
   },
   subscriptionroutes
 );
-console.log("✅ Subscription routes registered");
+
+console.log("✅ Subscription routes registered at /subscription");
 
 // Authentication and user management
 app.use("/auth", userroutes);

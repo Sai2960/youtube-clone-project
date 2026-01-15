@@ -47,6 +47,8 @@ const PLAN_DETAILS = {
 
 // Get all available plans
 export const getAvailablePlans = async (req, res) => {
+  console.log("\n📋 ===== GET AVAILABLE PLANS =====");
+
   try {
     const planDetails = {
       FREE: {
@@ -100,9 +102,13 @@ export const getAvailablePlans = async (req, res) => {
     };
 
     const plans = Object.values(planDetails);
+
+    console.log("✅ Sending plans:", plans.length);
+    console.log("===== GET PLANS COMPLETE =====\n");
+
     return res.status(200).json({ success: true, plans });
   } catch (error) {
-    console.error("Get plans error:", error);
+    console.error("❌ Get plans error:", error);
     return res
       .status(500)
       .json({ success: false, message: "Failed to fetch plans" });
