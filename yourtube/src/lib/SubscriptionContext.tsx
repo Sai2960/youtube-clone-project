@@ -84,7 +84,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   // ✅ IMPROVED: Enhanced fetchSubscription with better error handling and logging
   const fetchSubscription = useCallback(async () => {
     console.log("\n🔄 ===== FETCHING SUBSCRIPTION =====");
-    
+
     if (globalFetchState.isFetching) {
       console.log("⏸️ Fetch already in progress, skipping");
       return;
@@ -122,15 +122,23 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
       }
 
       console.log("📞 Calling /subscription/current API...");
-      const response = await axiosInstance.get("/subscription/current");
-      
+      console.log("📞 Calling /subscription/current API...");
+      const response = await axiosInstance.get("/subscription/current", {
+        timeout: 30000, // 30 second timeout
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
       console.log("✅ API Response:", response.data);
 
       if (response.data.success) {
-        const currentPlanValue = (response.data.currentPlan || "FREE").toUpperCase();
-        const watchLimit = response.data.watchTimeLimit !== undefined 
-          ? response.data.watchTimeLimit 
-          : 5;
+        const currentPlanValue = (
+          response.data.currentPlan || "FREE"
+        ).toUpperCase();
+        const watchLimit =
+          response.data.watchTimeLimit !== undefined
+            ? response.data.watchTimeLimit
+            : 5;
 
         const planDetails = {
           currentPlan: currentPlanValue,
@@ -227,64 +235,65 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   }, [watchTimeLimit]);
 
   // ✅ Check download permission function
-  const checkDownloadPermission = useCallback(async (): Promise<DownloadPermission> => {
-    try {
-      console.log("📥 Checking download permission...");
-      
-      const userString = localStorage.getItem("user");
-      if (!userString) {
+  const checkDownloadPermission =
+    useCallback(async (): Promise<DownloadPermission> => {
+      try {
+        console.log("📥 Checking download permission...");
+
+        const userString = localStorage.getItem("user");
+        if (!userString) {
+          return {
+            allowed: false,
+            reason: "Please login to download",
+            remainingDownloads: 0,
+          };
+        }
+
+        const user = JSON.parse(userString);
+        const userPlanType = subscription?.planType || "free";
+
+        // Premium users get unlimited downloads
+        if (isPremiumPlan(userPlanType)) {
+          console.log("✅ Premium user - unlimited downloads");
+          return {
+            allowed: true,
+            remainingDownloads: "unlimited",
+            reason: undefined,
+          };
+        }
+
+        // Check eligibility for free users
+        const response = await axiosInstance.get(
+          `/download/eligibility/${user._id}`
+        );
+
+        console.log("✅ Download eligibility:", response.data);
+
         return {
-          allowed: false,
-          reason: "Please login to download",
-          remainingDownloads: 0,
+          allowed: response.data.canDownload,
+          remainingDownloads: response.data.isPremium
+            ? "unlimited"
+            : response.data.maxDownloads - response.data.downloadsToday,
+          reason: response.data.canDownload ? undefined : "Daily limit reached",
+        };
+      } catch (error: any) {
+        console.error("❌ Download permission check error:", error);
+
+        // Fallback calculation
+        const userPlanType = subscription?.planType || "free";
+        const isPremium = isPremiumPlan(userPlanType);
+        const dailyDownloads = subscription?.dailyDownloads || 0;
+        const allowed = isPremium || dailyDownloads < 1;
+
+        return {
+          allowed,
+          remainingDownloads: isPremium
+            ? "unlimited"
+            : Math.max(0, 1 - dailyDownloads),
+          reason: allowed ? undefined : "Daily download limit reached",
         };
       }
-
-      const user = JSON.parse(userString);
-      const userPlanType = subscription?.planType || "free";
-
-      // Premium users get unlimited downloads
-      if (isPremiumPlan(userPlanType)) {
-        console.log("✅ Premium user - unlimited downloads");
-        return {
-          allowed: true,
-          remainingDownloads: "unlimited",
-          reason: undefined,
-        };
-      }
-
-      // Check eligibility for free users
-      const response = await axiosInstance.get(
-        `/download/eligibility/${user._id}`
-      );
-
-      console.log("✅ Download eligibility:", response.data);
-
-      return {
-        allowed: response.data.canDownload,
-        remainingDownloads: response.data.isPremium
-          ? "unlimited"
-          : response.data.maxDownloads - response.data.downloadsToday,
-        reason: response.data.canDownload ? undefined : "Daily limit reached",
-      };
-    } catch (error: any) {
-      console.error("❌ Download permission check error:", error);
-      
-      // Fallback calculation
-      const userPlanType = subscription?.planType || "free";
-      const isPremium = isPremiumPlan(userPlanType);
-      const dailyDownloads = subscription?.dailyDownloads || 0;
-      const allowed = isPremium || dailyDownloads < 1;
-
-      return {
-        allowed,
-        remainingDownloads: isPremium
-          ? "unlimited"
-          : Math.max(0, 1 - dailyDownloads),
-        reason: allowed ? undefined : "Daily download limit reached",
-      };
-    }
-  }, [subscription?.planType, subscription?.dailyDownloads]);
+    }, [subscription?.planType, subscription?.dailyDownloads]);
 
   // ✅ Manual refresh function
   const refreshSubscription = useCallback(async () => {
