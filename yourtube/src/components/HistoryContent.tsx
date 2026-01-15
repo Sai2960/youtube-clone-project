@@ -527,13 +527,14 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
             return (
               <Link key={item._id} href={`/shorts/${short._id}`}>
                 <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                  <div className="aspect-[9/16] rounded-xl overflow-hidden relative border border-gray-200 dark:border-gray-700">
+                  {/* Changed: Removed border, adjusted overflow and position */}
+                  <div className="aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-200 dark:bg-gray-800">
                     
                     {thumbnailUrl && !thumbnailFailed ? (
                       <img
                         src={thumbnailUrl}
                         alt={short.title || "Short"}
-                        className="absolute inset-0 w-full h-full object-cover bg-gray-100 dark:bg-gray-800"
+                        className="w-full h-full object-cover"
                         loading="lazy"
                         onError={(e) => {
                           console.error("❌ Thumbnail failed for:", shortId, thumbnailUrl);
@@ -544,7 +545,7 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
                     ) : (thumbnailFailed || !thumbnailUrl) && videoUrl && !videoFailed ? (
                       <video
                         src={videoUrl}
-                        className="absolute inset-0 w-full h-full object-cover bg-gray-100 dark:bg-gray-800"
+                        className="w-full h-full object-cover"
                         preload="metadata"
                         muted
                         playsInline
@@ -555,19 +556,16 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
                         onLoadedMetadata={() => console.log("✅ Video loaded:", shortId)}
                       />
                     ) : (
-                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                      <div className="w-full h-full flex items-center justify-center">
                         <div className="text-center text-gray-500 dark:text-gray-400 p-4">
                           <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           <p className="text-xs">No preview available</p>
-                          <p className="text-[10px] mt-1 opacity-70">
-                            {!thumbnailUrl && !videoUrl ? "Missing media" : "Failed to load"}
-                          </p>
                         </div>
                       </div>
                     )}
 
                     {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
+                    <div className="absolute inset-0 bg-transparent group-hover:bg-black/20 transition-all duration-200" />
 
                     {/* Play icon on hover */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
