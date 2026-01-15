@@ -124,8 +124,10 @@ export default function HistoryContent() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useUser();
-  const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(new Set());
-const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
+  const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(
+    new Set()
+  );
+  const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
 
   const tabs = ["All", "Videos", "Shorts"];
 
@@ -500,98 +502,124 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
           </div>
         ) : (
           <div className="space-y-6">
-       {/* Shorts Section */}
-{(activeTab === "All" || activeTab === "Shorts") &&
-  shortsInHistory.length > 0 && (
-    <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
-      <div className="flex items-center gap-2 mb-4 px-4 md:px-0">
-        <Play className="text-red-600 w-5 h-5" fill="currentColor" />
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Shorts
-        </h2>
-      </div>
+            {/* Shorts Section */}
+            {(activeTab === "All" || activeTab === "Shorts") &&
+              shortsInHistory.length > 0 && (
+                <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
+                  <div className="flex items-center gap-2 mb-4 px-4 md:px-0">
+                    <Play
+                      className="text-red-600 w-5 h-5"
+                      fill="currentColor"
+                    />
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Shorts
+                    </h2>
+                  </div>
 
-      <div className="w-full shorts-scroll-container">
-        <div className="flex gap-3 pb-2 px-4 md:px-0 min-w-min overflow-x-auto scrollbar-hide">
-          {shortsInHistory.slice(0, 10).map((item) => {
-            const short = item.shortid;
-            if (!short || typeof short !== "object") return null;
+                  <div className="w-full shorts-scroll-container">
+                    <div className="flex gap-3 pb-2 px-4 md:px-0 min-w-min overflow-x-auto scrollbar-hide">
+                      {shortsInHistory.slice(0, 10).map((item) => {
+                        const short = item.shortid;
+                        if (!short || typeof short !== "object") return null;
 
-            const thumbnailUrl = getShortThumbnail(short);
-            const videoUrl = getShortUrl(short);
-            const shortId = short._id;
-            
-            const thumbnailFailed = failedThumbnails.has(shortId);
-            const videoFailed = failedVideos.has(shortId);
+                        const thumbnailUrl = getShortThumbnail(short);
+                        const videoUrl = getShortUrl(short);
+                        const shortId = short._id;
 
-            return (
-              <Link key={item._id} href={`/shorts/${short._id}`}>
-                <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                  {/* Changed: Removed border, adjusted overflow and position */}
-                  <div className="aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-200 dark:bg-gray-800">
-                    
-                    {thumbnailUrl && !thumbnailFailed ? (
-                      <img
-                        src={thumbnailUrl}
-                        alt={short.title || "Short"}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          console.error("❌ Thumbnail failed for:", shortId, thumbnailUrl);
-                          setFailedThumbnails(prev => new Set(prev).add(shortId));
-                        }}
-                        onLoad={() => console.log("✅ Thumbnail loaded:", shortId)}
-                      />
-                    ) : (thumbnailFailed || !thumbnailUrl) && videoUrl && !videoFailed ? (
-                      <video
-                        src={videoUrl}
-                        className="w-full h-full object-cover"
-                        preload="metadata"
-                        muted
-                        playsInline
-                        onError={(e) => {
-                          console.error("❌ Video failed for:", shortId, videoUrl);
-                          setFailedVideos(prev => new Set(prev).add(shortId));
-                        }}
-                        onLoadedMetadata={() => console.log("✅ Video loaded:", shortId)}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="text-center text-gray-500 dark:text-gray-400 p-4">
-                          <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-xs">No preview available</p>
-                        </div>
-                      </div>
-                    )}
+                        const thumbnailFailed = failedThumbnails.has(shortId);
+                        const videoFailed = failedVideos.has(shortId);
 
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-transparent group-hover:bg-black/20 transition-all duration-200" />
+                        return (
+                          <Link key={item._id} href={`/shorts/${short._id}`}>
+                            <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
+                              {/* Fixed: Added border and proper background for visibility in dark mode */}
+                              <div className="aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                                {thumbnailUrl && !thumbnailFailed ? (
+                                  <img
+                                    src={thumbnailUrl}
+                                    alt={short.title || "Short"}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      console.error(
+                                        "❌ Thumbnail failed for:",
+                                        shortId,
+                                        thumbnailUrl
+                                      );
+                                      setFailedThumbnails((prev) =>
+                                        new Set(prev).add(shortId)
+                                      );
+                                    }}
+                                    onLoad={() =>
+                                      console.log(
+                                        "✅ Thumbnail loaded:",
+                                        shortId
+                                      )
+                                    }
+                                  />
+                                ) : (thumbnailFailed || !thumbnailUrl) &&
+                                  videoUrl &&
+                                  !videoFailed ? (
+                                  <video
+                                    src={videoUrl}
+                                    className="w-full h-full object-cover"
+                                    preload="metadata"
+                                    muted
+                                    playsInline
+                                    onError={(e) => {
+                                      console.error(
+                                        "❌ Video failed for:",
+                                        shortId,
+                                        videoUrl
+                                      );
+                                      setFailedVideos((prev) =>
+                                        new Set(prev).add(shortId)
+                                      );
+                                    }}
+                                    onLoadedMetadata={() =>
+                                      console.log("✅ Video loaded:", shortId)
+                                    }
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                    <div className="text-center text-gray-500 dark:text-gray-400 p-4">
+                                      <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                      <p className="text-xs">No preview</p>
+                                    </div>
+                                  </div>
+                                )}
 
-                    {/* Play icon on hover */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <div className="w-12 h-12 rounded-full bg-white/90 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                        <Play className="w-6 h-6 text-gray-900 dark:text-white ml-0.5" fill="currentColor" />
-                      </div>
+                                {/* Hover overlay - more visible in dark mode */}
+                                <div className="absolute inset-0 bg-transparent group-hover:bg-black/30 dark:group-hover:bg-black/40 transition-all duration-200" />
+
+                                {/* Play icon on hover - enhanced visibility */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                  <div className="w-14 h-14 rounded-full bg-white/95 dark:bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                                    <Play
+                                      className="w-7 h-7 text-gray-900 dark:text-black ml-0.5"
+                                      fill="currentColor"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Title and views - enhanced contrast */}
+                              <div className="mt-2 px-1">
+                                <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
+                                  {short.title || "Untitled Short"}
+                                </h3>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">
+                                  {short.views?.toLocaleString() || "0"} views
+                                </p>
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
-
-                  {/* Title and views */}
-                  <div className="mt-2 px-1">
-                    <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
-                      {short.title || "Untitled Short"}
-                    </h3>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {short.views?.toLocaleString() || "0"} views
-                    </p>
-                  </div>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  )}
+              )}
 
             {/* Videos History */}
             {videosInHistory.length > 0 && (
@@ -623,15 +651,15 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
                                   href={`/watch/${video._id}`}
                                   className="flex-shrink-0"
                                 >
-                                  <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative">
+                                  <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden relative border border-gray-200 dark:border-gray-700">
                                     <video
                                       src={getVideoUrl(video)}
                                       className="w-full h-full object-cover"
                                       preload="metadata"
                                     />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                       <Play
-                                        className="w-8 h-8 md:w-10 md:h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
+                                        className="w-10 h-10 md:w-12 md:h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
                                         fill="white"
                                       />
                                     </div>
@@ -705,7 +733,7 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                                        className="h-8 w-8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                                         onClick={(e) => e.preventDefault()}
                                       >
                                         <MoreVertical className="w-4 h-4" />
