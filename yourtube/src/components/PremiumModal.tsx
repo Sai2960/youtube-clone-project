@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// frontend/components/PremiumModal.tsx
 import React, { useState, useEffect } from 'react';
 import { X, Crown, Check, Loader2 } from 'lucide-react';
 
