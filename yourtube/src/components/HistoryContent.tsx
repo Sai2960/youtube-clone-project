@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import axiosInstance from "@/lib/axiosinstance";
 import { useUser } from "@/lib/AuthContext";
 
-// Types remain the same...
+// Types
 interface Video {
   _id: string;
   videotitle: string;
@@ -127,6 +127,9 @@ export default function HistoryContent() {
 
   const tabs = ["All", "Videos", "Shorts"];
 
+  // ============================================================================
+  // LOAD HISTORY
+  // ============================================================================
   useEffect(() => {
     if (user) {
       loadHistory();
@@ -174,24 +177,10 @@ export default function HistoryContent() {
       setLoading(false);
     }
   };
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 dark:border-gray-700 border-t-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">
-            Loading history...
-          </p>
-          {/* ✅ ADD DEBUG INFO */}
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-            {allHistory.length > 0
-              ? `Found ${allHistory.length} items`
-              : "Fetching data..."}
-          </p>
-        </div>
-      </div>
-    );
-  }
+
+  // ============================================================================
+  // FILTER HISTORY
+  // ============================================================================
   const filterHistory = () => {
     let filtered: HistoryItem[] = [...allHistory];
 
@@ -240,6 +229,9 @@ export default function HistoryContent() {
     setFilteredHistory(filtered);
   };
 
+  // ============================================================================
+  // ACTION HANDLERS
+  // ============================================================================
   const handleRemoveFromHistory = async (historyId: string) => {
     try {
       await axiosInstance.delete(`/history/item/${historyId}`, {
@@ -300,24 +292,21 @@ export default function HistoryContent() {
     }
   };
 
-  // Removed duplicate declaration of getShortUrl
-
+  // ============================================================================
+  // URL HELPERS
+  // ============================================================================
   const getShortThumbnail = (short: Short) => {
-    // ✅ If no thumbnail, return null immediately (don't try to construct URL)
     if (!short?.thumbnailUrl) {
-      console.log("⚠️ No thumbnail URL for short:", short?._id);
       return null;
     }
 
     const backendUrl =
       "https://youtube-clone-project-production.up.railway.app";
 
-    // ✅ Already a full URL
     if (short.thumbnailUrl.startsWith("http")) {
       return short.thumbnailUrl;
     }
 
-    // ✅ Ensure leading slash
     const path = short.thumbnailUrl.startsWith("/")
       ? short.thumbnailUrl
       : `/${short.thumbnailUrl}`;
@@ -326,21 +315,17 @@ export default function HistoryContent() {
   };
 
   const getShortUrl = (short: Short) => {
-    // ✅ If no video URL, return empty string
     if (!short?.videoUrl) {
-      console.log("⚠️ No video URL for short:", short?._id);
       return "";
     }
 
     const backendUrl =
       "https://youtube-clone-project-production.up.railway.app";
 
-    // ✅ Already a full URL
     if (short.videoUrl.startsWith("http")) {
       return short.videoUrl;
     }
 
-    // ✅ Ensure leading slash
     const path = short.videoUrl.startsWith("/")
       ? short.videoUrl
       : `/${short.videoUrl}`;
@@ -348,6 +333,27 @@ export default function HistoryContent() {
     return `${backendUrl}${path}`;
   };
 
+  const getVideoUrl = (vid: Video) => {
+    const backendUrl =
+      "https://youtube-clone-project-production.up.railway.app";
+
+    if (vid.filepath) {
+      if (vid.filepath.startsWith("http")) {
+        return vid.filepath;
+      }
+      return `${backendUrl}${vid.filepath}`;
+    }
+
+    if (vid.videofilename) {
+      return `${backendUrl}/uploads/videos/${vid.videofilename}`;
+    }
+
+    return "";
+  };
+
+  // ============================================================================
+  // FILTERED DATA
+  // ============================================================================
   const groupedHistory = groupHistoryByDate(filteredHistory);
   const shortsInHistory = filteredHistory.filter(
     (item) =>
@@ -362,6 +368,9 @@ export default function HistoryContent() {
       (!item.contentType || item.contentType === "video")
   );
 
+  // ============================================================================
+  // ✅ SINGLE LOADING CHECK (KEEP ONLY THIS ONE)
+  // ============================================================================
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -370,11 +379,19 @@ export default function HistoryContent() {
           <p className="text-gray-600 dark:text-gray-400 font-medium">
             Loading history...
           </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+            {allHistory.length > 0
+              ? `Found ${allHistory.length} items`
+              : "Fetching data..."}
+          </p>
         </div>
       </div>
     );
   }
 
+  // ============================================================================
+  // NOT LOGGED IN
+  // ============================================================================
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -398,9 +415,12 @@ export default function HistoryContent() {
     );
   }
 
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
   return (
     <div className="w-full min-h-screen bg-white dark:bg-[#0f0f0f] overflow-x-hidden">
-      {/* ✅ Mobile Header - Compact */}
+      {/* Mobile Header */}
       <div className="md:hidden px-4 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
           Watch history
@@ -411,7 +431,7 @@ export default function HistoryContent() {
         </p>
       </div>
 
-      {/* ✅ Desktop Header - Spacious */}
+      {/* Desktop Header */}
       <div className="hidden md:block max-w-7xl mx-auto px-6 pt-6 pb-4">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Watch history
@@ -463,7 +483,7 @@ export default function HistoryContent() {
           />
         </div>
 
-        {/* Content */}
+        {/* Empty State */}
         {filteredHistory.length === 0 ? (
           <div className="text-center py-20">
             <Clock className="w-24 h-24 mx-auto text-gray-300 dark:text-gray-700 mb-4" />
@@ -478,7 +498,7 @@ export default function HistoryContent() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Shorts Section - MOBILE FIXED */}
+            {/* Shorts Section */}
             {(activeTab === "All" || activeTab === "Shorts") &&
               shortsInHistory.length > 0 && (
                 <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -492,7 +512,6 @@ export default function HistoryContent() {
                     </h2>
                   </div>
 
-                  {/* ✅ MOBILE-OPTIMIZED SCROLL CONTAINER */}
                   <div className="w-full shorts-scroll-container">
                     <div className="flex gap-3 pb-2 px-4 md:px-0 min-w-min overflow-x-auto scrollbar-hide">
                       {shortsInHistory.slice(0, 10).map((item) => {
@@ -513,12 +532,7 @@ export default function HistoryContent() {
                                     className="w-full h-full object-cover"
                                     loading="lazy"
                                     onError={(e) => {
-                                      console.error(
-                                        "❌ Thumbnail failed for:",
-                                        short._id
-                                      );
                                       e.currentTarget.style.display = "none";
-                                      // ✅ Show video fallback
                                       const parent =
                                         e.currentTarget.parentElement;
                                       if (parent && videoUrl) {
@@ -538,24 +552,19 @@ export default function HistoryContent() {
                                     className="w-full h-full object-cover"
                                     preload="metadata"
                                     onError={(e) => {
-                                      console.error(
-                                        "❌ Video failed for:",
-                                        short._id
-                                      );
-                                      // ✅ Show placeholder
                                       const parent =
                                         e.currentTarget.parentElement;
                                       if (parent) {
                                         parent.innerHTML = `
-                    <div class="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400">
-                      <div class="text-center">
-                        <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                        <p class="text-xs">Unavailable</p>
-                      </div>
-                    </div>
-                  `;
+                                          <div class="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400">
+                                            <div class="text-center">
+                                              <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z"/>
+                                              </svg>
+                                              <p class="text-xs">Unavailable</p>
+                                            </div>
+                                          </div>
+                                        `;
                                       }
                                     }}
                                   />
@@ -610,30 +619,9 @@ export default function HistoryContent() {
                           const video = item.videoid;
                           if (!video || typeof video !== "object") return null;
 
-                          // ✅ FIXED: Proper video URL helper
-                          const getVideoUrl = (vid: Video) => {
-                            const backendUrl =
-                              "https://youtube-clone-project-production.up.railway.app";
-
-                            if (vid.filepath) {
-                              if (vid.filepath.startsWith("http")) {
-                                return vid.filepath;
-                              }
-                              return `${backendUrl}${vid.filepath}`;
-                            }
-
-                            if (vid.videofilename) {
-                              return `${backendUrl}/uploads/videos/${vid.videofilename}`;
-                            }
-
-                            return "";
-                          };
-
                           return (
                             <div key={item._id} className="mb-2 md:mb-3">
-                              {/* Video Card - Optimized for Mobile & Desktop */}
                               <div className="flex gap-2 md:gap-3 hover:bg-gray-50 dark:hover:bg-[#272727] p-2 rounded-lg transition-colors relative group">
-                                {/* Thumbnail - Left Side */}
                                 <Link
                                   href={`/watch/${video._id}`}
                                   className="flex-shrink-0"
@@ -653,24 +641,20 @@ export default function HistoryContent() {
                                   </div>
                                 </Link>
 
-                                {/* Video Info - Right Side */}
                                 <div className="flex-1 min-w-0 flex flex-col py-0.5 md:py-1">
                                   <Link
                                     href={`/watch/${video._id}`}
                                     className="flex-1"
                                   >
                                     <div className="space-y-0.5 md:space-y-1">
-                                      {/* Title */}
                                       <h3 className="font-medium text-sm md:text-base line-clamp-2 text-gray-900 dark:text-white leading-tight pr-6 md:pr-8">
                                         {video.videotitle}
                                       </h3>
 
-                                      {/* Channel */}
                                       <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
                                         {video.videochanel}
                                       </p>
 
-                                      {/* Views & Upload Time */}
                                       <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                                         <span>
                                           {video.views?.toLocaleString() || "0"}{" "}
@@ -694,7 +678,6 @@ export default function HistoryContent() {
                                         </span>
                                       </div>
 
-                                      {/* Watch Time */}
                                       <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
                                         <Clock className="w-3 h-3" />
                                         <span className="hidden sm:inline">
@@ -719,7 +702,6 @@ export default function HistoryContent() {
                                   </Link>
                                 </div>
 
-                                {/* Menu Button - Top Right */}
                                 <div className="absolute top-1 right-1 md:top-2 md:right-2">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
