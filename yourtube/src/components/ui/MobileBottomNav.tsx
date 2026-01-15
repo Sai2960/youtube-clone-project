@@ -1,4 +1,4 @@
-// src/components/ui/MobileBottomNav.tsx - FIXED LIGHT THEME
+// src/components/ui/MobileBottomNav.tsx - COMPLETE THEME FIX
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -10,97 +10,79 @@ const MobileBottomNav: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
   
-  // ✅ FIX: Better initial state detection
-  const [isDark, setIsDark] = useState(() => {
+  // ✅ SIMPLIFIED: Single source of truth from DOM
+  const [isDark, setIsDark] = useState(true);
+
+  // ✅ CRITICAL: Main theme detection function
+  const detectTheme = () => {
     if (typeof window === "undefined") return true;
     
-    // Check localStorage first (highest priority)
+    // Check multiple sources in priority order
     const stored = localStorage.getItem("theme");
-    if (stored === "light") return false;
-    if (stored === "dark") return true;
+    const dataTheme = document.documentElement.getAttribute("data-theme");
+    const htmlClass = document.documentElement.className;
     
-    // Check data-theme attribute
-    const dataTheme = document.documentElement?.getAttribute("data-theme");
-    if (dataTheme === "light") return false;
-    if (dataTheme === "dark") return true;
+    console.log("🔍 MobileNav detecting theme:", { stored, dataTheme, htmlClass });
     
-    // Check class
-    if (document.documentElement?.classList.contains("light")) return false;
-    if (document.documentElement?.classList.contains("dark")) return true;
+    // If ANY indicator says light, use light
+    const isLight = stored === "light" || 
+                    dataTheme === "light" || 
+                    htmlClass.includes("light");
     
-    // Default to dark
-    return true;
-  });
+    console.log("📱 MobileNav theme result:", isLight ? "LIGHT" : "DARK");
+    return !isLight; // Return isDark boolean
+  };
 
-  // ✅ FIX: Simplified and more reliable theme detection
+  // ✅ EFFECT 1: Initial detection + all watchers
   useEffect(() => {
-    const checkTheme = () => {
-      // Priority: localStorage > data-theme > class > default
-      const stored = localStorage.getItem("theme");
-      const dataTheme = document.documentElement.getAttribute("data-theme");
-      const hasLightClass = document.documentElement.classList.contains("light");
-      const hasDarkClass = document.documentElement.classList.contains("dark");
-      
-      console.log("🔍 MobileNav theme check:", {
-        stored,
-        dataTheme,
-        hasLightClass,
-        hasDarkClass
-      });
-      
-      if (stored === "light" || dataTheme === "light" || hasLightClass) {
-        setIsDark(false);
-        return;
-      }
-      
-      if (stored === "dark" || dataTheme === "dark" || hasDarkClass) {
-        setIsDark(true);
-        return;
-      }
-      
-      // Default to dark
-      setIsDark(true);
-    };
-
     // Initial check
-    checkTheme();
+    setIsDark(detectTheme());
 
-    // Check after small delay (for hydration)
-    const timeoutId = setTimeout(checkTheme, 100);
+    // Small delay for hydration
+    const initialTimer = setTimeout(() => {
+      setIsDark(detectTheme());
+    }, 100);
 
-    // Watch for DOM changes
-    const observer = new MutationObserver(checkTheme);
+    // Watch DOM mutations
+    const observer = new MutationObserver(() => {
+      setIsDark(detectTheme());
+    });
+    
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class", "data-theme", "style"],
     });
 
-    // Watch localStorage changes
+    // Watch localStorage
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "theme") {
-        checkTheme();
+        setIsDark(detectTheme());
       }
     };
     window.addEventListener("storage", handleStorage);
 
-    // Watch system preference
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    mediaQuery.addEventListener("change", checkTheme);
+    // Watch custom theme event
+    const handleThemeEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      console.log("🎨 MobileNav received theme event:", customEvent.detail);
+      setIsDark(customEvent.detail.theme === "dark");
+    };
+    window.addEventListener("themeChanged", handleThemeEvent);
 
+    // Cleanup
     return () => {
-      clearTimeout(timeoutId);
+      clearTimeout(initialTimer);
       observer.disconnect();
       window.removeEventListener("storage", handleStorage);
-      mediaQuery.removeEventListener("change", checkTheme);
+      window.removeEventListener("themeChanged", handleThemeEvent);
     };
   }, []);
 
-  // ✅ FIX: Re-check on route change
+  // ✅ EFFECT 2: Re-check on route change
   useEffect(() => {
     const handleRouteChange = () => {
-      const stored = localStorage.getItem("theme");
-      const dataTheme = document.documentElement.getAttribute("data-theme");
-      setIsDark(!(stored === "light" || dataTheme === "light"));
+      console.log("🔄 Route changed, re-detecting theme");
+      setIsDark(detectTheme());
     };
 
     router.events?.on("routeChangeComplete", handleRouteChange);
@@ -109,20 +91,20 @@ const MobileBottomNav: React.FC = () => {
     };
   }, [router.events]);
 
-  // ✅ CRITICAL: Listen for theme change events from applyTheme()
+  // ✅ EFFECT 3: Force re-check every 2 seconds (safety net)
   useEffect(() => {
-    const handleThemeChange = (e: CustomEvent) => {
-      console.log("🎨 MobileNav received theme change event:", e.detail.theme);
-      setIsDark(e.detail.theme === "dark");
-    };
+    const interval = setInterval(() => {
+      const newIsDark = detectTheme();
+      if (newIsDark !== isDark) {
+        console.log("⚠️ Theme mismatch detected, fixing...");
+        setIsDark(newIsDark);
+      }
+    }, 2000);
 
-    window.addEventListener("themeChanged", handleThemeChange as any);
-    return () => {
-      window.removeEventListener("themeChanged", handleThemeChange as any);
-    };
-  }, []);
+    return () => clearInterval(interval);
+  }, [isDark]);
 
-  // ✅ FIX: Updated colors with better contrast
+  // Theme colors
   const colors = {
     bg: isDark ? "#0f0f0f" : "#ffffff",
     border: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
@@ -131,6 +113,8 @@ const MobileBottomNav: React.FC = () => {
     textActive: isDark ? "#ffffff" : "#0f0f0f",
     textInactive: isDark ? "#aaaaaa" : "#606060",
   };
+
+  console.log("📱 MobileNav rendering with theme:", isDark ? "DARK" : "LIGHT", colors);
 
   const navItems = [
     {
