@@ -15,20 +15,20 @@ import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Public routes
+// ✅ Public routes - NO authentication required
 router.get('/plans', getAvailablePlans);
 
-// Protected routes (require authentication)
-router.post('/create-order', verifyToken, createSubscriptionOrder);
-router.post('/verify-payment', verifyToken, verifyPayment);
-router.get('/current', verifyToken, getCurrentSubscription);
-router.get('/check-watch-limit', verifyToken, checkWatchLimit);
-router.get('/transactions', verifyToken, getTransactionHistory);
-router.get('/user/:userId', verifyToken, getUserSubscription);
-router.post('/cancel', verifyToken, cancelSubscription); // ✅ Removed /:userId
-router.get('/analytics', verifyToken, getSubscriptionAnalytics);
-router.post('/enforce-watch-limit', verifyToken, enforceWatchTimeLimit);
+// ✅ Protected routes - Authentication required
+router.use(verifyToken); // Apply auth to all routes below
 
-
+router.post('/create-order', createSubscriptionOrder);
+router.post('/verify-payment', verifyPayment);
+router.get('/current', getCurrentSubscription);
+router.get('/check-watch-limit', checkWatchLimit);
+router.get('/transactions', getTransactionHistory);
+router.get('/user/:userId', getUserSubscription);
+router.post('/cancel', cancelSubscription);
+router.get('/analytics', getSubscriptionAnalytics);
+router.post('/enforce-watch-limit', enforceWatchTimeLimit);
 
 export default router;
