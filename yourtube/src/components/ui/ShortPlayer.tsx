@@ -2103,76 +2103,136 @@ const ShortPlayer: React.FC<ShortPlayerProps> = ({
                       </span>
                     </button>
 
-                    {/* Volume Slider Popup */}
-                    {showVolumeSlider && (
-                      <div
-                        className="absolute bottom-full mb-3 md:mb-4 rounded-2xl shadow-2xl border-2 right-0 p-4 md:p-5 lg:p-6"
-                        style={{
-                          backgroundColor: "rgba(31, 41, 55, 0.98)",
-                          backdropFilter: "blur(20px)",
-                          borderColor: "rgba(255, 255, 255, 0.15)",
-                          minWidth: "110px",
-                          boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="flex flex-col items-center gap-4 md:gap-5">
-                          <span className="text-lg md:text-xl lg:text-2xl font-bold text-white">
-                            {Math.round(volume * 100)}%
-                          </span>
+               {/* Volume Slider Popup - PREMIUM PROFESSIONAL STYLE */}
+{showVolumeSlider && (
+  <div
+    className="absolute bottom-full mb-3 md:mb-4 right-0 z-[100]"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <div
+      className="rounded-2xl shadow-2xl overflow-hidden"
+      style={{
+        background: 'linear-gradient(180deg, rgba(24, 24, 27, 0.98) 0%, rgba(9, 9, 11, 0.98) 100%)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+        minWidth: '80px',
+      }}
+    >
+      <div className="p-4 md:p-5 flex flex-col items-center gap-4">
+        {/* Volume Percentage Display */}
+        <div className="text-center">
+          <span 
+            className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent"
+            style={{ 
+              fontVariantNumeric: 'tabular-nums',
+              letterSpacing: '-0.02em'
+            }}
+          >
+            {Math.round(volume * 100)}%
+          </span>
+        </div>
 
-                          <div
-                            className="relative h-36 md:h-40 lg:h-44 w-3 md:w-4 rounded-full overflow-hidden"
-                            style={{ backgroundColor: "rgba(75, 85, 99, 0.8)" }}
-                          >
-                            <div
-                              className="absolute bottom-0 w-full rounded-full transition-all bg-gradient-to-t from-blue-600 via-blue-500 to-blue-400"
-                              style={{
-                                height: `${volume * 100}%`,
-                                boxShadow: "0 0 20px rgba(59, 130, 246, 0.6)",
-                              }}
-                            />
-                            <input
-                              type="range"
-                              min="0"
-                              max="1"
-                              step="0.01"
-                              value={volume}
-                              onChange={(e) =>
-                                handleVolumeChange(parseFloat(e.target.value))
-                              }
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                              style={
-                                {
-                                  WebkitAppearance: "slider-vertical",
-                                } as React.CSSProperties
-                              }
-                            />
-                          </div>
+        {/* Vertical Slider Track */}
+        <div className="relative h-32 md:h-40 w-2 md:w-2.5 flex items-end">
+          {/* Background Track */}
+          <div 
+            className="absolute inset-0 rounded-full overflow-hidden"
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+            }}
+          />
+          
+          {/* Active Fill */}
+          <div
+            className="absolute bottom-0 w-full rounded-full transition-all duration-150 ease-out"
+            style={{
+              height: `${volume * 100}%`,
+              background: 'linear-gradient(to top, #3b82f6 0%, #60a5fa 50%, #93c5fd 100%)',
+              boxShadow: '0 0 12px rgba(59, 130, 246, 0.5), 0 0 24px rgba(59, 130, 246, 0.3)',
+            }}
+          />
+          
+          {/* Slider Thumb */}
+          <div
+            className="absolute w-4 h-4 md:w-5 md:h-5 rounded-full left-1/2 -translate-x-1/2 transition-all duration-150 ease-out pointer-events-none"
+            style={{
+              bottom: `calc(${volume * 100}% - 8px)`,
+              background: 'linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(59, 130, 246, 0.5)',
+            }}
+          />
 
-                          <div className="flex flex-col gap-2 w-full">
-                            <button
-                              onClick={() => handleVolumeChange(1)}
-                              className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
-                            >
-                              100%
-                            </button>
-                            <button
-                              onClick={() => handleVolumeChange(0.5)}
-                              className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
-                            >
-                              50%
-                            </button>
-                            <button
-                              onClick={() => handleVolumeChange(0)}
-                              className="text-sm md:text-base transition-all px-4 py-2.5 rounded-lg text-center font-bold text-gray-300 hover:text-white hover:bg-gray-700/70"
-                            >
-                              Mute
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+          {/* Invisible Range Input */}
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volume}
+            onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            style={{
+              WebkitAppearance: 'slider-vertical',
+              writingMode: 'vertical-lr',
+              direction: 'rtl',
+            } as React.CSSProperties}
+          />
+        </div>
+
+        {/* Quick Volume Buttons */}
+        <div className="flex flex-col gap-1.5 w-full">
+          <button
+            onClick={() => handleVolumeChange(1)}
+            className={`px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all duration-150 ${
+              volume === 1 
+                ? 'bg-blue-600 text-white' 
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+            style={{
+              letterSpacing: '0.02em',
+            }}
+          >
+            100%
+          </button>
+          <button
+            onClick={() => handleVolumeChange(0.5)}
+            className={`px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all duration-150 ${
+              volume === 0.5 
+                ? 'bg-blue-600 text-white' 
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+            style={{
+              letterSpacing: '0.02em',
+            }}
+          >
+            50%
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMute(e);
+              setShowVolumeSlider(false);
+            }}
+            className={`px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all duration-150 ${
+              isMuted || volume === 0
+                ? 'bg-red-600/80 text-white' 
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+            style={{
+              letterSpacing: '0.02em',
+            }}
+          >
+            Mute
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
                   </div>
                 </div>
               </div>
