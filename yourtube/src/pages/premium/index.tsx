@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Crown, Check, Loader2, Zap, Star } from "lucide-react";
 import { useUser } from "@/lib/AuthContext";
@@ -35,10 +34,35 @@ const PremiumPage = () => {
   };
 
   const planFeatures: Record<string, string[]> = {
-    FREE: ["5 minutes watch time", "Basic features", "Ad-supported", "1 download per day"],
-    BRONZE: ["7 minutes watch time", "Basic features", "Reduced ads", "30 days validity", "Unlimited downloads"],
-    SILVER: ["10 minutes watch time", "Premium features", "No ads", "30 days validity", "Unlimited downloads", "HD quality"],
-    GOLD: ["Unlimited watch time", "All premium features", "No ads", "30 days validity", "Priority support", "Unlimited HD downloads"],
+    FREE: [
+      "5 minutes watch time",
+      "Basic features",
+      "Ad-supported",
+      "1 download per day",
+    ],
+    BRONZE: [
+      "7 minutes watch time",
+      "Basic features",
+      "Reduced ads",
+      "30 days validity",
+      "Unlimited downloads",
+    ],
+    SILVER: [
+      "10 minutes watch time",
+      "Premium features",
+      "No ads",
+      "30 days validity",
+      "Unlimited downloads",
+      "HD quality",
+    ],
+    GOLD: [
+      "Unlimited watch time",
+      "All premium features",
+      "No ads",
+      "30 days validity",
+      "Priority support",
+      "Unlimited HD downloads",
+    ],
   };
 
   useEffect(() => {
@@ -79,89 +103,101 @@ const PremiumPage = () => {
     }
   };
 
-const handleSubscribe = async (plan: any) => {
-  if (plan.id === "FREE") return;
-  if (!user) {
-    alert("Please login to subscribe");
-    return;
-  }
-
-  setSelectedPlan(plan.id);
-  setProcessing(true);
-
-  try {
-    // Step 1: Create order
-    const orderResponse = await axiosInstance.post("/subscription/create-order", {
-      userId: user._id,
-      plan: plan.id,
-    });
-
-    if (!orderResponse.data.success) {
-      throw new Error(orderResponse.data.message || "Failed to create order");
+  const handleSubscribe = async (plan: any) => {
+    if (plan.id === "FREE") return;
+    if (!user) {
+      alert("Please login to subscribe");
+      return;
     }
 
-    const { order } = orderResponse.data;
+    setSelectedPlan(plan.id);
+    setProcessing(true);
 
-    // ✅ Step 2: Validate Razorpay key
-    const razorpayKey = order.razorpayKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-
-    if (!razorpayKey) {
-      console.error('❌ Razorpay key not configured');
-      throw new Error('Payment service configuration error');
-    }
-
-    // Step 3: Initialize Razorpay
-    const options = {
-      key: razorpayKey, // ✅ Validated key
-      amount: order.amount * 100,
-      currency: order.currency,
-      name: "YouTube Clone Premium",
-      description: `${plan.name} Plan Subscription`,
-      order_id: order.orderId,
-      handler: async function (response: any) {
-        try {
-          const verifyResponse = await axiosInstance.post("/subscription/verify-payment", {
-            userId: user._id,
-            orderId: response.razorpay_order_id,
-            paymentId: response.razorpay_payment_id,
-            signature: response.razorpay_signature,
-            plan: plan.id,
-          });
-
-          if (verifyResponse.data.success) {
-            alert("🎉 Payment successful! Subscription active.");
-            await refreshSubscription();
-            window.location.href = "/";
-          } else {
-            throw new Error(verifyResponse.data.message || "Verification failed");
-          }
-        } catch (err: any) {
-          console.error("Verification error:", err);
-          alert(err.response?.data?.message || "Payment verification failed. Please contact support.");
+    try {
+      // Step 1: Create order
+      const orderResponse = await axiosInstance.post(
+        "/subscription/create-order",
+        {
+          userId: user._id,
+          plan: plan.id,
         }
-      },
-      prefill: { 
-        name: user.name, 
-        email: user.email 
-      },
-      theme: { color: "#EF4444" },
-      modal: {
-        ondismiss: () => {
-          setProcessing(false);
-          setSelectedPlan(null);
-        }
+      );
+
+      if (!orderResponse.data.success) {
+        throw new Error(orderResponse.data.message || "Failed to create order");
       }
-    };
 
-    const razorpay = new window.Razorpay(options);
-    razorpay.open();
-  } catch (err: any) {
-    console.error("Payment error:", err);
-    alert(err.message || "Payment initialization failed. Please try again.");
-    setProcessing(false);
-    setSelectedPlan(null);
-  }
-};
+      const { order } = orderResponse.data;
+
+      // ✅ Step 2: Validate Razorpay key
+      const razorpayKey =
+        order.razorpayKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+      if (!razorpayKey) {
+        console.error("❌ Razorpay key not configured");
+        throw new Error("Payment service configuration error");
+      }
+
+      // Step 3: Initialize Razorpay
+      const options = {
+        key: razorpayKey, // ✅ Validated key
+        amount: order.amount * 100,
+        currency: order.currency,
+        name: "YouTube Clone Premium",
+        description: `${plan.name} Plan Subscription`,
+        order_id: order.orderId,
+        handler: async function (response: any) {
+          try {
+            const verifyResponse = await axiosInstance.post(
+              "/subscription/verify-payment",
+              {
+                userId: user._id,
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+                plan: plan.id,
+              }
+            );
+
+            if (verifyResponse.data.success) {
+              alert("🎉 Payment successful! Subscription active.");
+              await refreshSubscription();
+              window.location.href = "/";
+            } else {
+              throw new Error(
+                verifyResponse.data.message || "Verification failed"
+              );
+            }
+          } catch (err: any) {
+            console.error("Verification error:", err);
+            alert(
+              err.response?.data?.message ||
+                "Payment verification failed. Please contact support."
+            );
+          }
+        },
+        prefill: {
+          name: user.name,
+          email: user.email,
+        },
+        theme: { color: "#EF4444" },
+        modal: {
+          ondismiss: () => {
+            setProcessing(false);
+            setSelectedPlan(null);
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      alert(err.message || "Payment initialization failed. Please try again.");
+      setProcessing(false);
+      setSelectedPlan(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -188,7 +224,7 @@ const handleSubscribe = async (plan: any) => {
         </div>
 
         {/* Active Subscription Banner */}
-        {subscription && subscription.planType !== 'free' && (
+        {subscription && subscription.planType !== "free" && (
           <div className="mb-8 p-6 bg-youtube-secondary border-2 border-green-500 rounded-xl">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -200,22 +236,24 @@ const handleSubscribe = async (plan: any) => {
                     Active {subscription.planType?.toUpperCase()} Subscription
                   </h3>
                   <p className="text-sm text-youtube-secondary">
-                    {subscription.planName || 'GOLD Plan'}
+                    {subscription.planName || "GOLD Plan"}
                   </p>
                   <p className="text-xs text-youtube-secondary mt-1">
-                    Started: {subscription.startDate 
+                    Started:{" "}
+                    {subscription.startDate
                       ? new Date(subscription.startDate).toLocaleDateString()
-                      : '8 October 2025'}
+                      : "8 October 2025"}
                   </p>
                   <p className="text-xs text-youtube-secondary">
-                    Expires: {subscription.endDate 
+                    Expires:{" "}
+                    {subscription.endDate
                       ? new Date(subscription.endDate).toLocaleDateString()
-                      : '7 November 2025'}
+                      : "7 November 2025"}
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => window.location.href = '/subscription'}
+                onClick={() => (window.location.href = "/subscription")}
                 className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
               >
                 Cancel Subscription
@@ -228,15 +266,16 @@ const handleSubscribe = async (plan: any) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {plans.map((plan: any) => {
             const Icon = planIcons[plan.id as keyof typeof planIcons] || Star;
-            const currentPlanType = subscription?.planType?.toUpperCase() || 'FREE';
+            const currentPlanType =
+              subscription?.planType?.toUpperCase() || "FREE";
             const isCurrent = currentPlanType === plan.id;
 
             return (
               <div
                 key={plan.id}
                 className={`relative bg-youtube-secondary rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 border-2 ${
-                  isCurrent 
-                    ? "border-green-500" 
+                  isCurrent
+                    ? "border-green-500"
                     : plan.id === "GOLD"
                     ? "border-yellow-500"
                     : "border-youtube"
@@ -248,7 +287,7 @@ const handleSubscribe = async (plan: any) => {
                     BEST VALUE
                   </div>
                 )}
-                
+
                 {/* Current Plan Badge */}
                 {isCurrent && (
                   <div className="absolute top-0 left-0 bg-green-500 text-white px-4 py-1 text-xs font-bold rounded-br-lg z-10">
@@ -257,26 +296,40 @@ const handleSubscribe = async (plan: any) => {
                 )}
 
                 {/* Plan Header */}
-                <div className={`bg-gradient-to-br ${planColors[plan.id]} p-6 text-white relative overflow-hidden`}>
+                <div
+                  className={`bg-gradient-to-br ${
+                    planColors[plan.id]
+                  } p-6 text-white relative overflow-hidden`}
+                >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
                   <Icon className="w-10 h-10 mb-3 relative z-10" />
-                  <h2 className="text-2xl font-bold mb-2 relative z-10">{plan.name}</h2>
-                  <div className="text-3xl font-bold relative z-10">₹{plan.price}</div>
-                  {plan.id !== 'FREE' && (
-                    <div className="text-sm opacity-90 mt-1 relative z-10">30 days validity</div>
+                  <h2 className="text-2xl font-bold mb-2 relative z-10">
+                    {plan.name}
+                  </h2>
+                  <div className="text-3xl font-bold relative z-10">
+                    ₹{plan.price}
+                  </div>
+                  {plan.id !== "FREE" && (
+                    <div className="text-sm opacity-90 mt-1 relative z-10">
+                      30 days validity
+                    </div>
                   )}
                 </div>
 
                 {/* Features */}
                 <div className="p-6">
                   <ul className="space-y-3 mb-6">
-                    {planFeatures[plan.id as keyof typeof planFeatures].map((feature, i) => (
-                      <li key={i} className="flex items-start">
-                        <Check className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <span className="text-youtube-secondary text-sm">{feature}</span>
-                      </li>
-                    ))}
+                    {planFeatures[plan.id as keyof typeof planFeatures].map(
+                      (feature, i) => (
+                        <li key={i} className="flex items-start">
+                          <Check className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                          <span className="text-youtube-secondary text-sm">
+                            {feature}
+                          </span>
+                        </li>
+                      )
+                    )}
                   </ul>
 
                   {/* Subscribe Button */}
@@ -288,7 +341,9 @@ const handleSubscribe = async (plan: any) => {
                         ? "bg-youtube-hover text-youtube-secondary cursor-not-allowed"
                         : plan.id === "FREE"
                         ? "bg-youtube-hover text-youtube-secondary cursor-not-allowed"
-                        : `bg-gradient-to-r ${planColors[plan.id]} text-white hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1`
+                        : `bg-gradient-to-r ${
+                            planColors[plan.id]
+                          } text-white hover:opacity-90 hover:shadow-lg transform hover:-translate-y-1`
                     }`}
                   >
                     {processing && selectedPlan === plan.id ? (
@@ -322,7 +377,8 @@ const handleSubscribe = async (plan: any) => {
                 What are the watch time limits?
               </h3>
               <p className="text-youtube-secondary ml-5">
-                FREE: 5 minutes | BRONZE: 7 minutes | SILVER: 10 minutes | GOLD: Unlimited
+                FREE: 5 minutes | BRONZE: 7 minutes | SILVER: 10 minutes | GOLD:
+                Unlimited
               </p>
             </div>
             <div>
@@ -331,7 +387,8 @@ const handleSubscribe = async (plan: any) => {
                 Can I cancel my subscription anytime?
               </h3>
               <p className="text-youtube-secondary ml-5">
-                Yes, you can cancel your subscription at any time. You'll be moved back to the FREE plan immediately.
+                Yes, you can cancel your subscription at any time. You'll be
+                moved back to the FREE plan immediately.
               </p>
             </div>
             <div>
@@ -340,7 +397,8 @@ const handleSubscribe = async (plan: any) => {
                 Can I upgrade my plan?
               </h3>
               <p className="text-youtube-secondary ml-5">
-                Yes! You can upgrade from BRONZE to SILVER or GOLD, or from SILVER to GOLD at any time.
+                Yes! You can upgrade from BRONZE to SILVER or GOLD, or from
+                SILVER to GOLD at any time.
               </p>
             </div>
             <div>
@@ -349,7 +407,8 @@ const handleSubscribe = async (plan: any) => {
                 What payment methods do you accept?
               </h3>
               <p className="text-youtube-secondary ml-5">
-                We accept all major credit/debit cards, UPI, net banking, and wallets via Razorpay.
+                We accept all major credit/debit cards, UPI, net banking, and
+                wallets via Razorpay.
               </p>
             </div>
           </div>
@@ -358,9 +417,5 @@ const handleSubscribe = async (plan: any) => {
     </div>
   );
 };
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  return {
-    props: {}, // Client-side handles user history data
-  };
-};
+
 export default PremiumPage;
