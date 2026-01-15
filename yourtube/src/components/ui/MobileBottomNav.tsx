@@ -58,8 +58,10 @@ const MobileBottomNav: React.FC = () => {
     <>
       {/* Bottom Navigation - FIXED POSITIONING */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-youtube-primary border-t border-youtube"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{
+          backgroundColor: "#0f0f0f",
+          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
@@ -82,7 +84,7 @@ const MobileBottomNav: React.FC = () => {
                     <div className="relative">
                       <Icon
                         size={28}
-                        className="text-youtube-primary"
+                        className="text-white"
                         strokeWidth={1.5}
                       />
                     </div>
@@ -100,8 +102,8 @@ const MobileBottomNav: React.FC = () => {
                         viewBox="0 0 24 24"
                         className={`w-6 h-6 ${
                           active
-                            ? "fill-youtube-primary"
-                            : "fill-none stroke-youtube-primary stroke-2"
+                            ? "fill-white"
+                            : "fill-none stroke-white stroke-2"
                         }`}
                       >
                         <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
@@ -109,9 +111,7 @@ const MobileBottomNav: React.FC = () => {
                     </div>
                     <span
                       className={`text-[10px] font-medium ${
-                        active
-                          ? "text-youtube-primary"
-                          : "text-youtube-secondary"
+                        active ? "text-white" : "text-gray-400"
                       }`}
                     >
                       {item.label}
@@ -127,15 +127,13 @@ const MobileBottomNav: React.FC = () => {
                 <div className="flex flex-col items-center justify-center gap-0.5 py-1 px-2 min-w-[64px]">
                   <Icon
                     size={24}
-                    className={
-                      active ? "text-youtube-primary" : "text-youtube-secondary"
-                    }
+                    className={active ? "text-white" : "text-gray-400"}
                     strokeWidth={2}
                     fill={active && item.filled ? "currentColor" : "none"}
                   />
                   <span
                     className={`text-[10px] font-medium ${
-                      active ? "text-youtube-primary" : "text-youtube-secondary"
+                      active ? "text-white" : "text-gray-400"
                     }`}
                   >
                     {item.label}
