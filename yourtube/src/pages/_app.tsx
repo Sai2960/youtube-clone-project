@@ -625,7 +625,7 @@ function AppContent({ Component, pageProps }: AppProps) {
         <title>YouTube Clone</title>
       </Head>
 
-      <div className="flex flex-col h-screen overflow-hidden">
+      <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-[#0f0f0f]">
         <Header onMenuClick={openMobileSidebar} />
 
         <div className="flex flex-1 overflow-hidden">
@@ -634,7 +634,8 @@ function AppContent({ Component, pageProps }: AppProps) {
             onMobileClose={closeMobileSidebar}
           />
 
-          <main className="flex-1 overflow-y-auto bg-youtube-primary pb-16 md:pb-0">
+          {/* ✅ FIXED: Direct theme-aware classes instead of CSS variable */}
+          <main className="flex-1 overflow-y-auto bg-white dark:bg-[#0f0f0f] pb-16 md:pb-0">
             <Component {...pageProps} />
           </main>
         </div>
