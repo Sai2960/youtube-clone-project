@@ -524,18 +524,16 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
             const thumbnailFailed = failedThumbnails.has(shortId);
             const videoFailed = failedVideos.has(shortId);
 
-            console.log(`Short ${shortId}:`, { thumbnailUrl, videoUrl, thumbnailFailed, videoFailed });
-
             return (
               <Link key={item._id} href={`/shorts/${short._id}`}>
                 <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                  <div className="aspect-[9/16] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden relative">
+                  <div className="aspect-[9/16] rounded-xl overflow-hidden relative border border-gray-200 dark:border-gray-700">
                     
                     {thumbnailUrl && !thumbnailFailed ? (
                       <img
                         src={thumbnailUrl}
                         alt={short.title || "Short"}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover bg-gray-100 dark:bg-gray-800"
                         loading="lazy"
                         onError={(e) => {
                           console.error("❌ Thumbnail failed for:", shortId, thumbnailUrl);
@@ -546,7 +544,7 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
                     ) : (thumbnailFailed || !thumbnailUrl) && videoUrl && !videoFailed ? (
                       <video
                         src={videoUrl}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover bg-gray-100 dark:bg-gray-800"
                         preload="metadata"
                         muted
                         playsInline
@@ -557,7 +555,7 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
                         onLoadedMetadata={() => console.log("✅ Video loaded:", shortId)}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
                         <div className="text-center text-gray-500 dark:text-gray-400 p-4">
                           <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           <p className="text-xs">No preview available</p>
@@ -568,15 +566,18 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
                       </div>
                     )}
 
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 pointer-events-none" />
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
 
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                    {/* Play icon on hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <div className="w-12 h-12 rounded-full bg-white/90 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center">
                         <Play className="w-6 h-6 text-gray-900 dark:text-white ml-0.5" fill="currentColor" />
                       </div>
                     </div>
                   </div>
 
+                  {/* Title and views */}
                   <div className="mt-2 px-1">
                     <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
                       {short.title || "Untitled Short"}
