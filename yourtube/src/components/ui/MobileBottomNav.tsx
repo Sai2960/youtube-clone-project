@@ -9,7 +9,13 @@ import { useUser } from "@/lib/AuthContext";
 const MobileBottomNav: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") return true; // SSR default to dark
+    const stored = localStorage.getItem("theme");
+    const dataTheme = document.documentElement?.getAttribute("data-theme");
+    // Default to dark unless explicitly light
+    return !(stored === "light" || dataTheme === "light");
+  });
 
   // Detect dark mode
   useEffect(() => {
