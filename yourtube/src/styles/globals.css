@@ -12541,3 +12541,25 @@ html.light body,
 html.light #__next > div {
   background-color: #ffffff !important;
 }
+/* 🔴 CRITICAL: Force theme backgrounds */
+.bg-youtube-primary {
+  background-color: var(--bg-primary) !important;
+}
+
+/* Force dark mode backgrounds */
+html.dark,
+html.dark body,
+html.dark #__next,
+html.dark .bg-youtube-primary {
+  background-color: #0f0f0f !important;
+  color: #f1f1f1 !important;
+}
+
+/* Force light mode backgrounds */
+html.light,
+html.light body,
+html.light #__next,
+html.light .bg-youtube-primary {
+  background-color: #ffffff !important;
+  color: #0f0f0f !important;
+}

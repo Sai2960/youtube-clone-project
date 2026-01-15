@@ -512,10 +512,10 @@ const Home: NextPage = () => {
           </div>
         )}
 
-        <div
-          ref={containerRef}
-className="w-full bg-white dark:bg-gray-900 min-h-screen pb-16 lg:pb-0"
-          style={{
+      <div
+  ref={containerRef}
+  className="w-full bg-youtube-primary min-h-screen pb-16 lg:pb-0"
+  style={{
             position: "relative",
             width: "100%",
             overflow: "visible",
