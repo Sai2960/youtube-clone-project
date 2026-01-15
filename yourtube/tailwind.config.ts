@@ -71,14 +71,6 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
 
-      // ✅ Background Color Extensions
-      backgroundColor: {
-        "youtube-primary": "rgb(255 255 255 / <alpha-value>)",
-        "youtube-secondary": "rgb(249 249 249 / <alpha-value>)",
-        "youtube-tertiary": "rgb(242 242 242 / <alpha-value>)",
-        "youtube-hover": "rgb(0 0 0 / 0.05)",
-      },
-
       // ✅ Text Color Extensions
       textColor: {
         "youtube-primary": "var(--text-primary)",
