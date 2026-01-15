@@ -20,10 +20,13 @@ interface Plan {
   watchTime: number;
   features: string[];
 }
-
 const SubscriptionPage = () => {
   const { user } = useUser();
-  const { subscription, refreshSubscription, loading: subscriptionLoading } = useSubscription();
+  const {
+    subscription,
+    refreshSubscription,
+    loading: subscriptionLoading,
+  } = useSubscription();
   const router = useRouter();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,11 +39,11 @@ const SubscriptionPage = () => {
   // ✅ Load Razorpay script
   const loadRazorpayScript = useCallback(() => {
     return new Promise<boolean>((resolve) => {
-      if (typeof window !== 'undefined' && window.Razorpay) {
+      if (typeof window !== "undefined" && window.Razorpay) {
         resolve(true);
         return;
       }
-      
+
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
       script.onload = () => resolve(true);
@@ -48,16 +51,27 @@ const SubscriptionPage = () => {
       document.body.appendChild(script);
     });
   }, []);
-
-  // ✅ Fetch plans with error handling
+  // ✅ Fetch plans with improved error handling and timeout
   const fetchPlans = useCallback(async () => {
     try {
       setError(null);
       console.log("📋 Fetching subscription plans...");
-      
-      const response = await axiosInstance.get("/subscription/plans");
+
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+      const response = await axiosInstance.get("/subscription/plans", {
+        signal: controller.signal,
+        timeout: 25000,
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
+
+      clearTimeout(timeoutId);
       console.log("📋 Plans response:", response.data);
-      
+
       if (response.data.success && response.data.plans) {
         // Filter out FREE plan for purchase options
         const paidPlans = response.data.plans.filter(
@@ -70,33 +84,56 @@ const SubscriptionPage = () => {
       }
     } catch (err: any) {
       console.error("❌ Error fetching plans:", err);
-      setError("Failed to load plans. Please refresh the page.");
-      
+
+      // Better error message
+      const errorMsg =
+        err.code === "ECONNABORTED" || err.name === "AbortError"
+          ? "Request timed out. Please check your connection and try again."
+          : "Failed to load plans. Please refresh the page.";
+
+      setError(errorMsg);
+
       // Fallback plans
       setPlans([
-        { 
-          id: "BRONZE", 
-          name: "BRONZE", 
-          price: 10, 
-          duration: 30, 
+        {
+          id: "BRONZE",
+          name: "BRONZE",
+          price: 10,
+          duration: 30,
           watchTime: 7,
-          features: ["7 minutes watch time", "Basic features", "Reduced ads", "30 days validity"]
+          features: [
+            "7 minutes watch time",
+            "Basic features",
+            "Reduced ads",
+            "30 days validity",
+          ],
         },
-        { 
-          id: "SILVER", 
-          name: "SILVER", 
-          price: 50, 
-          duration: 30, 
+        {
+          id: "SILVER",
+          name: "SILVER",
+          price: 50,
+          duration: 30,
           watchTime: 10,
-          features: ["10 minutes watch time", "Premium features", "No ads", "30 days validity"]
+          features: [
+            "10 minutes watch time",
+            "Premium features",
+            "No ads",
+            "30 days validity",
+          ],
         },
-        { 
-          id: "GOLD", 
-          name: "GOLD", 
-          price: 100, 
-          duration: 30, 
+        {
+          id: "GOLD",
+          name: "GOLD",
+          price: 100,
+          duration: 30,
           watchTime: -1,
-          features: ["Unlimited watch time", "All premium features", "No ads", "30 days validity", "Priority support"]
+          features: [
+            "Unlimited watch time",
+            "All premium features",
+            "No ads",
+            "30 days validity",
+            "Priority support",
+          ],
         },
       ]);
     } finally {
@@ -107,19 +144,18 @@ const SubscriptionPage = () => {
   // ✅ Initialize on mount
   useEffect(() => {
     console.log("🔄 SubscriptionPage mounted");
-    
+
     const init = async () => {
       await loadRazorpayScript();
       await fetchPlans();
     };
-    
+
     init();
   }, [fetchPlans, loadRazorpayScript]);
-
   // ✅ Handle subscription purchase
   const handleSubscribe = async (plan: Plan) => {
     const token = localStorage.getItem("token");
-    
+
     if (!user || !token) {
       alert("Please login to subscribe");
       router.push("/");
@@ -139,7 +175,7 @@ const SubscriptionPage = () => {
 
     try {
       console.log("📞 Creating order for plan:", plan.id);
-      
+
       const orderResponse = await axiosInstance.post(
         "/subscription/create-order",
         { plan: plan.id }
@@ -167,7 +203,7 @@ const SubscriptionPage = () => {
         handler: async function (response: any) {
           try {
             console.log("✅ Payment successful, verifying...");
-            
+
             const verifyResponse = await axiosInstance.post(
               "/subscription/verify-payment",
               {
@@ -187,7 +223,9 @@ const SubscriptionPage = () => {
             }
           } catch (verifyErr: any) {
             console.error("❌ Verification error:", verifyErr);
-            alert(verifyErr.response?.data?.message || "Payment verification failed");
+            alert(
+              verifyErr.response?.data?.message || "Payment verification failed"
+            );
           } finally {
             setProcessing(false);
             setSelectedPlan(null);
@@ -211,23 +249,22 @@ const SubscriptionPage = () => {
 
       const razorpay = new window.Razorpay(options);
       razorpay.open();
-      
     } catch (err: any) {
       console.error("❌ Payment error:", err);
-      
-      const errorMessage = err.response?.data?.message || err.message || "Payment failed";
+
+      const errorMessage =
+        err.response?.data?.message || err.message || "Payment failed";
       setError(errorMessage);
       alert(errorMessage);
-      
+
       setProcessing(false);
       setSelectedPlan(null);
     }
   };
-
   // ✅ Handle subscription cancellation
   const handleCancelSubscription = async () => {
     const token = localStorage.getItem("token");
-    
+
     if (!user || !token) {
       alert("Please login to cancel subscription");
       router.push("/");
@@ -235,7 +272,7 @@ const SubscriptionPage = () => {
     }
 
     setCancelling(true);
-    
+
     try {
       const response = await axiosInstance.post("/subscription/cancel");
 
@@ -270,7 +307,9 @@ const SubscriptionPage = () => {
       <div className="flex items-center justify-center min-h-screen bg-youtube-primary">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-4" />
-          <p className="text-youtube-secondary">Loading subscription plans...</p>
+          <p className="text-youtube-secondary">
+            Loading subscription plans...
+          </p>
         </div>
       </div>
     );
@@ -278,7 +317,6 @@ const SubscriptionPage = () => {
 
   const isPremium = subscription?.planType?.toUpperCase() !== "FREE";
   const currentPlanType = subscription?.planType?.toUpperCase() || "FREE";
-
   return (
     <div className="min-h-screen bg-youtube-primary py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -304,7 +342,6 @@ const SubscriptionPage = () => {
             </div>
           </div>
         )}
-
         {/* Active Subscription Card */}
         {isPremium && subscription && (
           <div className="max-w-4xl mx-auto mb-8 bg-youtube-secondary rounded-xl shadow-lg p-6 border border-green-500">
@@ -350,13 +387,16 @@ const SubscriptionPage = () => {
                 <Crown className="w-5 h-5 text-gray-400" />
               </div>
               <div>
-                <p className="text-youtube-primary font-semibold">Current Plan: FREE</p>
-                <p className="text-sm text-youtube-secondary">5 minutes watch time limit</p>
+                <p className="text-youtube-primary font-semibold">
+                  Current Plan: FREE
+                </p>
+                <p className="text-sm text-youtube-secondary">
+                  5 minutes watch time limit
+                </p>
               </div>
             </div>
           </div>
         )}
-
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => {
@@ -366,10 +406,10 @@ const SubscriptionPage = () => {
               <div
                 key={plan.id}
                 className={`relative bg-youtube-secondary rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl border ${
-                  isCurrentPlan 
-                    ? "border-green-500 ring-2 ring-green-500" 
-                    : plan.id === "GOLD" 
-                    ? "border-yellow-500 ring-2 ring-yellow-500 scale-105" 
+                  isCurrentPlan
+                    ? "border-green-500 ring-2 ring-green-500"
+                    : plan.id === "GOLD"
+                    ? "border-yellow-500 ring-2 ring-yellow-500 scale-105"
                     : "border-youtube"
                 }`}
               >
@@ -438,7 +478,6 @@ const SubscriptionPage = () => {
             );
           })}
         </div>
-
         {/* FAQ Section */}
         <div className="mt-16 max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold text-center mb-8 text-youtube-primary">
@@ -450,7 +489,8 @@ const SubscriptionPage = () => {
                 What are the watch time limits?
               </h3>
               <p className="text-youtube-secondary">
-                FREE: 5 minutes | BRONZE: 7 minutes | SILVER: 10 minutes | GOLD: Unlimited
+                FREE: 5 minutes | BRONZE: 7 minutes | SILVER: 10 minutes | GOLD:
+                Unlimited
               </p>
             </div>
             <div>
@@ -458,7 +498,8 @@ const SubscriptionPage = () => {
                 Can I cancel my subscription anytime?
               </h3>
               <p className="text-youtube-secondary">
-                Yes, you can cancel your subscription at any time. You'll be moved back to the FREE plan immediately.
+                Yes, you can cancel your subscription at any time. You'll be
+                moved back to the FREE plan immediately.
               </p>
             </div>
             <div>
@@ -466,13 +507,13 @@ const SubscriptionPage = () => {
                 Is this a test payment?
               </h3>
               <p className="text-youtube-secondary">
-                Yes, we are using Razorpay test mode. Use card 4111 1111 1111 1111 to test.
+                Yes, we are using Razorpay test mode. Use card 4111 1111 1111
+                1111 to test.
               </p>
             </div>
           </div>
         </div>
       </div>
-
       {/* Cancel Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
@@ -486,7 +527,8 @@ const SubscriptionPage = () => {
                   Cancel Subscription?
                 </h3>
                 <p className="text-youtube-secondary mb-4">
-                  Are you sure you want to cancel your {currentPlanType} subscription?
+                  Are you sure you want to cancel your {currentPlanType}{" "}
+                  subscription?
                 </p>
                 <ul className="space-y-2 text-sm text-youtube-secondary mb-4">
                   <li className="flex items-center gap-2">
