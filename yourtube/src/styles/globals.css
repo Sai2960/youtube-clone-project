@@ -12629,3 +12629,25 @@ button span {
     padding-bottom: 0 !important;
   }
 }
+/* Shorts horizontal scroll - Mobile optimized */
+.shorts-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.shorts-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure smooth scrolling on mobile */
+@media (max-width: 768px) {
+  .shorts-scroll-container {
+    scroll-snap-type: x proximity;
+    scroll-padding-left: 1rem;
+  }
+  
+  .shorts-scroll-container > div > * {
+    scroll-snap-align: start;
+  }
+}
