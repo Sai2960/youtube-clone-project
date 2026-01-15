@@ -524,8 +524,8 @@ export default function HistoryContent() {
                         return (
                           <Link key={item._id} href={`/shorts/${short._id}`}>
                             <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                              {/* ✅ FIXED: Proper thumbnail container with border in dark mode */}
-                              <div className="aspect-[9/16] bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden relative">
+                              {/* ✅ FIXED: Stronger border and shadow in dark mode */}
+                              <div className="aspect-[9/16] bg-gray-100 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden relative shadow-sm dark:shadow-gray-800/50">
                                 {thumbnailUrl ? (
                                   <img
                                     src={thumbnailUrl}
@@ -540,25 +540,23 @@ export default function HistoryContent() {
                                       const parent =
                                         e.currentTarget.parentElement;
                                       if (parent && videoUrl) {
-                                        // Create video element as fallback
                                         const video =
                                           document.createElement("video");
                                         video.src = videoUrl;
                                         video.className =
                                           "w-full h-full object-cover";
                                         video.preload = "metadata";
-                                        video.poster = ""; // Ensure poster attribute exists
+                                        video.poster = "";
                                         parent.appendChild(video);
                                       }
                                     }}
                                   />
                                 ) : videoUrl ? (
-                                  // ✅ FIXED: Video with proper poster frame extraction
                                   <video
                                     src={videoUrl}
                                     className="w-full h-full object-cover"
                                     preload="metadata"
-                                    poster="" // Browser will extract first frame
+                                    poster=""
                                     onError={(e) => {
                                       console.error(
                                         "❌ Video failed, showing placeholder"
@@ -580,7 +578,6 @@ export default function HistoryContent() {
                                     }}
                                   />
                                 ) : (
-                                  // ✅ FIXED: Better placeholder with gradient
                                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 dark:from-gray-800 dark:to-black">
                                     <div className="text-center text-gray-300 dark:text-gray-500">
                                       <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -589,10 +586,10 @@ export default function HistoryContent() {
                                   </div>
                                 )}
 
-                                {/* ✅ Hover overlay - more visible in dark mode */}
+                                {/* ✅ Hover overlay */}
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 dark:group-hover:bg-black/50 transition-all duration-200" />
 
-                                {/* ✅ ADDED: Play icon overlay for better visibility */}
+                                {/* ✅ Play icon overlay */}
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                   <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
                                     <Play
@@ -603,7 +600,7 @@ export default function HistoryContent() {
                                 </div>
                               </div>
 
-                              {/* ✅ Title and views - improved contrast */}
+                              {/* Title and views */}
                               <div className="mt-2 px-1">
                                 <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
                                   {short.title || "Untitled Short"}
