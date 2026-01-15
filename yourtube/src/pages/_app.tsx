@@ -74,13 +74,6 @@ function AppContent({ Component, pageProps }: AppProps) {
         return;
       }
 
-      // If no token and trying to access protected route, redirect to login
-      if (!token && !isPublicRoute) {
-        console.log("⚠️ No token found, redirecting to login");
-        router.replace(`/login?returnUrl=${encodeURIComponent(router.asPath)}`);
-        return;
-      }
-
       // Mark as checked and allow rendering
       initializationState.hasCheckedAuth = true;
       setIsAuthChecking(false);
