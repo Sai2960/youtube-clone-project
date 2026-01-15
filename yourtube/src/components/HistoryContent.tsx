@@ -124,6 +124,8 @@ export default function HistoryContent() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useUser();
+  const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(new Set());
+const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
 
   const tabs = ["All", "Videos", "Shorts"];
 
@@ -498,7 +500,7 @@ export default function HistoryContent() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Shorts Section */}
+         {/* Shorts Section */}
 {(activeTab === "All" || activeTab === "Shorts") &&
   shortsInHistory.length > 0 && (
     <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -520,111 +522,62 @@ export default function HistoryContent() {
 
             const thumbnailUrl = getShortThumbnail(short);
             const videoUrl = getShortUrl(short);
+            const shortId = short._id;
+            
+            const thumbnailFailed = failedThumbnails.has(shortId);
+            const videoFailed = failedVideos.has(shortId);
 
             return (
               <Link key={item._id} href={`/shorts/${short._id}`}>
                 <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                  {/* ✅ FIXED: Added background color for dark mode visibility */}
-                  <div className="aspect-[9/16] bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden relative shadow-sm">
-                    {thumbnailUrl ? (
+                  <div className="aspect-[9/16] bg-gray-200 dark:bg-[#272727] border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden relative">
+                    
+                    {/* Show thumbnail if available and not failed */}
+                    {thumbnailUrl && !thumbnailFailed && (
                       <img
                         src={thumbnailUrl}
                         alt={short.title || "Short"}
                         className="w-full h-full object-cover"
                         loading="lazy"
-                        onError={(e) => {
-                          console.error("❌ Thumbnail failed, trying video fallback");
-                          const imgElement = e.currentTarget;
-                          const parent = imgElement.parentElement;
-                          
-                          if (parent && videoUrl) {
-                            // Hide the broken image
-                            imgElement.style.display = "none";
-                            
-                            // Create video element as fallback
-                            const video = document.createElement("video");
-                            video.src = videoUrl;
-                            video.className = "w-full h-full object-cover absolute inset-0";
-                            video.preload = "metadata";
-                            video.muted = true;
-                            video.playsInline = true;
-                            
-                            // Add error handler for video too
-                            video.onerror = () => {
-                              console.error("❌ Video also failed, showing placeholder");
-                              video.remove();
-                              // Show placeholder
-                              const placeholder = document.createElement("div");
-                              placeholder.className = "w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-900 absolute inset-0";
-                              placeholder.innerHTML = `
-                                <div class="text-center text-gray-500 dark:text-gray-400">
-                                  <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z"/>
-                                  </svg>
-                                  <p class="text-xs">Unavailable</p>
-                                </div>
-                              `;
-                              parent.appendChild(placeholder);
-                            };
-                            
-                            parent.appendChild(video);
-                          } else if (parent) {
-                            // No video URL, show placeholder directly
-                            imgElement.style.display = "none";
-                            const placeholder = document.createElement("div");
-                            placeholder.className = "w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-900 absolute inset-0";
-                            placeholder.innerHTML = `
-                              <div class="text-center text-gray-500 dark:text-gray-400">
-                                <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z"/>
-                                </svg>
-                                <p class="text-xs">No preview</p>
-                              </div>
-                            `;
-                            parent.appendChild(placeholder);
-                          }
+                        onError={() => {
+                          console.error("❌ Thumbnail failed for:", shortId);
+                          setFailedThumbnails(prev => new Set(prev).add(shortId));
                         }}
                       />
-                    ) : videoUrl ? (
+                    )}
+                    
+                    {/* Show video if thumbnail failed or no thumbnail, and video not failed */}
+                    {((!thumbnailUrl || thumbnailFailed) && videoUrl && !videoFailed) && (
                       <video
                         src={videoUrl}
                         className="w-full h-full object-cover"
                         preload="metadata"
                         muted
                         playsInline
-                        onError={(e) => {
-                          console.error("❌ Video failed, showing placeholder");
-                          const videoElement = e.currentTarget;
-                          const parent = videoElement.parentElement;
-                          if (parent) {
-                            videoElement.style.display = "none";
-                            const placeholder = document.createElement("div");
-                            placeholder.className = "w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-900 absolute inset-0";
-                            placeholder.innerHTML = `
-                              <div class="text-center text-gray-500 dark:text-gray-400">
-                                <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z"/>
-                                </svg>
-                                <p class="text-xs">Unavailable</p>
-                              </div>
-                            `;
-                            parent.appendChild(placeholder);
-                          }
+                        onError={() => {
+                          console.error("❌ Video failed for:", shortId);
+                          setFailedVideos(prev => new Set(prev).add(shortId));
                         }}
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-900">
+                    )}
+                    
+                    {/* Show placeholder if both failed or no media */}
+                    {((!thumbnailUrl && !videoUrl) || 
+                      (thumbnailFailed && videoFailed) || 
+                      (thumbnailFailed && !videoUrl) ||
+                      (!thumbnailUrl && videoFailed)) && (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-300 dark:bg-[#3f3f3f]">
                         <div className="text-center text-gray-500 dark:text-gray-400">
                           <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-xs">No media</p>
+                          <p className="text-xs">No preview</p>
                         </div>
                       </div>
                     )}
 
                     {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 dark:group-hover:bg-black/40 transition-all duration-200 pointer-events-none" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 pointer-events-none" />
 
-                    {/* Play icon overlay on hover */}
+                    {/* Play icon on hover */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                       <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
                         <Play
@@ -652,7 +605,6 @@ export default function HistoryContent() {
       </div>
     </div>
   )}
-
 
             {/* Videos History */}
             {videosInHistory.length > 0 && (
