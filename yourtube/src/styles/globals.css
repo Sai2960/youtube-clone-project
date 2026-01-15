@@ -12564,3 +12564,68 @@ button span {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* =================== MOBILE BOTTOM NAV - THEME COMPATIBLE FIX =================== */
+
+/* Force mobile bottom nav to respect theme */
+@media (max-width: 1023px) {
+  /* Dark theme */
+  .dark nav.lg\:hidden,
+  html.dark nav.lg\:hidden {
+    background-color: #0f0f0f !important;
+    border-top-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .dark nav.lg\:hidden svg,
+  html.dark nav.lg\:hidden svg {
+    color: inherit !important;
+  }
+  
+  .dark nav.lg\:hidden span,
+  html.dark nav.lg\:hidden span {
+    color: inherit !important;
+  }
+  
+  /* Light theme */
+  .light nav.lg\:hidden,
+  html.light nav.lg\:hidden {
+    background-color: #ffffff !important;
+    border-top-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .light nav.lg\:hidden svg,
+  html.light nav.lg\:hidden svg {
+    color: inherit !important;
+  }
+  
+  .light nav.lg\:hidden span,
+  html.light nav.lg\:hidden span {
+    color: inherit !important;
+  }
+  
+  /* Ensure nav is always at bottom */
+  nav.lg\:hidden {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+  }
+  
+  /* Safe area support */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    nav.lg\:hidden {
+      padding-bottom: env(safe-area-inset-bottom) !important;
+    }
+  }
+}
+
+/* Ensure proper content spacing */
+@media (max-width: 1023px) {
+  main {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 16px)) !important;
+  }
+  
+  body {
+    padding-bottom: 0 !important;
+  }
+}

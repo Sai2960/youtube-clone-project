@@ -1,6 +1,6 @@
 // src/components/ui/MobileBottomNav.tsx - FIXED VERSION
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Home, PlusCircle, Folder, User } from "lucide-react";
@@ -10,50 +10,95 @@ const MobileBottomNav: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
   
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true); // Default to dark
 
-  // Detect theme from DOM
-  const detectTheme = () => {
-    if (typeof window === "undefined") return false;
+  // Detect theme from DOM - more robust detection
+  const detectTheme = useCallback(() => {
+    if (typeof window === "undefined") return true;
     
+    // Check multiple sources for theme
+    const html = document.documentElement;
+    const body = document.body;
+    
+    // Priority 1: Check localStorage
     const stored = localStorage.getItem("theme");
-    const dataTheme = document.documentElement.getAttribute("data-theme");
-    const htmlClass = document.documentElement.className;
+    if (stored === "light") return false;
+    if (stored === "dark") return true;
     
-    // Return true if dark, false if light
-    return stored === "dark" || 
-           dataTheme === "dark" || 
-           htmlClass.includes("dark");
-  };
+    // Priority 2: Check data-theme attribute
+    const dataTheme = html.getAttribute("data-theme") || body.getAttribute("data-theme");
+    if (dataTheme === "light") return false;
+    if (dataTheme === "dark") return true;
+    
+    // Priority 3: Check class on html/body
+    if (html.classList.contains("light") || body.classList.contains("light")) return false;
+    if (html.classList.contains("dark") || body.classList.contains("dark")) return true;
+    
+    // Priority 4: Check CSS custom property
+    const bgPrimary = getComputedStyle(html).getPropertyValue("--bg-primary").trim();
+    if (bgPrimary === "#ffffff" || bgPrimary === "white") return false;
+    
+    // Default to dark
+    return true;
+  }, []);
+
+  // Update theme state
+  const updateTheme = useCallback(() => {
+    const newIsDark = detectTheme();
+    setIsDark(newIsDark);
+  }, [detectTheme]);
 
   // Initial detection + watchers
   useEffect(() => {
-    setIsDark(detectTheme());
+    // Initial detection
+    updateTheme();
 
+    // Watch for class/attribute changes on html element
     const observer = new MutationObserver(() => {
-      setIsDark(detectTheme());
+      updateTheme();
     });
     
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["class", "data-theme"],
+      attributeFilter: ["class", "data-theme", "style"],
     });
 
-    const handleStorage = () => setIsDark(detectTheme());
+    // Also observe body
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme", "style"],
+    });
+
+    // Listen for storage changes
+    const handleStorage = () => updateTheme();
     window.addEventListener("storage", handleStorage);
 
+    // Listen for custom theme change event
     const handleThemeEvent = (e: Event) => {
       const customEvent = e as CustomEvent;
-      setIsDark(customEvent.detail.theme === "dark");
+      if (customEvent.detail?.theme) {
+        setIsDark(customEvent.detail.theme === "dark");
+      }
     };
     window.addEventListener("themeChanged", handleThemeEvent);
+
+    // Periodic check as fallback (every 500ms for 5 seconds after mount)
+    let checkCount = 0;
+    const intervalId = setInterval(() => {
+      updateTheme();
+      checkCount++;
+      if (checkCount >= 10) {
+        clearInterval(intervalId);
+      }
+    }, 500);
 
     return () => {
       observer.disconnect();
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("themeChanged", handleThemeEvent);
+      clearInterval(intervalId);
     };
-  }, []);
+  }, [updateTheme]);
 
   const navItems = [
     {
@@ -102,12 +147,20 @@ const MobileBottomNav: React.FC = () => {
     return false;
   };
 
+  // Theme-aware colors
+  const bgColor = isDark ? "#0f0f0f" : "#ffffff";
+  const borderColor = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)";
+  const activeIconColor = isDark ? "#ffffff" : "#0f0f0f";
+  const inactiveIconColor = isDark ? "#aaaaaa" : "#606060";
+  const activeTextColor = isDark ? "#ffffff" : "#0f0f0f";
+  const inactiveTextColor = isDark ? "#aaaaaa" : "#606060";
+
   return (
     <nav
-      className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 ${isDark ? 'dark' : 'light'}`}
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{
-        backgroundColor: isDark ? "#0f0f0f" : "#ffffff",
-        borderTop: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid rgba(0, 0, 0, 0.1)",
+        backgroundColor: bgColor,
+        borderTop: `1px solid ${borderColor}`,
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
@@ -120,12 +173,8 @@ const MobileBottomNav: React.FC = () => {
       >
         {navItems.map((item, index) => {
           const active = isActive(item.path);
-          const iconColor = isDark 
-            ? (active ? "#ffffff" : "#aaaaaa")
-            : (active ? "#0f0f0f" : "#606060");
-          const textColor = isDark 
-            ? (active ? "#ffffff" : "#aaaaaa")
-            : (active ? "#0f0f0f" : "#606060");
+          const iconColor = active ? activeIconColor : inactiveIconColor;
+          const textColor = active ? activeTextColor : inactiveTextColor;
 
           // Upload button
           if (item.isUpload) {
