@@ -1,6 +1,6 @@
-// src/components/ui/MobileBottomNav.tsx - FIXED VERSION
+// src/components/ui/MobileBottomNav.tsx - FIXED LIGHT THEME
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Home, PlusCircle, Folder, User } from "lucide-react";
@@ -10,109 +10,157 @@ const MobileBottomNav: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
   
-  // Initialize with correct theme immediately
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
-    try {
-      const stored = localStorage.getItem('theme');
-      if (stored === 'light') return false;
-      if (stored === 'dark') return true;
-      return document.documentElement.classList.contains('dark');
-    } catch {
-      return true;
-    }
+  // ✅ FIX: Better initial state detection
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") return true;
+    
+    // Check localStorage first (highest priority)
+    const stored = localStorage.getItem("theme");
+    if (stored === "light") return false;
+    if (stored === "dark") return true;
+    
+    // Check data-theme attribute
+    const dataTheme = document.documentElement?.getAttribute("data-theme");
+    if (dataTheme === "light") return false;
+    if (dataTheme === "dark") return true;
+    
+    // Check class
+    if (document.documentElement?.classList.contains("light")) return false;
+    if (document.documentElement?.classList.contains("dark")) return true;
+    
+    // Default to dark
+    return true;
   });
 
-  // Theme detection function
-  const checkTheme = useCallback(() => {
-    const stored = localStorage.getItem('theme');
-    const dataTheme = document.documentElement.getAttribute('data-theme');
-    const hasLightClass = document.documentElement.classList.contains('light');
-    const hasDarkClass = document.documentElement.classList.contains('dark');
-    
-    // Priority: localStorage > data-theme > class
-    if (stored === 'light' || dataTheme === 'light' || (hasLightClass && !hasDarkClass)) {
-      setIsDark(false);
-    } else {
+  // ✅ FIX: Simplified and more reliable theme detection
+  useEffect(() => {
+    const checkTheme = () => {
+      // Priority: localStorage > data-theme > class > default
+      const stored = localStorage.getItem("theme");
+      const dataTheme = document.documentElement.getAttribute("data-theme");
+      const hasLightClass = document.documentElement.classList.contains("light");
+      const hasDarkClass = document.documentElement.classList.contains("dark");
+      
+      console.log("🔍 MobileNav theme check:", {
+        stored,
+        dataTheme,
+        hasLightClass,
+        hasDarkClass
+      });
+      
+      if (stored === "light" || dataTheme === "light" || hasLightClass) {
+        setIsDark(false);
+        return;
+      }
+      
+      if (stored === "dark" || dataTheme === "dark" || hasDarkClass) {
+        setIsDark(true);
+        return;
+      }
+      
+      // Default to dark
       setIsDark(true);
-    }
-  }, []);
-
-  // Check theme on mount and after hydration
-  useEffect(() => {
-    checkTheme();
-    
-    // Re-check after a small delay for hydration
-    const timeoutId = setTimeout(checkTheme, 50);
-    const timeoutId2 = setTimeout(checkTheme, 200);
-    
-    return () => {
-      clearTimeout(timeoutId);
-      clearTimeout(timeoutId2);
     };
-  }, [checkTheme]);
 
-  // Watch for theme changes via MutationObserver
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      checkTheme();
-    });
-    
+    // Initial check
+    checkTheme();
+
+    // Check after small delay (for hydration)
+    const timeoutId = setTimeout(checkTheme, 100);
+
+    // Watch for DOM changes
+    const observer = new MutationObserver(checkTheme);
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class', 'data-theme', 'style'],
-    });
-    
-    observer.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme', 'style'],
+      attributeFilter: ["class", "data-theme", "style"],
     });
 
-    return () => observer.disconnect();
-  }, [checkTheme]);
-
-  // Watch for localStorage changes
-  useEffect(() => {
+    // Watch localStorage changes
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'theme') {
+      if (e.key === "theme") {
         checkTheme();
       }
     };
-    
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [checkTheme]);
+    window.addEventListener("storage", handleStorage);
 
-  // Watch for route changes
+    // Watch system preference
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", checkTheme);
+
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+      window.removeEventListener("storage", handleStorage);
+      mediaQuery.removeEventListener("change", checkTheme);
+    };
+  }, []);
+
+  // ✅ FIX: Re-check on route change
   useEffect(() => {
     const handleRouteChange = () => {
-      setTimeout(checkTheme, 100);
+      const stored = localStorage.getItem("theme");
+      const dataTheme = document.documentElement.getAttribute("data-theme");
+      setIsDark(!(stored === "light" || dataTheme === "light"));
     };
-    
-    router.events?.on('routeChangeComplete', handleRouteChange);
-    return () => router.events?.off('routeChangeComplete', handleRouteChange);
-  }, [router.events, checkTheme]);
 
-  // Theme colors - HARDCODED for reliability
-  const bgColor = isDark ? "#0f0f0f" : "#ffffff";
-  const borderColor = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)";
-  const iconActiveColor = isDark ? "#ffffff" : "#0f0f0f";
-  const iconInactiveColor = isDark ? "#aaaaaa" : "#606060";
-  const textActiveColor = isDark ? "#ffffff" : "#0f0f0f";
-  const textInactiveColor = isDark ? "#aaaaaa" : "#606060";
+    router.events?.on("routeChangeComplete", handleRouteChange);
+    return () => {
+      router.events?.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router.events]);
+
+  // ✅ FIX: Updated colors with better contrast
+  const colors = {
+    bg: isDark ? "#0f0f0f" : "#ffffff",
+    border: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+    iconActive: isDark ? "#ffffff" : "#0f0f0f",
+    iconInactive: isDark ? "#aaaaaa" : "#606060",
+    textActive: isDark ? "#ffffff" : "#0f0f0f",
+    textInactive: isDark ? "#aaaaaa" : "#606060",
+  };
 
   const navItems = [
-    { icon: Home, label: "Home", path: "/", filled: false },
-    { icon: "shorts", label: "Shorts", path: "/shorts", filled: true, isShorts: true },
-    { icon: PlusCircle, label: "", path: user ? "/upload" : "/login", isUpload: true },
-    { icon: Folder, label: "Subscriptions", path: "/subscriptions", filled: false },
-    { icon: User, label: "You", path: user?._id ? `/channel/${user._id}` : "/login", filled: false },
+    {
+      icon: Home,
+      label: "Home",
+      path: "/",
+      filled: false,
+    },
+    {
+      icon: "shorts",
+      label: "Shorts",
+      path: "/shorts",
+      filled: true,
+      isShorts: true,
+    },
+    {
+      icon: PlusCircle,
+      label: "",
+      path: user ? "/upload" : "/login",
+      isUpload: true,
+    },
+    {
+      icon: Folder,
+      label: "Subscriptions",
+      path: "/subscriptions",
+      filled: false,
+    },
+    {
+      icon: User,
+      label: "You",
+      path: user?._id ? `/channel/${user._id}` : "/login",
+      filled: false,
+    },
   ];
 
   const isActive = (path: string) => {
     if (path === "/" && router.pathname === "/") return true;
     if (path !== "/" && router.pathname.startsWith(path)) return true;
-    if (user?._id && path === `/channel/${user._id}` && router.pathname.startsWith("/channel/")) {
+    if (
+      user?._id &&
+      path === `/channel/${user._id}` &&
+      router.pathname.startsWith("/channel/")
+    ) {
       return router.query.id === user._id;
     }
     return false;
@@ -122,29 +170,40 @@ const MobileBottomNav: React.FC = () => {
     <nav
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{
-        backgroundColor: bgColor,
-        borderTop: `1px solid ${borderColor}`,
+        backgroundColor: colors.bg,
+        borderTop: `1px solid ${colors.border}`,
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
       <div
         className="flex items-center justify-around"
-        style={{ height: "56px", padding: "0 4px" }}
+        style={{
+          height: "56px",
+          padding: "0 4px",
+        }}
       >
         {navItems.map((item, index) => {
           const active = isActive(item.path);
 
+          // Upload button
           if (item.isUpload) {
             const Icon = item.icon as any;
             return (
               <Link key={index} href={item.path}>
                 <div className="flex flex-col items-center justify-center w-14 h-14">
-                  <Icon size={28} strokeWidth={1.5} style={{ color: iconActiveColor }} />
+                  <div className="relative">
+                    <Icon
+                      size={28}
+                      strokeWidth={1.5}
+                      style={{ color: colors.iconActive }}
+                    />
+                  </div>
                 </div>
               </Link>
             );
           }
 
+          // Shorts icon
           if (item.isShorts) {
             return (
               <Link key={index} href={item.path}>
@@ -154,8 +213,8 @@ const MobileBottomNav: React.FC = () => {
                       viewBox="0 0 24 24"
                       className="w-6 h-6"
                       style={{
-                        fill: active ? iconActiveColor : "none",
-                        stroke: active ? "none" : iconInactiveColor,
+                        fill: active ? colors.iconActive : "none",
+                        stroke: active ? "none" : colors.iconInactive,
                         strokeWidth: active ? 0 : 2,
                       }}
                     >
@@ -164,7 +223,9 @@ const MobileBottomNav: React.FC = () => {
                   </div>
                   <span
                     className="text-[10px] font-medium"
-                    style={{ color: active ? textActiveColor : textInactiveColor }}
+                    style={{
+                      color: active ? colors.textActive : colors.textInactive,
+                    }}
                   >
                     {item.label}
                   </span>
@@ -173,6 +234,7 @@ const MobileBottomNav: React.FC = () => {
             );
           }
 
+          // Regular nav items
           const Icon = item.icon as any;
           return (
             <Link key={index} href={item.path}>
@@ -181,11 +243,15 @@ const MobileBottomNav: React.FC = () => {
                   size={24}
                   strokeWidth={2}
                   fill={active && item.filled ? "currentColor" : "none"}
-                  style={{ color: active ? iconActiveColor : iconInactiveColor }}
+                  style={{
+                    color: active ? colors.iconActive : colors.iconInactive,
+                  }}
                 />
                 <span
                   className="text-[10px] font-medium"
-                  style={{ color: active ? textActiveColor : textInactiveColor }}
+                  style={{
+                    color: active ? colors.textActive : colors.textInactive,
+                  }}
                 >
                   {item.label}
                 </span>
