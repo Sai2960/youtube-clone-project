@@ -976,9 +976,10 @@ const Home: NextPage = () => {
 
                         {/* FIX: Text Content - Critical min-w-0 for flex shrinking */}
                         <div className="video-text-content flex-1 min-w-0 overflow-hidden">
+                          {/* Video Title */}
                           <Link href={`/watch/${video._id}`}>
                             <h3
-                              className="video-title"
+                              className="video-title text-gray-900 dark:text-white"
                               title={video?.videotitle || "Untitled Video"}
                             >
                               {video?.videotitle || "Untitled Video"}
