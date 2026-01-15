@@ -19,6 +19,9 @@ interface Subscription {
   status?: string;
   dailyDownloads?: number;
   currentPlan?: string;
+  plan?: string;
+  watchLimit?: number;
+  isUnlimited?: boolean;
 }
 
 interface DownloadPermission {
@@ -70,7 +73,6 @@ const globalFetchState = {
   hasFetched: false,
   isFetching: false,
 };
-
 export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   children,
 }) => {
@@ -79,173 +81,218 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   const [watchTimeLimit, setWatchTimeLimit] = useState(5);
   const [currentPlan, setCurrentPlan] = useState("FREE");
 
-  // ✅ CRITICAL FIX: Use useCallback to stabilize functions
+  // ✅ IMPROVED: Enhanced fetchSubscription with better error handling and logging
   const fetchSubscription = useCallback(async () => {
-  if (globalFetchState.isFetching) {
-    console.log("⏸️ Fetch already in progress, skipping");
-    return;
-  }
-
-  globalFetchState.isFetching = true;
-  console.log("🔄 fetchSubscription STARTED");
-
-  try {
-    if (typeof window === "undefined") {
-      console.log("⚠️ Server side - skipping");
-      setLoading(false);
+    console.log("\n🔄 ===== FETCHING SUBSCRIPTION =====");
+    
+    if (globalFetchState.isFetching) {
+      console.log("⏸️ Fetch already in progress, skipping");
       return;
     }
 
-    const token = localStorage.getItem("token");
-    console.log("🔑 Token exists?", !!token);
+    globalFetchState.isFetching = true;
 
-    if (!token) {
-      console.log("⚠️ No token - setting FREE plan");
-      const freePlan = {
-        planType: "free",
-        planName: "Free Plan",
-        dailyDownloads: 0,
-        currentPlan: "FREE",
-      };
-      setSubscription(freePlan);
-      setWatchTimeLimit(5);
-      setCurrentPlan("FREE");
-      setLoading(false);
+    try {
+      if (typeof window === "undefined") {
+        console.log("⚠️ Server side - skipping");
+        setLoading(false);
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+      console.log("🔑 Token exists:", !!token);
+
+      if (!token) {
+        console.log("⚠️ No token - setting FREE plan");
+        const freePlan: Subscription = {
+          planType: "free",
+          planName: "Free Plan",
+          dailyDownloads: 0,
+          currentPlan: "FREE",
+          plan: "FREE",
+          watchLimit: 5,
+          isUnlimited: false,
+        };
+        setSubscription(freePlan);
+        setWatchTimeLimit(5);
+        setCurrentPlan("FREE");
+        setLoading(false);
+        globalFetchState.hasFetched = true;
+        return;
+      }
+
+      console.log("📞 Calling /subscription/current API...");
+      const response = await axiosInstance.get("/subscription/current");
+      
+      console.log("✅ API Response:", response.data);
+
+      if (response.data.success) {
+        const currentPlanValue = (response.data.currentPlan || "FREE").toUpperCase();
+        const watchLimit = response.data.watchTimeLimit !== undefined 
+          ? response.data.watchTimeLimit 
+          : 5;
+
+        const planDetails = {
+          currentPlan: currentPlanValue,
+          watchLimit: watchLimit,
+          isUnlimited: watchLimit === -1,
+        };
+
+        console.log("✅ Plan details from backend:", planDetails);
+
+        const newSubscription: Subscription = {
+          ...response.data.subscription,
+          planType: response.data.subscription?.planType || "free",
+          dailyDownloads: response.data.subscription?.dailyDownloads || 0,
+          currentPlan: currentPlanValue,
+          plan: currentPlanValue,
+          watchLimit: watchLimit,
+          isUnlimited: watchLimit === -1,
+        };
+
+        setSubscription(newSubscription);
+        setWatchTimeLimit(watchLimit);
+        setCurrentPlan(currentPlanValue);
+
+        console.log("✅ Subscription loaded:", {
+          plan: currentPlanValue,
+          watchLimit: watchLimit,
+          isUnlimited: watchLimit === -1,
+        });
+      } else {
+        console.log("⚠️ No active subscription in response");
+        const freePlan: Subscription = {
+          planType: "free",
+          planName: "Free Plan",
+          dailyDownloads: 0,
+          currentPlan: "FREE",
+          plan: "FREE",
+          watchLimit: 5,
+          isUnlimited: false,
+        };
+        setSubscription(freePlan);
+        setWatchTimeLimit(5);
+        setCurrentPlan("FREE");
+      }
       globalFetchState.hasFetched = true;
-      return;
-    }
-
-    console.log("📞 Calling /subscription/current API...");
-    const response = await axiosInstance.get("/subscription/current");
-    console.log("📥 API Response:", response.data);
-
-    if (response.data.success) {
-      const currentPlanValue = (response.data.currentPlan || "FREE").toUpperCase();
-      const watchLimit = response.data.watchTimeLimit;
-
-      console.log("✅ Plan details from backend:", {
-        currentPlan: currentPlanValue,
-        watchTimeLimit: watchLimit,
-        isUnlimited: watchLimit === -1
+    } catch (error: any) {
+      console.error("❌ Subscription fetch error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
       });
 
-      const newSubscription = {
-        ...response.data.subscription,
-        planType: response.data.subscription?.planType || "free",
-        dailyDownloads: response.data.subscription?.dailyDownloads || 0,
-        currentPlan: currentPlanValue,
-      };
+      // Handle 401 unauthorized
+      if (error.response?.status === 401) {
+        console.log("🔄 Token expired, clearing token...");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        // Optionally dispatch event for logout
+        window.dispatchEvent(new Event("tokenExpired"));
+      }
 
-      setSubscription(newSubscription);
-      setWatchTimeLimit(watchLimit); // ✅ Use backend value directly
-      setCurrentPlan(currentPlanValue);
-
-      console.log("✅ Subscription loaded:", {
-        plan: currentPlanValue,
-        watchLimit: watchLimit,
-        isUnlimited: watchLimit === -1
-      });
-    } else {
-      console.log("⚠️ No active subscription in response");
-      const freePlan = {
+      const freePlan: Subscription = {
         planType: "free",
         planName: "Free Plan",
         dailyDownloads: 0,
         currentPlan: "FREE",
+        plan: "FREE",
+        watchLimit: 5,
+        isUnlimited: false,
       };
       setSubscription(freePlan);
       setWatchTimeLimit(5);
       setCurrentPlan("FREE");
+      globalFetchState.hasFetched = true;
+    } finally {
+      setLoading(false);
+      globalFetchState.isFetching = false;
+      console.log("🔄 fetchSubscription COMPLETED\n");
     }
-    globalFetchState.hasFetched = true;
-  } catch (error: any) {
-    console.error("❌ Subscription fetch error:", error);
-
-    const freePlan = {
-      planType: "free",
-      planName: "Free Plan",
-      dailyDownloads: 0,
-      currentPlan: "FREE",
-    };
-    setSubscription(freePlan);
-    setWatchTimeLimit(5);
-    setCurrentPlan("FREE");
-    globalFetchState.hasFetched = true;
-  } finally {
-    setLoading(false);
-    globalFetchState.isFetching = false;
-    console.log("🔄 fetchSubscription COMPLETED");
-  }
-}, []);
-  // ✅ CRITICAL FIX: Stabilize callback functions
+  }, []);
+  // ✅ Check watch limit function
   const checkWatchLimit = useCallback(async (): Promise<boolean> => {
     try {
+      console.log("🎬 Checking watch limit...");
       const response = await axiosInstance.get(
         "/subscription/check-watch-limit"
       );
+      console.log("✅ Watch limit check result:", response.data.canWatch);
       return response.data.canWatch;
     } catch (error) {
+      console.error("❌ Watch limit check error:", error);
+      // Fallback: allow if unlimited or has time remaining
       return watchTimeLimit === -1 || watchTimeLimit > 0;
     }
   }, [watchTimeLimit]);
 
-  const checkDownloadPermission =
-    useCallback(async (): Promise<DownloadPermission> => {
-      try {
-        const userString = localStorage.getItem("user");
-        if (!userString) {
-          return {
-            allowed: false,
-            reason: "Please login to download",
-            remainingDownloads: 0,
-          };
-        }
-
-        const user = JSON.parse(userString);
-        const userPlanType = subscription?.planType || "free";
-
-        if (isPremiumPlan(userPlanType)) {
-          return {
-            allowed: true,
-            remainingDownloads: "unlimited",
-            reason: undefined,
-          };
-        }
-
-        const response = await axiosInstance.get(
-          `/download/eligibility/${user._id}`
-        );
-
+  // ✅ Check download permission function
+  const checkDownloadPermission = useCallback(async (): Promise<DownloadPermission> => {
+    try {
+      console.log("📥 Checking download permission...");
+      
+      const userString = localStorage.getItem("user");
+      if (!userString) {
         return {
-          allowed: response.data.canDownload,
-          remainingDownloads: response.data.isPremium
-            ? "unlimited"
-            : response.data.maxDownloads - response.data.downloadsToday,
-          reason: response.data.canDownload ? undefined : "Daily limit reached",
-        };
-      } catch (error: any) {
-        const userPlanType = subscription?.planType || "free";
-        const isPremium = isPremiumPlan(userPlanType);
-        const dailyDownloads = subscription?.dailyDownloads || 0;
-        const allowed = isPremium || dailyDownloads < 1;
-
-        return {
-          allowed,
-          remainingDownloads: isPremium
-            ? "unlimited"
-            : Math.max(0, 1 - dailyDownloads),
-          reason: allowed ? undefined : "Daily download limit reached",
+          allowed: false,
+          reason: "Please login to download",
+          remainingDownloads: 0,
         };
       }
-    }, [subscription?.planType, subscription?.dailyDownloads]);
 
+      const user = JSON.parse(userString);
+      const userPlanType = subscription?.planType || "free";
+
+      // Premium users get unlimited downloads
+      if (isPremiumPlan(userPlanType)) {
+        console.log("✅ Premium user - unlimited downloads");
+        return {
+          allowed: true,
+          remainingDownloads: "unlimited",
+          reason: undefined,
+        };
+      }
+
+      // Check eligibility for free users
+      const response = await axiosInstance.get(
+        `/download/eligibility/${user._id}`
+      );
+
+      console.log("✅ Download eligibility:", response.data);
+
+      return {
+        allowed: response.data.canDownload,
+        remainingDownloads: response.data.isPremium
+          ? "unlimited"
+          : response.data.maxDownloads - response.data.downloadsToday,
+        reason: response.data.canDownload ? undefined : "Daily limit reached",
+      };
+    } catch (error: any) {
+      console.error("❌ Download permission check error:", error);
+      
+      // Fallback calculation
+      const userPlanType = subscription?.planType || "free";
+      const isPremium = isPremiumPlan(userPlanType);
+      const dailyDownloads = subscription?.dailyDownloads || 0;
+      const allowed = isPremium || dailyDownloads < 1;
+
+      return {
+        allowed,
+        remainingDownloads: isPremium
+          ? "unlimited"
+          : Math.max(0, 1 - dailyDownloads),
+        reason: allowed ? undefined : "Daily download limit reached",
+      };
+    }
+  }, [subscription?.planType, subscription?.dailyDownloads]);
+
+  // ✅ Manual refresh function
   const refreshSubscription = useCallback(async () => {
     console.log("🔄 Manual refresh requested");
     globalFetchState.hasFetched = false;
     setLoading(true);
     await fetchSubscription();
   }, [fetchSubscription]);
-
   // ✅ FIXED: Initial fetch (runs ONCE)
   useEffect(() => {
     if (globalFetchState.hasFetched) {
@@ -268,26 +315,43 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   useEffect(() => {
     const handleStorageChange = (e: Event) => {
       if (e instanceof StorageEvent && e.key === "token") {
-        console.log("📢 Token changed, refetching");
+        console.log("📢 Token changed in storage, refetching");
         globalFetchState.hasFetched = false;
         fetchSubscription();
       } else if (e.type === "tokenUpdated") {
-        console.log("📢 Token updated event");
+        console.log("📢 Token updated event received");
         globalFetchState.hasFetched = false;
         fetchSubscription();
+      } else if (e.type === "tokenExpired") {
+        console.log("📢 Token expired event received");
+        // Set to free plan immediately
+        const freePlan: Subscription = {
+          planType: "free",
+          planName: "Free Plan",
+          dailyDownloads: 0,
+          currentPlan: "FREE",
+          plan: "FREE",
+          watchLimit: 5,
+          isUnlimited: false,
+        };
+        setSubscription(freePlan);
+        setWatchTimeLimit(5);
+        setCurrentPlan("FREE");
       }
     };
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("tokenUpdated", handleStorageChange);
+    window.addEventListener("tokenExpired", handleStorageChange);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("tokenUpdated", handleStorageChange);
+      window.removeEventListener("tokenExpired", handleStorageChange);
     };
   }, [fetchSubscription]);
 
-  // ✅ CRITICAL FIX: Compute derived values inline
+  // ✅ Compute derived values inline (stable)
   const userPlanType = subscription?.planType || "free";
   const canDownload =
     isPremiumPlan(userPlanType) || (subscription?.dailyDownloads || 0) < 1;
