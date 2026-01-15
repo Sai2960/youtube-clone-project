@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-// src/components/ui/MobileBottomNav.tsx - GUARANTEED FIX
+// src/components/ui/MobileBottomNav.tsx - COMPLETELY FIXED VERSION
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -10,101 +9,41 @@ import { useUser } from "@/lib/AuthContext";
 const MobileBottomNav: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
-  const [isDark, setIsDark] = useState<boolean | null>(null); // null = not yet determined
+  const [isDark, setIsDark] = useState(false);
 
-  // Detect dark mode from multiple sources
+  // Detect dark mode
   useEffect(() => {
     const checkDarkMode = () => {
-      // 1. Check localStorage (most apps store theme preference here)
-      const storedTheme =
-        localStorage.getItem("theme") ||
-        localStorage.getItem("color-theme") ||
-        localStorage.getItem("darkMode");
+      // Check multiple sources for dark mode
+      const htmlHasDark = document.documentElement.classList.contains("dark");
+      const bodyHasDark = document.body.classList.contains("dark");
+      const dataTheme = document.documentElement.getAttribute("data-theme");
+      const storedTheme = localStorage.getItem("theme");
 
-      if (storedTheme === "dark") {
-        setIsDark(true);
-        return;
-      }
-      if (storedTheme === "light") {
+      // Priority: data-theme attribute > localStorage > class > system preference
+      if (dataTheme === "light" || storedTheme === "light") {
         setIsDark(false);
         return;
       }
-
-      // 2. Check data-theme attribute
-      const dataTheme =
-        document.documentElement.getAttribute("data-theme") ||
-        document.body.getAttribute("data-theme");
-      if (dataTheme === "dark") {
-        setIsDark(true);
-        return;
-      }
-      if (dataTheme === "light") {
-        setIsDark(false);
-        return;
-      }
-
-      // 3. Check for .dark class
-      if (
-        document.documentElement.classList.contains("dark") ||
-        document.body.classList.contains("dark")
-      ) {
+      if (dataTheme === "dark" || storedTheme === "dark") {
         setIsDark(true);
         return;
       }
 
-      // 4. Check for .light class (explicit light mode)
-      if (
-        document.documentElement.classList.contains("light") ||
-        document.body.classList.contains("light")
-      ) {
-        setIsDark(false);
-        return;
-      }
-
-      // 5. Check CSS variable (if your app uses --theme or similar)
-      const computedBg = getComputedStyle(document.documentElement)
-        .getPropertyValue("--bg-primary")
-        .trim();
-      if (computedBg) {
-        // If bg-primary is dark color, it's dark mode
-        const isDarkBg =
-          computedBg === "#0f0f0f" ||
-          computedBg === "#000000" ||
-          computedBg === "#121212" ||
-          computedBg === "#1a1a1a";
-        setIsDark(isDarkBg);
-        return;
-      }
-
-      // 6. Check actual background color of body/main content
-      const bodyBg = getComputedStyle(document.body).backgroundColor;
-      if (bodyBg) {
-        // Parse RGB values
-        const match = bodyBg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-        if (match) {
-          const [, r, g, b] = match.map(Number);
-          // If average is low, it's dark
-          const brightness = (r + g + b) / 3;
-          setIsDark(brightness < 128);
-          return;
-        }
-      }
-
-      // 7. Fallback: Check system preference (LAST RESORT)
-      // setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-      // 8. DEFAULT TO LIGHT MODE if nothing else detected
-      setIsDark(false);
+      const isDarkMode = htmlHasDark || bodyHasDark;
+      setIsDark(isDarkMode);
     };
 
     // Initial check
     checkDarkMode();
 
-    // Re-check periodically (in case theme changes)
-    const interval = setInterval(checkDarkMode, 500);
+    // Small delay to catch theme changes after hydration
+    const timeoutId = setTimeout(checkDarkMode, 100);
 
-    // Watch for class changes
-    const observer = new MutationObserver(checkDarkMode);
+    // Watch for class changes on html/body
+    const observer = new MutationObserver(() => {
+      checkDarkMode();
+    });
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class", "data-theme"],
@@ -114,30 +53,59 @@ const MobileBottomNav: React.FC = () => {
       attributeFilter: ["class", "data-theme"],
     });
 
-    // Watch for storage changes
-    window.addEventListener("storage", checkDarkMode);
+    // Watch for localStorage changes (cross-tab)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "theme") {
+        checkDarkMode();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    // Watch for system preference changes
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", checkDarkMode);
 
     return () => {
-      clearInterval(interval);
+      clearTimeout(timeoutId);
       observer.disconnect();
-      window.removeEventListener("storage", checkDarkMode);
+      mediaQuery.removeEventListener("change", checkDarkMode);
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 
-  // Theme colors - DEFAULT TO LIGHT if not determined yet
-  const isCurrentlyDark = isDark === true;
+  // Listen for custom theme change events
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const storedTheme = localStorage.getItem("theme");
+      const dataTheme = document.documentElement.getAttribute("data-theme");
+      setIsDark(dataTheme === "dark" || storedTheme === "dark");
+    };
 
+    // Re-check on route change
+    router.events?.on("routeChangeComplete", handleThemeChange);
+
+    return () => {
+      router.events?.off("routeChangeComplete", handleThemeChange);
+    };
+  }, [router.events]);
+
+  // Theme colors
   const colors = {
-    bg: isCurrentlyDark ? "#0f0f0f" : "#ffffff",
-    border: isCurrentlyDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-    iconActive: isCurrentlyDark ? "#ffffff" : "#0f0f0f",
-    iconInactive: isCurrentlyDark ? "#aaaaaa" : "#606060",
-    textActive: isCurrentlyDark ? "#ffffff" : "#0f0f0f",
-    textInactive: isCurrentlyDark ? "#aaaaaa" : "#606060",
+    bg: isDark ? "#0f0f0f" : "#ffffff",
+    border: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+    iconActive: isDark ? "#ffffff" : "#0f0f0f",
+    iconInactive: isDark ? "#aaaaaa" : "#606060",
+    textActive: isDark ? "#ffffff" : "#0f0f0f",
+    textInactive: isDark ? "#aaaaaa" : "#606060",
   };
 
   const navItems = [
-    { icon: Home, label: "Home", path: "/", filled: false },
+    {
+      icon: Home,
+      label: "Home",
+      path: "/",
+      filled: false,
+    },
     {
       icon: "shorts",
       label: "Shorts",
@@ -178,14 +146,6 @@ const MobileBottomNav: React.FC = () => {
     return false;
   };
 
-  // Debug log (remove in production)
-  useEffect(() => {
-    console.log("🎨 MobileBottomNav theme:", isDark ? "DARK" : "LIGHT", {
-      isDark,
-      colors,
-    });
-  }, [isDark]);
-
   return (
     <nav
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
@@ -197,40 +157,53 @@ const MobileBottomNav: React.FC = () => {
     >
       <div
         className="flex items-center justify-around"
-        style={{ height: "56px", padding: "0 4px" }}
+        style={{
+          height: "56px",
+          padding: "0 4px",
+        }}
       >
         {navItems.map((item, index) => {
           const active = isActive(item.path);
 
+          // Special styling for Upload button
           if (item.isUpload) {
             const Icon = item.icon as any;
             return (
               <Link key={index} href={item.path}>
                 <div className="flex flex-col items-center justify-center w-14 h-14">
-                  <Icon size={28} strokeWidth={1.5} color={colors.iconActive} />
+                  <div className="relative">
+                    <Icon
+                      size={28}
+                      strokeWidth={1.5}
+                      style={{ color: colors.iconActive }}
+                    />
+                  </div>
                 </div>
               </Link>
             );
           }
 
+          // Shorts icon special styling
           if (item.isShorts) {
             return (
               <Link key={index} href={item.path}>
                 <div className="flex flex-col items-center justify-center gap-0.5 py-1 px-2 min-w-[64px]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width={24}
-                    height={24}
-                    fill={active ? colors.iconActive : "none"}
-                    stroke={active ? "none" : colors.iconInactive}
-                    strokeWidth={active ? 0 : 2}
-                  >
-                    <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
-                  </svg>
+                  <div className="relative flex items-center justify-center w-6 h-6">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="w-6 h-6"
+                      style={{
+                        fill: active ? colors.iconActive : "none",
+                        stroke: active ? "none" : colors.iconInactive,
+                        strokeWidth: active ? 0 : 2,
+                      }}
+                    >
+                      <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
+                    </svg>
+                  </div>
                   <span
+                    className="text-[10px] font-medium"
                     style={{
-                      fontSize: "10px",
-                      fontWeight: 500,
                       color: active ? colors.textActive : colors.textInactive,
                     }}
                   >
@@ -241,6 +214,7 @@ const MobileBottomNav: React.FC = () => {
             );
           }
 
+          // Regular nav items
           const Icon = item.icon as any;
           return (
             <Link key={index} href={item.path}>
@@ -248,13 +222,14 @@ const MobileBottomNav: React.FC = () => {
                 <Icon
                   size={24}
                   strokeWidth={2}
-                  color={active ? colors.iconActive : colors.iconInactive}
-                  fill={active && item.filled ? colors.iconActive : "none"}
+                  fill={active && item.filled ? "currentColor" : "none"}
+                  style={{
+                    color: active ? colors.iconActive : colors.iconInactive,
+                  }}
                 />
                 <span
+                  className="text-[10px] font-medium"
                   style={{
-                    fontSize: "10px",
-                    fontWeight: 500,
                     color: active ? colors.textActive : colors.textInactive,
                   }}
                 >
