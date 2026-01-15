@@ -1,8 +1,3 @@
-// server/index.js
-// Main server file for YouTube Clone Backend
-// FULLY MERGED VERSION - All Features + Railway Deployment Fixes
-// Version: 2.0.2 - Production Ready
-
 // =================== ENVIRONMENT SETUP (MUST BE FIRST) ===================
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -116,7 +111,6 @@ const server = http.createServer(app);
 
 // ✅ CRITICAL FIX: Ultra-fast health check FIRST (before ANY middleware)
 // This MUST be the first route to respond instantly to Railway health checks
-// ✅ FIXED: Health check with CORS headers
 app.get("/health", (req, res) => {
   // Set CORS headers FIRST
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -143,7 +137,6 @@ app.get("/health/full", (req, res) => {
 
 console.log("✅ Express app created");
 console.log("✅ Critical health check route registered");
-
 // =================== CORS CONFIGURATION ===================
 const allowedOrigins = [
   "http://localhost:3000",
@@ -165,7 +158,6 @@ const isOriginAllowed = (origin) => {
 
 console.log("✅ CORS configuration prepared");
 // =================== SOCKET.IO INITIALIZATION ===================
-// ✅ Initialize Socket.IO immediately after server creation
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
@@ -230,7 +222,6 @@ app.use(
 
 console.log("✅ Compression middleware enabled");
 
-// ✅ CRITICAL: Smart timeout - LONGER for OTP operations and uploads
 // ✅ CRITICAL: Railway-optimized timeout middleware
 app.use((req, res, next) => {
   // Skip timeout for health checks - CRITICAL for Railway
@@ -602,6 +593,9 @@ console.log("✅ Static file serving configured");
 // =================== API ROUTES ===================
 console.log("📋 Setting up API routes...");
 
+// ✅ CRITICAL: Subscription routes FIRST (before any wildcards)
+app.use("/subscription", subscriptionroutes);
+
 // Authentication and user management
 app.use("/auth", userroutes);
 app.use("/user", userroutes);
@@ -644,7 +638,6 @@ app.get("/video", async (req, res) => {
 });
 
 // Subscription and engagement routes
-app.use("/subscription", subscriptionroutes);
 app.use("/api/download", downloadroutes);
 app.use("/history", historyroutes);
 app.use("/like", likeroutes);
@@ -674,7 +667,7 @@ app.get("/", (req, res) => {
   res.json({
     message: "YouTube Clone Backend API",
     status: "OK",
-    version: "2.0.2",
+    version: "2.0.3",
     environment: process.env.NODE_ENV || "development",
     mongoConnected: mongoConnected,
     cronJobsActive: cronJobsRunning,
@@ -750,7 +743,7 @@ app.get("/health/detailed", (req, res) => {
     res.status(200).json({
       message: "Server is running",
       status: "OK",
-      version: "2.0.2",
+      version: "2.0.3",
       mongodb: mongoConnected ? "Connected" : "Disconnected",
       cronJobs: cronJobsRunning ? "Active" : "Inactive",
       socketConnections: io.sockets.sockets.size,
@@ -786,6 +779,36 @@ app.get("/health/detailed", (req, res) => {
 });
 
 console.log("✅ Health check endpoints configured");
+
+// ✅ DEBUG: List all registered routes
+app.get("/api/debug-routes", (req, res) => {
+  const routes = [];
+
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      routes.push({
+        path: middleware.route.path,
+        methods: Object.keys(middleware.route.methods),
+      });
+    } else if (middleware.name === "router") {
+      middleware.handle.stack.forEach((handler) => {
+        if (handler.route) {
+          routes.push({
+            path: handler.route.path,
+            methods: Object.keys(handler.route.methods),
+          });
+        }
+      });
+    }
+  });
+
+  res.json({
+    success: true,
+    totalRoutes: routes.length,
+    routes: routes,
+    subscriptionRoutes: routes.filter((r) => r.path?.includes("subscription")),
+  });
+});
 // =================== SOCKET.IO CONNECTION HANDLER ===================
 io.on("connection", (socket) => {
   console.log("\n👤 New user connected");
@@ -987,6 +1010,7 @@ io.on("connection", (socket) => {
 
 console.log("✅ Socket.IO connection handler configured");
 // =================== ERROR HANDLING MIDDLEWARE ===================
+// ✅ CRITICAL: This MUST come AFTER all routes
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -1052,28 +1076,31 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal server error",
-    // Only show stack trace in development
     error: process.env.NODE_ENV === "development" ? err.stack : undefined,
     timestamp: new Date().toISOString(),
   });
 });
 
-// 404 handler for undefined routes
+// ✅ CRITICAL: 404 handler MUST be the LAST route handler
+// This catches all undefined routes AFTER all other routes have been checked
 app.use((req, res) => {
-  console.log("❌ 404 - Route not found:", req.method, req.path);
+  console.log("❌404 - Route not found:", req.method, req.path);
   res.status(404).json({
     success: false,
     message: "Route not found",
     path: req.path,
     method: req.method,
-    availableEndpoints: "/",
+    availableEndpoints: {
+      root: "/",
+      health: "/health",
+      subscription: "/subscription",
+      videos: "/video",
+      auth: "/auth",
+    },
     timestamp: new Date().toISOString(),
   });
 });
-
 console.log("✅ Error handling middleware configured");
-// =================== DATABASE CONNECTION & CONFIGURATION ===================
-
 // =================== DATABASE CONNECTION & CONFIGURATION ===================
 
 const DATABASE_URL = process.env.DB_URL;
@@ -1136,10 +1163,9 @@ const connectToDatabase = async () => {
     // Don't crash the server - just log and continue
     console.log("   Server will continue without database");
     console.log("   MongoDB will retry via reconnect events");
-
-    // Don't call connectToDatabase recursively here
   }
 };
+
 // =================== MONGODB EVENT LISTENERS ===================
 
 mongoose.connection.on("connected", () => {
@@ -1399,6 +1425,7 @@ console.log("   ✓ CORS & Security");
 console.log("   ✓ Video Streaming (Range Support)");
 console.log("   ✓ Static File Serving");
 console.log("   ✓ API Routes (16+ routes)");
+console.log("   ✓ FIXED ROUTE ORDER (Subscription FIRST)");
 console.log("   ✓ Health Monitoring");
 console.log("   ✓ Error Handling");
 console.log("   ✓ Database Connection");
