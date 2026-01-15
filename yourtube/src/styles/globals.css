@@ -81,10 +81,9 @@ svg,
 canvas {
   transition: none !important;
 }
-
 /* =================== HTML & BODY =================== */
 html {
-  background-color: var(--bg-primary);
+  /* ✅ REMOVED background-color - let theme.ts handle it via inline styles */
   color: var(--text-primary);
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
@@ -92,7 +91,7 @@ html {
 }
 
 body {
-  background-color: var(--bg-primary);
+  /* ✅ REMOVED background-color - let theme.ts handle it via inline styles */
   color: var(--text-primary);
   font-family: "Roboto", "Arial", sans-serif;
   font-size: 14px;
@@ -170,12 +169,7 @@ aside {
   border-right: 1px solid var(--border-color);
 }
 
-/* =================== MAIN CONTENT =================== */
-main {
-  background-color: var(--bg-primary);
-  min-height: 100vh;
-  padding: 24px 24px 48px 24px;
-}
+
 
 @media (max-width: 1024px) {
   main {
