@@ -1,4 +1,4 @@
-// src/components/ui/MobileBottomNav.tsx - COMPLETE THEME FIX
+// src/components/ui/MobileBottomNav.tsx - FIXED VERSION
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -10,111 +10,50 @@ const MobileBottomNav: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
   
-  // ✅ SIMPLIFIED: Single source of truth from DOM
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
-  // ✅ CRITICAL: Main theme detection function
+  // Detect theme from DOM
   const detectTheme = () => {
-    if (typeof window === "undefined") return true;
+    if (typeof window === "undefined") return false;
     
-    // Check multiple sources in priority order
     const stored = localStorage.getItem("theme");
     const dataTheme = document.documentElement.getAttribute("data-theme");
     const htmlClass = document.documentElement.className;
     
-    console.log("🔍 MobileNav detecting theme:", { stored, dataTheme, htmlClass });
-    
-    // If ANY indicator says light, use light
-    const isLight = stored === "light" || 
-                    dataTheme === "light" || 
-                    htmlClass.includes("light");
-    
-    console.log("📱 MobileNav theme result:", isLight ? "LIGHT" : "DARK");
-    return !isLight; // Return isDark boolean
+    // Return true if dark, false if light
+    return stored === "dark" || 
+           dataTheme === "dark" || 
+           htmlClass.includes("dark");
   };
 
-  // ✅ EFFECT 1: Initial detection + all watchers
+  // Initial detection + watchers
   useEffect(() => {
-    // Initial check
     setIsDark(detectTheme());
 
-    // Small delay for hydration
-    const initialTimer = setTimeout(() => {
-      setIsDark(detectTheme());
-    }, 100);
-
-    // Watch DOM mutations
     const observer = new MutationObserver(() => {
       setIsDark(detectTheme());
     });
     
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["class", "data-theme", "style"],
+      attributeFilter: ["class", "data-theme"],
     });
 
-    // Watch localStorage
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "theme") {
-        setIsDark(detectTheme());
-      }
-    };
+    const handleStorage = () => setIsDark(detectTheme());
     window.addEventListener("storage", handleStorage);
 
-    // Watch custom theme event
     const handleThemeEvent = (e: Event) => {
       const customEvent = e as CustomEvent;
-      console.log("🎨 MobileNav received theme event:", customEvent.detail);
       setIsDark(customEvent.detail.theme === "dark");
     };
     window.addEventListener("themeChanged", handleThemeEvent);
 
-    // Cleanup
     return () => {
-      clearTimeout(initialTimer);
       observer.disconnect();
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("themeChanged", handleThemeEvent);
     };
   }, []);
-
-  // ✅ EFFECT 2: Re-check on route change
-  useEffect(() => {
-    const handleRouteChange = () => {
-      console.log("🔄 Route changed, re-detecting theme");
-      setIsDark(detectTheme());
-    };
-
-    router.events?.on("routeChangeComplete", handleRouteChange);
-    return () => {
-      router.events?.off("routeChangeComplete", handleRouteChange);
-    };
-  }, [router.events]);
-
-  // ✅ EFFECT 3: Force re-check every 2 seconds (safety net)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newIsDark = detectTheme();
-      if (newIsDark !== isDark) {
-        console.log("⚠️ Theme mismatch detected, fixing...");
-        setIsDark(newIsDark);
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [isDark]);
-
-  // Theme colors
-  const colors = {
-    bg: isDark ? "#0f0f0f" : "#ffffff",
-    border: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-    iconActive: isDark ? "#ffffff" : "#0f0f0f",
-    iconInactive: isDark ? "#aaaaaa" : "#606060",
-    textActive: isDark ? "#ffffff" : "#0f0f0f",
-    textInactive: isDark ? "#aaaaaa" : "#606060",
-  };
-
-  console.log("📱 MobileNav rendering with theme:", isDark ? "DARK" : "LIGHT", colors);
 
   const navItems = [
     {
@@ -165,10 +104,10 @@ const MobileBottomNav: React.FC = () => {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
+      className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 ${isDark ? 'dark' : 'light'}`}
       style={{
-        backgroundColor: colors.bg,
-        borderTop: `1px solid ${colors.border}`,
+        backgroundColor: isDark ? "#0f0f0f" : "#ffffff",
+        borderTop: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid rgba(0, 0, 0, 0.1)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
@@ -181,6 +120,12 @@ const MobileBottomNav: React.FC = () => {
       >
         {navItems.map((item, index) => {
           const active = isActive(item.path);
+          const iconColor = isDark 
+            ? (active ? "#ffffff" : "#aaaaaa")
+            : (active ? "#0f0f0f" : "#606060");
+          const textColor = isDark 
+            ? (active ? "#ffffff" : "#aaaaaa")
+            : (active ? "#0f0f0f" : "#606060");
 
           // Upload button
           if (item.isUpload) {
@@ -188,13 +133,11 @@ const MobileBottomNav: React.FC = () => {
             return (
               <Link key={index} href={item.path}>
                 <div className="flex flex-col items-center justify-center w-14 h-14">
-                  <div className="relative">
-                    <Icon
-                      size={28}
-                      strokeWidth={1.5}
-                      style={{ color: colors.iconActive }}
-                    />
-                  </div>
+                  <Icon
+                    size={28}
+                    strokeWidth={1.5}
+                    style={{ color: iconColor }}
+                  />
                 </div>
               </Link>
             );
@@ -210,8 +153,8 @@ const MobileBottomNav: React.FC = () => {
                       viewBox="0 0 24 24"
                       className="w-6 h-6"
                       style={{
-                        fill: active ? colors.iconActive : "none",
-                        stroke: active ? "none" : colors.iconInactive,
+                        fill: active ? iconColor : "none",
+                        stroke: active ? "none" : iconColor,
                         strokeWidth: active ? 0 : 2,
                       }}
                     >
@@ -220,9 +163,7 @@ const MobileBottomNav: React.FC = () => {
                   </div>
                   <span
                     className="text-[10px] font-medium"
-                    style={{
-                      color: active ? colors.textActive : colors.textInactive,
-                    }}
+                    style={{ color: textColor }}
                   >
                     {item.label}
                   </span>
@@ -240,15 +181,11 @@ const MobileBottomNav: React.FC = () => {
                   size={24}
                   strokeWidth={2}
                   fill={active && item.filled ? "currentColor" : "none"}
-                  style={{
-                    color: active ? colors.iconActive : colors.iconInactive,
-                  }}
+                  style={{ color: iconColor }}
                 />
                 <span
                   className="text-[10px] font-medium"
-                  style={{
-                    color: active ? colors.textActive : colors.textInactive,
-                  }}
+                  style={{ color: textColor }}
                 >
                   {item.label}
                 </span>
