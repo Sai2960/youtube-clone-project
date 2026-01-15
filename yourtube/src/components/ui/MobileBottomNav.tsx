@@ -1,4 +1,4 @@
-// src/components/ui/MobileBottomNav.tsx - THEME-COMPATIBLE VERSION
+// src/components/ui/MobileBottomNav.tsx - FIXED FOR YOUR THEME SYSTEM
 
 import React from "react";
 import Link from "next/link";
@@ -59,11 +59,9 @@ const MobileBottomNav: React.FC = () => {
 
   return (
     <>
-      {/* Bottom Navigation - FIXED POSITIONING WITH THEME SUPPORT */}
+      {/* Bottom Navigation - Using CSS Variables for Theme */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 
-                   bg-white dark:bg-[#0f0f0f] 
-                   border-t border-gray-200 dark:border-white/10"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav"
         style={{
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
@@ -87,7 +85,7 @@ const MobileBottomNav: React.FC = () => {
                     <div className="relative">
                       <Icon
                         size={28}
-                        className="text-gray-900 dark:text-white"
+                        className="nav-icon-primary"
                         strokeWidth={1.5}
                       />
                     </div>
@@ -106,20 +104,14 @@ const MobileBottomNav: React.FC = () => {
                         viewBox="0 0 24 24"
                         className={`w-6 h-6 ${
                           active
-                            ? "fill-gray-900 dark:fill-white"
-                            : "fill-none stroke-gray-500 dark:stroke-white stroke-2"
+                            ? "nav-shorts-active"
+                            : "nav-shorts-inactive"
                         }`}
                       >
                         <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
                       </svg>
                     </div>
-                    <span
-                      className={`text-[10px] font-medium ${
-                        active 
-                          ? "text-gray-900 dark:text-white" 
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}
-                    >
+                    <span className={`text-[10px] font-medium ${active ? "nav-text-active" : "nav-text-inactive"}`}>
                       {item.label}
                     </span>
                   </div>
@@ -134,21 +126,11 @@ const MobileBottomNav: React.FC = () => {
                 <div className="flex flex-col items-center justify-center gap-0.5 py-1 px-2 min-w-[64px]">
                   <Icon
                     size={24}
-                    className={
-                      active 
-                        ? "text-gray-900 dark:text-white" 
-                        : "text-gray-500 dark:text-gray-400"
-                    }
+                    className={active ? "nav-icon-active" : "nav-icon-inactive"}
                     strokeWidth={2}
                     fill={active && item.filled ? "currentColor" : "none"}
                   />
-                  <span
-                    className={`text-[10px] font-medium ${
-                      active 
-                        ? "text-gray-900 dark:text-white" 
-                        : "text-gray-500 dark:text-gray-400"
-                    }`}
-                  >
+                  <span className={`text-[10px] font-medium ${active ? "nav-text-active" : "nav-text-inactive"}`}>
                     {item.label}
                   </span>
                 </div>
@@ -157,6 +139,74 @@ const MobileBottomNav: React.FC = () => {
           })}
         </div>
       </nav>
+
+      {/* Theme-aware styles using CSS variables */}
+      <style jsx>{`
+        /* ===== NAV BACKGROUND ===== */
+        .mobile-bottom-nav {
+          background-color: var(--bg-primary, #ffffff);
+          border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+        }
+
+        /* ===== ICON COLORS ===== */
+        .nav-icon-primary {
+          color: var(--text-primary, #0f0f0f);
+        }
+
+        .nav-icon-active {
+          color: var(--text-primary, #0f0f0f);
+        }
+
+        .nav-icon-inactive {
+          color: var(--text-secondary, #606060);
+        }
+
+        /* ===== TEXT COLORS ===== */
+        .nav-text-active {
+          color: var(--text-primary, #0f0f0f);
+        }
+
+        .nav-text-inactive {
+          color: var(--text-secondary, #606060);
+        }
+
+        /* ===== SHORTS ICON ===== */
+        .nav-shorts-active {
+          fill: var(--text-primary, #0f0f0f);
+        }
+
+        .nav-shorts-inactive {
+          fill: none;
+          stroke: var(--text-secondary, #606060);
+          stroke-width: 2;
+        }
+
+        /* ===== DARK MODE FALLBACK (if CSS vars aren't set) ===== */
+        :global(.dark) .mobile-bottom-nav {
+          background-color: #0f0f0f;
+          border-top-color: rgba(255, 255, 255, 0.1);
+        }
+
+        :global(.dark) .nav-icon-primary,
+        :global(.dark) .nav-icon-active,
+        :global(.dark) .nav-text-active {
+          color: #ffffff;
+        }
+
+        :global(.dark) .nav-icon-inactive,
+        :global(.dark) .nav-text-inactive {
+          color: #aaaaaa;
+        }
+
+        :global(.dark) .nav-shorts-active {
+          fill: #ffffff;
+        }
+
+        :global(.dark) .nav-shorts-inactive {
+          fill: none;
+          stroke: #aaaaaa;
+        }
+      `}</style>
     </>
   );
 };
