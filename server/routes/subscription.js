@@ -41,7 +41,7 @@ router.get('/analytics', verifyToken, getSubscriptionAnalytics);
 router.post('/enforce-watch-limit', verifyToken, enforceWatchTimeLimit);
 
 // ✅ CRITICAL: Add catch-all route for debugging
-router.all('/:path(.*)', (req, res) => {
+router.use((req, res) => {
   console.log("❌ Subscription route not found:", req.method, req.path);
   res.status(404).json({
     success: false,
