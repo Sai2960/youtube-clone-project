@@ -559,7 +559,7 @@ const Home: NextPage = () => {
           {/* ========== SHORTS SECTION - COMPLETELY FIXED LAYOUT ========== */}
           {shorts.length > 0 && (
             <section
-              className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-white dark:bg-gray-900"
+              className="py-4 border-b-8 border-gray-100 dark:border-gray-800 lg:border-b lg:border-gray-200 dark:lg:border-gray-700 lg:py-6 bg-youtube-primary"
               style={{
                 display: "block",
                 width: "100%",
@@ -567,7 +567,7 @@ const Home: NextPage = () => {
               }}
             >
               {/* Header */}
-              <div className="flex items-center gap-3 px-4 mb-4 lg:px-6 bg-white dark:bg-gray-900">
+              <div className="flex items-center gap-3 px-4 mb-4 lg:px-6 bg-youtube-primary">
                 <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 lg:w-10 lg:h-10 lg:rounded-xl shadow-md">
                   <svg
                     viewBox="0 0 24 24"
@@ -583,7 +583,7 @@ const Home: NextPage = () => {
 
               {loadingShorts ? (
                 <div
-                  className="overflow-x-hidden px-4 lg:px-6 bg-white dark:bg-gray-900"
+                  className="overflow-x-hidden px-4 lg:px-6 bg-youtube-primary"
                   style={{ display: "flex", gap: "16px" }}
                 >
                   {[...Array(6)].map((_, i) => (
@@ -631,7 +631,7 @@ const Home: NextPage = () => {
                   {/* Shorts Container - FIXED WIDTH */}
                   <div
                     ref={shortsScrollRef}
-                    className="overflow-x-scroll scrollbar-hide bg-white dark:bg-gray-900"
+                    className="overflow-x-scroll scrollbar-hide bg-youtube-primary"
                     style={{
                       display: "flex",
                       gap: "16px",
