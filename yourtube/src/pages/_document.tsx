@@ -105,19 +105,21 @@ export default function CustomDocument() {
     const storedTheme = localStorage.getItem('theme');
     const theme = (storedTheme === 'light' || storedTheme === 'dark') ? storedTheme : 'dark';
     
-    const html = document.documentElement;
+   const html = document.documentElement;
     if (html) {
       html.classList.remove('light', 'dark');
       html.classList.add(theme);
       html.setAttribute('data-theme', theme);
       
       const bgColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
-      html.style.backgroundColor = bgColor;
+      const textColor = theme === 'dark' ? '#f1f1f1' : '#0f0f0f';
+      
+      // Force background using cssText
+      html.style.cssText = 'background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important;';
       
       if (document.body) {
-        document.body.style.backgroundColor = bgColor;
+        document.body.style.cssText = 'background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important;';
       }
-      
       const metaTheme = document.querySelector('meta[name="theme-color"]');
       if (metaTheme) {
         metaTheme.setAttribute('content', bgColor);

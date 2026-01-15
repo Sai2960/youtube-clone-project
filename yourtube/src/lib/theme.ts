@@ -35,10 +35,20 @@ export const applyTheme = (theme: Theme): void => {
   const bgColor = theme === "dark" ? "#0f0f0f" : "#ffffff";
   const textColor = theme === "dark" ? "#f1f1f1" : "#0f0f0f";
 
-  html.style.setProperty("background-color", bgColor, "important");
-  body.style.setProperty("background-color", bgColor, "important");
-  html.style.setProperty("color", textColor, "important");
-  body.style.setProperty("color", textColor, "important");
+  // Force background with multiple methods for reliability
+  html.style.cssText = `background-color: ${bgColor} !important; color: ${textColor} !important;`;
+  body.style.cssText = `background-color: ${bgColor} !important; color: ${textColor} !important;`;
+
+  // Also set as inline attributes
+  html.setAttribute(
+    "style",
+    `background-color: ${bgColor} !important; color: ${textColor} !important;`
+  );
+  body.setAttribute(
+    "style",
+    `background-color: ${bgColor} !important; color: ${textColor} !important;`
+  );
+
   console.log("   ✓ Set inline styles:", { bgColor, textColor });
 
   // ✅ STEP 5: Update CSS variables on :root
