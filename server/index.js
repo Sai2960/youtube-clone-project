@@ -598,13 +598,23 @@ app.get("/api/health", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.json({ status: "OK", timestamp: Date.now() });
 });
-
+// ✅ CRITICAL: Bypass timeout for subscription routes
+app.use("/subscription", (req, res, next) => {
+  // Remove timeouts for subscription routes
+  req.setTimeout(0);
+  res.setTimeout(0);
+  next();
+});
 // ✅ CRITICAL: Subscription routes FIRST with proper logging
 console.log("📋 Registering subscription routes...");
-app.use("/subscription", (req, res, next) => {
-  console.log("🔍 Subscription route hit:", req.method, req.path);
-  next();
-}, subscriptionroutes);
+app.use(
+  "/subscription",
+  (req, res, next) => {
+    console.log("🔍 Subscription route hit:", req.method, req.path);
+    next();
+  },
+  subscriptionroutes
+);
 console.log("✅ Subscription routes registered");
 
 // Authentication and user management
@@ -1024,8 +1034,19 @@ console.log("✅ Socket.IO connection handler configured");
 // ✅ CRITICAL: This MUST come AFTER all routes
 
 // Global error handler
+// ✅ FIXED: Global error handler
 app.use((err, req, res, next) => {
-  console.error("❌ Server error:", err.stack);
+  // Check if err exists
+  if (!err) {
+    return next();
+  }
+
+  console.error("❌ Server error:", err.message);
+
+  // Don't send if headers already sent
+  if (res.headersSent) {
+    return next(err);
+  }
 
   // Special handling for CORS errors
   if (err.message === "Not allowed by CORS") {
@@ -1034,7 +1055,6 @@ app.use((err, req, res, next) => {
       error: "CORS Error",
       message: "This origin is not allowed to access this resource",
       origin: req.headers.origin,
-      hint: "Add your domain to ALLOWED_ORIGINS environment variable or allowedOrigins array",
     });
   }
 
@@ -1054,7 +1074,6 @@ app.use((err, req, res, next) => {
       success: false,
       error: "Validation Error",
       message: err.message,
-      details: err.errors,
     });
   }
 
@@ -1092,10 +1111,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ✅ CRITICAL: 404 handler MUST be the LAST route handler
-// This catches all undefined routes AFTER all other routes have been checked
+// ✅ FIXED: 404 handler with proper error handling
 app.use((req, res) => {
-  console.log("❌404 - Route not found:", req.method, req.path);
+  console.log("❌ 404 - Route not found:", req.method, req.path);
+
+  // Don't send headers if already sent
+  if (res.headersSent) {
+    return;
+  }
+
   res.status(404).json({
     success: false,
     message: "Route not found",
@@ -1104,7 +1128,8 @@ app.use((req, res) => {
     availableEndpoints: {
       root: "/",
       health: "/health",
-      subscription: "/subscription",
+      subscription: "/subscription/current",
+      subscriptionPlans: "/subscription/plans",
       videos: "/video",
       auth: "/auth",
     },
