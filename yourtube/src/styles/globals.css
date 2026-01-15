@@ -12666,3 +12666,26 @@ html.light #__next {
   background-color: #ffffff !important;
   color: #0f0f0f !important;
 }
+/* Fix for media visibility in dark mode */
+.short-thumbnail-container video,
+.short-thumbnail-container img,
+.video-thumbnail-container video {
+  background-color: transparent !important;
+  opacity: 1 !important;
+}
+
+/* Ensure proper rendering in dark mode */
+.dark .short-thumbnail-container,
+.dark .video-thumbnail-container {
+  background-color: #1a1a1a !important;
+}
+
+/* Scrollbar hide utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

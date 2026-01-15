@@ -373,7 +373,7 @@ export default function HistoryContent() {
   );
 
   // ============================================================================
-  // ✅ SINGLE LOADING CHECK (KEEP ONLY THIS ONE)
+  // LOADING CHECK
   // ============================================================================
   if (loading) {
     return (
@@ -502,7 +502,7 @@ export default function HistoryContent() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Shorts Section */}
+            {/* Shorts Section - FIXED */}
             {(activeTab === "All" || activeTab === "Shorts") &&
               shortsInHistory.length > 0 && (
                 <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -532,8 +532,8 @@ export default function HistoryContent() {
                         return (
                           <Link key={item._id} href={`/shorts/${short._id}`}>
                             <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                              {/* Fixed: Added border and proper background for visibility in dark mode */}
-                              <div className="aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                              {/* FIXED: Added proper background and border for dark mode visibility */}
+                              <div className="short-thumbnail-container aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-100 dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700">
                                 {thumbnailUrl && !thumbnailFailed ? (
                                   <img
                                     src={thumbnailUrl}
@@ -562,7 +562,7 @@ export default function HistoryContent() {
                                   !videoFailed ? (
                                   <video
                                     src={videoUrl}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover bg-transparent"
                                     preload="metadata"
                                     muted
                                     playsInline
@@ -581,7 +581,7 @@ export default function HistoryContent() {
                                     }
                                   />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                                     <div className="text-center text-gray-500 dark:text-gray-400 p-4">
                                       <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
                                       <p className="text-xs">No preview</p>
@@ -589,12 +589,12 @@ export default function HistoryContent() {
                                   </div>
                                 )}
 
-                                {/* Hover overlay - more visible in dark mode */}
+                                {/* Hover overlay - enhanced for dark mode */}
                                 <div className="absolute inset-0 bg-transparent group-hover:bg-black/30 dark:group-hover:bg-black/40 transition-all duration-200" />
 
-                                {/* Play icon on hover - enhanced visibility */}
+                                {/* Play icon on hover - improved contrast */}
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                  <div className="w-14 h-14 rounded-full bg-white/95 dark:bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                                  <div className="w-14 h-14 rounded-full bg-white/95 dark:bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-2xl">
                                     <Play
                                       className="w-7 h-7 text-gray-900 dark:text-black ml-0.5"
                                       fill="currentColor"
@@ -621,7 +621,7 @@ export default function HistoryContent() {
                 </div>
               )}
 
-            {/* Videos History */}
+            {/* Videos History - FIXED */}
             {videosInHistory.length > 0 && (
               <div>
                 {groupedHistory.map(([dateGroup, items]) => {
@@ -651,15 +651,16 @@ export default function HistoryContent() {
                                   href={`/watch/${video._id}`}
                                   className="flex-shrink-0"
                                 >
-                                  <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden relative border border-gray-200 dark:border-gray-700">
+                                  {/* FIXED: Improved video thumbnail container */}
+                                  <div className="video-thumbnail-container w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden relative border-2 border-gray-200 dark:border-gray-700">
                                     <video
                                       src={getVideoUrl(video)}
-                                      className="w-full h-full object-cover"
+                                      className="w-full h-full object-cover bg-transparent"
                                       preload="metadata"
                                     />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                       <Play
-                                        className="w-10 h-10 md:w-12 md:h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
+                                        className="w-10 h-10 md:w-12 md:h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-2xl"
                                         fill="white"
                                       />
                                     </div>
@@ -748,7 +749,8 @@ export default function HistoryContent() {
                                           e.preventDefault();
                                           handleRemoveFromHistory(item._id);
                                         }}
-                                        className="text-red-600 dark:text-red-500 focus:text-red-700 dark:focus:text-red-400 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer"
+                                        className="text-red-600 dark:text-red-500 focus:text-red-700 dark:focus:text-red-400 focus:bg-red-50
+                                        dark:focus:bg-red-900/20 cursor-pointer"
                                       >
                                         <X className="w-4 h-4 mr-2" />
                                         Remove from history
