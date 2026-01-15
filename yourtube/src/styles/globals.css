@@ -12525,3 +12525,19 @@ button span {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* Force theme backgrounds - CRITICAL FIX */
+.bg-youtube-primary {
+  background-color: var(--bg-primary) !important;
+}
+
+html.dark .bg-youtube-primary,
+html.dark body,
+html.dark #__next > div {
+  background-color: #0f0f0f !important;
+}
+
+html.light .bg-youtube-primary,
+html.light body,
+html.light #__next > div {
+  background-color: #ffffff !important;
+}
