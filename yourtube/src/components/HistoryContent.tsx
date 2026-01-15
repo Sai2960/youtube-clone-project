@@ -499,124 +499,160 @@ export default function HistoryContent() {
         ) : (
           <div className="space-y-6">
             {/* Shorts Section */}
-            {(activeTab === "All" || activeTab === "Shorts") &&
-              shortsInHistory.length > 0 && (
-                <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
-                  <div className="flex items-center gap-2 mb-4 px-4 md:px-0">
-                    <Play
-                      className="text-red-600 w-5 h-5"
-                      fill="currentColor"
-                    />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Shorts
-                    </h2>
-                  </div>
+{(activeTab === "All" || activeTab === "Shorts") &&
+  shortsInHistory.length > 0 && (
+    <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div className="flex items-center gap-2 mb-4 px-4 md:px-0">
+        <Play
+          className="text-red-600 w-5 h-5"
+          fill="currentColor"
+        />
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Shorts
+        </h2>
+      </div>
 
-                  <div className="w-full shorts-scroll-container">
-                    <div className="flex gap-3 pb-2 px-4 md:px-0 min-w-min overflow-x-auto scrollbar-hide">
-                      {shortsInHistory.slice(0, 10).map((item) => {
-                        const short = item.shortid;
-                        if (!short || typeof short !== "object") return null;
+      <div className="w-full shorts-scroll-container">
+        <div className="flex gap-3 pb-2 px-4 md:px-0 min-w-min overflow-x-auto scrollbar-hide">
+          {shortsInHistory.slice(0, 10).map((item) => {
+            const short = item.shortid;
+            if (!short || typeof short !== "object") return null;
 
-                        const thumbnailUrl = getShortThumbnail(short);
-                        const videoUrl = getShortUrl(short);
+            const thumbnailUrl = getShortThumbnail(short);
+            const videoUrl = getShortUrl(short);
 
-                        return (
-                          <Link key={item._id} href={`/shorts/${short._id}`}>
-                            <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                              {/* ✅ FIXED: Stronger border and shadow in dark mode */}
-                              <div className="aspect-[9/16] bg-gray-100 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden relative shadow-sm dark:shadow-gray-800/50">
-                                {thumbnailUrl ? (
-                                  <img
-                                    src={thumbnailUrl}
-                                    alt={short.title || "Short"}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                    onError={(e) => {
-                                      console.error(
-                                        "❌ Thumbnail failed, using video"
-                                      );
-                                      e.currentTarget.style.display = "none";
-                                      const parent =
-                                        e.currentTarget.parentElement;
-                                      if (parent && videoUrl) {
-                                        const video =
-                                          document.createElement("video");
-                                        video.src = videoUrl;
-                                        video.className =
-                                          "w-full h-full object-cover";
-                                        video.preload = "metadata";
-                                        video.poster = "";
-                                        parent.appendChild(video);
-                                      }
-                                    }}
-                                  />
-                                ) : videoUrl ? (
-                                  <video
-                                    src={videoUrl}
-                                    className="w-full h-full object-cover"
-                                    preload="metadata"
-                                    poster=""
-                                    onError={(e) => {
-                                      console.error(
-                                        "❌ Video failed, showing placeholder"
-                                      );
-                                      const parent =
-                                        e.currentTarget.parentElement;
-                                      if (parent) {
-                                        parent.innerHTML = `
-                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 dark:from-gray-800 dark:to-black">
-                      <div class="text-center text-gray-300 dark:text-gray-500">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                        <p class="text-xs">Unavailable</p>
+            return (
+              <Link key={item._id} href={`/shorts/${short._id}`}>
+                <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
+                  {/* ✅ FIXED: Added background color for dark mode visibility */}
+                  <div className="aspect-[9/16] bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden relative shadow-sm">
+                    {thumbnailUrl ? (
+                      <img
+                        src={thumbnailUrl}
+                        alt={short.title || "Short"}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          console.error("❌ Thumbnail failed, trying video fallback");
+                          const imgElement = e.currentTarget;
+                          const parent = imgElement.parentElement;
+                          
+                          if (parent && videoUrl) {
+                            // Hide the broken image
+                            imgElement.style.display = "none";
+                            
+                            // Create video element as fallback
+                            const video = document.createElement("video");
+                            video.src = videoUrl;
+                            video.className = "w-full h-full object-cover absolute inset-0";
+                            video.preload = "metadata";
+                            video.muted = true;
+                            video.playsInline = true;
+                            
+                            // Add error handler for video too
+                            video.onerror = () => {
+                              console.error("❌ Video also failed, showing placeholder");
+                              video.remove();
+                              // Show placeholder
+                              const placeholder = document.createElement("div");
+                              placeholder.className = "w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-900 absolute inset-0";
+                              placeholder.innerHTML = `
+                                <div class="text-center text-gray-500 dark:text-gray-400">
+                                  <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                  <p class="text-xs">Unavailable</p>
+                                </div>
+                              `;
+                              parent.appendChild(placeholder);
+                            };
+                            
+                            parent.appendChild(video);
+                          } else if (parent) {
+                            // No video URL, show placeholder directly
+                            imgElement.style.display = "none";
+                            const placeholder = document.createElement("div");
+                            placeholder.className = "w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-900 absolute inset-0";
+                            placeholder.innerHTML = `
+                              <div class="text-center text-gray-500 dark:text-gray-400">
+                                <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                                <p class="text-xs">No preview</p>
+                              </div>
+                            `;
+                            parent.appendChild(placeholder);
+                          }
+                        }}
+                      />
+                    ) : videoUrl ? (
+                      <video
+                        src={videoUrl}
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                        muted
+                        playsInline
+                        onError={(e) => {
+                          console.error("❌ Video failed, showing placeholder");
+                          const videoElement = e.currentTarget;
+                          const parent = videoElement.parentElement;
+                          if (parent) {
+                            videoElement.style.display = "none";
+                            const placeholder = document.createElement("div");
+                            placeholder.className = "w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-900 absolute inset-0";
+                            placeholder.innerHTML = `
+                              <div class="text-center text-gray-500 dark:text-gray-400">
+                                <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                                <p class="text-xs">Unavailable</p>
+                              </div>
+                            `;
+                            parent.appendChild(placeholder);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-900">
+                        <div className="text-center text-gray-500 dark:text-gray-400">
+                          <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs">No media</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 dark:group-hover:bg-black/40 transition-all duration-200 pointer-events-none" />
+
+                    {/* Play icon overlay on hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                      <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                        <Play
+                          className="w-6 h-6 text-white ml-0.5"
+                          fill="white"
+                        />
                       </div>
                     </div>
-                  `;
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 dark:from-gray-800 dark:to-black">
-                                    <div className="text-center text-gray-300 dark:text-gray-500">
-                                      <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                      <p className="text-xs">No media</p>
-                                    </div>
-                                  </div>
-                                )}
+                  </div>
 
-                                {/* ✅ Hover overlay */}
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 dark:group-hover:bg-black/50 transition-all duration-200" />
-
-                                {/* ✅ Play icon overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                  <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                                    <Play
-                                      className="w-6 h-6 text-white ml-0.5"
-                                      fill="white"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Title and views */}
-                              <div className="mt-2 px-1">
-                                <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
-                                  {short.title || "Untitled Short"}
-                                </h3>
-                                <p className="text-xs text-gray-600 dark:text-gray-400">
-                                  {short.views?.toLocaleString() || "0"} views
-                                </p>
-                              </div>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
+                  {/* Title and views */}
+                  <div className="mt-2 px-1">
+                    <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
+                      {short.title || "Untitled Short"}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {short.views?.toLocaleString() || "0"} views
+                    </p>
                   </div>
                 </div>
-              )}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  )}
+
 
             {/* Videos History */}
             {videosInHistory.length > 0 && (
