@@ -81,7 +81,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   const [watchTimeLimit, setWatchTimeLimit] = useState(5);
   const [currentPlan, setCurrentPlan] = useState("FREE");
 
-  // ✅ IMPROVED: Enhanced fetchSubscription with better error handling and logging
+  // ✅ IMPROVED: Enhanced fetchSubscription with abort controller and better error handling
   const fetchSubscription = useCallback(async () => {
     console.log("\n🔄 ===== FETCHING SUBSCRIPTION =====");
 
@@ -122,67 +122,89 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
       }
 
       console.log("📞 Calling /subscription/current API...");
-      console.log("📞 Calling /subscription/current API...");
-      const response = await axiosInstance.get("/subscription/current", {
-        timeout: 30000, // 30 second timeout
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      });
-      console.log("✅ API Response:", response.data);
 
-      if (response.data.success) {
-        const currentPlanValue = (
-          response.data.currentPlan || "FREE"
-        ).toUpperCase();
-        const watchLimit =
-          response.data.watchTimeLimit !== undefined
-            ? response.data.watchTimeLimit
-            : 5;
+      // ✅ CRITICAL: Add abort controller to prevent request cancellation
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log("⏰ Request timeout - aborting");
+        controller.abort();
+      }, 25000);
 
-        const planDetails = {
-          currentPlan: currentPlanValue,
-          watchLimit: watchLimit,
-          isUnlimited: watchLimit === -1,
-        };
-
-        console.log("✅ Plan details from backend:", planDetails);
-
-        const newSubscription: Subscription = {
-          ...response.data.subscription,
-          planType: response.data.subscription?.planType || "free",
-          dailyDownloads: response.data.subscription?.dailyDownloads || 0,
-          currentPlan: currentPlanValue,
-          plan: currentPlanValue,
-          watchLimit: watchLimit,
-          isUnlimited: watchLimit === -1,
-        };
-
-        setSubscription(newSubscription);
-        setWatchTimeLimit(watchLimit);
-        setCurrentPlan(currentPlanValue);
-
-        console.log("✅ Subscription loaded:", {
-          plan: currentPlanValue,
-          watchLimit: watchLimit,
-          isUnlimited: watchLimit === -1,
+      try {
+        const response = await axiosInstance.get("/subscription/current", {
+          signal: controller.signal,
+          timeout: 25000,
+          headers: {
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+          },
         });
-      } else {
-        console.log("⚠️ No active subscription in response");
-        const freePlan: Subscription = {
-          planType: "free",
-          planName: "Free Plan",
-          dailyDownloads: 0,
-          currentPlan: "FREE",
-          plan: "FREE",
-          watchLimit: 5,
-          isUnlimited: false,
-        };
-        setSubscription(freePlan);
-        setWatchTimeLimit(5);
-        setCurrentPlan("FREE");
+
+        clearTimeout(timeoutId);
+
+        console.log("✅ API Response:", response.data);
+
+        if (response.data.success) {
+          const currentPlanValue = (
+            response.data.currentPlan || "FREE"
+          ).toUpperCase();
+          const watchLimit =
+            response.data.watchTimeLimit !== undefined
+              ? response.data.watchTimeLimit
+              : 5;
+
+          const planDetails = {
+            currentPlan: currentPlanValue,
+            watchLimit: watchLimit,
+            isUnlimited: watchLimit === -1,
+          };
+
+          console.log("✅ Plan details from backend:", planDetails);
+
+          const newSubscription: Subscription = {
+            ...response.data.subscription,
+            planType: response.data.subscription?.planType || "free",
+            dailyDownloads: response.data.subscription?.dailyDownloads || 0,
+            currentPlan: currentPlanValue,
+            plan: currentPlanValue,
+            watchLimit: watchLimit,
+            isUnlimited: watchLimit === -1,
+          };
+
+          setSubscription(newSubscription);
+          setWatchTimeLimit(watchLimit);
+          setCurrentPlan(currentPlanValue);
+
+          console.log("✅ Subscription loaded:", {
+            plan: currentPlanValue,
+            watchLimit: watchLimit,
+            isUnlimited: watchLimit === -1,
+          });
+        } else {
+          console.log("⚠️ No active subscription in response");
+          const freePlan: Subscription = {
+            planType: "free",
+            planName: "Free Plan",
+            dailyDownloads: 0,
+            currentPlan: "FREE",
+            plan: "FREE",
+            watchLimit: 5,
+            isUnlimited: false,
+          };
+          setSubscription(freePlan);
+          setWatchTimeLimit(5);
+          setCurrentPlan("FREE");
+        }
+        globalFetchState.hasFetched = true;
+      } catch (fetchError: any) {
+        if (fetchError.name === "AbortError") {
+          console.error("❌ Request was aborted/timed out");
+        } else {
+          throw fetchError; // Re-throw to outer catch
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
-      globalFetchState.hasFetched = true;
     } catch (error: any) {
       console.error("❌ Subscription fetch error:", {
         message: error.message,
@@ -195,7 +217,6 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
         console.log("🔄 Token expired, clearing token...");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        // Optionally dispatch event for logout
         window.dispatchEvent(new Event("tokenExpired"));
       }
 
