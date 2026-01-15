@@ -524,7 +524,8 @@ export default function HistoryContent() {
                         return (
                           <Link key={item._id} href={`/shorts/${short._id}`}>
                             <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                              <div className="aspect-[9/16] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden relative">
+                              {/* ✅ FIXED: Proper thumbnail container with border in dark mode */}
+                              <div className="aspect-[9/16] bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden relative">
                                 {thumbnailUrl ? (
                                   <img
                                     src={thumbnailUrl}
@@ -532,53 +533,77 @@ export default function HistoryContent() {
                                     className="w-full h-full object-cover"
                                     loading="lazy"
                                     onError={(e) => {
+                                      console.error(
+                                        "❌ Thumbnail failed, using video"
+                                      );
                                       e.currentTarget.style.display = "none";
                                       const parent =
                                         e.currentTarget.parentElement;
                                       if (parent && videoUrl) {
+                                        // Create video element as fallback
                                         const video =
                                           document.createElement("video");
                                         video.src = videoUrl;
                                         video.className =
                                           "w-full h-full object-cover";
                                         video.preload = "metadata";
+                                        video.poster = ""; // Ensure poster attribute exists
                                         parent.appendChild(video);
                                       }
                                     }}
                                   />
                                 ) : videoUrl ? (
+                                  // ✅ FIXED: Video with proper poster frame extraction
                                   <video
                                     src={videoUrl}
                                     className="w-full h-full object-cover"
                                     preload="metadata"
+                                    poster="" // Browser will extract first frame
                                     onError={(e) => {
+                                      console.error(
+                                        "❌ Video failed, showing placeholder"
+                                      );
                                       const parent =
                                         e.currentTarget.parentElement;
                                       if (parent) {
                                         parent.innerHTML = `
-                                          <div class="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400">
-                                            <div class="text-center">
-                                              <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M8 5v14l11-7z"/>
-                                              </svg>
-                                              <p class="text-xs">Unavailable</p>
-                                            </div>
-                                          </div>
-                                        `;
+                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 dark:from-gray-800 dark:to-black">
+                      <div class="text-center text-gray-300 dark:text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <p class="text-xs">Unavailable</p>
+                      </div>
+                    </div>
+                  `;
                                       }
                                     }}
                                   />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400">
-                                    <div className="text-center">
-                                      <Play className="w-12 h-12 mx-auto mb-2" />
+                                  // ✅ FIXED: Better placeholder with gradient
+                                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 dark:from-gray-800 dark:to-black">
+                                    <div className="text-center text-gray-300 dark:text-gray-500">
+                                      <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
                                       <p className="text-xs">No media</p>
                                     </div>
                                   </div>
                                 )}
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+
+                                {/* ✅ Hover overlay - more visible in dark mode */}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 dark:group-hover:bg-black/50 transition-all duration-200" />
+
+                                {/* ✅ ADDED: Play icon overlay for better visibility */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                  <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                                    <Play
+                                      className="w-6 h-6 text-white ml-0.5"
+                                      fill="white"
+                                    />
+                                  </div>
+                                </div>
                               </div>
 
+                              {/* ✅ Title and views - improved contrast */}
                               <div className="mt-2 px-1">
                                 <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
                                   {short.title || "Untitled Short"}
