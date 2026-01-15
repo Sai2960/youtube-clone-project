@@ -50,9 +50,19 @@ export const applyTheme = (theme: Theme): void => {
   );
 
   console.log("   ✓ Set inline styles:", { bgColor, textColor });
+  // ✅ ADD THIS NEW CODE HERE:
+  // Dispatch theme change event for components
+  window.dispatchEvent(
+    new CustomEvent("themeChanged", {
+      detail: { theme },
+    })
+  );
+  console.log("   ✓ Dispatched theme change event");
 
   // ✅ STEP 5: Update CSS variables on :root
   const root = document.documentElement;
+
+  // ✅ STEP 5: Update CSS variables on :root
 
   if (theme === "light") {
     // Light theme variables

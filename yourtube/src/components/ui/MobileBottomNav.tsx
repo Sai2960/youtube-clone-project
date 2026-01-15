@@ -109,6 +109,19 @@ const MobileBottomNav: React.FC = () => {
     };
   }, [router.events]);
 
+  // ✅ CRITICAL: Listen for theme change events from applyTheme()
+  useEffect(() => {
+    const handleThemeChange = (e: CustomEvent) => {
+      console.log("🎨 MobileNav received theme change event:", e.detail.theme);
+      setIsDark(e.detail.theme === "dark");
+    };
+
+    window.addEventListener("themeChanged", handleThemeChange as any);
+    return () => {
+      window.removeEventListener("themeChanged", handleThemeChange as any);
+    };
+  }, []);
+
   // ✅ FIX: Updated colors with better contrast
   const colors = {
     bg: isDark ? "#0f0f0f" : "#ffffff",
