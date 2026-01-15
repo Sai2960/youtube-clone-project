@@ -500,15 +500,12 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
           </div>
         ) : (
           <div className="space-y-6">
-         {/* Shorts Section */}
+       {/* Shorts Section */}
 {(activeTab === "All" || activeTab === "Shorts") &&
   shortsInHistory.length > 0 && (
     <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
       <div className="flex items-center gap-2 mb-4 px-4 md:px-0">
-        <Play
-          className="text-red-600 w-5 h-5"
-          fill="currentColor"
-        />
+        <Play className="text-red-600 w-5 h-5" fill="currentColor" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
           Shorts
         </h2>
@@ -527,68 +524,59 @@ const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
             const thumbnailFailed = failedThumbnails.has(shortId);
             const videoFailed = failedVideos.has(shortId);
 
+            console.log(`Short ${shortId}:`, { thumbnailUrl, videoUrl, thumbnailFailed, videoFailed });
+
             return (
               <Link key={item._id} href={`/shorts/${short._id}`}>
                 <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
-                  <div className="aspect-[9/16] bg-gray-200 dark:bg-[#272727] border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden relative">
+                  <div className="aspect-[9/16] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden relative">
                     
-                    {/* Show thumbnail if available and not failed */}
-                    {thumbnailUrl && !thumbnailFailed && (
+                    {thumbnailUrl && !thumbnailFailed ? (
                       <img
                         src={thumbnailUrl}
                         alt={short.title || "Short"}
                         className="w-full h-full object-cover"
                         loading="lazy"
-                        onError={() => {
-                          console.error("❌ Thumbnail failed for:", shortId);
+                        onError={(e) => {
+                          console.error("❌ Thumbnail failed for:", shortId, thumbnailUrl);
                           setFailedThumbnails(prev => new Set(prev).add(shortId));
                         }}
+                        onLoad={() => console.log("✅ Thumbnail loaded:", shortId)}
                       />
-                    )}
-                    
-                    {/* Show video if thumbnail failed or no thumbnail, and video not failed */}
-                    {((!thumbnailUrl || thumbnailFailed) && videoUrl && !videoFailed) && (
+                    ) : (thumbnailFailed || !thumbnailUrl) && videoUrl && !videoFailed ? (
                       <video
                         src={videoUrl}
                         className="w-full h-full object-cover"
                         preload="metadata"
                         muted
                         playsInline
-                        onError={() => {
-                          console.error("❌ Video failed for:", shortId);
+                        onError={(e) => {
+                          console.error("❌ Video failed for:", shortId, videoUrl);
                           setFailedVideos(prev => new Set(prev).add(shortId));
                         }}
+                        onLoadedMetadata={() => console.log("✅ Video loaded:", shortId)}
                       />
-                    )}
-                    
-                    {/* Show placeholder if both failed or no media */}
-                    {((!thumbnailUrl && !videoUrl) || 
-                      (thumbnailFailed && videoFailed) || 
-                      (thumbnailFailed && !videoUrl) ||
-                      (!thumbnailUrl && videoFailed)) && (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-300 dark:bg-[#3f3f3f]">
-                        <div className="text-center text-gray-500 dark:text-gray-400">
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                        <div className="text-center text-gray-500 dark:text-gray-400 p-4">
                           <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-xs">No preview</p>
+                          <p className="text-xs">No preview available</p>
+                          <p className="text-[10px] mt-1 opacity-70">
+                            {!thumbnailUrl && !videoUrl ? "Missing media" : "Failed to load"}
+                          </p>
                         </div>
                       </div>
                     )}
 
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 pointer-events-none" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 pointer-events-none" />
 
-                    {/* Play icon on hover */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                      <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                        <Play
-                          className="w-6 h-6 text-white ml-0.5"
-                          fill="white"
-                        />
+                      <div className="w-12 h-12 rounded-full bg-white/90 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                        <Play className="w-6 h-6 text-gray-900 dark:text-white ml-0.5" fill="currentColor" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Title and views */}
                   <div className="mt-2 px-1">
                     <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
                       {short.title || "Untitled Short"}
