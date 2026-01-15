@@ -456,53 +456,72 @@ export const getSubscriptionAnalytics = async (req, res) => {
 };
 
 // Get current subscription
-// Get current subscription
 export const getCurrentSubscription = async (req, res) => {
   try {
-    const userId = req.user.id;
+    console.log("\n🔍 ===== GET CURRENT SUBSCRIPTION =====");
+    console.log("   User ID:", req.user?.id);
+    console.log("   Headers:", req.headers.authorization?.substring(0, 20));
+
+    const userId = req.user?.id || req.user?._id;
+
+    if (!userId) {
+      console.log("❌ No user ID found");
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      console.log("❌ User not found");
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     const subscription = await Subscription.findOne({
       userId,
       status: "ACTIVE",
     });
-    const user = await User.findById(userId);
 
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-
-    // ✅ CRITICAL FIX: Determine correct watch time limit
     const currentPlan = user.currentPlan || "FREE";
     const planDetails = PLAN_DETAILS[currentPlan] || PLAN_DETAILS.FREE;
     const watchTimeLimit = planDetails.watchTime;
 
-    console.log("✅ getCurrentSubscription:", {
-      userId,
+    console.log("✅ Subscription data:", {
       currentPlan,
       watchTimeLimit,
-      subscriptionExists: !!subscription
+      hasActiveSubscription: !!subscription,
     });
 
-    return res.json({
+    const response = {
       success: true,
       subscription: {
-        planType:
-          subscription?.planType || user.currentPlan?.toLowerCase() || "free",
-        planName:
-          subscription?.planName || `${user.currentPlan} Plan` || "Free Plan",
+        planType: subscription?.planType || currentPlan.toLowerCase(),
+        planName: subscription?.planName || `${currentPlan} Plan`,
         startDate: subscription?.startDate,
         endDate: subscription?.endDate,
         status: subscription?.status || "ACTIVE",
       },
       currentPlan: currentPlan,
-      watchTimeLimit: watchTimeLimit, // ✅ Use plan-specific limit
+      watchTimeLimit: watchTimeLimit,
       subscriptionExpiry: user.subscriptionExpiry,
-    });
+    };
+
+    console.log("📤 Sending response:", response);
+    console.log("===== GET SUBSCRIPTION COMPLETE =====\n");
+
+    return res.status(200).json(response);
   } catch (error) {
-    console.error("Get subscription error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to get subscription" });
+    console.error("❌ Get subscription error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get subscription",
+      error: error.message,
+    });
   }
 };
 

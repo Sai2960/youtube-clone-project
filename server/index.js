@@ -593,8 +593,19 @@ console.log("✅ Static file serving configured");
 // =================== API ROUTES ===================
 console.log("📋 Setting up API routes...");
 
-// ✅ CRITICAL: Subscription routes FIRST (before any wildcards)
-app.use("/subscription", subscriptionroutes);
+// ✅ Alternative health endpoints
+app.get("/api/health", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.json({ status: "OK", timestamp: Date.now() });
+});
+
+// ✅ CRITICAL: Subscription routes FIRST with proper logging
+console.log("📋 Registering subscription routes...");
+app.use("/subscription", (req, res, next) => {
+  console.log("🔍 Subscription route hit:", req.method, req.path);
+  next();
+}, subscriptionroutes);
+console.log("✅ Subscription routes registered");
 
 // Authentication and user management
 app.use("/auth", userroutes);

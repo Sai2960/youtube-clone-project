@@ -17,7 +17,11 @@ const router = express.Router();
 
 // ✅ Public routes - NO authentication required
 router.get('/plans', getAvailablePlans);
-
+// ✅ Debug middleware
+router.use((req, res, next) => {
+  console.log("📍 Subscription Router:", req.method, req.path);
+  next();
+});
 // ✅ Protected routes - Authentication required
 router.post('/create-order', verifyToken, createSubscriptionOrder);
 router.post('/verify-payment', verifyToken, verifyPayment);
