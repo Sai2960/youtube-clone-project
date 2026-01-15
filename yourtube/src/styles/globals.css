@@ -1,3 +1,48 @@
+/* ============================================================================
+   🔴 CRITICAL: THEME NUCLEAR OVERRIDE - MUST BE FIRST
+   ============================================================================ */
+
+/* Force theme colors with !important - highest priority */
+html.light,
+html.light body,
+html.light #__next {
+  background-color: #ffffff !important;
+  color: #0f0f0f !important;
+}
+
+html.dark,
+html.dark body,
+html.dark #__next {
+  background-color: #0f0f0f !important;
+  color: #f1f1f1 !important;
+}
+
+/* Override Tailwind's background utilities */
+html.light .bg-youtube-primary,
+html.light [class*="bg-white"],
+html.light [class*="bg-gray-50"] {
+  background-color: #ffffff !important;
+}
+
+html.dark .bg-youtube-primary,
+html.dark [class*="bg-gray-900"],
+html.dark [class*="bg-black"] {
+  background-color: #0f0f0f !important;
+}
+
+/* Override Tailwind's text utilities */
+html.light .text-youtube-primary,
+html.light [class*="text-black"],
+html.light [class*="text-gray-900"] {
+  color: #0f0f0f !important;
+}
+
+html.dark .text-youtube-primary,
+html.dark [class*="text-white"],
+html.dark [class*="text-gray-100"] {
+  color: #f1f1f1 !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
