@@ -12651,3 +12651,18 @@ button span {
     scroll-snap-align: start;
   }
 }
+/* Force dark mode backgrounds - HIGHEST PRIORITY */
+html.dark,
+html.dark body,
+html.dark #__next {
+  background-color: #0f0f0f !important;
+  color: #f1f1f1 !important;
+}
+
+/* Force light mode backgrounds */
+html.light,
+html.light body,
+html.light #__next {
+  background-color: #ffffff !important;
+  color: #0f0f0f !important;
+}

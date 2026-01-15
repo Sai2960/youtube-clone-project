@@ -419,7 +419,7 @@ export default function HistoryContent() {
   // MAIN RENDER
   // ============================================================================
   return (
-    <div className="w-full min-h-screen bg-white dark:bg-[#0f0f0f] overflow-x-hidden">
+    <div className="w-full min-h-screen bg-white dark:!bg-[#0f0f0f] overflow-x-hidden">
       {/* Mobile Header */}
       <div className="md:hidden px-4 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
