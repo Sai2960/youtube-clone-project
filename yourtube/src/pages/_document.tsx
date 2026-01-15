@@ -63,13 +63,11 @@ export default function CustomDocument() {
           }}
         />
 
-        {/* Enhanced Theme Initialization - Prevents flash and hydration issues */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
 (function() {
   try {
-    // ✅ CRITICAL: Detect call page FIRST
     const isCallPage = window.location.pathname.startsWith('/call/');
     
     if (isCallPage) {
@@ -77,19 +75,15 @@ export default function CustomDocument() {
       const html = document.documentElement;
       const body = document.body;
       
-      // Remove ALL background styling
       html.classList.add('dark', 'call-page-active');
       html.style.background = 'none';
       html.style.backgroundColor = 'transparent';
-      html.removeAttribute('style'); // Clear any inline styles
       
       if (body) {
         body.style.background = 'none';
         body.style.backgroundColor = 'transparent';
-        body.removeAttribute('style');
       }
       
-      // Force next wrapper transparent too
       setTimeout(() => {
         const next = document.getElementById('__next');
         if (next) {
@@ -98,14 +92,16 @@ export default function CustomDocument() {
         }
       }, 0);
       
-      return; // STOP HERE - don't apply theme colors
+      return;
     }
     
-    // Normal theme initialization for other pages
+    // Normal theme initialization
     const storedTheme = localStorage.getItem('theme');
     const theme = (storedTheme === 'light' || storedTheme === 'dark') ? storedTheme : 'dark';
     
-   const html = document.documentElement;
+    const html = document.documentElement;
+    const body = document.body;
+    
     if (html) {
       html.classList.remove('light', 'dark');
       html.classList.add(theme);
@@ -114,12 +110,21 @@ export default function CustomDocument() {
       const bgColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
       const textColor = theme === 'dark' ? '#f1f1f1' : '#0f0f0f';
       
-      // Force background using cssText
+      // Force styles using cssText
       html.style.cssText = 'background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important;';
       
-      if (document.body) {
-        document.body.style.cssText = 'background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important;';
+      if (body) {
+        body.style.cssText = 'background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important;';
       }
+      
+      // Apply to #__next after DOM ready
+      setTimeout(() => {
+        const next = document.getElementById('__next');
+        if (next) {
+          next.style.cssText = 'background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important;';
+        }
+      }, 0);
+      
       const metaTheme = document.querySelector('meta[name="theme-color"]');
       if (metaTheme) {
         metaTheme.setAttribute('content', bgColor);
@@ -127,7 +132,6 @@ export default function CustomDocument() {
     }
   } catch (e) {
     console.error('Theme initialization error:', e);
-    // Fallback - but NOT on call pages
     if (!window.location.pathname.startsWith('/call/')) {
       const html = document.documentElement;
       if (html) {

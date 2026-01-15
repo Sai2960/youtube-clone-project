@@ -15,15 +15,21 @@ export const applyTheme = (theme: Theme): void => {
 
   const html = document.documentElement;
   const body = document.body;
-
   // ✅ STEP 1: Remove both theme classes
   html.classList.remove("light", "dark");
   body.classList.remove("light", "dark");
   console.log("   ✓ Removed old classes");
 
-  // ✅ STEP 2: Add new theme class
+  // ✅ STEP 2: Add new theme class IMMEDIATELY (no delay)
   html.classList.add(theme);
   body.classList.add(theme);
+
+  // Also add to #__next for Next.js
+  const nextRoot = document.getElementById("__next");
+  if (nextRoot) {
+    nextRoot.classList.remove("light", "dark");
+    nextRoot.classList.add(theme);
+  }
   console.log("   ✓ Added new class:", theme);
 
   // ✅ STEP 3: Set data attributes
@@ -35,28 +41,27 @@ export const applyTheme = (theme: Theme): void => {
   const bgColor = theme === "dark" ? "#0f0f0f" : "#ffffff";
   const textColor = theme === "dark" ? "#f1f1f1" : "#0f0f0f";
 
-  // Force background with multiple methods for reliability
+  // Use cssText to ensure !important takes effect
   html.style.cssText = `background-color: ${bgColor} !important; color: ${textColor} !important;`;
   body.style.cssText = `background-color: ${bgColor} !important; color: ${textColor} !important;`;
 
-  // Also set as inline attributes
-  html.setAttribute(
-    "style",
-    `background-color: ${bgColor} !important; color: ${textColor} !important;`
-  );
-  body.setAttribute(
-    "style",
-    `background-color: ${bgColor} !important; color: ${textColor} !important;`
-  );
+  // Also apply to #__next (reuse the variable from above)
+  if (nextRoot) {
+    nextRoot.style.cssText = `background-color: ${bgColor} !important; color: ${textColor} !important;`;
+  }
 
   console.log("   ✓ Set inline styles:", { bgColor, textColor });
   // ✅ ADD THIS NEW CODE HERE:
   // Dispatch theme change event for components
-  window.dispatchEvent(
-    new CustomEvent("themeChanged", {
-      detail: { theme },
-    })
-  );
+  // ✅ Dispatch theme change event for components
+  window.dispatchEvent(new CustomEvent("themeChanged", { detail: { theme } }));
+
+  // ✅ CRITICAL: Force Tailwind to recognize the theme change
+  requestAnimationFrame(() => {
+    document.documentElement.style.colorScheme = theme;
+    document.body.style.colorScheme = theme;
+  });
+
   console.log("   ✓ Dispatched theme change event");
 
   // ✅ STEP 5: Update CSS variables on :root
