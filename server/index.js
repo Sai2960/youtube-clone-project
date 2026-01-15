@@ -1043,21 +1043,17 @@ io.on("connection", (socket) => {
 
 console.log("✅ Socket.IO connection handler configured");
 // =================== ERROR HANDLING MIDDLEWARE ===================
-// =================== ERROR HANDLING MIDDLEWARE ===================
-// ✅ FIXED: Global error handler with proper null checks
 app.use((err, req, res, next) => {
-  // Check if err exists and is valid
+  // ✅ FIXED: Null check FIRST
   if (!err) {
     return next();
   }
 
-  // Safe error message extraction
-  const errorMessage = err?.message || "Unknown error occurred";
-  const errorStack = err?.stack || "No stack trace available";
+  const errorMessage = err.message || "Unknown error occurred";
+  const errorStack = err.stack || "No stack trace available";
 
   console.error("❌ Server error:", errorMessage);
 
-  // Log stack only in development
   if (process.env.NODE_ENV !== "production") {
     console.error("Stack:", errorStack);
   }
@@ -1067,7 +1063,7 @@ app.use((err, req, res, next) => {
     return next(err);
   }
 
-  // Special handling for CORS errors
+  // Handle specific error types
   if (errorMessage === "Not allowed by CORS") {
     return res.status(403).json({
       success: false,
@@ -1077,8 +1073,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Handle multer file upload errors
-  if (err?.code === "LIMIT_FILE_SIZE") {
+  if (err.code === "LIMIT_FILE_SIZE") {
     return res.status(413).json({
       success: false,
       error: "File Too Large",
@@ -1087,8 +1082,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Handle MongoDB errors
-  if (err?.name === "ValidationError") {
+  if (err.name === "ValidationError") {
     return res.status(400).json({
       success: false,
       error: "Validation Error",
@@ -1096,7 +1090,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  if (err?.name === "CastError") {
+  if (err.name === "CastError") {
     return res.status(400).json({
       success: false,
       error: "Invalid ID",
@@ -1104,8 +1098,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Handle JWT errors
-  if (err?.name === "JsonWebTokenError") {
+  if (err.name === "JsonWebTokenError") {
     return res.status(401).json({
       success: false,
       error: "Authentication Error",
@@ -1113,7 +1106,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  if (err?.name === "TokenExpiredError") {
+  if (err.name === "TokenExpiredError") {
     return res.status(401).json({
       success: false,
       error: "Authentication Error",
@@ -1122,7 +1115,7 @@ app.use((err, req, res, next) => {
   }
 
   // Generic error response
-  res.status(err?.status || 500).json({
+  res.status(err.status || 500).json({
     success: false,
     message: errorMessage,
     error: process.env.NODE_ENV === "development" ? errorStack : undefined,
@@ -1134,7 +1127,7 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   console.log("❌ 404 - Route not found:", req.method, req.path);
 
-  // Don't send headers if already sent
+  // Don't send if headers already sent
   if (res.headersSent) {
     return;
   }
@@ -1155,6 +1148,7 @@ app.use((req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
 console.log("✅ Error handling middleware configured");
 // =================== DATABASE CONNECTION & CONFIGURATION ===================
 

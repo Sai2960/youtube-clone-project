@@ -1,4 +1,4 @@
-// server/routes/subscription.js - COMPLETE FILE
+// server/routes/subscription.js - FIXED VERSION
 import express from 'express';
 import {
   createSubscriptionOrder,
@@ -16,70 +16,32 @@ import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// ✅ CRITICAL: Add logging middleware FIRST
+// ✅ CRITICAL: Logging middleware
 router.use((req, res, next) => {
-  console.log("📍 Subscription Router Hit:", {
-    method: req.method,
-    path: req.path,
-    fullUrl: req.originalUrl,
-    hasAuth: !!req.headers.authorization
-  });
+  console.log("\n🔍 ===== SUBSCRIPTION ROUTE =====");
+  console.log("   Method:", req.method);
+  console.log("   Path:", req.path);
+  console.log("   Full URL:", req.originalUrl);
+  console.log("   Auth:", !!req.headers.authorization);
+  console.log("================================\n");
   next();
 });
 
-// ✅ Public routes - NO authentication required
-router.get('/plans', (req, res, next) => {
-  console.log("📋 Plans route hit");
-  getAvailablePlans(req, res, next);
-});
+// ✅ Public routes (no auth needed)
+router.get('/plans', getAvailablePlans);
 
-// ✅ Protected routes - Authentication required
-router.post('/create-order', verifyToken, (req, res, next) => {
-  console.log("💳 Create order route hit");
-  createSubscriptionOrder(req, res, next);
-});
+// ✅ Protected routes
+router.post('/create-order', verifyToken, createSubscriptionOrder);
+router.post('/verify-payment', verifyToken, verifyPayment);
+router.get('/current', verifyToken, getCurrentSubscription);
+router.get('/check-watch-limit', verifyToken, checkWatchLimit);
+router.get('/transactions', verifyToken, getTransactionHistory);
+router.get('/user/:userId', verifyToken, getUserSubscription);
+router.post('/cancel', verifyToken, cancelSubscription);
+router.get('/analytics', verifyToken, getSubscriptionAnalytics);
+router.post('/enforce-watch-limit', verifyToken, enforceWatchTimeLimit);
 
-router.post('/verify-payment', verifyToken, (req, res, next) => {
-  console.log("✅ Verify payment route hit");
-  verifyPayment(req, res, next);
-});
-
-router.get('/current', verifyToken, (req, res, next) => {
-  console.log("📊 Current subscription route hit");
-  getCurrentSubscription(req, res, next);
-});
-
-router.get('/check-watch-limit', verifyToken, (req, res, next) => {
-  console.log("⏱️ Check watch limit route hit");
-  checkWatchLimit(req, res, next);
-});
-
-router.get('/transactions', verifyToken, (req, res, next) => {
-  console.log("📜 Transactions route hit");
-  getTransactionHistory(req, res, next);
-});
-
-router.get('/user/:userId', verifyToken, (req, res, next) => {
-  console.log("👤 User subscription route hit");
-  getUserSubscription(req, res, next);
-});
-
-router.post('/cancel', verifyToken, (req, res, next) => {
-  console.log("❌ Cancel subscription route hit");
-  cancelSubscription(req, res, next);
-});
-
-router.get('/analytics', verifyToken, (req, res, next) => {
-  console.log("📈 Analytics route hit");
-  getSubscriptionAnalytics(req, res, next);
-});
-
-router.post('/enforce-watch-limit', verifyToken, (req, res, next) => {
-  console.log("🚫 Enforce watch limit route hit");
-  enforceWatchTimeLimit(req, res, next);
-});
-
-// ✅ CRITICAL: Add catch-all route for debugging
+// ✅ Debug: Catch-all for 404
 router.use((req, res) => {
   console.log("❌ Subscription route not found:", req.method, req.path);
   res.status(404).json({
@@ -92,9 +54,7 @@ router.use((req, res) => {
       'GET /current',
       'POST /create-order',
       'POST /verify-payment',
-      'POST /cancel',
-      'GET /check-watch-limit',
-      'GET /transactions'
+      'POST /cancel'
     ]
   });
 });
