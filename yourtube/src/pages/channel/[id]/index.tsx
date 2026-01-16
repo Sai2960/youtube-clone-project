@@ -1224,6 +1224,7 @@ const ChannelPage = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 w-full pb-4 px-1 sm:px-0">
                           {shorts.map((short, index) => {
                             const thumbnailUrl = getShortThumbnail(short);
+                            const videoUrl = getShortVideoUrl(short);
 
                             return (
                               <div
@@ -1237,147 +1238,217 @@ const ChannelPage = () => {
                                 }}
                                 className="group cursor-pointer w-full transform transition-all duration-300 active:scale-95 md:hover:scale-[1.02]"
                               >
-                                {/* Thumbnail Container */}
-<div 
-  className="relative w-full rounded-lg sm:rounded-xl overflow-hidden shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-600"
-  style={{
-    background: 'linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)',
-  }}
->
-                                    <div
+                                {/* Thumbnail Container - FIXED FOR DARK THEME */}
+                                <div
+                                  className="relative w-full rounded-lg sm:rounded-xl overflow-hidden shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300"
+                                  style={{
+                                    background:
+                                      "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
+                                    border: "1px solid rgba(220, 38, 38, 0.3)",
+                                  }}
+                                >
+                                  <div
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                              {thumbnailUrl && thumbnailUrl !== "fallback" && thumbnailUrl.startsWith("http") ? (
-  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800">
-    <img
-      src={thumbnailUrl}
-      alt={short.title || "Short"}
-      className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-      style={{ zIndex: 1 }}
-      loading="lazy"
-     onError={(e) => {
-  console.error("❌ Thumbnail failed for:", short._id);
-  const img = e.currentTarget;
-  img.style.display = "none";
-  const parent = img.parentElement;
-  if (parent && !parent.querySelector("video") && !parent.querySelector(".fallback-gradient")) {
-    const videoUrl = getShortVideoUrl(short);
-    if (videoUrl) {
-      const videoElement = document.createElement("video");
-      videoElement.src = videoUrl;
-      videoElement.className = "absolute inset-0 w-full h-full object-cover";
-      videoElement.style.zIndex = "1";
-      videoElement.preload = "metadata";
-      videoElement.muted = true;
-      videoElement.playsInline = true;
-      videoElement.onerror = () => {
-        console.error("❌ Video also failed for:", short._id);
-        videoElement.style.display = "none";
-        if (parent && !parent.querySelector(".fallback-gradient")) {
-          const fallbackDiv = document.createElement("div");
-          fallbackDiv.className = "fallback-gradient absolute inset-0 flex items-center justify-center";
-          fallbackDiv.style.cssText = "background: linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%); z-index: 1;";
-          fallbackDiv.innerHTML = `
-            <div class="text-center p-4">
-              <div class="relative mb-3">
-                <div style="width: 80px; height: 80px; margin: 0 auto; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);">
-                  <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-              </div>
-              <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
-              <p style="font-size: 12px; font-weight: 600; color: #fecaca; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
-            </div>
-          `;
-          parent.appendChild(fallbackDiv);
-        }
-      };
-      parent.appendChild(videoElement);
-    } else {
-      if (!parent.querySelector(".fallback-gradient")) {
-        const fallbackDiv = document.createElement("div");
-        fallbackDiv.className = "fallback-gradient absolute inset-0 flex items-center justify-center";
-        fallbackDiv.style.cssText = "background: linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%); z-index: 1;";
-        fallbackDiv.innerHTML = `
-          <div class="text-center p-4">
-            <div class="relative mb-3">
-              <div style="width: 80px; height: 80px; margin: 0 auto; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);">
-                <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              </div>
-            </div>
-            <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
-            <p style="font-size: 12px; font-weight: 600; color: #fecaca; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
-          </div>
-        `;
-        parent.appendChild(fallbackDiv);
-      }
-    }
-  }
-}}
-    />
-  </div>
-) : thumbnailUrl !== "fallback" && getShortVideoUrl(short) ? (
-  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-700 to-gray-800">
-    <video
-      src={getShortVideoUrl(short)}
-      className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-      style={{ zIndex: 1 }}
-      preload="metadata"
-      muted
-      playsInline
-      onError={(e) => {
-        console.error("❌ Video failed for:", short._id);
-        const video = e.currentTarget;
-        video.style.display = "none";
-        const parent = video.parentElement;
-        if (parent) {
-          parent.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
-        }
-      }}
-    />
-  </div>
-) : (
-  <div 
-    className="absolute inset-0 w-full h-full"
-    style={{
-      background: 'linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)',
-      zIndex: 1
-    }}
-  >
-    <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
-      <div className="text-center p-4">
-        <div className="relative mb-3">
-          <div className="absolute inset-0 bg-white/30 rounded-full blur-xl animate-ping opacity-75"></div>
-          <div 
-            className="relative w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-2xl"
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(8px)',
-              border: '4px solid rgba(255, 255, 255, 0.4)'
-            }}
-          >
-            <Play className="w-10 h-10 ml-1" style={{ color: '#dc2626' }} fill="#dc2626" />
-          </div>
-        </div>
-        <p className="text-lg font-black text-white drop-shadow-lg tracking-wider" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-          SHORT
-        </p>
-        <p className="text-xs font-semibold drop-shadow" style={{ color: '#fecaca', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
-          Tap to play
-        </p>
-      </div>
-    </div>
-  </div>
-)}
-                                   
-                                    {/* Gradient Overlay - MOBILE & DESKTOP */}
+                                    {/* RENDERING LOGIC - COMPLETELY FIXED */}
+                                    {thumbnailUrl &&
+                                    thumbnailUrl !== "fallback" &&
+                                    thumbnailUrl.startsWith("http") ? (
+                                      /* Image Thumbnail */
+                                      <img
+                                        src={thumbnailUrl}
+                                        alt={short.title || "Short"}
+                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+                                        style={{ zIndex: 1 }}
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          console.error(
+                                            "❌ Image failed:",
+                                            short._id
+                                          );
+                                          const img = e.currentTarget;
+                                          img.style.display = "none";
+
+                                          // Try video fallback
+                                          const parent = img.parentElement;
+                                          if (
+                                            parent &&
+                                            !parent.querySelector("video") &&
+                                            !parent.querySelector(
+                                              ".fallback-ui"
+                                            )
+                                          ) {
+                                            if (videoUrl) {
+                                              const vid =
+                                                document.createElement("video");
+                                              vid.src = videoUrl;
+                                              vid.className =
+                                                "absolute inset-0 w-full h-full object-cover";
+                                              vid.style.cssText = "z-index: 1;";
+                                              vid.preload = "metadata";
+                                              vid.muted = true;
+                                              vid.playsInline = true;
+                                              vid.onerror = () => {
+                                                vid.style.display = "none";
+                                                // Show final fallback UI
+                                                if (
+                                                  !parent.querySelector(
+                                                    ".fallback-ui"
+                                                  )
+                                                ) {
+                                                  const fb =
+                                                    document.createElement(
+                                                      "div"
+                                                    );
+                                                  fb.className =
+                                                    "fallback-ui absolute inset-0 flex items-center justify-center";
+                                                  fb.style.cssText =
+                                                    "z-index: 1; background: linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%);";
+                                                  fb.innerHTML = `
+                          <div style="text-align: center; padding: 16px;">
+                            <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                              <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                            <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
+                            <p style="font-size: 12px; font-weight: 600; color: rgba(254, 202, 202, 1); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
+                          </div>
+                        `;
+                                                  parent.appendChild(fb);
+                                                }
+                                              };
+                                              parent.appendChild(vid);
+                                            } else {
+                                              // No video URL - show fallback immediately
+                                              const fb =
+                                                document.createElement("div");
+                                              fb.className =
+                                                "fallback-ui absolute inset-0 flex items-center justify-center";
+                                              fb.style.cssText =
+                                                "z-index: 1; background: linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%);";
+                                              fb.innerHTML = `
+                      <div style="text-align: center; padding: 16px;">
+                        <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                          <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                        <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
+                        <p style="font-size: 12px; font-weight: 600; color: rgba(254, 202, 202, 1); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
+                      </div>
+                    `;
+                                              parent.appendChild(fb);
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    ) : videoUrl &&
+                                      videoUrl.startsWith("http") ? (
+                                      /* Video Element */
+                                      <video
+                                        src={videoUrl}
+                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+                                        style={{ zIndex: 1 }}
+                                        preload="metadata"
+                                        muted
+                                        playsInline
+                                        onError={(e) => {
+                                          console.error(
+                                            "❌ Video failed:",
+                                            short._id
+                                          );
+                                          const vid = e.currentTarget;
+                                          vid.style.display = "none";
+
+                                          const parent = vid.parentElement;
+                                          if (
+                                            parent &&
+                                            !parent.querySelector(
+                                              ".fallback-ui"
+                                            )
+                                          ) {
+                                            const fb =
+                                              document.createElement("div");
+                                            fb.className =
+                                              "fallback-ui absolute inset-0 flex items-center justify-center";
+                                            fb.style.cssText =
+                                              "z-index: 1; background: linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%);";
+                                            fb.innerHTML = `
+                    <div style="text-align: center; padding: 16px;">
+                      <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                        <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      </div>
+                      <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
+                      <p style="font-size: 12px; font-weight: 600; color: rgba(254, 202, 202, 1); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
+                    </div>
+                  `;
+                                            parent.appendChild(fb);
+                                          }
+                                        }}
+                                      />
+                                    ) : (
+                                      /* Direct Fallback UI - No thumbnail or video */
+                                      <div
+                                        className="absolute inset-0 w-full h-full flex items-center justify-center"
+                                        style={{
+                                          background:
+                                            "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
+                                          zIndex: 1,
+                                        }}
+                                      >
+                                        <div className="text-center p-4">
+                                          <div className="relative mb-3">
+                                            <div
+                                              className="absolute inset-0 rounded-full animate-ping opacity-75"
+                                              style={{
+                                                background:
+                                                  "rgba(255, 255, 255, 0.3)",
+                                              }}
+                                            />
+                                            <div
+                                              className="relative w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-2xl"
+                                              style={{
+                                                background:
+                                                  "rgba(255, 255, 255, 0.95)",
+                                                backdropFilter: "blur(8px)",
+                                                border:
+                                                  "4px solid rgba(255, 255, 255, 0.4)",
+                                              }}
+                                            >
+                                              <Play
+                                                className="w-10 h-10 ml-1"
+                                                style={{ color: "#dc2626" }}
+                                                fill="#dc2626"
+                                              />
+                                            </div>
+                                          </div>
+                                          <p
+                                            className="text-lg font-black text-white tracking-wider"
+                                            style={{
+                                              textShadow:
+                                                "0 2px 4px rgba(0,0,0,0.3)",
+                                            }}
+                                          >
+                                            SHORT
+                                          </p>
+                                          <p
+                                            className="text-xs font-semibold"
+                                            style={{
+                                              color: "#fecaca",
+                                              textShadow:
+                                                "0 1px 2px rgba(0,0,0,0.2)",
+                                            }}
+                                          >
+                                            Tap to play
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     <div
                                       className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300"
                                       style={{ zIndex: 3 }}
                                     />
 
-                                    {/* Red Overlay - MOBILE & DESKTOP */}
                                     {/* Red Overlay - MOBILE & DESKTOP */}
                                     <div
                                       className="absolute inset-0 bg-red-600/0 group-active:bg-red-600/15 md:group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none"
