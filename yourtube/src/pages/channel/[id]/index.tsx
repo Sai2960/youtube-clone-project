@@ -1243,42 +1243,57 @@ const getShortVideoUrl = (short: any): string => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                     {thumbnailUrl && thumbnailUrl.startsWith("http") ? (
-  <img
-    src={thumbnailUrl}
-    alt={short.title || "Short"}
-    className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-800"
-    loading="lazy"
-    onError={(e) => {
-      // Hide failed image and show video fallback
-      const img = e.currentTarget;
-      img.style.display = 'none';
-      const parent = img.parentElement;
-      if (parent && !parent.querySelector('video')) {
-        const videoElement = document.createElement('video');
-        videoElement.src = getShortVideoUrl(short);
-        videoElement.className = 'absolute inset-0 w-full h-full object-cover bg-transparent';
-        videoElement.preload = 'metadata';
-        videoElement.muted = true;
-        videoElement.playsInline = true;
-        parent.appendChild(videoElement);
-      }
-    }}
-  />
+                    {thumbnailUrl && thumbnailUrl.startsWith("http") ? (
+  <div className="absolute inset-0 w-full h-full bg-gray-200 dark:bg-gray-700">
+    <img
+      src={thumbnailUrl}
+      alt={short.title || "Short"}
+      className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+      style={{
+        zIndex: 1,
+        position: 'absolute',
+        backgroundColor: 'transparent'
+      }}
+      loading="lazy"
+      onError={(e) => {
+        console.error("❌ Thumbnail failed for:", short._id);
+        const img = e.currentTarget;
+        img.style.display = 'none';
+        const parent = img.parentElement;
+        if (parent && !parent.querySelector('video')) {
+          const videoElement = document.createElement('video');
+          videoElement.src = getShortVideoUrl(short);
+          videoElement.className = 'absolute inset-0 w-full h-full object-cover bg-transparent';
+          videoElement.style.zIndex = '1';
+          videoElement.preload = 'metadata';
+          videoElement.muted = true;
+          videoElement.playsInline = true;
+          parent.appendChild(videoElement);
+        }
+      }}
+      onLoad={() => console.log("✅ Thumbnail loaded and visible:", short._id)}
+    />
+  </div>
 ) : getShortVideoUrl(short) ? (
-  <video
-    src={getShortVideoUrl(short)}
-    className="absolute inset-0 w-full h-full object-cover bg-transparent group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-    preload="metadata"
-    muted
-    playsInline
-    style={{ backgroundColor: 'transparent' }}
-    onError={() => {
-      console.error("❌ Video failed for:", short._id);
-    }}
-  />
+  <div className="absolute inset-0 w-full h-full bg-gray-200 dark:bg-gray-700">
+    <video
+      src={getShortVideoUrl(short)}
+      className="absolute inset-0 w-full h-full object-cover bg-transparent group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+      style={{ 
+        backgroundColor: 'transparent',
+        zIndex: 1 
+      }}
+      preload="metadata"
+      muted
+      playsInline
+      onError={() => {
+        console.error("❌ Video failed for:", short._id);
+      }}
+      onLoadedMetadata={() => console.log("✅ Video loaded:", short._id)}
+    />
+  </div>
 ) : (
-  // Premium fallback
+  // Premium fallback remains the same
   <div className="absolute inset-0 w-full h-full">
     <div className="absolute inset-0 bg-gradient-to-br from-red-500 via-pink-500 to-rose-600 dark:from-red-600 dark:via-rose-700 dark:to-red-900" />
     
