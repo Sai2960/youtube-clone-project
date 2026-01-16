@@ -533,12 +533,12 @@ export default function HistoryContent() {
                           <Link key={item._id} href={`/shorts/${short._id}`}>
                             <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
                               {/* FIXED: Added proper background and border for dark mode visibility */}
-<div className="short-thumbnail-container aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-200 dark:bg-gray-400 border-2 border-gray-400 dark:border-gray-200 shadow-md dark:shadow-2xl ring-1 dark:ring-gray-300">
+<div className="short-thumbnail-container aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-200 dark:bg-gray-400 border-2 border-gray-400 dark:border-gray-200 shadow-md dark:shadow-2xl">
                                 {thumbnailUrl && !thumbnailFailed ? (
-                                  <img
-                                    src={thumbnailUrl}
-                                    alt={short.title || "Short"}
-                                    className="w-full h-full object-cover"
+                                <img
+  src={thumbnailUrl}
+  alt={short.title || "Short"}
+  className="w-full h-full object-cover relative z-10"
                                     loading="lazy"
                                     onError={(e) => {
                                       console.error(
@@ -560,9 +560,9 @@ export default function HistoryContent() {
                                 ) : (thumbnailFailed || !thumbnailUrl) &&
                                   videoUrl &&
                                   !videoFailed ? (
-                                  <video
-                                    src={videoUrl}
-                                    className="w-full h-full object-cover bg-transparent"
+                                 <video
+  src={videoUrl}
+  className="w-full h-full object-cover bg-transparent relative z-10"
                                     preload="metadata"
                                     muted
                                     playsInline
@@ -654,12 +654,13 @@ export default function HistoryContent() {
                                   className="flex-shrink-0"
                                 >
                                   {/* FIXED: Improved video thumbnail container */}
-<div className="video-thumbnail-container w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-400 rounded-lg overflow-hidden relative border-2 border-gray-400 dark:border-gray-200 shadow-md dark:shadow-2xl ring-1 dark:ring-gray-300">
-                                      <video
-                                      src={getVideoUrl(video)}
-                                      className="w-full h-full object-cover bg-transparent"
-                                      preload="metadata"
-                                    />
+<div className="video-thumbnail-container w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-400 rounded-lg overflow-hidden relative border-2 border-gray-400 dark:border-gray-200 shadow-md dark:shadow-2xl">
+                                       <video
+  src={getVideoUrl(video)}
+  className="w-full h-full object-cover relative z-10"
+  preload="metadata"
+  style={{ backgroundColor: 'transparent' }}
+/>
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                       <Play
                                         className="w-10 h-10 md:w-12 md:h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-2xl"
