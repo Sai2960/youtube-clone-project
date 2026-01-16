@@ -15,40 +15,40 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
-import { getVideoUrl as getProperVideoUrl } from '@/lib/urlHelper';
+import { getVideoUrl as getProperVideoUrl } from "@/lib/urlHelper";
 
 export default function LikedVideosContent() {
-  const [activeTab, setActiveTab] = useState<string>('All');
+  const [activeTab, setActiveTab] = useState<string>("All");
   const [likedVideos, setLikedVideos] = useState<any[]>([]);
   const [likedShorts, setLikedShorts] = useState<any[]>([]);
   const [allLiked, setAllLiked] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
 
-  const tabs = ['All', 'Videos', 'Shorts'];
+  const tabs = ["All", "Videos", "Shorts"];
 
   // Format time ago
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     const intervals = {
       year: 31536000,
       month: 2592000,
       week: 604800,
       day: 86400,
       hour: 3600,
-      minute: 60
+      minute: 60,
     };
-    
+
     for (const [unit, secondsInUnit] of Object.entries(intervals)) {
       const interval = Math.floor(seconds / secondsInUnit);
       if (interval >= 1) {
-        return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
+        return `${interval} ${unit}${interval === 1 ? "" : "s"} ago`;
       }
     }
-    return 'just now';
+    return "just now";
   };
 
   useEffect(() => {
@@ -64,14 +64,16 @@ export default function LikedVideosContent() {
 
     try {
       const response = await axiosInstance.get(`/like/${user._id}`);
-      
+
       if (response.data.success) {
         setLikedVideos(response.data.videos || []);
         setLikedShorts(response.data.shorts || []);
         setAllLiked(response.data.combined || []);
       } else {
         // Fallback for old API
-        const validVideos = response.data.filter((item: any) => item.videoid != null);
+        const validVideos = response.data.filter(
+          (item: any) => item.videoid != null
+        );
         setLikedVideos(validVideos);
         setAllLiked(validVideos);
       }
@@ -82,64 +84,68 @@ export default function LikedVideosContent() {
     }
   };
 
-const handleUnlikeVideo = async (videoId: string, likedVideoId: string) => {
-  if (!user) return;
+  const handleUnlikeVideo = async (videoId: string, likedVideoId: string) => {
+    if (!user) return;
 
-  try {
-    console.log('🗑️ Unliking video:', { videoId, likedVideoId });
-    
-    // ✅ Toggle the like off
-    const response = await axiosInstance.post(`/like/video/${videoId}`, { 
-      userId: user._id,
-      isLike: true  // Send true to toggle it off
-    });
+    try {
+      console.log("🗑️ Unliking video:", { videoId, likedVideoId });
 
-    console.log('✅ Unlike response:', response.data);
+      // ✅ Toggle the like off
+      const response = await axiosInstance.post(`/like/video/${videoId}`, {
+        userId: user._id,
+        isLike: true, // Send true to toggle it off
+      });
 
-    if (response.data.success && !response.data.liked) {
-      // Remove from UI only if the server confirms it's unliked
-      setLikedVideos(prev => prev.filter((item) => item._id !== likedVideoId));
-      setAllLiked(prev => prev.filter((item) => item._id !== likedVideoId));
-      
-      console.log('✅ Video removed from liked list');
+      console.log("✅ Unlike response:", response.data);
+
+      if (response.data.success && !response.data.liked) {
+        // Remove from UI only if the server confirms it's unliked
+        setLikedVideos((prev) =>
+          prev.filter((item) => item._id !== likedVideoId)
+        );
+        setAllLiked((prev) => prev.filter((item) => item._id !== likedVideoId));
+
+        console.log("✅ Video removed from liked list");
+      }
+    } catch (error) {
+      console.error("❌ Error unliking video:", error);
     }
-  } catch (error) {
-    console.error("❌ Error unliking video:", error);
-  }
-};
+  };
 
-const handleUnlikeShort = async (shortId: string, likedShortId: string) => {
-  if (!user) return;
+  const handleUnlikeShort = async (shortId: string, likedShortId: string) => {
+    if (!user) return;
 
-  try {
-    console.log('🗑️ Unliking short:', { shortId, likedShortId });
-    
-    const response = await axiosInstance.post(`/like/short/${shortId}`, { 
-      userId: user._id
-    });
+    try {
+      console.log("🗑️ Unliking short:", { shortId, likedShortId });
 
-    console.log('✅ Unlike short response:', response.data);
+      const response = await axiosInstance.post(`/like/short/${shortId}`, {
+        userId: user._id,
+      });
 
-    if (response.data.success && !response.data.liked) {
-      // Remove from UI only if the server confirms it's unliked
-      setLikedShorts(prev => prev.filter((item) => item._id !== likedShortId));
-      setAllLiked(prev => prev.filter((item) => item._id !== likedShortId));
-      
-      console.log('✅ Short removed from liked list');
+      console.log("✅ Unlike short response:", response.data);
+
+      if (response.data.success && !response.data.liked) {
+        // Remove from UI only if the server confirms it's unliked
+        setLikedShorts((prev) =>
+          prev.filter((item) => item._id !== likedShortId)
+        );
+        setAllLiked((prev) => prev.filter((item) => item._id !== likedShortId));
+
+        console.log("✅ Short removed from liked list");
+      }
+    } catch (error) {
+      console.error("❌ Error unliking short:", error);
     }
-  } catch (error) {
-    console.error("❌ Error unliking short:", error);
-  }
-};
+  };
 
-const getVideoUrl = (video: any) => {
-  const url = getProperVideoUrl(video);
-  return url || '';
-};
+  const getVideoUrl = (video: any) => {
+    const url = getProperVideoUrl(video);
+    return url || "";
+  };
 
   const getShortThumbnail = (short: any) => {
     if (short?.thumbnailUrl) {
-      if (short.thumbnailUrl.startsWith('http')) {
+      if (short.thumbnailUrl.startsWith("http")) {
         return short.thumbnailUrl;
       }
       return short.thumbnailUrl;
@@ -148,8 +154,8 @@ const getVideoUrl = (video: any) => {
   };
 
   const getFilteredContent = () => {
-    if (activeTab === 'Videos') return likedVideos;
-    if (activeTab === 'Shorts') return likedShorts;
+    if (activeTab === "Videos") return likedVideos;
+    if (activeTab === "Shorts") return likedShorts;
     return allLiked;
   };
 
@@ -183,7 +189,9 @@ const getVideoUrl = (video: any) => {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 dark:border-gray-700 border-t-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading liked content...</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">
+            Loading liked content...
+          </p>
         </div>
       </div>
     );
@@ -198,14 +206,15 @@ const getVideoUrl = (video: any) => {
             No liked {activeTab.toLowerCase()} yet
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            {activeTab === 'All' ? 'Videos and shorts' : activeTab} you like will appear here.
+            {activeTab === "All" ? "Videos and shorts" : activeTab} you like
+            will appear here.
           </p>
         </div>
       </div>
     );
   }
 
-return (
+  return (
     <div className="w-full min-h-screen bg-white dark:bg-[#0f0f0f] overflow-x-hidden">
       {/* Mobile Header */}
       <div className="md:hidden px-4 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
@@ -213,7 +222,8 @@ return (
           Liked {activeTab.toLowerCase()}
         </h1>
         <p className="text-xs text-gray-600 dark:text-gray-400">
-          {filteredContent.length} {filteredContent.length === 1 ? 'item' : 'items'}
+          {filteredContent.length}{" "}
+          {filteredContent.length === 1 ? "item" : "items"}
         </p>
       </div>
 
@@ -223,21 +233,22 @@ return (
           Liked {activeTab.toLowerCase()}
         </h1>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          {filteredContent.length} {filteredContent.length === 1 ? 'item' : 'items'}
+          {filteredContent.length}{" "}
+          {filteredContent.length === 1 ? "item" : "items"}
         </p>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 md:pb-6 w-full overflow-x-hidden">
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 py-2">
-          {tabs.map(tab => (
+          {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-lg whitespace-nowrap text-sm font-medium transition-all flex-shrink-0 ${
                 activeTab === tab
-                  ? 'bg-gray-900 dark:bg-white text-white dark:text-black'
-                  : 'bg-gray-100 dark:bg-[#272727] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3f3f3f]'
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-black"
+                  : "bg-gray-100 dark:bg-[#272727] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3f3f3f]"
               }`}
             >
               {tab}
@@ -248,159 +259,197 @@ return (
         {/* Content */}
         <div className="space-y-6">
           {/* Shorts Section - MOBILE FIXED */}
-          {(activeTab === 'All' || activeTab === 'Shorts') && likedShorts.length > 0 && (
-            <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
-              <div className="flex items-center gap-2 mb-4">
-                <Play className="text-red-600 w-5 h-5" fill="currentColor" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Liked Shorts</h2>
-              </div>
-              
-              {/* ✅ MOBILE-OPTIMIZED SCROLL CONTAINER */}
-              <div className="w-full shorts-scroll-container">
-                <div className="flex gap-3 pb-2 min-w-min overflow-x-auto scrollbar-hide">
-                  {likedShorts.map(item => {
-                    const short = item.shortid;
-                    if (!short) return null;
+          {(activeTab === "All" || activeTab === "Shorts") &&
+            likedShorts.length > 0 && (
+              <div className="pb-6 border-b border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div className="flex items-center gap-2 mb-4">
+                  <Play className="text-red-600 w-5 h-5" fill="currentColor" />
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Liked Shorts
+                  </h2>
+                </div>
 
-                    return (
-                      <div key={item._id} className="flex-shrink-0 w-[160px] md:w-[180px] relative group">
-                        <Link href={`/shorts/${short._id}`} className="block">
-                          <div className="aspect-[9/16] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden relative">
-                            {getShortThumbnail(short) ? (
-                              <img
-                                src={getShortThumbnail(short)}
-                                alt={short.title || "Short"}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : short.videoUrl ? (
-                              <video
-                                src={short.videoUrl}
-                                className="w-full h-full object-cover"
-                                preload="metadata"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400">
-                                <Play className="w-12 h-12" />
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                          </div>
-                        </Link>
-                        
-                        <div className="mt-2 px-1">
-                          <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
-                            {short.title || "Untitled Short"}
-                          </h3>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            {short.views?.toLocaleString() || '0'} views
-                          </p>
-                        </div>
+                {/* ✅ MOBILE-OPTIMIZED SCROLL CONTAINER */}
+                <div className="w-full shorts-scroll-container">
+                  <div className="flex gap-3 pb-2 min-w-min overflow-x-auto scrollbar-hide">
+                    {likedShorts.map((item) => {
+                      const short = item.shortid;
+                      if (!short) return null;
 
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleUnlikeShort(short._id, item._id);
-                          }}
-                          className="absolute top-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      return (
+                        <div
+                          key={item._id}
+                          className="flex-shrink-0 w-[160px] md:w-[180px] relative group"
                         >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    );
-                  })}
+                          <Link href={`/shorts/${short._id}`} className="block">
+                            <div className="aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
+                              {getShortThumbnail(short) ? (
+                                <img
+                                  src={getShortThumbnail(short)}
+                                  alt={short.title || "Short"}
+                                  className="w-full h-full object-cover relative z-10"
+                                  loading="lazy"
+                                />
+                              ) : short.videoUrl ? (
+                                <video
+                                  src={short.videoUrl}
+                                  className="w-full h-full object-cover bg-transparent relative z-10"
+                                  preload="metadata"
+                                  muted
+                                  playsInline
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700">
+                                  <div className="text-center text-gray-600 dark:text-gray-300 p-4">
+                                    <Play className="w-12 h-12 mx-auto mb-2 opacity-60" />
+                                    <p className="text-xs font-medium">
+                                      No preview
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                              {/* Hover overlay - enhanced for dark mode */}
+                              <div className="absolute inset-0 bg-transparent group-hover:bg-black/30 dark:group-hover:bg-black/40 transition-all duration-200" />
+
+                              {/* Play icon on hover - improved contrast */}
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <div className="w-14 h-14 rounded-full bg-white/95 dark:bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-2xl">
+                                  <Play
+                                    className="w-7 h-7 text-gray-900 dark:text-black ml-0.5"
+                                    fill="currentColor"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+
+                          {/* Title and views - enhanced contrast */}
+                          <div className="mt-2 px-1">
+                            <h3 className="text-sm font-medium line-clamp-2 leading-tight text-gray-900 dark:text-white mb-1">
+                              {short.title || "Untitled Short"}
+                            </h3>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              {short.views?.toLocaleString() || "0"} views
+                            </p>
+                          </div>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleUnlikeShort(short._id, item._id);
+                            }}
+                            className="absolute top-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Videos Section */}
-          {(activeTab === 'All' || activeTab === 'Videos') && likedVideos.length > 0 && (
-            <div className="space-y-2">
-              {likedVideos.map((item) => {
-                if (!item.videoid) return null;
-                const video = item.videoid;
+          {(activeTab === "All" || activeTab === "Videos") &&
+            likedVideos.length > 0 && (
+              <div className="space-y-2">
+                {likedVideos.map((item) => {
+                  if (!item.videoid) return null;
+                  const video = item.videoid;
 
-                return (
-                  <div key={item._id} className="mb-2 md:mb-3">
-                    <div className="flex gap-2 md:gap-3 hover:bg-gray-50 dark:hover:bg-[#272727] p-2 rounded-lg transition-colors relative group">
-                      {/* Thumbnail */}
-                      <Link href={`/watch/${video._id}`} className="flex-shrink-0">
-                        <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative">
-                          <video
-                            src={getVideoUrl(video)}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                            <Play className="w-8 h-8 md:w-10 md:h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" fill="white" />
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Video Info */}
-                      <div className="flex-1 min-w-0 flex flex-col py-0.5 md:py-1">
-                        <Link href={`/watch/${video._id}`} className="flex-1">
-                          <div className="space-y-0.5 md:space-y-1">
-                            <h3 className="font-medium text-sm md:text-base line-clamp-2 text-gray-900 dark:text-white leading-tight pr-6 md:pr-8">
-                              {video.videotitle || "Untitled Video"}
-                            </h3>
-                            
-                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
-                              {video.videochanel || "Unknown Channel"}
-                            </p>
-                            
-                            <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
-                              <span>{(video.views || 0).toLocaleString()} views</span>
-                              <span>•</span>
-                              <span className="hidden sm:inline">
-                                {video.createdAt 
-                                  ? formatTimeAgo(video.createdAt)
-                                  : "Recently uploaded"}
-                              </span>
+                  return (
+                    <div key={item._id} className="mb-2 md:mb-3">
+                      <div className="flex gap-2 md:gap-3 hover:bg-gray-50 dark:hover:bg-[#272727] p-2 rounded-lg transition-colors relative group">
+                        {/* Thumbnail */}
+                        <Link
+                          href={`/watch/${video._id}`}
+                          className="flex-shrink-0"
+                        >
+                          {/* Improved video thumbnail container */}
+                          <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
+                            <video
+                              src={getVideoUrl(video)}
+                              className="w-full h-full object-cover relative z-10"
+                              style={{ backgroundColor: "transparent" }}
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                              <Play
+                                className="w-8 h-8 md:w-10 md:h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
+                                fill="white"
+                              />
                             </div>
-                            
-                            <p className="text-xs text-gray-500 dark:text-gray-500">
-                              Liked {formatTimeAgo(item.createdAt)}
-                            </p>
                           </div>
                         </Link>
-                      </div>
 
-                      {/* Menu Button */}
-                      <div className="absolute top-1 right-1 md:top-2 md:right-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                        {/* Video Info */}
+                        <div className="flex-1 min-w-0 flex flex-col py-0.5 md:py-1">
+                          <Link href={`/watch/${video._id}`} className="flex-1">
+                            <div className="space-y-0.5 md:space-y-1">
+                              <h3 className="font-medium text-sm md:text-base line-clamp-2 text-gray-900 dark:text-white leading-tight pr-6 md:pr-8">
+                                {video.videotitle || "Untitled Video"}
+                              </h3>
+
+                              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
+                                {video.videochanel || "Unknown Channel"}
+                              </p>
+
+                              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                                <span>
+                                  {(video.views || 0).toLocaleString()} views
+                                </span>
+                                <span>•</span>
+                                <span className="hidden sm:inline">
+                                  {video.createdAt
+                                    ? formatTimeAgo(video.createdAt)
+                                    : "Recently uploaded"}
+                                </span>
+                              </div>
+
+                              <p className="text-xs text-gray-500 dark:text-gray-500">
+                                Liked {formatTimeAgo(item.createdAt)}
+                              </p>
+                            </div>
+                          </Link>
+                        </div>
+
+                        {/* Menu Button */}
+                        <div className="absolute top-1 right-1 md:top-2 md:right-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-56 bg-white dark:bg-[#282828] border-gray-200 dark:border-gray-700"
                             >
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent 
-                            align="end" 
-                            className="w-56 bg-white dark:bg-[#282828] border-gray-200 dark:border-gray-700"
-                          >
-                            <DropdownMenuItem
-                              onClick={() => handleUnlikeVideo(video._id, item._id)}
-                              className="text-red-600 dark:text-red-500 focus:text-red-700 dark:focus:text-red-400 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer"
-                            >
-                              <X className="w-4 h-4 mr-2" />
-                              Remove from liked videos
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleUnlikeVideo(video._id, item._id)
+                                }
+                                className="text-red-600 dark:text-red-500 focus:text-red-700 dark:focus:text-red-400 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer"
+                              >
+                                <X className="w-4 h-4 mr-2" />
+                                Remove from liked videos
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
         </div>
       </div>
     </div>
