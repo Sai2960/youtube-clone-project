@@ -22,31 +22,67 @@ function VideoThumbnail({
   video: any;
   getVideoUrl: (v: any) => string;
 }) {
-  const [status, setStatus] = useState<"loading" | "image" | "video" | "fallback">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "image" | "video" | "fallback"
+  >("loading");
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // ✅ FIXED: Construct thumbnail URL properly
   const thumbnailUrl = video.thumbnailfilename
     ? `https://youtube-clone-project-production.up.railway.app/uploads/thumbnails/${video.thumbnailfilename}`
-    : video.thumbnail;
+    : video.thumbnail || null;
 
   useEffect(() => {
-    // Reset status when video changes
     setStatus("loading");
-    
+
     if (thumbnailUrl) {
-      // Try loading thumbnail image
       const img = new Image();
-      img.onload = () => setStatus("image");
-      img.onerror = () => {
-        // Image failed, try video
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        console.log("✅ Thumbnail loaded:", video.videotitle);
+        setStatus("image");
+      };
+      img.onerror = (e) => {
+        console.log("❌ Thumbnail failed, trying video:", video.videotitle);
         setStatus("video");
       };
       img.src = thumbnailUrl;
     } else {
-      // No thumbnail, try video directly
+      console.log("⚠️ No thumbnail, using video:", video.videotitle);
       setStatus("video");
     }
-  }, [video._id, thumbnailUrl]);
+  }, [video._id, thumbnailUrl, video.videotitle]);
+
+  // ✅ Handle video thumbnail loading
+  useEffect(() => {
+    if (status === "video" && videoRef.current) {
+      const videoElement = videoRef.current;
+
+      const handleLoadedData = () => {
+        console.log("✅ Video thumbnail loaded:", video.videotitle);
+        videoElement.currentTime = 1;
+      };
+
+      const handleSeeked = () => {
+        setStatus("video");
+      };
+
+      const handleError = (e: any) => {
+        console.log("❌ Video thumbnail error:", video.videotitle, e);
+        setStatus("fallback");
+      };
+
+      videoElement.addEventListener("loadeddata", handleLoadedData);
+      videoElement.addEventListener("seeked", handleSeeked);
+      videoElement.addEventListener("error", handleError);
+
+      return () => {
+        videoElement.removeEventListener("loadeddata", handleLoadedData);
+        videoElement.removeEventListener("seeked", handleSeeked);
+        videoElement.removeEventListener("error", handleError);
+      };
+    }
+  }, [status, video.videotitle]);
 
   // Thumbnail image
   if (status === "image" && thumbnailUrl) {
@@ -55,6 +91,7 @@ function VideoThumbnail({
         src={thumbnailUrl}
         alt={video.videotitle || "Video thumbnail"}
         className="w-full h-full object-cover"
+        crossOrigin="anonymous"
       />
     );
   }
@@ -65,27 +102,13 @@ function VideoThumbnail({
       <>
         <video
           ref={videoRef}
-          src={`${getVideoUrl(video)}#t=1`}  
+          src={`${getVideoUrl(video)}#t=1`}
           className="w-full h-full object-cover"
           preload="metadata"
           muted
           playsInline
           crossOrigin="anonymous"
-          onLoadedData={(e) => {
-            const vid = e.target as HTMLVideoElement;
-            // Seek to 1 second for better frame
-            vid.currentTime = 1;
-          }}
-          onSeeked={() => {
-            // Video loaded and seeked successfully
-            setStatus("video");
-          }}
-          onError={() => {
-            console.log("Video thumbnail failed for:", video.videotitle);
-            setStatus("fallback");
-          }}
         />
-        {/* Show loading state overlay */}
         {status === "loading" && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
             <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -161,6 +184,21 @@ export default function WatchLaterContent() {
       setLoading(false);
     }
   };
+// Add this after loadWatchLater function for debugging
+useEffect(() => {
+  if (watchLater.length > 0) {
+    console.log("🔍 Watch Later Debug:", watchLater.map(item => ({
+      id: item._id,
+      title: item.videoid?.videotitle,
+      hasThumbnailFilename: !!item.videoid?.thumbnailfilename,
+      thumbnailFilename: item.videoid?.thumbnailfilename,
+      hasThumbnail: !!item.videoid?.thumbnail,
+      thumbnail: item.videoid?.thumbnail,
+      hasVideoFilename: !!item.videoid?.videofilename,
+      videoFilename: item.videoid?.videofilename,
+    })));
+  }
+}, [watchLater]);
 
   const handleRemoveFromWatchLater = async (
     videoId: string,
