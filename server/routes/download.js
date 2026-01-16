@@ -16,8 +16,10 @@ routes.get("/stats/:userId", getDownloadStats);
 routes.get("/history/:userId", getUserDownloads);
 routes.delete("/:downloadId", deleteDownload);
 
-// ✅ POST route (record download) MUST come BEFORE GET
+// ✅ FIXED: POST route for video download
 routes.post("/video/:videoId", downloadVideo);
+
+// ✅ Stream route
 routes.get("/stream/:videoId", streamVideoDownload);
 
 export default routes;
