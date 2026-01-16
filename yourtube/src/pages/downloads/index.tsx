@@ -327,30 +327,6 @@ export default function DownloadsPage() {
             )}
           </div>
         </div>
-
-        {/* Premium Upsell - Mobile Only */}
-        {!isPremium && (
-          <div className="mt-6 sm:hidden">
-            <div className="relative overflow-hidden bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl p-5">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <Crown className="w-5 h-5 text-white" />
-                  <span className="text-white font-bold">Go Premium</span>
-                </div>
-                <p className="text-white/90 text-sm mb-4">
-                  Unlock unlimited downloads & HD quality
-                </p>
-                <Link
-                  href="/premium"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-orange-600 font-semibold rounded-xl text-sm active:scale-95 transition-all"
-                >
-                  Upgrade Now
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
