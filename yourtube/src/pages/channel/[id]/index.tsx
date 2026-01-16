@@ -188,13 +188,7 @@ const premiumStyles = `
 // THUMBNAIL HELPER - FIXED VERSION
 // ============================================================================
 const getShortThumbnail = (short: any): string => {
-  console.log("🖼️ Getting thumbnail for short:", {
-    id: short._id,
-    thumbnailUrl: short.thumbnailUrl?.substring(0, 100),
-    thumbnail: short.thumbnail?.substring(0, 100),
-    videoUrl: short.videoUrl?.substring(0, 100),
-  });
-
+  // Try explicit thumbnail fields with full URLs
   const thumbnailCandidates = [
     short.thumbnailUrl,
     short.thumbnail,
@@ -204,22 +198,27 @@ const getShortThumbnail = (short: any): string => {
 
   for (const thumb of thumbnailCandidates) {
     if (thumb && typeof thumb === "string" && thumb.startsWith("http")) {
-      console.log("✅ Using explicit thumbnail:", thumb.substring(0, 80));
-      return thumb;
+      // Check if URL is complete (has file extension)
+      if (thumb.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i)) {
+        console.log("✅ Using complete thumbnail URL");
+        return thumb;
+      }
     }
   }
 
-  if (short.videoUrl && typeof short.videoUrl === "string") {
-    if (
-      short.videoUrl.includes("supabase.co") ||
-      short.videoUrl.includes("supabase.in")
-    ) {
-      console.log("📦 Using Supabase video URL as thumbnail");
+  // Try video URL as fallback
+  if (
+    short.videoUrl &&
+    typeof short.videoUrl === "string" &&
+    short.videoUrl.startsWith("http")
+  ) {
+    if (short.videoUrl.match(/\.(mp4|webm|mov|avi)(\?|$)/i)) {
+      console.log("📦 Using video URL for thumbnail");
       return short.videoUrl;
     }
   }
 
-  console.warn("⚠️ No thumbnail available for short:", short._id);
+  console.warn("⚠️ No valid media URL for short:", short._id);
   return "fallback";
 };
 
@@ -513,28 +512,39 @@ const ChannelPage = () => {
             response.data.data || response.data.shorts || [];
           console.log("✅ Setting shorts:", fetchedShorts.length);
 
-        const processedShorts = fetchedShorts.map((short: any) => {
-  console.log('🎬 SHORT DATA:', {
-    id: short._id,
-    title: short.title,
-    thumbnailUrl: short.thumbnailUrl,
-    thumbnail: short.thumbnail,
-    videoUrl: short.videoUrl,
-    video: short.video,
-    // Log ALL possible URL fields
-    allFields: Object.keys(short).filter(k => 
-      k.toLowerCase().includes('url') || 
-      k.toLowerCase().includes('video') || 
-      k.toLowerCase().includes('thumb')
-    ).reduce((acc, k) => ({...acc, [k]: short[k]}), {})
-  });
-  
-  return {
-    ...short,
-    thumbnailUrl: short.thumbnailUrl || short.thumbnail || short.thumbnailPath || short.thumb,
-    videoUrl: short.videoUrl || short.video || short.videoPath || short.filepath,
-  };
-});
+          const processedShorts = fetchedShorts.map((short: any) => {
+            console.log("🎬 SHORT DATA:", {
+              id: short._id,
+              title: short.title,
+              thumbnailUrl: short.thumbnailUrl,
+              thumbnail: short.thumbnail,
+              videoUrl: short.videoUrl,
+              video: short.video,
+              // Log ALL possible URL fields
+              allFields: Object.keys(short)
+                .filter(
+                  (k) =>
+                    k.toLowerCase().includes("url") ||
+                    k.toLowerCase().includes("video") ||
+                    k.toLowerCase().includes("thumb")
+                )
+                .reduce((acc, k) => ({ ...acc, [k]: short[k] }), {}),
+            });
+
+            return {
+              ...short,
+              thumbnailUrl:
+                short.thumbnailUrl ||
+                short.thumbnail ||
+                short.thumbnailPath ||
+                short.thumb,
+              videoUrl:
+                short.videoUrl ||
+                short.video ||
+                short.videoPath ||
+                short.filepath,
+            };
+          });
 
           setShorts(processedShorts);
           setTimeout(() => setRenderKey((prev) => prev + 1), 100);
@@ -1545,7 +1555,6 @@ const ChannelPage = () => {
                                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                         style={{ zIndex: 1 }}
                                         loading="lazy"
-                                        
                                         onError={(e) => {
                                           console.error(
                                             "❌ Thumbnail image failed:",
@@ -1667,64 +1676,80 @@ const ChannelPage = () => {
                                           }
                                         }}
                                       />
-                                      
-                                 ) : (
-  // Enhanced fallback with better visibility
-  <div
-    className="absolute inset-0 w-full h-full flex items-center justify-center"
-    style={{ 
-      zIndex: 1,
-      background: "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)"
-    }}
-  >
-                                       <div className="text-center p-4">
-      <div className="relative mb-3">
-        <div
-          className="absolute inset-0 rounded-full animate-ping opacity-50"
-          style={{
-            background: "rgba(255, 255, 255, 0.3)",
-          }}
-        />
-                                         <div
-          className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl"
-          style={{
-            background: "rgba(255, 255, 255, 0.95)",
-          }}
-        >
+                                    ) : (
+                                      // Enhanced fallback with better visibility
+                                      <div
+                                        className="absolute inset-0 w-full h-full flex items-center justify-center"
+                                        style={{
+                                          zIndex: 1,
+                                          background:
+                                            "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
+                                        }}
+                                      >
+                                        <div className="text-center p-4">
+                                          <div className="relative mb-3">
+                                            <div
+                                              className="absolute inset-0 rounded-full animate-ping opacity-50"
+                                              style={{
+                                                background:
+                                                  "rgba(255, 255, 255, 0.3)",
+                                              }}
+                                            />
+                                            <div
+                                              className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl"
+                                              style={{
+                                                background:
+                                                  "rgba(255, 255, 255, 0.95)",
+                                              }}
+                                            >
                                               <Play
-            className="w-8 h-8 ml-1"
-            style={{ color: "#dc2626" }}
-            fill="#dc2626"
-          />
-        </div>
-      </div>
-                                        <p
-        className="text-xs font-black text-white tracking-widest"
-        style={{
-          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-        }}
-      >
-        {short.title || "SHORT"}
-      </p> <p className="text-[8px] text-white/70 mt-1">
-        Media loading...
-      </p>
-    </div>
-  </div>
-                                 )}
-{/* 🔍 DEBUG - Check raw short data */}
-{shorts.length > 0 && typeof window !== 'undefined' && (
-  <div className="fixed bottom-4 right-4 bg-yellow-500 text-black p-3 rounded-lg text-xs max-w-sm z-50 max-h-48 overflow-auto">
-    <strong>SHORT #{1} DEBUG:</strong>
-    <pre className="text-[10px] mt-2">
-      {JSON.stringify({
-        id: shorts[0]._id,
-        title: shorts[0].title?.substring(0, 30),
-        thumbnailUrl: shorts[0].thumbnailUrl,
-        videoUrl: shorts[0].videoUrl,
-      }, null, 2)}
-    </pre>
-  </div>
-)}
+                                                className="w-8 h-8 ml-1"
+                                                style={{ color: "#dc2626" }}
+                                                fill="#dc2626"
+                                              />
+                                            </div>
+                                          </div>
+                                          <p
+                                            className="text-xs font-black text-white tracking-widest"
+                                            style={{
+                                              textShadow:
+                                                "0 2px 4px rgba(0,0,0,0.3)",
+                                            }}
+                                          >
+                                            {short.title || "SHORT"}
+                                          </p>{" "}
+                                          <p className="text-[8px] text-white/70 mt-1">
+                                            Media loading...
+                                          </p>
+                                        </div>
+                                        {/* 🔍 DEBUG - Check raw short data */}
+                                        {shorts.length > 0 &&
+                                          typeof window !== "undefined" && (
+                                            <div className="fixed bottom-4 right-4 bg-yellow-500 text-black p-3 rounded-lg text-xs max-w-sm z-50 max-h-48 overflow-auto">
+                                              <strong>SHORT #{1} DEBUG:</strong>
+                                              <pre className="text-[10px] mt-2">
+                                                {JSON.stringify(
+                                                  {
+                                                    id: shorts[0]._id,
+                                                    title:
+                                                      shorts[0].title?.substring(
+                                                        0,
+                                                        30
+                                                      ),
+                                                    thumbnailUrl:
+                                                      shorts[0].thumbnailUrl,
+                                                    videoUrl:
+                                                      shorts[0].videoUrl,
+                                                  },
+                                                  null,
+                                                  2
+                                                )}
+                                              </pre>
+                                            </div>
+                                          )}
+                                      </div>
+                                    )}
+
                                     {/* Premium Gradient Overlay */}
                                     <div
                                       className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
