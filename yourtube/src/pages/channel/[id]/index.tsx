@@ -51,9 +51,9 @@ const getShortThumbnail = (short: any): string => {
     }
   }
 
-  // ✅ Fallback placeholder
+  // ✅ BRIGHT FALLBACK PLACEHOLDER - VISIBLE IN BOTH LIGHT & DARK MODE
   console.warn("⚠️ No thumbnail available for short:", short._id);
-  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%23374151"/%3E%3Ccircle cx="90" cy="160" r="30" fill="%23EF4444" opacity="0.2"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="210" text-anchor="middle" fill="%23D1D5DB" font-family="Arial" font-size="11" font-weight="bold"%3EShort%3C/text%3E%3C/svg%3E';
+  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Cdefs%3E%3ClinearGradient id="grad1" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23374151;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%231F2937;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="180" height="320" fill="url(%23grad1)"/%3E%3Ccircle cx="90" cy="160" r="40" fill="%23EF4444" opacity="0.3"/%3E%3Ccircle cx="90" cy="160" r="35" fill="%23DC2626" opacity="0.5"/%3E%3Cpath d="M75 145L105 160L75 175V145Z" fill="%23FFFFFF"/%3E%3Ctext x="90" y="220" text-anchor="middle" fill="%23F3F4F6" font-family="Arial" font-size="13" font-weight="bold"%3ESHORT%3C/text%3E%3Ctext x="90" y="235" text-anchor="middle" fill="%23D1D5DB" font-family="Arial" font-size="9"%3ETap to play%3C/text%3E%3C/svg%3E';
 };
 // ============================================================================
 // MAIN COMPONENT - STATE & REFS
@@ -1230,23 +1230,33 @@ const ChannelPage = () => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                                  {thumbnailUrl.includes("supabase.co") ||
-thumbnailUrl.includes("supabase.in") ? (
-  <>
-    <img
-      src={thumbnailUrl}
-      alt={short.title}
-      className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-700"
-      loading="lazy"
-      onError={(e) => {
-        const target = e.currentTarget as HTMLImageElement;
-        console.error("❌ Image failed, showing fallback");
-        target.style.display = "none";
-        const parent = target.parentElement;
-        if (parent && !parent.querySelector(".fallback-thumbnail")) {
-          const fallbackDiv = document.createElement("div");
-          fallbackDiv.className = "fallback-thumbnail absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900";
-          fallbackDiv.innerHTML = `
+                                    {thumbnailUrl.includes("supabase.co") ||
+                                    thumbnailUrl.includes("supabase.in") ? (
+                                      <>
+                                        <img
+                                          src={thumbnailUrl}
+                                          alt={short.title}
+                                          className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-700"
+                                          loading="lazy"
+                                          onError={(e) => {
+                                            const target =
+                                              e.currentTarget as HTMLImageElement;
+                                            console.error(
+                                              "❌ Image failed, showing fallback"
+                                            );
+                                            target.style.display = "none";
+                                            const parent = target.parentElement;
+                                            if (
+                                              parent &&
+                                              !parent.querySelector(
+                                                ".fallback-thumbnail"
+                                              )
+                                            ) {
+                                              const fallbackDiv =
+                                                document.createElement("div");
+                                              fallbackDiv.className =
+                                                "fallback-thumbnail absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900";
+                                              fallbackDiv.innerHTML = `
             <div class="text-center">
               <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/20 flex items-center justify-center">
                 <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
@@ -1256,37 +1266,61 @@ thumbnailUrl.includes("supabase.in") ? (
               <p class="text-xs text-gray-300 font-semibold">Short Video</p>
             </div>
           `;
-          parent.appendChild(fallbackDiv);
-        }
-      }}
-      onLoad={() => console.log("✅ Thumbnail loaded:", short._id)}
-    />
-  </>
-                                  ) : thumbnailUrl.includes("data:image/svg") ? (
-  <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900">
-    <div className="text-center">
-      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/30 flex items-center justify-center ring-2 ring-red-500/50">
-        <Play className="w-8 h-8 text-red-400" fill="currentColor" />
-      </div>
-      <p className="text-xs text-gray-200 font-bold tracking-wide">SHORT</p>
-      <p className="text-[10px] text-gray-400 mt-1">Tap to play</p>
-    </div>
-  </div>
-                                ) : (
-  <img
-    src={thumbnailUrl}
-    alt={short.title}
-    className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-700"
-    loading="lazy"
-    onError={(e) => {
-      const target = e.currentTarget as HTMLImageElement;
-      console.error("⚠️ Final fallback triggered");
-      target.style.display = "none";
-      const parent = target.parentElement;
-      if (parent && !parent.querySelector(".fallback-thumbnail")) {
-        const fallbackDiv = document.createElement("div");
-        fallbackDiv.className = "fallback-thumbnail absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900";
-        fallbackDiv.innerHTML = `
+                                              parent.appendChild(fallbackDiv);
+                                            }
+                                          }}
+                                          onLoad={() =>
+                                            console.log(
+                                              "✅ Thumbnail loaded:",
+                                              short._id
+                                            )
+                                          }
+                                        />
+                                      </>
+                                    ) : thumbnailUrl.includes(
+                                        "data:image/svg"
+                                      ) ? (
+                                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900">
+                                        <div className="text-center">
+                                          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/30 flex items-center justify-center ring-2 ring-red-500/50">
+                                            <Play
+                                              className="w-8 h-8 text-red-400"
+                                              fill="currentColor"
+                                            />
+                                          </div>
+                                          <p className="text-xs text-gray-200 font-bold tracking-wide">
+                                            SHORT
+                                          </p>
+                                          <p className="text-[10px] text-gray-400 mt-1">
+                                            Tap to play
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <img
+                                        src={thumbnailUrl}
+                                        alt={short.title}
+                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-700"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          const target =
+                                            e.currentTarget as HTMLImageElement;
+                                          console.error(
+                                            "⚠️ Final fallback triggered"
+                                          );
+                                          target.style.display = "none";
+                                          const parent = target.parentElement;
+                                          if (
+                                            parent &&
+                                            !parent.querySelector(
+                                              ".fallback-thumbnail"
+                                            )
+                                          ) {
+                                            const fallbackDiv =
+                                              document.createElement("div");
+                                            fallbackDiv.className =
+                                              "fallback-thumbnail absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900";
+                                            fallbackDiv.innerHTML = `
           <div class="text-center">
             <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/30 flex items-center justify-center ring-4 ring-red-500/20 animate-pulse">
               <svg class="w-10 h-10 text-red-400" fill="currentColor" viewBox="0 0 24 24">
@@ -1297,11 +1331,11 @@ thumbnailUrl.includes("supabase.in") ? (
             <p class="text-xs text-gray-300 mt-1">Tap to watch</p>
           </div>
         `;
-        parent.appendChild(fallbackDiv);
-      }
-    }}
-  />
-)}
+                                            parent.appendChild(fallbackDiv);
+                                          }
+                                        }}
+                                      />
+                                    )}
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300" />
 
