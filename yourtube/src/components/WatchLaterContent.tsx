@@ -86,8 +86,8 @@ function VideoThumbnail({
             ref={videoRef}
             src={`${videoUrl}#t=1`}
             className="w-full h-full object-cover relative z-10"
-            style={{ backgroundColor: "transparent" }}
             preload="metadata"
+            style={{ backgroundColor: "transparent" }}
             muted
             playsInline
             crossOrigin="anonymous"
@@ -340,7 +340,7 @@ export default function WatchLaterContent() {
                 <div className="flex gap-2 md:gap-3 hover:bg-gray-50 dark:hover:bg-[#272727] p-2 rounded-lg transition-colors relative group">
                   {/* Thumbnail */}
                   <Link href={`/watch/${video._id}`} className="flex-shrink-0">
-                    <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] rounded-lg overflow-hidden relative bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
+                    <div className="video-thumbnail-container w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
                       <VideoThumbnail video={video} getVideoUrl={getVideoUrl} />
 
                       {/* Hover overlay */}
