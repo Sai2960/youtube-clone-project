@@ -1528,6 +1528,7 @@ const ChannelPage = () => {
                                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                         style={{ zIndex: 1 }}
                                         loading="lazy"
+                                        
                                         onError={(e) => {
                                           console.error(
                                             "❌ Thumbnail image failed:",
@@ -1649,46 +1650,49 @@ const ChannelPage = () => {
                                           }
                                         }}
                                       />
-                                    ) : (
-                                      <div
-                                        className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-500 to-rose-500"
-                                        style={{ zIndex: 1 }}
-                                      >
-                                        <div className="text-center p-4">
-                                          <div className="relative mb-3">
-                                            <div
-                                              className="absolute inset-0 rounded-full animate-ping opacity-50"
-                                              style={{
-                                                background:
-                                                  "rgba(255, 255, 255, 0.3)",
-                                              }}
-                                            />
-                                            <div
-                                              className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl"
-                                              style={{
-                                                background:
-                                                  "rgba(255, 255, 255, 0.95)",
-                                              }}
-                                            >
+                                 ) : (
+  // Enhanced fallback with better visibility
+  <div
+    className="absolute inset-0 w-full h-full flex items-center justify-center"
+    style={{ 
+      zIndex: 1,
+      background: "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)"
+    }}
+  >
+                                       <div className="text-center p-4">
+      <div className="relative mb-3">
+        <div
+          className="absolute inset-0 rounded-full animate-ping opacity-50"
+          style={{
+            background: "rgba(255, 255, 255, 0.3)",
+          }}
+        />
+                                         <div
+          className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl"
+          style={{
+            background: "rgba(255, 255, 255, 0.95)",
+          }}
+        >
                                               <Play
-                                                className="w-8 h-8 ml-1"
-                                                style={{ color: "#dc2626" }}
-                                                fill="#dc2626"
-                                              />
-                                            </div>
-                                          </div>
-                                          <p
-                                            className="text-sm font-black text-white tracking-widest"
-                                            style={{
-                                              textShadow:
-                                                "0 2px 4px rgba(0,0,0,0.3)",
-                                            }}
-                                          >
-                                            SHORT
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
+            className="w-8 h-8 ml-1"
+            style={{ color: "#dc2626" }}
+            fill="#dc2626"
+          />
+        </div>
+      </div>
+                                        <p
+        className="text-xs font-black text-white tracking-widest"
+        style={{
+          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+        }}
+      >
+        {short.title || "SHORT"}
+      </p> <p className="text-[8px] text-white/70 mt-1">
+        Media loading...
+      </p>
+    </div>
+  </div>
+                                 )}
 
                                     {/* Premium Gradient Overlay */}
                                     <div
