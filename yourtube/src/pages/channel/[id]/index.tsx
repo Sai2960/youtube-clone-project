@@ -51,9 +51,9 @@ const getShortThumbnail = (short: any): string => {
     }
   }
 
-  // ✅ Return empty string to trigger video element rendering instead
+  // ✅ FALLBACK: Return "fallback" string to trigger fallback UI
   console.warn("⚠️ No thumbnail available for short:", short._id);
-  return "";
+  return "fallback";
 };
 // ============================================================================
 // MAIN COMPONENT - STATE & REFS
@@ -1243,7 +1243,7 @@ const ChannelPage = () => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                                {thumbnailUrl && thumbnailUrl.startsWith("http") ? (
+                              {thumbnailUrl && thumbnailUrl !== "fallback" && thumbnailUrl.startsWith("http") ? (
   <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800">
     <img
       src={thumbnailUrl}
@@ -1269,15 +1269,20 @@ const ChannelPage = () => {
             videoElement.onerror = () => {
               console.error("❌ Video also failed for:", short._id);
               videoElement.style.display = "none";
+              if (parent) {
+                parent.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+              }
             };
             parent.appendChild(videoElement);
+          } else {
+            parent.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
           }
         }
       }}
     />
   </div>
-) : getShortVideoUrl(short) ? (
-  <div className="absolute inset-0 w-full h-full">
+) : thumbnailUrl !== "fallback" && getShortVideoUrl(short) ? (
+  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-700 to-gray-800">
     <video
       src={getShortVideoUrl(short)}
       className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
@@ -1285,17 +1290,29 @@ const ChannelPage = () => {
       preload="metadata"
       muted
       playsInline
+      onError={(e) => {
+        console.error("❌ Video failed for:", short._id);
+        const video = e.currentTarget;
+        video.style.display = "none";
+        const parent = video.parentElement;
+        if (parent) {
+          parent.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+        }
+      }}
     />
   </div>
 ) : (
-  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-red-500 via-pink-500 to-rose-600">
+  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-red-500 via-pink-500 to-rose-600 dark:from-red-600 dark:via-rose-700 dark:to-red-900">
     <div className="absolute inset-0 flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-20 h-20 mx-auto rounded-full bg-white/90 flex items-center justify-center shadow-2xl">
-          <Play className="w-10 h-10 text-red-600 ml-1" fill="currentColor" />
+      <div className="text-center p-4">
+        <div className="relative mb-3">
+          <div className="absolute inset-0 bg-white/30 dark:bg-white/20 rounded-full blur-xl animate-ping opacity-75"></div>
+          <div className="relative w-20 h-20 mx-auto rounded-full bg-white/90 dark:bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-4 ring-white/40 dark:ring-white/30">
+            <Play className="w-10 h-10 text-red-600 dark:text-red-700 ml-1" fill="currentColor" />
+          </div>
         </div>
-        <p className="text-lg font-black text-white mt-3">SHORT</p>
-        <p className="text-xs text-white/90 font-semibold">Tap to play</p>
+        <p className="text-lg font-black text-white drop-shadow-lg tracking-wider">SHORT</p>
+        <p className="text-xs text-white/90 dark:text-red-50 font-semibold drop-shadow">Tap to play</p>
       </div>
     </div>
   </div>
