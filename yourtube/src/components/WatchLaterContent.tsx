@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { MoreVertical, X, Clock, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,10 +27,19 @@ function VideoThumbnail({
   >("loading");
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // ✅ FIXED: Construct thumbnail URL properly
-  const thumbnailUrl = video.thumbnailfilename
-    ? `https://youtube-clone-project-production.up.railway.app/uploads/thumbnails/${video.thumbnailfilename}`
-    : video.thumbnail || null;
+  // ✅ FIXED: Proper thumbnail URL construction with memoization
+  const thumbnailUrl = useMemo(() => {
+    if (video.thumbnail && !video.thumbnail.includes("undefined")) {
+      return video.thumbnail;
+    }
+    if (video.thumbnailfilename) {
+      return `https://youtube-clone-project-production.up.railway.app/uploads/thumbnails/${video.thumbnailfilename}`;
+    }
+    return null;
+  }, [video.thumbnail, video.thumbnailfilename]);
+
+  // ✅ Get video URL for fallback
+  const videoUrl = useMemo(() => getVideoUrl(video), [video, getVideoUrl]);
 
   useEffect(() => {
     setStatus("loading");
@@ -38,51 +47,23 @@ function VideoThumbnail({
     if (thumbnailUrl) {
       const img = new Image();
       img.crossOrigin = "anonymous";
+
       img.onload = () => {
         console.log("✅ Thumbnail loaded:", video.videotitle);
         setStatus("image");
       };
-      img.onerror = (e) => {
+
+      img.onerror = () => {
         console.log("❌ Thumbnail failed, trying video:", video.videotitle);
         setStatus("video");
       };
+
       img.src = thumbnailUrl;
     } else {
       console.log("⚠️ No thumbnail, using video:", video.videotitle);
       setStatus("video");
     }
   }, [video._id, thumbnailUrl, video.videotitle]);
-
-  // ✅ Handle video thumbnail loading
-  useEffect(() => {
-    if (status === "video" && videoRef.current) {
-      const videoElement = videoRef.current;
-
-      const handleLoadedData = () => {
-        console.log("✅ Video thumbnail loaded:", video.videotitle);
-        videoElement.currentTime = 1;
-      };
-
-      const handleSeeked = () => {
-        setStatus("video");
-      };
-
-      const handleError = (e: any) => {
-        console.log("❌ Video thumbnail error:", video.videotitle, e);
-        setStatus("fallback");
-      };
-
-      videoElement.addEventListener("loadeddata", handleLoadedData);
-      videoElement.addEventListener("seeked", handleSeeked);
-      videoElement.addEventListener("error", handleError);
-
-      return () => {
-        videoElement.removeEventListener("loadeddata", handleLoadedData);
-        videoElement.removeEventListener("seeked", handleSeeked);
-        videoElement.removeEventListener("error", handleError);
-      };
-    }
-  }, [status, video.videotitle]);
 
   // Thumbnail image
   if (status === "image" && thumbnailUrl) {
@@ -100,15 +81,30 @@ function VideoThumbnail({
   if (status === "loading" || status === "video") {
     return (
       <>
-        <video
-          ref={videoRef}
-          src={`${getVideoUrl(video)}#t=1`}
-          className="w-full h-full object-cover"
-          preload="metadata"
-          muted
-          playsInline
-          crossOrigin="anonymous"
-        />
+        {videoUrl && (
+          <video
+            ref={videoRef}
+            src={`${videoUrl}#t=1`}
+            className="w-full h-full object-cover"
+            preload="metadata"
+            muted
+            playsInline
+            crossOrigin="anonymous"
+            onLoadedData={() => {
+              if (videoRef.current) {
+                videoRef.current.currentTime = 1;
+              }
+            }}
+            onSeeked={() => {
+              console.log("✅ Video thumbnail loaded:", video.videotitle);
+              setStatus("video");
+            }}
+            onError={(e) => {
+              console.log("❌ Video thumbnail error:", video.videotitle, e);
+              setStatus("fallback");
+            }}
+          />
+        )}
         {status === "loading" && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
             <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -184,21 +180,20 @@ export default function WatchLaterContent() {
       setLoading(false);
     }
   };
-// Add this after loadWatchLater function for debugging
-useEffect(() => {
-  if (watchLater.length > 0) {
-    console.log("🔍 Watch Later Debug:", watchLater.map(item => ({
-      id: item._id,
-      title: item.videoid?.videotitle,
-      hasThumbnailFilename: !!item.videoid?.thumbnailfilename,
-      thumbnailFilename: item.videoid?.thumbnailfilename,
-      hasThumbnail: !!item.videoid?.thumbnail,
-      thumbnail: item.videoid?.thumbnail,
-      hasVideoFilename: !!item.videoid?.videofilename,
-      videoFilename: item.videoid?.videofilename,
-    })));
-  }
-}, [watchLater]);
+  useEffect(() => {
+    if (watchLater.length > 0) {
+      console.log(
+        "🔍 Video Data Debug:",
+        watchLater.map((item) => ({
+          title: item.videoid?.videotitle,
+          videofilename: item.videoid?.videofilename,
+          filepath: item.videoid?.filepath,
+          thumbnail: item.videoid?.thumbnail,
+          thumbnailfilename: item.videoid?.thumbnailfilename,
+        }))
+      );
+    }
+  }, [watchLater]);
 
   const handleRemoveFromWatchLater = async (
     videoId: string,
@@ -215,13 +210,15 @@ useEffect(() => {
   };
 
   const getVideoUrl = (video: any) => {
+    // ✅ FIXED: Remove duplicate /videos/ from path
     if (video?.videofilename) {
       return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${video.videofilename}`;
     } else if (video?.filepath) {
+      // Extract just the filename, not the full path
       const filename = video.filepath.split(/[\\/]/).pop();
       return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
     }
-    return "/video/vdo.mp4";
+    return "";
   };
 
   if (!user) {
