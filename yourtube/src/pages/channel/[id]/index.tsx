@@ -513,11 +513,28 @@ const ChannelPage = () => {
             response.data.data || response.data.shorts || [];
           console.log("✅ Setting shorts:", fetchedShorts.length);
 
-          const processedShorts = fetchedShorts.map((short: any) => ({
-            ...short,
-            thumbnailUrl: short.thumbnailUrl || short.thumbnail,
-            videoUrl: short.videoUrl || short.video,
-          }));
+        const processedShorts = fetchedShorts.map((short: any) => {
+  console.log('🎬 SHORT DATA:', {
+    id: short._id,
+    title: short.title,
+    thumbnailUrl: short.thumbnailUrl,
+    thumbnail: short.thumbnail,
+    videoUrl: short.videoUrl,
+    video: short.video,
+    // Log ALL possible URL fields
+    allFields: Object.keys(short).filter(k => 
+      k.toLowerCase().includes('url') || 
+      k.toLowerCase().includes('video') || 
+      k.toLowerCase().includes('thumb')
+    ).reduce((acc, k) => ({...acc, [k]: short[k]}), {})
+  });
+  
+  return {
+    ...short,
+    thumbnailUrl: short.thumbnailUrl || short.thumbnail || short.thumbnailPath || short.thumb,
+    videoUrl: short.videoUrl || short.video || short.videoPath || short.filepath,
+  };
+});
 
           setShorts(processedShorts);
           setTimeout(() => setRenderKey((prev) => prev + 1), 100);
@@ -1650,6 +1667,7 @@ const ChannelPage = () => {
                                           }
                                         }}
                                       />
+                                      
                                  ) : (
   // Enhanced fallback with better visibility
   <div
@@ -1693,7 +1711,20 @@ const ChannelPage = () => {
     </div>
   </div>
                                  )}
-
+{/* 🔍 DEBUG - Check raw short data */}
+{shorts.length > 0 && typeof window !== 'undefined' && (
+  <div className="fixed bottom-4 right-4 bg-yellow-500 text-black p-3 rounded-lg text-xs max-w-sm z-50 max-h-48 overflow-auto">
+    <strong>SHORT #{1} DEBUG:</strong>
+    <pre className="text-[10px] mt-2">
+      {JSON.stringify({
+        id: shorts[0]._id,
+        title: shorts[0].title?.substring(0, 30),
+        thumbnailUrl: shorts[0].thumbnailUrl,
+        videoUrl: shorts[0].videoUrl,
+      }, null, 2)}
+    </pre>
+  </div>
+)}
                                     {/* Premium Gradient Overlay */}
                                     <div
                                       className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
