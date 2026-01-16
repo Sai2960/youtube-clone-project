@@ -183,7 +183,6 @@ export const checkDownloadEligibility = async (req, res) => {
   }
 };
 
-// ✅ FIXED: Download video function with Cloudinary support
 export const downloadVideo = async (req, res) => {
   try {
     const { videoId } = req.params;
@@ -194,11 +193,15 @@ export const downloadVideo = async (req, res) => {
 
     // Validate IDs
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid user ID" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(videoId)) {
-      return res.status(400).json({ message: "Invalid video ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid video ID" });
     }
 
     // Check subscription and download limits
@@ -209,6 +212,7 @@ export const downloadVideo = async (req, res) => {
       const downloadsToday = await DownloadModel.getTodayDownloadCount(userId);
       if (downloadsToday >= 1) {
         return res.status(403).json({
+          success: false,
           message:
             "Daily download limit reached. Upgrade to premium for unlimited downloads.",
           downloadsToday,
@@ -220,7 +224,9 @@ export const downloadVideo = async (req, res) => {
     // Get video details
     const video = await videofiles.findById(videoId);
     if (!video) {
-      return res.status(404).json({ message: "Video not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Video not found" });
     }
 
     // ✅ Get video URL
@@ -232,6 +238,7 @@ export const downloadVideo = async (req, res) => {
         title: video.videotitle,
       });
       return res.status(404).json({
+        success: false,
         message: "Video URL not found",
         debug: {
           id: video._id,
@@ -242,25 +249,21 @@ export const downloadVideo = async (req, res) => {
 
     console.log("📹 Video URL:", videoUrl);
 
-    // ✅ Check if video is on Cloudinary or local
-    const isCloudinary = videoUrl.includes("cloudinary.com");
+    // ✅ Check if video is on external storage (Supabase, Cloudinary, etc.)
+    const isExternalStorage =
+      videoUrl.includes("supabase.co") ||
+      videoUrl.includes("cloudinary.com") ||
+      videoUrl.includes("https://") ||
+      videoUrl.includes("http://");
 
-    if (!isCloudinary) {
-      // ✅ Local file handling
-      const filename = extractFilename(video);
-      const filePath = findVideoFile(filename);
+    const sanitizedTitle = sanitizeFilename(video.videotitle || "video");
+    const downloadFilename = `${sanitizedTitle}-${quality}.mp4`;
 
-      if (!filePath) {
-        return res.status(404).json({
-          message: "Video file not found on server",
-          filename: filename,
-        });
-      }
+    if (isExternalStorage) {
+      console.log("☁️  External video storage detected");
 
-      const stat = fs.statSync(filePath);
+      // For external storage, we'll proxy through our stream endpoint
       const streamUrl = `/api/download/stream/${videoId}?quality=${quality}`;
-      const sanitizedTitle = sanitizeFilename(video.videotitle || "video");
-      const downloadFilename = `${sanitizedTitle}-${quality}.mp4`;
 
       // Create download record
       const download = await DownloadModel.create({
@@ -269,8 +272,9 @@ export const downloadVideo = async (req, res) => {
         videoTitle: video.videotitle || video.title || "Untitled Video",
         videoUrl: videoUrl,
         downloadUrl: streamUrl,
-        fileSize: stat.size,
+        fileSize: 0, // Will be determined during streaming
         quality,
+        withAudio: true,
         status: "completed",
         downloadedAt: new Date(),
       });
@@ -279,7 +283,7 @@ export const downloadVideo = async (req, res) => {
         await subscription.incrementDownload();
       }
 
-      console.log("✅ Local file download record created:", download._id);
+      console.log("✅ Download record created:", download._id);
 
       return res.status(200).json({
         success: true,
@@ -290,17 +294,26 @@ export const downloadVideo = async (req, res) => {
           streamUrl: streamUrl,
           downloadFilename: downloadFilename,
           quality,
-          fileSize: stat.size,
+          fileSize: 0,
           expiresAt: download.expiresAt,
+          isExternal: true,
         },
       });
     }
 
-    // ✅ Cloudinary video handling - Stream through backend
-    console.log("☁️  Video is on Cloudinary, proxying through backend");
+    // ✅ Local file handling (if video is stored locally)
+    const filename = extractFilename(video);
+    const filePath = findVideoFile(filename);
 
-    const sanitizedTitle = sanitizeFilename(video.videotitle || "video");
-    const downloadFilename = `${sanitizedTitle}-${quality}.mp4`;
+    if (!filePath) {
+      return res.status(404).json({
+        success: false,
+        message: "Video file not found on server",
+        filename: filename,
+      });
+    }
+
+    const stat = fs.statSync(filePath);
     const streamUrl = `/api/download/stream/${videoId}?quality=${quality}`;
 
     // Create download record
@@ -310,8 +323,9 @@ export const downloadVideo = async (req, res) => {
       videoTitle: video.videotitle || video.title || "Untitled Video",
       videoUrl: videoUrl,
       downloadUrl: streamUrl,
-      fileSize: 0, // Will be determined during streaming
+      fileSize: stat.size,
       quality,
+      withAudio: true,
       status: "completed",
       downloadedAt: new Date(),
     });
@@ -320,7 +334,7 @@ export const downloadVideo = async (req, res) => {
       await subscription.incrementDownload();
     }
 
-    console.log("✅ Cloudinary download record created:", download._id);
+    console.log("✅ Local file download record created:", download._id);
 
     return res.status(200).json({
       success: true,
@@ -331,14 +345,14 @@ export const downloadVideo = async (req, res) => {
         streamUrl: streamUrl,
         downloadFilename: downloadFilename,
         quality,
-        fileSize: 0,
+        fileSize: stat.size,
         expiresAt: download.expiresAt,
-        isCloudinary: true,
       },
     });
   } catch (error) {
     console.error("Download video error:", error);
     return res.status(500).json({
+      success: false,
       message: "Failed to process download",
       error: error.message,
     });
@@ -370,18 +384,30 @@ export const streamVideoDownload = async (req, res) => {
       return res.status(404).json({ message: "Video URL not found" });
     }
 
-    const isCloudinary = videoUrl.includes("cloudinary.com");
-
     // ✅ CLOUDINARY VIDEO - GET ORIGINAL URL WITH AUDIO
-    if (isCloudinary) {
-      console.log("☁️  Streaming ORIGINAL Cloudinary video WITH AUDIO");
-      console.log("📹 Input URL:", videoUrl);
+    // ✅ Check if video is on Supabase
+    const isSupabase = videoUrl.includes("supabase.co");
+    const isCloudinary = videoUrl.includes("cloudinary.com");
+    const isExternalStorage = isSupabase || isCloudinary;
+
+    if (isExternalStorage) {
+      console.log(
+        `☁️  Streaming from external storage: ${
+          isSupabase ? "Supabase" : "Cloudinary"
+        }`
+      );
+      console.log("📹 Direct URL:", videoUrl);
 
       try {
         let originalUrl = videoUrl;
 
-        // ✅ CRITICAL FIX: Extract the filename properly
-        if (videoUrl.includes("/upload/")) {
+        // ✅ For Supabase - use direct URL
+        if (isSupabase) {
+          originalUrl = videoUrl;
+          console.log("✅ Using direct Supabase URL");
+        }
+        // ✅ For Cloudinary - extract clean URL
+        else if (videoUrl.includes("/upload/")) {
           const parts = videoUrl.split("/upload/");
 
           if (parts.length === 2) {
