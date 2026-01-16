@@ -526,33 +526,44 @@ export default function HistoryContent() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 md:px-8 pb-24 md:pb-10 w-full overflow-x-hidden">
-        {/* Premium Tabs */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 md:mb-6 py-3">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`group relative px-5 py-2.5 rounded-xl whitespace-nowrap text-sm font-medium transition-all duration-300 flex-shrink-0 flex items-center gap-2 ${
-                  activeTab === tab.id
-                    ? "bg-gradient-to-r from-gray-900 to-gray-800 dark:from-white dark:to-gray-100 text-white dark:text-black shadow-lg shadow-gray-900/20 dark:shadow-white/10"
-                    : "bg-white/80 dark:bg-white/5 backdrop-blur-sm text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-white/10 border border-gray-200/50 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20"
-                }`}
-              >
-                <Icon
-                  className={`w-4 h-4 transition-transform duration-300 ${
-                    activeTab === tab.id ? "scale-110" : "group-hover:scale-110"
-                  }`}
-                />
-                {tab.label}
-                {activeTab === tab.id && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-red-500"></span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+       {/* Ultra Premium Tabs - Glass Morphism Style */}
+<div className="flex gap-3 overflow-x-auto scrollbar-hide mb-4 md:mb-6 py-3">
+  {tabs.map((tab) => {
+    const Icon = tab.icon;
+    const isActive = activeTab === tab.id;
+    return (
+      <button
+        key={tab.id}
+        onClick={() => setActiveTab(tab.id)}
+        className={`group relative px-6 py-3 rounded-2xl whitespace-nowrap text-sm font-semibold transition-all duration-300 flex-shrink-0 flex items-center gap-2.5 overflow-hidden ${
+          isActive
+            ? "bg-gradient-to-br from-red-600 via-red-500 to-red-600 text-white shadow-xl shadow-red-500/25"
+            : "bg-white/80 dark:bg-white/10 backdrop-blur-md text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-white/15 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 shadow-sm hover:shadow-md"
+        }`}
+      >
+        {/* Shine effect for active state */}
+        {isActive && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+        )}
+        
+        <Icon 
+          className={`relative z-10 w-4 h-4 transition-all duration-300 ${
+            isActive 
+              ? 'text-white' 
+              : 'text-gray-500 dark:text-gray-400 group-hover:text-red-500 dark:group-hover:text-red-400'
+          }`} 
+        />
+        <span className="relative z-10">{tab.label}</span>
+        
+        {/* Subtle glow for active */}
+        {isActive && (
+          <div className="absolute inset-0 rounded-2xl bg-red-400/20 blur-xl -z-10"></div>
+        )}
+      </button>
+    );
+  })}
+</div>
+
 
         {/* Premium Clear Button */}
         <Button
