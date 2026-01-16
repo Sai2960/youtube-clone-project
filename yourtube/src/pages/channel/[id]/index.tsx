@@ -11,7 +11,19 @@ import axiosInstance from "@/lib/axiosinstance";
 import { getSocket, isSocketConnected } from "@/lib/socket";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/imageUtils";
-import { Calendar, Video, Upload, Play, Film, Grid, User, Sparkles, Crown, Gem, Star } from "lucide-react";
+import {
+  Calendar,
+  Video,
+  Upload,
+  Play,
+  Film,
+  Grid,
+  User,
+  Sparkles,
+  Crown,
+  Gem,
+  Star,
+} from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { GetServerSideProps } from "next";
 
@@ -160,6 +172,16 @@ const premiumStyles = `
   .premium-scrollbar::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #764ba2, #f093fb);
   }
+    /* Dark Mode Z-Index Fix */
+.dark .premium-card,
+.dark .premium-glass {
+  z-index: auto !important;
+}
+
+/* Ensure proper stacking in dark mode */
+.dark [class*="absolute"] {
+  isolation: isolate;
+}
 `;
 
 // ============================================================================
@@ -617,14 +639,22 @@ const ChannelPage = () => {
   if (loading) {
     return (
       <>
-        <style jsx global>{premiumStyles}</style>
+        <style jsx global>
+          {premiumStyles}
+        </style>
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-900">
           <div className="text-center">
             {/* Premium Loading Spinner */}
             <div className="relative w-24 h-24 mx-auto mb-6">
               <div className="absolute inset-0 rounded-full border-4 border-purple-200 dark:border-purple-900/50"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-600 dark:border-t-purple-400 animate-spin"></div>
-              <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-pink-500 dark:border-t-pink-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+              <div
+                className="absolute inset-2 rounded-full border-4 border-transparent border-t-pink-500 dark:border-t-pink-400 animate-spin"
+                style={{
+                  animationDirection: "reverse",
+                  animationDuration: "1.5s",
+                }}
+              ></div>
               <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 animate-pulse flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
@@ -632,7 +662,9 @@ const ChannelPage = () => {
             <p className="text-lg font-medium bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Loading channel...
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait a moment</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              Please wait a moment
+            </p>
           </div>
         </div>
       </>
@@ -642,7 +674,9 @@ const ChannelPage = () => {
   if (!channel) {
     return (
       <>
-        <style jsx global>{premiumStyles}</style>
+        <style jsx global>
+          {premiumStyles}
+        </style>
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-900">
           <div className="text-center p-8">
             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
@@ -681,11 +715,12 @@ const ChannelPage = () => {
   // ============================================================================
   return (
     <ProtectedRoute requireAuth={true}>
-      <style jsx global>{premiumStyles}</style>
-      
+      <style jsx global>
+        {premiumStyles}
+      </style>
+
       {/* Premium Background with Gradient */}
-      <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/30 dark:from-[#0a0a0f] dark:via-[#0d0d15] dark:to-[#0a0a0f] premium-scrollbar">
-        
+      <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/30 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-900 premium-scrollbar">
         {/* Decorative Background Elements */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-3xl"></div>
@@ -709,20 +744,18 @@ const ChannelPage = () => {
             <div
               ref={infoBarRef}
               key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-              className="w-full relative"
+              className="w-full relative z-10"
               style={{
-                position: "relative",
-                zIndex: 10,
                 marginBottom: "24px",
               }}
             >
               {/* Premium Glass Effect Background */}
-              <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-purple-500/20"></div>
-              
+              <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/50 dark:border-purple-500/30 z-0"></div>
+
               {/* Gradient Accent Line */}
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500/50 to-transparent"></div>
-              
-              <div className="relative px-4 sm:px-6 py-4 sm:py-5 max-w-7xl mx-auto">
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500/50 dark:via-purple-400/70 to-transparent z-[1]"></div>
+
+              <div className="relative px-4 sm:px-6 py-4 sm:py-5 max-w-7xl mx-auto z-[2]">
                 <div
                   className="flex items-center overflow-x-auto scrollbar-hide premium-scrollbar"
                   style={{ gap: "16px" }}
@@ -905,10 +938,9 @@ const ChannelPage = () => {
               <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl">
                 {/* Animated Gradient Border */}
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-2xl sm:rounded-3xl animate-pulse opacity-30"></div>
-                
+
                 {/* Inner Card */}
                 <div className="relative m-[1px] bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl shadow-purple-500/10">
-                  
                   {/* Premium Header Badge */}
                   <div className="flex items-center justify-center mb-4 sm:mb-6">
                     <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 rounded-full border border-purple-200/50 dark:border-purple-500/30">
@@ -1004,7 +1036,10 @@ const ChannelPage = () => {
                             {channel?.channelname || channel?.name}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-500" fill="currentColor" />
+                            <Star
+                              className="w-3 h-3 text-yellow-500"
+                              fill="currentColor"
+                            />
                             Uploading as this channel
                           </p>
                         </div>
@@ -1015,7 +1050,7 @@ const ChannelPage = () => {
                         <div className="relative inline-block">
                           {/* Animated Glow */}
                           <div className="absolute -inset-4 bg-gradient-to-r from-red-500/20 via-pink-500/20 to-red-500/20 rounded-3xl blur-xl animate-pulse"></div>
-                          
+
                           <div className="relative bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-2xl p-8 sm:p-10 max-w-md border border-red-200/50 dark:border-red-500/30">
                             <div className="relative mb-4 sm:mb-6">
                               <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl animate-pulse"></div>
@@ -1055,14 +1090,13 @@ const ChannelPage = () => {
               ============================================================================ */}
           <div className="w-full pb-32 sm:pb-8 overflow-hidden">
             <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
-              
               {/* Premium Tab Navigation */}
               <div className="w-full mb-8">
                 <div className="relative">
                   {/* Background Blur Effect */}
-                  <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg rounded-xl sm:rounded-2xl"></div>
-                  
-                  <div className="relative flex items-center gap-2 p-2 overflow-x-auto scrollbar-hide px-4 sm:px-2">
+                  <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/70 backdrop-blur-lg rounded-xl sm:rounded-2xl z-0"></div>
+
+                  <div className="relative flex items-center gap-2 p-2 overflow-x-auto scrollbar-hide px-4 sm:px-2 z-[1]">
                     {/* Videos Tab - Premium */}
                     <button
                       onClick={() => setContentTab("videos")}
@@ -1219,7 +1253,7 @@ const ChannelPage = () => {
                             <div className="relative w-full aspect-video rounded-xl sm:rounded-2xl overflow-hidden mb-3 sm:mb-4 shadow-lg group-hover:shadow-2xl group-hover:shadow-blue-500/20 transition-all duration-500">
                               {/* Gradient Border Effect */}
                               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-sm scale-105"></div>
-                              
+
                               <div className="relative w-full h-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
                                 {getVideoThumbnail(video).includes(
                                   "supabase.co"
@@ -1265,24 +1299,27 @@ const ChannelPage = () => {
                                     playsInline
                                   />
                                 )}
-                                
+
                                 {/* Premium Overlay */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                
+
                                 {/* Play Button Overlay */}
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/90 dark:bg-white/95 flex items-center justify-center shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-500 ease-out">
-                                    <Play className="w-6 h-6 sm:w-7 sm:h-7 text-gray-900 ml-1" fill="currentColor" />
+                                    <Play
+                                      className="w-6 h-6 sm:w-7 sm:h-7 text-gray-900 ml-1"
+                                      fill="currentColor"
+                                    />
                                   </div>
                                 </div>
-                                
+
                                 {/* Duration Badge - Premium */}
                                 {video?.duration && (
                                   <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-md">
                                     {video.duration}
                                   </div>
                                 )}
-                                
+
                                 {/* Premium Quality Badge */}
                                 <div className="absolute top-2 left-2 sm:top-3 sm:left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                   <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
@@ -1345,8 +1382,12 @@ const ChannelPage = () => {
                                   {channelName}
                                 </p>
                                 <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500">
-                                  <span className="font-medium">{video.views || 0} views</span>
-                                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                                  <span className="font-medium">
+                                    {video.views || 0} views
+                                  </span>
+                                  <span className="text-gray-300 dark:text-gray-600">
+                                    •
+                                  </span>
                                   <span>
                                     {video.createdAt
                                       ? new Date(
@@ -1446,7 +1487,7 @@ const ChannelPage = () => {
                         </div>
 
                         {/* Premium Shorts Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 w-full pb-4 px-1 sm:px-0">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 w-full pb-4 px-1 sm:px-0 relative z-[1]">
                           {shorts.map((short, index) => {
                             const thumbnailUrl = getShortThumbnail(short);
                             const videoUrl = getShortVideoUrl(short);
@@ -1472,11 +1513,15 @@ const ChannelPage = () => {
                                 >
                                   {/* Animated Gradient Border on Hover */}
                                   <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 -z-10"></div>
-                                  
-                                  <div className="relative w-full bg-gradient-to-br from-red-500/20 to-pink-500/20" style={{ paddingBottom: "177.78%" }}>
-                                    
+
+                                  <div
+                                    className="relative w-full bg-gradient-to-br from-red-500/20 to-pink-500/20"
+                                    style={{ paddingBottom: "177.78%" }}
+                                  >
                                     {/* Conditional Rendering Based on Available Media */}
-                                    {thumbnailUrl && thumbnailUrl !== "fallback" && thumbnailUrl.startsWith("http") ? (
+                                    {thumbnailUrl &&
+                                    thumbnailUrl !== "fallback" &&
+                                    thumbnailUrl.startsWith("http") ? (
                                       <img
                                         src={thumbnailUrl}
                                         alt={short.title || "Short"}
@@ -1484,27 +1529,46 @@ const ChannelPage = () => {
                                         style={{ zIndex: 1 }}
                                         loading="lazy"
                                         onError={(e) => {
-                                          console.error("❌ Thumbnail image failed:", short._id);
+                                          console.error(
+                                            "❌ Thumbnail image failed:",
+                                            short._id
+                                          );
                                           const img = e.currentTarget;
                                           img.style.display = "none";
-                                          
+
                                           const parent = img.parentElement;
-                                          if (parent && !parent.querySelector(".media-fallback")) {
-                                            if (videoUrl && videoUrl.startsWith("http")) {
-                                              const videoEl = document.createElement("video");
-                                              videoEl.className = "media-fallback absolute inset-0 w-full h-full object-cover";
+                                          if (
+                                            parent &&
+                                            !parent.querySelector(
+                                              ".media-fallback"
+                                            )
+                                          ) {
+                                            if (
+                                              videoUrl &&
+                                              videoUrl.startsWith("http")
+                                            ) {
+                                              const videoEl =
+                                                document.createElement("video");
+                                              videoEl.className =
+                                                "media-fallback absolute inset-0 w-full h-full object-cover";
                                               videoEl.style.zIndex = "1";
                                               videoEl.src = videoUrl;
                                               videoEl.preload = "metadata";
                                               videoEl.muted = true;
                                               videoEl.playsInline = true;
-                                              
+
                                               videoEl.onerror = () => {
-                                                console.error("❌ Video backup also failed:", short._id);
+                                                console.error(
+                                                  "❌ Video backup also failed:",
+                                                  short._id
+                                                );
                                                 videoEl.remove();
-                                                const fallbackUI = document.createElement("div");
-                                                fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
-                                                fallbackUI.style.cssText = "z-index: 1;";
+                                                const fallbackUI =
+                                                  document.createElement("div");
+                                                fallbackUI.className =
+                                                  "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
+                                                fallbackUI.style.cssText =
+                                                  "z-index: 1;";
                                                 fallbackUI.innerHTML = `
                                                   <div style="text-align: center; padding: 16px;">
                                                     <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
@@ -1517,12 +1581,15 @@ const ChannelPage = () => {
                                                 `;
                                                 parent?.appendChild(fallbackUI);
                                               };
-                                              
+
                                               parent.appendChild(videoEl);
                                             } else {
-                                              const fallbackUI = document.createElement("div");
-                                              fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
-                                              fallbackUI.style.cssText = "z-index: 1;";
+                                              const fallbackUI =
+                                                document.createElement("div");
+                                              fallbackUI.className =
+                                                "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
+                                              fallbackUI.style.cssText =
+                                                "z-index: 1;";
                                               fallbackUI.innerHTML = `
                                                 <div style="text-align: center; padding: 16px;">
                                                   <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
@@ -1538,7 +1605,8 @@ const ChannelPage = () => {
                                           }
                                         }}
                                       />
-                                    ) : videoUrl && videoUrl.startsWith("http") ? (
+                                    ) : videoUrl &&
+                                      videoUrl.startsWith("http") ? (
                                       <video
                                         src={videoUrl}
                                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
@@ -1547,15 +1615,26 @@ const ChannelPage = () => {
                                         muted
                                         playsInline
                                         onError={(e) => {
-                                          console.error("❌ Video failed:", short._id);
+                                          console.error(
+                                            "❌ Video failed:",
+                                            short._id
+                                          );
                                           const videoEl = e.currentTarget;
                                           videoEl.style.display = "none";
-                                          
+
                                           const parent = videoEl.parentElement;
-                                          if (parent && !parent.querySelector(".media-fallback")) {
-                                            const fallbackUI = document.createElement("div");
-                                            fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
-                                            fallbackUI.style.cssText = "z-index: 1;";
+                                          if (
+                                            parent &&
+                                            !parent.querySelector(
+                                              ".media-fallback"
+                                            )
+                                          ) {
+                                            const fallbackUI =
+                                              document.createElement("div");
+                                            fallbackUI.className =
+                                              "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
+                                            fallbackUI.style.cssText =
+                                              "z-index: 1;";
                                             fallbackUI.innerHTML = `
                                               <div style="text-align: center; padding: 16px;">
                                                 <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
@@ -1579,12 +1658,16 @@ const ChannelPage = () => {
                                           <div className="relative mb-3">
                                             <div
                                               className="absolute inset-0 rounded-full animate-ping opacity-50"
-                                              style={{ background: "rgba(255, 255, 255, 0.3)" }}
+                                              style={{
+                                                background:
+                                                  "rgba(255, 255, 255, 0.3)",
+                                              }}
                                             />
                                             <div
                                               className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl"
                                               style={{
-                                                background: "rgba(255, 255, 255, 0.95)",
+                                                background:
+                                                  "rgba(255, 255, 255, 0.95)",
                                               }}
                                             >
                                               <Play
@@ -1596,7 +1679,10 @@ const ChannelPage = () => {
                                           </div>
                                           <p
                                             className="text-sm font-black text-white tracking-widest"
-                                            style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
+                                            style={{
+                                              textShadow:
+                                                "0 2px 4px rgba(0,0,0,0.3)",
+                                            }}
                                           >
                                             SHORT
                                           </p>
@@ -1609,7 +1695,8 @@ const ChannelPage = () => {
                                       className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
                                       style={{
                                         zIndex: 3,
-                                        background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5), transparent)",
+                                        background:
+                                          "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5), transparent)",
                                       }}
                                     />
 
@@ -1629,7 +1716,9 @@ const ChannelPage = () => {
                                       }}
                                     >
                                       <Play className="w-3 h-3" fill="white" />
-                                      <span>{(short.views || 0).toLocaleString()}</span>
+                                      <span>
+                                        {(short.views || 0).toLocaleString()}
+                                      </span>
                                     </div>
 
                                     {/* Duration Badge */}
@@ -1660,7 +1749,8 @@ const ChannelPage = () => {
                                           <div
                                             className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/30"
                                             style={{
-                                              background: "linear-gradient(135deg, #ef4444, #ec4899)",
+                                              background:
+                                                "linear-gradient(135deg, #ef4444, #ec4899)",
                                             }}
                                           >
                                             <Play
@@ -1680,7 +1770,8 @@ const ChannelPage = () => {
                                       <div
                                         className="absolute inset-0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"
                                         style={{
-                                          background: "linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)",
+                                          background:
+                                            "linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)",
                                         }}
                                       />
                                     </div>
@@ -1690,7 +1781,8 @@ const ChannelPage = () => {
                                       className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg"
                                       style={{
                                         zIndex: 8,
-                                        background: "linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9))",
+                                        background:
+                                          "linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9))",
                                         backdropFilter: "blur(8px)",
                                       }}
                                     >
