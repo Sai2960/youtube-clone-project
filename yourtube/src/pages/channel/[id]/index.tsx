@@ -1,31 +1,162 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/pages/channel/[id]/index.tsx - COMPLETE FINAL FIXED VERSION
+// src/pages/channel/[id]/index.tsx - PREMIUM DELUXE VERSION
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import ChannelHeader from "@/components/ChannelHeader";
-import ChannelVideos from "@/components/ChannelVideos";
 import VideoUploader from "@/components/VideoUploader";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
 import { getSocket, isSocketConnected } from "@/lib/socket";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/imageUtils";
-import { Calendar, Video, Upload, Play, Film, Grid, User } from "lucide-react";
+import { 
+  Calendar, Video, Upload, Play, Film, Grid, User, 
+  Sparkles, Crown, Star, Zap, Eye, Clock, TrendingUp,
+  CheckCircle2, Diamond, Award, Flame
+} from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { GetServerSideProps } from "next";
+
 // ============================================================================
-// THUMBNAIL HELPER - FIXED VERSION
+// PREMIUM ANIMATIONS CSS (Add to your globals.css or include inline)
+// ============================================================================
+const premiumStyles = `
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.6); }
+  }
+  
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes border-dance {
+    0%, 100% { border-color: rgba(139, 92, 246, 0.5); }
+    25% { border-color: rgba(236, 72, 153, 0.5); }
+    50% { border-color: rgba(59, 130, 246, 0.5); }
+    75% { border-color: rgba(16, 185, 129, 0.5); }
+  }
+  
+  @keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+  
+  .premium-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  .premium-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .premium-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .premium-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+  
+  .premium-border {
+    animation: border-dance 4s ease infinite;
+  }
+  
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  .dark .glass-effect {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  .premium-card {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .premium-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    transition: left 0.5s;
+  }
+  
+  .premium-card:hover::before {
+    left: 100%;
+  }
+  
+  .luxury-shadow {
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06),
+      0 20px 25px -5px rgba(139, 92, 246, 0.1),
+      0 10px 10px -5px rgba(139, 92, 246, 0.04);
+  }
+  
+  .dark .luxury-shadow {
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.3),
+      0 2px 4px -1px rgba(0, 0, 0, 0.2),
+      0 20px 25px -5px rgba(139, 92, 246, 0.2),
+      0 10px 10px -5px rgba(139, 92, 246, 0.1);
+  }
+  
+  .golden-glow {
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+  }
+  
+  .premium-text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .golden-text {
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 50%, #f6d365 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+`;
+
+// ============================================================================
+// THUMBNAIL HELPER
 // ============================================================================
 const getShortThumbnail = (short: any): string => {
-  console.log("🖼️ Getting thumbnail for short:", {
-    id: short._id,
-    thumbnailUrl: short.thumbnailUrl?.substring(0, 100),
-    thumbnail: short.thumbnail?.substring(0, 100),
-    videoUrl: short.videoUrl?.substring(0, 100),
-  });
-
-  // ✅ PRIORITY 1: Check explicit thumbnail fields
   const thumbnailCandidates = [
     short.thumbnailUrl,
     short.thumbnail,
@@ -35,184 +166,407 @@ const getShortThumbnail = (short: any): string => {
 
   for (const thumb of thumbnailCandidates) {
     if (thumb && typeof thumb === "string" && thumb.startsWith("http")) {
-      console.log("✅ Using explicit thumbnail:", thumb.substring(0, 80));
       return thumb;
     }
   }
 
-  // ✅ PRIORITY 2: For Supabase videos, use video URL directly
   if (short.videoUrl && typeof short.videoUrl === "string") {
-    if (
-      short.videoUrl.includes("supabase.co") ||
-      short.videoUrl.includes("supabase.in")
-    ) {
-      console.log("📦 Using Supabase video URL as thumbnail");
+    if (short.videoUrl.includes("supabase.co") || short.videoUrl.includes("supabase.in")) {
       return short.videoUrl;
     }
   }
 
-  // ✅ FALLBACK: Return "fallback" string to trigger fallback UI
-  console.warn("⚠️ No thumbnail available for short:", short._id);
   return "fallback";
 };
-// ============================================================================
-// MAIN COMPONENT - STATE & REFS
-// ============================================================================
 
+const getShortVideoUrl = (short: any): string => {
+  if (!short?.videoUrl) return "";
+  if (short.videoUrl.startsWith("http")) return short.videoUrl;
+  return short.videoUrl;
+};
+
+// ============================================================================
+// PREMIUM STAT CARD COMPONENT
+// ============================================================================
+const PremiumStatCard = ({ 
+  icon: Icon, 
+  label, 
+  value, 
+  gradient, 
+  delay = 0 
+}: { 
+  icon: any; 
+  label: string; 
+  value: string | number; 
+  gradient: string;
+  delay?: number;
+}) => (
+  <div 
+    className="premium-card group relative rounded-2xl p-4 sm:p-5 transition-all duration-500 hover:scale-105 luxury-shadow"
+    style={{ 
+      background: gradient,
+      animationDelay: `${delay}ms`
+    }}
+  >
+    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    
+    <div className="relative z-10 flex items-center gap-3 sm:gap-4">
+      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+        <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+      </div>
+      <div>
+        <p className="text-white/80 text-xs sm:text-sm font-medium uppercase tracking-wider">{label}</p>
+        <p className="text-white text-xl sm:text-2xl font-bold">{value}</p>
+      </div>
+    </div>
+    
+    {/* Sparkle effects */}
+    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+      <Sparkles className="w-4 h-4 text-white/60 animate-pulse" />
+    </div>
+  </div>
+);
+
+// ============================================================================
+// PREMIUM VIDEO CARD COMPONENT
+// ============================================================================
+const PremiumVideoCard = ({ video, router, index }: { video: any; router: any; index: number }) => {
+  const getVideoThumbnail = (video: any): string => {
+    const explicitThumbnail = video?.thumbnailUrl || video?.thumbnail || video?.videothumbnail || video?.videothumb;
+    if (explicitThumbnail?.startsWith("http")) return explicitThumbnail;
+    
+    const videoUrl = video?.filepath || video?.videofile || video?.videoLink;
+    if (videoUrl?.includes("supabase.co")) return videoUrl;
+    
+    if (videoUrl?.includes("cloudinary.com") && videoUrl.includes("/video/upload/")) {
+      try {
+        const match = videoUrl.match(/https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/);
+        if (match) {
+          const cloudName = match[1];
+          let publicId = match[2];
+          publicId = publicId.split("/").filter((segment: string) => !segment.match(/^(f_|vc_|ac_|af_|br_|q_|w_|h_|c_|so_|t_)/)).join("/");
+          publicId = publicId.replace(/\.(mp4|mov|avi|mkv|webm)$/i, "");
+          return `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
+        }
+      } catch (error) {
+        console.error("Thumbnail generation error:", error);
+      }
+    }
+    return "/placeholder-thumbnail.jpg";
+  };
+
+  const channelName = video.uploadedBy?.channelname || video.uploadedBy?.name || video?.videochanel || "Unknown Channel";
+
+  return (
+    <div
+      onClick={() => router.push(`/watch/${video._id}`)}
+      className="group cursor-pointer premium-card rounded-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02] luxury-shadow bg-white dark:bg-gray-900/80 border border-gray-100 dark:border-gray-800/50"
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      {/* Thumbnail Container */}
+      <div className="relative w-full aspect-video overflow-hidden">
+        {/* Premium overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        
+        {/* Play button overlay */}
+        <div className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-all duration-500">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/95 dark:bg-gray-900/95 flex items-center justify-center shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-500">
+            <Play className="w-8 h-8 sm:w-10 sm:h-10 text-violet-600 dark:text-violet-400 ml-1" fill="currentColor" />
+          </div>
+        </div>
+        
+        {/* Thumbnail */}
+        {getVideoThumbnail(video).includes("supabase.co") ? (
+          <img
+            src={getVideoThumbnail(video)}
+            alt={video?.videotitle || "Video thumbnail"}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            loading="lazy"
+          />
+        ) : (
+          <video
+            src={getVideoThumbnail(video)}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            preload="metadata"
+            muted
+            playsInline
+          />
+        )}
+        
+        {/* Duration badge */}
+        {video?.duration && (
+          <div className="absolute bottom-3 right-3 z-20 bg-black/90 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+            <Clock className="w-3 h-3" />
+            {video.duration}
+          </div>
+        )}
+        
+        {/* Premium badge for high view videos */}
+        {video.views > 1000 && (
+          <div className="absolute top-3 left-3 z-20 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-lg">
+            <Flame className="w-3 h-3" />
+            Trending
+          </div>
+        )}
+      </div>
+      
+      {/* Video Info */}
+      <div className="p-4 sm:p-5">
+        <div className="flex gap-3 sm:gap-4">
+          {/* Channel Avatar */}
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/channel/${video.uploadedBy?._id}`);
+            }}
+            className="flex-shrink-0"
+          >
+            <div className="relative">
+              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 ring-2 ring-violet-500/30 group-hover:ring-violet-500 transition-all duration-500">
+                <AvatarImage src={getImageUrl(video.uploadedBy?.image, true)} alt={channelName} />
+                <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white font-bold">
+                  {channelName[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              {/* Verified badge */}
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900">
+                <CheckCircle2 className="w-3 h-3 text-white" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors duration-300">
+              {video?.videotitle || "Untitled Video"}
+            </h3>
+            
+            <p
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/channel/${video.uploadedBy?._id}`);
+              }}
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 mb-2 cursor-pointer font-medium transition-colors"
+            >
+              {channelName}
+            </p>
+            
+            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
+              <span className="flex items-center gap-1">
+                <Eye className="w-3.5 h-3.5" />
+                {(video.views || 0).toLocaleString()} views
+              </span>
+              <span className="w-1 h-1 rounded-full bg-gray-400" />
+              <span>
+                {video.createdAt ? new Date(video.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "Recently"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// PREMIUM SHORT CARD COMPONENT
+// ============================================================================
+const PremiumShortCard = ({ short, router, channel, index }: { short: any; router: any; channel: any; index: number }) => {
+  const thumbnailUrl = getShortThumbnail(short);
+  const videoUrl = getShortVideoUrl(short);
+
+  return (
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        const shortId = short._id || short.id;
+        if (shortId) router.push(`/shorts?id=${shortId}`);
+      }}
+      className="group cursor-pointer transform transition-all duration-500 hover:scale-[1.03] active:scale-95"
+      style={{ animationDelay: `${index * 30}ms` }}
+    >
+      {/* Thumbnail Container */}
+      <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden luxury-shadow">
+        {/* Gradient border effect */}
+        <div className="absolute inset-0 rounded-2xl sm:rounded-3xl p-[2px] bg-gradient-to-br from-rose-500 via-purple-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0">
+          <div className="absolute inset-[2px] rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900" />
+        </div>
+        
+        <div 
+          className="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl"
+          style={{ paddingBottom: "177.78%" }}
+        >
+          {/* Background gradient */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%)"
+            }}
+          />
+          
+          {/* Media content */}
+          {thumbnailUrl && thumbnailUrl !== "fallback" && thumbnailUrl.startsWith("http") ? (
+            <img
+              src={thumbnailUrl}
+              alt={short.title || "Short"}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out z-10"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : videoUrl && videoUrl.startsWith("http") ? (
+            <video
+              src={videoUrl}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out z-10"
+              preload="metadata"
+              muted
+              playsInline
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <div className="text-center p-4">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Play className="w-10 h-10 text-white ml-1" fill="white" />
+                </div>
+                <p className="text-white font-bold tracking-wider">SHORT</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Gradient overlay */}
+          <div 
+            className="absolute inset-x-0 bottom-0 h-32 sm:h-40 z-20 pointer-events-none"
+            style={{
+              background: "linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.5), transparent)"
+            }}
+          />
+          
+          {/* Play button overlay */}
+          <div className="absolute inset-0 flex items-center justify-center z-30 opacity-0 group-hover:opacity-100 transition-all duration-500">
+            <div className="relative">
+              <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-30" />
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/95 flex items-center justify-center shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-500">
+                <Play className="w-8 h-8 sm:w-10 sm:h-10 text-rose-500 ml-1" fill="currentColor" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Views badge */}
+          <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-30 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-2">
+            <Eye className="w-3.5 h-3.5" />
+            {(short.views || 0).toLocaleString()}
+          </div>
+          
+          {/* Duration badge */}
+          {short.duration && (
+            <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 bg-rose-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">
+              {short.duration}s
+            </div>
+          )}
+          
+          {/* Premium indicator */}
+          <div className="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+              <Crown className="w-4 h-4 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Title & Channel Info */}
+      <div className="mt-3 sm:mt-4 px-1">
+        <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors duration-300">
+          {short.title}
+        </h3>
+        
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-7 h-7 rounded-full overflow-hidden ring-2 ring-rose-500/30 group-hover:ring-rose-500 transition-all duration-300"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const channelId = short.userId?._id || short.userId || channel?._id;
+              if (channelId) router.push(`/channel/${channelId}`);
+            }}
+          >
+            <Avatar className="w-full h-full">
+              <AvatarImage
+                src={getImageUrl(short.userId?.image || short.userId?.avatar || channel?.image, true)}
+                alt={short.userId?.channelName || short.userId?.name || channel?.channelname || "Channel"}
+              />
+              <AvatarFallback className="bg-gradient-to-br from-rose-500 to-pink-600 text-white text-xs font-bold">
+                {(short.userId?.channelName || short.userId?.name || channel?.channelname || "U")[0].toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+          
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1">
+            {short.userId?.channelName || short.userId?.name || channel?.channelname || "Unknown"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 const ChannelPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { user, updateUser } = useUser();
 
-  // ✅ Refs for Android visibility fix
   const infoBarRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(false);
 
-  // State: Channel Data
+  // State
   const [channel, setChannel] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  // State: Call Functionality
   const [isInitiatingCall, setIsInitiatingCall] = useState(false);
   const [callError, setCallError] = useState<string | null>(null);
-
-  // State: Videos
   const [videos, setVideos] = useState<any[]>([]);
   const [videosLoading, setVideosLoading] = useState(false);
-
-  // State: Shorts
   const [shorts, setShorts] = useState<any[]>([]);
   const [shortsLoading, setShortsLoading] = useState(false);
   const [shortsError, setShortsError] = useState<string | null>(null);
-
-  // State: Tabs
   const [activeTab, setActiveTab] = useState<"videos" | "shorts">("videos");
   const [contentTab, setContentTab] = useState<"videos" | "shorts">("videos");
-
-  // State: Render Control
   const [refreshKey, setRefreshKey] = useState(0);
   const [renderKey, setRenderKey] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
-  // ✅ Add thumbnail/video failure tracking
 
   // ============================================================================
-  // LIFECYCLE HOOKS - CLIENT MOUNTING & VISIBILITY
+  // LIFECYCLE HOOKS
   // ============================================================================
-
-  // ✅ Client-side mounting
   useEffect(() => {
     isMountedRef.current = true;
     setIsMounted(true);
-    console.log("✅ Component Mounted");
-    return () => {
-      isMountedRef.current = false;
-    };
+    return () => { isMountedRef.current = false; };
   }, []);
 
-  // ✅ ANDROID FIX: Force info bar visibility
-  useEffect(() => {
-    if (channel && isMountedRef.current && infoBarRef.current) {
-      const checkVisibility = () => {
-        if (!infoBarRef.current) return;
-
-        const rect = infoBarRef.current.getBoundingClientRect();
-        console.log("📏 Info bar:", {
-          height: rect.height,
-          width: rect.width,
-          top: rect.top,
-        });
-
-        if (rect.height === 0) {
-          console.warn("⚠️ Info bar hidden! Forcing re-render...");
-          infoBarRef.current.style.display = "block";
-          infoBarRef.current.style.minHeight = "80px";
-          infoBarRef.current.style.visibility = "visible";
-          infoBarRef.current.style.opacity = "1";
-          setRenderKey((prev) => prev + 1);
-        }
-      };
-
-      checkVisibility();
-      const timer = setTimeout(checkVisibility, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [channel?._id, videos.length, shorts.length]);
-
-  // ✅ DEBUG: Log data changes
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      console.log("🔍 CHANNEL PAGE DEBUG:", {
-        channelLoaded: !!channel,
-        channelId: channel?._id,
-        channelName: channel?.channelname || channel?.name,
-        videosCount: videos.length,
-        shortsCount: shorts.length,
-        isMounted,
-        renderKey,
-        timestamp: new Date().toISOString(),
-      });
-
-      (window as any).__debugChannelPage = {
-        channel,
-        videos,
-        shorts,
-        isMounted,
-        renderKey,
-      };
-    }
-  }, [channel, videos.length, shorts.length, isMounted, renderKey]);
-
-  // ============================================================================
-  // 🔴 ANDROID: LISTEN FOR FORCE REFRESH EVENTS
-  // ============================================================================
   useEffect(() => {
     const handleForceRefresh = (event: CustomEvent) => {
-      console.log("🔄 Force refresh event received:", event.detail);
-
-      // Increment both keys to force complete re-render
       setRefreshKey((prev) => prev + 1);
       setRenderKey((prev) => prev + 1);
     };
-
-    window.addEventListener(
-      "forceChannelRefresh",
-      handleForceRefresh as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "forceChannelRefresh",
-        handleForceRefresh as EventListener
-      );
-    };
+    window.addEventListener("forceChannelRefresh", handleForceRefresh as EventListener);
+    return () => window.removeEventListener("forceChannelRefresh", handleForceRefresh as EventListener);
   }, []);
 
   // ============================================================================
   // FETCH CHANNEL DATA
   // ============================================================================
-
   useEffect(() => {
     const fetchChannel = async () => {
       if (!id || typeof id !== "string") return;
-
       try {
         setLoading(true);
-        console.log("📡 Fetching channel:", id);
-
         const response = await axiosInstance.get(`/auth/channel/${id}`);
-
         if (response.data.success && response.data.user) {
           const channelData = response.data.user;
-
-          // ✅ Ensure subscribers is a number
-          if (typeof channelData.subscribers !== "number") {
-            channelData.subscribers = 0;
-          }
-
+          if (typeof channelData.subscribers !== "number") channelData.subscribers = 0;
           setChannel(channelData);
-          console.log("✅ Channel loaded:", channelData.channelname);
-
-          // ✅ Update user context if viewing own channel
           if (user && user._id === id) {
             const updatedUser = {
               ...user,
@@ -228,210 +582,112 @@ const ChannelPage = () => {
         } else {
           setChannel(null);
         }
-      } catch (error: any) {
-        console.error("❌ Channel fetch error:", error);
+      } catch (error) {
         setChannel(null);
       } finally {
         setLoading(false);
       }
     };
-
     fetchChannel();
   }, [id, user?._id]);
 
   // ============================================================================
   // FETCH VIDEOS
   // ============================================================================
-
   useEffect(() => {
     const fetchVideos = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for videos");
-        return;
-      }
-
+      if (!id || typeof id !== "string") return;
       try {
         setVideosLoading(true);
-        console.log("📹 Fetching videos for channel:", id);
-
-        const timestamp = Date.now();
-
-        // ✅ CRITICAL FIX: Remove if-none-match header, use custom timestamp
         const response = await axiosInstance.get(`/video/channel/${id}`, {
-          params: {
-            _t: timestamp,
-            nocache: "true",
-            mobile: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-            Pragma: "no-cache",
-            Expires: "0",
-            // ✅ REMOVED: "If-None-Match" - this was causing CORS error
-          },
-          // ✅ CRITICAL: Disable Axios's automatic ETag handling
-          transformRequest: [
-            (data, headers) => {
-              delete headers["If-None-Match"];
-              delete headers["If-Modified-Since"];
-              return data;
-            },
-          ],
+          params: { _t: Date.now(), nocache: "true", mobile: "true" },
+          headers: { "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0" },
+          transformRequest: [(data, headers) => {
+            delete headers["If-None-Match"];
+            delete headers["If-Modified-Since"];
+            return data;
+          }],
         });
-
-        console.log("📹 Videos API response:", {
-          success: response.data.success,
-          count:
-            response.data.data?.length || response.data.videos?.length || 0,
-          timestamp: response.data.timestamp,
-        });
-
         if (response.data.success && Array.isArray(response.data.data)) {
-          console.log("✅ Setting videos:", response.data.data.length);
           setVideos(response.data.data);
-          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
-        } else if (
-          response.data.videos &&
-          Array.isArray(response.data.videos)
-        ) {
-          console.log(
-            "✅ Setting videos (alternate):",
-            response.data.videos.length
-          );
+        } else if (response.data.videos && Array.isArray(response.data.videos)) {
           setVideos(response.data.videos);
-          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
         } else {
-          console.log("⚠️ No videos in response");
           setVideos([]);
         }
-      } catch (error: any) {
-        console.error("❌ Error fetching videos:", {
-          message: error.message,
-          status: error.response?.status,
-        });
+      } catch (error) {
         setVideos([]);
       } finally {
         setVideosLoading(false);
       }
     };
-
     const timer = setTimeout(fetchVideos, 150);
     return () => clearTimeout(timer);
   }, [id, refreshKey]);
+
   // ============================================================================
   // FETCH SHORTS
   // ============================================================================
-
   useEffect(() => {
     const fetchShorts = async () => {
-      if (!id || typeof id !== "string") {
-        console.log("⚠️ No channel ID for shorts");
-        return;
-      }
-
+      if (!id || typeof id !== "string") return;
       try {
         setShortsLoading(true);
         setShortsError(null);
-        console.log("🎬 Fetching shorts for channel:", id);
-
-        const timestamp = Date.now();
-
-        // ✅ CRITICAL FIX: Remove if-none-match header
         const response = await axiosInstance.get(`/shorts/channel/${id}`, {
-          params: {
-            page: 1,
-            limit: 100,
-            _t: timestamp,
-            nocache: "true",
-            mobile: "true",
-          },
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-            Pragma: "no-cache",
-            Expires: "0",
-            // ✅ REMOVED: "If-None-Match" - this was causing CORS error
-          },
-          // ✅ CRITICAL: Disable Axios's automatic ETag handling
-          transformRequest: [
-            (data, headers) => {
-              delete headers["If-None-Match"];
-              delete headers["If-Modified-Since"];
-              return data;
-            },
-          ],
+          params: { page: 1, limit: 100, _t: Date.now(), nocache: "true", mobile: "true" },
+          headers: { "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0" },
+          transformRequest: [(data, headers) => {
+            delete headers["If-None-Match"];
+            delete headers["If-Modified-Since"];
+            return data;
+          }],
         });
-
-        console.log("🎬 Shorts API response:", {
-          success: response.data.success,
-          count:
-            response.data.data?.length || response.data.shorts?.length || 0,
-          timestamp: response.data.timestamp,
-        });
-
         if (response.data.success) {
-          const fetchedShorts =
-            response.data.data || response.data.shorts || [];
-          console.log("✅ Setting shorts:", fetchedShorts.length);
-
+          const fetchedShorts = response.data.data || response.data.shorts || [];
           const processedShorts = fetchedShorts.map((short: any) => ({
             ...short,
             thumbnailUrl: short.thumbnailUrl || short.thumbnail,
             videoUrl: short.videoUrl || short.video,
           }));
-
           setShorts(processedShorts);
-          setTimeout(() => setRenderKey((prev) => prev + 1), 100);
         } else {
-          console.log("⚠️ No shorts in response");
           setShorts([]);
         }
       } catch (error: any) {
-        console.error("❌ Error fetching shorts:", {
-          message: error.message,
-          status: error.response?.status,
-        });
-
-        if (error.response?.status !== 404) {
-          setShortsError("Failed to load shorts");
-        }
+        if (error.response?.status !== 404) setShortsError("Failed to load shorts");
         setShorts([]);
       } finally {
         setShortsLoading(false);
       }
     };
-
     const timer = setTimeout(fetchShorts, 200);
     return () => clearTimeout(timer);
   }, [id, refreshKey]);
+
   // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
-
   const handleVideoUploadSuccess = (newVideo: any) => {
-    console.log("✅ Video upload success:", newVideo._id);
     setVideos((prevVideos) => [newVideo, ...prevVideos]);
   };
 
   const handleStartCall = async () => {
-    // ✅ Validation checks
     if (!user) {
       setCallError("Please login to make calls");
       setTimeout(() => setCallError(null), 3000);
       return;
     }
-
     if (!id || typeof id !== "string") {
       setCallError("Invalid channel ID");
       setTimeout(() => setCallError(null), 3000);
       return;
     }
-
     if (user._id === id) {
       setCallError("You cannot call yourself!");
       setTimeout(() => setCallError(null), 3000);
       return;
     }
-
     if (!channel) {
       setCallError("Channel data not loaded");
       setTimeout(() => setCallError(null), 3000);
@@ -441,29 +697,12 @@ const ChannelPage = () => {
     try {
       setIsInitiatingCall(true);
       setCallError(null);
-
-      const remotePersonName =
-        channel.name || channel.channelname || "Unknown User";
-      const remotePersonImage =
-        channel.image || "https://github.com/shadcn.png";
-
-      // ✅ Initiate call via API
-      const response = await axiosInstance.post("/call/initiate", {
-        receiverId: id,
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to initiate call");
-      }
-
+      const remotePersonName = channel.name || channel.channelname || "Unknown User";
+      const remotePersonImage = channel.image || "https://github.com/shadcn.png";
+      const response = await axiosInstance.post("/call/initiate", { receiverId: id });
+      if (!response.data.success) throw new Error(response.data.message || "Failed to initiate call");
       const { call } = response.data;
-
-      // ✅ Check socket connection
-      if (!isSocketConnected()) {
-        throw new Error("Socket not connected. Please refresh the page.");
-      }
-
-      // ✅ Emit socket event
+      if (!isSocketConnected()) throw new Error("Socket not connected. Please refresh the page.");
       const socket = getSocket();
       socket.emit("call-user", {
         userToCall: id,
@@ -473,8 +712,6 @@ const ChannelPage = () => {
         roomId: call.roomId,
         callId: call._id,
       });
-
-      // ✅ Navigate to call page
       router.push({
         pathname: `/call/${call.roomId}`,
         query: {
@@ -485,11 +722,7 @@ const ChannelPage = () => {
         },
       });
     } catch (error: any) {
-      setCallError(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to initiate call. Please try again."
-      );
+      setCallError(error.response?.data?.message || error.message || "Failed to initiate call. Please try again.");
       setTimeout(() => setCallError(null), 5000);
     } finally {
       setIsInitiatingCall(false);
@@ -497,15 +730,19 @@ const ChannelPage = () => {
   };
 
   // ============================================================================
-  // LOADING & ERROR STATES
+  // LOADING STATE
   // ============================================================================
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading channel...</p>
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 animate-spin" />
+            <div className="absolute inset-1 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center">
+              <Diamond className="w-8 h-8 text-violet-500 animate-pulse" />
+            </div>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading channel...</p>
         </div>
       </div>
     );
@@ -513,17 +750,16 @@ const ChannelPage = () => {
 
   if (!channel) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
-            Channel not found
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            This channel doesn't exist or has been removed.
-          </p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+        <div className="text-center p-8">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+            <User className="w-12 h-12 text-gray-400" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Channel not found</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">This channel doesn't exist or has been removed.</p>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-8 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-semibold hover:opacity-90 transition-all shadow-lg hover:shadow-violet-500/25"
           >
             Go Home
           </button>
@@ -533,25 +769,38 @@ const ChannelPage = () => {
   }
 
   const isOwnChannel = user?._id === id;
-  // ✅ HELPER: Get short video URL
-  const getShortVideoUrl = (short: any): string => {
-    if (!short?.videoUrl) return "";
 
-    if (short.videoUrl.startsWith("http")) {
-      return short.videoUrl;
-    }
-
-    // If it's a relative path, you might need to prepend your backend URL
-    // Adjust this based on your backend setup
-    return short.videoUrl;
-  };
   // ============================================================================
-  // RENDER - MAIN JSX
+  // MAIN RENDER
   // ============================================================================
   return (
     <ProtectedRoute requireAuth={true}>
-      <div className="flex-1 min-h-screen bg-white dark:bg-gray-900">
-        <div className="w-full">
+      {/* Inject premium styles */}
+      <style jsx global>{premiumStyles}</style>
+      
+      <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-[#0a0a0f] dark:via-[#0f0f18] dark:to-[#0a0a0f]">
+        
+        {/* Premium Background Effects */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          {/* Gradient orbs */}
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/10 dark:bg-violet-500/5 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-pink-500/10 dark:bg-pink-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl" />
+          
+          {/* Grid pattern */}
+          <div 
+            className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(139, 92, 246, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.5) 1px, transparent 1px)
+              `,
+              backgroundSize: '60px 60px'
+            }}
+          />
+        </div>
+
+        <div className="relative w-full z-10">
           {/* Channel Header */}
           <ChannelHeader
             channel={channel}
@@ -562,1042 +811,347 @@ const ChannelPage = () => {
             onAvatarUpdate={() => setRefreshKey((prev) => prev + 1)}
           />
 
-          {/* ✅ CHANNEL INFO BAR - MOBILE FIXED */}
+          {/* ================================================================
+              PREMIUM STATS SECTION
+              ================================================================ */}
           {channel && isMounted && (
-            <div
-              ref={infoBarRef}
-              key={`info-${channel._id}-${videos.length}-${shorts.length}-${renderKey}`}
-              className="w-full bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-800"
-              style={{
-                position: "relative",
-                zIndex: 10,
-                marginBottom: "20px",
-              }}
-            >
-              <div className="px-3 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
-                {/* Scrollable container */}
-                <div
-                  className="flex items-center overflow-x-auto scrollbar-hide"
-                  style={{ gap: "12px" }}
-                >
-                  {/* Channel Name */}
-                  <div
-                    className="flex items-center border-r border-gray-200 dark:border-gray-700"
-                    style={{ gap: "8px", paddingRight: "12px", flexShrink: 0 }}
-                  >
-                    <div
-                      className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
-                      style={{
-                        width: "28px",
-                        height: "28px",
-                        minWidth: "28px",
-                      }}
-                    >
-                      <User
-                        style={{
-                          width: "14px",
-                          height: "14px",
-                          color: "white",
-                        }}
-                      />
-                    </div>
-                    <span
-                      className="font-semibold text-gray-900 dark:text-white"
-                      style={{ fontSize: "13px", whiteSpace: "nowrap" }}
-                    >
-                      {channel.channelname || channel.name || "Unknown"}
-                    </span>
-                  </div>
-
-                  {/* Joined Date */}
-                  <div
-                    className="flex items-center border-r border-gray-200 dark:border-gray-700"
-                    style={{ gap: "6px", paddingRight: "12px", flexShrink: 0 }}
-                  >
-                    <Calendar
-                      className="text-gray-400 dark:text-gray-500"
-                      style={{
-                        width: "14px",
-                        height: "14px",
-                        minWidth: "14px",
-                      }}
-                    />
-                    <span
-                      className="text-gray-600 dark:text-gray-400"
-                      style={{ fontSize: "12px", whiteSpace: "nowrap" }}
-                    >
-                      Joined{" "}
-                      {channel.joinedon
-                        ? new Date(channel.joinedon).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )
-                        : "Recently"}
-                    </span>
-                  </div>
-
-                  {/* Video Count - COMPLETELY FIXED */}
-                  <div
-                    key={`video-${videos.length}-${renderKey}`}
-                    className="flex items-center border-r border-gray-200 dark:border-gray-700"
-                    style={{
-                      gap: "8px",
-                      paddingRight: "12px",
-                      flexShrink: 0,
-                      minWidth: "fit-content",
-                    }}
-                  >
-                    <div
-                      className="rounded bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center"
-                      style={{
-                        width: "24px",
-                        height: "24px",
-                        minWidth: "24px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Video
-                        className="text-blue-600 dark:text-blue-400"
-                        style={{ width: "14px", height: "14px" }}
-                      />
-                    </div>
-                    <span
-                      className="font-medium text-gray-700 dark:text-gray-300"
-                      style={{
-                        fontSize: "13px",
-                        whiteSpace: "nowrap",
-                        minWidth: "max-content",
-                      }}
-                    >
-                      {videos.length} {videos.length === 1 ? "video" : "videos"}
-                    </span>
-                  </div>
-
-                  {/* Shorts Count - COMPLETELY FIXED */}
-                  <div
-                    key={`shorts-${shorts.length}-${renderKey}`}
-                    className="flex items-center"
-                    style={{
-                      gap: "8px",
-                      flexShrink: 0,
-                      minWidth: "fit-content",
-                    }}
-                  >
-                    <div
-                      className="rounded bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center"
-                      style={{
-                        width: "24px",
-                        height: "24px",
-                        minWidth: "24px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Film
-                        className="text-red-600 dark:text-red-400"
-                        style={{ width: "14px", height: "14px" }}
-                      />
-                    </div>
-                    <span
-                      className="font-medium text-gray-700 dark:text-gray-300"
-                      style={{
-                        fontSize: "13px",
-                        whiteSpace: "nowrap",
-                        minWidth: "max-content",
-                      }}
-                    >
-                      {shorts.length} {shorts.length === 1 ? "short" : "shorts"}
-                    </span>
-                  </div>
-                </div>
+            <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto -mt-8 sm:-mt-12 relative z-20 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+                {/* Channel Name Card */}
+                <PremiumStatCard
+                  icon={Crown}
+                  label="Channel"
+                  value={channel.channelname || channel.name || "Creator"}
+                  gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                  delay={0}
+                />
+                
+                {/* Joined Date Card */}
+                <PremiumStatCard
+                  icon={Calendar}
+                  label="Member Since"
+                  value={channel.joinedon 
+                    ? new Date(channel.joinedon).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                    : "2024"
+                  }
+                  gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                  delay={100}
+                />
+                
+                {/* Videos Count Card */}
+                <PremiumStatCard
+                  icon={Video}
+                  label="Videos"
+                  value={videos.length}
+                  gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+                  delay={200}
+                />
+                
+                {/* Shorts Count Card */}
+                <PremiumStatCard
+                  icon={Film}
+                  label="Shorts"
+                  value={shorts.length}
+                  gradient="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
+                  delay={300}
+                />
               </div>
             </div>
           )}
 
-          {/* ✅ DEBUG: Force Refresh Button (remove after testing) */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-center">
-              <button
-                onClick={() => {
-                  console.log("🔄 Force refresh triggered");
-                  setRefreshKey((prev) => prev + 1);
-                  setRenderKey((prev) => prev + 1);
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-              >
-                Force Refresh (Debug)
-              </button>
-              <span className="ml-4 text-xs">
-                Videos: {videos.length} | Shorts: {shorts.length} | Render:{" "}
-                {renderKey}
-              </span>
-            </div>
-          )}
-
-          {/* ============================================================================
-              UPLOAD SECTION - OWN CHANNEL ONLY
-              ============================================================================ */}
+          {/* ================================================================
+              PREMIUM UPLOAD SECTION - OWN CHANNEL ONLY
+              ================================================================ */}
           {isOwnChannel && (
-            <div
-              className="px-4 sm:px-6 pb-6 sm:pb-8 pt-0 max-w-7xl mx-auto"
-              style={{ position: "relative", zIndex: 5 }}
-            >
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-                {/* Upload Tabs */}
-                <div className="flex items-center gap-0 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide bg-white dark:bg-gray-800">
-                  {/* Videos Upload Tab */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("videos")}
-                    className={`
-                      flex items-center gap-1.5 sm:gap-2 
-                      px-4 sm:px-5 md:px-6 
-                      py-3 sm:py-3.5 
-                      transition-all relative 
-                      whitespace-nowrap flex-shrink-0
-                      font-semibold
-                      bg-transparent
-                      ${
-                        activeTab === "videos"
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                      }
-                    `}
-                    style={{
-                      borderBottom:
-                        activeTab === "videos"
-                          ? "3px solid #2563eb"
-                          : "3px solid transparent",
-                    }}
-                  >
-                    <Video className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Upload Videos</span>
-                  </button>
-
-                  {/* Shorts Upload Tab */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("shorts")}
-                    className={`
-                      flex items-center gap-1.5 sm:gap-2 
-                      px-4 sm:px-5 md:px-6 
-                      py-3 sm:py-3.5 
-                      transition-all relative 
-                      whitespace-nowrap flex-shrink-0
-                      font-semibold
-                      bg-transparent
-                      ${
-                        activeTab === "shorts"
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                      }
-                    `}
-                    style={{
-                      borderBottom:
-                        activeTab === "shorts"
-                          ? "3px solid #dc2626"
-                          : "3px solid transparent",
-                    }}
-                  >
-                    <Play className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base">Upload Shorts</span>
-                  </button>
+            <div className="px-4 sm:px-6 lg:px-8 pb-8 max-w-7xl mx-auto">
+              <div className="relative premium-card rounded-3xl overflow-hidden">
+                {/* Glass effect background */}
+                <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl" />
+                
+                {/* Gradient border */}
+                <div className="absolute inset-0 rounded-3xl p-[1px] bg-gradient-to-br from-violet-500/50 via-purple-500/50 to-pink-500/50">
+                  <div className="absolute inset-[1px] rounded-3xl bg-white dark:bg-gray-900" />
                 </div>
-
-                {/* Tab Content */}
-                {activeTab === "videos" ? (
-                  <div>
-                    <VideoUploader
-                      channelId={id as string}
-                      channelName={channel?.channelname || channel?.name}
-                      onUploadSuccess={handleVideoUploadSuccess}
-                    />
+                
+                <div className="relative z-10 p-5 sm:p-6 lg:p-8">
+                  {/* Upload Tabs */}
+                  <div className="flex items-center gap-2 mb-6 p-1.5 bg-gray-100 dark:bg-gray-800/50 rounded-2xl w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("videos")}
+                      className={`
+                        flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300
+                        ${activeTab === "videos"
+                          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/25"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50"
+                        }
+                      `}
+                    >
+                      <Video className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span>Videos</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("shorts")}
+                      className={`
+                        flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300
+                        ${activeTab === "shorts"
+                          ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/25"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50"
+                        }
+                      `}
+                    >
+                      <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span>Shorts</span>
+                    </button>
                   </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-red-600">
-                        <Avatar className="w-full h-full">
-                          <AvatarImage
-                            src={getImageUrl(channel?.image, true)}
-                            alt={channel?.channelname || channel?.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white font-semibold text-sm">
-                            {(channel?.channelname ||
-                              channel?.name ||
-                              "C")[0]?.toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
-                          {channel?.channelname || channel?.name}
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Uploading as this channel
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="text-center py-6 sm:py-8">
-                      <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 sm:p-8 max-w-md mx-auto">
-                        <div className="bg-red-100 dark:bg-red-900/50 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                          <Play
-                            className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-400"
-                            fill="currentColor"
-                          />
+                  {/* Upload Content */}
+                  {activeTab === "videos" ? (
+                    <div>
+                      {/* Channel info badge */}
+                      <div className="flex items-center gap-3 mb-6 p-4 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-2xl border border-violet-200/50 dark:border-violet-700/30">
+                        <div className="relative">
+                          <Avatar className="w-12 h-12 ring-2 ring-violet-500">
+                            <AvatarImage src={getImageUrl(channel?.image, true)} alt={channel?.channelname || channel?.name} />
+                            <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white font-bold">
+                              {(channel?.channelname || channel?.name || "C")[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900">
+                            <CheckCircle2 className="w-3 h-3 text-white" />
+                          </div>
                         </div>
-                        <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2">
-                          Upload Shorts
-                        </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
-                          Go to the Shorts section to upload vertical videos
-                          (9:16 aspect ratio)
-                        </p>
-                        <button
-                          onClick={() => router.push("/shorts/upload")}
-                          className="bg-red-600 hover:bg-red-700 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto shadow-lg hover:shadow-xl text-sm sm:text-base"
-                        >
-                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
-                          Go to Shorts Upload
-                        </button>
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white">{channel?.channelname || channel?.name}</p>
+                          <p className="text-sm text-violet-600 dark:text-violet-400 font-medium">Uploading as this channel</p>
+                        </div>
+                      </div>
+                      
+                      <VideoUploader
+                        channelId={id as string}
+                        channelName={channel?.channelname || channel?.name}
+                        onUploadSuccess={handleVideoUploadSuccess}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 sm:py-12">
+                      <div className="relative inline-block mb-6">
+                        <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-pink-600 rounded-3xl blur-xl opacity-30 animate-pulse" />
+                        <div className="relative bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-3xl p-8 sm:p-10 border border-rose-200/50 dark:border-rose-700/30">
+                          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 flex items-center justify-center shadow-lg shadow-rose-500/30">
+                            <Play className="w-10 h-10 text-white" fill="white" />
+                          </div>
+                          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">Upload Shorts</h3>
+                          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+                            Create engaging vertical videos (9:16) to reach more viewers
+                          </p>
+                          <button
+                            onClick={() => router.push("/shorts/upload")}
+                            className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-bold transition-all hover:opacity-90 shadow-lg shadow-rose-500/30 hover:shadow-xl hover:shadow-rose-500/40"
+                          >
+                            <Upload className="w-5 h-5" />
+                            Go to Shorts Upload
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* ============================================================================
-              CONTENT TABS - VIEW VIDEOS & SHORTS
-              ============================================================================ */}
-          <div className="w-full pb-32 sm:pb-8 overflow-hidden">
-            <div className="w-full sm:px-6 sm:max-w-7xl sm:mx-auto">
-              {/* Tab Navigation - YouTube Style */}
-              <div className="w-full border-b border-gray-200 dark:border-gray-700 mb-6">
-                <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide px-4 sm:px-0">
-                  {/* Videos Tab */}
+          {/* ================================================================
+              PREMIUM CONTENT TABS
+              ================================================================ */}
+          <div className="w-full pb-32 sm:pb-16">
+            <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+              
+              {/* Premium Tab Navigation */}
+              <div className="flex items-center justify-center mb-8">
+                <div className="inline-flex items-center p-1.5 bg-gray-100 dark:bg-gray-800/50 rounded-2xl backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                   <button
                     onClick={() => setContentTab("videos")}
                     className={`
-        flex items-center gap-2 px-6 py-3 
-        font-semibold text-sm
-        transition-all relative whitespace-nowrap
-        ${
-          contentTab === "videos"
-            ? "text-gray-900 dark:text-white"
-            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-        }
-      `}
-                    style={{
-                      borderBottom:
-                        contentTab === "videos"
-                          ? "2px solid #3b82f6"
-                          : "2px solid transparent",
-                    }}
+                      flex items-center gap-2.5 px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-300
+                      ${contentTab === "videos"
+                        ? "bg-white dark:bg-gray-900 text-violet-600 dark:text-violet-400 shadow-lg"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      }
+                    `}
                   >
                     <Grid className="w-5 h-5" />
                     <span>Videos</span>
-                    <span
-                      className={`
-        text-xs font-bold px-2 py-0.5 rounded-full
-        ${
-          contentTab === "videos"
-            ? "bg-blue-600 text-white"
-            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-        }
-      `}
-                    >
+                    <span className={`
+                      px-2.5 py-0.5 rounded-full text-xs font-bold transition-all
+                      ${contentTab === "videos"
+                        ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                      }
+                    `}>
                       {videos.length}
                     </span>
                   </button>
-
-                  {/* Shorts Tab */}
+                  
                   <button
                     onClick={() => setContentTab("shorts")}
                     className={`
-        flex items-center gap-2 px-6 py-3 
-        font-semibold text-sm
-        transition-all relative whitespace-nowrap
-        ${
-          contentTab === "shorts"
-            ? "text-gray-900 dark:text-white"
-            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-        }
-      `}
-                    style={{
-                      borderBottom:
-                        contentTab === "shorts"
-                          ? "2px solid #dc2626"
-                          : "2px solid transparent",
-                    }}
+                      flex items-center gap-2.5 px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-300
+                      ${contentTab === "shorts"
+                        ? "bg-white dark:bg-gray-900 text-rose-500 dark:text-rose-400 shadow-lg"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      }
+                    `}
                   >
                     <Film className="w-5 h-5" />
                     <span>Shorts</span>
-                    <span
-                      className={`
-        text-xs font-bold px-2 py-0.5 rounded-full
-        ${
-          contentTab === "shorts"
-            ? "bg-red-600 text-white"
-            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-        }
-      `}
-                    >
+                    <span className={`
+                      px-2.5 py-0.5 rounded-full text-xs font-bold transition-all
+                      ${contentTab === "shorts"
+                        ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                      }
+                    `}>
                       {shorts.length}
                     </span>
                   </button>
                 </div>
               </div>
 
-              {/* Videos Content */}
+              {/* ================================================================
+                  VIDEOS CONTENT
+                  ================================================================ */}
               {contentTab === "videos" && (
-                <div className="w-full px-2 sm:px-0">
+                <div className="w-full">
                   {videosLoading ? (
-                    <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        Loading videos...
-                      </p>
+                    <div className="text-center py-16">
+                      <div className="relative w-16 h-16 mx-auto mb-6">
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 animate-spin" />
+                        <div className="absolute inset-1 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center">
+                          <Video className="w-6 h-6 text-violet-500" />
+                        </div>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">Loading videos...</p>
                     </div>
                   ) : videos.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {videos.map((video) => {
-                        // ✅ SAME THUMBNAIL LOGIC AS HOME PAGE
-                        const getVideoThumbnail = (video: any): string => {
-                          const explicitThumbnail =
-                            video?.thumbnailUrl ||
-                            video?.thumbnail ||
-                            video?.videothumbnail ||
-                            video?.videothumb;
-
-                          if (explicitThumbnail?.startsWith("http")) {
-                            return explicitThumbnail;
-                          }
-
-                          const videoUrl =
-                            video?.filepath ||
-                            video?.videofile ||
-                            video?.videoLink;
-                          if (videoUrl?.includes("supabase.co")) {
-                            return videoUrl;
-                          }
-
-                          if (
-                            videoUrl?.includes("cloudinary.com") &&
-                            videoUrl.includes("/video/upload/")
-                          ) {
-                            try {
-                              const match = videoUrl.match(
-                                /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/
-                              );
-                              if (match) {
-                                const cloudName = match[1];
-                                let publicId = match[2];
-                                publicId = publicId
-                                  .split("/")
-                                  .filter(
-                                    (segment) =>
-                                      !segment.match(
-                                        /^(f_|vc_|ac_|af_|br_|q_|w_|h_|c_|so_|t_)/
-                                      )
-                                  )
-                                  .join("/");
-                                publicId = publicId.replace(
-                                  /\.(mp4|mov|avi|mkv|webm)$/i,
-                                  ""
-                                );
-                                return `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
-                              }
-                            } catch (error) {
-                              console.error(
-                                "❌ Thumbnail generation error:",
-                                error
-                              );
-                            }
-                          }
-
-                          return "/placeholder-thumbnail.jpg";
-                        };
-
-                        const channelName =
-                          video.uploadedBy?.channelname ||
-                          video.uploadedBy?.name ||
-                          video?.videochanel ||
-                          "Unknown Channel";
-
-                        return (
-                          <div
-                            key={video._id}
-                            onClick={() => router.push(`/watch/${video._id}`)}
-                            className="cursor-pointer group"
-                          >
-                            {/* Thumbnail */}
-                            <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3 shadow-sm hover:shadow-lg transition-shadow">
-                              {getVideoThumbnail(video).includes(
-                                "supabase.co"
-                              ) ? (
-                                <img
-                                  src={getVideoThumbnail(video)}
-                                  alt={video?.videotitle || "Video thumbnail"}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                  loading="lazy"
-                                  onError={(e) => {
-                                    const target =
-                                      e.currentTarget as HTMLImageElement;
-                                    const currentVideo = video;
-                                    console.error(
-                                      "❌ Thumbnail failed, trying video element"
-                                    );
-                                    target.style.display = "none";
-                                    const parent = target.parentElement;
-                                    if (
-                                      parent &&
-                                      !parent.querySelector("video")
-                                    ) {
-                                      const videoElement =
-                                        document.createElement("video");
-                                      videoElement.src =
-                                        getVideoThumbnail(currentVideo);
-                                      videoElement.className =
-                                        "w-full h-full object-cover";
-                                      videoElement.preload = "metadata";
-                                      videoElement.muted = true;
-                                      videoElement.playsInline = true;
-                                      parent.appendChild(videoElement);
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <video
-                                  src={getVideoThumbnail(video)}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                  preload="metadata"
-                                  poster={getVideoThumbnail(video)}
-                                  muted
-                                  playsInline
-                                />
-                              )}
-                              {video?.duration && (
-                                <div className="absolute bottom-2 right-2 bg-black/90 text-white text-xs font-bold px-2 py-0.5 rounded">
-                                  {video.duration}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Video Info */}
-                            <div className="flex gap-3">
-                              <div
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(
-                                    `/channel/${video.uploadedBy?._id}`
-                                  );
-                                }}
-                                className="flex-shrink-0"
-                              >
-                                <Avatar className="w-9 h-9 ring-2 ring-transparent hover:ring-blue-500 transition-all">
-                                  <AvatarImage
-                                    src={getImageUrl(
-                                      video.uploadedBy?.image,
-                                      true
-                                    )}
-                                    alt={channelName}
-                                  />
-                                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
-                                    {channelName[0]?.toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <h3
-                                  className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-3 mb-1 leading-snug group-hover:text-blue-600 transition-colors"
-                                  style={{
-                                    wordBreak: "break-all",
-                                    overflowWrap: "anywhere",
-                                    hyphens: "auto",
-                                  }}
-                                >
-                                  {video?.videotitle || "Untitled Video"}
-                                </h3>
-
-                                <p
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(
-                                      `/channel/${video.uploadedBy?._id}`
-                                    );
-                                  }}
-                                  className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-1 cursor-pointer"
-                                >
-                                  {channelName}
-                                </p>
-                                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
-                                  <span>{video.views || 0} views</span>
-                                  <span>•</span>
-                                  <span>
-                                    {video.createdAt
-                                      ? new Date(
-                                          video.createdAt
-                                        ).toLocaleDateString()
-                                      : "Recently"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                    <>
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                            <Video className="w-5 h-5 text-white" />
                           </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4">
-                        <Video className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
+                          <div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Videos</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{videos.length} {videos.length === 1 ? 'video' : 'videos'} uploaded</p>
+                          </div>
+                        </div>
                       </div>
-                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                        No videos yet
-                      </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                      
+                      {/* Videos Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                        {videos.map((video, index) => (
+                          <PremiumVideoCard key={video._id} video={video} router={router} index={index} />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-16">
+                      <div className="relative inline-block mb-6">
+                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full blur-xl opacity-20" />
+                        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                          <Video className="w-12 h-12 text-gray-400" />
+                        </div>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">No videos yet</h3>
+                      <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
                         {isOwnChannel
-                          ? "Upload your first video to get started!"
-                          : "This channel hasn't uploaded any videos yet."}
+                          ? "Start your journey! Upload your first video to share with the world."
+                          : "This channel hasn't uploaded any videos yet. Check back soon!"}
                       </p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Shorts Content - COMPLETE WITH FIXED THUMBNAILS */}
+              {/* ================================================================
+                  SHORTS CONTENT
+                  ================================================================ */}
               {contentTab === "shorts" && (
-                <div className="w-full overflow-hidden">
-                  <div className="px-2 sm:px-0">
-                    {shortsLoading ? (
-                      <div className="text-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-                        <p className="text-gray-600 dark:text-gray-400">
-                          Loading shorts...
-                        </p>
-                      </div>
-                    ) : shortsError ? (
-                      <div className="text-center py-12">
-                        <div className="bg-red-100 dark:bg-red-900/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                          <Film className="w-10 h-10 text-red-600" />
+                <div className="w-full">
+                  {shortsLoading ? (
+                    <div className="text-center py-16">
+                      <div className="relative w-16 h-16 mx-auto mb-6">
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 animate-spin" />
+                        <div className="absolute inset-1 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center">
+                          <Film className="w-6 h-6 text-rose-500" />
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                          Error Loading Shorts
-                        </h3>
-                        <p className="text-red-600 dark:text-red-400 mb-4">
-                          {shortsError}
-                        </p>
-                        <button
-                          onClick={() => setRefreshKey((prev) => prev + 1)}
-                          className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                        >
-                          Retry
-                        </button>
                       </div>
-                    ) : shorts.length > 0 ? (
-                      <div>
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
-                              <Play
-                                className="w-5 h-5 text-white"
-                                fill="white"
-                              />
-                            </div>
-                            Shorts
-                          </h2>
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-                            {shorts.length} short
-                            {shorts.length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-
-                        {/* Shorts Grid - MOBILE & DESKTOP OPTIMIZED */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 w-full pb-4 px-1 sm:px-0">
-                        {shorts.map((short, index) => {
-  const thumbnailUrl = getShortThumbnail(short);
-  const videoUrl = getShortVideoUrl(short);
-
-  return (
-    <div
-      key={short._id || short.id}
-      onClick={(e) => {
-        e.preventDefault();
-        const shortId = short._id || short.id;
-        if (shortId) {
-          router.push(`/shorts?id=${shortId}`);
-        }
-      }}
-      className="group cursor-pointer w-full transform transition-all duration-300 active:scale-95 md:hover:scale-[1.02]"
-    >
-      {/* Thumbnail Container */}
-      <div
-        className="relative w-full rounded-lg sm:rounded-xl overflow-hidden shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300"
-        style={{
-          background: "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
-          border: "1px solid rgba(220, 38, 38, 0.3)",
-        }}
-      >
-        <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
-          
-          {/* Conditional Rendering Based on Available Media */}
-          {thumbnailUrl && thumbnailUrl !== "fallback" && thumbnailUrl.startsWith("http") ? (
-            // IMAGE THUMBNAIL PATH
-            <img
-              src={thumbnailUrl}
-              alt={short.title || "Short"}
-              className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-              style={{ zIndex: 1 }}
-              loading="lazy"
-              onError={(e) => {
-                console.error("❌ Thumbnail image failed:", short._id);
-                const img = e.currentTarget;
-                img.style.display = "none";
-                
-                const parent = img.parentElement;
-                if (parent && !parent.querySelector(".media-fallback")) {
-                  // Try video as backup
-                  if (videoUrl && videoUrl.startsWith("http")) {
-                    const videoEl = document.createElement("video");
-                    videoEl.className = "media-fallback absolute inset-0 w-full h-full object-cover";
-                    videoEl.style.zIndex = "1";
-                    videoEl.src = videoUrl;
-                    videoEl.preload = "metadata";
-                    videoEl.muted = true;
-                    videoEl.playsInline = true;
-                    
-                    videoEl.onerror = () => {
-                      console.error("❌ Video backup also failed:", short._id);
-                      videoEl.remove();
-                      // Create fallback UI
-                      const fallbackUI = document.createElement("div");
-                      fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center";
-                      fallbackUI.style.cssText = "z-index: 1;";
-                      fallbackUI.innerHTML = `
-                        <div style="text-align: center; padding: 16px;">
-                          <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
-                            <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          </div>
-                          <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
-                          <p style="font-size: 12px; font-weight: 600; color: #fecaca; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
-                        </div>
-                      `;
-                      parent?.appendChild(fallbackUI);
-                    };
-                    
-                    parent.appendChild(videoEl);
-                  } else {
-                    // No video URL - show fallback immediately
-                    const fallbackUI = document.createElement("div");
-                    fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center";
-                    fallbackUI.style.cssText = "z-index: 1;";
-                    fallbackUI.innerHTML = `
-                      <div style="text-align: center; padding: 16px;">
-                        <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
-                          <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z"/>
-                          </svg>
-                        </div>
-                        <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
-                        <p style="font-size: 12px; font-weight: 600; color: #fecaca; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
-                      </div>
-                    `;
-                    parent.appendChild(fallbackUI);
-                  }
-                }
-              }}
-            />
-          ) : videoUrl && videoUrl.startsWith("http") ? (
-            // VIDEO ELEMENT PATH
-            <video
-              src={videoUrl}
-              className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-              style={{ zIndex: 1 }}
-              preload="metadata"
-              muted
-              playsInline
-              onError={(e) => {
-                console.error("❌ Video failed:", short._id);
-                const videoEl = e.currentTarget;
-                videoEl.style.display = "none";
-                
-                const parent = videoEl.parentElement;
-                if (parent && !parent.querySelector(".media-fallback")) {
-                  const fallbackUI = document.createElement("div");
-                  fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center";
-                  fallbackUI.style.cssText = "z-index: 1;";
-                  fallbackUI.innerHTML = `
-                    <div style="text-align: center; padding: 16px;">
-                      <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
-                        <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      </div>
-                      <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
-                      <p style="font-size: 12px; font-weight: 600; color: #fecaca; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">Loading shorts...</p>
                     </div>
-                  `;
-                  parent.appendChild(fallbackUI);
-                }
-              }}
-            />
-          ) : (
-            // DIRECT FALLBACK UI - No media available
-            <div
-              className="absolute inset-0 w-full h-full flex items-center justify-center"
-              style={{ zIndex: 1 }}
-            >
-              <div className="text-center p-4">
-                <div className="relative mb-3">
-                  <div
-                    className="absolute inset-0 rounded-full animate-ping opacity-75"
-                    style={{ background: "rgba(255, 255, 255, 0.3)" }}
-                  />
-                  <div
-                    className="relative w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-2xl"
-                    style={{
-                      background: "rgba(255, 255, 255, 0.95)",
-                      backdropFilter: "blur(8px)",
-                      border: "4px solid rgba(255, 255, 255, 0.4)",
-                    }}
-                  >
-                    <Play
-                      className="w-10 h-10 ml-1"
-                      style={{ color: "#dc2626" }}
-                      fill="#dc2626"
-                    />
-                  </div>
-                </div>
-                <p
-                  className="text-lg font-black text-white tracking-wider"
-                  style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
-                >
-                  SHORT
-                </p>
-                <p
-                  className="text-xs font-semibold"
-                  style={{
-                    color: "#fecaca",
-                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  Tap to play
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Gradient Overlay */}
-          <div
-            className="absolute inset-x-0 bottom-0 h-24 sm:h-32 pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300"
-            style={{
-              zIndex: 3,
-              background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5), transparent)",
-            }}
-          />
-
-          {/* Red Hover Overlay */}
-          <div
-            className="absolute inset-0 bg-red-600/0 group-active:bg-red-600/15 md:group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none"
-            style={{ zIndex: 4 }}
-          />
-
-          {/* Views Badge */}
-          <div
-            className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-active:scale-105 md:group-hover:scale-110 transition-all duration-300"
-            style={{
-              zIndex: 5,
-              background: "rgba(0, 0, 0, 0.8)",
-              backdropFilter: "blur(4px)",
-            }}
-          >
-            <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="white" />
-            <span>{(short.views || 0).toLocaleString()}</span>
-          </div>
-
-          {/* Duration Badge */}
-          {short.duration && (
-            <div
-              className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md group-active:scale-105 md:group-hover:scale-110 transition-all duration-300"
-              style={{
-                zIndex: 5,
-                background: "rgba(0, 0, 0, 0.8)",
-                backdropFilter: "blur(4px)",
-              }}
-            >
-              {short.duration}s
-            </div>
-          )}
-
-          {/* Play Button Overlay */}
-          <div
-            className="absolute inset-0 bg-black/0 group-active:bg-black/40 md:group-hover:bg-black/50 transition-all duration-500 flex items-center justify-center"
-            style={{ zIndex: 6 }}
-          >
-            <div className="opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transform scale-50 group-active:scale-90 md:group-hover:scale-100 transition-all duration-500 ease-out">
-              <div className="relative">
-                <div
-                  className="absolute inset-0 rounded-full animate-ping opacity-75"
-                  style={{ background: "#dc2626" }}
-                />
-                <div
-                  className="relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center shadow-2xl ring-2 ring-white/40 group-active:ring-4 md:group-hover:ring-8 transition-all duration-300"
-                  style={{
-                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
-                  }}
-                >
-                  <Play
-                    className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 text-white ml-1"
-                    fill="white"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Shine Effect */}
-          <div
-            className="absolute inset-0 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-            style={{ zIndex: 7 }}
-          >
-            <div
-              className="absolute inset-0 transform -skew-x-12 -translate-x-full group-active:translate-x-full md:group-hover:translate-x-full transition-transform duration-1000"
-              style={{
-                background: "linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)",
-              }}
-            />
-          </div>
-
-          {/* Index Badge */}
-          <div
-            className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-all duration-300 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md"
-            style={{
-              zIndex: 8,
-              background: "rgba(0, 0, 0, 0.7)",
-              backdropFilter: "blur(4px)",
-            }}
-          >
-            #{index + 1}
-          </div>
-        </div>
-      </div>
-
-      {/* Title & Channel Info - Keep existing code */}
-      <div className="mt-2 sm:mt-3 px-1">
-                                  <h3
-                                    className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-4 leading-snug mb-1 group-active:text-red-600 dark:group-active:text-red-500 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300"
-                                    style={{
-                                      wordBreak: "break-word",
-                                      overflowWrap: "break-word",
-                                      hyphens: "auto",
-                                      display: "-webkit-box",
-                                      WebkitLineClamp: 4,
-                                      WebkitBoxOrient: "vertical",
-                                      overflow: "hidden",
-                                    }}
-                                  >
-                                    {short.title}
-                                  </h3>
-
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 flex-shrink-0 ring-1 ring-gray-200 dark:ring-gray-700 group-active:ring-2 group-active:ring-red-500 md:group-hover:ring-2 md:group-hover:ring-red-500 transition-all duration-300 transform group-active:scale-110 md:group-hover:scale-110"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        const channelId =
-                                          short.userId?._id ||
-                                          short.userId ||
-                                          channel?._id;
-                                        if (channelId)
-                                          router.push(`/channel/${channelId}`);
-                                      }}
-                                    >
-                                      <Avatar className="w-full h-full">
-                                        <AvatarImage
-                                          src={getImageUrl(
-                                            short.userId?.image ||
-                                              short.userId?.avatar ||
-                                              channel?.image,
-                                            true
-                                          )}
-                                          alt={
-                                            short.userId?.channelName ||
-                                            short.userId?.name ||
-                                            channel?.channelname ||
-                                            "Channel"
-                                          }
-                                          className="w-full h-full object-cover"
-                                        />
-                                        <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] sm:text-xs font-bold">
-                                          {(short.userId?.channelName ||
-                                            short.userId?.name ||
-                                            channel?.channelname ||
-                                            "U")[0].toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                    </div>
-
-                                    <p
-                                      className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer active:text-gray-900 dark:active:text-white md:hover:text-gray-900 dark:md:hover:text-white transition-colors duration-300"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        const channelId =
-                                          short.userId?._id ||
-                                          short.userId ||
-                                          channel?._id;
-                                        if (channelId)
-                                          router.push(`/channel/${channelId}`);
-                                      }}
-                                    >
-                                      {short.userId?.channelName ||
-                                        short.userId?.name ||
-                                        channel?.channelname ||
-                                        "Unknown"}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
+                  ) : shortsError ? (
+                    <div className="text-center py-16">
+                      <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                        <Film className="w-12 h-12 text-red-500" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Error Loading Shorts</h3>
+                      <p className="text-red-500 mb-6">{shortsError}</p>
+                      <button
+                        onClick={() => setRefreshKey((prev) => prev + 1)}
+                        className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold hover:opacity-90 transition-all shadow-lg"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  ) : shorts.length > 0 ? (
+                    <>
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 flex items-center justify-center shadow-lg shadow-rose-500/25">
+                            <Play className="w-5 h-5 text-white" fill="white" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Shorts</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{shorts.length} {shorts.length === 1 ? 'short' : 'shorts'} uploaded</p>
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4">
-                          <Film className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                          No shorts yet
-                        </h3>
-                        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">
-                          {isOwnChannel
-                            ? "Upload your first short to get started!"
-                            : "This channel hasn't uploaded any shorts yet."}
-                        </p>
-                        {isOwnChannel && (
-                          <button
-                            onClick={() => router.push("/shorts/upload")}
-                            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2 shadow-lg"
-                          >
-                            <Upload className="w-5 h-5" />
-                            Upload Short
-                          </button>
-                        )}
+                      
+                      {/* Shorts Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+                        {shorts.map((short, index) => (
+                          <PremiumShortCard key={short._id || short.id} short={short} router={router} channel={channel} index={index} />
+                        ))}
                       </div>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-16">
+                      <div className="relative inline-block mb-6">
+                        <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-pink-600 rounded-full blur-xl opacity-20" />
+                        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                          <Film className="w-12 h-12 text-gray-400" />
+                        </div>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">No shorts yet</h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                        {isOwnChannel
+                          ? "Create engaging short-form content to grow your audience!"
+                          : "This channel hasn't uploaded any shorts yet. Check back soon!"}
+                      </p>
+                      {isOwnChannel && (
+                        <button
+                          onClick={() => router.push("/shorts/upload")}
+                          className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-rose-500/25"
+                        >
+                          <Upload className="w-5 h-5" />
+                          Upload Your First Short
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1607,14 +1161,9 @@ const ChannelPage = () => {
     </ProtectedRoute>
   );
 };
-// ✅ CRITICAL FIX: Disable static generation for dynamic channel pages
-// This prevents the "Cannot find module 'critters'" error during build
+
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  // You could optionally fetch initial channel data here if needed
-  // For now, we'll let the client-side useEffect handle it
-  return {
-    props: {}, // Empty props - we get everything client-side
-  };
+  return { props: {} };
 };
 
 export default ChannelPage;
