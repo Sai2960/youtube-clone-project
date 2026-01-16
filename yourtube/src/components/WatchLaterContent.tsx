@@ -78,42 +78,43 @@ function VideoThumbnail({
   }
 
   // Video element for thumbnail
-  if (status === "loading" || status === "video") {
-    return (
-      <>
-        {videoUrl && (
-          <video
-            ref={videoRef}
-            src={`${videoUrl}#t=1`}
-            className="w-full h-full object-cover relative z-10"
-            preload="metadata"
-            style={{ backgroundColor: "transparent" }}
-            muted
-            playsInline
-            crossOrigin="anonymous"
-            onLoadedData={() => {
-              if (videoRef.current) {
-                videoRef.current.currentTime = 1;
-              }
-            }}
-            onSeeked={() => {
-              console.log("✅ Video thumbnail loaded:", video.videotitle);
-              setStatus("video");
-            }}
-            onError={(e) => {
-              console.log("❌ Video thumbnail error:", video.videotitle, e);
-              setStatus("fallback");
-            }}
-          />
-        )}
-        {status === "loading" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
-            <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
-      </>
-    );
-  }
+  // Video element for thumbnail
+if (status === "loading" || status === "video") {
+  return (
+    <>
+      {videoUrl && (
+        <video
+          ref={videoRef}
+          src={`${videoUrl}#t=1`}
+          className="w-full h-full object-cover relative z-10"
+          preload="metadata"
+          muted
+          playsInline
+          crossOrigin="anonymous"
+          style={{ backgroundColor: "transparent" }}
+          onLoadedData={() => {
+            if (videoRef.current) {
+              videoRef.current.currentTime = 1;
+            }
+          }}
+          onSeeked={() => {
+            console.log("✅ Video thumbnail loaded:", video.videotitle);
+            setStatus("video");
+          }}
+          onError={(e) => {
+            console.log("❌ Video thumbnail error:", video.videotitle, e);
+            setStatus("fallback");
+          }}
+        />
+      )}
+      {status === "loading" && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+          <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+    </>
+  );
+}
 
   // Fallback placeholder
   return (
