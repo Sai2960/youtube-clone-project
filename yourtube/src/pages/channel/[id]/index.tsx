@@ -1245,15 +1245,14 @@ const ChannelPage = () => {
                                   >
                                     {thumbnailUrl &&
                                     thumbnailUrl.startsWith("http") ? (
-                                      <div className="absolute inset-0 w-full h-full bg-gray-300 dark:bg-gray-600">
+                                      <div className="absolute inset-0 w-full h-full">
                                         <img
                                           src={thumbnailUrl}
                                           alt={short.title || "Short"}
                                           className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
                                           style={{
-                                            zIndex: 2,
+                                            zIndex: 1,
                                             position: "absolute",
-                                            backgroundColor: "transparent",
                                           }}
                                           loading="lazy"
                                           onError={(e) => {
@@ -1290,13 +1289,12 @@ const ChannelPage = () => {
                                         />
                                       </div>
                                     ) : getShortVideoUrl(short) ? (
-                                      <div className="absolute inset-0 w-full h-full bg-gray-300 dark:bg-gray-600">
+                                      <div className="absolute inset-0 w-full h-full">
                                         <video
                                           src={getShortVideoUrl(short)}
-                                          className="absolute inset-0 w-full h-full object-cover bg-transparent group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+                                          className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
                                           style={{
-                                            backgroundColor: "transparent",
-                                            zIndex: 2,
+                                            zIndex: 1,
                                           }}
                                           preload="metadata"
                                           muted
@@ -1350,13 +1348,24 @@ const ChannelPage = () => {
                                       </div>
                                     )}
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
-                                    <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300" />
+                                    {/* Gradient Overlay - MOBILE & DESKTOP */}
+                                    <div
+                                      className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300"
+                                      style={{ zIndex: 3 }}
+                                    />
 
                                     {/* Red Overlay - MOBILE & DESKTOP */}
-                                    <div className="absolute inset-0 bg-red-600/0 group-active:bg-red-600/15 md:group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none" />
+                                    {/* Red Overlay - MOBILE & DESKTOP */}
+                                    <div
+                                      className="absolute inset-0 bg-red-600/0 group-active:bg-red-600/15 md:group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none"
+                                      style={{ zIndex: 4 }}
+                                    />
 
                                     {/* Views Badge - MOBILE & DESKTOP */}
-                                    <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
+                                    <div
+                                      className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300"
+                                      style={{ zIndex: 5 }}
+                                    >
                                       <Play
                                         className="w-2.5 h-2.5 sm:w-3 sm:h-3"
                                         fill="white"
@@ -1368,13 +1377,19 @@ const ChannelPage = () => {
 
                                     {/* Duration Badge - MOBILE & DESKTOP */}
                                     {short.duration && (
-                                      <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300">
+                                      <div
+                                        className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300"
+                                        style={{ zIndex: 5 }}
+                                      >
                                         {short.duration}s
                                       </div>
                                     )}
 
                                     {/* Play Button Overlay - MOBILE ACTIVE + DESKTOP HOVER */}
-                                    <div className="absolute inset-0 bg-black/0 group-active:bg-black/40 md:group-hover:bg-black/50 transition-all duration-500 flex items-center justify-center">
+                                    <div
+                                      className="absolute inset-0 bg-black/0 group-active:bg-black/40 md:group-hover:bg-black/50 transition-all duration-500 flex items-center justify-center"
+                                      style={{ zIndex: 6 }}
+                                    >
                                       <div className="opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transform scale-50 group-active:scale-90 md:group-hover:scale-100 transition-all duration-500 ease-out">
                                         <div className="relative">
                                           <div className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-75"></div>
@@ -1389,12 +1404,18 @@ const ChannelPage = () => {
                                     </div>
 
                                     {/* Shine Effect - MOBILE ACTIVE + DESKTOP HOVER */}
-                                    <div className="absolute inset-0 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                                    <div
+                                      className="absolute inset-0 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+                                      style={{ zIndex: 7 }}
+                                    >
                                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-active:translate-x-full md:group-hover:translate-x-full transition-transform duration-1000"></div>
                                     </div>
 
                                     {/* Index Badge - MOBILE ACTIVE + DESKTOP HOVER */}
-                                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-all duration-300 bg-black/70 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md">
+                                    <div
+                                      className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-all duration-300 bg-black/70 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md"
+                                      style={{ zIndex: 8 }}
+                                    >
                                       #{index + 1}
                                     </div>
                                   </div>
