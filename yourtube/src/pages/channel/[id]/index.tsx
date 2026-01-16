@@ -93,6 +93,9 @@ const ChannelPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [renderKey, setRenderKey] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+  // ✅ Add thumbnail/video failure tracking
+const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(new Set());
+const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
   // ============================================================================
   // LIFECYCLE HOOKS - CLIENT MOUNTING & VISIBILITY
   // ============================================================================
@@ -531,7 +534,18 @@ const ChannelPage = () => {
   }
 
   const isOwnChannel = user?._id === id;
-
+// ✅ HELPER: Get short video URL
+const getShortVideoUrl = (short: any): string => {
+  if (!short?.videoUrl) return "";
+  
+  if (short.videoUrl.startsWith("http")) {
+    return short.videoUrl;
+  }
+  
+  // If it's a relative path, you might need to prepend your backend URL
+  // Adjust this based on your backend setup
+  return short.videoUrl;
+};
   // ============================================================================
   // RENDER - MAIN JSX
   // ============================================================================
@@ -1230,112 +1244,67 @@ const ChannelPage = () => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                                    {thumbnailUrl.includes("supabase.co") ||
-                                    thumbnailUrl.includes("supabase.in") ? (
-                                      <>
-                                        <img
-                                          src={thumbnailUrl}
-                                          alt={short.title}
-                                          className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-700"
-                                          loading="lazy"
-                                          onError={(e) => {
-                                            const target =
-                                              e.currentTarget as HTMLImageElement;
-                                            console.error(
-                                              "❌ Image failed, showing fallback"
-                                            );
-                                            target.style.display = "none";
-                                            const parent = target.parentElement;
-                                            if (
-                                              parent &&
-                                              !parent.querySelector(
-                                                ".fallback-thumbnail"
-                                              )
-                                            ) {
-                                              const fallbackDiv =
-                                                document.createElement("div");
-                                              fallbackDiv.className =
-                                                "fallback-thumbnail absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900";
-                                              fallbackDiv.innerHTML = `
-            <div class="text-center">
-              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/20 flex items-center justify-center">
-                <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-              <p class="text-xs text-gray-300 font-semibold">Short Video</p>
-            </div>
-          `;
-                                              parent.appendChild(fallbackDiv);
-                                            }
-                                          }}
-                                          onLoad={() =>
-                                            console.log(
-                                              "✅ Thumbnail loaded:",
-                                              short._id
-                                            )
-                                          }
-                                        />
-                                      </>
-                                    ) : thumbnailUrl.includes(
-                                        "data:image/svg"
-                                      ) ? (
-                                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900">
-                                        <div className="text-center">
-                                          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/30 flex items-center justify-center ring-2 ring-red-500/50">
-                                            <Play
-                                              className="w-8 h-8 text-red-400"
-                                              fill="currentColor"
-                                            />
-                                          </div>
-                                          <p className="text-xs text-gray-200 font-bold tracking-wide">
-                                            SHORT
-                                          </p>
-                                          <p className="text-[10px] text-gray-400 mt-1">
-                                            Tap to play
-                                          </p>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <img
-                                        src={thumbnailUrl}
-                                        alt={short.title}
-                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-700"
-                                        loading="lazy"
-                                        onError={(e) => {
-                                          const target =
-                                            e.currentTarget as HTMLImageElement;
-                                          console.error(
-                                            "⚠️ Final fallback triggered"
-                                          );
-                                          target.style.display = "none";
-                                          const parent = target.parentElement;
-                                          if (
-                                            parent &&
-                                            !parent.querySelector(
-                                              ".fallback-thumbnail"
-                                            )
-                                          ) {
-                                            const fallbackDiv =
-                                              document.createElement("div");
-                                            fallbackDiv.className =
-                                              "fallback-thumbnail absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900";
-                                            fallbackDiv.innerHTML = `
-          <div class="text-center">
-            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/30 flex items-center justify-center ring-4 ring-red-500/20 animate-pulse">
-              <svg class="w-10 h-10 text-red-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-            <p class="text-sm text-white font-bold">SHORT</p>
-            <p class="text-xs text-gray-300 mt-1">Tap to watch</p>
+                                {(() => {
+  const shortId = short._id || short.id;
+  const videoUrl = getShortVideoUrl(short);
+  const thumbnailFailed = failedThumbnails.has(shortId);
+  const videoFailed = failedVideos.has(shortId);
+
+  if (thumbnailUrl && !thumbnailFailed) {
+    return (
+      <img
+        src={thumbnailUrl}
+        alt={short.title}
+        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-700"
+        loading="lazy"
+        onError={(e) => {
+          console.error("❌ Thumbnail failed, trying video");
+          setFailedThumbnails((prev) => new Set(prev).add(shortId));
+        }}
+        onLoad={() => console.log("✅ Thumbnail loaded:", shortId)}
+      />
+    );
+  } else if ((thumbnailFailed || !thumbnailUrl) && videoUrl && !videoFailed) {
+    return (
+      <video
+        src={videoUrl}
+        className="absolute inset-0 w-full h-full object-cover bg-transparent group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+        preload="metadata"
+        muted
+        playsInline
+        onError={(e) => {
+          console.error("❌ Video failed for:", shortId);
+          setFailedVideos((prev) => new Set(prev).add(shortId));
+        }}
+        onLoadedMetadata={() => console.log("✅ Video loaded:", shortId)}
+      />
+    );
+  } else if (thumbnailUrl.includes("data:image/svg")) {
+    return (
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/30 flex items-center justify-center ring-2 ring-red-500/50">
+            <Play className="w-8 h-8 text-red-400" fill="currentColor" />
           </div>
-        `;
-                                            parent.appendChild(fallbackDiv);
-                                          }
-                                        }}
-                                      />
-                                    )}
+          <p className="text-xs text-gray-200 font-bold tracking-wide">SHORT</p>
+          <p className="text-[10px] text-gray-400 mt-1">Tap to play</p>
+        </div>
+      </div>
+    );
+  } else {
+    return (
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900">
+        <div className="text-center text-gray-400 p-4">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/30 flex items-center justify-center ring-4 ring-red-500/20 animate-pulse">
+            <Play className="w-10 h-10 text-red-400" fill="currentColor" />
+          </div>
+          <p className="text-sm text-white font-bold">SHORT</p>
+          <p className="text-xs text-gray-300 mt-1">Tap to watch</p>
+        </div>
+      </div>
+    );
+  }
+})()}
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300" />
 
