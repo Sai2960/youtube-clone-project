@@ -533,7 +533,7 @@ export default function HistoryContent() {
                           <Link key={item._id} href={`/shorts/${short._id}`}>
                             <div className="flex-shrink-0 group cursor-pointer w-[160px] md:w-[180px]">
                               {/* FIXED: Added proper background and border for dark mode visibility */}
-                              <div className="short-thumbnail-container aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-200 dark:bg-gray-500 border-2 border-gray-400 dark:border-gray-300 shadow-md dark:shadow-2xl">
+<div className="short-thumbnail-container aspect-[9/16] rounded-xl overflow-hidden relative bg-gray-200 dark:bg-gray-400 border-2 border-gray-400 dark:border-gray-200 shadow-md dark:shadow-2xl ring-1 dark:ring-gray-300">
                                 {thumbnailUrl && !thumbnailFailed ? (
                                   <img
                                     src={thumbnailUrl}
@@ -654,8 +654,8 @@ export default function HistoryContent() {
                                   className="flex-shrink-0"
                                 >
                                   {/* FIXED: Improved video thumbnail container */}
-                                  <div className="video-thumbnail-container w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-500 rounded-lg overflow-hidden relative border-2 border-gray-400 dark:border-gray-300 shadow-md dark:shadow-2xl">
-                                    <video
+<div className="video-thumbnail-container w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-400 rounded-lg overflow-hidden relative border-2 border-gray-400 dark:border-gray-200 shadow-md dark:shadow-2xl ring-1 dark:ring-gray-300">
+                                      <video
                                       src={getVideoUrl(video)}
                                       className="w-full h-full object-cover bg-transparent"
                                       preload="metadata"
