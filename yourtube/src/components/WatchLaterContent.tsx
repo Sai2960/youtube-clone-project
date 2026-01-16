@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { MoreVertical, X, Clock, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,67 +14,104 @@ import {
 import axiosInstance from "@/lib/axiosinstance";
 import { useUser } from "@/lib/AuthContext";
 
-export default function WatchLaterContent() {
-  const [watchLater, setWatchLater] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useUser();
-  // Thumbnail component with proper fallback handling
-  function VideoThumbnail({
-    video,
-    getVideoUrl,
-  }: {
-    video: any;
-    getVideoUrl: (v: any) => string;
-  }) {
-    const [imageError, setImageError] = useState(false);
-    const [videoError, setVideoError] = useState(false);
+// ✅ MOVE VideoThumbnail OUTSIDE the main component
+function VideoThumbnail({
+  video,
+  getVideoUrl,
+}: {
+  video: any;
+  getVideoUrl: (v: any) => string;
+}) {
+  const [status, setStatus] = useState<"loading" | "image" | "video" | "fallback">("loading");
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-    const thumbnailUrl = video.thumbnailfilename
-      ? `https://youtube-clone-project-production.up.railway.app/uploads/thumbnails/${video.thumbnailfilename}`
-      : video.thumbnail;
+  const thumbnailUrl = video.thumbnailfilename
+    ? `https://youtube-clone-project-production.up.railway.app/uploads/thumbnails/${video.thumbnailfilename}`
+    : video.thumbnail;
 
-    // If we have a thumbnail URL and it hasn't errored, try image first
-    if (thumbnailUrl && !imageError) {
-      return (
-        <img
-          src={thumbnailUrl}
-          alt={video.videotitle || "Video thumbnail"}
-          className="w-full h-full object-cover"
-          onError={() => setImageError(true)}
-        />
-      );
+  useEffect(() => {
+    // Reset status when video changes
+    setStatus("loading");
+    
+    if (thumbnailUrl) {
+      // Try loading thumbnail image
+      const img = new Image();
+      img.onload = () => setStatus("image");
+      img.onerror = () => {
+        // Image failed, try video
+        setStatus("video");
+      };
+      img.src = thumbnailUrl;
+    } else {
+      // No thumbnail, try video directly
+      setStatus("video");
     }
+  }, [video._id, thumbnailUrl]);
 
-    // If no thumbnail or image errored, try video element
-    if (!videoError) {
-      return (
+  // Thumbnail image
+  if (status === "image" && thumbnailUrl) {
+    return (
+      <img
+        src={thumbnailUrl}
+        alt={video.videotitle || "Video thumbnail"}
+        className="w-full h-full object-cover"
+      />
+    );
+  }
+
+  // Video element for thumbnail
+  if (status === "loading" || status === "video") {
+    return (
+      <>
         <video
-          src={getVideoUrl(video)}
+          ref={videoRef}
+          src={`${getVideoUrl(video)}#t=1`}  
           className="w-full h-full object-cover"
           preload="metadata"
           muted
           playsInline
-          onLoadedMetadata={(e) => {
-            // Seek to 1 second to get a frame
-            (e.target as HTMLVideoElement).currentTime = 1;
+          crossOrigin="anonymous"
+          onLoadedData={(e) => {
+            const vid = e.target as HTMLVideoElement;
+            // Seek to 1 second for better frame
+            vid.currentTime = 1;
           }}
-          onError={() => setVideoError(true)}
+          onSeeked={() => {
+            // Video loaded and seeked successfully
+            setStatus("video");
+          }}
+          onError={() => {
+            console.log("Video thumbnail failed for:", video.videotitle);
+            setStatus("fallback");
+          }}
         />
-      );
-    }
-
-    // Final fallback - show placeholder
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-800">
-        <div className="text-center text-gray-600 dark:text-gray-300">
-          <Play className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-1 opacity-50" />
-          <p className="text-[10px] md:text-xs font-medium px-2 line-clamp-2">
-            {video.videotitle?.slice(0, 25) || "Video"}
-          </p>
-        </div>
-      </div>
+        {/* Show loading state overlay */}
+        {status === "loading" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+            <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+      </>
     );
   }
+
+  // Fallback placeholder
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500/20 to-red-600/30 dark:from-red-900/40 dark:to-red-800/50">
+      <div className="text-center text-gray-700 dark:text-gray-200">
+        <Play className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-1 opacity-70" />
+        <p className="text-[10px] md:text-xs font-medium px-2 line-clamp-2">
+          {video.videotitle?.slice(0, 25) || "Video"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function WatchLaterContent() {
+  const [watchLater, setWatchLater] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useUser();
 
   // Format time ago
   const formatTimeAgo = (dateString: string) => {
@@ -116,6 +153,7 @@ export default function WatchLaterContent() {
       const validVideos = response.data.filter(
         (item: any) => item.videoid != null
       );
+      console.log("Watch later videos:", validVideos); // Debug log
       setWatchLater(validVideos);
     } catch (error) {
       console.error("Error loading watch later:", error);
@@ -147,6 +185,7 @@ export default function WatchLaterContent() {
     }
     return "/video/vdo.mp4";
   };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -232,12 +271,12 @@ export default function WatchLaterContent() {
                 <div className="flex gap-2 md:gap-3 hover:bg-gray-50 dark:hover:bg-[#272727] p-2 rounded-lg transition-colors relative group">
                   {/* Thumbnail */}
                   <Link href={`/watch/${video._id}`} className="flex-shrink-0">
-                    <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
+                    <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] rounded-lg overflow-hidden relative">
                       {/* Video thumbnail with state management */}
                       <VideoThumbnail video={video} getVideoUrl={getVideoUrl} />
 
                       {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center z-20">
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center z-20 pointer-events-none">
                         <Play
                           className="w-8 h-8 md:w-10 md:h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
                           fill="white"
