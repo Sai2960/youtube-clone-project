@@ -210,9 +210,11 @@ export default function WatchLaterContent() {
   };
 
   const getVideoUrl = (video: any) => {
-    // ✅ FIXED: Remove duplicate /videos/ from path
+    // ✅ FIXED: Prevent duplicate /videos/ in path
     if (video?.videofilename) {
-      return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${video.videofilename}`;
+      // Extract just the filename, removing any path prefixes
+      const filename = video.videofilename.split(/[\\/]/).pop();
+      return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
     } else if (video?.filepath) {
       // Extract just the filename, not the full path
       const filename = video.filepath.split(/[\\/]/).pop();
