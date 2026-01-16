@@ -51,9 +51,9 @@ const getShortThumbnail = (short: any): string => {
     }
   }
 
-  // ✅ BRIGHT FALLBACK PLACEHOLDER - WORKS IN BOTH LIGHT & DARK MODE
+  // ✅ Return empty string to trigger video element rendering instead
   console.warn("⚠️ No thumbnail available for short:", short._id);
-  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Cdefs%3E%3ClinearGradient id="grad1" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23DC2626;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%23991B1B;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="180" height="320" fill="url(%23grad1)"/%3E%3Ccircle cx="90" cy="160" r="50" fill="%23FFFFFF" opacity="0.2"/%3E%3Ccircle cx="90" cy="160" r="42" fill="%23FFFFFF" opacity="0.3"/%3E%3Cpath d="M75 145L110 162.5L75 180V145Z" fill="%23FFFFFF"/%3E%3Ctext x="90" y="220" text-anchor="middle" fill="%23FFFFFF" font-family="Arial, sans-serif" font-size="16" font-weight="bold"%3ESHORT%3C/text%3E%3Ctext x="90" y="240" text-anchor="middle" fill="%23FEE2E2" font-family="Arial, sans-serif" font-size="11"%3ETap to play%3C/text%3E%3C/svg%3E';
+  return "";
 };
 // ============================================================================
 // MAIN COMPONENT - STATE & REFS
@@ -1243,110 +1243,56 @@ const ChannelPage = () => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                                    {thumbnailUrl &&
-                                    thumbnailUrl.startsWith("http") ? (
-                                      <div className="absolute inset-0 w-full h-full">
-                                        <img
-                                          src={thumbnailUrl}
-                                          alt={short.title || "Short"}
-                                          className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-                                          style={{
-                                            zIndex: 1,
-                                            position: "absolute",
-                                          }}
-                                          loading="lazy"
-                                          onError={(e) => {
-                                            console.error(
-                                              "❌ Thumbnail failed for:",
-                                              short._id
-                                            );
-                                            const img = e.currentTarget;
-                                            img.style.display = "none";
-                                            const parent = img.parentElement;
-                                            if (
-                                              parent &&
-                                              !parent.querySelector("video")
-                                            ) {
-                                              const videoElement =
-                                                document.createElement("video");
-                                              videoElement.src =
-                                                getShortVideoUrl(short);
-                                              videoElement.className =
-                                                "absolute inset-0 w-full h-full object-cover bg-transparent";
-                                              videoElement.style.zIndex = "1";
-                                              videoElement.preload = "metadata";
-                                              videoElement.muted = true;
-                                              videoElement.playsInline = true;
-                                              parent.appendChild(videoElement);
-                                            }
-                                          }}
-                                          onLoad={() =>
-                                            console.log(
-                                              "✅ Thumbnail loaded and visible:",
-                                              short._id
-                                            )
-                                          }
-                                        />
-                                      </div>
-                                    ) : getShortVideoUrl(short) ? (
-                                      <div className="absolute inset-0 w-full h-full">
-                                        <video
-                                          src={getShortVideoUrl(short)}
-                                          className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-                                          style={{
-                                            zIndex: 1,
-                                          }}
-                                          preload="metadata"
-                                          muted
-                                          playsInline
-                                          onError={() => {
-                                            console.error(
-                                              "❌ Video failed for:",
-                                              short._id
-                                            );
-                                          }}
-                                          onLoadedMetadata={() =>
-                                            console.log(
-                                              "✅ Video loaded:",
-                                              short._id
-                                            )
-                                          }
-                                        />
-                                      </div>
-                                    ) : (
-                                      // Premium fallback remains the same
-                                      <div className="absolute inset-0 w-full h-full">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-red-500 via-pink-500 to-rose-600 dark:from-red-600 dark:via-rose-700 dark:to-red-900" />
-
-                                        <div className="absolute inset-0 opacity-30">
-                                          <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full blur-3xl animate-pulse" />
-                                          <div
-                                            className="absolute bottom-0 right-0 w-40 h-40 bg-pink-300 dark:bg-pink-600 rounded-full blur-3xl animate-pulse"
-                                            style={{ animationDelay: "1s" }}
-                                          />
-                                        </div>
-
-                                        <div className="absolute inset-0 flex items-center justify-center z-10">
-                                          <div className="text-center p-4">
-                                            <div className="relative mb-3">
-                                              <div className="absolute inset-0 bg-white/30 dark:bg-white/20 rounded-full blur-xl animate-ping" />
-                                              <div className="relative w-20 h-20 mx-auto rounded-full bg-white/90 dark:bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-4 ring-white/40 dark:ring-white/30">
-                                                <Play
-                                                  className="w-10 h-10 text-red-600 dark:text-red-700 ml-1"
-                                                  fill="currentColor"
-                                                />
-                                              </div>
-                                            </div>
-                                            <p className="text-lg font-black text-white drop-shadow-lg tracking-wider">
-                                              SHORT
-                                            </p>
-                                            <p className="text-xs text-white/90 dark:text-red-50 font-semibold drop-shadow">
-                                              Tap to play
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
+                                  {thumbnailUrl && thumbnailUrl.startsWith("http") ? (
+  <div className="absolute inset-0 w-full h-full">
+    <img
+      src={thumbnailUrl}
+      alt={short.title || "Short"}
+      className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+      style={{ zIndex: 1, background: "transparent" }}
+      loading="lazy"
+      onError={(e) => {
+        const img = e.currentTarget;
+        img.style.display = "none";
+        const parent = img.parentElement;
+        if (parent && !parent.querySelector("video")) {
+          const videoElement = document.createElement("video");
+          videoElement.src = getShortVideoUrl(short);
+          videoElement.className = "absolute inset-0 w-full h-full object-cover";
+          videoElement.style.zIndex = "1";
+          videoElement.preload = "metadata";
+          videoElement.muted = true;
+          videoElement.playsInline = true;
+          parent.appendChild(videoElement);
+        }
+      }}
+    />
+  </div>
+) : getShortVideoUrl(short) ? (
+  <div className="absolute inset-0 w-full h-full">
+    <video
+      src={getShortVideoUrl(short)}
+      className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+      style={{ zIndex: 1 }}
+      preload="metadata"
+      muted
+      playsInline
+    />
+  </div>
+) : (
+  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-red-500 via-pink-500 to-rose-600">
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-20 h-20 mx-auto rounded-full bg-white/90 flex items-center justify-center shadow-2xl">
+          <Play className="w-10 h-10 text-red-600 ml-1" fill="currentColor" />
+        </div>
+        <p className="text-lg font-black text-white mt-3">SHORT</p>
+        <p className="text-xs text-white/90 font-semibold">Tap to play</p>
+      </div>
+    </div>
+  </div>
+)}
+                                   
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     <div
