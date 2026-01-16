@@ -173,21 +173,42 @@ export default function WatchLaterContent() {
             return (
               <div key={item._id} className="mb-2 md:mb-3">
                 <div className="flex gap-2 md:gap-3 hover:bg-gray-50 dark:hover:bg-[#272727] p-2 rounded-lg transition-colors relative group">
-                  {/* Thumbnail */}
+                {/* Thumbnail */}
                   <Link href={`/watch/${video._id}`} className="flex-shrink-0">
-                    {/* FIXED: Improved video thumbnail container */}
                     <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
+                      {/* Video element with fallback */}
                       <video
                         src={getVideoUrl(video)}
                         className="w-full h-full object-cover relative z-10"
                         preload="metadata"
+                        muted
+                        playsInline
                         style={{ backgroundColor: "transparent" }}
+                        onError={(e) => {
+                          // Hide video on error and show placeholder
+                          (e.target as HTMLVideoElement).style.display = 'none';
+                        }}
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                        <Play
-                          className="w-10 h-10 md:w-12 md:h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-2xl"
-                          fill="white"
-                        />
+                      
+                      {/* Fallback placeholder - always visible behind video */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-800">
+                        <div className="text-center text-gray-600 dark:text-gray-300">
+                          <Play className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs font-medium px-4">{video.videotitle?.slice(0, 30) || "Video"}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-transparent group-hover:bg-black/30 dark:group-hover:bg-black/40 transition-all duration-200 z-20" />
+                      
+                      {/* Play button on hover */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30">
+                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/95 dark:bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-2xl">
+                          <Play
+                            className="w-6 h-6 md:w-7 md:h-7 text-gray-900 dark:text-black ml-0.5"
+                            fill="currentColor"
+                          />
+                        </div>
                       </div>
                     </div>
                   </Link>
