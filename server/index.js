@@ -499,6 +499,41 @@ app.get("/api/test-video/:shortId", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+// ✅ Thumbnail serving with proper CORS
+app.get("/uploads/thumbnails/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const thumbnailPath = path.join(__dirname, "uploads", "thumbnails", filename);
+
+  console.log("🖼️ Thumbnail request:", {
+    filename,
+    path: thumbnailPath,
+    exists: fs.existsSync(thumbnailPath),
+  });
+
+  if (!fs.existsSync(thumbnailPath)) {
+    console.error("❌ Thumbnail not found:", thumbnailPath);
+    return res.status(404).json({
+      success: false,
+      message: "Thumbnail not found",
+    });
+  }
+
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Cache-Control", "public, max-age=31536000");
+
+  // Set proper content type
+  if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
+    res.setHeader("Content-Type", "image/jpeg");
+  } else if (filename.endsWith(".png")) {
+    res.setHeader("Content-Type", "image/png");
+  } else if (filename.endsWith(".webp")) {
+    res.setHeader("Content-Type", "image/webp");
+  }
+
+  fs.createReadStream(thumbnailPath).pipe(res);
+});
 
 console.log("✅ Video streaming routes configured");
 // =================== ENHANCED CORS MIDDLEWARE ===================
