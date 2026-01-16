@@ -1222,301 +1222,278 @@ const ChannelPage = () => {
 
                         {/* Shorts Grid - MOBILE & DESKTOP OPTIMIZED */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 sm:gap-3 md:gap-4 w-full pb-4 px-1 sm:px-0">
-                          {shorts.map((short, index) => {
-                            const thumbnailUrl = getShortThumbnail(short);
-                            const videoUrl = getShortVideoUrl(short);
+                        {shorts.map((short, index) => {
+  const thumbnailUrl = getShortThumbnail(short);
+  const videoUrl = getShortVideoUrl(short);
 
-                            return (
-                              <div
-                                key={short._id || short.id}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  const shortId = short._id || short.id;
-                                  if (shortId) {
-                                    router.push(`/shorts?id=${shortId}`);
-                                  }
-                                }}
-                                className="group cursor-pointer w-full transform transition-all duration-300 active:scale-95 md:hover:scale-[1.02]"
-                              >
-                                {/* Thumbnail Container - FIXED FOR DARK THEME */}
-                                <div
-                                  className="relative w-full rounded-lg sm:rounded-xl overflow-hidden shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300"
-                                  style={{
-                                    background:
-                                      "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
-                                    border: "1px solid rgba(220, 38, 38, 0.3)",
-                                  }}
-                                >
-                                  <div
-                                    className="relative w-full"
-                                    style={{ paddingBottom: "177.78%" }}
-                                  >
-                                    {/* RENDERING LOGIC - COMPLETELY FIXED */}
-                                    {thumbnailUrl &&
-                                    thumbnailUrl !== "fallback" &&
-                                    thumbnailUrl.startsWith("http") ? (
-                                      /* Image Thumbnail */
-                                      <img
-                                        src={thumbnailUrl}
-                                        alt={short.title || "Short"}
-                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-                                        style={{ zIndex: 1 }}
-                                        loading="lazy"
-                                        onError={(e) => {
-                                          console.error(
-                                            "❌ Image failed:",
-                                            short._id
-                                          );
-                                          const img = e.currentTarget;
-                                          img.style.display = "none";
-
-                                          // Try video fallback
-                                          const parent = img.parentElement;
-                                          if (
-                                            parent &&
-                                            !parent.querySelector("video") &&
-                                            !parent.querySelector(
-                                              ".fallback-ui"
-                                            )
-                                          ) {
-                                            if (videoUrl) {
-                                              const vid =
-                                                document.createElement("video");
-                                              vid.src = videoUrl;
-                                              vid.className =
-                                                "absolute inset-0 w-full h-full object-cover";
-                                              vid.style.cssText = "z-index: 1;";
-                                              vid.preload = "metadata";
-                                              vid.muted = true;
-                                              vid.playsInline = true;
-                                              vid.onerror = () => {
-                                                vid.style.display = "none";
-                                                // Show final fallback UI
-                                                if (
-                                                  !parent.querySelector(
-                                                    ".fallback-ui"
-                                                  )
-                                                ) {
-                                                  const fb =
-                                                    document.createElement(
-                                                      "div"
-                                                    );
-                                                  fb.className =
-                                                    "fallback-ui absolute inset-0 flex items-center justify-center";
-                                                  fb.style.cssText =
-                                                    "z-index: 1; background: linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%);";
-                                                  fb.innerHTML = `
-                          <div style="text-align: center; padding: 16px;">
-                            <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                              <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                            </div>
-                            <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
-                            <p style="font-size: 12px; font-weight: 600; color: rgba(254, 202, 202, 1); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
+  return (
+    <div
+      key={short._id || short.id}
+      onClick={(e) => {
+        e.preventDefault();
+        const shortId = short._id || short.id;
+        if (shortId) {
+          router.push(`/shorts?id=${shortId}`);
+        }
+      }}
+      className="group cursor-pointer w-full transform transition-all duration-300 active:scale-95 md:hover:scale-[1.02]"
+    >
+      {/* Thumbnail Container */}
+      <div
+        className="relative w-full rounded-lg sm:rounded-xl overflow-hidden shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300"
+        style={{
+          background: "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
+          border: "1px solid rgba(220, 38, 38, 0.3)",
+        }}
+      >
+        <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
+          
+          {/* Conditional Rendering Based on Available Media */}
+          {thumbnailUrl && thumbnailUrl !== "fallback" && thumbnailUrl.startsWith("http") ? (
+            // IMAGE THUMBNAIL PATH
+            <img
+              src={thumbnailUrl}
+              alt={short.title || "Short"}
+              className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+              style={{ zIndex: 1 }}
+              loading="lazy"
+              onError={(e) => {
+                console.error("❌ Thumbnail image failed:", short._id);
+                const img = e.currentTarget;
+                img.style.display = "none";
+                
+                const parent = img.parentElement;
+                if (parent && !parent.querySelector(".media-fallback")) {
+                  // Try video as backup
+                  if (videoUrl && videoUrl.startsWith("http")) {
+                    const videoEl = document.createElement("video");
+                    videoEl.className = "media-fallback absolute inset-0 w-full h-full object-cover";
+                    videoEl.style.zIndex = "1";
+                    videoEl.src = videoUrl;
+                    videoEl.preload = "metadata";
+                    videoEl.muted = true;
+                    videoEl.playsInline = true;
+                    
+                    videoEl.onerror = () => {
+                      console.error("❌ Video backup also failed:", short._id);
+                      videoEl.remove();
+                      // Create fallback UI
+                      const fallbackUI = document.createElement("div");
+                      fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center";
+                      fallbackUI.style.cssText = "z-index: 1;";
+                      fallbackUI.innerHTML = `
+                        <div style="text-align: center; padding: 16px;">
+                          <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
+                            <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
                           </div>
-                        `;
-                                                  parent.appendChild(fb);
-                                                }
-                                              };
-                                              parent.appendChild(vid);
-                                            } else {
-                                              // No video URL - show fallback immediately
-                                              const fb =
-                                                document.createElement("div");
-                                              fb.className =
-                                                "fallback-ui absolute inset-0 flex items-center justify-center";
-                                              fb.style.cssText =
-                                                "z-index: 1; background: linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%);";
-                                              fb.innerHTML = `
+                          <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
+                          <p style="font-size: 12px; font-weight: 600; color: #fecaca; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
+                        </div>
+                      `;
+                      parent?.appendChild(fallbackUI);
+                    };
+                    
+                    parent.appendChild(videoEl);
+                  } else {
+                    // No video URL - show fallback immediately
+                    const fallbackUI = document.createElement("div");
+                    fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center";
+                    fallbackUI.style.cssText = "z-index: 1;";
+                    fallbackUI.innerHTML = `
                       <div style="text-align: center; padding: 16px;">
-                        <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                          <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
+                          <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
                         </div>
                         <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
-                        <p style="font-size: 12px; font-weight: 600; color: rgba(254, 202, 202, 1); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
+                        <p style="font-size: 12px; font-weight: 600; color: #fecaca; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
                       </div>
                     `;
-                                              parent.appendChild(fb);
-                                            }
-                                          }
-                                        }}
-                                      />
-                                    ) : videoUrl &&
-                                      videoUrl.startsWith("http") ? (
-                                      /* Video Element */
-                                      <video
-                                        src={videoUrl}
-                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-                                        style={{ zIndex: 1 }}
-                                        preload="metadata"
-                                        muted
-                                        playsInline
-                                        onError={(e) => {
-                                          console.error(
-                                            "❌ Video failed:",
-                                            short._id
-                                          );
-                                          const vid = e.currentTarget;
-                                          vid.style.display = "none";
-
-                                          const parent = vid.parentElement;
-                                          if (
-                                            parent &&
-                                            !parent.querySelector(
-                                              ".fallback-ui"
-                                            )
-                                          ) {
-                                            const fb =
-                                              document.createElement("div");
-                                            fb.className =
-                                              "fallback-ui absolute inset-0 flex items-center justify-center";
-                                            fb.style.cssText =
-                                              "z-index: 1; background: linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%);";
-                                            fb.innerHTML = `
+                    parent.appendChild(fallbackUI);
+                  }
+                }
+              }}
+            />
+          ) : videoUrl && videoUrl.startsWith("http") ? (
+            // VIDEO ELEMENT PATH
+            <video
+              src={videoUrl}
+              className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+              style={{ zIndex: 1 }}
+              preload="metadata"
+              muted
+              playsInline
+              onError={(e) => {
+                console.error("❌ Video failed:", short._id);
+                const videoEl = e.currentTarget;
+                videoEl.style.display = "none";
+                
+                const parent = videoEl.parentElement;
+                if (parent && !parent.querySelector(".media-fallback")) {
+                  const fallbackUI = document.createElement("div");
+                  fallbackUI.className = "media-fallback absolute inset-0 flex items-center justify-center";
+                  fallbackUI.style.cssText = "z-index: 1;";
+                  fallbackUI.innerHTML = `
                     <div style="text-align: center; padding: 16px;">
-                      <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                        <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
+                        <svg style="width: 40px; height: 40px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
                       </div>
                       <p style="font-size: 18px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.1em;">SHORT</p>
-                      <p style="font-size: 12px; font-weight: 600; color: rgba(254, 202, 202, 1); text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
+                      <p style="font-size: 12px; font-weight: 600; color: #fecaca; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Tap to play</p>
                     </div>
                   `;
-                                            parent.appendChild(fb);
-                                          }
-                                        }}
-                                      />
-                                    ) : (
-                                      /* Direct Fallback UI - No thumbnail or video */
-                                      <div
-                                        className="absolute inset-0 w-full h-full flex items-center justify-center"
-                                        style={{
-                                          background:
-                                            "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
-                                          zIndex: 1,
-                                        }}
-                                      >
-                                        <div className="text-center p-4">
-                                          <div className="relative mb-3">
-                                            <div
-                                              className="absolute inset-0 rounded-full animate-ping opacity-75"
-                                              style={{
-                                                background:
-                                                  "rgba(255, 255, 255, 0.3)",
-                                              }}
-                                            />
-                                            <div
-                                              className="relative w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-2xl"
-                                              style={{
-                                                background:
-                                                  "rgba(255, 255, 255, 0.95)",
-                                                backdropFilter: "blur(8px)",
-                                                border:
-                                                  "4px solid rgba(255, 255, 255, 0.4)",
-                                              }}
-                                            >
-                                              <Play
-                                                className="w-10 h-10 ml-1"
-                                                style={{ color: "#dc2626" }}
-                                                fill="#dc2626"
-                                              />
-                                            </div>
-                                          </div>
-                                          <p
-                                            className="text-lg font-black text-white tracking-wider"
-                                            style={{
-                                              textShadow:
-                                                "0 2px 4px rgba(0,0,0,0.3)",
-                                            }}
-                                          >
-                                            SHORT
-                                          </p>
-                                          <p
-                                            className="text-xs font-semibold"
-                                            style={{
-                                              color: "#fecaca",
-                                              textShadow:
-                                                "0 1px 2px rgba(0,0,0,0.2)",
-                                            }}
-                                          >
-                                            Tap to play
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
+                  parent.appendChild(fallbackUI);
+                }
+              }}
+            />
+          ) : (
+            // DIRECT FALLBACK UI - No media available
+            <div
+              className="absolute inset-0 w-full h-full flex items-center justify-center"
+              style={{ zIndex: 1 }}
+            >
+              <div className="text-center p-4">
+                <div className="relative mb-3">
+                  <div
+                    className="absolute inset-0 rounded-full animate-ping opacity-75"
+                    style={{ background: "rgba(255, 255, 255, 0.3)" }}
+                  />
+                  <div
+                    className="relative w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-2xl"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.95)",
+                      backdropFilter: "blur(8px)",
+                      border: "4px solid rgba(255, 255, 255, 0.4)",
+                    }}
+                  >
+                    <Play
+                      className="w-10 h-10 ml-1"
+                      style={{ color: "#dc2626" }}
+                      fill="#dc2626"
+                    />
+                  </div>
+                </div>
+                <p
+                  className="text-lg font-black text-white tracking-wider"
+                  style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
+                >
+                  SHORT
+                </p>
+                <p
+                  className="text-xs font-semibold"
+                  style={{
+                    color: "#fecaca",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  Tap to play
+                </p>
+              </div>
+            </div>
+          )}
 
-                                    {/* Gradient Overlay - MOBILE & DESKTOP */}
-                                    <div
-                                      className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300"
-                                      style={{ zIndex: 3 }}
-                                    />
+          {/* Gradient Overlay */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-24 sm:h-32 pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300"
+            style={{
+              zIndex: 3,
+              background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5), transparent)",
+            }}
+          />
 
-                                    {/* Red Overlay - MOBILE & DESKTOP */}
-                                    <div
-                                      className="absolute inset-0 bg-red-600/0 group-active:bg-red-600/15 md:group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none"
-                                      style={{ zIndex: 4 }}
-                                    />
+          {/* Red Hover Overlay */}
+          <div
+            className="absolute inset-0 bg-red-600/0 group-active:bg-red-600/15 md:group-hover:bg-red-600/10 transition-all duration-300 pointer-events-none"
+            style={{ zIndex: 4 }}
+          />
 
-                                    {/* Views Badge - MOBILE & DESKTOP */}
-                                    <div
-                                      className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300"
-                                      style={{ zIndex: 5 }}
-                                    >
-                                      <Play
-                                        className="w-2.5 h-2.5 sm:w-3 sm:h-3"
-                                        fill="white"
-                                      />
-                                      <span>
-                                        {(short.views || 0).toLocaleString()}
-                                      </span>
-                                    </div>
+          {/* Views Badge */}
+          <div
+            className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md flex items-center gap-1 group-active:scale-105 md:group-hover:scale-110 transition-all duration-300"
+            style={{
+              zIndex: 5,
+              background: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(4px)",
+            }}
+          >
+            <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="white" />
+            <span>{(short.views || 0).toLocaleString()}</span>
+          </div>
 
-                                    {/* Duration Badge - MOBILE & DESKTOP */}
-                                    {short.duration && (
-                                      <div
-                                        className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/80 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md group-active:bg-red-600 group-active:scale-105 md:group-hover:bg-red-600 md:group-hover:scale-110 transition-all duration-300"
-                                        style={{ zIndex: 5 }}
-                                      >
-                                        {short.duration}s
-                                      </div>
-                                    )}
+          {/* Duration Badge */}
+          {short.duration && (
+            <div
+              className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:px-2 sm:py-1 rounded-md group-active:scale-105 md:group-hover:scale-110 transition-all duration-300"
+              style={{
+                zIndex: 5,
+                background: "rgba(0, 0, 0, 0.8)",
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              {short.duration}s
+            </div>
+          )}
 
-                                    {/* Play Button Overlay - MOBILE ACTIVE + DESKTOP HOVER */}
-                                    <div
-                                      className="absolute inset-0 bg-black/0 group-active:bg-black/40 md:group-hover:bg-black/50 transition-all duration-500 flex items-center justify-center"
-                                      style={{ zIndex: 6 }}
-                                    >
-                                      <div className="opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transform scale-50 group-active:scale-90 md:group-hover:scale-100 transition-all duration-500 ease-out">
-                                        <div className="relative">
-                                          <div className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-75"></div>
-                                          <div className="relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-2xl ring-2 ring-white/40 group-active:ring-4 md:group-hover:ring-8 transition-all duration-300">
-                                            <Play
-                                              className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 text-white ml-1"
-                                              fill="white"
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
+          {/* Play Button Overlay */}
+          <div
+            className="absolute inset-0 bg-black/0 group-active:bg-black/40 md:group-hover:bg-black/50 transition-all duration-500 flex items-center justify-center"
+            style={{ zIndex: 6 }}
+          >
+            <div className="opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transform scale-50 group-active:scale-90 md:group-hover:scale-100 transition-all duration-500 ease-out">
+              <div className="relative">
+                <div
+                  className="absolute inset-0 rounded-full animate-ping opacity-75"
+                  style={{ background: "#dc2626" }}
+                />
+                <div
+                  className="relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center shadow-2xl ring-2 ring-white/40 group-active:ring-4 md:group-hover:ring-8 transition-all duration-300"
+                  style={{
+                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  }}
+                >
+                  <Play
+                    className="w-6 h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 text-white ml-1"
+                    fill="white"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
-                                    {/* Shine Effect - MOBILE ACTIVE + DESKTOP HOVER */}
-                                    <div
-                                      className="absolute inset-0 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-                                      style={{ zIndex: 7 }}
-                                    >
-                                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-active:translate-x-full md:group-hover:translate-x-full transition-transform duration-1000"></div>
-                                    </div>
+          {/* Shine Effect */}
+          <div
+            className="absolute inset-0 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+            style={{ zIndex: 7 }}
+          >
+            <div
+              className="absolute inset-0 transform -skew-x-12 -translate-x-full group-active:translate-x-full md:group-hover:translate-x-full transition-transform duration-1000"
+              style={{
+                background: "linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)",
+              }}
+            />
+          </div>
 
-                                    {/* Index Badge - MOBILE ACTIVE + DESKTOP HOVER */}
-                                    <div
-                                      className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-all duration-300 bg-black/70 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md"
-                                      style={{ zIndex: 8 }}
-                                    >
-                                      #{index + 1}
-                                    </div>
-                                  </div>
-                                </div>
+          {/* Index Badge */}
+          <div
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 opacity-0 group-active:opacity-100 md:group-hover:opacity-100 transition-all duration-300 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-md"
+            style={{
+              zIndex: 8,
+              background: "rgba(0, 0, 0, 0.7)",
+              backdropFilter: "blur(4px)",
+            }}
+          >
+            #{index + 1}
+          </div>
+        </div>
+      </div>
 
-                                {/* Title & Channel Info */}
-                                <div className="mt-2 sm:mt-3 px-1">
+      {/* Title & Channel Info - Keep existing code */}
+      <div className="mt-2 sm:mt-3 px-1">
                                   <h3
                                     className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-4 leading-snug mb-1 group-active:text-red-600 dark:group-active:text-red-500 md:group-hover:text-red-600 dark:md:group-hover:text-red-500 transition-colors duration-300"
                                     style={{
