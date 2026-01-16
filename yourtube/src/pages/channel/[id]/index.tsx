@@ -1225,7 +1225,7 @@ const ChannelPage = () => {
                                 className="group cursor-pointer w-full transform transition-all duration-300 active:scale-95 md:hover:scale-[1.02]"
                               >
                                 {/* Thumbnail Container */}
-                                <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 active:border-red-500 dark:active:border-red-500 md:hover:border-red-500 dark:md:hover:border-red-500 active:ring-2 active:ring-red-500/50 md:hover:ring-2 md:hover:ring-red-500/50">
+                                <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700...">
                                   <div
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
