@@ -1230,63 +1230,37 @@ const ChannelPage = () => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                                    {/* Thumbnail - Supabase Video or Image */}
-                                    {thumbnailUrl.includes("supabase.co") ||
-                                    thumbnailUrl.includes("supabase.in") ? (
-                                      <video
-                                        src={thumbnailUrl}
-                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-                                        preload="metadata"
-                                        muted
-                                        playsInline
-                                        poster={thumbnailUrl}
-                                        onError={(e) => {
-                                          console.error(
-                                            "❌ Video thumbnail failed:",
-                                            thumbnailUrl.substring(0, 100)
-                                          );
-                                          const target =
-                                            e.currentTarget as HTMLVideoElement;
-                                          target.style.display = "none";
-                                          const parent = target.parentElement;
-                                          if (
-                                            parent &&
-                                            !parent.querySelector("img")
-                                          ) {
-                                            const imgElement =
-                                              document.createElement("img");
-                                            imgElement.src =
-                                              'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%23DC2626"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="white"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="white" font-family="Arial" font-size="14" font-weight="bold"%3EShort%3C/text%3E%3C/svg%3E';
-                                            imgElement.className =
-                                              "absolute inset-0 w-full h-full object-cover";
-                                            parent.appendChild(imgElement);
-                                          }
-                                        }}
-                                      />
-                                    ) : (
-                                      <img
-                                        src={thumbnailUrl}
-                                        alt={short.title}
-                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-                                        loading="lazy"
-                                        onError={(e) => {
-                                          const target =
-                                            e.currentTarget as HTMLImageElement;
-                                          if (
-                                            target.src.includes(
-                                              "data:image/svg"
-                                            )
-                                          )
-                                            return;
-                                          console.error(
-                                            "❌ Image thumbnail failed:",
-                                            target.src.substring(0, 100)
-                                          );
-                                          target.src =
-                                            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%23DC2626"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="white"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="white" font-family="Arial" font-size="14" font-weight="bold"%3EShort%3C/text%3E%3C/svg%3E';
-                                        }}
-                                      />
-                                    )}
+                     {/* Thumbnail - Same logic as liked content */}
+{thumbnailUrl.includes("supabase.co") || thumbnailUrl.includes("supabase.in") ? (
+  <video
+    src={thumbnailUrl}
+    className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+    style={{ backgroundColor: "transparent" }}
+    preload="metadata"
+    muted
+    playsInline
+  />
+) : getShortThumbnail(short) ? (
+  <img
+    src={thumbnailUrl}
+    alt={short.title}
+    className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+    loading="lazy"
+    onError={(e) => {
+      const target = e.currentTarget as HTMLImageElement;
+      if (target.src.includes("data:image/svg")) return;
+      console.error("❌ Image thumbnail failed");
+      target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%23DC2626"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="white"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="white" font-family="Arial" font-size="14" font-weight="bold"%3EShort%3C/text%3E%3C/svg%3E';
+    }}
+  />
+) : (
+  <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30">
+    <div className="text-center text-gray-600 dark:text-gray-300 p-4">
+      <Play className="w-12 h-12 mx-auto mb-2 opacity-60" />
+      <p className="text-xs font-medium">No preview</p>
+    </div>
+  </div>
+)}
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300" />
 
