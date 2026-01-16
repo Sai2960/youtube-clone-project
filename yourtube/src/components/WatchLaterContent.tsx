@@ -79,42 +79,42 @@ function VideoThumbnail({
 
   // Video element for thumbnail
   // Video element for thumbnail
-if (status === "loading" || status === "video") {
-  return (
-    <>
-      {videoUrl && (
-        <video
-          ref={videoRef}
-          src={`${videoUrl}#t=1`}
-          className="w-full h-full object-cover relative z-10"
-          preload="metadata"
-          muted
-          playsInline
-          crossOrigin="anonymous"
-          style={{ backgroundColor: "transparent" }}
-          onLoadedData={() => {
-            if (videoRef.current) {
-              videoRef.current.currentTime = 1;
-            }
-          }}
-          onSeeked={() => {
-            console.log("✅ Video thumbnail loaded:", video.videotitle);
-            setStatus("video");
-          }}
-          onError={(e) => {
-            console.log("❌ Video thumbnail error:", video.videotitle, e);
-            setStatus("fallback");
-          }}
-        />
-      )}
-      {status === "loading" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
-          <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-    </>
-  );
-}
+  if (status === "loading" || status === "video") {
+    return (
+      <>
+        {videoUrl && (
+          <video
+            ref={videoRef}
+            src={`${videoUrl}#t=1`}
+            className="w-full h-full object-cover relative z-10"
+            preload="metadata"
+            muted
+            playsInline
+            crossOrigin="anonymous"
+            style={{ backgroundColor: "transparent" }}
+            onLoadedData={() => {
+              if (videoRef.current) {
+                videoRef.current.currentTime = 1;
+              }
+            }}
+            onSeeked={() => {
+              console.log("✅ Video thumbnail loaded:", video.videotitle);
+              setStatus("video");
+            }}
+            onError={(e) => {
+              console.log("❌ Video thumbnail error:", video.videotitle, e);
+              setStatus("fallback");
+            }}
+          />
+        )}
+        {status === "loading" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+            <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+      </>
+    );
+  }
 
   // Fallback placeholder
   return (
@@ -342,10 +342,13 @@ export default function WatchLaterContent() {
                   {/* Thumbnail */}
                   <Link href={`/watch/${video._id}`} className="flex-shrink-0">
                     <div className="video-thumbnail-container w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
-                      <VideoThumbnail video={video} getVideoUrl={getVideoUrl} />
-
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center z-20 pointer-events-none">
+                      <video
+                        src={getVideoUrl(video)}
+                        className="w-full h-full object-cover relative z-10"
+                        preload="metadata"
+                        style={{ backgroundColor: "transparent" }}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center">
                         <Play
                           className="w-8 h-8 md:w-10 md:h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
                           fill="white"
