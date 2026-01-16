@@ -164,22 +164,29 @@ export default function WatchLaterContent() {
     }
   }, [user]);
 
-  const loadWatchLater = async () => {
-    if (!user) return;
+const loadWatchLater = async () => {
+  if (!user) return;
 
-    try {
-      const response = await axiosInstance.get(`/watch/${user._id}`);
-      const validVideos = response.data.filter(
-        (item: any) => item.videoid != null
-      );
-      console.log("Watch later videos:", validVideos); // Debug log
-      setWatchLater(validVideos);
-    } catch (error) {
-      console.error("Error loading watch later:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const response = await axiosInstance.get(`/watch/${user._id}`);
+    const validVideos = response.data.filter(
+      (item: any) => item.videoid != null
+    );
+    
+    // ✅ ADD THIS DEBUG LOG
+    console.log("🔍 Raw video data from backend:", validVideos[0]?.videoid);
+    console.log("📹 Video filename:", validVideos[0]?.videoid?.videofilename);
+    console.log("📁 Video filepath:", validVideos[0]?.videoid?.filepath);
+    console.log("🖼️ Thumbnail:", validVideos[0]?.videoid?.thumbnail);
+    console.log("🖼️ Thumbnail filename:", validVideos[0]?.videoid?.thumbnailfilename);
+    
+    setWatchLater(validVideos);
+  } catch (error) {
+    console.error("Error loading watch later:", error);
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     if (watchLater.length > 0) {
       console.log(
@@ -209,19 +216,40 @@ export default function WatchLaterContent() {
     }
   };
 
-  const getVideoUrl = (video: any) => {
-    // ✅ FIXED: Prevent duplicate /videos/ in path
-    if (video?.videofilename) {
-      // Extract just the filename, removing any path prefixes
-      const filename = video.videofilename.split(/[\\/]/).pop();
-      return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
-    } else if (video?.filepath) {
-      // Extract just the filename, not the full path
-      const filename = video.filepath.split(/[\\/]/).pop();
-      return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
-    }
-    return "";
-  };
+const getVideoUrl = (video: any) => {
+  console.log("🎬 Getting video URL for:", video.videotitle);
+  console.log("   videofilename:", video.videofilename);
+  console.log("   filepath:", video.filepath);
+  
+  // ✅ Check for full URLs first (Cloudinary, Supabase, etc.)
+  if (video?.filepath?.startsWith("http")) {
+    console.log("   ✅ Using full URL from filepath");
+    return video.filepath;
+  }
+  
+  if (video?.videoLink?.startsWith("http")) {
+    console.log("   ✅ Using full URL from videoLink");
+    return video.videoLink;
+  }
+  
+  // ✅ Handle local files
+  if (video?.videofilename) {
+    const filename = video.videofilename.split(/[\\/]/).pop();
+    const url = `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
+    console.log("   ✅ Built URL from filename:", url);
+    return url;
+  } 
+  
+  if (video?.filepath) {
+    const filename = video.filepath.split(/[\\/]/).pop();
+    const url = `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
+    console.log("   ✅ Built URL from filepath:", url);
+    return url;
+  }
+  
+  console.log("   ❌ No valid video source found!");
+  return "";
+};
 
   if (!user) {
     return (
