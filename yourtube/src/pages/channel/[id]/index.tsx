@@ -1243,27 +1243,35 @@ const ChannelPage = () => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                                  {thumbnailUrl && thumbnailUrl.startsWith("http") ? (
-  <div className="absolute inset-0 w-full h-full">
+                                {thumbnailUrl && thumbnailUrl.startsWith("http") ? (
+  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800">
     <img
       src={thumbnailUrl}
       alt={short.title || "Short"}
       className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-      style={{ zIndex: 1, background: "transparent" }}
+      style={{ zIndex: 1 }}
       loading="lazy"
       onError={(e) => {
+        console.error("❌ Thumbnail failed for:", short._id);
         const img = e.currentTarget;
         img.style.display = "none";
         const parent = img.parentElement;
         if (parent && !parent.querySelector("video")) {
-          const videoElement = document.createElement("video");
-          videoElement.src = getShortVideoUrl(short);
-          videoElement.className = "absolute inset-0 w-full h-full object-cover";
-          videoElement.style.zIndex = "1";
-          videoElement.preload = "metadata";
-          videoElement.muted = true;
-          videoElement.playsInline = true;
-          parent.appendChild(videoElement);
+          const videoUrl = getShortVideoUrl(short);
+          if (videoUrl) {
+            const videoElement = document.createElement("video");
+            videoElement.src = videoUrl;
+            videoElement.className = "absolute inset-0 w-full h-full object-cover";
+            videoElement.style.zIndex = "1";
+            videoElement.preload = "metadata";
+            videoElement.muted = true;
+            videoElement.playsInline = true;
+            videoElement.onerror = () => {
+              console.error("❌ Video also failed for:", short._id);
+              videoElement.style.display = "none";
+            };
+            parent.appendChild(videoElement);
+          }
         }
       }}
     />
