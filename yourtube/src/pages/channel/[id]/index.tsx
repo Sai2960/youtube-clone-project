@@ -26,7 +26,7 @@ const getShortThumbnail = (short: any): string => {
   });
 
   // ✅ PRIORITY 1: Check explicit thumbnail fields
-  const thumbnailCandidates = [
+   const thumbnailCandidates = [
     short.thumbnailUrl,
     short.thumbnail,
     short.videothumbnail,
@@ -51,9 +51,9 @@ const getShortThumbnail = (short: any): string => {
     }
   }
 
-  // ✅ BRIGHT FALLBACK PLACEHOLDER - VISIBLE IN BOTH LIGHT & DARK MODE
+  // ✅ BRIGHT FALLBACK PLACEHOLDER - WORKS IN BOTH LIGHT & DARK MODE
   console.warn("⚠️ No thumbnail available for short:", short._id);
-  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Cdefs%3E%3ClinearGradient id="grad1" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23374151;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%231F2937;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="180" height="320" fill="url(%23grad1)"/%3E%3Ccircle cx="90" cy="160" r="40" fill="%23EF4444" opacity="0.3"/%3E%3Ccircle cx="90" cy="160" r="35" fill="%23DC2626" opacity="0.5"/%3E%3Cpath d="M75 145L105 160L75 175V145Z" fill="%23FFFFFF"/%3E%3Ctext x="90" y="220" text-anchor="middle" fill="%23F3F4F6" font-family="Arial" font-size="13" font-weight="bold"%3ESHORT%3C/text%3E%3Ctext x="90" y="235" text-anchor="middle" fill="%23D1D5DB" font-family="Arial" font-size="9"%3ETap to play%3C/text%3E%3C/svg%3E';
+  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Cdefs%3E%3ClinearGradient id="grad1" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23DC2626;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%23991B1B;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="180" height="320" fill="url(%23grad1)"/%3E%3Ccircle cx="90" cy="160" r="50" fill="%23FFFFFF" opacity="0.2"/%3E%3Ccircle cx="90" cy="160" r="42" fill="%23FFFFFF" opacity="0.3"/%3E%3Cpath d="M75 145L110 162.5L75 180V145Z" fill="%23FFFFFF"/%3E%3Ctext x="90" y="220" text-anchor="middle" fill="%23FFFFFF" font-family="Arial, sans-serif" font-size="16" font-weight="bold"%3ESHORT%3C/text%3E%3Ctext x="90" y="240" text-anchor="middle" fill="%23FEE2E2" font-family="Arial, sans-serif" font-size="11"%3ETap to play%3C/text%3E%3C/svg%3E';
 };
 // ============================================================================
 // MAIN COMPONENT - STATE & REFS
@@ -1244,27 +1244,25 @@ const getShortVideoUrl = (short: any): string => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                                {(() => {
+
+{(() => {
   const shortId = short._id || short.id;
   const videoUrl = getShortVideoUrl(short);
+  const thumbnailUrl = getShortThumbnail(short);
   const thumbnailFailed = failedThumbnails.has(shortId);
   const videoFailed = failedVideos.has(shortId);
 
-  if (thumbnailUrl && !thumbnailFailed) {
+  if (thumbnailUrl && thumbnailUrl.startsWith("http") && !thumbnailFailed) {
     return (
       <img
         src={thumbnailUrl}
-        alt={short.title}
-        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out bg-gray-200 dark:bg-gray-700"
+        alt={short.title || "Short"}
+        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
         loading="lazy"
-        onError={(e) => {
-          console.error("❌ Thumbnail failed, trying video");
-          setFailedThumbnails((prev) => new Set(prev).add(shortId));
-        }}
-        onLoad={() => console.log("✅ Thumbnail loaded:", shortId)}
+        onError={() => setFailedThumbnails((prev) => new Set(prev).add(shortId))}
       />
     );
-  } else if ((thumbnailFailed || !thumbnailUrl) && videoUrl && !videoFailed) {
+  } else if ((thumbnailFailed || !thumbnailUrl.startsWith("http")) && videoUrl && !videoFailed) {
     return (
       <video
         src={videoUrl}
@@ -1272,40 +1270,45 @@ const getShortVideoUrl = (short: any): string => {
         preload="metadata"
         muted
         playsInline
-        onError={(e) => {
-          console.error("❌ Video failed for:", shortId);
-          setFailedVideos((prev) => new Set(prev).add(shortId));
-        }}
-        onLoadedMetadata={() => console.log("✅ Video loaded:", shortId)}
+        onError={() => setFailedVideos((prev) => new Set(prev).add(shortId))}
       />
     );
-  } else if (thumbnailUrl.includes("data:image/svg")) {
-    return (
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/30 flex items-center justify-center ring-2 ring-red-500/50">
-            <Play className="w-8 h-8 text-red-400" fill="currentColor" />
-          </div>
-          <p className="text-xs text-gray-200 font-bold tracking-wide">SHORT</p>
-          <p className="text-[10px] text-gray-400 mt-1">Tap to play</p>
-        </div>
-      </div>
-    );
   } else {
+    // ✅ PREMIUM FALLBACK - Works beautifully in both themes
     return (
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 via-gray-700 to-gray-900">
-        <div className="text-center text-gray-400 p-4">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/30 flex items-center justify-center ring-4 ring-red-500/20 animate-pulse">
-            <Play className="w-10 h-10 text-red-400" fill="currentColor" />
+      <div className="absolute inset-0 w-full h-full">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500 via-pink-500 to-rose-600 dark:from-red-600 dark:via-rose-700 dark:to-red-900 opacity-100" />
+        
+        {/* Animated glow effect */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 right-0 w-40 h-40 bg-pink-300 dark:bg-pink-600 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+
+        {/* Content */}
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="text-center p-6">
+            {/* Play button */}
+            <div className="relative mb-4">
+              <div className="absolute inset-0 bg-white/30 dark:bg-white/20 rounded-full blur-xl animate-ping" />
+              <div className="relative w-24 h-24 mx-auto rounded-full bg-white/90 dark:bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-4 ring-white/40 dark:ring-white/30">
+                <Play className="w-12 h-12 text-red-600 dark:text-red-700 ml-1" fill="currentColor" />
+              </div>
+            </div>
+            
+            {/* Text */}
+            <div className="space-y-1">
+              <p className="text-xl font-black text-white drop-shadow-lg tracking-wider">SHORT</p>
+              <p className="text-sm text-white/90 dark:text-red-50 font-semibold drop-shadow">Tap to play</p>
+            </div>
           </div>
-          <p className="text-sm text-white font-bold">SHORT</p>
-          <p className="text-xs text-gray-300 mt-1">Tap to watch</p>
         </div>
       </div>
     );
   }
 })()}
-                                    {/* Gradient Overlay - MOBILE & DESKTOP */}
+                               {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300" />
 
                                     {/* Red Overlay - MOBILE & DESKTOP */}
