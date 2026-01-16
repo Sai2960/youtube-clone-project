@@ -1,4 +1,4 @@
-// src/components/SubscriptionPage.tsx - PREMIUM DELUXE VERSION
+// src/components/SubscriptionPage.tsx - PREMIUM DELUXE VERSION (FIXED)
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Crown,
@@ -59,6 +59,7 @@ const SubscriptionPage = () => {
       iconBg: string;
       borderColor: string;
       buttonGradient: string;
+      checkBg: string;
     }
   > = {
     BRONZE: {
@@ -69,6 +70,7 @@ const SubscriptionPage = () => {
       iconBg: "bg-gradient-to-br from-amber-500/20 to-orange-500/20",
       borderColor: "border-amber-500/30 hover:border-amber-400/50",
       buttonGradient: "from-amber-600 via-orange-500 to-amber-600",
+      checkBg: "bg-gradient-to-r from-amber-500 to-orange-500",
     },
     SILVER: {
       icon: Shield,
@@ -78,6 +80,7 @@ const SubscriptionPage = () => {
       iconBg: "bg-gradient-to-br from-slate-400/20 to-gray-400/20",
       borderColor: "border-slate-400/30 hover:border-slate-300/50",
       buttonGradient: "from-slate-500 via-gray-400 to-slate-500",
+      checkBg: "bg-gradient-to-r from-slate-400 to-gray-500",
     },
     GOLD: {
       icon: Crown,
@@ -87,6 +90,7 @@ const SubscriptionPage = () => {
       iconBg: "bg-gradient-to-br from-yellow-400/20 to-amber-400/20",
       borderColor: "border-yellow-400/40 hover:border-yellow-300/60",
       buttonGradient: "from-yellow-500 via-amber-400 to-yellow-500",
+      checkBg: "bg-gradient-to-r from-yellow-400 to-amber-500",
     },
   };
 
@@ -650,15 +654,15 @@ const SubscriptionPage = () => {
                       {/* Divider */}
                       <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent mb-6"></div>
 
-                      {/* Features */}
+                      {/* Features - FIXED ALIGNMENT */}
                       <ul className="space-y-4 mb-8">
                         {plan.features?.map((feature: string, i: number) => (
-                          <li key={i} className="flex items-start gap-3">
+                          <li key={i} className="flex items-center gap-3">
                             <div
-                              className={`flex-shrink-0 mt-0.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-r ${config.gradient} flex items-center justify-center`}
+                              className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full ${config.checkBg} flex items-center justify-center shadow-sm`}
                             >
                               <Check
-                                className="w-3 h-3 sm:w-4 sm:h-4 text-white"
+                                className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white"
                                 strokeWidth={3}
                               />
                             </div>
@@ -669,38 +673,40 @@ const SubscriptionPage = () => {
                         ))}
                       </ul>
 
-                      {/* Subscribe Button */}
-                      <button
-                        onClick={() => handleSubscribe(plan)}
-                        disabled={processing || isCurrentPlan}
-                        className={`relative w-full py-3.5 sm:py-4 px-6 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 overflow-hidden group/btn ${
-                          isCurrentPlan
-                            ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 cursor-not-allowed"
-                            : `bg-gradient-to-r ${config.buttonGradient} text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0`
-                        }`}
-                      >
-                        {!isCurrentPlan && (
-                          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
-                        )}
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                          {processing && selectedPlan === plan.id ? (
-                            <>
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                              <span>Processing...</span>
-                            </>
-                          ) : isCurrentPlan ? (
-                            <>
-                              <Check className="w-5 h-5" />
-                              <span>Current Plan</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>Subscribe Now</span>
-                              <Sparkles className="w-5 h-5" />
-                            </>
+                      {/* Subscribe Button - CENTERED */}
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => handleSubscribe(plan)}
+                          disabled={processing || isCurrentPlan}
+                          className={`relative w-full py-3.5 sm:py-4 px-6 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 overflow-hidden group/btn ${
+                            isCurrentPlan
+                              ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 cursor-not-allowed"
+                              : `bg-gradient-to-r ${config.buttonGradient} text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0`
+                          }`}
+                        >
+                          {!isCurrentPlan && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700"></div>
                           )}
-                        </span>
-                      </button>
+                          <span className="relative z-10 flex items-center justify-center gap-2">
+                            {processing && selectedPlan === plan.id ? (
+                              <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span>Processing...</span>
+                              </>
+                            ) : isCurrentPlan ? (
+                              <>
+                                <Check className="w-5 h-5" />
+                                <span>Current Plan</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Subscribe Now</span>
+                                <Sparkles className="w-5 h-5" />
+                              </>
+                            )}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -752,7 +758,9 @@ const SubscriptionPage = () => {
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        <span className="text-2xl">{faq.icon}</span>
+                        <span className="text-2xl flex-shrink-0">
+                          {faq.icon}
+                        </span>
                         <div>
                           <h3 className="font-bold text-lg sm:text-xl text-gray-900 dark:text-white mb-2">
                             {faq.question}
@@ -834,7 +842,7 @@ const SubscriptionPage = () => {
                       key={i}
                       className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4 flex-shrink-0" />
                       <span>{item}</span>
                     </li>
                   ))}
