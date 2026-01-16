@@ -1230,74 +1230,87 @@ const ChannelPage = () => {
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
                                   >
-                                    {/* Thumbnail Image */}
-                                    <img
-                                      src={thumbnailUrl}
-                                      alt={short.title}
-                                      className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
-                                      loading="lazy"
-                                      onError={(e) => {
-                                        const target =
-                                          e.currentTarget as HTMLImageElement;
-                                        const currentShort = short;
-
-                                        // Don't retry if already showing placeholder
-                                        if (
-                                          target.src.includes("data:image/svg")
-                                        )
-                                          return;
-
-                                        console.error(
-                                          "❌ Thumbnail failed:",
-                                          target.src.substring(0, 100)
-                                        );
-
-                                        // ✅ For Supabase videos, try creating a video element
-                                        if (
-                                          currentShort.videoUrl &&
-                                          (currentShort.videoUrl.includes(
-                                            "supabase.co"
-                                          ) ||
-                                            currentShort.videoUrl.includes(
-                                              "supabase.in"
-                                            ))
-                                        ) {
-                                          console.log(
-                                            "🔄 Trying video element for Supabase short"
-                                          );
-                                          target.style.display = "none";
-                                          const parent = target.parentElement;
-
-                                          if (
-                                            parent &&
-                                            !parent.querySelector("video")
-                                          ) {
-                                            const videoElement =
-                                              document.createElement("video");
-                                            videoElement.src =
-                                              currentShort.videoUrl;
-                                            videoElement.className =
-                                              "absolute inset-0 w-full h-full object-cover";
-                                            videoElement.preload = "metadata";
-                                            videoElement.muted = true;
-                                            videoElement.playsInline = true;
-                                            parent.appendChild(videoElement);
-                                            return;
+                                    {/* Thumbnail Image/Video - DARK MODE FIXED */}
+                                    {thumbnailUrl.includes("supabase.co") ||
+                                    thumbnailUrl.includes("supabase.in") ? (
+                                      <>
+                                        <img
+                                          src={thumbnailUrl}
+                                          alt={short.title}
+                                          className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+                                          loading="lazy"
+                                          onError={(e) => {
+                                            const target =
+                                              e.currentTarget as HTMLImageElement;
+                                            console.error(
+                                              "❌ Image failed, trying video element"
+                                            );
+                                            target.style.display = "none";
+                                            const parent = target.parentElement;
+                                            if (
+                                              parent &&
+                                              !parent.querySelector("video")
+                                            ) {
+                                              const videoElement =
+                                                document.createElement("video");
+                                              videoElement.src = thumbnailUrl;
+                                              videoElement.className =
+                                                "absolute inset-0 w-full h-full object-cover bg-gray-900 dark:bg-gray-800";
+                                              videoElement.preload = "metadata";
+                                              videoElement.muted = true;
+                                              videoElement.playsInline = true;
+                                              videoElement.setAttribute(
+                                                "playsinline",
+                                                ""
+                                              );
+                                              videoElement.setAttribute(
+                                                "webkit-playsinline",
+                                                ""
+                                              );
+                                              parent.appendChild(videoElement);
+                                            }
+                                          }}
+                                          onLoad={() =>
+                                            console.log(
+                                              "✅ Thumbnail loaded:",
+                                              short._id
+                                            )
                                           }
-                                        }
-
-                                        // ✅ Final fallback to placeholder - MATCHES LIKED CONTENT
-                                        console.log("⚠️ Using placeholder SVG");
-                                        target.src =
-                                          'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%23374151"/%3E%3Ccircle cx="90" cy="160" r="30" fill="%23EF4444" opacity="0.2"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="210" text-anchor="middle" fill="%23D1D5DB" font-family="Arial" font-size="11" font-weight="bold"%3EShort%3C/text%3E%3C/svg%3E';
-                                      }}
-                                      onLoad={() => {
-                                        console.log(
-                                          "✅ Thumbnail loaded for short:",
-                                          short._id
-                                        );
-                                      }}
-                                    />
+                                        />
+                                      </>
+                                    ) : thumbnailUrl.includes(
+                                        "data:image/svg"
+                                      ) ? (
+                                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900">
+                                        <div className="text-center">
+                                          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/20 flex items-center justify-center">
+                                            <Play
+                                              className="w-8 h-8 text-red-500"
+                                              fill="currentColor"
+                                            />
+                                          </div>
+                                          <p className="text-xs text-gray-400 font-semibold">
+                                            Short
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <img
+                                        src={thumbnailUrl}
+                                        alt={short.title}
+                                        className="absolute inset-0 w-full h-full object-cover group-active:scale-105 md:group-hover:scale-110 transition-transform duration-700 ease-out"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          const target =
+                                            e.currentTarget as HTMLImageElement;
+                                          console.log(
+                                            "⚠️ Using placeholder SVG"
+                                          );
+                                          target.src =
+                                            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%23374151"/%3E%3Ccircle cx="90" cy="160" r="30" fill="%23EF4444" opacity="0.2"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="210" text-anchor="middle" fill="%23D1D5DB" font-family="Arial" font-size="11" font-weight="bold"%3EShort%3C/text%3E%3C/svg%3E';
+                                        }}
+                                      />
+                                    )}
                                     {/* Gradient Overlay - MOBILE & DESKTOP */}
                                     <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none group-active:from-black/95 md:group-hover:from-black/95 transition-all duration-300" />
 
