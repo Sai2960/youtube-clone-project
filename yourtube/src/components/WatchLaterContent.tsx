@@ -85,7 +85,7 @@ function VideoThumbnail({
           <video
             ref={videoRef}
             src={`${videoUrl}#t=1`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover bg-gray-200 dark:bg-gray-800"
             preload="metadata"
             muted
             playsInline
@@ -164,29 +164,32 @@ export default function WatchLaterContent() {
     }
   }, [user]);
 
-const loadWatchLater = async () => {
-  if (!user) return;
+  const loadWatchLater = async () => {
+    if (!user) return;
 
-  try {
-    const response = await axiosInstance.get(`/watch/${user._id}`);
-    const validVideos = response.data.filter(
-      (item: any) => item.videoid != null
-    );
-    
-    // ✅ ADD THIS DEBUG LOG
-    console.log("🔍 Raw video data from backend:", validVideos[0]?.videoid);
-    console.log("📹 Video filename:", validVideos[0]?.videoid?.videofilename);
-    console.log("📁 Video filepath:", validVideos[0]?.videoid?.filepath);
-    console.log("🖼️ Thumbnail:", validVideos[0]?.videoid?.thumbnail);
-    console.log("🖼️ Thumbnail filename:", validVideos[0]?.videoid?.thumbnailfilename);
-    
-    setWatchLater(validVideos);
-  } catch (error) {
-    console.error("Error loading watch later:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const response = await axiosInstance.get(`/watch/${user._id}`);
+      const validVideos = response.data.filter(
+        (item: any) => item.videoid != null
+      );
+
+      // ✅ ADD THIS DEBUG LOG
+      console.log("🔍 Raw video data from backend:", validVideos[0]?.videoid);
+      console.log("📹 Video filename:", validVideos[0]?.videoid?.videofilename);
+      console.log("📁 Video filepath:", validVideos[0]?.videoid?.filepath);
+      console.log("🖼️ Thumbnail:", validVideos[0]?.videoid?.thumbnail);
+      console.log(
+        "🖼️ Thumbnail filename:",
+        validVideos[0]?.videoid?.thumbnailfilename
+      );
+
+      setWatchLater(validVideos);
+    } catch (error) {
+      console.error("Error loading watch later:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     if (watchLater.length > 0) {
       console.log(
@@ -216,40 +219,40 @@ const loadWatchLater = async () => {
     }
   };
 
-const getVideoUrl = (video: any) => {
-  console.log("🎬 Getting video URL for:", video.videotitle);
-  console.log("   videofilename:", video.videofilename);
-  console.log("   filepath:", video.filepath);
-  
-  // ✅ Check for full URLs first (Cloudinary, Supabase, etc.)
-  if (video?.filepath?.startsWith("http")) {
-    console.log("   ✅ Using full URL from filepath");
-    return video.filepath;
-  }
-  
-  if (video?.videoLink?.startsWith("http")) {
-    console.log("   ✅ Using full URL from videoLink");
-    return video.videoLink;
-  }
-  
-  // ✅ Handle local files
-  if (video?.videofilename) {
-    const filename = video.videofilename.split(/[\\/]/).pop();
-    const url = `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
-    console.log("   ✅ Built URL from filename:", url);
-    return url;
-  } 
-  
-  if (video?.filepath) {
-    const filename = video.filepath.split(/[\\/]/).pop();
-    const url = `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
-    console.log("   ✅ Built URL from filepath:", url);
-    return url;
-  }
-  
-  console.log("   ❌ No valid video source found!");
-  return "";
-};
+  const getVideoUrl = (video: any) => {
+    console.log("🎬 Getting video URL for:", video.videotitle);
+    console.log("   videofilename:", video.videofilename);
+    console.log("   filepath:", video.filepath);
+
+    // ✅ Check for full URLs first (Cloudinary, Supabase, etc.)
+    if (video?.filepath?.startsWith("http")) {
+      console.log("   ✅ Using full URL from filepath");
+      return video.filepath;
+    }
+
+    if (video?.videoLink?.startsWith("http")) {
+      console.log("   ✅ Using full URL from videoLink");
+      return video.videoLink;
+    }
+
+    // ✅ Handle local files
+    if (video?.videofilename) {
+      const filename = video.videofilename.split(/[\\/]/).pop();
+      const url = `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
+      console.log("   ✅ Built URL from filename:", url);
+      return url;
+    }
+
+    if (video?.filepath) {
+      const filename = video.filepath.split(/[\\/]/).pop();
+      const url = `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
+      console.log("   ✅ Built URL from filepath:", url);
+      return url;
+    }
+
+    console.log("   ❌ No valid video source found!");
+    return "";
+  };
 
   if (!user) {
     return (
@@ -336,8 +339,7 @@ const getVideoUrl = (video: any) => {
                 <div className="flex gap-2 md:gap-3 hover:bg-gray-50 dark:hover:bg-[#272727] p-2 rounded-lg transition-colors relative group">
                   {/* Thumbnail */}
                   <Link href={`/watch/${video._id}`} className="flex-shrink-0">
-                    <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] rounded-lg overflow-hidden relative">
-                      {/* Video thumbnail with state management */}
+                    <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] rounded-lg overflow-hidden relative bg-gray-200 dark:bg-gray-800">
                       <VideoThumbnail video={video} getVideoUrl={getVideoUrl} />
 
                       {/* Hover overlay */}
