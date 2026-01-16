@@ -53,7 +53,7 @@ const getShortThumbnail = (short: any): string => {
 
   // ✅ Fallback placeholder
   console.warn("⚠️ No thumbnail available for short:", short._id);
-  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
+  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%23374151"/%3E%3Ccircle cx="90" cy="160" r="30" fill="%23EF4444" opacity="0.2"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="210" text-anchor="middle" fill="%23D1D5DB" font-family="Arial" font-size="11" font-weight="bold"%3EShort%3C/text%3E%3C/svg%3E';
 };
 // ============================================================================
 // MAIN COMPONENT - STATE & REFS
@@ -1225,7 +1225,10 @@ const ChannelPage = () => {
                                 className="group cursor-pointer w-full transform transition-all duration-300 active:scale-95 md:hover:scale-[1.02]"
                               >
                                 {/* Thumbnail Container */}
-                                <div className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-black shadow-md active:shadow-xl md:hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 active:border-red-500 dark:active:border-red-500 md:hover:border-red-500 dark:md:hover:border-red-500 active:ring-2 active:ring-red-500/50 md:hover:ring-2 md:hover:ring-red-500/50">
+                                <div
+                                  className="relative w-full rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900 shadow-md...
+ active:shadow-xl md:hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 active:border-red-500 dark:active:border-red-500 md:hover:border-red-500 dark:md:hover:border-red-500 active:ring-2 active:ring-red-500/50 md:hover:ring-2 md:hover:ring-red-500/50"
+                                >
                                   <div
                                     className="relative w-full"
                                     style={{ paddingBottom: "177.78%" }}
@@ -1289,7 +1292,7 @@ const ChannelPage = () => {
                                         // ✅ Final fallback to placeholder
                                         console.log("⚠️ Using placeholder SVG");
                                         target.src =
-                                          'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%231F2937"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="200" text-anchor="middle" fill="%239CA3AF" font-family="Arial" font-size="12"%3ENo Thumbnail%3C/text%3E%3C/svg%3E';
+                                          'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 320"%3E%3Crect width="180" height="320" fill="%23374151"/%3E%3Ccircle cx="90" cy="160" r="30" fill="%23EF4444" opacity="0.2"/%3E%3Cpath d="M70 140L110 160L70 180V140Z" fill="%23EF4444"/%3E%3Ctext x="90" y="210" text-anchor="middle" fill="%23D1D5DB" font-family="Arial" font-size="11" font-weight="bold"%3EShort%3C/text%3E%3C/svg%3E';
                                       }}
                                       onLoad={() => {
                                         console.log(
