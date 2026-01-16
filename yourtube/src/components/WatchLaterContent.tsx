@@ -24,23 +24,23 @@ export default function WatchLaterContent() {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     const intervals = {
       year: 31536000,
       month: 2592000,
       week: 604800,
       day: 86400,
       hour: 3600,
-      minute: 60
+      minute: 60,
     };
-    
+
     for (const [unit, secondsInUnit] of Object.entries(intervals)) {
       const interval = Math.floor(seconds / secondsInUnit);
       if (interval >= 1) {
-        return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
+        return `${interval} ${unit}${interval === 1 ? "" : "s"} ago`;
       }
     }
-    return 'just now';
+    return "just now";
   };
 
   useEffect(() => {
@@ -56,7 +56,9 @@ export default function WatchLaterContent() {
 
     try {
       const response = await axiosInstance.get(`/watch/${user._id}`);
-      const validVideos = response.data.filter((item: any) => item.videoid != null);
+      const validVideos = response.data.filter(
+        (item: any) => item.videoid != null
+      );
       setWatchLater(validVideos);
     } catch (error) {
       console.error("Error loading watch later:", error);
@@ -65,7 +67,10 @@ export default function WatchLaterContent() {
     }
   };
 
-  const handleRemoveFromWatchLater = async (videoId: string, watchLaterId: string) => {
+  const handleRemoveFromWatchLater = async (
+    videoId: string,
+    watchLaterId: string
+  ) => {
     if (!user) return;
 
     try {
@@ -77,14 +82,14 @@ export default function WatchLaterContent() {
   };
 
   const getVideoUrl = (video: any) => {
-  if (video?.videofilename) {
-    return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${video.videofilename}`;
-  } else if (video?.filepath) {
-    const filename = video.filepath.split(/[\\/]/).pop();
-    return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
-  }
-  return "/video/vdo.mp4";
-};
+    if (video?.videofilename) {
+      return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${video.videofilename}`;
+    } else if (video?.filepath) {
+      const filename = video.filepath.split(/[\\/]/).pop();
+      return `https://youtube-clone-project-production.up.railway.app/uploads/videos/${filename}`;
+    }
+    return "/video/vdo.mp4";
+  };
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -113,7 +118,9 @@ export default function WatchLaterContent() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 dark:border-gray-700 border-t-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading watch later...</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">
+            Loading watch later...
+          </p>
         </div>
       </div>
     );
@@ -143,7 +150,7 @@ export default function WatchLaterContent() {
           Watch later
         </h1>
         <p className="text-xs text-gray-600 dark:text-gray-400">
-          {watchLater.length} {watchLater.length === 1 ? 'video' : 'videos'}
+          {watchLater.length} {watchLater.length === 1 ? "video" : "videos"}
         </p>
       </div>
 
@@ -153,7 +160,7 @@ export default function WatchLaterContent() {
           Watch later
         </h1>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          {watchLater.length} {watchLater.length === 1 ? 'video' : 'videos'}
+          {watchLater.length} {watchLater.length === 1 ? "video" : "videos"}
         </p>
       </div>
 
@@ -168,13 +175,19 @@ export default function WatchLaterContent() {
                 <div className="flex gap-2 md:gap-3 hover:bg-gray-50 dark:hover:bg-[#272727] p-2 rounded-lg transition-colors relative group">
                   {/* Thumbnail */}
                   <Link href={`/watch/${video._id}`} className="flex-shrink-0">
-                    <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative">
+                    {/* FIXED: Improved video thumbnail container */}
+                    <div className="w-[140px] h-[78px] md:w-[246px] md:h-[138px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden relative border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
                       <video
                         src={getVideoUrl(video)}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover relative z-10"
+                        preload="metadata"
+                        style={{ backgroundColor: "transparent" }}
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <Play className="w-8 h-8 md:w-10 md:h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" fill="white" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        <Play
+                          className="w-10 h-10 md:w-12 md:h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-2xl"
+                          fill="white"
+                        />
                       </div>
                     </div>
                   </Link>
@@ -186,21 +199,23 @@ export default function WatchLaterContent() {
                         <h3 className="font-medium text-sm md:text-base line-clamp-2 text-gray-900 dark:text-white leading-tight pr-6 md:pr-8">
                           {video.videotitle || "Untitled Video"}
                         </h3>
-                        
+
                         <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
                           {video.videochanel || "Unknown Channel"}
                         </p>
-                        
+
                         <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
-                          <span>{(video.views || 0).toLocaleString()} views</span>
+                          <span>
+                            {(video.views || 0).toLocaleString()} views
+                          </span>
                           <span>•</span>
                           <span className="hidden sm:inline">
-                            {video.createdAt 
+                            {video.createdAt
                               ? formatTimeAgo(video.createdAt)
                               : "Recently uploaded"}
                           </span>
                         </div>
-                        
+
                         <p className="text-xs text-gray-500 dark:text-gray-500">
                           <Clock className="w-3 h-3 inline mr-1" />
                           Added {formatTimeAgo(item.createdAt)}
@@ -221,12 +236,14 @@ export default function WatchLaterContent() {
                           <MoreVertical className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent 
-                        align="end" 
+                      <DropdownMenuContent
+                        align="end"
                         className="w-56 bg-white dark:bg-[#282828] border-gray-200 dark:border-gray-700"
                       >
                         <DropdownMenuItem
-                          onClick={() => handleRemoveFromWatchLater(video._id, item._id)}
+                          onClick={() =>
+                            handleRemoveFromWatchLater(video._id, item._id)
+                          }
                           className="text-red-600 dark:text-red-500 focus:text-red-700 dark:focus:text-red-400 focus:bg-red-50 dark:focus:bg-red-900/20 cursor-pointer"
                         >
                           <X className="w-4 h-4 mr-2" />
