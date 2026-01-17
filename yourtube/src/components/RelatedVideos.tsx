@@ -3,7 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { getBackendURL, normalizeURL, getThumbnailUrl, getVideoUrl } from "@/lib/urlHelper";
+import {
+  getBackendURL,
+  normalizeURL,
+  getThumbnailUrl,
+  getVideoUrl,
+} from "@/lib/urlHelper";
 
 interface Video {
   _id: string;
@@ -34,32 +39,32 @@ interface RelatedVideosProps {
 
 const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
   const [imageKeys, setImageKeys] = useState<Record<string, number>>({});
-  const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(new Set());
-
-
+  const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(
+    new Set(),
+  );
 
   // ✅ Refresh on avatar update
-useEffect(() => {
-  const handleAvatarUpdate = () => {
-    console.log('🔄 Avatar updated, refreshing related videos');
-    const updatedKeys: Record<string, number> = {};
-    videos.forEach(video => {
-      if (video.uploadedBy?._id) {
-        updatedKeys[video.uploadedBy._id] = Date.now();
-      }
-    });
-    setImageKeys(updatedKeys);
-  };
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      console.log("🔄 Avatar updated, refreshing related videos");
+      const updatedKeys: Record<string, number> = {};
+      videos.forEach((video) => {
+        if (video.uploadedBy?._id) {
+          updatedKeys[video.uploadedBy._id] = Date.now();
+        }
+      });
+      setImageKeys(updatedKeys);
+    };
 
-  window.addEventListener('avatarUpdated', handleAvatarUpdate);
-  return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
-}, [videos]);
-
+    window.addEventListener("avatarUpdated", handleAvatarUpdate);
+    return () =>
+      window.removeEventListener("avatarUpdated", handleAvatarUpdate);
+  }, [videos]);
 
   // ========== Avatar Cache Management ==========
   useEffect(() => {
     const newKeys: Record<string, number> = {};
-    videos.forEach(video => {
+    videos.forEach((video) => {
       if (video.uploadedBy?._id) {
         newKeys[video.uploadedBy._id] = Date.now();
       }
@@ -68,7 +73,7 @@ useEffect(() => {
 
     const handleAvatarUpdate = () => {
       const updatedKeys: Record<string, number> = {};
-      videos.forEach(video => {
+      videos.forEach((video) => {
         if (video.uploadedBy?._id) {
           updatedKeys[video.uploadedBy._id] = Date.now();
         }
@@ -76,75 +81,132 @@ useEffect(() => {
       setImageKeys(updatedKeys);
     };
 
-    window.addEventListener('avatarUpdated', handleAvatarUpdate);
-    return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+    window.addEventListener("avatarUpdated", handleAvatarUpdate);
+    return () =>
+      window.removeEventListener("avatarUpdated", handleAvatarUpdate);
   }, [videos]);
 
   // ========== Avatar URL Function ==========
   const getAvatarUrl = (uploadedBy?: any): string => {
-    const defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
-    
+    const defaultAvatar =
+      'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+
     if (!uploadedBy?.image && !uploadedBy?.avatar) {
-      console.log('⚠️ No image provided, using default avatar');
+      console.log("⚠️ No image provided, using default avatar");
       return defaultAvatar;
     }
 
     const imageUrl = uploadedBy.image || uploadedBy.avatar;
-    console.log('🖼️ Processing avatar:', imageUrl);
+    console.log("🖼️ Processing avatar:", imageUrl);
 
     // Use urlHelper to normalize all URLs consistently
     const normalizedUrl = normalizeURL(imageUrl);
-    
+
     if (normalizedUrl) {
-      console.log('✅ Normalized avatar URL:', normalizedUrl);
+      console.log("✅ Normalized avatar URL:", normalizedUrl);
       return normalizedUrl;
     }
 
-    console.log('⚠️ Failed to normalize avatar, using default');
+    console.log("⚠️ Failed to normalize avatar, using default");
     return defaultAvatar;
   };
 
   // ========== Enhanced Video URL Function ==========
   const getVideoUrlForPreview = (video: Video): string => {
     const backend = getBackendURL();
-    
+
     // Try using the urlHelper's getVideoUrl first
     const urlFromHelper = getVideoUrl(video);
     if (urlFromHelper) {
-      console.log('✅ Video URL from helper:', urlFromHelper.substring(0, 60));
+      console.log("✅ Video URL from helper:", urlFromHelper.substring(0, 60));
       return urlFromHelper;
     }
-    
+
     // Fallback: Manual construction
     if (video?.videofilename) {
       const manualUrl = `${backend}/uploads/videos/${video.videofilename}`;
-      console.log('✅ Manual video URL from filename:', manualUrl.substring(0, 60));
+      console.log(
+        "✅ Manual video URL from filename:",
+        manualUrl.substring(0, 60),
+      );
       return manualUrl;
     } else if (video?.filepath) {
       const normalizedUrl = normalizeURL(video.filepath);
       if (normalizedUrl) {
-        console.log('✅ Normalized filepath URL:', normalizedUrl.substring(0, 60));
+        console.log(
+          "✅ Normalized filepath URL:",
+          normalizedUrl.substring(0, 60),
+        );
         return normalizedUrl;
       }
     }
-    
-    console.log('⚠️ No valid video URL found, using fallback');
-    return '/video/vdo.mp4';
+
+    console.log("⚠️ No valid video URL found, using fallback");
+    return "/video/vdo.mp4";
   };
 
-  // ========== Enhanced Thumbnail URL Function ==========
-const getEnhancedThumbnailUrl = (video: Video): string | null => {
-  // Use urlHelper's getThumbnailUrl directly
-  const thumbnailUrl = getThumbnailUrl(video);
-  
-  if (thumbnailUrl) {
-    console.log('✅ Thumbnail URL:', thumbnailUrl.substring(0, 60));
-    return thumbnailUrl;
-  }
-  
-  console.log('⚠️ No thumbnail URL found for video:', video._id);
-  return null;
-};
+  const getEnhancedThumbnailUrl = (video: Video): string | null => {
+    const backend = getBackendURL();
+
+    // Try multiple thumbnail fields
+    const thumbnailFields = [
+      video.thumbnail,
+      video.videothumbnail,
+      video.videothumb,
+      video.thumbnailUrl,
+    ];
+    const thumbnailUrl = getEnhancedThumbnailUrl(video);
+    console.log(
+      "🔍 Video:",
+      video._id,
+      "Thumbnail:",
+      thumbnailUrl,
+      "Raw data:",
+      {
+        thumbnail: video.thumbnail,
+        videothumbnail: video.videothumbnail,
+        videothumb: video.videothumb,
+        thumbnailUrl: video.thumbnailUrl,
+      },
+    );
+
+    for (const field of thumbnailFields) {
+      if (field) {
+        // Check if it's already a full URL
+        if (field.startsWith("http://") || field.startsWith("https://")) {
+          console.log("✅ Full thumbnail URL:", field.substring(0, 60));
+          return field;
+        }
+        // Check if it's a relative path
+        if (field.startsWith("/uploads/")) {
+          const fullUrl = `${backend}${field}`;
+          console.log(
+            "✅ Constructed thumbnail URL:",
+            fullUrl.substring(0, 60),
+          );
+          return fullUrl;
+        }
+        // Check if it's just a filename
+        if (field && !field.includes("/")) {
+          const fullUrl = `${backend}/uploads/thumbnails/${field}`;
+          console.log("✅ Thumbnail from filename:", fullUrl.substring(0, 60));
+          return fullUrl;
+        }
+        // Try normalizing with urlHelper
+        const normalized = normalizeURL(field);
+        if (normalized) {
+          console.log(
+            "✅ Normalized thumbnail URL:",
+            normalized.substring(0, 60),
+          );
+          return normalized;
+        }
+      }
+    }
+
+    console.log("⚠️ No thumbnail URL found for video:", video._id);
+    return null;
+  };
   // ========== Format Views Function ==========
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";
@@ -155,8 +217,8 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
 
   // ========== Handle Thumbnail Error ==========
   const handleThumbnailError = (videoId: string, thumbnailUrl: string) => {
-    console.error('❌ Thumbnail failed to load:', thumbnailUrl);
-    setFailedThumbnails(prev => new Set(prev).add(videoId));
+    console.error("❌ Thumbnail failed to load:", thumbnailUrl);
+    setFailedThumbnails((prev) => new Set(prev).add(videoId));
   };
 
   // ========== Empty State ==========
@@ -185,8 +247,12 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
           const avatarUrl = getAvatarUrl(video.uploadedBy);
           const thumbnailUrl = getEnhancedThumbnailUrl(video);
           const videoUrl = getVideoUrlForPreview(video);
-          const channelName = video.uploadedBy?.channelname || video.uploadedBy?.name || video?.videochanel || 'Unknown Channel';
-          const channelInitial = channelName[0]?.toUpperCase() || 'U';
+          const channelName =
+            video.uploadedBy?.channelname ||
+            video.uploadedBy?.name ||
+            video?.videochanel ||
+            "Unknown Channel";
+          const channelInitial = channelName[0]?.toUpperCase() || "U";
           const hasThumbnailFailed = failedThumbnails.has(video._id);
 
           return (
@@ -198,59 +264,50 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
               {/* ========== Thumbnail Section ========== */}
               <div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
                 {thumbnailUrl && !hasThumbnailFailed ? (
-                  // ✅ Use IMG tag for thumbnails (better loading)
                   <img
                     src={thumbnailUrl}
-                    alt={video?.videotitle || 'Video thumbnail'}
+                    alt={video?.videotitle || "Video thumbnail"}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
-                    onError={() => handleThumbnailError(video._id, thumbnailUrl)}
+                    crossOrigin="anonymous"
+                    onError={(e) => {
+                      console.error("❌ Thumbnail failed:", thumbnailUrl);
+                      handleThumbnailError(video._id, thumbnailUrl);
+                    }}
                     onLoad={() => {
-                      console.log('✅ Thumbnail loaded successfully:', video._id);
+                      console.log("✅ Thumbnail loaded:", video._id);
                     }}
                   />
                 ) : (
-                  // Fallback: Show video element or placeholder
-                  <>
-                    {videoUrl !== '/video/vdo.mp4' ? (
-                      <video
-                        src={videoUrl}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        preload="metadata"
-                        poster={video?.thumbnail}
-                        onError={() => {
-                          console.error('❌ Video preview failed:', videoUrl);
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
-                        <div className="text-center text-gray-400">
-                          <svg className="w-8 h-8 mx-auto mb-1 opacity-50" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                          </svg>
-                          <p className="text-[10px] font-medium">No Thumbnail</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
+                    <div className="text-center text-gray-400">
+                      <svg
+                        className="w-8 h-8 mx-auto mb-1 opacity-50"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                      </svg>
+                      <p className="text-[10px] font-medium">No Preview</p>
+                    </div>
+                  </div>
                 )}
-                
+
                 {/* Duration Badge */}
                 <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
-                  {video?.duration || '10:24'}
+                  {video?.duration || "10:24"}
                 </div>
               </div>
-
               {/* ========== Video Info Section ========== */}
               <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                 {/* Title */}
                 <h3 className="font-medium text-[14px] md:text-sm leading-[1.4] line-clamp-2 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1">
-                  {video?.videotitle || 'Untitled Video'}
+                  {video?.videotitle || "Untitled Video"}
                 </h3>
-                
+
                 {/* Channel Info with Avatar */}
-                <Link 
-                  href={`/channel/${video.uploadedBy?._id || 'unknown'}`}
+                <Link
+                  href={`/channel/${video.uploadedBy?._id || "unknown"}`}
                   onClick={(e) => e.stopPropagation()}
                   className="flex items-center gap-1.5 mb-1 group/channel"
                 >
@@ -262,27 +319,30 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
                     </div>
                     {/* Avatar image overlays on top */}
                     <img
-                      key={`avatar-${video._id}-${imageKeys[video.uploadedBy?._id || ''] || Date.now()}`}
+                      key={`avatar-${video._id}-${imageKeys[video.uploadedBy?._id || ""] || Date.now()}`}
                       src={avatarUrl}
                       alt={channelName}
                       className="absolute inset-0 w-full h-full object-cover z-10"
                       onError={(e) => {
-                        console.error('❌ Avatar failed to load:', avatarUrl);
+                        console.error("❌ Avatar failed to load:", avatarUrl);
                         const target = e.currentTarget as HTMLImageElement;
-                        target.style.display = 'none';
+                        target.style.display = "none";
                       }}
                       onLoad={() => {
-                        console.log('✅ Avatar loaded successfully:', video._id);
+                        console.log(
+                          "✅ Avatar loaded successfully:",
+                          video._id,
+                        );
                       }}
                     />
                   </div>
-                  
+
                   {/* Channel Name */}
                   <p className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors truncate">
                     {channelName}
                   </p>
                 </Link>
-                
+
                 {/* Views and Date */}
                 <div className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-400">
                   <span className="font-medium">
@@ -291,8 +351,10 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
                   <span>•</span>
                   <span>
                     {video?.createdAt
-                      ? formatDistanceToNow(new Date(video.createdAt), { addSuffix: true })
-                      : 'Recently'}
+                      ? formatDistanceToNow(new Date(video.createdAt), {
+                          addSuffix: true,
+                        })
+                      : "Recently"}
                   </span>
                 </div>
               </div>
