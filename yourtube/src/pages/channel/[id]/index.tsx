@@ -1528,7 +1528,7 @@ const ChannelPage = () => {
                                 className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
                               >
                                 {/* ✅ FIXED CONTAINER - Always visible in both themes */}
-                                <div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gray-100 dark:bg-gray-800/50">
+<div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gray-200 dark:bg-gray-500">
                                   {/* Animated Border */}
                                   <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 z-0"></div>
 
