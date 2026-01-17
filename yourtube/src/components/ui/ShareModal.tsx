@@ -1,4 +1,4 @@
-// components/ui/ShareModal.tsx - PREMIUM ENHANCED VERSION
+// components/ui/ShareModal.tsx - PREMIUM ENHANCED VERSION (FIXED)
 
 import React, { useState, useEffect, useRef } from "react";
 import { X, Copy, Check, Sparkles } from "lucide-react";
@@ -164,7 +164,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
     platform, 
     onClick, 
     gradient, 
-    hoverGradient,
     icon, 
     label,
     glowColor 
@@ -172,57 +171,31 @@ const ShareModal: React.FC<ShareModalProps> = ({
     platform: string;
     onClick: () => void;
     gradient: string;
-    hoverGradient: string;
     icon: React.ReactNode;
     label: string;
     glowColor: string;
   }) => (
     <button
       onClick={() => handleButtonClick(platform, onClick)}
-      className={`
-        group relative flex flex-col items-center gap-2.5 p-3 sm:p-4 
-        rounded-2xl transition-all duration-500 ease-out
-        hover:scale-110 active:scale-95
-        ${activeButton === platform ? 'scale-110' : ''}
-      `}
+      className={`group relative flex flex-col items-center gap-2.5 p-3 sm:p-4 rounded-2xl transition-all duration-500 ease-out hover:scale-110 active:scale-95 ${activeButton === platform ? 'scale-110' : ''}`}
     >
       {/* Glow effect on hover */}
       <div 
-        className={`
-          absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100
-          transition-opacity duration-500 blur-xl -z-10
-        `}
+        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10"
         style={{ background: glowColor }}
       />
       
       {/* Icon container with premium styling */}
       <div 
-        className={`
-          relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center
-          shadow-lg group-hover:shadow-2xl transition-all duration-500
-          before:absolute before:inset-0 before:rounded-2xl before:p-[1px]
-          before:bg-gradient-to-b before:from-white/30 before:to-transparent
-          overflow-hidden
-          ${activeButton === platform ? 'animate-pulse' : ''}
-        `}
+        className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-2xl transition-all duration-500 before:absolute before:inset-0 before:rounded-2xl before:p-[1px] before:bg-gradient-to-b before:from-white/30 before:to-transparent overflow-hidden ${activeButton === platform ? 'animate-pulse' : ''}`}
         style={{ background: gradient }}
       >
         {/* Shine effect */}
-        <div 
-          className="
-            absolute inset-0 opacity-0 group-hover:opacity-100
-            bg-gradient-to-r from-transparent via-white/25 to-transparent
-            -translate-x-full group-hover:translate-x-full
-            transition-transform duration-1000 ease-out
-          "
-        />
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
         
         {/* Inner glow */}
         <div 
-          className="
-            absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-50
-            transition-opacity duration-300
-          "
+          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-50 transition-opacity duration-300"
           style={{ 
             background: `radial-gradient(circle at center, ${glowColor}40 0%, transparent 70%)` 
           }}
@@ -237,21 +210,14 @@ const ShareModal: React.FC<ShareModalProps> = ({
         {activeButton === platform && (
           <>
             <div className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full animate-ping" />
-            <div className="absolute bottom-2 left-2 w-1.5 h-1.5 bg-white rounded-full animate-ping delay-100" />
-            <div className="absolute top-3 left-1 w-1 h-1 bg-white rounded-full animate-ping delay-200" />
+            <div className="absolute bottom-2 left-2 w-1.5 h-1.5 bg-white rounded-full animate-ping" style={{ animationDelay: '100ms' }} />
+            <div className="absolute top-3 left-1 w-1 h-1 bg-white rounded-full animate-ping" style={{ animationDelay: '200ms' }} />
           </>
         )}
       </div>
       
       {/* Label with premium typography */}
-      <span 
-        className="
-          text-xs sm:text-sm font-semibold tracking-wide
-          text-gray-600 dark:text-gray-400
-          group-hover:text-gray-900 dark:group-hover:text-white
-          transition-colors duration-300
-        "
-      >
+      <span className="text-xs sm:text-sm font-semibold tracking-wide text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300">
         {label}
       </span>
     </button>
@@ -261,55 +227,25 @@ const ShareModal: React.FC<ShareModalProps> = ({
     <>
       {/* Premium Backdrop with animated gradient */}
       <div
-        className={`
-          fixed inset-0 z-[9999]
-          bg-black/60 dark:bg-black/80
-          backdrop-blur-md
-          transition-all duration-300
-          ${isClosing ? 'opacity-0' : 'opacity-100'}
-        `}
+        className={`fixed inset-0 z-[9999] bg-black/60 dark:bg-black/80 backdrop-blur-md transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
         onClick={handleClose}
       >
         {/* Animated gradient orbs in background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div 
-            className="
-              absolute -top-40 -right-40 w-80 h-80 
-              bg-gradient-to-br from-purple-500/20 to-pink-500/20 
-              rounded-full blur-3xl animate-pulse
-            " 
-          />
-          <div 
-            className="
-              absolute -bottom-40 -left-40 w-80 h-80 
-              bg-gradient-to-br from-blue-500/20 to-cyan-500/20 
-              rounded-full blur-3xl animate-pulse delay-1000
-            " 
-          />
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1000ms' }} />
         </div>
       </div>
 
       {/* Premium Modal */}
       <div 
         ref={modalRef}
-        className={`
-          fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-          z-[9999] w-[95%] max-w-lg mx-auto
-          transition-all duration-500 ease-out
-          ${isClosing 
-            ? 'opacity-0 scale-95 translate-y-4' 
-            : 'opacity-100 scale-100 translate-y-0'
-          }
-        `}
+        className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] w-[95%] max-w-lg mx-auto transition-all duration-500 ease-out ${isClosing ? 'opacity-0 scale-95 translate-y-4' : 'opacity-100 scale-100 translate-y-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Outer glow effect */}
         <div 
-          className="
-            absolute -inset-1 rounded-3xl opacity-75
-            bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500
-            blur-lg animate-gradient-x
-          "
+          className="absolute -inset-1 rounded-3xl opacity-75 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 blur-lg"
           style={{
             backgroundSize: '200% 200%',
             animation: 'gradient-shift 3s ease infinite',
@@ -317,51 +253,19 @@ const ShareModal: React.FC<ShareModalProps> = ({
         />
         
         {/* Main modal container */}
-        <div 
-          className="
-            relative rounded-3xl overflow-hidden
-            bg-white dark:bg-gray-900
-            shadow-2xl
-            border border-gray-200/50 dark:border-gray-700/50
-          "
-        >
+        <div className="relative rounded-3xl overflow-hidden bg-white dark:bg-gray-900 shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
           {/* Premium glass header */}
-          <div 
-            className="
-              relative px-6 py-5
-              bg-gradient-to-r from-gray-50 to-gray-100
-              dark:from-gray-800 dark:to-gray-850
-              border-b border-gray-200/50 dark:border-gray-700/50
-            "
-          >
+          <div className="relative px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-850 border-b border-gray-200/50 dark:border-gray-700/50">
             {/* Decorative gradient line */}
-            <div 
-              className="
-                absolute top-0 left-0 right-0 h-1
-                bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500
-              "
-            />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500" />
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div 
-                  className="
-                    p-2 rounded-xl
-                    bg-gradient-to-br from-purple-500 to-pink-500
-                    shadow-lg shadow-purple-500/25
-                  "
-                >
+                <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 
-                    className="
-                      text-xl sm:text-2xl font-bold
-                      bg-gradient-to-r from-gray-900 to-gray-700
-                      dark:from-white dark:to-gray-300
-                      bg-clip-text text-transparent
-                    "
-                  >
+                  <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                     Share
                   </h2>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -373,24 +277,10 @@ const ShareModal: React.FC<ShareModalProps> = ({
               {/* Premium close button */}
               <button
                 onClick={handleClose}
-                className="
-                  group relative p-2.5 rounded-xl
-                  bg-gray-100 dark:bg-gray-800
-                  hover:bg-gray-200 dark:hover:bg-gray-700
-                  transition-all duration-300
-                  hover:scale-110 active:scale-95
-                  hover:shadow-lg
-                "
+                className="group relative p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-lg"
                 aria-label="Close"
               >
-                <X 
-                  className="
-                    w-5 h-5 
-                    text-gray-500 dark:text-gray-400
-                    group-hover:text-gray-700 dark:group-hover:text-white
-                    group-hover:rotate-90 transition-all duration-300
-                  " 
-                />
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white group-hover:rotate-90 transition-all duration-300" />
               </button>
             </div>
           </div>
@@ -403,7 +293,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 platform="whatsapp"
                 onClick={shareToWhatsApp}
                 gradient="linear-gradient(135deg, #25D366 0%, #128C7E 100%)"
-                hoverGradient="linear-gradient(135deg, #2EE874 0%, #17A689 100%)"
                 glowColor="#25D366"
                 label="WhatsApp"
                 icon={
@@ -417,7 +306,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 platform="facebook"
                 onClick={shareToFacebook}
                 gradient="linear-gradient(135deg, #1877F2 0%, #0C5DC7 100%)"
-                hoverGradient="linear-gradient(135deg, #2B8AF9 0%, #1268D8 100%)"
                 glowColor="#1877F2"
                 label="Facebook"
                 icon={
@@ -431,7 +319,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 platform="twitter"
                 onClick={shareToTwitter}
                 gradient="linear-gradient(135deg, #000000 0%, #14171A 100%)"
-                hoverGradient="linear-gradient(135deg, #1A1A1A 0%, #2C3136 100%)"
                 glowColor="#1DA1F2"
                 label="X"
                 icon={
@@ -445,7 +332,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 platform="telegram"
                 onClick={shareToTelegram}
                 gradient="linear-gradient(135deg, #0088cc 0%, #006699 100%)"
-                hoverGradient="linear-gradient(135deg, #00A0E9 0%, #0077B3 100%)"
                 glowColor="#0088cc"
                 label="Telegram"
                 icon={
@@ -459,7 +345,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 platform="linkedin"
                 onClick={shareToLinkedIn}
                 gradient="linear-gradient(135deg, #0077B5 0%, #005885 100%)"
-                hoverGradient="linear-gradient(135deg, #0088CC 0%, #006699 100%)"
                 glowColor="#0077B5"
                 label="LinkedIn"
                 icon={
@@ -473,7 +358,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 platform="reddit"
                 onClick={shareToReddit}
                 gradient="linear-gradient(135deg, #FF4500 0%, #CC3700 100%)"
-                hoverGradient="linear-gradient(135deg, #FF5722 0%, #E64A19 100%)"
                 glowColor="#FF4500"
                 label="Reddit"
                 icon={
@@ -488,7 +372,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
                   platform="more"
                   onClick={shareViaWebShare}
                   gradient="linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F59E0B 100%)"
-                  hoverGradient="linear-gradient(135deg, #9F7AEA 0%, #F472B6 50%, #FBBF24 100%)"
                   glowColor="#A855F7"
                   label="More"
                   icon={
@@ -502,15 +385,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
             {/* Premium Timestamp Toggle */}
             {!isShort && currentTime > 0 && (
-              <div 
-                className="
-                  mb-6 p-4 rounded-2xl
-                  bg-gradient-to-r from-gray-50 to-gray-100
-                  dark:from-gray-800 dark:to-gray-850
-                  border border-gray-200/50 dark:border-gray-700/50
-                  shadow-sm
-                "
-              >
+              <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-850 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="relative">
                     <input
@@ -520,38 +395,15 @@ const ShareModal: React.FC<ShareModalProps> = ({
                       onChange={(e) => setIncludeTimestamp(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div 
-                      className="
-                        w-12 h-7 rounded-full
-                        bg-gray-300 dark:bg-gray-600
-                        peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-pink-500
-                        transition-all duration-300
-                        shadow-inner
-                      "
-                    />
-                    <div 
-                      className="
-                        absolute top-0.5 left-0.5 w-6 h-6 rounded-full
-                        bg-white shadow-lg
-                        transform transition-transform duration-300
-                        peer-checked:translate-x-5
-                        flex items-center justify-center
-                      "
-                    >
+                    <div className="w-12 h-7 rounded-full bg-gray-300 dark:bg-gray-600 peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-pink-500 transition-all duration-300 shadow-inner" />
+                    <div className="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-lg transform transition-transform duration-300 peer-checked:translate-x-5 flex items-center justify-center">
                       {includeTimestamp && (
                         <Check className="w-3 h-3 text-purple-500" />
                       )}
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <span 
-                      className="
-                        text-sm font-semibold
-                        text-gray-700 dark:text-gray-200
-                        group-hover:text-gray-900 dark:group-hover:text-white
-                        transition-colors
-                      "
-                    >
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                       Start at {formatTime(currentTime)}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -563,67 +415,25 @@ const ShareModal: React.FC<ShareModalProps> = ({
             )}
 
             {/* Premium Copy Link Section */}
-            <div 
-              className="
-                relative p-1 rounded-2xl
-                bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-blue-500/20
-                dark:from-purple-500/10 dark:via-pink-500/10 dark:to-blue-500/10
-              "
-            >
-              <div 
-                className="
-                  flex items-center gap-3 p-3 sm:p-4 rounded-xl
-                  bg-white dark:bg-gray-900
-                "
-              >
+            <div className="relative p-1 rounded-2xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-blue-500/20 dark:from-purple-500/10 dark:via-pink-500/10 dark:to-blue-500/10">
+              <div className="flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-white dark:bg-gray-900">
                 {/* URL Input with premium styling */}
-                <div 
-                  className="
-                    flex-1 px-4 py-3 rounded-xl
-                    bg-gray-50 dark:bg-gray-800
-                    border border-gray-200 dark:border-gray-700
-                    overflow-hidden
-                  "
-                >
+                <div className="flex-1 px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <input
                     type="text"
                     value={shareUrl}
                     readOnly
-                    className="
-                      w-full bg-transparent outline-none
-                      text-sm sm:text-base font-medium
-                      text-gray-700 dark:text-gray-300
-                      truncate
-                    "
+                    className="w-full bg-transparent outline-none text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 truncate"
                   />
                 </div>
                 
                 {/* Premium Copy Button */}
                 <button
                   onClick={copyToClipboard}
-                  className={`
-                    relative group/btn flex items-center gap-2 
-                    px-5 sm:px-6 py-3 rounded-xl
-                    font-bold text-sm sm:text-base text-white
-                    transition-all duration-300
-                    hover:scale-105 active:scale-95
-                    shadow-lg hover:shadow-xl
-                    overflow-hidden
-                    ${copied
-                      ? 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-emerald-500/25'
-                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-purple-500/25'
-                    }
-                  `}
+                  className={`relative group/btn flex items-center gap-2 px-5 sm:px-6 py-3 rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl overflow-hidden ${copied ? 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-emerald-500/25' : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-purple-500/25'}`}
                 >
                   {/* Shine effect on button */}
-                  <div 
-                    className="
-                      absolute inset-0 opacity-0 group-hover/btn:opacity-100
-                      bg-gradient-to-r from-transparent via-white/20 to-transparent
-                      -translate-x-full group-hover/btn:translate-x-full
-                      transition-transform duration-700
-                    "
-                  />
+                  <div className="absolute inset-0 opacity-0 group-hover/btn:opacity-100 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
                   
                   {copied ? (
                     <>
@@ -642,13 +452,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
             {/* Premium footer accent */}
             <div className="mt-6 flex justify-center">
-              <div 
-                className="
-                  flex items-center gap-2 px-4 py-2 rounded-full
-                  bg-gray-100 dark:bg-gray-800
-                  text-xs text-gray-500 dark:text-gray-400
-                "
-              >
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                 <span>Secure sharing</span>
               </div>
@@ -662,11 +466,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
         @keyframes gradient-shift {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
-        }
-        
-        .animate-gradient-x {
-          animation: gradient-shift 3s ease infinite;
-          background-size: 200% 200%;
         }
       `}</style>
     </>
