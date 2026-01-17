@@ -1356,60 +1356,78 @@ router.get("/health", (req, res) => {
     cloudinaryEnabled: true,
   });
 });
-// ✅ CHECK LOCATION ENDPOINT - FIXED VERSION
+// ✅ CHECK LOCATION ENDPOINT - MATCHES FRONTEND CALL
 router.get("/check-location", async (req, res) => {
   try {
     console.log("\n🌍 ===== LOCATION CHECK REQUEST =====");
-
-    // ✅ CRITICAL: Extract IP properly for Railway/Vercel
-    const forwardedFor = req.headers["x-forwarded-for"];
-    const ip = forwardedFor
-      ? forwardedFor.split(",")[0].trim()
-      : req.ip ||
-        req.connection?.remoteAddress ||
-        req.socket?.remoteAddress ||
-        "127.0.0.1";
-
-    // Clean IPv6 prefix
-    const cleanIp = ip.replace(/^::ffff:/, "");
-
-    console.log("   Original IP:", ip);
-    console.log("   Cleaned IP:", cleanIp);
     console.log("   Headers:", {
       forwarded: req.headers["x-forwarded-for"],
       realIp: req.headers["x-real-ip"],
+      cfIp: req.headers["cf-connecting-ip"],
     });
+    
+    // ✅ CRITICAL: Try multiple IP sources
+    const forwardedFor = req.headers["x-forwarded-for"];
+    const realIp = req.headers["x-real-ip"];
+    const cfIp = req.headers["cf-connecting-ip"];
+    
+    let ip = "127.0.0.1";
+    
+    if (cfIp) {
+      ip = cfIp;
+    } else if (realIp) {
+      ip = realIp;
+    } else if (forwardedFor) {
+      ip = forwardedFor.split(",")[0].trim();
+    } else {
+      ip = req.ip || 
+           req.connection?.remoteAddress || 
+           req.socket?.remoteAddress ||
+           "127.0.0.1";
+    }
+    
+    // Clean IPv6 prefix
+    const cleanIp = ip.replace(/^::ffff:/, "");
+    
+    console.log("   Raw IP:", ip);
+    console.log("   Clean IP:", cleanIp);
 
-    // Call the theme determination function
+    // Use the existing determineThemeAndOtpMethod function
     const result = determineThemeAndOtpMethod(cleanIp);
-
+    
+    const currentHour = moment().tz("Asia/Kolkata").hour();
+    
     console.log("   Result:", {
       state: result.state,
+      city: result.city,
       theme: result.theme,
-      otpMethod: result.otpMethod,
+      hour: currentHour,
+      isMorningTime: currentHour >= 10 && currentHour < 12,
     });
     console.log("=====================================\n");
 
-    res.json({
+    // ✅ ALWAYS return 200 (never throw error to frontend)
+    res.status(200).json({
       success: true,
       theme: result.theme,
       otpMethod: result.otpMethod,
       location: {
         state: result.state,
-        city: result.city,
-        country: result.country,
-        timezone: result.timezone,
+        city: result.city || "Unknown",
+        country: result.country || "IN",
+        timezone: result.timezone || "Asia/Kolkata",
       },
-      debug: {
+      debug: process.env.NODE_ENV === "development" ? {
         ip: cleanIp,
-        method: result.debug?.method || "geoip",
-      },
+        hour: currentHour,
+        method: result.debug?.method
+      } : undefined
     });
   } catch (error) {
-    console.error("❌ Location check failed:", error);
+    console.error("❌ Location check error:", error);
     console.error("   Stack:", error.stack);
-
-    // ✅ Always return 200 with fallback data
+    
+    // ✅ CRITICAL: Return 200 with fallback (not 500)
     res.status(200).json({
       success: true,
       theme: "dark",
@@ -1420,7 +1438,7 @@ router.get("/check-location", async (req, res) => {
         country: "IN",
         timezone: "Asia/Kolkata",
       },
-      error: error.message,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined
     });
   }
 });
