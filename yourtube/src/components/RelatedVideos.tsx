@@ -144,7 +144,6 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
     console.log("⚠️ No valid video URL found, using fallback");
     return "/video/vdo.mp4";
   };
-
 const getEnhancedThumbnailUrl = (video: Video): string | null => {
   const backend = getBackendURL();
   
@@ -170,13 +169,32 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
     if (field) {
       const fieldStr = String(field).trim();
       
-      // Complete Supabase URL
+      // ✅ FIX: Check if Supabase URL has actual filename
       if (fieldStr.includes("supabase.co/storage/v1/object")) {
-        console.log("✅ Using complete Supabase URL:", fieldStr.substring(0, 80));
-        return fieldStr;
+        // Check if URL ends with a file extension
+        if (fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+          console.log("✅ Using complete Supabase URL:", fieldStr.substring(0, 80));
+          return fieldStr;
+        } else {
+          console.log("⚠️ Incomplete Supabase URL (missing filename):", fieldStr);
+          // Try to construct complete URL from video filename
+          if (video.videofilename) {
+            const thumbFilename = String(video.videofilename)
+              .split("/")
+              .pop()
+              ?.replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg");
+            
+            if (thumbFilename) {
+              const completeUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${thumbFilename}`;
+              console.log("✅ Reconstructed complete Supabase URL:", completeUrl.substring(0, 80));
+              return completeUrl;
+            }
+          }
+          continue; // Skip this incomplete URL and try next field
+        }
       }
 
-      // Full HTTP/HTTPS URL
+      // Full HTTP/HTTPS URL (non-Supabase)
       if (fieldStr.startsWith("http://") || fieldStr.startsWith("https://")) {
         console.log("✅ Using full URL:", fieldStr.substring(0, 80));
         return fieldStr;
@@ -197,7 +215,6 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
 
       // Just a filename with extension
       if (fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
-        // Try Supabase first
         const supabaseUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${fieldStr}`;
         console.log("✅ Constructed Supabase URL from filename:", supabaseUrl.substring(0, 80));
         return supabaseUrl;
@@ -237,8 +254,7 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
 
   console.log("⚠️ No valid thumbnail URL found for video:", video._id);
   return null;
-};
-  // ========== Format Views Function ==========
+};  // ========== Format Views Function ==========
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";
     if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M views`;
