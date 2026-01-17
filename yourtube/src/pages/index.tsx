@@ -1,12 +1,20 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-// src/pages/index.tsx - PREMIUM REDESIGN
+// src/pages/index.tsx - PREMIUM LUXURIOUS DESIGN VERSION
 
 import { NextPage } from "next";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Play, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
+import {
+  Play,
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  Eye,
+} from "lucide-react";
 import axiosInstance from "@/lib/axiosinstance";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -102,6 +110,32 @@ const hapticFeedback = {
   },
 };
 
+// Premium Loading Spinner Component
+const PremiumSpinner = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
+  const sizeClasses = {
+    sm: "w-5 h-5",
+    md: "w-8 h-8",
+    lg: "w-12 h-12",
+  };
+
+  return (
+    <div className={`premium-spinner ${sizeClasses[size]}`}>
+      <div className="spinner-ring"></div>
+      <div className="spinner-ring"></div>
+      <div className="spinner-ring"></div>
+    </div>
+  );
+};
+
+// Premium Skeleton Component
+const PremiumSkeleton = ({
+  className = "",
+  style = {},
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) => <div className={`premium-skeleton ${className}`} style={style} />;
+
 const Home: NextPage = () => {
   const router = useRouter();
   const [videos, setVideos] = useState<Video[]>([]);
@@ -122,23 +156,44 @@ const Home: NextPage = () => {
 
   const [backendReady, setBackendReady] = useState(false);
   const [backendCheckAttempts, setBackendCheckAttempts] = useState(0);
-  const [mounted, setMounted] = useState(false);
 
-  // Scroll position for shorts navigation
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  // New state for premium effects
+  const [isPageLoaded, setIsPageLoaded] = useState(false);
+  const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
+  // Track scroll for parallax effects
   useEffect(() => {
-    setMounted(true);
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? scrollTop / docHeight : 0;
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Page load animation
+  useEffect(() => {
+    const timer = setTimeout(() => setIsPageLoaded(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     const applyTheme = () => {
       const isDark = document.documentElement.classList.contains("dark");
-      const bgColor = isDark ? "#030303" : "#fafafa";
+      const bgColor = isDark ? "#0a0a0a" : "#fafafa";
 
       document.body.style.backgroundColor = bgColor;
       document.documentElement.style.backgroundColor = bgColor;
+
+      const container = document.querySelector(".w-full.min-h-screen");
+      if (container instanceof HTMLElement) {
+        container.style.backgroundColor = bgColor;
+      }
     };
 
     applyTheme();
@@ -158,6 +213,8 @@ const Home: NextPage = () => {
     const pingBackend = async (attempt = 1): Promise<void> => {
       if (!isMounted) return;
 
+      console.log(`🔍 Checking backend availability (attempt ${attempt})...`);
+
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -171,6 +228,7 @@ const Home: NextPage = () => {
         clearTimeout(timeoutId);
 
         if (response.ok) {
+          console.log("✅ Backend is ready!");
           if (isMounted) {
             setBackendReady(true);
             setConnectionError(null);
@@ -178,17 +236,17 @@ const Home: NextPage = () => {
           return;
         }
       } catch (error) {
-        console.warn(`Backend check ${attempt} failed:`, error);
+        console.warn(`⚠️ Backend check ${attempt} failed:`, error);
       }
 
       if (attempt < 5 && isMounted) {
         setBackendCheckAttempts(attempt);
-        setConnectionError(`Connecting to server... (${attempt}/5)`);
+        setConnectionError(`Server is warming up... (attempt ${attempt}/5)`);
 
         const delay = Math.min(5000 * Math.pow(1.5, attempt - 1), 15000);
         setTimeout(() => pingBackend(attempt + 1), delay);
       } else if (isMounted) {
-        setConnectionError("Unable to connect. Please refresh.");
+        setConnectionError("Server timeout. Please refresh the page.");
       }
     };
 
@@ -209,12 +267,14 @@ const Home: NextPage = () => {
   const fetchVideos = async () => {
     try {
       setLoadingVideos(true);
+      console.log("📹 Fetching videos...");
 
       const res = await axiosInstance.get("/video/getall", {
         params: { _t: Date.now() },
       });
       if (res.data.success && Array.isArray(res.data.videos)) {
         setVideos(res.data.videos);
+        console.log("✅ Loaded", res.data.videos.length, "videos");
 
         const newKeys: Record<string, number> = {};
         res.data.videos.forEach((video: Video) => {
@@ -223,9 +283,11 @@ const Home: NextPage = () => {
           }
         });
         setImageKeys(newKeys);
+      } else {
+        console.warn("⚠️ Unexpected video response format:", res.data);
       }
     } catch (error: any) {
-      console.error("Error fetching videos:", error);
+      console.error("❌ Error fetching videos:", error);
     } finally {
       setLoadingVideos(false);
     }
@@ -234,6 +296,7 @@ const Home: NextPage = () => {
   const fetchShorts = async () => {
     try {
       setLoadingShorts(true);
+      console.log("🎬 Fetching shorts...");
 
       const response = await axiosInstance.get("/api/shorts", {
         params: { limit: 20 },
@@ -241,11 +304,13 @@ const Home: NextPage = () => {
 
       if (response.data.success && Array.isArray(response.data.data)) {
         setShorts(response.data.data);
+        console.log("✅ Loaded", response.data.data.length, "shorts");
       } else {
         setShorts([]);
+        console.warn("⚠️ No shorts data");
       }
     } catch (error: any) {
-      console.error("Error fetching shorts:", error);
+      console.error("❌ Error fetching shorts:", error);
       setShorts([]);
     } finally {
       setLoadingShorts(false);
@@ -295,25 +360,6 @@ const Home: NextPage = () => {
       };
     }
   }, [pullDistance]);
-
-  // Update scroll indicators
-  const updateScrollIndicators = () => {
-    if (shortsScrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = shortsScrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
-  useEffect(() => {
-    const scrollContainer = shortsScrollRef.current;
-    if (scrollContainer) {
-      scrollContainer.addEventListener("scroll", updateScrollIndicators);
-      updateScrollIndicators();
-      return () =>
-        scrollContainer.removeEventListener("scroll", updateScrollIndicators);
-    }
-  }, [shorts]);
 
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";
@@ -419,7 +465,7 @@ const Home: NextPage = () => {
           return thumbnail;
         }
       } catch (error) {
-        console.error("Thumbnail generation error:", error);
+        console.error("❌ Thumbnail generation error:", error);
       }
     }
 
@@ -431,12 +477,13 @@ const Home: NextPage = () => {
   );
 
   const handleThumbnailError = (videoId: string, url: string) => {
+    console.error(`❌ Thumbnail failed for ${videoId}:`, url);
     setThumbnailErrors((prev) => new Set(prev).add(videoId));
   };
 
   const scrollShorts = (direction: "left" | "right") => {
     if (shortsScrollRef.current) {
-      const scrollAmount = 320;
+      const scrollAmount = 300;
       shortsScrollRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -463,7 +510,7 @@ const Home: NextPage = () => {
     const threshold = 50;
 
     if (Math.abs(diff) > threshold && shortsScrollRef.current) {
-      const scrollAmount = 280;
+      const scrollAmount = 250;
       shortsScrollRef.current.scrollBy({
         left: diff > 0 ? scrollAmount : -scrollAmount,
         behavior: "smooth",
@@ -493,129 +540,202 @@ const Home: NextPage = () => {
     });
   };
 
-  if (!mounted) return null;
-
   return (
     <ProtectedRoute requireAuth={true}>
       <>
         <Head>
-          <title>YourTube - Home</title>
-          <meta name="theme-color" content="#030303" />
+          <title>YourTube - Premium Video Experience</title>
+          <meta
+            name="description"
+            content="Experience premium video streaming with YourTube"
+          />
         </Head>
 
-        {/* Connection Status Banner */}
+        {/* Premium Connection Error Banner */}
         {connectionError && (
-          <div className="premium-banner fixed top-0 left-0 right-0 z-50">
-            <div className="flex items-center justify-center gap-3 py-3 px-4">
-              <div className="premium-spinner" />
-              <span className="text-sm font-medium text-white/90">
-                {connectionError}
-              </span>
+          <div className="premium-banner fixed top-0 left-0 right-0 z-50 px-4 py-4 text-center">
+            <div className="premium-banner-content max-w-lg mx-auto">
+              <div className="flex items-center justify-center gap-3">
+                <PremiumSpinner size="sm" />
+                <span className="font-medium text-white">
+                  {connectionError}
+                </span>
+              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className="premium-retry-btn mt-3"
+              >
+                <span>Retry Connection</span>
+              </button>
             </div>
           </div>
         )}
 
         {/* Premium Loading Screen */}
         {!backendReady && !connectionError && (
-          <div className="premium-loading-screen">
-            <div className="premium-loader">
-              <div className="loader-ring"></div>
-              <div className="loader-ring"></div>
-              <div className="loader-ring"></div>
+          <div className="premium-loading-screen fixed inset-0 z-40 flex flex-col items-center justify-center">
+            <div className="premium-loading-content text-center px-6">
+              <div className="premium-logo-container mb-8">
+                <div className="premium-logo">
+                  <svg viewBox="0 0 90 20" className="w-32 h-8">
+                    <text x="0" y="16" className="premium-logo-text">
+                      YourTube
+                    </text>
+                  </svg>
+                </div>
+                <div className="premium-logo-glow"></div>
+              </div>
+
+              <PremiumSpinner size="lg" />
+
+              <h2 className="premium-loading-title mt-8 text-2xl font-bold">
+                {backendCheckAttempts > 0
+                  ? `Initializing... (${backendCheckAttempts}/5)`
+                  : "Connecting to Server"}
+              </h2>
+              <p className="premium-loading-subtitle mt-3 text-sm max-w-sm mx-auto">
+                Preparing your premium streaming experience
+              </p>
+
+              <div className="premium-progress-bar mt-6">
+                <div
+                  className="premium-progress-fill"
+                  style={{
+                    width: `${Math.min(backendCheckAttempts * 20, 100)}%`,
+                  }}
+                />
+              </div>
             </div>
-            <h2 className="text-xl font-semibold mt-8 mb-2">YourTube</h2>
-            <p className="text-sm opacity-60">
-              {backendCheckAttempts > 0
-                ? `Initializing... (${backendCheckAttempts}/5)`
-                : "Loading your experience..."}
-            </p>
           </div>
         )}
 
-        {/* Main Container */}
-        <div ref={containerRef} className="premium-container">
+        {/* Main Content Container */}
+        <div
+          ref={containerRef}
+          className={`premium-container w-full min-h-screen pb-16 lg:pb-0 ${isPageLoaded ? "page-loaded" : ""}`}
+        >
+          {/* Ambient Background Effects */}
+          <div className="premium-ambient-bg" aria-hidden="true">
+            <div className="ambient-orb ambient-orb-1"></div>
+            <div className="ambient-orb ambient-orb-2"></div>
+            <div className="ambient-orb ambient-orb-3"></div>
+          </div>
+
+          {process.env.NODE_ENV === "development" && (
+            <div className="lg:hidden fixed top-2 right-2 z-50 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-3 py-1.5 rounded-full shadow-lg font-medium">
+              Shorts: {shorts.length} | Loading: {loadingShorts ? "Y" : "N"}
+            </div>
+          )}
+
           {/* Pull to Refresh Indicator */}
           {pullDistance > 0 && (
             <div
-              className="pull-refresh-indicator"
+              className="premium-pull-indicator fixed top-0 left-0 right-0 flex justify-center items-center z-50"
               style={{ height: `${pullDistance}px` }}
             >
-              <div className={`refresh-icon ${refreshing ? "spinning" : ""}`}>
-                <svg
-                  className="w-5 h-5"
-                  style={{ transform: `rotate(${pullDistance * 3.6}deg)` }}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
+              <div className="premium-refresh-icon">
+                {refreshing ? (
+                  <PremiumSpinner size="sm" />
+                ) : (
+                  <svg
+                    className="w-6 h-6 transition-transform duration-300"
+                    style={{ transform: `rotate(${pullDistance * 3.6}deg)` }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                )}
               </div>
             </div>
           )}
 
-          {/* ========== SHORTS SECTION ========== */}
+          {/* ========== PREMIUM SHORTS SECTION ========== */}
           {shorts.length > 0 && (
-            <section className="shorts-section">
-              {/* Section Header */}
-              <div className="section-header">
-                <div className="header-left">
-                  <div className="shorts-icon">
+            <section className="premium-shorts-section relative py-6 lg:py-8">
+              {/* Section Background Accent */}
+              <div
+                className="absolute inset-0 premium-section-bg"
+                aria-hidden="true"
+              ></div>
+
+              {/* Header */}
+              <div className="relative flex items-center justify-between px-4 mb-5 lg:px-6">
+                <div className="flex items-center gap-3">
+                  <div className="premium-shorts-icon">
                     <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
                       <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.06-2.04 1.99-3.49-.07-1.42-.94-2.68-2.23-3.25z" />
                     </svg>
                   </div>
-                  <h2 className="section-title">Shorts</h2>
+                  <div>
+                    <h2 className="premium-section-title text-xl font-bold lg:text-2xl">
+                      Shorts
+                    </h2>
+                    <p className="premium-section-subtitle text-xs mt-0.5 hidden sm:block">
+                      Quick entertainment, endless fun
+                    </p>
+                  </div>
                 </div>
-                <Link href="/shorts" className="view-all-link">
-                  View all
-                  <ChevronRight size={16} />
+
+                {/* See All Link */}
+                <Link
+                  href="/shorts"
+                  className="premium-see-all group flex items-center gap-1.5 text-sm font-medium"
+                >
+                  <span>See all</span>
+                  <ChevronRight
+                    size={16}
+                    className="transition-transform group-hover:translate-x-0.5"
+                  />
                 </Link>
               </div>
 
               {loadingShorts ? (
-                <div className="shorts-skeleton-container">
+                <div className="overflow-x-hidden px-4 lg:px-6 flex gap-4">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="short-skeleton">
-                      <div className="skeleton-thumbnail" />
-                      <div className="skeleton-title" />
-                      <div className="skeleton-channel" />
+                    <div
+                      key={i}
+                      className="flex-shrink-0"
+                      style={{ minWidth: "180px", width: "180px" }}
+                    >
+                      <PremiumSkeleton
+                        className="w-full rounded-2xl mb-3"
+                        style={{ paddingBottom: "177.5%" }}
+                      />
+                      <PremiumSkeleton className="h-4 rounded-lg mb-2" />
+                      <PremiumSkeleton className="h-3 rounded-lg w-3/4" />
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="shorts-wrapper">
-                  {/* Left Navigation */}
+                <div className="relative group/container">
+                  {/* Navigation Buttons */}
                   <button
                     onClick={() => scrollShorts("left")}
-                    className={`scroll-nav-btn left ${
-                      canScrollLeft ? "visible" : ""
-                    }`}
+                    className="premium-scroll-btn premium-scroll-btn-left hidden lg:flex"
                     aria-label="Scroll left"
                   >
                     <ChevronLeft size={20} />
                   </button>
 
-                  {/* Right Navigation */}
                   <button
                     onClick={() => scrollShorts("right")}
-                    className={`scroll-nav-btn right ${
-                      canScrollRight ? "visible" : ""
-                    }`}
+                    className="premium-scroll-btn premium-scroll-btn-right hidden lg:flex"
                     aria-label="Scroll right"
                   >
                     <ChevronRight size={20} />
                   </button>
 
-                  {/* Shorts Scroll Container */}
+                  {/* Shorts Container */}
                   <div
                     ref={shortsScrollRef}
-                    className="shorts-scroll-container"
+                    className="premium-shorts-scroll overflow-x-scroll scrollbar-hide"
                     onTouchStart={handleShortsScrollTouchStart}
                     onTouchMove={handleShortsScrollTouchMove}
                     onTouchEnd={handleShortsScrollTouchEnd}
@@ -625,24 +745,26 @@ const Home: NextPage = () => {
                       const shortChannelName = getShortChannelName(short);
 
                       return (
-                        <article
+                        <div
                           key={short._id}
                           onClick={(e) => {
                             if (
-                              !(e.target as HTMLElement).closest(
-                                ".channel-link",
-                              )
+                              !(e.target as HTMLElement).closest(".no-click")
                             ) {
                               handleShortClick(e, short._id, index);
                             }
                           }}
-                          className="short-card"
+                          className="premium-short-card group/short"
+                          style={{
+                            animationDelay: `${index * 50}ms`,
+                          }}
                         >
-                          {/* Thumbnail */}
-                          <div className="short-thumbnail">
+                          {/* Thumbnail Card */}
+                          <div className="premium-short-thumbnail">
                             <img
                               src={short.thumbnailUrl}
                               alt={short.title}
+                              className="absolute inset-0 w-full h-full object-cover"
                               loading="lazy"
                               onError={(e) => {
                                 const target =
@@ -659,7 +781,8 @@ const Home: NextPage = () => {
                                     const video =
                                       document.createElement("video");
                                     video.src = short.thumbnailUrl;
-                                    video.className = "thumbnail-video";
+                                    video.className =
+                                      "absolute inset-0 w-full h-full object-cover";
                                     video.muted = true;
                                     video.preload = "metadata";
                                     video.playsInline = true;
@@ -671,98 +794,119 @@ const Home: NextPage = () => {
                               }}
                             />
 
-                            {/* Hover Overlay */}
-                            <div className="thumbnail-overlay">
-                              <div className="play-button">
+                            {/* Gradient Overlay */}
+                            <div className="premium-short-overlay" />
+
+                            {/* Play Icon */}
+                            <div className="premium-play-overlay">
+                              <div className="premium-play-button">
                                 <Play size={24} fill="currentColor" />
                               </div>
                             </div>
 
-                            {/* Gradient */}
-                            <div className="thumbnail-gradient" />
-
                             {/* Views Badge */}
-                            <div className="views-badge">
-                              <svg
-                                className="w-3 h-3"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                              >
-                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                              </svg>
+                            <div className="premium-views-badge">
+                              <Eye size={12} />
                               <span>{formatViewsShort(short.views)}</span>
                             </div>
+
+                            {/* Shine Effect */}
+                            <div className="premium-shine-effect" />
                           </div>
 
-                          {/* Content */}
-                          <div className="short-content">
-                            <h3 className="short-title" title={short.title}>
-                              {short.title}
-                            </h3>
-                            <div
-                              className="channel-link"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                hapticFeedback.selection();
-                                router.push(`/channel/${short.userId?._id}`);
-                              }}
+                          {/* Short Info */}
+                          <div className="premium-short-info">
+                            <p
+                              className="premium-short-title"
+                              title={short.title}
                             >
-                              <img
-                                src={getImageUrl(
-                                  short.userId?.image || short.userId?.avatar,
-                                  true,
-                                )}
-                                alt={shortChannelName}
-                                className="channel-avatar"
-                                onError={(e) => {
-                                  e.currentTarget.src =
-                                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+                              {short.title}
+                            </p>
+
+                            <div className="premium-short-channel no-click">
+                              <div
+                                className="premium-channel-avatar"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  hapticFeedback.selection();
+                                  router.push(`/channel/${short.userId?._id}`);
                                 }}
-                              />
-                              <span className="channel-name">
+                              >
+                                <img
+                                  src={getImageUrl(
+                                    short.userId?.image || short.userId?.avatar,
+                                    true,
+                                  )}
+                                  alt={shortChannelName}
+                                  onError={(e) => {
+                                    e.currentTarget.src =
+                                      'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E';
+                                  }}
+                                />
+                              </div>
+                              <span
+                                className="premium-channel-name"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  hapticFeedback.selection();
+                                  router.push(`/channel/${short.userId?._id}`);
+                                }}
+                                title={shortChannelName}
+                              >
                                 {shortChannelName}
                               </span>
                             </div>
                           </div>
-                        </article>
+                        </div>
                       );
                     })}
                   </div>
                 </div>
               )}
+
+              {/* Section Divider */}
+              <div className="premium-section-divider mx-4 lg:mx-6 mt-6" />
             </section>
           )}
 
-          {/* ========== VIDEOS SECTION ========== */}
-          <section className="videos-section">
-            <div className="section-header">
-              <div className="header-left">
-                <div className="videos-icon">
-                  <Sparkles size={18} />
+          {/* ========== PREMIUM VIDEOS SECTION ========== */}
+          <section className="premium-videos-section px-4 py-6 pb-24 lg:px-6 lg:pb-10">
+            {/* Section Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="premium-videos-icon">
+                  <TrendingUp size={20} />
                 </div>
-                <h2 className="section-title">Recommended</h2>
+                <div>
+                  <h2 className="premium-section-title text-xl font-bold lg:text-2xl">
+                    Recommended
+                  </h2>
+                  <p className="premium-section-subtitle text-xs mt-0.5 hidden sm:block">
+                    Handpicked content just for you
+                  </p>
+                </div>
               </div>
             </div>
 
             {loadingVideos ? (
-              <div className="videos-grid">
+              <div className="premium-video-grid">
                 {[...Array(8)].map((_, i) => (
-                  <div key={i} className="video-skeleton">
-                    <div className="skeleton-video-thumbnail" />
-                    <div className="skeleton-video-info">
-                      <div className="skeleton-avatar" />
-                      <div className="skeleton-text-group">
-                        <div className="skeleton-video-title" />
-                        <div className="skeleton-video-channel" />
-                        <div className="skeleton-video-meta" />
+                  <div key={i} className="premium-video-skeleton">
+                    <PremiumSkeleton className="w-full aspect-video rounded-xl mb-3" />
+                    <div className="flex gap-3">
+                      <PremiumSkeleton className="w-10 h-10 rounded-full flex-shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <PremiumSkeleton className="h-4 rounded-lg" />
+                        <PremiumSkeleton className="h-3 rounded-lg w-3/4" />
+                        <PremiumSkeleton className="h-3 rounded-lg w-1/2" />
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : videos.length > 0 ? (
-              <div className="videos-grid">
-                {videos.slice(0, 12).map((video) => {
+              <div className="premium-video-grid">
+                {videos.slice(0, 12).map((video, index) => {
                   const channelName =
                     video.uploadedBy?.channelname ||
                     video.uploadedBy?.name ||
@@ -771,17 +915,21 @@ const Home: NextPage = () => {
                   const channelInitial = channelName[0]?.toUpperCase() || "U";
 
                   return (
-                    <article key={video._id} className="video-card">
-                      {/* Thumbnail */}
-                      <Link
-                        href={`/watch/${video._id}`}
-                        className="video-thumbnail-link"
-                      >
-                        <div className="video-thumbnail">
+                    <div
+                      key={video._id}
+                      className="premium-video-card group"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                      onMouseEnter={() => setHoveredVideoId(video._id)}
+                      onMouseLeave={() => setHoveredVideoId(null)}
+                    >
+                      {/* Video Thumbnail */}
+                      <Link href={`/watch/${video._id}`} className="block mb-3">
+                        <div className="premium-video-thumbnail">
                           {getThumbnailUrl(video).includes("supabase.co") ? (
                             <img
                               src={getThumbnailUrl(video)}
                               alt={video?.videotitle || "Video thumbnail"}
+                              className="absolute inset-0 w-full h-full object-cover"
                               loading="lazy"
                               onError={(e) => {
                                 const target =
@@ -792,7 +940,8 @@ const Home: NextPage = () => {
                                   const videoElement =
                                     document.createElement("video");
                                   videoElement.src = getThumbnailUrl(video);
-                                  videoElement.className = "thumbnail-video";
+                                  videoElement.className =
+                                    "w-full h-full object-cover";
                                   videoElement.preload = "metadata";
                                   videoElement.muted = true;
                                   videoElement.playsInline = true;
@@ -803,6 +952,7 @@ const Home: NextPage = () => {
                           ) : (
                             <video
                               src={getVideoUrl(video)}
+                              className="absolute inset-0 w-full h-full object-cover"
                               preload="metadata"
                               poster={getThumbnailUrl(video)}
                               muted
@@ -810,26 +960,30 @@ const Home: NextPage = () => {
                             />
                           )}
 
+                          {/* Hover Overlay */}
+                          <div className="premium-video-hover-overlay">
+                            <div className="premium-video-play-btn">
+                              <Play size={32} fill="currentColor" />
+                            </div>
+                          </div>
+
                           {/* Duration Badge */}
                           {video?.duration && (
-                            <div className="duration-badge">
-                              {video.duration}
+                            <div className="premium-duration-badge">
+                              <Clock size={10} />
+                              <span>{video.duration}</span>
                             </div>
                           )}
 
-                          {/* Hover Overlay */}
-                          <div className="video-overlay">
-                            <div className="play-icon">
-                              <Play size={40} fill="currentColor" />
-                            </div>
-                          </div>
+                          {/* Shine Effect */}
+                          <div className="premium-video-shine" />
                         </div>
                       </Link>
 
                       {/* Video Info */}
-                      <div className="video-info">
+                      <div className="premium-video-info flex gap-3">
+                        {/* Channel Avatar */}
                         <div
-                          className="video-avatar"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -837,36 +991,37 @@ const Home: NextPage = () => {
                               `/channel/${video.uploadedBy?._id || "unknown"}`,
                             );
                           }}
+                          className="premium-video-avatar flex-shrink-0 cursor-pointer"
                         >
-                          <div className="avatar-fallback">
-                            {channelInitial}
+                          <div className="premium-avatar-ring">
+                            <div className="premium-avatar-gradient">
+                              <span>{channelInitial}</span>
+                            </div>
+                            <img
+                              key={`video-avatar-${video._id}-${imageKeys[video.uploadedBy?._id || ""] || Date.now()}`}
+                              src={getImageUrl(video.uploadedBy?.image, true)}
+                              alt={channelName}
+                              crossOrigin="anonymous"
+                              loading="eager"
+                              onError={(e) => {
+                                const target =
+                                  e.currentTarget as HTMLImageElement;
+                                target.style.opacity = "0";
+                              }}
+                              onLoad={(e) => {
+                                const target =
+                                  e.currentTarget as HTMLImageElement;
+                                target.style.opacity = "1";
+                              }}
+                            />
                           </div>
-                          <img
-                            key={`video-avatar-${video._id}-${
-                              imageKeys[video.uploadedBy?._id || ""] ||
-                              Date.now()
-                            }`}
-                            src={getImageUrl(video.uploadedBy?.image, true)}
-                            alt={channelName}
-                            crossOrigin="anonymous"
-                            loading="eager"
-                            onError={(e) => {
-                              const target =
-                                e.currentTarget as HTMLImageElement;
-                              target.style.opacity = "0";
-                            }}
-                            onLoad={(e) => {
-                              const target =
-                                e.currentTarget as HTMLImageElement;
-                              target.style.opacity = "1";
-                            }}
-                          />
                         </div>
 
-                        <div className="video-text">
+                        {/* Text Content */}
+                        <div className="premium-video-text flex-1 min-w-0">
                           <Link href={`/watch/${video._id}`}>
                             <h3
-                              className="video-title"
+                              className="premium-video-title"
                               title={video?.videotitle || "Untitled Video"}
                             >
                               {video?.videotitle || "Untitled Video"}
@@ -874,35 +1029,44 @@ const Home: NextPage = () => {
                           </Link>
 
                           <p
-                            className="video-channel"
                             onClick={(e) => {
                               e.preventDefault();
                               router.push(
                                 `/channel/${video.uploadedBy?._id || "unknown"}`,
                               );
                             }}
+                            className="premium-video-channel"
                             title={channelName}
                           >
                             {channelName}
                           </p>
 
-                          <div className="video-meta">
-                            <span>{formatViews(video?.views)}</span>
-                            <span className="meta-dot">•</span>
-                            <span>{formatTimeAgo(video?.createdAt)}</span>
+                          <div className="premium-video-meta">
+                            <span className="flex items-center gap-1">
+                              <Eye size={12} />
+                              {formatViews(video?.views)}
+                            </span>
+                            <span className="premium-meta-dot">•</span>
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} />
+                              {formatTimeAgo(video?.createdAt)}
+                            </span>
                           </div>
                         </div>
                       </div>
-                    </article>
+                    </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="empty-state">
-                <div className="empty-icon">
+              <div className="premium-empty-state">
+                <div className="premium-empty-icon">
                   <Play size={48} />
                 </div>
-                <p>No videos available</p>
+                <h3 className="premium-empty-title">No videos available</h3>
+                <p className="premium-empty-subtitle">
+                  Check back later for new content
+                </p>
               </div>
             )}
           </section>
@@ -910,688 +1074,533 @@ const Home: NextPage = () => {
 
         {/* Premium Styles */}
         <style jsx>{`
-          /* ========== BASE VARIABLES ========== */
+          /* ===== ROOT VARIABLES ===== */
           :root {
-            --premium-bg: #fafafa;
-            --premium-surface: #ffffff;
-            --premium-surface-hover: #f5f5f5;
-            --premium-border: rgba(0, 0, 0, 0.08);
-            --premium-text-primary: #0f0f0f;
-            --premium-text-secondary: #606060;
-            --premium-text-tertiary: #909090;
-            --premium-accent: #ff0033;
-            --premium-accent-soft: rgba(255, 0, 51, 0.1);
-            --premium-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-            --premium-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-            --premium-shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
-            --premium-radius-sm: 8px;
-            --premium-radius-md: 12px;
-            --premium-radius-lg: 16px;
-            --premium-radius-xl: 20px;
+            --premium-primary: #ff0844;
+            --premium-secondary: #ffb199;
+            --premium-accent: #7928ca;
+            --premium-gold: #f5a623;
+            --premium-gradient: linear-gradient(
+              135deg,
+              #ff0844 0%,
+              #ffb199 100%
+            );
+            --premium-gradient-accent: linear-gradient(
+              135deg,
+              #7928ca 0%,
+              #ff0080 100%
+            );
+            --premium-shadow: 0 4px 20px rgba(255, 8, 68, 0.15);
+            --premium-shadow-hover: 0 8px 40px rgba(255, 8, 68, 0.25);
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.3);
           }
 
-          :global(.dark) {
-            --premium-bg: #030303;
-            --premium-surface: #0f0f0f;
-            --premium-surface-hover: #1a1a1a;
-            --premium-border: rgba(255, 255, 255, 0.1);
-            --premium-text-primary: #f1f1f1;
-            --premium-text-secondary: #aaaaaa;
-            --premium-text-tertiary: #717171;
-            --premium-accent: #ff4444;
-            --premium-accent-soft: rgba(255, 68, 68, 0.15);
-            --premium-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-            --premium-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-            --premium-shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
+          .dark {
+            --glass-bg: rgba(20, 20, 20, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.1);
           }
 
-          /* ========== PREMIUM CONTAINER ========== */
+          /* ===== PAGE TRANSITIONS ===== */
           .premium-container {
-            width: 100%;
-            min-height: 100vh;
-            padding-bottom: 80px;
-            background: var(--premium-bg);
-            transition: background-color 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+            transition:
+              opacity 0.6s ease-out,
+              transform 0.6s ease-out;
+            position: relative;
+            background: linear-gradient(
+              180deg,
+              var(--bg-primary, #fafafa) 0%,
+              var(--bg-secondary, #f5f5f5) 100%
+            );
           }
 
-          @media (min-width: 1024px) {
-            .premium-container {
-              padding-bottom: 0;
+          .dark .premium-container {
+            background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
+          }
+
+          .premium-container.page-loaded {
+            opacity: 1;
+            transform: translateY(0);
+          }
+
+          /* ===== AMBIENT BACKGROUND ===== */
+          .premium-ambient-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+          }
+
+          .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: float 20s ease-in-out infinite;
+          }
+
+          .ambient-orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--premium-primary);
+            top: -200px;
+            right: -100px;
+            animation-delay: 0s;
+          }
+
+          .ambient-orb-2 {
+            width: 300px;
+            height: 300px;
+            background: var(--premium-accent);
+            bottom: 20%;
+            left: -150px;
+            animation-delay: -7s;
+          }
+
+          .ambient-orb-3 {
+            width: 250px;
+            height: 250px;
+            background: var(--premium-gold);
+            top: 50%;
+            right: -100px;
+            animation-delay: -14s;
+          }
+
+          .dark .ambient-orb {
+            opacity: 0.15;
+          }
+
+          @keyframes float {
+            0%,
+            100% {
+              transform: translate(0, 0) scale(1);
+            }
+            25% {
+              transform: translate(20px, -20px) scale(1.05);
+            }
+            50% {
+              transform: translate(-10px, 20px) scale(0.95);
+            }
+            75% {
+              transform: translate(-20px, -10px) scale(1.02);
             }
           }
 
-          /* ========== CONNECTION BANNER ========== */
-          .premium-banner {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            backdrop-filter: blur(10px);
-          }
-
+          /* ===== PREMIUM SPINNER ===== */
           .premium-spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-          }
-
-          /* ========== LOADING SCREEN ========== */
-          .premium-loading-screen {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: var(--premium-bg);
-            color: var(--premium-text-primary);
-          }
-
-          .premium-loader {
             position: relative;
-            width: 60px;
-            height: 60px;
           }
 
-          .loader-ring {
+          .premium-spinner .spinner-ring {
             position: absolute;
             inset: 0;
-            border: 3px solid transparent;
-            border-top-color: var(--premium-accent);
+            border: 2px solid transparent;
             border-radius: 50%;
-            animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            animation: spin 1.2s linear infinite;
           }
 
-          .loader-ring:nth-child(2) {
+          .premium-spinner .spinner-ring:nth-child(1) {
+            border-top-color: var(--premium-primary);
+            animation-delay: 0s;
+          }
+
+          .premium-spinner .spinner-ring:nth-child(2) {
+            inset: 3px;
+            border-right-color: var(--premium-accent);
+            animation-delay: 0.15s;
+            animation-direction: reverse;
+          }
+
+          .premium-spinner .spinner-ring:nth-child(3) {
             inset: 6px;
-            animation-delay: -0.15s;
-            border-top-color: var(--premium-text-secondary);
-          }
-
-          .loader-ring:nth-child(3) {
-            inset: 12px;
-            animation-delay: -0.3s;
-            border-top-color: var(--premium-text-tertiary);
+            border-bottom-color: var(--premium-gold);
+            animation-delay: 0.3s;
           }
 
           @keyframes spin {
+            from {
+              transform: rotate(0deg);
+            }
             to {
               transform: rotate(360deg);
             }
           }
 
-          /* ========== PULL TO REFRESH ========== */
-          .pull-refresh-indicator {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 50;
-            background: linear-gradient(
-              to bottom,
-              var(--premium-surface),
-              transparent
-            );
-          }
-
-          .refresh-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--premium-surface);
-            border-radius: 50%;
-            box-shadow: var(--premium-shadow-md);
-            color: var(--premium-text-primary);
-            transition: transform 0.2s ease;
-          }
-
-          .refresh-icon.spinning svg {
-            animation: spin 0.8s linear infinite;
-          }
-
-          /* ========== SECTION HEADER ========== */
-          .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 16px 16px;
-          }
-
-          @media (min-width: 1024px) {
-            .section-header {
-              padding: 28px 24px 20px;
-            }
-          }
-
-          .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-          }
-
-          .shorts-icon {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #ff0033 0%, #ff4444 100%);
-            border-radius: var(--premium-radius-sm);
-            color: white;
-            box-shadow: 0 4px 12px rgba(255, 0, 51, 0.3);
-          }
-
-          .videos-icon {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: var(--premium-radius-sm);
-            color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-          }
-
-          .section-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--premium-text-primary);
-            letter-spacing: -0.02em;
-          }
-
-          @media (min-width: 1024px) {
-            .section-title {
-              font-size: 24px;
-            }
-          }
-
-          .view-all-link {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--premium-accent);
-            text-decoration: none;
-            padding: 8px 12px;
-            border-radius: var(--premium-radius-sm);
-            transition: all 0.2s ease;
-          }
-
-          .view-all-link:hover {
-            background: var(--premium-accent-soft);
-          }
-
-          /* ========== SHORTS SECTION ========== */
-          .shorts-section {
-            border-bottom: 1px solid var(--premium-border);
-            padding-bottom: 24px;
-          }
-
-          .shorts-skeleton-container {
-            display: flex;
-            gap: 16px;
-            padding: 0 16px;
-            overflow: hidden;
-          }
-
-          .short-skeleton {
-            flex-shrink: 0;
-            width: 180px;
-          }
-
-          @media (min-width: 1024px) {
-            .short-skeleton {
-              width: 200px;
-            }
-          }
-
-          .skeleton-thumbnail {
-            width: 100%;
-            padding-bottom: 177.5%;
+          /* ===== PREMIUM SKELETON ===== */
+          .premium-skeleton {
             background: linear-gradient(
               90deg,
-              var(--premium-surface-hover) 25%,
-              var(--premium-surface) 50%,
-              var(--premium-surface-hover) 75%
+              rgba(200, 200, 200, 0.2) 0%,
+              rgba(200, 200, 200, 0.4) 50%,
+              rgba(200, 200, 200, 0.2) 100%
             );
             background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: var(--premium-radius-lg);
+            animation: shimmer 1.5s ease-in-out infinite;
+            border-radius: 8px;
           }
 
-          .skeleton-title {
-            height: 14px;
-            margin-top: 12px;
-            background: var(--premium-surface-hover);
-            border-radius: 4px;
-            animation: shimmer 1.5s infinite;
-          }
-
-          .skeleton-channel {
-            height: 12px;
-            margin-top: 8px;
-            width: 60%;
-            background: var(--premium-surface-hover);
-            border-radius: 4px;
-            animation: shimmer 1.5s infinite;
+          .dark .premium-skeleton {
+            background: linear-gradient(
+              90deg,
+              rgba(60, 60, 60, 0.3) 0%,
+              rgba(80, 80, 80, 0.5) 50%,
+              rgba(60, 60, 60, 0.3) 100%
+            );
+            background-size: 200% 100%;
           }
 
           @keyframes shimmer {
             0% {
-              background-position: -200% 0;
-            }
-            100% {
               background-position: 200% 0;
             }
+            100% {
+              background-position: -200% 0;
+            }
           }
 
-          /* Shorts Wrapper */
-          .shorts-wrapper {
+          /* ===== PREMIUM BANNER ===== */
+          .premium-banner {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            backdrop-filter: blur(10px);
+          }
+
+          .premium-retry-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: #d97706;
+            font-weight: 600;
+            font-size: 0.75rem;
+            border-radius: 9999px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+          }
+
+          .premium-retry-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+          }
+
+          /* ===== PREMIUM LOADING SCREEN ===== */
+          .premium-loading-screen {
+            background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+          }
+
+          .dark .premium-loading-screen {
+            background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
+          }
+
+          .premium-logo-container {
             position: relative;
+            display: inline-block;
           }
 
-          .scroll-nav-btn {
-            display: none;
+          .premium-logo {
+            position: relative;
+            z-index: 1;
+          }
+
+          .premium-logo-text {
+            font-family:
+              "Inter",
+              system-ui,
+              -apple-system,
+              sans-serif;
+            font-weight: 800;
+            font-size: 20px;
+            fill: var(--premium-primary);
+          }
+
+          .premium-logo-glow {
+            position: absolute;
+            inset: -20px;
+            background: var(--premium-gradient);
+            filter: blur(40px);
+            opacity: 0.4;
+            animation: pulse-glow 2s ease-in-out infinite;
+          }
+
+          @keyframes pulse-glow {
+            0%,
+            100% {
+              opacity: 0.4;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.6;
+              transform: scale(1.1);
+            }
+          }
+
+          .premium-loading-title {
+            color: #1a1a1a;
+            letter-spacing: -0.02em;
+          }
+
+          .dark .premium-loading-title {
+            color: #ffffff;
+          }
+
+          .premium-loading-subtitle {
+            color: #666666;
+          }
+
+          .dark .premium-loading-subtitle {
+            color: #888888;
+          }
+
+          .premium-progress-bar {
+            width: 200px;
+            height: 3px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin: 0 auto;
+          }
+
+          .dark .premium-progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+          }
+
+          .premium-progress-fill {
+            height: 100%;
+            background: var(--premium-gradient);
+            border-radius: 9999px;
+            transition: width 0.5s ease;
+          }
+
+          /* ===== PREMIUM PULL INDICATOR ===== */
+          .premium-pull-indicator {
+            background: linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.9) 0%,
+              transparent 100%
+            );
+          }
+
+          .dark .premium-pull-indicator {
+            background: linear-gradient(
+              180deg,
+              rgba(20, 20, 20, 0.9) 0%,
+              transparent 100%
+            );
+          }
+
+          .premium-refresh-icon {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 9999px;
+            padding: 0.75rem;
+            color: var(--premium-primary);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+          }
+
+          /* ===== PREMIUM SHORTS SECTION ===== */
+          .premium-shorts-section {
+            position: relative;
+            z-index: 1;
+          }
+
+          .premium-section-bg {
+            background: linear-gradient(
+              180deg,
+              rgba(255, 8, 68, 0.02) 0%,
+              transparent 100%
+            );
+          }
+
+          .dark .premium-section-bg {
+            background: linear-gradient(
+              180deg,
+              rgba(255, 8, 68, 0.05) 0%,
+              transparent 100%
+            );
+          }
+
+          .premium-shorts-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--premium-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 8, 68, 0.3);
+          }
+
+          .premium-section-title {
+            color: #1a1a1a;
+            letter-spacing: -0.02em;
+          }
+
+          .dark .premium-section-title {
+            color: #ffffff;
+          }
+
+          .premium-section-subtitle {
+            color: #888888;
+          }
+
+          .dark .premium-section-subtitle {
+            color: #666666;
+          }
+
+          .premium-see-all {
+            color: var(--premium-primary);
+            transition: all 0.2s ease;
+          }
+
+          .premium-see-all:hover {
+            opacity: 0.8;
+          }
+
+          .premium-section-divider {
+            height: 1px;
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(0, 0, 0, 0.08) 50%,
+              transparent 100%
+            );
+          }
+
+          .dark .premium-section-divider {
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.08) 50%,
+              transparent 100%
+            );
+          }
+
+          /* ===== PREMIUM SCROLL BUTTONS ===== */
+          .premium-scroll-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
             z-index: 10;
             width: 44px;
             height: 44px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 9999px;
             align-items: center;
             justify-content: center;
-            background: var(--premium-surface);
-            border: 1px solid var(--premium-border);
-            border-radius: 50%;
-            color: var(--premium-text-primary);
-            cursor: pointer;
+            color: #1a1a1a;
             opacity: 0;
-            transition: all 0.2s ease;
-            box-shadow: var(--premium-shadow-md);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
           }
 
-          .scroll-nav-btn.left {
-            left: 8px;
+          .dark .premium-scroll-btn {
+            color: #ffffff;
           }
 
-          .scroll-nav-btn.right {
-            right: 8px;
-          }
-
-          .scroll-nav-btn.visible {
-            opacity: 1;
-          }
-
-          .scroll-nav-btn:hover {
-            background: var(--premium-surface-hover);
+          .premium-scroll-btn:hover {
+            background: var(--premium-gradient);
+            color: white;
+            border-color: transparent;
             transform: translateY(-50%) scale(1.05);
           }
 
-          @media (min-width: 1024px) {
-            .shorts-wrapper:hover .scroll-nav-btn.visible {
-              display: flex;
-            }
+          .premium-scroll-btn-left {
+            left: 8px;
+          }
+          .premium-scroll-btn-right {
+            right: 8px;
           }
 
-          /* Shorts Scroll Container */
-          .shorts-scroll-container {
-            display: flex;
-            gap: 16px;
-            padding: 0 16px;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
-
-          .shorts-scroll-container::-webkit-scrollbar {
-            display: none;
-          }
-
-          @media (min-width: 1024px) {
-            .shorts-scroll-container {
-              padding: 0 24px;
-              gap: 20px;
-            }
-          }
-
-          /* Short Card */
-          .short-card {
-            flex-shrink: 0;
-            width: 160px;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-          }
-
-          @media (min-width: 640px) {
-            .short-card {
-              width: 180px;
-            }
-          }
-
-          @media (min-width: 1024px) {
-            .short-card {
-              width: 200px;
-            }
-          }
-
-          /* Short Thumbnail */
-          .short-thumbnail {
-            position: relative;
-            width: 100%;
-            padding-bottom: 177.5%;
-            border-radius: var(--premium-radius-lg);
-            overflow: hidden;
-            background: var(--premium-surface-hover);
-            box-shadow: var(--premium-shadow-sm);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-
-          .short-card:hover .short-thumbnail {
-            transform: translateY(-4px);
-            box-shadow: var(--premium-shadow-lg);
-          }
-
-          .short-card:active .short-thumbnail {
-            transform: scale(0.98);
-          }
-
-          .short-thumbnail img,
-          .short-thumbnail video,
-          .thumbnail-video {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.4s ease;
-          }
-
-          .short-card:hover .short-thumbnail img {
-            transform: scale(1.05);
-          }
-
-          .thumbnail-overlay {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.4);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          }
-
-          .short-card:hover .thumbnail-overlay {
+          .group\/container:hover .premium-scroll-btn {
             opacity: 1;
           }
 
-          .play-button {
-            width: 56px;
-            height: 56px;
+          /* ===== PREMIUM SHORTS SCROLL ===== */
+          .premium-shorts-scroll {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            border-radius: 50%;
-            color: var(--premium-text-primary);
-            transform: scale(0.8);
-            transition: transform 0.3s ease;
-            box-shadow: var(--premium-shadow-lg);
+            gap: 16px;
+            padding: 0 16px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
           }
 
-          .short-card:hover .play-button {
-            transform: scale(1);
+          .premium-shorts-scroll::-webkit-scrollbar {
+            display: none;
           }
 
-          .thumbnail-gradient {
+          /* ===== PREMIUM SHORT CARD ===== */
+          .premium-short-card {
+            flex-shrink: 0;
+            width: 180px;
+            min-width: 180px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+          }
+
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .premium-short-thumbnail {
+            position: relative;
+            width: 100%;
+            padding-bottom: 177.5%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .premium-short-card:hover .premium-short-thumbnail {
+            transform: scale(0.98);
+            box-shadow: 0 8px 40px rgba(255, 8, 68, 0.2);
+          }
+
+          .premium-short-card:active .premium-short-thumbnail {
+            transform: scale(0.95);
+          }
+
+          .premium-short-thumbnail img {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .premium-short-card:hover .premium-short-thumbnail img {
+            transform: scale(1.08);
+          }
+
+          .premium-short-overlay {
             position: absolute;
             inset: 0;
             background: linear-gradient(
-              to top,
-              rgba(0, 0, 0, 0.7) 0%,
-              rgba(0, 0, 0, 0.3) 30%,
-              transparent 60%
+              180deg,
+              transparent 0%,
+              transparent 50%,
+              rgba(0, 0, 0, 0.7) 100%
             );
             pointer-events: none;
           }
 
-          .views-badge {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(4px);
-            border-radius: 6px;
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
-          }
-
-          /* Short Content */
-          .short-content {
-            padding: 12px 4px 0;
-          }
-
-          .short-title {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 1.4;
-            color: var(--premium-text-primary);
-            margin-bottom: 8px;
-            transition: color 0.2s ease;
-          }
-
-          .short-card:hover .short-title {
-            color: var(--premium-accent);
-          }
-
-          .channel-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-          }
-
-          .channel-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--premium-border);
-            transition: border-color 0.2s ease;
-          }
-
-          .channel-link:hover .channel-avatar {
-            border-color: var(--premium-accent);
-          }
-
-          .channel-name {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--premium-text-secondary);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            transition: color 0.2s ease;
-          }
-
-          .channel-link:hover .channel-name {
-            color: var(--premium-text-primary);
-          }
-
-          /* ========== VIDEOS SECTION ========== */
-          .videos-section {
-            padding-bottom: 24px;
-          }
-
-          .videos-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            padding: 0 16px;
-          }
-
-          @media (min-width: 640px) {
-            .videos-grid {
-              grid-template-columns: repeat(2, 1fr);
-              gap: 20px;
-            }
-          }
-
-          @media (min-width: 1024px) {
-            .videos-grid {
-              grid-template-columns: repeat(3, 1fr);
-              gap: 24px;
-              padding: 0 24px;
-            }
-          }
-
-          @media (min-width: 1280px) {
-            .videos-grid {
-              grid-template-columns: repeat(4, 1fr);
-            }
-          }
-
-          /* Video Skeleton */
-          .video-skeleton {
-            display: flex;
-            flex-direction: column;
-          }
-
-          .skeleton-video-thumbnail {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            background: linear-gradient(
-              90deg,
-              var(--premium-surface-hover) 25%,
-              var(--premium-surface) 50%,
-              var(--premium-surface-hover) 75%
-            );
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: var(--premium-radius-md);
-          }
-
-          .skeleton-video-info {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-          }
-
-          .skeleton-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--premium-surface-hover);
-            flex-shrink: 0;
-            animation: shimmer 1.5s infinite;
-          }
-
-          .skeleton-text-group {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-
-          .skeleton-video-title {
-            height: 16px;
-            background: var(--premium-surface-hover);
-            border-radius: 4px;
-            animation: shimmer 1.5s infinite;
-          }
-
-          .skeleton-video-channel {
-            height: 12px;
-            width: 70%;
-            background: var(--premium-surface-hover);
-            border-radius: 4px;
-            animation: shimmer 1.5s infinite;
-          }
-
-          .skeleton-video-meta {
-            height: 12px;
-            width: 50%;
-            background: var(--premium-surface-hover);
-            border-radius: 4px;
-            animation: shimmer 1.5s infinite;
-          }
-
-          /* Video Card */
-          .video-card {
-            display: flex;
-            flex-direction: column;
-          }
-
-          .video-thumbnail-link {
-            display: block;
-            text-decoration: none;
-          }
-
-          .video-thumbnail {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            border-radius: var(--premium-radius-md);
-            overflow: hidden;
-            background: var(--premium-surface-hover);
-            box-shadow: var(--premium-shadow-sm);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-
-          .video-card:hover .video-thumbnail {
-            transform: translateY(-2px);
-            box-shadow: var(--premium-shadow-md);
-          }
-
-          .video-thumbnail img,
-          .video-thumbnail video {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.4s ease;
-          }
-
-          .video-card:hover .video-thumbnail img,
-          .video-card:hover .video-thumbnail video {
-            transform: scale(1.03);
-          }
-
-          .duration-badge {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            padding: 3px 6px;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 4px;
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-          }
-
-          .video-overlay {
+          .premium-play-overlay {
             position: absolute;
             inset: 0;
             display: flex;
@@ -1602,159 +1611,451 @@ const Home: NextPage = () => {
             transition: opacity 0.3s ease;
           }
 
-          .video-card:hover .video-overlay {
+          .premium-short-card:hover .premium-play-overlay {
             opacity: 1;
           }
 
-          .play-icon {
-            color: white;
-            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
-            transform: scale(0.9);
-            transition: transform 0.3s ease;
-          }
-
-          .video-card:hover .play-icon {
-            transform: scale(1);
-          }
-
-          /* Video Info */
-          .video-info {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-          }
-
-          .video-avatar {
-            position: relative;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            overflow: hidden;
-            flex-shrink: 0;
-            cursor: pointer;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: transform 0.2s ease;
-          }
-
-          .video-avatar:hover {
-            transform: scale(1.05);
-          }
-
-          .avatar-fallback {
-            position: absolute;
-            inset: 0;
+          .premium-play-button {
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 9999px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: #1a1a1a;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+          }
+
+          .premium-short-card:hover .premium-play-button {
+            transform: scale(1);
+          }
+
+          .premium-views-badge {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            border-radius: 8px;
             color: white;
-            font-size: 16px;
+            font-size: 11px;
             font-weight: 600;
           }
 
-          .video-avatar img {
+          .premium-shine-effect {
             position: absolute;
-            inset: 0;
-            width: 100%;
+            top: 0;
+            left: -100%;
+            width: 50%;
             height: 100%;
-            object-fit: cover;
-            opacity: 0;
-            transition: opacity 0.2s ease;
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.2) 50%,
+              transparent 100%
+            );
+            transform: skewX(-25deg);
+            transition: left 0.6s ease;
+            pointer-events: none;
           }
 
-          .video-text {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+          .premium-short-card:hover .premium-shine-effect {
+            left: 150%;
           }
 
-          .video-title {
+          /* ===== PREMIUM SHORT INFO ===== */
+          .premium-short-info {
+            margin-top: 12px;
+          }
+
+          .premium-short-title {
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 600;
             line-height: 1.4;
-            color: var(--premium-text-primary);
+            color: #1a1a1a;
+            margin-bottom: 8px;
             transition: color 0.2s ease;
           }
 
-          .video-card:hover .video-title {
-            color: var(--premium-accent);
+          .dark .premium-short-title {
+            color: #f1f1f1;
           }
 
-          .video-channel {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--premium-text-secondary);
+          .premium-short-card:hover .premium-short-title {
+            color: var(--premium-primary);
+          }
+
+          .premium-short-channel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .premium-channel-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 9999px;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid transparent;
+            background:
+              linear-gradient(white, white) padding-box,
+              var(--premium-gradient) border-box;
+            transition: transform 0.2s ease;
+          }
+
+          .dark .premium-channel-avatar {
+            background:
+              linear-gradient(#1a1a1a, #1a1a1a) padding-box,
+              var(--premium-gradient) border-box;
+          }
+
+          .premium-channel-avatar:hover {
+            transform: scale(1.1);
+          }
+
+          .premium-channel-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .premium-channel-name {
+            flex: 1;
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666666;
             transition: color 0.2s ease;
-            margin: 0;
+            cursor: pointer;
           }
 
-          .video-channel:hover {
-            color: var(--premium-text-primary);
+          .dark .premium-channel-name {
+            color: #aaaaaa;
           }
 
-          .video-meta {
+          .premium-channel-name:hover {
+            color: #1a1a1a;
+          }
+
+          .dark .premium-channel-name:hover {
+            color: #ffffff;
+          }
+
+          /* ===== PREMIUM VIDEOS SECTION ===== */
+          .premium-videos-section {
+            position: relative;
+            z-index: 1;
+          }
+
+          .premium-videos-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--premium-gradient-accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(121, 40, 202, 0.3);
+          }
+
+          /* ===== PREMIUM VIDEO GRID ===== */
+          .premium-video-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+          }
+
+          @media (min-width: 640px) {
+            .premium-video-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+
+          @media (min-width: 1024px) {
+            .premium-video-grid {
+              grid-template-columns: repeat(3, 1fr);
+              gap: 24px;
+            }
+          }
+
+          @media (min-width: 1280px) {
+            .premium-video-grid {
+              grid-template-columns: repeat(4, 1fr);
+            }
+          }
+
+          /* ===== PREMIUM VIDEO CARD ===== */
+          .premium-video-card {
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+          }
+
+          .premium-video-thumbnail {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .premium-video-card:hover .premium-video-thumbnail {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+          }
+
+          .premium-video-thumbnail img,
+          .premium-video-thumbnail video {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .premium-video-card:hover .premium-video-thumbnail img,
+          .premium-video-card:hover .premium-video-thumbnail video {
+            transform: scale(1.05);
+          }
+
+          .premium-video-hover-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          }
+
+          .premium-video-card:hover .premium-video-hover-overlay {
+            opacity: 1;
+          }
+
+          .premium-video-play-btn {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a1a1a;
+            transform: scale(0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+          }
+
+          .premium-video-card:hover .premium-video-play-btn {
+            transform: scale(1);
+          }
+
+          .premium-duration-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
             display: flex;
             align-items: center;
             gap: 4px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            border-radius: 6px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+          }
+
+          .premium-video-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.15) 50%,
+              transparent 100%
+            );
+            transform: skewX(-25deg);
+            transition: left 0.8s ease;
+            pointer-events: none;
+          }
+
+          .premium-video-card:hover .premium-video-shine {
+            left: 150%;
+          }
+
+          /* ===== PREMIUM VIDEO INFO ===== */
+          .premium-video-avatar {
+            transition: transform 0.2s ease;
+          }
+
+          .premium-video-avatar:hover {
+            transform: scale(1.05);
+          }
+
+          .premium-avatar-ring {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 9999px;
+            padding: 2px;
+            background: var(--premium-gradient);
+          }
+
+          .premium-avatar-gradient {
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+          }
+
+          .premium-avatar-ring img {
+            position: absolute;
+            inset: 2px;
+            width: calc(100% - 4px);
+            height: calc(100% - 4px);
+            border-radius: 9999px;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+          }
+
+          .premium-video-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+            transition: color 0.2s ease;
+          }
+
+          .dark .premium-video-title {
+            color: #f1f1f1;
+          }
+
+          .premium-video-card:hover .premium-video-title {
+            color: var(--premium-primary);
+          }
+
+          .premium-video-channel {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
             font-size: 12px;
-            color: var(--premium-text-tertiary);
+            font-weight: 500;
+            color: #666666;
+            margin-bottom: 4px;
+            transition: color 0.2s ease;
+            cursor: pointer;
           }
 
-          .meta-dot {
-            font-size: 4px;
+          .dark .premium-video-channel {
+            color: #aaaaaa;
           }
 
-          /* Empty State */
-          .empty-state {
+          .premium-video-channel:hover {
+            color: #1a1a1a;
+          }
+
+          .dark .premium-video-channel:hover {
+            color: #ffffff;
+          }
+
+          .premium-video-meta {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #888888;
+          }
+
+          .dark .premium-video-meta {
+            color: #666666;
+          }
+
+          .premium-meta-dot {
+            font-size: 6px;
+            margin: 0 2px;
+          }
+
+          /* ===== PREMIUM EMPTY STATE ===== */
+          .premium-empty-state {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 60px 20px;
-            color: var(--premium-text-tertiary);
+            padding: 80px 20px;
+            text-align: center;
           }
 
-          .empty-icon {
+          .premium-empty-icon {
             width: 80px;
             height: 80px;
+            background: var(--premium-gradient);
+            border-radius: 9999px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--premium-surface-hover);
-            border-radius: 50%;
-            margin-bottom: 16px;
+            color: white;
+            margin-bottom: 24px;
+            opacity: 0.5;
           }
 
-          .empty-state p {
-            font-size: 16px;
-            font-weight: 500;
+          .premium-empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
           }
 
-          /* ========== RESPONSIVE FINE-TUNING ========== */
-          @media (max-width: 360px) {
-            .short-card {
-              width: 140px;
-            }
-
-            .section-title {
-              font-size: 18px;
-            }
-
-            .video-title {
-              font-size: 14px;
-            }
+          .dark .premium-empty-title {
+            color: #f1f1f1;
           }
 
-          /* ========== ACCESSIBILITY ========== */
+          .premium-empty-subtitle {
+            font-size: 14px;
+            color: #888888;
+          }
+
+          /* ===== SCROLLBAR HIDING ===== */
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+
+          /* ===== ACCESSIBILITY ===== */
           @media (prefers-reduced-motion: reduce) {
             *,
             *::before,
@@ -1765,14 +2066,80 @@ const Home: NextPage = () => {
             }
           }
 
-          /* Focus visible states */
-          .short-card:focus-visible,
-          .video-card:focus-visible,
-          .video-avatar:focus-visible,
-          .channel-link:focus-visible {
-            outline: 2px solid var(--premium-accent);
+          /* Focus states for keyboard navigation */
+          .premium-short-card:focus-visible,
+          .premium-video-card:focus-visible {
+            outline: 2px solid var(--premium-primary);
+            outline-offset: 4px;
+            border-radius: 16px;
+          }
+
+          .premium-scroll-btn:focus-visible {
+            outline: 2px solid var(--premium-primary);
             outline-offset: 2px;
-            border-radius: var(--premium-radius-sm);
+          }
+
+          /* ===== MOBILE OPTIMIZATIONS ===== */
+          @media (max-width: 639px) {
+            .premium-short-card {
+              width: 150px;
+              min-width: 150px;
+            }
+
+            .premium-short-thumbnail {
+              border-radius: 12px;
+            }
+
+            .premium-video-thumbnail {
+              border-radius: 12px;
+            }
+
+            .premium-shorts-icon,
+            .premium-videos-icon {
+              width: 36px;
+              height: 36px;
+            }
+
+            .premium-section-title {
+              font-size: 18px;
+            }
+
+            .premium-video-grid {
+              gap: 20px;
+            }
+
+            .premium-avatar-ring {
+              width: 36px;
+              height: 36px;
+            }
+
+            .ambient-orb {
+              opacity: 0.15;
+            }
+          }
+
+          /* ===== TABLET OPTIMIZATIONS ===== */
+          @media (min-width: 640px) and (max-width: 1023px) {
+            .premium-short-card {
+              width: 160px;
+              min-width: 160px;
+            }
+
+            .premium-shorts-scroll {
+              gap: 14px;
+            }
+          }
+
+          /* ===== LARGE DESKTOP ===== */
+          @media (min-width: 1536px) {
+            .premium-video-grid {
+              grid-template-columns: repeat(5, 1fr);
+            }
+
+            .premium-short-card {
+              width: 200px;
+              min-width: 200px;
+            }
           }
         `}</style>
       </>
