@@ -35,7 +35,7 @@ const initializationState = {
   hasCheckedAuth: false,
 };
 function AppContent({ Component, pageProps }: AppProps) {
-  const { user } = useUser();
+  const { user, updateUser } = useUser();
   const router = useRouter();
   const [isThemeReady, setIsThemeReady] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
@@ -125,7 +125,7 @@ function AppContent({ Component, pageProps }: AppProps) {
       const WrappedAudioContext = function (this: any, ...args: any[]) {
         if (!userHasInteracted) {
           console.warn(
-            "⚠️ AudioContext created before user interaction - will be suspended"
+            "⚠️ AudioContext created before user interaction - will be suspended",
           );
         }
         return new originalAudioContext(...args);
@@ -175,13 +175,13 @@ function AppContent({ Component, pageProps }: AppProps) {
             cacheNames.map((cacheName) => {
               console.log("🗑️ Deleting cache:", cacheName);
               return caches.delete(cacheName);
-            })
+            }),
           );
           console.log("✅ All cache storage cleared");
         }
 
         const navigation = (performance as any).getEntriesByType?.(
-          "navigation"
+          "navigation",
         )?.[0] as any;
         if (navigation?.type === "back_forward") {
           console.log("⚠️ Page loaded from BF cache, forcing reload...");
@@ -206,7 +206,7 @@ function AppContent({ Component, pageProps }: AppProps) {
         window.dispatchEvent(
           new CustomEvent("forceChannelRefresh", {
             detail: { timestamp: Date.now() },
-          })
+          }),
         );
       }
     };
@@ -227,7 +227,7 @@ function AppContent({ Component, pageProps }: AppProps) {
       window.dispatchEvent(
         new CustomEvent("forceChannelRefresh", {
           detail: { timestamp: Date.now() },
-        })
+        }),
       );
     };
 
@@ -325,51 +325,77 @@ function AppContent({ Component, pageProps }: AppProps) {
   // ============================================================================
   // LOCATION-BASED THEME
   // ============================================================================
+  // ============================================================================
+  // 🔴 CRITICAL: CONTINUOUS THEME CHECKER FOR TIME-BASED SWITCHING
+  // ============================================================================
   useEffect(() => {
-    if (!isThemeReady || initializationState.hasCheckedLocation || user) {
-      return;
-    }
+    if (typeof window === "undefined" || !isThemeReady) return;
 
-    initializationState.hasCheckedLocation = true;
+    let intervalId: NodeJS.Timeout;
+    let lastCheckedMinute = -1;
 
-    const fetchLocationBasedTheme = async () => {
+    const checkAndApplyTheme = async () => {
       try {
-        console.log("🌍 Checking location-based theme preferences...");
+        // Get current minute to avoid redundant checks
+        const now = new Date();
+        const currentMinute = now.getHours() * 60 + now.getMinutes();
 
-        const response = await fetch(`${API_URL}/api/location/check-location`, {
+        // Only check if minute has changed
+        if (currentMinute === lastCheckedMinute) return;
+        lastCheckedMinute = currentMinute;
+
+        console.log("⏰ Checking theme at", now.toLocaleTimeString());
+
+        // Fetch location-based theme from server
+        const response = await fetch(`${API_URL}/auth/check-location`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
 
         if (!response.ok) {
-          console.log("Location check returned non-OK status");
+          console.warn("⚠️ Location check failed, using stored theme");
           return;
         }
 
         const locationData = await response.json();
 
         if (locationData.success && locationData.theme) {
-          console.log("✅ Applying location-based theme:", locationData.theme);
-          applyTheme(locationData.theme as "light" | "dark");
+          const currentTheme = getStoredTheme();
 
-          sessionStorage.setItem("locationTheme", locationData.theme);
-          sessionStorage.setItem(
-            "locationData",
-            JSON.stringify({
-              country: locationData.country || locationData.location?.country,
-              region: locationData.region || locationData.location?.state,
-              city: locationData.city || locationData.location?.city,
-              timezone:
-                locationData.timezone || locationData.location?.timezone,
-            })
-          );
+          // Only apply if theme changed
+          if (currentTheme !== locationData.theme) {
+            console.log(
+              `🎨 Auto-switching theme: ${currentTheme} → ${locationData.theme}`,
+            );
+            applyTheme(locationData.theme as "light" | "dark");
+
+            // Update user context if logged in
+            if (user) {
+              updateUser({ theme: locationData.theme });
+            }
+          } else {
+            console.log(`✅ Theme already correct: ${currentTheme}`);
+          }
         }
       } catch (error) {
-        console.error("❌ Failed to fetch location-based theme:", error);
+        console.error("❌ Theme check error:", error);
       }
     };
 
-    fetchLocationBasedTheme();
+    // Initial check
+    checkAndApplyTheme();
+
+    // Check every minute
+    intervalId = setInterval(checkAndApplyTheme, 60000);
+
+    console.log("✅ Real-time theme checker started");
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        console.log("🛑 Theme checker stopped");
+      }
+    };
   }, [isThemeReady, user]);
 
   // ============================================================================
