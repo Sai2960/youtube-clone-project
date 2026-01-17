@@ -145,70 +145,99 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
     return "/video/vdo.mp4";
   };
 
-  const getEnhancedThumbnailUrl = (video: Video): string | null => {
-    // Priority 1: Check all thumbnail fields
-    const thumbnailFields = [
-      video.thumbnail,
-      video.videothumbnail,
-      video.videothumb,
-      video.thumbnailUrl,
-    ];
+const getEnhancedThumbnailUrl = (video: Video): string | null => {
+  const backend = getBackendURL();
+  
+  console.log("🔍 Finding thumbnail for video:", video._id);
+  console.log("📦 Video data:", {
+    thumbnail: video.thumbnail,
+    videothumbnail: video.videothumbnail,
+    videothumb: video.videothumb,
+    thumbnailUrl: video.thumbnailUrl,
+    videofilename: video.videofilename,
+    filepath: video.filepath
+  });
 
-    for (const field of thumbnailFields) {
-      if (field) {
-        const fieldStr = String(field).trim();
-        console.log("🔍 Checking thumbnail field:", fieldStr.substring(0, 100));
+  // Priority 1: Check all thumbnail fields
+  const thumbnailFields = [
+    video.thumbnailUrl,      // Most specific
+    video.videothumbnail,    // Common field
+    video.thumbnail,         // Generic field
+    video.videothumb,        // Alternative field
+  ];
 
-        // Complete Supabase URL
-        if (fieldStr.includes("supabase.co/storage/v1/object")) {
-          console.log("✅ Using complete Supabase URL");
-          return fieldStr;
-        }
+  for (const field of thumbnailFields) {
+    if (field) {
+      const fieldStr = String(field).trim();
+      
+      // Complete Supabase URL
+      if (fieldStr.includes("supabase.co/storage/v1/object")) {
+        console.log("✅ Using complete Supabase URL:", fieldStr.substring(0, 80));
+        return fieldStr;
+      }
 
-        // Full HTTP/HTTPS URL
-        if (fieldStr.startsWith("http://") || fieldStr.startsWith("https://")) {
-          console.log("✅ Full thumbnail URL found");
-          return fieldStr;
-        }
+      // Full HTTP/HTTPS URL
+      if (fieldStr.startsWith("http://") || fieldStr.startsWith("https://")) {
+        console.log("✅ Using full URL:", fieldStr.substring(0, 80));
+        return fieldStr;
+      }
 
-        // Partial path - construct full Supabase URL
-        if (
-          fieldStr.includes(".jpg") ||
-          fieldStr.includes(".png") ||
-          fieldStr.includes(".webp")
-        ) {
-          const filename = fieldStr.split("/").pop();
-          const supabaseUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${filename}`;
-          console.log(
-            "✅ Constructed Supabase URL:",
-            supabaseUrl.substring(0, 80),
-          );
-          return supabaseUrl;
-        }
+      // Cloudinary URL
+      if (fieldStr.includes("cloudinary.com")) {
+        console.log("✅ Using Cloudinary URL:", fieldStr.substring(0, 80));
+        return fieldStr;
+      }
+
+      // Relative path starting with /uploads/
+      if (fieldStr.startsWith("/uploads/")) {
+        const fullUrl = `${backend}${fieldStr}`;
+        console.log("✅ Constructed backend URL:", fullUrl.substring(0, 80));
+        return fullUrl;
+      }
+
+      // Just a filename with extension
+      if (fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+        // Try Supabase first
+        const supabaseUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${fieldStr}`;
+        console.log("✅ Constructed Supabase URL from filename:", supabaseUrl.substring(0, 80));
+        return supabaseUrl;
       }
     }
+  }
 
-    // Fallback: Generate from video filename if exists
-    if (video.videofilename || video.filepath) {
-      const videoPath = video.videofilename || video.filepath;
-      const videoFilename = String(videoPath)
-        .split("/")
-        .pop()
-        ?.replace(/\.(mp4|mov|avi|webm)$/i, ".jpg");
+  // Priority 2: Extract thumbnail from video filename
+  if (video.videofilename) {
+    const videoFile = String(video.videofilename);
+    const thumbFilename = videoFile
+      .split("/")
+      .pop()
+      ?.replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg");
 
-      if (videoFilename) {
-        const fallbackUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${videoFilename}`;
-        console.log(
-          "🔄 Using fallback thumbnail from video filename:",
-          fallbackUrl.substring(0, 80),
-        );
-        return fallbackUrl;
-      }
+    if (thumbFilename) {
+      const supabaseThumbUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${thumbFilename}`;
+      console.log("🔄 Generated thumbnail from video filename:", supabaseThumbUrl.substring(0, 80));
+      return supabaseThumbUrl;
     }
+  }
 
-    console.log("⚠️ No valid thumbnail URL found for video:", video._id);
-    return null;
-  };
+  // Priority 3: Extract from filepath
+  if (video.filepath) {
+    const filepath = String(video.filepath);
+    const thumbFilename = filepath
+      .split("/")
+      .pop()
+      ?.replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg");
+
+    if (thumbFilename) {
+      const supabaseThumbUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${thumbFilename}`;
+      console.log("🔄 Generated thumbnail from filepath:", supabaseThumbUrl.substring(0, 80));
+      return supabaseThumbUrl;
+    }
+  }
+
+  console.log("⚠️ No valid thumbnail URL found for video:", video._id);
+  return null;
+};
   // ========== Format Views Function ==========
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";
@@ -276,26 +305,43 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
               href={`/watch/${video._id}`}
               className="flex gap-2 md:gap-3 px-3 md:px-0 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group"
             >
-            {/* ========== Thumbnail Section ========== */}
+           {/* ========== Thumbnail Section ========== */}
 <div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
-  {/* Just show placeholder for all videos */}
-  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
-    <div className="text-center text-gray-400">
-      <svg
-        className="w-8 h-8 mx-auto mb-1 opacity-50"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-      </svg>
-      <p className="text-[10px] font-medium">Video</p>
+  {thumbnailUrl && !hasThumbnailFailed ? (
+    <>
+      {/* Actual Thumbnail Image */}
+      <img
+        src={thumbnailUrl}
+        alt={video?.videotitle || "Video thumbnail"}
+        className="w-full h-full object-cover"
+        onError={() => handleThumbnailError(video._id, thumbnailUrl)}
+        onLoad={() => {
+          console.log("✅ Thumbnail loaded:", video._id, thumbnailUrl.substring(0, 60));
+        }}
+      />
+    </>
+  ) : (
+    /* Fallback Placeholder */
+    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
+      <div className="text-center text-gray-400">
+        <svg
+          className="w-8 h-8 mx-auto mb-1 opacity-50"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+        </svg>
+        <p className="text-[10px] font-medium">No Preview</p>
+      </div>
     </div>
-  </div>
+  )}
 
   {/* Duration Badge */}
-  <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
-    {video?.duration || "10:24"}
-  </div>
+  {video?.duration && (
+    <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
+      {video.duration}
+    </div>
+  )}
 </div>
 
               {/* ========== Video Info Section ========== */}
