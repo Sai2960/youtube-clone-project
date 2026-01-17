@@ -155,20 +155,6 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
       video.videothumb,
       video.thumbnailUrl,
     ];
-    const thumbnailUrl = getEnhancedThumbnailUrl(video);
-    console.log(
-      "🔍 Video:",
-      video._id,
-      "Thumbnail:",
-      thumbnailUrl,
-      "Raw data:",
-      {
-        thumbnail: video.thumbnail,
-        videothumbnail: video.videothumbnail,
-        videothumb: video.videothumb,
-        thumbnailUrl: video.thumbnailUrl,
-      },
-    );
 
     for (const field of thumbnailFields) {
       if (field) {
@@ -246,6 +232,19 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
         {videos.slice(0, 20).map((video) => {
           const avatarUrl = getAvatarUrl(video.uploadedBy);
           const thumbnailUrl = getEnhancedThumbnailUrl(video);
+          console.log(
+            "🔍 Video:",
+            video._id,
+            "Thumbnail:",
+            thumbnailUrl,
+            "Raw data:",
+            {
+              thumbnail: video.thumbnail,
+              videothumbnail: video.videothumbnail,
+              videothumb: video.videothumb,
+              thumbnailUrl: video.thumbnailUrl,
+            },
+          );
           const videoUrl = getVideoUrlForPreview(video);
           const channelName =
             video.uploadedBy?.channelname ||
