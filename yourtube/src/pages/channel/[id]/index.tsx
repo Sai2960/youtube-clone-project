@@ -1527,139 +1527,124 @@ const ChannelPage = () => {
                                 }}
                                 className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
                               >
-                                {/* ✅ FIXED CONTAINER - Always visible in both themes */}
-<div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gray-200 dark:bg-gray-500">
-                                  {/* Animated Border */}
-                                  <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 z-0"></div>
+                              {/* ✅ ULTIMATE FIX - Complete rewrite with proper z-index */}
+<div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500">
+  
+  {/* Solid background - BEHIND everything */}
+  <div className="absolute inset-0 bg-gray-200 dark:bg-slate-600 z-0"></div>
 
-                                  {/* ✅ CRITICAL FIX: Media Content with proper z-index */}
-                                  <div className="absolute inset-0 w-full h-full z-[5] bg-transparent">
-                                    {hasValidThumbnail ? (
-                                      <img
-                                        src={thumbnailUrl}
-                                        alt={short.title || "Short"}
-                                        className="w-full h-full object-cover absolute inset-0"
-                                        loading="lazy"
-                                        style={{
-                                          display: "block",
-                                          backgroundColor: "transparent",
-                                          minHeight: "100%",
-                                          minWidth: "100%",
-                                          zIndex: 10,
-                                          position: "relative",
-                                        }}
-                                        onError={(e) => {
-                                          console.error(
-                                            "❌ Thumbnail failed:",
-                                            short._id,
-                                          );
-                                          const target = e.currentTarget;
-                                          target.style.display = "none";
+  {/* Animated Border - BEHIND media */}
+  <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 z-[1]"></div>
 
-                                          if (hasValidVideo) {
-                                            const parent = target.parentElement;
-                                            if (
-                                              parent &&
-                                              !parent.querySelector(
-                                                "video.backup-video",
-                                              )
-                                            ) {
-                                              const video =
-                                                document.createElement("video");
-                                              video.className =
-                                                "backup-video w-full h-full object-cover";
-                                              video.src = videoUrl;
-                                              video.preload = "metadata";
-                                              video.muted = true;
-                                              video.playsInline = true;
-                                              video.style.display = "block";
-                                              parent.appendChild(video);
-                                            }
-                                          }
-                                        }}
-                                      />
-                                    ) : hasValidVideo ? (
-                                      <video
-                                        src={videoUrl}
-                                        className="w-full h-full object-cover absolute inset-0"
-                                        preload="metadata"
-                                        muted
-                                        playsInline
-                                        style={{
-                                          display: "block",
-                                          backgroundColor: "transparent",
-                                          minHeight: "100%",
-                                          minWidth: "100%",
-                                          zIndex: 10,
-                                          position: "relative",
-                                        }}
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600">
-                                        <div className="text-center p-4">
-                                          <div className="relative mb-3">
-                                            <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-white/30"></div>
-                                            <div className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl bg-white/95">
-                                              <Play
-                                                className="w-8 h-8 ml-1 text-red-600"
-                                                fill="currentColor"
-                                              />
-                                            </div>
-                                          </div>
-                                          <p
-                                            className="text-xs font-black text-white tracking-widest"
-                                            style={{
-                                              textShadow:
-                                                "0 2px 4px rgba(0,0,0,0.3)",
-                                            }}
-                                          >
-                                            {short.title || "SHORT"}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
+  {/* ✅ MEDIA LAYER - HIGHEST z-index for content */}
+  <div className="absolute inset-0 w-full h-full z-[20]">
+    {hasValidThumbnail ? (
+      <img
+        src={thumbnailUrl}
+        alt={short.title || "Short"}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+          zIndex: 20
+        }}
+        onError={(e) => {
+          console.error("❌ Thumbnail failed:", short._id);
+          const target = e.currentTarget;
+          target.style.display = "none";
 
-                                  {/* Bottom Gradient - OVER media but UNDER badges */}
-                                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-[15]"></div>
+          if (hasValidVideo) {
+            const parent = target.parentElement;
+            if (parent && !parent.querySelector("video.backup-video")) {
+              const video = document.createElement("video");
+              video.className = "backup-video";
+              video.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block; z-index: 20";
+              video.src = videoUrl;
+              video.preload = "metadata";
+              video.muted = true;
+              video.playsInline = true;
+              parent.appendChild(video);
+            }
+          }
+        }}
+      />
+    ) : hasValidVideo ? (
+      <video
+        src={videoUrl}
+        className="w-full h-full object-cover"
+        preload="metadata"
+        muted
+        playsInline
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+          zIndex: 20
+        }}
+      />
+    ) : (
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600">
+        <div className="text-center p-4">
+          <div className="relative mb-3">
+            <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-white/30"></div>
+            <div className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl bg-white/95">
+              <Play className="w-8 h-8 ml-1 text-red-600" fill="currentColor" />
+            </div>
+          </div>
+          <p className="text-xs font-black text-white tracking-widest" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
+            {short.title || "SHORT"}
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
 
-                                  {/* Hover Overlay - OVER media */}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-red-600/0 to-transparent group-hover:from-red-600/20 transition-all duration-300 pointer-events-none z-[12]"></div>
-                                  {/* Views Badge - z-30 */}
-                                  <div className="absolute bottom-3 left-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg z-30">
-                                    <Play className="w-3 h-3" fill="white" />
-                                    <span>
-                                      {(short.views || 0).toLocaleString()}
-                                    </span>
-                                  </div>
+  {/* Bottom Gradient - OVER media at z-25 */}
+  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-[25]"></div>
 
-                                  {/* Duration Badge - z-30 */}
-                                  {short.duration && (
-                                    <div className="absolute bottom-3 right-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-lg z-30">
-                                      {short.duration}s
-                                    </div>
-                                  )}
+  {/* Hover Overlay - z-22 */}
+  <div className="absolute inset-0 bg-gradient-to-t from-red-600/0 to-transparent group-hover:from-red-600/20 transition-all duration-300 pointer-events-none z-[22]"></div>
 
-                                  {/* Play Button - z-40 */}
-                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-500 flex items-center justify-center z-40">
-                                    <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
-                                      <div className="relative">
-                                        <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-red-600"></div>
-                                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
-                                          <Play
-                                            className="w-7 h-7 sm:w-8 sm:h-8 text-white ml-1"
-                                            fill="white"
-                                          />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
+  {/* Views Badge - z-30 */}
+  <div className="absolute bottom-3 left-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg z-30">
+    <Play className="w-3 h-3" fill="white" />
+    <span>{(short.views || 0).toLocaleString()}</span>
+  </div>
 
-                                  {/* Shine Effect - z-50 */}
-                                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-50">
-                                    <div className="absolute inset-0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-                                  </div>
-                                </div>
+  {/* Duration Badge - z-30 */}
+  {short.duration && (
+    <div className="absolute bottom-3 right-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-lg z-30">
+      {short.duration}s
+    </div>
+  )}
+
+  {/* Play Button - z-35 */}
+  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-500 flex items-center justify-center z-35">
+    <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-red-600"></div>
+        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
+          <Play className="w-7 h-7 sm:w-8 sm:h-8 text-white ml-1" fill="white" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Shine Effect - z-40 */}
+  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-40">
+    <div className="absolute inset-0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+  </div>
+</div>
 
                                 {/* Title & Channel Info */}
                                 <div className="mt-3 sm:mt-4 px-1">
