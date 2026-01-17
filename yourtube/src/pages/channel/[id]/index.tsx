@@ -172,16 +172,6 @@ const premiumStyles = `
   .premium-scrollbar::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #764ba2, #f093fb);
   }
-    /* Dark Mode Z-Index Fix */
-.dark .premium-card,
-.dark .premium-glass {
-  z-index: auto !important;
-}
-
-/* Ensure proper stacking in dark mode */
-.dark [class*="absolute"] {
-  isolation: isolate;
-}
 `;
 
 // ============================================================================
@@ -1514,8 +1504,7 @@ const ChannelPage = () => {
                         </div>
 
                         {/* Premium Shorts Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 w-full pb-4 px-1 sm:px-0 relative z-[1]">
-                          {shorts.map((short, index) => {
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 w-full pb-4 px-1 sm:px-0">                          {shorts.map((short, index) => {
                             const thumbnailUrl = getShortThumbnail(short);
                             const videoUrl = getShortVideoUrl(short);
 
@@ -1531,20 +1520,23 @@ const ChannelPage = () => {
                                 }}
                                 className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
                               >
-                                {/* Premium Thumbnail Container */}
-                                <div
-                                  className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500"
-                                  style={{
-                                    border: "1px solid rgba(239, 68, 68, 0.2)",
-                                  }}
-                                >
+                               <div
+  className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gray-900 dark:bg-gray-800"
+  style={{
+    border: "1px solid rgba(239, 68, 68, 0.2)",
+    isolation: "isolate",
+  }}
+>
                                   {/* Animated Gradient Border on Hover */}
                                   <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 -z-10"></div>
 
-                                  <div
-                                    className="relative w-full bg-gradient-to-br from-red-500/20 to-pink-500/20"
-                                    style={{ paddingBottom: "177.78%" }}
-                                  >
+                                 <div
+  className="relative w-full bg-gray-900 dark:bg-gray-800"
+  style={{ 
+    paddingBottom: "177.78%",
+    isolation: "isolate"
+  }}
+>
                                     {/* Conditional Rendering Based on Available Media */}
                                     {thumbnailUrl &&
                                     thumbnailUrl !== "fallback" &&
@@ -1678,14 +1670,14 @@ const ChannelPage = () => {
                                       />
                                     ) : (
                                       // Enhanced fallback with better visibility
-                                      <div
-                                        className="absolute inset-0 w-full h-full flex items-center justify-center"
-                                        style={{
-                                          zIndex: 1,
-                                          background:
-                                            "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
-                                        }}
-                                      >
+                                     <div
+  className="absolute inset-0 w-full h-full flex items-center justify-center bg-gray-900 dark:bg-gray-800"
+  style={{
+    zIndex: 1,
+    backgroundImage: "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
+    isolation: "isolate",
+  }}
+>
                                         <div className="text-center p-4">
                                           <div className="relative mb-3">
                                             <div
@@ -1722,31 +1714,6 @@ const ChannelPage = () => {
                                             Media loading...
                                           </p>
                                         </div>
-                                        {/* 🔍 DEBUG - Check raw short data */}
-                                        {shorts.length > 0 &&
-                                          typeof window !== "undefined" && (
-                                            <div className="fixed bottom-4 right-4 bg-yellow-500 text-black p-3 rounded-lg text-xs max-w-sm z-50 max-h-48 overflow-auto">
-                                              <strong>SHORT #{1} DEBUG:</strong>
-                                              <pre className="text-[10px] mt-2">
-                                                {JSON.stringify(
-                                                  {
-                                                    id: shorts[0]._id,
-                                                    title:
-                                                      shorts[0].title?.substring(
-                                                        0,
-                                                        30
-                                                      ),
-                                                    thumbnailUrl:
-                                                      shorts[0].thumbnailUrl,
-                                                    videoUrl:
-                                                      shorts[0].videoUrl,
-                                                  },
-                                                  null,
-                                                  2
-                                                )}
-                                              </pre>
-                                            </div>
-                                          )}
                                       </div>
                                     )}
 
