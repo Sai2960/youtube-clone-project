@@ -255,50 +255,60 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
               href={`/watch/${video._id}`}
               className="flex gap-2 md:gap-3 px-3 md:px-0 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group"
             >
-              {/* ========== Thumbnail Section ========== */}
-              <div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
-                {thumbnailUrl && !hasThumbnailFailed ? (
-                  <>
-                    {/* Actual Thumbnail Image */}
-                    <img
-                      src={thumbnailUrl}
-                      alt={video?.videotitle || "Video thumbnail"}
-                      className="w-full h-full object-cover"
-                      onError={() =>
-                        handleThumbnailError(video._id, thumbnailUrl)
-                      }
-                      onLoad={() => {
-                        console.log(
-                          "✅ Thumbnail loaded:",
-                          video._id,
-                          thumbnailUrl.substring(0, 60),
-                        );
-                      }}
-                    />
-                  </>
-                ) : (
-                  /* Fallback Placeholder */
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
-                    <div className="text-center text-gray-400">
-                      <svg
-                        className="w-8 h-8 mx-auto mb-1 opacity-50"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                      </svg>
-                      <p className="text-[10px] font-medium">No Preview</p>
-                    </div>
-                  </div>
-                )}
+          {/* ========== Thumbnail Section ========== */}
+<div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
+  {thumbnailUrl && !hasThumbnailFailed ? (
+    <>
+      {/* Check if it's a video URL (Supabase) or image URL */}
+      {thumbnailUrl.includes('.mp4') || thumbnailUrl.includes('.webm') || thumbnailUrl.includes('.mov') ? (
+        /* Use video element for Supabase videos */
+        <video
+          src={thumbnailUrl}
+          className="w-full h-full object-cover"
+          muted
+          playsInline
+          preload="metadata"
+          onError={() => handleThumbnailError(video._id, thumbnailUrl)}
+          onLoadedData={() => {
+            console.log("✅ Video thumbnail loaded:", video._id);
+          }}
+        />
+      ) : (
+        /* Use img element for actual image thumbnails */
+        <img
+          src={thumbnailUrl}
+          alt={video?.videotitle || "Video thumbnail"}
+          className="w-full h-full object-cover"
+          onError={() => handleThumbnailError(video._id, thumbnailUrl)}
+          onLoad={() => {
+            console.log("✅ Image thumbnail loaded:", video._id, thumbnailUrl.substring(0, 60));
+          }}
+        />
+      )}
+    </>
+  ) : (
+    /* Fallback Placeholder */
+    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
+      <div className="text-center text-gray-400">
+        <svg
+          className="w-8 h-8 mx-auto mb-1 opacity-50"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+        </svg>
+        <p className="text-[10px] font-medium">No Preview</p>
+      </div>
+    </div>
+  )}
 
-                {/* Duration Badge */}
-                {video?.duration && (
-                  <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
-                    {video.duration}
-                  </div>
-                )}
-              </div>
+  {/* Duration Badge */}
+  {video?.duration && (
+    <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
+      {video.duration}
+    </div>
+  )}
+</div>
 
               {/* ========== Video Info Section ========== */}
               <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
