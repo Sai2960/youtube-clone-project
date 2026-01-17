@@ -1356,79 +1356,117 @@ router.get("/health", (req, res) => {
     cloudinaryEnabled: true,
   });
 });
-// ✅ CHECK LOCATION ENDPOINT - MATCHES FRONTEND CALL
+// ✅ CHECK LOCATION ENDPOINT - BULLETPROOF VERSION
 router.get("/check-location", async (req, res) => {
+  // ✅ CRITICAL: Wrap EVERYTHING in try-catch
   try {
     console.log("\n🌍 ===== LOCATION CHECK REQUEST =====");
-    console.log("   Headers:", {
-      forwarded: req.headers["x-forwarded-for"],
-      realIp: req.headers["x-real-ip"],
-      cfIp: req.headers["cf-connecting-ip"],
-    });
-    
-    // ✅ CRITICAL: Try multiple IP sources
-    const forwardedFor = req.headers["x-forwarded-for"];
-    const realIp = req.headers["x-real-ip"];
-    const cfIp = req.headers["cf-connecting-ip"];
-    
-    let ip = "127.0.0.1";
-    
-    if (cfIp) {
-      ip = cfIp;
-    } else if (realIp) {
-      ip = realIp;
-    } else if (forwardedFor) {
-      ip = forwardedFor.split(",")[0].trim();
-    } else {
-      ip = req.ip || 
-           req.connection?.remoteAddress || 
-           req.socket?.remoteAddress ||
-           "127.0.0.1";
-    }
-    
-    // Clean IPv6 prefix
-    const cleanIp = ip.replace(/^::ffff:/, "");
-    
-    console.log("   Raw IP:", ip);
-    console.log("   Clean IP:", cleanIp);
+    console.log("   Time:", new Date().toISOString());
+    console.log(
+      "   Headers:",
+      JSON.stringify({
+        forwarded: req.headers["x-forwarded-for"],
+        realIp: req.headers["x-real-ip"],
+        cfIp: req.headers["cf-connecting-ip"],
+      }),
+    );
 
-    // Use the existing determineThemeAndOtpMethod function
-    const result = determineThemeAndOtpMethod(cleanIp);
-    
-    const currentHour = moment().tz("Asia/Kolkata").hour();
-    
-    console.log("   Result:", {
+    // ✅ Extract IP safely
+    let ip = "127.0.0.1"; // Default fallback
+
+    try {
+      const forwardedFor = req.headers["x-forwarded-for"];
+      const realIp = req.headers["x-real-ip"];
+      const cfIp = req.headers["cf-connecting-ip"];
+
+      if (cfIp) {
+        ip = cfIp;
+      } else if (realIp) {
+        ip = realIp;
+      } else if (forwardedFor) {
+        ip = forwardedFor.split(",")[0].trim();
+      } else if (req.ip) {
+        ip = req.ip;
+      } else if (req.connection?.remoteAddress) {
+        ip = req.connection.remoteAddress;
+      } else if (req.socket?.remoteAddress) {
+        ip = req.socket.remoteAddress;
+      }
+
+      // Clean IPv6 prefix
+      ip = ip.replace(/^::ffff:/, "");
+
+      console.log("   Raw IP:", ip);
+    } catch (ipError) {
+      console.error("   IP extraction error:", ipError.message);
+      ip = "127.0.0.1";
+    }
+
+    // ✅ Call theme function safely
+    let result;
+    try {
+      result = determineThemeAndOtpMethod(ip);
+      console.log("   Theme result:", result);
+    } catch (themeError) {
+      console.error("   Theme determination error:", themeError);
+      console.error("   Stack:", themeError.stack);
+
+      // Use safe fallback
+      result = {
+        state: "Unknown",
+        city: "Unknown",
+        theme: "dark",
+        otpMethod: "sms",
+        country: "IN",
+        timezone: "Asia/Kolkata",
+      };
+    }
+
+    // ✅ Get current hour safely
+    let currentHour = 0;
+    try {
+      currentHour = moment().tz("Asia/Kolkata").hour();
+    } catch (momentError) {
+      console.error("   Moment error:", momentError);
+      currentHour = new Date().getHours();
+    }
+
+    console.log("   Final result:", {
       state: result.state,
-      city: result.city,
       theme: result.theme,
       hour: currentHour,
-      isMorningTime: currentHour >= 10 && currentHour < 12,
     });
     console.log("=====================================\n");
 
-    // ✅ ALWAYS return 200 (never throw error to frontend)
-    res.status(200).json({
+    // ✅ ALWAYS return 200 with valid JSON
+    return res.status(200).json({
       success: true,
-      theme: result.theme,
-      otpMethod: result.otpMethod,
+      theme: result.theme || "dark",
+      otpMethod: result.otpMethod || "sms",
       location: {
-        state: result.state,
+        state: result.state || "Unknown",
         city: result.city || "Unknown",
         country: result.country || "IN",
         timezone: result.timezone || "Asia/Kolkata",
       },
-      debug: process.env.NODE_ENV === "development" ? {
-        ip: cleanIp,
-        hour: currentHour,
-        method: result.debug?.method
-      } : undefined
+      debug:
+        process.env.NODE_ENV === "development"
+          ? {
+              ip: ip,
+              hour: currentHour,
+              method: result.debug?.method || "fallback",
+            }
+          : undefined,
     });
-  } catch (error) {
-    console.error("❌ Location check error:", error);
-    console.error("   Stack:", error.stack);
-    
-    // ✅ CRITICAL: Return 200 with fallback (not 500)
-    res.status(200).json({
+  } catch (outerError) {
+    // ✅ CRITICAL: Catch-all error handler
+    console.error("\n❌ ===== LOCATION CHECK FATAL ERROR =====");
+    console.error("Error:", outerError.message);
+    console.error("Stack:", outerError.stack);
+    console.error("=========================================\n");
+
+    // ✅ Return 200 with safe fallback (NOT 400 or 500)
+    return res.status(200).json({
       success: true,
       theme: "dark",
       otpMethod: "sms",
@@ -1438,7 +1476,8 @@ router.get("/check-location", async (req, res) => {
         country: "IN",
         timezone: "Asia/Kolkata",
       },
-      error: process.env.NODE_ENV === "development" ? error.message : undefined
+      error:
+        process.env.NODE_ENV === "development" ? outerError.message : undefined,
     });
   }
 });
