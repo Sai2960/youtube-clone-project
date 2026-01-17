@@ -12689,3 +12689,33 @@ html.light #__next {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* ============================================
+   CRITICAL: Theme Override - ADD TO END OF globals.css
+   ============================================ */
+
+/* Force dark theme */
+html.dark,
+html.dark body,
+html.dark #__next {
+  background-color: #0f0f0f !important;
+  background: #0f0f0f !important;
+  color: #f1f1f1 !important;
+}
+
+/* Force light theme */
+html.light,
+html.light body,
+html.light #__next {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #0f0f0f !important;
+}
+
+/* Override ANY background colors in dark mode */
+.dark {
+  background-color: #0f0f0f !important;
+}
+
+.light {
+  background-color: #ffffff !important;
+}
