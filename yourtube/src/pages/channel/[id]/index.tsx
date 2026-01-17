@@ -1528,26 +1528,25 @@ const ChannelPage = () => {
                                 className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
                               >
                                 {/* ✅ FIXED CONTAINER - Always visible in both themes */}
-                                <div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500">
-                                  {/* ✅ FIX 1: Solid background layer - ALWAYS VISIBLE */}
-                                  <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 z-0"></div>
-
+                                <div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900">
                                   {/* Animated Border */}
-                                  <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 z-[1]"></div>
+                                  <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 z-0"></div>
 
                                   {/* ✅ CRITICAL FIX: Media Content with proper z-index */}
-                                  <div className="absolute inset-0 w-full h-full z-[15]">
+                                  <div className="absolute inset-0 w-full h-full z-[5] bg-transparent">
                                     {hasValidThumbnail ? (
                                       <img
                                         src={thumbnailUrl}
                                         alt={short.title || "Short"}
-                                        className="w-full h-full object-cover relative z-[16]"
+                                        className="w-full h-full object-cover absolute inset-0"
                                         loading="lazy"
                                         style={{
                                           display: "block",
                                           backgroundColor: "transparent",
                                           minHeight: "100%",
                                           minWidth: "100%",
+                                          zIndex: 10,
+                                          position: "relative",
                                         }}
                                         onError={(e) => {
                                           console.error(
@@ -1619,11 +1618,11 @@ const ChannelPage = () => {
                                     )}
                                   </div>
 
-                                  {/* Bottom Gradient - HIGHER z-index */}
-                                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-[30]"></div>
+                                  {/* Bottom Gradient - OVER media but UNDER badges */}
+                                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-[15]"></div>
 
-                                  {/* Hover Overlay - HIGHER z-index */}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-red-600/0 to-transparent group-hover:from-red-600/20 transition-all duration-300 pointer-events-none z-[35]"></div>
+                                  {/* Hover Overlay - OVER media */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-red-600/0 to-transparent group-hover:from-red-600/20 transition-all duration-300 pointer-events-none z-[12]"></div>
                                   {/* Views Badge - z-30 */}
                                   <div className="absolute bottom-3 left-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg z-30">
                                     <Play className="w-3 h-3" fill="white" />
