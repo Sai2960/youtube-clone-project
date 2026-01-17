@@ -150,49 +150,33 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
 
     // Try multiple thumbnail fields
     const thumbnailFields = [
-      video.thumbnail,
-      video.videothumbnail,
-      video.videothumb,
-      video.thumbnailUrl,
-    ];
+    video.thumbnail,
+    video.videothumbnail,
+    video.videothumb,
+    video.thumbnailUrl,
+  ];
 
-    for (const field of thumbnailFields) {
-      if (field) {
-        // Check if it's already a full URL
-        if (field.startsWith("http://") || field.startsWith("https://")) {
-          console.log("✅ Full thumbnail URL:", field.substring(0, 60));
-          return field;
-        }
-        // Check if it's a relative path
-        if (field.startsWith("/uploads/")) {
-          const fullUrl = `${backend}${field}`;
-          console.log(
-            "✅ Constructed thumbnail URL:",
-            fullUrl.substring(0, 60),
-          );
-          return fullUrl;
-        }
-        // Check if it's just a filename
-        if (field && !field.includes("/")) {
-          const fullUrl = `${backend}/uploads/thumbnails/${field}`;
-          console.log("✅ Thumbnail from filename:", fullUrl.substring(0, 60));
-          return fullUrl;
-        }
-        // Try normalizing with urlHelper
-        const normalized = normalizeURL(field);
-        if (normalized) {
-          console.log(
-            "✅ Normalized thumbnail URL:",
-            normalized.substring(0, 60),
-          );
-          return normalized;
-        }
+     for (const field of thumbnailFields) {
+    if (field) {
+      console.log("🔍 Checking thumbnail field:", field.substring(0, 100));
+      
+      // If it's already a complete Supabase URL, return it as-is
+      if (field.includes('supabase.co/storage/v1/object')) {
+        console.log("✅ Using complete Supabase URL:", field.substring(0, 80));
+        return field;
+      }
+      
+      // If it's a full URL (http/https), return it
+      if (field.startsWith("http://") || field.startsWith("https://")) {
+        console.log("✅ Full thumbnail URL:", field.substring(0, 80));
+        return field;
       }
     }
+  }
 
-    console.log("⚠️ No thumbnail URL found for video:", video._id);
-    return null;
-  };
+  console.log("⚠️ No valid thumbnail URL found for video:", video._id);
+  return null;
+};
   // ========== Format Views Function ==========
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";
@@ -262,18 +246,25 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
             >
               {/* ========== Thumbnail Section ========== */}
               <div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
-              {thumbnailUrl && !hasThumbnailFailed ? (
+            {thumbnailUrl && !hasThumbnailFailed ? (
   <img
-    src={thumbnailUrl.replace('https://eizqutnyengdtfxkczu.supabase.co/storage/v1/object/', 'https://eizqutnyengdtfxkczu.supabase.co/storage/v1/object/public/')}
+    src={thumbnailUrl}
     alt={video?.videotitle || "Video thumbnail"}
     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
     loading="lazy"
     onError={(e) => {
-      console.error("❌ Thumbnail failed:", thumbnailUrl);
-      handleThumbnailError(video._id, thumbnailUrl);
+      console.error("❌ Thumbnail failed to load:", thumbnailUrl);
+      const target = e.currentTarget as HTMLImageElement;
+      // Retry with cache buster
+      if (!target.src.includes('?t=')) {
+        target.src = `${thumbnailUrl}?t=${Date.now()}`;
+        console.log("🔄 Retrying with cache buster");
+      } else {
+        handleThumbnailError(video._id, thumbnailUrl);
+      }
     }}
     onLoad={() => {
-      console.log("✅ Thumbnail loaded:", video._id);
+      console.log("✅ Thumbnail loaded successfully:", video._id);
     }}
   />
 ) : (
