@@ -109,7 +109,7 @@ const determineThemeAndOtpMethod = (ip) => {
     ];
 
     const isSouthIndia = southernStates.some((s) =>
-      state.toLowerCase().includes(s.toLowerCase())
+      state.toLowerCase().includes(s.toLowerCase()),
     );
 
     const currentTime = moment().tz("Asia/Kolkata");
@@ -124,7 +124,7 @@ const determineThemeAndOtpMethod = (ip) => {
       "| OTP:",
       otpMethod,
       "| State:",
-      state
+      state,
     );
     return {
       state,
@@ -252,7 +252,7 @@ router.post("/login", locationMiddleware, async (req, res) => {
       // ✅ ADD DESCRIPTION IF MISSING
       if (!user.description || user.description.trim() === "") {
         user.description = generateChannelDescription(
-          user.channelname || user.name
+          user.channelname || user.name,
         );
         updated = true;
         console.log("✅ Added auto-description to existing user");
@@ -385,7 +385,7 @@ router.patch("/update/:userId", verifyToken, async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $set: updateData },
-      { new: true, select: "-password" }
+      { new: true, select: "-password" },
     );
 
     if (!updatedUser) {
@@ -419,7 +419,7 @@ router.get("/all", async (req, res) => {
   try {
     const users = await User.find()
       .select(
-        "_id email name channelname description image bannerImage currentPlan joinedon subscribers"
+        "_id email name channelname description image bannerImage currentPlan joinedon subscribers",
       )
       .sort({ joinedon: -1 })
       .limit(100);
@@ -451,7 +451,7 @@ router.get("/channel/:id", async (req, res) => {
     }
 
     const user = await User.findById(id).select(
-      "_id email name channelname description image bannerImage joinedon currentPlan subscribers"
+      "_id email name channelname description image bannerImage joinedon currentPlan subscribers",
     );
 
     if (!user) {
@@ -478,7 +478,7 @@ router.get("/channel/:id", async (req, res) => {
         ) {
           return imagePath.replace(
             /https?:\/\/(192\.168\.0\.181|localhost):5000/,
-            BASE_URL
+            BASE_URL,
           );
         }
         // Fix wrong Vercel URLs with port
@@ -612,7 +612,7 @@ router.post(
       const updatedUser = await User.findByIdAndUpdate(
         channelId,
         { $set: updateData },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       ).select("name email channelname image bannerImage subscribers");
 
       if (!updatedUser) {
@@ -624,7 +624,7 @@ router.post(
 
       console.log(
         `✅ ${imageType} image uploaded successfully:`,
-        uploadResult.url
+        uploadResult.url,
       );
 
       res.json({
@@ -650,7 +650,7 @@ router.post(
             : "Internal server error",
       });
     }
-  }
+  },
 );
 
 // ✅ UPDATE PROFILE WITH AVATAR (Alternative endpoint)
@@ -686,7 +686,7 @@ router.put(
         const { uploadToSupabase } = await import("../config/cloudinary.js");
         const uploadResult = await uploadToSupabase(
           req.file,
-          "channel-images/profiles"
+          "channel-images/profiles",
         );
 
         updateData.image = uploadResult.url;
@@ -700,7 +700,7 @@ router.put(
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         { $set: updateData },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       ).select("-password");
 
       if (!updatedUser) {
@@ -726,7 +726,7 @@ router.put(
         error: error.message,
       });
     }
-  }
+  },
 );
 
 // ✅ UPLOAD AVATAR (Alternative endpoint)
@@ -749,7 +749,7 @@ router.post(
       const { uploadToSupabase } = await import("../config/cloudinary.js");
       const uploadResult = await uploadToSupabase(
         req.file,
-        "channel-images/profiles"
+        "channel-images/profiles",
       );
 
       // Update user's avatar
@@ -788,7 +788,7 @@ router.post(
         error: error.message,
       });
     }
-  }
+  },
 );
 // ✅ CRITICAL: Profile route MUST come BEFORE /:id route
 router.get("/profile", verifyToken, async (req, res) => {
@@ -970,7 +970,7 @@ router.post("/subscribe/:channelId", verifyToken, async (req, res) => {
     }
 
     const isAlreadySubscribed = user.subscribedChannels.some(
-      (id) => id.toString() === channelId
+      (id) => id.toString() === channelId,
     );
 
     if (isAlreadySubscribed) {
@@ -1029,7 +1029,7 @@ router.post("/unsubscribe/:channelId", verifyToken, async (req, res) => {
     }
 
     const subscriptionIndex = user.subscribedChannels.findIndex(
-      (id) => id.toString() === channelId
+      (id) => id.toString() === channelId,
     );
 
     if (subscriptionIndex === -1) {
@@ -1046,7 +1046,7 @@ router.post("/unsubscribe/:channelId", verifyToken, async (req, res) => {
 
     console.log(
       "✅ Unsubscribed successfully! New count:",
-      channel.subscribers
+      channel.subscribers,
     );
 
     res.json({
@@ -1089,7 +1089,7 @@ router.get("/subscription-status/:channelId", verifyToken, async (req, res) => {
     }
 
     const isSubscribed = user.subscribedChannels.some(
-      (id) => id.toString() === channelId
+      (id) => id.toString() === channelId,
     );
 
     // Get notification preference for this channel
@@ -1159,7 +1159,7 @@ router.post(
 
       // Check if user is subscribed to this channel
       const isSubscribed = user.subscribedChannels.some(
-        (id) => id.toString() === channelId
+        (id) => id.toString() === channelId,
       );
 
       if (!isSubscribed) {
@@ -1194,7 +1194,7 @@ router.post(
         error: error.message,
       });
     }
-  }
+  },
 );
 
 router.get("/subscribed-channels", verifyToken, async (req, res) => {
@@ -1203,7 +1203,7 @@ router.get("/subscribed-channels", verifyToken, async (req, res) => {
 
     const user = await User.findById(userId).populate(
       "subscribedChannels",
-      "name channelname image bannerImage subscribers"
+      "name channelname image bannerImage subscribers",
     );
 
     if (!user) {
@@ -1626,7 +1626,7 @@ router.post("/otp-login", async (req, res) => {
         email: user.email,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "30d" }
+      { expiresIn: "30d" },
     );
 
     console.log("✅ OTP Login successful");
@@ -1658,6 +1658,37 @@ router.post("/otp-login", async (req, res) => {
       error: "Login failed",
       details: error.message,
     });
+  }
+});
+// ✅ DEBUG: Check current theme logic
+router.get("/debug-theme", async (req, res) => {
+  try {
+    const ip =
+      req.ip ||
+      req.connection?.remoteAddress ||
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      "127.0.0.1";
+
+    const moment = (await import("moment-timezone")).default;
+    const currentMoment = moment().tz("Asia/Kolkata");
+
+    const { state, theme, otpMethod } = determineThemeAndOtpMethod(ip);
+
+    res.json({
+      success: true,
+      debug: {
+        serverTime: currentMoment.format("YYYY-MM-DD HH:mm:ss Z"),
+        hour: currentMoment.hour(),
+        minute: currentMoment.minute(),
+        isMorningTime: currentMoment.hour() >= 10 && currentMoment.hour() < 12,
+        detectedState: state,
+        determinedTheme: theme,
+        otpMethod: otpMethod,
+        ip: ip,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

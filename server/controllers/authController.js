@@ -19,7 +19,6 @@ const __dirname = path.dirname(__filename);
 const otpStore = new Map();
 
 // Cleanup job - runs every minute to remove expired OTPs
-// ! This prevents memory leaks from abandoned OTP requests
 setInterval(() => {
   const currentTime = Date.now();
 
@@ -97,7 +96,7 @@ export const determineThemeAndOtpMethod = (ip) => {
       userState = process.env.TEST_GEO_STATE;
       console.log(
         "🧪 TEST MODE ACTIVE - Using state from environment:",
-        userState
+        userState,
       );
     }
     // ? Localhost development - can't get real geo data
@@ -145,7 +144,7 @@ export const determineThemeAndOtpMethod = (ip) => {
 
     // Check if user is from South India
     const isUserFromSouthIndia = southernIndianStates.some((stateName) =>
-      userState.toLowerCase().includes(stateName.toLowerCase())
+      userState.toLowerCase().includes(stateName.toLowerCase()),
     );
 
     // Get current time in Indian Standard Time
@@ -154,13 +153,19 @@ export const determineThemeAndOtpMethod = (ip) => {
     const currentMinute = currentMoment.minute();
     const isMorningHours = currentHour >= 10 && currentHour < 12;
 
-    // Detailed logging - helpful for debugging theme issues
+    // 🔴 CRITICAL: Log complete time details
     console.log("⏰ ═══════════════════════════════════════");
-    console.log("⏰ TIME CHECK FOR THEME DETERMINATION:");
-    console.log("   IST Time:", currentMoment.format("YYYY-MM-DD HH:mm:ss"));
-    console.log("   Hour:", currentHour);
+    console.log("⏰ DETAILED TIME CHECK:");
+    console.log(
+      "   Full Timestamp:",
+      currentMoment.format("YYYY-MM-DD HH:mm:ss Z"),
+    );
+    console.log("   Hour (24h format):", currentHour);
     console.log("   Minute:", currentMinute);
-    console.log("   Morning Period (10-12):", isMorningHours);
+    console.log("   Expected Range: 10:00 - 11:59");
+    console.log("   Is Morning Period:", isMorningHours);
+    console.log("   State:", userState);
+    console.log("   Is South India:", isUserFromSouthIndia);
     console.log("⏰ ═══════════════════════════════════════");
 
     // ! OTP Method: South India gets email (better infrastructure)
@@ -325,7 +330,7 @@ export const login = async (req, res) => {
       // Add description if missing (for older accounts)
       if (!existingUser.description || existingUser.description.trim() === "") {
         existingUser.description = generateChannelDescription(
-          existingUser.channelname || existingUser.name
+          existingUser.channelname || existingUser.name,
         );
         needsUpdate = true;
         console.log("✅ Added auto-description to existing user");
@@ -372,7 +377,7 @@ export const login = async (req, res) => {
       "✅ Sending response - Theme:",
       theme,
       "| OTP Method:",
-      otpMethod
+      otpMethod,
     );
 
     // Send success response with user data
@@ -447,7 +452,7 @@ export const updateprofile = async (req, res) => {
       {
         new: true, // Return updated document
         runValidators: true, // Ensure mongoose validation runs
-      }
+      },
     );
 
     // Check if user exists
@@ -560,7 +565,7 @@ export const updateChannelImages = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { $set: { [imageField]: newImageUrl } },
-      { new: true }
+      { new: true },
     );
 
     console.log("✅ Channel image updated successfully");
@@ -660,7 +665,7 @@ export const deleteChannelImage = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { $set: { [imageField]: defaultImage } },
-      { new: true }
+      { new: true },
     );
 
     console.log("✅ Image reset to default successfully");
@@ -1073,7 +1078,7 @@ export const otpLogin = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET || "your-secret-key",
-      { expiresIn: "30d" }
+      { expiresIn: "30d" },
     );
 
     // ✅ SEND WELCOME EMAIL to new users
@@ -1088,7 +1093,7 @@ export const otpLogin = async (req, res) => {
           } else {
             console.log(
               "⚠️ Welcome email failed (non-critical):",
-              result.error
+              result.error,
             );
           }
         })
