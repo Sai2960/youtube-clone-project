@@ -86,9 +86,27 @@ const generateToken = (user) => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
 };
 
-// 🌍 Determine Theme and OTP Method based on Geo-location
 const determineThemeAndOtpMethod = (ip) => {
   try {
+    // ✅ Handle localhost
+    if (ip === "::1" || ip === "127.0.0.1" || ip.startsWith("192.168")) {
+      console.log("🏠 Localhost detected, using test location");
+
+      const currentHour = moment().tz("Asia/Kolkata").hour();
+      const isLightTime = currentHour >= 10 && currentHour < 12;
+
+      return {
+        state: "Tamil Nadu",
+        city: "Chennai",
+        country: "IN",
+        timezone: "Asia/Kolkata",
+        theme: isLightTime ? "light" : "dark",
+        otpMethod: "email",
+        debug: { method: "localhost", hour: currentHour },
+      };
+    }
+
+    // ✅ Use geoip-lite
     const geo = geoip.lookup(ip) || { country: "IN", region: "TN" };
     const state = geo.region || "Unknown";
     const city = geo.city || "Unknown";
@@ -119,13 +137,14 @@ const determineThemeAndOtpMethod = (ip) => {
     if (isSouthIndia && hour >= 10 && hour < 12) theme = "light";
 
     console.log(
-      "🎨 Fallback Theme:",
+      "🎨 Theme determined:",
       theme,
-      "| OTP:",
-      otpMethod,
+      "| Hour:",
+      hour,
       "| State:",
       state,
     );
+
     return {
       state,
       city,
@@ -133,6 +152,7 @@ const determineThemeAndOtpMethod = (ip) => {
       otpMethod,
       country: geo.country || "IN",
       timezone: geo.timezone || "Asia/Kolkata",
+      debug: { method: "geoip", hour, isSouthIndia },
     };
   } catch (error) {
     console.error("⚠️ Theme determination error:", error);
@@ -143,6 +163,7 @@ const determineThemeAndOtpMethod = (ip) => {
       otpMethod: "email",
       country: "IN",
       timezone: "Asia/Kolkata",
+      debug: { method: "error" },
     };
   }
 };
@@ -1335,44 +1356,74 @@ router.get("/health", (req, res) => {
     cloudinaryEnabled: true,
   });
 });
-// ==================== LOCATION ROUTES ====================
-
-// ✅ CHECK LOCATION ENDPOINT
+// ✅ CHECK LOCATION ENDPOINT - FIXED VERSION
 router.get("/check-location", async (req, res) => {
   try {
-    const ip =
-      req.ip ||
-      req.connection?.remoteAddress ||
-      req.headers["x-forwarded-for"]?.split(",")[0] ||
-      "127.0.0.1";
+    console.log("\n🌍 ===== LOCATION CHECK REQUEST =====");
 
-    console.log("🌍 Location check request from IP:", ip);
+    // ✅ CRITICAL: Extract IP properly for Railway/Vercel
+    const forwardedFor = req.headers["x-forwarded-for"];
+    const ip = forwardedFor
+      ? forwardedFor.split(",")[0].trim()
+      : req.ip ||
+        req.connection?.remoteAddress ||
+        req.socket?.remoteAddress ||
+        "127.0.0.1";
 
-    const { state, theme, otpMethod, geo } = determineThemeAndOtpMethod(ip);
+    // Clean IPv6 prefix
+    const cleanIp = ip.replace(/^::ffff:/, "");
+
+    console.log("   Original IP:", ip);
+    console.log("   Cleaned IP:", cleanIp);
+    console.log("   Headers:", {
+      forwarded: req.headers["x-forwarded-for"],
+      realIp: req.headers["x-real-ip"],
+    });
+
+    // Call the theme determination function
+    const result = determineThemeAndOtpMethod(cleanIp);
+
+    console.log("   Result:", {
+      state: result.state,
+      theme: result.theme,
+      otpMethod: result.otpMethod,
+    });
+    console.log("=====================================\n");
 
     res.json({
       success: true,
-      theme,
-      otpMethod,
+      theme: result.theme,
+      otpMethod: result.otpMethod,
       location: {
-        state,
-        country: geo.country,
-        timezone: geo.timezone,
+        state: result.state,
+        city: result.city,
+        country: result.country,
+        timezone: result.timezone,
+      },
+      debug: {
+        ip: cleanIp,
+        method: result.debug?.method || "geoip",
       },
     });
   } catch (error) {
     console.error("❌ Location check failed:", error);
+    console.error("   Stack:", error.stack);
 
-    res.status(500).json({
-      success: false,
+    // ✅ Always return 200 with fallback data
+    res.status(200).json({
+      success: true,
       theme: "dark",
       otpMethod: "sms",
-      location: null,
+      location: {
+        state: "Unknown",
+        city: "Unknown",
+        country: "IN",
+        timezone: "Asia/Kolkata",
+      },
       error: error.message,
     });
   }
 });
-
 // ✅ OTP ROUTES
 router.post("/send-email-otp", async (req, res) => {
   try {
