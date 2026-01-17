@@ -276,68 +276,28 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
               href={`/watch/${video._id}`}
               className="flex gap-2 md:gap-3 px-3 md:px-0 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group"
             >
-              {/* ========== Thumbnail Section ========== */}
-              <div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
-                {thumbnailUrl && !hasThumbnailFailed ? (
-                  <img
-                    src={thumbnailUrl}
-                    alt={video?.videotitle || "Video thumbnail"}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                    onError={(e) => {
-                      const target = e.currentTarget as HTMLImageElement;
-                      console.error(
-                        "❌ Thumbnail failed to load:",
-                        thumbnailUrl,
-                      );
+            {/* ========== Thumbnail Section ========== */}
+<div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
+  {/* Just show placeholder for all videos */}
+  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
+    <div className="text-center text-gray-400">
+      <svg
+        className="w-8 h-8 mx-auto mb-1 opacity-50"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+      </svg>
+      <p className="text-[10px] font-medium">Video</p>
+    </div>
+  </div>
 
-                      // Try alternative: remove query params and retry
-                      if (target.src.includes("?")) {
-                        const cleanUrl = target.src.split("?")[0];
-                        target.src = cleanUrl;
-                        console.log(
-                          "🔄 Retrying without query params:",
-                          cleanUrl,
-                        );
-                      }
-                      // Try adding timestamp
-                      else if (!target.src.includes("&t=")) {
-                        const separator = target.src.includes("?") ? "&" : "?";
-                        target.src = `${thumbnailUrl}${separator}t=${Date.now()}`;
-                        console.log("🔄 Retrying with cache buster");
-                      }
-                      // Give up
-                      else {
-                        handleThumbnailError(video._id, thumbnailUrl);
-                      }
-                    }}
-                    onLoad={() => {
-                      console.log(
-                        "✅ Thumbnail loaded successfully:",
-                        video._id,
-                      );
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
-                    <div className="text-center text-gray-400">
-                      <svg
-                        className="w-8 h-8 mx-auto mb-1 opacity-50"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                      </svg>
-                      <p className="text-[10px] font-medium">No Preview</p>
-                    </div>
-                  </div>
-                )}
+  {/* Duration Badge */}
+  <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
+    {video?.duration || "10:24"}
+  </div>
+</div>
 
-                {/* Duration Badge */}
-                <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
-                  {video?.duration || "10:24"}
-                </div>
-              </div>
               {/* ========== Video Info Section ========== */}
               <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                 {/* Title */}
