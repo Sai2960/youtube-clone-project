@@ -325,7 +325,6 @@ function AppContent({ Component, pageProps }: AppProps) {
   // ============================================================================
   // 🔴 CRITICAL: REAL-TIME THEME CHECKER - REPLACE LINES 278-322 in _app.js
   // ============================================================================
-
   useEffect(() => {
     if (typeof window === "undefined" || !isThemeReady) return;
 
@@ -345,6 +344,27 @@ function AppContent({ Component, pageProps }: AppProps) {
 
         console.log("\n⏰ ===== THEME CHECK =====");
         console.log("   Time:", now.toLocaleTimeString());
+
+        // ✅ CRITICAL: Check if user manually set theme recently
+        const manualOverride = localStorage.getItem("themeManualOverride");
+        if (manualOverride) {
+          const blockUntil = parseInt(manualOverride);
+          if (Date.now() < blockUntil) {
+            const hoursLeft = Math.ceil(
+              (blockUntil - Date.now()) / (1000 * 60 * 60),
+            );
+            console.log(
+              `🔒 Manual theme override active (${hoursLeft}h remaining)`,
+            );
+            console.log("⏭️ Skipping auto-theme check");
+            console.log("=========================\n");
+            return;
+          } else {
+            // Override expired, remove it
+            localStorage.removeItem("themeManualOverride");
+            console.log("🔓 Manual override expired, resuming auto-theme");
+          }
+        }
 
         const timestamp = Date.now();
         const response = await fetch(
@@ -383,27 +403,26 @@ function AppContent({ Component, pageProps }: AppProps) {
             needsUpdate: currentTheme !== newTheme,
           });
 
-          // ✅ CRITICAL FIX: Apply theme WITHOUT unmounting
+          // Apply theme WITHOUT marking as manual (so auto-check continues)
           if (currentTheme !== newTheme) {
-            console.log(`🔄 SWITCHING THEME: ${currentTheme} → ${newTheme}`);
+            console.log(
+              `🔄 AUTO-SWITCHING THEME: ${currentTheme} → ${newTheme}`,
+            );
 
-            // ✅ Just apply the theme directly - no unmounting!
-            applyTheme(newTheme);
+            applyTheme(newTheme, false); // ✅ false = not a manual change
 
-            // ✅ Update user context
             if (user && updateUser) {
               console.log("👤 Updating user context with new theme");
               updateUser({ theme: newTheme });
             }
 
-            // ✅ Dispatch event for other components
             window.dispatchEvent(
               new CustomEvent("themeChanged", {
                 detail: { theme: newTheme, timestamp },
               }),
             );
 
-            console.log("✅ Theme switch complete!");
+            console.log("✅ Auto theme switch complete!");
           } else {
             console.log(`✅ Theme already correct: ${currentTheme}`);
           }
@@ -415,11 +434,9 @@ function AppContent({ Component, pageProps }: AppProps) {
       }
     };
 
-    // ✅ Run immediately on mount
     console.log("🚀 Starting real-time theme checker");
     checkAndApplyTheme();
 
-    // ✅ Check every 60 seconds (1 minute)
     intervalId = setInterval(checkAndApplyTheme, 60000);
 
     return () => {
