@@ -513,9 +513,7 @@ function AppContent({ Component, pageProps }: AppProps) {
     };
   }, [showMobileSidebar]);
 
-  // NEW - Add condition to exclude upload page:
   useEffect(() => {
-    // ✅ CRITICAL: Only apply overrides to shorts PLAYER, not upload page
     const isShortsPlayer =
       router.pathname === "/shorts" || router.pathname === "/shorts/";
     const isShortsUpload = router.pathname === "/shorts/upload";
@@ -546,18 +544,16 @@ function AppContent({ Component, pageProps }: AppProps) {
 
       console.log("✅ Shorts player overrides applied");
     } else {
-      // ✅ Reset when leaving shorts player OR on upload page
+      // ✅ CRITICAL FIX: Re-apply theme after clearing shorts overrides
       document.documentElement.style.position = "";
       document.documentElement.style.inset = "";
       document.documentElement.style.zIndex = "";
       document.documentElement.style.pointerEvents = "";
-      document.documentElement.style.background = "";
 
       document.body.style.position = "";
       document.body.style.inset = "";
       document.body.style.zIndex = "";
       document.body.style.pointerEvents = "";
-      document.body.style.background = "";
 
       const nextDiv = document.getElementById("__next");
       if (nextDiv) {
@@ -565,8 +561,27 @@ function AppContent({ Component, pageProps }: AppProps) {
         nextDiv.style.inset = "";
         nextDiv.style.zIndex = "";
         nextDiv.style.pointerEvents = "";
-        nextDiv.style.background = "";
       }
+
+      // ✅ FIX: Re-apply current theme AFTER clearing shorts styles
+      const currentTheme = getStoredTheme();
+      const bgColor = currentTheme === "dark" ? "#0f0f0f" : "#ffffff";
+      const textColor = currentTheme === "dark" ? "#f1f1f1" : "#0f0f0f";
+
+      document.documentElement.style.backgroundColor = `${bgColor}`;
+      document.documentElement.style.color = `${textColor}`;
+      document.body.style.backgroundColor = `${bgColor}`;
+      document.body.style.color = `${textColor}`;
+
+      if (nextDiv) {
+        nextDiv.style.backgroundColor = `${bgColor}`;
+        nextDiv.style.color = `${textColor}`;
+      }
+
+      console.log(
+        "✅ Shorts overrides cleared, theme re-applied:",
+        currentTheme,
+      );
     }
   }, [router.pathname]);
 
