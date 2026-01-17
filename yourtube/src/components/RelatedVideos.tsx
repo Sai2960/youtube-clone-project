@@ -145,23 +145,14 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
     return "/video/vdo.mp4";
   };
   const getEnhancedThumbnailUrl = (video: Video): string | null => {
-    const backend = getBackendURL();
-
-    // ✅ CORRECT SUPABASE URL (fix the typo!)
-    const SUPABASE_URL =
-      "https://ejzqutnycnagdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos";
-
     console.log("🔍 Finding thumbnail for video:", video._id);
     console.log("📦 Video data:", {
       thumbnail: video.thumbnail,
       videothumbnail: video.videothumbnail,
-      videothumb: video.videothumb,
-      thumbnailUrl: video.thumbnailUrl,
-      videofilename: video.videofilename,
       filepath: video.filepath,
     });
 
-    // Priority 1: Check all thumbnail fields
+    // ✅ PRIORITY 1: Use the thumbnail field from database (already set correctly)
     const thumbnailFields = [
       video.thumbnailUrl,
       video.videothumbnail,
@@ -173,97 +164,25 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
       if (field) {
         const fieldStr = String(field).trim();
 
-        // Complete Supabase URL with image extension
-        if (
-          fieldStr.includes("supabase.co/storage/v1/object") &&
-          fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i)
-        ) {
-          console.log(
-            "✅ Using complete Supabase image URL:",
-            fieldStr.substring(0, 80),
-          );
+        // ✅ ANY valid HTTP/HTTPS URL (Supabase video URL or image URL)
+        if (fieldStr.startsWith("http://") || fieldStr.startsWith("https://")) {
+          console.log("✅ Using URL from database:", fieldStr.substring(0, 80));
           return fieldStr;
-        }
-
-        // Full HTTP/HTTPS URL (non-Supabase)
-        if (
-          (fieldStr.startsWith("http://") || fieldStr.startsWith("https://")) &&
-          !fieldStr.includes("supabase.co")
-        ) {
-          console.log("✅ Using external full URL:", fieldStr.substring(0, 80));
-          return fieldStr;
-        }
-
-        // Cloudinary URL
-        if (fieldStr.includes("cloudinary.com")) {
-          console.log("✅ Using Cloudinary URL:", fieldStr.substring(0, 80));
-          return fieldStr;
-        }
-
-        // Relative path starting with /uploads/
-        if (fieldStr.startsWith("/uploads/")) {
-          const fullUrl = `${backend}${fieldStr}`;
-          console.log("✅ Constructed backend URL:", fullUrl.substring(0, 80));
-          return fullUrl;
-        }
-
-        // Just a filename with extension
-        if (
-          fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i) &&
-          !fieldStr.includes("/")
-        ) {
-          const supabaseUrl = `${SUPABASE_URL}/${fieldStr}`;
-          console.log(
-            "✅ Constructed Supabase URL from filename:",
-            supabaseUrl.substring(0, 80),
-          );
-          return supabaseUrl;
         }
       }
     }
 
-    // Priority 2: Extract thumbnail from video filename
-    if (video.videofilename) {
-      const videoFile = String(video.videofilename);
-      // Extract just the filename without path
-      const videoFilenameOnly = videoFile.split("/").pop();
-
-      if (videoFilenameOnly) {
-        // Replace video extension with .jpg and handle URL encoding
-        const thumbFilename = videoFilenameOnly
-          .replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg")
-          .replace(/%20/g, " "); // Decode %20 to space first
-
-        // Then encode it properly for URLs
-        const encodedThumbFilename = encodeURIComponent(thumbFilename);
-
-        const supabaseThumbUrl = `${SUPABASE_URL}/${encodedThumbFilename}`;
-        console.log(
-          "🔄 Generated thumbnail from video filename:",
-          supabaseThumbUrl.substring(0, 80),
-        );
-        return supabaseThumbUrl;
-      }
-    }
-
-    // Priority 3: Extract from filepath
-    if (video.filepath) {
-      const filepath = String(video.filepath);
-      const filepathOnly = filepath.split("/").pop();
-
-      if (filepathOnly) {
-        const thumbFilename = filepathOnly
-          .replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg")
-          .replace(/%20/g, " ");
-
-        const encodedThumbFilename = encodeURIComponent(thumbFilename);
-        const supabaseThumbUrl = `${SUPABASE_URL}/${encodedThumbFilename}`;
-        console.log(
-          "🔄 Generated thumbnail from filepath:",
-          supabaseThumbUrl.substring(0, 80),
-        );
-        return supabaseThumbUrl;
-      }
+    // ✅ PRIORITY 2: Fallback to video URL (for Supabase videos)
+    const videoUrl = video.filepath || video.videoUrl;
+    if (
+      videoUrl &&
+      (videoUrl.startsWith("http://") || videoUrl.startsWith("https://"))
+    ) {
+      console.log(
+        "✅ Using video URL as thumbnail:",
+        videoUrl.substring(0, 80),
+      );
+      return videoUrl;
     }
 
     console.log("⚠️ No valid thumbnail URL found for video:", video._id);
