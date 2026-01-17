@@ -146,37 +146,69 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
   };
 
   const getEnhancedThumbnailUrl = (video: Video): string | null => {
-    const backend = getBackendURL();
-
-    // Try multiple thumbnail fields
+    // Priority 1: Check all thumbnail fields
     const thumbnailFields = [
-    video.thumbnail,
-    video.videothumbnail,
-    video.videothumb,
-    video.thumbnailUrl,
-  ];
+      video.thumbnail,
+      video.videothumbnail,
+      video.videothumb,
+      video.thumbnailUrl,
+    ];
 
-     for (const field of thumbnailFields) {
-    if (field) {
-      console.log("🔍 Checking thumbnail field:", field.substring(0, 100));
-      
-      // If it's already a complete Supabase URL, return it as-is
-      if (field.includes('supabase.co/storage/v1/object')) {
-        console.log("✅ Using complete Supabase URL:", field.substring(0, 80));
-        return field;
-      }
-      
-      // If it's a full URL (http/https), return it
-      if (field.startsWith("http://") || field.startsWith("https://")) {
-        console.log("✅ Full thumbnail URL:", field.substring(0, 80));
-        return field;
+    for (const field of thumbnailFields) {
+      if (field) {
+        const fieldStr = String(field).trim();
+        console.log("🔍 Checking thumbnail field:", fieldStr.substring(0, 100));
+
+        // Complete Supabase URL
+        if (fieldStr.includes("supabase.co/storage/v1/object")) {
+          console.log("✅ Using complete Supabase URL");
+          return fieldStr;
+        }
+
+        // Full HTTP/HTTPS URL
+        if (fieldStr.startsWith("http://") || fieldStr.startsWith("https://")) {
+          console.log("✅ Full thumbnail URL found");
+          return fieldStr;
+        }
+
+        // Partial path - construct full Supabase URL
+        if (
+          fieldStr.includes(".jpg") ||
+          fieldStr.includes(".png") ||
+          fieldStr.includes(".webp")
+        ) {
+          const filename = fieldStr.split("/").pop();
+          const supabaseUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${filename}`;
+          console.log(
+            "✅ Constructed Supabase URL:",
+            supabaseUrl.substring(0, 80),
+          );
+          return supabaseUrl;
+        }
       }
     }
-  }
 
-  console.log("⚠️ No valid thumbnail URL found for video:", video._id);
-  return null;
-};
+    // Fallback: Generate from video filename if exists
+    if (video.videofilename || video.filepath) {
+      const videoPath = video.videofilename || video.filepath;
+      const videoFilename = String(videoPath)
+        .split("/")
+        .pop()
+        ?.replace(/\.(mp4|mov|avi|webm)$/i, ".jpg");
+
+      if (videoFilename) {
+        const fallbackUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${videoFilename}`;
+        console.log(
+          "🔄 Using fallback thumbnail from video filename:",
+          fallbackUrl.substring(0, 80),
+        );
+        return fallbackUrl;
+      }
+    }
+
+    console.log("⚠️ No valid thumbnail URL found for video:", video._id);
+    return null;
+  };
   // ========== Format Views Function ==========
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";
@@ -246,28 +278,47 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
             >
               {/* ========== Thumbnail Section ========== */}
               <div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
-            {thumbnailUrl && !hasThumbnailFailed ? (
-  <img
-    src={thumbnailUrl}
-    alt={video?.videotitle || "Video thumbnail"}
-    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-    loading="lazy"
-    onError={(e) => {
-      console.error("❌ Thumbnail failed to load:", thumbnailUrl);
-      const target = e.currentTarget as HTMLImageElement;
-      // Retry with cache buster
-      if (!target.src.includes('?t=')) {
-        target.src = `${thumbnailUrl}?t=${Date.now()}`;
-        console.log("🔄 Retrying with cache buster");
-      } else {
-        handleThumbnailError(video._id, thumbnailUrl);
-      }
-    }}
-    onLoad={() => {
-      console.log("✅ Thumbnail loaded successfully:", video._id);
-    }}
-  />
-) : (
+                {thumbnailUrl && !hasThumbnailFailed ? (
+                  <img
+                    src={thumbnailUrl}
+                    alt={video?.videotitle || "Video thumbnail"}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      console.error(
+                        "❌ Thumbnail failed to load:",
+                        thumbnailUrl,
+                      );
+
+                      // Try alternative: remove query params and retry
+                      if (target.src.includes("?")) {
+                        const cleanUrl = target.src.split("?")[0];
+                        target.src = cleanUrl;
+                        console.log(
+                          "🔄 Retrying without query params:",
+                          cleanUrl,
+                        );
+                      }
+                      // Try adding timestamp
+                      else if (!target.src.includes("&t=")) {
+                        const separator = target.src.includes("?") ? "&" : "?";
+                        target.src = `${thumbnailUrl}${separator}t=${Date.now()}`;
+                        console.log("🔄 Retrying with cache buster");
+                      }
+                      // Give up
+                      else {
+                        handleThumbnailError(video._id, thumbnailUrl);
+                      }
+                    }}
+                    onLoad={() => {
+                      console.log(
+                        "✅ Thumbnail loaded successfully:",
+                        video._id,
+                      );
+                    }}
+                  />
+                ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
                     <div className="text-center text-gray-400">
                       <svg
