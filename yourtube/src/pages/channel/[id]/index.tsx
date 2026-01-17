@@ -312,13 +312,13 @@ const ChannelPage = () => {
 
     window.addEventListener(
       "forceChannelRefresh",
-      handleForceRefresh as EventListener
+      handleForceRefresh as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "forceChannelRefresh",
-        handleForceRefresh as EventListener
+        handleForceRefresh as EventListener,
       );
     };
   }, []);
@@ -427,7 +427,7 @@ const ChannelPage = () => {
         ) {
           console.log(
             "✅ Setting videos (alternate):",
-            response.data.videos.length
+            response.data.videos.length,
           );
           setVideos(response.data.videos);
           setTimeout(() => setRenderKey((prev) => prev + 1), 100);
@@ -516,7 +516,7 @@ const ChannelPage = () => {
                   (k) =>
                     k.toLowerCase().includes("url") ||
                     k.toLowerCase().includes("video") ||
-                    k.toLowerCase().includes("thumb")
+                    k.toLowerCase().includes("thumb"),
                 )
                 .reduce((acc, k) => ({ ...acc, [k]: short[k] }), {}),
             });
@@ -641,7 +641,7 @@ const ChannelPage = () => {
       setCallError(
         error.response?.data?.message ||
           error.message ||
-          "Failed to initiate call. Please try again."
+          "Failed to initiate call. Please try again.",
       );
       setTimeout(() => setCallError(null), 5000);
     } finally {
@@ -831,7 +831,7 @@ const ChannelPage = () => {
                             {
                               month: "short",
                               year: "numeric",
-                            }
+                            },
                           )
                         : "Recently"}
                     </span>
@@ -1223,7 +1223,7 @@ const ChannelPage = () => {
                           ) {
                             try {
                               const match = videoUrl.match(
-                                /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/
+                                /https:\/\/res\.cloudinary\.com\/([^/]+)\/video\/upload\/(.+)/,
                               );
                               if (match) {
                                 const cloudName = match[1];
@@ -1233,20 +1233,20 @@ const ChannelPage = () => {
                                   .filter(
                                     (segment) =>
                                       !segment.match(
-                                        /^(f_|vc_|ac_|af_|br_|q_|w_|h_|c_|so_|t_)/
-                                      )
+                                        /^(f_|vc_|ac_|af_|br_|q_|w_|h_|c_|so_|t_)/,
+                                      ),
                                   )
                                   .join("/");
                                 publicId = publicId.replace(
                                   /\.(mp4|mov|avi|mkv|webm)$/i,
-                                  ""
+                                  "",
                                 );
                                 return `https://res.cloudinary.com/${cloudName}/video/upload/so_0,w_640,h_360,c_fill,q_auto:good/${publicId}.jpg`;
                               }
                             } catch (error) {
                               console.error(
                                 "❌ Thumbnail generation error:",
-                                error
+                                error,
                               );
                             }
                           }
@@ -1273,7 +1273,7 @@ const ChannelPage = () => {
 
                               <div className="relative w-full h-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
                                 {getVideoThumbnail(video).includes(
-                                  "supabase.co"
+                                  "supabase.co",
                                 ) ? (
                                   <img
                                     src={getVideoThumbnail(video)}
@@ -1285,7 +1285,7 @@ const ChannelPage = () => {
                                         e.currentTarget as HTMLImageElement;
                                       const currentVideo = video;
                                       console.error(
-                                        "❌ Thumbnail failed, trying video element"
+                                        "❌ Thumbnail failed, trying video element",
                                       );
                                       target.style.display = "none";
                                       const parent = target.parentElement;
@@ -1353,7 +1353,7 @@ const ChannelPage = () => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   router.push(
-                                    `/channel/${video.uploadedBy?._id}`
+                                    `/channel/${video.uploadedBy?._id}`,
                                   );
                                 }}
                                 className="flex-shrink-0"
@@ -1364,7 +1364,7 @@ const ChannelPage = () => {
                                     <AvatarImage
                                       src={getImageUrl(
                                         video.uploadedBy?.image,
-                                        true
+                                        true,
                                       )}
                                       alt={channelName}
                                       className="object-cover"
@@ -1391,7 +1391,7 @@ const ChannelPage = () => {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     router.push(
-                                      `/channel/${video.uploadedBy?._id}`
+                                      `/channel/${video.uploadedBy?._id}`,
                                     );
                                   }}
                                   className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-1 cursor-pointer font-medium transition-colors"
@@ -1408,7 +1408,7 @@ const ChannelPage = () => {
                                   <span>
                                     {video.createdAt
                                       ? new Date(
-                                          video.createdAt
+                                          video.createdAt,
                                         ).toLocaleDateString()
                                       : "Recently"}
                                   </span>
@@ -1503,180 +1503,187 @@ const ChannelPage = () => {
                           </span>
                         </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 w-full pb-4 px-1 sm:px-0">
-  {shorts.map((short, index) => {
-    const thumbnailUrl = getShortThumbnail(short);
-    const videoUrl = getShortVideoUrl(short);
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 w-full pb-4 px-1 sm:px-0">
+                          {shorts.map((short, index) => {
+                            const thumbnailUrl = getShortThumbnail(short);
+                            const videoUrl = getShortVideoUrl(short);
 
-    // ✅ CRITICAL FIX: Better validation
-    const hasValidThumbnail = thumbnailUrl && thumbnailUrl !== "fallback" && thumbnailUrl.startsWith("http");
-    const hasValidVideo = videoUrl && videoUrl.startsWith("http");
+                            const hasValidThumbnail =
+                              thumbnailUrl &&
+                              thumbnailUrl !== "fallback" &&
+                              thumbnailUrl.startsWith("http");
+                            const hasValidVideo =
+                              videoUrl && videoUrl.startsWith("http");
 
-    return (
-    <div
-  key={short._id || short.id}
-  onClick={(e) => {
-    e.preventDefault();
-    const shortId = short._id || short.id;
-    if (shortId) {
-      router.push(`/shorts?id=${shortId}`);
-    }
-  }}
-  className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
-  style={{ isolation: 'isolate' }}
->
+                            return (
+                              <div
+                                key={short._id || short.id}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const shortId = short._id || short.id;
+                                  if (shortId) {
+                                    router.push(`/shorts?id=${shortId}`);
+                                  }
+                                }}
+                                className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
+                              >
+                                {/* ✅ FIXED CONTAINER - Always visible in both themes */}
+                                <div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gray-100 dark:bg-gray-800">
+                                  {/* Animated Border */}
+                                  <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500"></div>
 
+                                  {/* ✅ CRITICAL FIX: Media Content with proper z-index */}
+                                  <div className="absolute inset-0 w-full h-full z-10">
+                                    {hasValidThumbnail ? (
+                                      <img
+                                        src={thumbnailUrl}
+                                        alt={short.title || "Short"}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        style={{ display: "block" }}
+                                        onError={(e) => {
+                                          console.error(
+                                            "❌ Thumbnail failed:",
+                                            short._id,
+                                          );
+                                          const target = e.currentTarget;
+                                          target.style.display = "none";
 
+                                          if (hasValidVideo) {
+                                            const parent = target.parentElement;
+                                            if (
+                                              parent &&
+                                              !parent.querySelector(
+                                                "video.backup-video",
+                                              )
+                                            ) {
+                                              const video =
+                                                document.createElement("video");
+                                              video.className =
+                                                "backup-video w-full h-full object-cover";
+                                              video.src = videoUrl;
+                                              video.preload = "metadata";
+                                              video.muted = true;
+                                              video.playsInline = true;
+                                              video.style.display = "block";
+                                              parent.appendChild(video);
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    ) : hasValidVideo ? (
+                                      <video
+                                        src={videoUrl}
+                                        className="w-full h-full object-cover"
+                                        preload="metadata"
+                                        muted
+                                        playsInline
+                                        style={{ display: "block" }}
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600">
+                                        <div className="text-center p-4">
+                                          <div className="relative mb-3">
+                                            <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-white/30"></div>
+                                            <div className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl bg-white/95">
+                                              <Play
+                                                className="w-8 h-8 ml-1 text-red-600"
+                                                fill="currentColor"
+                                              />
+                                            </div>
+                                          </div>
+                                          <p
+                                            className="text-xs font-black text-white tracking-widest"
+                                            style={{
+                                              textShadow:
+                                                "0 2px 4px rgba(0,0,0,0.3)",
+                                            }}
+                                          >
+                                            {short.title || "SHORT"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
 
-        {/* ✅ FIXED: Proper container with light/dark backgrounds */}
-<div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500">
+                                  {/* Bottom Gradient - z-20 */}
+                                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-20"></div>
 
-          {/* Animated Gradient Border on Hover */}
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 -z-10"></div>
+                                  {/* Hover Overlay - z-25 */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-red-600/0 to-transparent group-hover:from-red-600/20 transition-all duration-300 pointer-events-none z-[25]"></div>
 
-          {/* ✅ FIXED: Conditional rendering with proper checks */}
-          {hasValidThumbnail ? (
-            // Show thumbnail image
-            <img
-              src={thumbnailUrl}
-              alt={short.title || "Short"}
-              className="w-full h-full object-cover relative z-10 transition-transform duration-700 group-hover:scale-110"
-              loading="lazy"
-              onError={(e) => {
-                console.error("❌ Thumbnail failed for:", short._id);
-                e.currentTarget.style.display = "none";
-                
-                // Try video as backup
-                if (hasValidVideo) {
-                  const parent = e.currentTarget.parentElement;
-                  if (parent && !parent.querySelector('video.backup-video')) {
-                    const video = document.createElement('video');
-                    video.className = 'backup-video w-full h-full object-cover relative z-10';
-                    video.src = videoUrl;
-                    video.preload = 'metadata';
-                    video.muted = true;
-                    video.playsInline = true;
-                    parent.appendChild(video);
-                  }
-                }
-              }}
-            />
-          ) : hasValidVideo ? (
-            // Show video element
-            <video
-              src={videoUrl}
-              className="w-full h-full object-cover relative z-10 transition-transform duration-700 group-hover:scale-110"
-              preload="metadata"
-              muted
-              playsInline
-            />
-          ) : (
-            // ✅ ENHANCED FALLBACK - Always visible
-  <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600 z-10">
+                                  {/* Views Badge - z-30 */}
+                                  <div className="absolute bottom-3 left-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg z-30">
+                                    <Play className="w-3 h-3" fill="white" />
+                                    <span>
+                                      {(short.views || 0).toLocaleString()}
+                                    </span>
+                                  </div>
 
-              <div className="text-center p-4">
-                <div className="relative mb-3">
-                  <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-white/30"></div>
-                  <div className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl bg-white/95">
-                    <Play className="w-8 h-8 ml-1 text-red-600" fill="currentColor" />
-                  </div>
-                </div>
-                <p className="text-xs font-black text-white tracking-widest" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
-                  {short.title || "SHORT"}
-                </p>
-                <p className="text-[8px] text-white/70 mt-1">Tap to play</p>
-              </div>
-            </div>
-          )}
+                                  {/* Duration Badge - z-30 */}
+                                  {short.duration && (
+                                    <div className="absolute bottom-3 right-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-lg z-30">
+                                      {short.duration}s
+                                    </div>
+                                  )}
 
-          {/* Gradient Overlay at bottom */}
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-20"></div>
+                                  {/* Play Button - z-40 */}
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-500 flex items-center justify-center z-40">
+                                    <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
+                                      <div className="relative">
+                                        <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-red-600"></div>
+                                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
+                                          <Play
+                                            className="w-7 h-7 sm:w-8 sm:h-8 text-white ml-1"
+                                            fill="white"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-red-600/0 to-transparent group-hover:from-red-600/20 transition-all duration-300 pointer-events-none z-20"></div>
+                                  {/* Shine Effect - z-50 */}
+                                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-50">
+                                    <div className="absolute inset-0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                                  </div>
+                                </div>
 
-          {/* Views Badge */}
-          <div className="absolute bottom-3 left-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg z-30">
-            <Play className="w-3 h-3" fill="white" />
-            <span>{(short.views || 0).toLocaleString()}</span>
-          </div>
+                                {/* Title & Channel Info */}
+                                <div className="mt-3 sm:mt-4 px-1">
+                                  <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors duration-300">
+                                    {short.title}
+                                  </h3>
 
-          {/* Duration Badge */}
-          {short.duration && (
-            <div className="absolute bottom-3 right-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-lg z-30">
-              {short.duration}s
-            </div>
-          )}
-
-          {/* Play Button Overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-500 flex items-center justify-center z-40">
-            <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-red-600"></div>
-                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
-                  <Play className="w-7 h-7 sm:w-8 sm:h-8 text-white ml-1" fill="white" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Shine Effect */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-50">
-            <div className="absolute inset-0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-          </div>
-
-          {/* Index Badge */}
-          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-br from-purple-500/90 to-pink-500/90 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg z-50">
-            #{index + 1}
-          </div>
-        </div>
-
-        {/* Title & Channel Info */}
-        <div className="mt-3 sm:mt-4 px-1">
-          <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors duration-300" style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
-            {short.title}
-          </h3>
-
-          <div className="flex items-center gap-2">
-            <div
-              className="relative flex-shrink-0"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const channelId = short.userId?._id || short.userId || channel?._id;
-                if (channelId) router.push(`/channel/${channelId}`);
-              }}
-            >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 to-pink-500 rounded-full opacity-0 group-hover:opacity-100 blur transition-opacity duration-300"></div>
-              <Avatar className="relative w-6 h-6 ring-1 ring-gray-200 dark:ring-gray-700">
-                <AvatarImage
-                  src={getImageUrl(short.userId?.image || short.userId?.avatar || channel?.image, true)}
-                  alt={short.userId?.channelName || short.userId?.name || channel?.channelname || "Channel"}
-                  className="w-full h-full object-cover"
-                />
-                <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] font-bold">
-                  {(short.userId?.channelName || short.userId?.name || channel?.channelname || "U")[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-
-            <p
-              className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const channelId = short.userId?._id || short.userId || channel?._id;
-                if (channelId) router.push(`/channel/${channelId}`);
-              }}
-            >
-              {short.userId?.channelName || short.userId?.name || channel?.channelname || "Unknown"}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="w-6 h-6 ring-1 ring-gray-200 dark:ring-gray-700">
+                                      <AvatarImage
+                                        src={getImageUrl(
+                                          short.userId?.image || channel?.image,
+                                          true,
+                                        )}
+                                        alt={
+                                          short.userId?.channelName ||
+                                          channel?.channelname ||
+                                          "Channel"
+                                        }
+                                      />
+                                      <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] font-bold">
+                                        {(short.userId?.channelName ||
+                                          channel?.channelname ||
+                                          "U")[0].toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1">
+                                      {short.userId?.channelName ||
+                                        channel?.channelname ||
+                                        "Unknown"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     ) : (
                       /* Empty State - Premium */
