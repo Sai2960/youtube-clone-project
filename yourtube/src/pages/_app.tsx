@@ -323,72 +323,135 @@ function AppContent({ Component, pageProps }: AppProps) {
     };
   }, []);
   // ============================================================================
-  // LOCATION-BASED THEME
+  // 🔴 CRITICAL: REAL-TIME THEME CHECKER - REPLACE LINES 278-322 in _app.js
   // ============================================================================
-  // ============================================================================
-  // 🔴 CRITICAL: CONTINUOUS THEME CHECKER FOR TIME-BASED SWITCHING
-  // ============================================================================
+
   useEffect(() => {
     if (typeof window === "undefined" || !isThemeReady) return;
 
-    let intervalId: NodeJS.Timeout;
+    let intervalId;
     let lastCheckedMinute = -1;
+    let isChecking = false; // Prevent concurrent checks
 
     const checkAndApplyTheme = async () => {
+      // Prevent concurrent calls
+      if (isChecking) {
+        console.log("⏳ Theme check already in progress, skipping");
+        return;
+      }
+
       try {
-        // Get current minute to avoid redundant checks
+        isChecking = true;
+
         const now = new Date();
         const currentMinute = now.getHours() * 60 + now.getMinutes();
 
         // Only check if minute has changed
-        if (currentMinute === lastCheckedMinute) return;
+        if (currentMinute === lastCheckedMinute) {
+          return;
+        }
         lastCheckedMinute = currentMinute;
 
-        console.log("⏰ Checking theme at", now.toLocaleTimeString());
+        console.log("\n⏰ ===== THEME CHECK =====");
+        console.log("   Time:", now.toLocaleTimeString());
+        console.log("   Current minute:", currentMinute);
 
-        // Fetch location-based theme from server
-        const response = await fetch(`${API_URL}/auth/check-location`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
+        // ✅ CRITICAL: Add cache-busting timestamp
+        const timestamp = Date.now();
+        const response = await fetch(
+          `${API_URL}/auth/check-location?_t=${timestamp}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
+            cache: "no-store", // ✅ Force fresh data
+          },
+        );
 
         if (!response.ok) {
-          console.warn("⚠️ Location check failed, using stored theme");
+          console.warn("⚠️ Location check failed:", response.status);
           return;
         }
 
         const locationData = await response.json();
 
+        console.log("📍 Location data received:", {
+          theme: locationData.theme,
+          state: locationData.location?.state,
+          serverTime: locationData.debug?.serverTime,
+          hour: locationData.debug?.hour,
+          isMorning: locationData.debug?.isMorningTime,
+        });
+
         if (locationData.success && locationData.theme) {
           const currentTheme = getStoredTheme();
+          const newTheme = locationData.theme;
 
-          // Only apply if theme changed
-          if (currentTheme !== locationData.theme) {
-            console.log(
-              `🎨 Auto-switching theme: ${currentTheme} → ${locationData.theme}`,
-            );
-            applyTheme(locationData.theme as "light" | "dark");
+          console.log("🎨 Theme comparison:", {
+            current: currentTheme,
+            new: newTheme,
+            needsUpdate: currentTheme !== newTheme,
+          });
 
-            // Update user context if logged in
-            if (user) {
-              updateUser({ theme: locationData.theme });
+          // ✅ CRITICAL: Apply theme if changed
+          if (currentTheme !== newTheme) {
+            console.log(`🔄 SWITCHING THEME: ${currentTheme} → ${newTheme}`);
+
+            // ✅ Step 1: Apply to DOM immediately
+            applyTheme(newTheme);
+
+            // ✅ Step 2: Update user context
+            if (user && updateUser) {
+              console.log("👤 Updating user context with new theme");
+              updateUser({ theme: newTheme });
             }
+
+            // ✅ Step 3: Force complete re-render
+            console.log("🔄 Forcing component re-render");
+            setIsThemeReady(false);
+
+            // Use requestAnimationFrame for smooth update
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                setIsThemeReady(true);
+                console.log("✅ Theme switch complete!");
+              });
+            });
+
+            // ✅ Step 4: Dispatch custom event for other components
+            window.dispatchEvent(
+              new CustomEvent("themeChanged", {
+                detail: { theme: newTheme, timestamp },
+              }),
+            );
           } else {
             console.log(`✅ Theme already correct: ${currentTheme}`);
           }
+        } else {
+          console.warn("⚠️ Invalid location data received");
         }
+
+        console.log("=========================\n");
       } catch (error) {
         console.error("❌ Theme check error:", error);
+        console.error("   Message:", error.message);
+      } finally {
+        isChecking = false;
       }
     };
 
-    // Initial check
+    // ✅ CRITICAL: Run immediately on mount
+    console.log("🚀 Starting real-time theme checker");
     checkAndApplyTheme();
 
-    // Check every minute
-    intervalId = setInterval(checkAndApplyTheme, 60000);
+    // ✅ CRITICAL: Check every 30 seconds (faster for testing)
+    // Change to 60000 (1 minute) in production if needed
+    intervalId = setInterval(checkAndApplyTheme, 30000);
 
-    console.log("✅ Real-time theme checker started");
+    console.log("✅ Theme checker interval started (30s)");
 
     return () => {
       if (intervalId) {
@@ -396,7 +459,7 @@ function AppContent({ Component, pageProps }: AppProps) {
         console.log("🛑 Theme checker stopped");
       }
     };
-  }, [isThemeReady, user]);
+  }, [isThemeReady, user, updateUser]); // ✅ CRITICAL: Added updateUser dependency
 
   // ============================================================================
   // USER THEME PREFERENCE

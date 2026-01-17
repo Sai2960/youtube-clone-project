@@ -54,7 +54,7 @@ export const UserProvider = ({ children }) => {
       token,
       theme = null,
       location = null,
-      otpMethod = DEFAULT_OTP_METHOD
+      otpMethod = DEFAULT_OTP_METHOD,
     ) => {
       console.log("🔐 ===== LOGIN FUNCTION =====");
       console.log("📦 User data:", {
@@ -65,7 +65,7 @@ export const UserProvider = ({ children }) => {
       });
       console.log(
         "🔑 Token received:",
-        token ? `Yes (${token.length} chars)` : "NO TOKEN!"
+        token ? `Yes (${token.length} chars)` : "NO TOKEN!",
       );
 
       // ✅ CRITICAL: Validate required data
@@ -136,7 +136,7 @@ export const UserProvider = ({ children }) => {
       // ✅ Clear any previous errors
       setError(null);
     },
-    []
+    [],
   );
 
   // ============================================================================
@@ -185,7 +185,7 @@ export const UserProvider = ({ children }) => {
           key: "user",
           newValue: JSON.stringify(updatedUser),
           url: window.location.href,
-        })
+        }),
       );
 
       // ✅ Dispatch avatar update event
@@ -436,73 +436,73 @@ export const UserProvider = ({ children }) => {
   }, [login, logout]);
 
   // ============================================================================
-// STORAGE EVENT LISTENER - ENHANCED FOR OTP
-// ============================================================================
+  // STORAGE EVENT LISTENER - ENHANCED FOR OTP
+  // ============================================================================
 
-useEffect(() => {
-  const handleStorageChange = (event) => {
-    console.log("💾 Storage event detected:", event?.key);
-    
-    // ✅ Handle user data changes
-    if (event?.key === "user" && event.newValue) {
-      try {
-        const updatedUser = JSON.parse(event.newValue);
-        console.log("✅ User synced from storage:", updatedUser.email);
-        setUser(updatedUser);
-      } catch (error) {
-        console.error("❌ Failed to parse synced user:", error);
-      }
-    } 
-    // ✅ Handle user logout
-    else if (event?.key === "user" && !event.newValue) {
-      console.log("🚪 User cleared from storage");
-      setUser(null);
-    } 
-    // ✅ Handle token changes
-    else if (event?.key === "token") {
-      console.log("🔑 Token updated");
-      window.dispatchEvent(new Event("tokenUpdated"));
-    }
-    // ✅ NEW: Handle manual storage events (for OTP login)
-    else if (!event?.key) {
-      console.log("📢 Manual storage event - checking for user data");
-      const token = localStorage.getItem("token");
-      const userStr = localStorage.getItem("user");
-      
-      if (token && userStr) {
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      console.log("💾 Storage event detected:", event?.key);
+
+      // ✅ Handle user data changes
+      if (event?.key === "user" && event.newValue) {
         try {
-          const userData = JSON.parse(userStr);
-          console.log("✅ Loading user from manual event:", userData.email);
-          setUser(userData);
+          const updatedUser = JSON.parse(event.newValue);
+          console.log("✅ User synced from storage:", updatedUser.email);
+          setUser(updatedUser);
         } catch (error) {
-          console.error("❌ Failed to parse user from manual event:", error);
+          console.error("❌ Failed to parse synced user:", error);
         }
       }
-    }
-  };
-
-  window.addEventListener("storage", handleStorageChange);
-  
-  // ✅ CRITICAL: Also check on mount
-  const checkStorageOnMount = () => {
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
-    
-    if (token && userStr && !user) {
-      try {
-        const userData = JSON.parse(userStr);
-        console.log("✅ Found stored user on mount:", userData.email);
-        setUser(userData);
-      } catch (error) {
-        console.error("❌ Failed to parse stored user on mount:", error);
+      // ✅ Handle user logout
+      else if (event?.key === "user" && !event.newValue) {
+        console.log("🚪 User cleared from storage");
+        setUser(null);
       }
-    }
-  };
-  
-  checkStorageOnMount();
-  
-  return () => window.removeEventListener("storage", handleStorageChange);
-}, [user]); // ✅ Added dependency
+      // ✅ Handle token changes
+      else if (event?.key === "token") {
+        console.log("🔑 Token updated");
+        window.dispatchEvent(new Event("tokenUpdated"));
+      }
+      // ✅ NEW: Handle manual storage events (for OTP login)
+      else if (!event?.key) {
+        console.log("📢 Manual storage event - checking for user data");
+        const token = localStorage.getItem("token");
+        const userStr = localStorage.getItem("user");
+
+        if (token && userStr) {
+          try {
+            const userData = JSON.parse(userStr);
+            console.log("✅ Loading user from manual event:", userData.email);
+            setUser(userData);
+          } catch (error) {
+            console.error("❌ Failed to parse user from manual event:", error);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // ✅ CRITICAL: Also check on mount
+    const checkStorageOnMount = () => {
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+
+      if (token && userStr && !user) {
+        try {
+          const userData = JSON.parse(userStr);
+          console.log("✅ Found stored user on mount:", userData.email);
+          setUser(userData);
+        } catch (error) {
+          console.error("❌ Failed to parse stored user on mount:", error);
+        }
+      }
+    };
+
+    checkStorageOnMount();
+
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [user]); // ✅ Added dependency
 
   // ============================================================================
   // TOKEN UPDATED LISTENER
@@ -528,6 +528,48 @@ useEffect(() => {
   }, []);
 
   // ============================================================================
+  // 🆕 THEME CHANGE LISTENER - REPLACE LINES 453-482 in AuthContext.tsx
+  // ============================================================================
+
+  useEffect(() => {
+    const handleThemeChange = (event) => {
+      const customEvent = event;
+      const newTheme = customEvent.detail?.theme;
+
+      if (!newTheme) return;
+
+      console.log("🎨 Theme change event received in AuthContext:", newTheme);
+
+      // Update user with new theme
+      if (user) {
+        console.log("👤 Syncing theme to user state");
+        setUser((currentUser) => {
+          if (!currentUser) return currentUser;
+
+          const updatedUser = {
+            ...currentUser,
+            theme: newTheme,
+          };
+
+          // Save to localStorage
+          try {
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+          } catch (error) {
+            console.error("Failed to save user theme:", error);
+          }
+
+          return updatedUser;
+        });
+      }
+    };
+
+    window.addEventListener("themeChanged", handleThemeChange);
+
+    return () => {
+      window.removeEventListener("themeChanged", handleThemeChange);
+    };
+  }, [user]);
+  // ============================================================================
   // CONTEXT VALUE
   // ============================================================================
 
@@ -541,7 +583,15 @@ useEffect(() => {
       error,
       isInitializing,
     }),
-    [user, error, isInitializing, login, logout, updateUser, handlegooglesignin]
+    [
+      user,
+      error,
+      isInitializing,
+      login,
+      logout,
+      updateUser,
+      handlegooglesignin,
+    ],
   );
 
   // ============================================================================
