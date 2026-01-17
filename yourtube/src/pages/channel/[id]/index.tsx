@@ -1513,20 +1513,24 @@ const ChannelPage = () => {
     const hasValidVideo = videoUrl && videoUrl.startsWith("http");
 
     return (
-      <div
-        key={short._id || short.id}
-        onClick={(e) => {
-          e.preventDefault();
-          const shortId = short._id || short.id;
-          if (shortId) {
-            router.push(`/shorts?id=${shortId}`);
-          }
-        }}
-        className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
-      >
+    <div
+  key={short._id || short.id}
+  onClick={(e) => {
+    e.preventDefault();
+    const shortId = short._id || short.id;
+    if (shortId) {
+      router.push(`/shorts?id=${shortId}`);
+    }
+  }}
+  className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
+  style={{ isolation: 'isolate' }}
+>
+
+
+
         {/* ✅ FIXED: Proper container with light/dark backgrounds */}
-        <div className="aspect-[9/16] rounded-2xl overflow-hidden relative bg-gradient-to-br from-slate-200 to-slate-300 dark:from-zinc-800 dark:to-zinc-900 ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500">
-          
+<div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500">
+
           {/* Animated Gradient Border on Hover */}
           <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 -z-10"></div>
 
@@ -1568,7 +1572,8 @@ const ChannelPage = () => {
             />
           ) : (
             // ✅ ENHANCED FALLBACK - Always visible
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600 relative z-10">
+  <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600 z-10">
+
               <div className="text-center p-4">
                 <div className="relative mb-3">
                   <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-white/30"></div>
