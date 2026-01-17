@@ -329,20 +329,11 @@ function AppContent({ Component, pageProps }: AppProps) {
   useEffect(() => {
     if (typeof window === "undefined" || !isThemeReady) return;
 
-    let intervalId;
+    let intervalId: NodeJS.Timeout;
     let lastCheckedMinute = -1;
-    let isChecking = false; // Prevent concurrent checks
 
     const checkAndApplyTheme = async () => {
-      // Prevent concurrent calls
-      if (isChecking) {
-        console.log("⏳ Theme check already in progress, skipping");
-        return;
-      }
-
       try {
-        isChecking = true;
-
         const now = new Date();
         const currentMinute = now.getHours() * 60 + now.getMinutes();
 
@@ -354,9 +345,7 @@ function AppContent({ Component, pageProps }: AppProps) {
 
         console.log("\n⏰ ===== THEME CHECK =====");
         console.log("   Time:", now.toLocaleTimeString());
-        console.log("   Current minute:", currentMinute);
 
-        // ✅ CRITICAL: Add cache-busting timestamp
         const timestamp = Date.now();
         const response = await fetch(
           `${API_URL}/auth/check-location?_t=${timestamp}`,
@@ -367,7 +356,7 @@ function AppContent({ Component, pageProps }: AppProps) {
               "Cache-Control": "no-cache",
               Pragma: "no-cache",
             },
-            cache: "no-store", // ✅ Force fresh data
+            cache: "no-store",
           },
         );
 
@@ -382,8 +371,6 @@ function AppContent({ Component, pageProps }: AppProps) {
           theme: locationData.theme,
           state: locationData.location?.state,
           serverTime: locationData.debug?.serverTime,
-          hour: locationData.debug?.hour,
-          isMorning: locationData.debug?.isMorningTime,
         });
 
         if (locationData.success && locationData.theme) {
@@ -396,62 +383,44 @@ function AppContent({ Component, pageProps }: AppProps) {
             needsUpdate: currentTheme !== newTheme,
           });
 
-          // ✅ CRITICAL: Apply theme if changed
+          // ✅ CRITICAL FIX: Apply theme WITHOUT unmounting
           if (currentTheme !== newTheme) {
             console.log(`🔄 SWITCHING THEME: ${currentTheme} → ${newTheme}`);
 
-            // ✅ Step 1: Apply to DOM immediately
+            // ✅ Just apply the theme directly - no unmounting!
             applyTheme(newTheme);
 
-            // ✅ Step 2: Update user context
+            // ✅ Update user context
             if (user && updateUser) {
               console.log("👤 Updating user context with new theme");
               updateUser({ theme: newTheme });
             }
 
-            // ✅ Step 3: Force complete re-render
-            console.log("🔄 Forcing component re-render");
-            setIsThemeReady(false);
-
-            // Use requestAnimationFrame for smooth update
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                setIsThemeReady(true);
-                console.log("✅ Theme switch complete!");
-              });
-            });
-
-            // ✅ Step 4: Dispatch custom event for other components
+            // ✅ Dispatch event for other components
             window.dispatchEvent(
               new CustomEvent("themeChanged", {
                 detail: { theme: newTheme, timestamp },
               }),
             );
+
+            console.log("✅ Theme switch complete!");
           } else {
             console.log(`✅ Theme already correct: ${currentTheme}`);
           }
-        } else {
-          console.warn("⚠️ Invalid location data received");
         }
 
         console.log("=========================\n");
       } catch (error) {
         console.error("❌ Theme check error:", error);
-        console.error("   Message:", error.message);
-      } finally {
-        isChecking = false;
       }
     };
 
-    // ✅ CRITICAL: Run immediately on mount
+    // ✅ Run immediately on mount
     console.log("🚀 Starting real-time theme checker");
     checkAndApplyTheme();
 
-    // ✅ CRITICAL: Check every 30 seconds (faster for testing)
-    // Change to 60000 (1 minute) in production if needed
-    intervalId = setInterval(checkAndApplyTheme, 30000);
-
-    console.log("✅ Theme checker interval started (30s)");
+    // ✅ Check every 60 seconds (1 minute)
+    intervalId = setInterval(checkAndApplyTheme, 60000);
 
     return () => {
       if (intervalId) {
@@ -459,7 +428,7 @@ function AppContent({ Component, pageProps }: AppProps) {
         console.log("🛑 Theme checker stopped");
       }
     };
-  }, [isThemeReady, user, updateUser]); // ✅ CRITICAL: Added updateUser dependency
+  }, [isThemeReady, user, updateUser]);
 
   // ============================================================================
   // USER THEME PREFERENCE
@@ -532,66 +501,7 @@ function AppContent({ Component, pageProps }: AppProps) {
       document.body.style.overflow = "unset";
     };
   }, [showMobileSidebar]);
-  // ============================================================================
-  // 🔴 CRITICAL: SHORTS PAGE VISIBILITY OVERRIDES
-  // ============================================================================
-  // ============================================================================
-  // 🔴 CRITICAL: SHORTS PAGE VISIBILITY OVERRIDES (WITH MODAL EXCEPTION)
-  // ============================================================================
-  useEffect(() => {
-    const isShortsPlayer =
-      router.pathname === "/shorts" || router.pathname === "/shorts/";
-    const isShortsUpload = router.pathname === "/shorts/upload";
 
-    if (isShortsPlayer && !isShortsUpload) {
-      console.log("🎬 Applying shorts overrides...");
-
-      document.documentElement.style.position = "fixed";
-      document.documentElement.style.inset = "0";
-      document.documentElement.style.zIndex = "0";
-      document.documentElement.style.background = "transparent";
-      // ✅ REMOVED pointer-events blocking
-
-      document.body.style.position = "fixed";
-      document.body.style.inset = "0";
-      document.body.style.zIndex = "0";
-      document.body.style.background = "transparent";
-      // ✅ REMOVED pointer-events blocking
-
-      const nextDiv = document.getElementById("__next");
-      if (nextDiv) {
-        nextDiv.style.position = "fixed";
-        nextDiv.style.inset = "0";
-        nextDiv.style.zIndex = "0";
-        nextDiv.style.background = "transparent";
-        // ✅ REMOVED pointer-events blocking
-      }
-
-      console.log("✅ Shorts overrides applied (modals enabled)");
-    } else {
-      // Reset when leaving shorts
-      document.documentElement.style.position = "";
-      document.documentElement.style.inset = "";
-      document.documentElement.style.zIndex = "";
-      document.documentElement.style.pointerEvents = "";
-      document.documentElement.style.background = "";
-
-      document.body.style.position = "";
-      document.body.style.inset = "";
-      document.body.style.zIndex = "";
-      document.body.style.pointerEvents = "";
-      document.body.style.background = "";
-
-      const nextDiv = document.getElementById("__next");
-      if (nextDiv) {
-        nextDiv.style.position = "";
-        nextDiv.style.inset = "";
-        nextDiv.style.zIndex = "";
-        nextDiv.style.pointerEvents = "";
-        nextDiv.style.background = "";
-      }
-    }
-  }, [router.pathname]);
   // NEW - Add condition to exclude upload page:
   useEffect(() => {
     // ✅ CRITICAL: Only apply overrides to shorts PLAYER, not upload page
