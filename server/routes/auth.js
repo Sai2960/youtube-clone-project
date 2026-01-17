@@ -1323,23 +1323,23 @@ router.get("/health", (req, res) => {
     cloudinaryEnabled: true,
   });
 });
-// ✅ CHECK LOCATION ENDPOINT - BULLETPROOF VERSION
+// ✅ CHECK LOCATION ENDPOINT - BULLETPROOF VERSION WITH NO CACHING
 router.get("/check-location", async (req, res) => {
-  // ✅ CRITICAL: Wrap EVERYTHING in try-catch
   try {
     console.log("\n🌍 ===== LOCATION CHECK REQUEST =====");
     console.log("   Time:", new Date().toISOString());
-    console.log(
-      "   Headers:",
-      JSON.stringify({
-        forwarded: req.headers["x-forwarded-for"],
-        realIp: req.headers["x-real-ip"],
-        cfIp: req.headers["cf-connecting-ip"],
-      }),
-    );
 
-    // ✅ Extract IP safely
-    let ip = "127.0.0.1"; // Default fallback
+    // ✅ CRITICAL: Prevent ALL caching
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+
+    // Extract IP
+    let ip = "127.0.0.1";
 
     try {
       const forwardedFor = req.headers["x-forwarded-for"];
@@ -1356,29 +1356,42 @@ router.get("/check-location", async (req, res) => {
         ip = req.ip;
       } else if (req.connection?.remoteAddress) {
         ip = req.connection.remoteAddress;
-      } else if (req.socket?.remoteAddress) {
-        ip = req.socket.remoteAddress;
       }
 
-      // Clean IPv6 prefix
       ip = ip.replace(/^::ffff:/, "");
-
-      console.log("   Raw IP:", ip);
+      console.log("   Client IP:", ip);
     } catch (ipError) {
       console.error("   IP extraction error:", ipError.message);
       ip = "127.0.0.1";
     }
 
-    // ✅ Call theme function safely
+    // ✅ Get current time FIRST before calling determineThemeAndOtpMethod
+    const moment = (await import("moment-timezone")).default;
+    const currentMoment = moment().tz("Asia/Kolkata");
+    const currentHour = currentMoment.hour();
+    const currentMinute = currentMoment.minute();
+    const isMorningTime = currentHour >= 10 && currentHour < 12;
+
+    console.log("⏰ SERVER TIME CHECK:");
+    console.log(
+      "   Full timestamp:",
+      currentMoment.format("YYYY-MM-DD HH:mm:ss Z"),
+    );
+    console.log("   Hour:", currentHour);
+    console.log("   Minute:", currentMinute);
+    console.log("   Is morning (10-12):", isMorningTime);
+
+    // Determine theme
     let result;
     try {
       result = determineThemeAndOtpMethod(ip);
-      console.log("   Theme result:", result);
+      console.log("   Location result:", {
+        state: result.state,
+        detectedTheme: result.theme,
+        otpMethod: result.otpMethod,
+      });
     } catch (themeError) {
       console.error("   Theme determination error:", themeError);
-      console.error("   Stack:", themeError.stack);
-
-      // Use safe fallback
       result = {
         state: "Unknown",
         city: "Unknown",
@@ -1389,23 +1402,12 @@ router.get("/check-location", async (req, res) => {
       };
     }
 
-    // ✅ Get current hour safely
-    let currentHour = 0;
-    try {
-      currentHour = moment().tz("Asia/Kolkata").hour();
-    } catch (momentError) {
-      console.error("   Moment error:", momentError);
-      currentHour = new Date().getHours();
-    }
-
-    console.log("   Final result:", {
-      state: result.state,
-      theme: result.theme,
-      hour: currentHour,
-    });
+    console.log("🎨 FINAL DECISION:");
+    console.log("   Theme to send:", result.theme);
+    console.log("   OTP method:", result.otpMethod);
     console.log("=====================================\n");
 
-    // ✅ ALWAYS return 200 with valid JSON
+    // ✅ Return response with extensive debugging
     return res.status(200).json({
       success: true,
       theme: result.theme || "dark",
@@ -1416,23 +1418,22 @@ router.get("/check-location", async (req, res) => {
         country: result.country || "IN",
         timezone: result.timezone || "Asia/Kolkata",
       },
-      debug:
-        process.env.NODE_ENV === "development"
-          ? {
-              ip: ip,
-              hour: currentHour,
-              method: result.debug?.method || "fallback",
-            }
-          : undefined,
+      debug: {
+        serverTime: currentMoment.format("YYYY-MM-DD HH:mm:ss Z"),
+        hour: currentHour,
+        minute: currentMinute,
+        isMorningTime,
+        detectedState: result.state,
+        determinedTheme: result.theme,
+        ip: ip,
+        timestamp: Date.now(),
+      },
     });
   } catch (outerError) {
-    // ✅ CRITICAL: Catch-all error handler
-    console.error("\n❌ ===== LOCATION CHECK FATAL ERROR =====");
+    console.error("\n❌ LOCATION CHECK FATAL ERROR");
     console.error("Error:", outerError.message);
     console.error("Stack:", outerError.stack);
-    console.error("=========================================\n");
 
-    // ✅ Return 200 with safe fallback (NOT 400 or 500)
     return res.status(200).json({
       success: true,
       theme: "dark",
