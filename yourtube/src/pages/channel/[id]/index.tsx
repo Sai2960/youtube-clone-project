@@ -1528,7 +1528,7 @@ const ChannelPage = () => {
                                 className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
                               >
                                 {/* ✅ FIXED CONTAINER - Always visible in both themes */}
-                                <div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900">
+<div className="aspect-[9/16] rounded-2xl overflow-hidden relative ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gray-200 dark:bg-gray-700">
                                   {/* Animated Border */}
                                   <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 z-0"></div>
 
@@ -1578,20 +1578,22 @@ const ChannelPage = () => {
                                           }
                                         }}
                                       />
-                                    ) : hasValidVideo ? (
-                                      <video
-                                        src={videoUrl}
-                                        className="w-full h-full object-cover relative z-[16]"
-                                        preload="metadata"
-                                        muted
-                                        playsInline
-                                        style={{
-                                          display: "block",
-                                          backgroundColor: "transparent",
-                                          minHeight: "100%",
-                                          minWidth: "100%",
-                                        }}
-                                      />
+                                 ) : hasValidVideo ? (
+  <video
+    src={videoUrl}
+    className="w-full h-full object-cover absolute inset-0"
+    preload="metadata"
+    muted
+    playsInline
+    style={{
+      display: "block",
+      backgroundColor: "transparent",
+      minHeight: "100%",
+      minWidth: "100%",
+      zIndex: 10,
+      position: "relative"
+    }}
+  />
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600">
                                         <div className="text-center p-4">
