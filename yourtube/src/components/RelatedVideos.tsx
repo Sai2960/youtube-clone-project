@@ -144,117 +144,132 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
     console.log("⚠️ No valid video URL found, using fallback");
     return "/video/vdo.mp4";
   };
-const getEnhancedThumbnailUrl = (video: Video): string | null => {
-  const backend = getBackendURL();
-  
-  console.log("🔍 Finding thumbnail for video:", video._id);
-  console.log("📦 Video data:", {
-    thumbnail: video.thumbnail,
-    videothumbnail: video.videothumbnail,
-    videothumb: video.videothumb,
-    thumbnailUrl: video.thumbnailUrl,
-    videofilename: video.videofilename,
-    filepath: video.filepath
-  });
+  const getEnhancedThumbnailUrl = (video: Video): string | null => {
+    const backend = getBackendURL();
 
-  // Priority 1: Check all thumbnail fields
-  const thumbnailFields = [
-    video.thumbnailUrl,      // Most specific
-    video.videothumbnail,    // Common field
-    video.thumbnail,         // Generic field
-    video.videothumb,        // Alternative field
-  ];
+    // ✅ CORRECT SUPABASE URL (fix the typo!)
+    const SUPABASE_URL =
+      "https://ejzqutnycnagdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos";
 
-  for (const field of thumbnailFields) {
-    if (field) {
-      const fieldStr = String(field).trim();
-      
-      // ✅ FIX: Check if Supabase URL has actual filename
-      if (fieldStr.includes("supabase.co/storage/v1/object")) {
-        // Check if URL ends with a file extension
-        if (fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
-          console.log("✅ Using complete Supabase URL:", fieldStr.substring(0, 80));
+    console.log("🔍 Finding thumbnail for video:", video._id);
+    console.log("📦 Video data:", {
+      thumbnail: video.thumbnail,
+      videothumbnail: video.videothumbnail,
+      videothumb: video.videothumb,
+      thumbnailUrl: video.thumbnailUrl,
+      videofilename: video.videofilename,
+      filepath: video.filepath,
+    });
+
+    // Priority 1: Check all thumbnail fields
+    const thumbnailFields = [
+      video.thumbnailUrl,
+      video.videothumbnail,
+      video.thumbnail,
+      video.videothumb,
+    ];
+
+    for (const field of thumbnailFields) {
+      if (field) {
+        const fieldStr = String(field).trim();
+
+        // Complete Supabase URL with image extension
+        if (
+          fieldStr.includes("supabase.co/storage/v1/object") &&
+          fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i)
+        ) {
+          console.log(
+            "✅ Using complete Supabase image URL:",
+            fieldStr.substring(0, 80),
+          );
           return fieldStr;
-        } else {
-          console.log("⚠️ Incomplete Supabase URL (missing filename):", fieldStr);
-          // Try to construct complete URL from video filename
-          if (video.videofilename) {
-            const thumbFilename = String(video.videofilename)
-              .split("/")
-              .pop()
-              ?.replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg");
-            
-            if (thumbFilename) {
-              const completeUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${thumbFilename}`;
-              console.log("✅ Reconstructed complete Supabase URL:", completeUrl.substring(0, 80));
-              return completeUrl;
-            }
-          }
-          continue; // Skip this incomplete URL and try next field
+        }
+
+        // Full HTTP/HTTPS URL (non-Supabase)
+        if (
+          (fieldStr.startsWith("http://") || fieldStr.startsWith("https://")) &&
+          !fieldStr.includes("supabase.co")
+        ) {
+          console.log("✅ Using external full URL:", fieldStr.substring(0, 80));
+          return fieldStr;
+        }
+
+        // Cloudinary URL
+        if (fieldStr.includes("cloudinary.com")) {
+          console.log("✅ Using Cloudinary URL:", fieldStr.substring(0, 80));
+          return fieldStr;
+        }
+
+        // Relative path starting with /uploads/
+        if (fieldStr.startsWith("/uploads/")) {
+          const fullUrl = `${backend}${fieldStr}`;
+          console.log("✅ Constructed backend URL:", fullUrl.substring(0, 80));
+          return fullUrl;
+        }
+
+        // Just a filename with extension
+        if (
+          fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i) &&
+          !fieldStr.includes("/")
+        ) {
+          const supabaseUrl = `${SUPABASE_URL}/${fieldStr}`;
+          console.log(
+            "✅ Constructed Supabase URL from filename:",
+            supabaseUrl.substring(0, 80),
+          );
+          return supabaseUrl;
         }
       }
+    }
 
-      // Full HTTP/HTTPS URL (non-Supabase)
-      if (fieldStr.startsWith("http://") || fieldStr.startsWith("https://")) {
-        console.log("✅ Using full URL:", fieldStr.substring(0, 80));
-        return fieldStr;
-      }
+    // Priority 2: Extract thumbnail from video filename
+    if (video.videofilename) {
+      const videoFile = String(video.videofilename);
+      // Extract just the filename without path
+      const videoFilenameOnly = videoFile.split("/").pop();
 
-      // Cloudinary URL
-      if (fieldStr.includes("cloudinary.com")) {
-        console.log("✅ Using Cloudinary URL:", fieldStr.substring(0, 80));
-        return fieldStr;
-      }
+      if (videoFilenameOnly) {
+        // Replace video extension with .jpg and handle URL encoding
+        const thumbFilename = videoFilenameOnly
+          .replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg")
+          .replace(/%20/g, " "); // Decode %20 to space first
 
-      // Relative path starting with /uploads/
-      if (fieldStr.startsWith("/uploads/")) {
-        const fullUrl = `${backend}${fieldStr}`;
-        console.log("✅ Constructed backend URL:", fullUrl.substring(0, 80));
-        return fullUrl;
-      }
+        // Then encode it properly for URLs
+        const encodedThumbFilename = encodeURIComponent(thumbFilename);
 
-      // Just a filename with extension
-      if (fieldStr.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
-        const supabaseUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${fieldStr}`;
-        console.log("✅ Constructed Supabase URL from filename:", supabaseUrl.substring(0, 80));
-        return supabaseUrl;
+        const supabaseThumbUrl = `${SUPABASE_URL}/${encodedThumbFilename}`;
+        console.log(
+          "🔄 Generated thumbnail from video filename:",
+          supabaseThumbUrl.substring(0, 80),
+        );
+        return supabaseThumbUrl;
       }
     }
-  }
 
-  // Priority 2: Extract thumbnail from video filename
-  if (video.videofilename) {
-    const videoFile = String(video.videofilename);
-    const thumbFilename = videoFile
-      .split("/")
-      .pop()
-      ?.replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg");
+    // Priority 3: Extract from filepath
+    if (video.filepath) {
+      const filepath = String(video.filepath);
+      const filepathOnly = filepath.split("/").pop();
 
-    if (thumbFilename) {
-      const supabaseThumbUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${thumbFilename}`;
-      console.log("🔄 Generated thumbnail from video filename:", supabaseThumbUrl.substring(0, 80));
-      return supabaseThumbUrl;
+      if (filepathOnly) {
+        const thumbFilename = filepathOnly
+          .replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg")
+          .replace(/%20/g, " ");
+
+        const encodedThumbFilename = encodeURIComponent(thumbFilename);
+        const supabaseThumbUrl = `${SUPABASE_URL}/${encodedThumbFilename}`;
+        console.log(
+          "🔄 Generated thumbnail from filepath:",
+          supabaseThumbUrl.substring(0, 80),
+        );
+        return supabaseThumbUrl;
+      }
     }
-  }
 
-  // Priority 3: Extract from filepath
-  if (video.filepath) {
-    const filepath = String(video.filepath);
-    const thumbFilename = filepath
-      .split("/")
-      .pop()
-      ?.replace(/\.(mp4|mov|avi|webm|mkv)$/i, ".jpg");
-
-    if (thumbFilename) {
-      const supabaseThumbUrl = `https://ejzqutnyengdtfxkczu.supabase.co/storage/v1/object/public/youtube-videos/${thumbFilename}`;
-      console.log("🔄 Generated thumbnail from filepath:", supabaseThumbUrl.substring(0, 80));
-      return supabaseThumbUrl;
-    }
-  }
-
-  console.log("⚠️ No valid thumbnail URL found for video:", video._id);
-  return null;
-};  // ========== Format Views Function ==========
+    console.log("⚠️ No valid thumbnail URL found for video:", video._id);
+    return null;
+  };
+  // ========== Format Views Function ==========
   const formatViews = (views?: number): string => {
     if (!views) return "0 views";
     if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M views`;
@@ -321,44 +336,50 @@ const getEnhancedThumbnailUrl = (video: Video): string | null => {
               href={`/watch/${video._id}`}
               className="flex gap-2 md:gap-3 px-3 md:px-0 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group"
             >
-           {/* ========== Thumbnail Section ========== */}
-<div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
-  {thumbnailUrl && !hasThumbnailFailed ? (
-    <>
-      {/* Actual Thumbnail Image */}
-      <img
-        src={thumbnailUrl}
-        alt={video?.videotitle || "Video thumbnail"}
-        className="w-full h-full object-cover"
-        onError={() => handleThumbnailError(video._id, thumbnailUrl)}
-        onLoad={() => {
-          console.log("✅ Thumbnail loaded:", video._id, thumbnailUrl.substring(0, 60));
-        }}
-      />
-    </>
-  ) : (
-    /* Fallback Placeholder */
-    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
-      <div className="text-center text-gray-400">
-        <svg
-          className="w-8 h-8 mx-auto mb-1 opacity-50"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-        </svg>
-        <p className="text-[10px] font-medium">No Preview</p>
-      </div>
-    </div>
-  )}
+              {/* ========== Thumbnail Section ========== */}
+              <div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
+                {thumbnailUrl && !hasThumbnailFailed ? (
+                  <>
+                    {/* Actual Thumbnail Image */}
+                    <img
+                      src={thumbnailUrl}
+                      alt={video?.videotitle || "Video thumbnail"}
+                      className="w-full h-full object-cover"
+                      onError={() =>
+                        handleThumbnailError(video._id, thumbnailUrl)
+                      }
+                      onLoad={() => {
+                        console.log(
+                          "✅ Thumbnail loaded:",
+                          video._id,
+                          thumbnailUrl.substring(0, 60),
+                        );
+                      }}
+                    />
+                  </>
+                ) : (
+                  /* Fallback Placeholder */
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900">
+                    <div className="text-center text-gray-400">
+                      <svg
+                        className="w-8 h-8 mx-auto mb-1 opacity-50"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                      </svg>
+                      <p className="text-[10px] font-medium">No Preview</p>
+                    </div>
+                  </div>
+                )}
 
-  {/* Duration Badge */}
-  {video?.duration && (
-    <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
-      {video.duration}
-    </div>
-  )}
-</div>
+                {/* Duration Badge */}
+                {video?.duration && (
+                  <div className="absolute bottom-1.5 right-1.5 bg-black/90 dark:bg-black/95 backdrop-blur-sm text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
+                    {video.duration}
+                  </div>
+                )}
+              </div>
 
               {/* ========== Video Info Section ========== */}
               <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
