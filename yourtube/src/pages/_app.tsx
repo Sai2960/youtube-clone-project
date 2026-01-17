@@ -433,6 +433,9 @@ function AppContent({ Component, pageProps }: AppProps) {
   // ============================================================================
   // USER THEME PREFERENCE
   // ============================================================================
+  // ============================================================================
+  // USER THEME PREFERENCE (ONLY ON INITIAL LOAD)
+  // ============================================================================
   useEffect(() => {
     if (!isThemeReady || !user?.theme) {
       return;
@@ -444,8 +447,16 @@ function AppContent({ Component, pageProps }: AppProps) {
       return;
     }
 
-    console.log("👤 Applying user theme preference:", user.theme);
-    applyTheme(user.theme as "light" | "dark");
+    // ✅ FIX: Only apply theme if it's different from current localStorage
+    const currentTheme = getStoredTheme();
+
+    if (currentTheme !== user.theme) {
+      console.log("👤 Applying user theme preference:", user.theme);
+      applyTheme(user.theme as "light" | "dark");
+    } else {
+      console.log("👤 User theme already matches:", currentTheme);
+    }
+
     initializationState.currentUserTheme = themeIdentifier;
     initializationState.hasCheckedLocation = true;
   }, [user?._id, user?.theme, isThemeReady]);
