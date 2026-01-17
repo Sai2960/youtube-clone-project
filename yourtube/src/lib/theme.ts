@@ -136,43 +136,47 @@ export const applyTheme = (theme: Theme): void => {
   } catch (e) {
     console.warn("   ⚠️ Failed to save theme:", e);
   }
-
-  // ✅ STEP 8: Force repaint
+  // ✅ STEP 8: Force multiple repaints
   void document.body.offsetHeight;
+  void document.documentElement.offsetHeight;
+  if (nextRoot) void nextRoot.offsetHeight;
   console.log("   ✓ Forced repaint");
 
-  // ✅ STEP 9: Verify application
-  const verifyBg = window.getComputedStyle(body).backgroundColor;
-  const verifyColor = window.getComputedStyle(body).color;
+  // ✅ STEP 9: Verify application (AFTER render completes)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const verifyBg = window.getComputedStyle(body).backgroundColor;
+      const verifyColor = window.getComputedStyle(body).color;
 
-  console.log("🔍 VERIFICATION:");
-  console.log("   HTML classes:", Array.from(html.classList));
-  console.log("   Body classes:", Array.from(body.classList));
-  console.log("   Computed background:", verifyBg);
-  console.log("   Computed color:", verifyColor);
-  console.log(
-    "   --bg-primary:",
-    getComputedStyle(root).getPropertyValue("--bg-primary")
-  );
-  console.log(
-    "   --text-primary:",
-    getComputedStyle(root).getPropertyValue("--text-primary")
-  );
+      console.log("🔍 VERIFICATION:");
+      console.log("   HTML classes:", Array.from(html.classList));
+      console.log("   Body classes:", Array.from(body.classList));
+      console.log("   Computed background:", verifyBg);
+      console.log("   Computed color:", verifyColor);
+      console.log(
+        "   --bg-primary:",
+        getComputedStyle(root).getPropertyValue("--bg-primary"),
+      );
+      console.log(
+        "   --text-primary:",
+        getComputedStyle(root).getPropertyValue("--text-primary"),
+      );
 
-  // Check if theme actually applied
-  const expectedBg =
-    theme === "dark" ? "rgb(15, 15, 15)" : "rgb(255, 255, 255)";
-  if (verifyBg === expectedBg) {
-    console.log("✅ THEME APPLIED SUCCESSFULLY!");
-  } else {
-    console.error("❌ THEME DID NOT APPLY!");
-    console.error("   Expected:", expectedBg);
-    console.error("   Got:", verifyBg);
-  }
+      // Check if theme actually applied
+      const expectedBg =
+        theme === "dark" ? "rgb(15, 15, 15)" : "rgb(255, 255, 255)";
+      if (verifyBg === expectedBg) {
+        console.log("✅ THEME APPLIED SUCCESSFULLY!");
+      } else {
+        console.warn("⚠️ Theme verification mismatch (might be timing)");
+        console.warn("   Expected:", expectedBg);
+        console.warn("   Got:", verifyBg);
+      }
+    });
+  });
 
   console.log("===== THEME APPLICATION COMPLETE =====\n");
 };
-
 /**
  * Get stored theme from localStorage
  */
