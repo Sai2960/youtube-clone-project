@@ -1520,21 +1520,20 @@ const ChannelPage = () => {
                                 }}
                                 className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
                               >
-                               <div
-  className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500 bg-gray-900 dark:bg-gray-800"
+                             <div
+  className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500"
   style={{
     border: "1px solid rgba(239, 68, 68, 0.2)",
-    isolation: "isolate",
   }}
 >
                                   {/* Animated Gradient Border on Hover */}
                                   <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 -z-10"></div>
 
-                                 <div
-  className="relative w-full bg-gray-900 dark:bg-gray-800"
+                                <div
+  className="relative w-full"
   style={{ 
     paddingBottom: "177.78%",
-    isolation: "isolate"
+    background: "linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)"
   }}
 >
                                     {/* Conditional Rendering Based on Available Media */}
@@ -1670,12 +1669,11 @@ const ChannelPage = () => {
                                       />
                                     ) : (
                                       // Enhanced fallback with better visibility
-                                     <div
-  className="absolute inset-0 w-full h-full flex items-center justify-center bg-gray-900 dark:bg-gray-800"
+                                   <div
+  className="absolute inset-0 w-full h-full flex items-center justify-center"
   style={{
     zIndex: 1,
-    backgroundImage: "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
-    isolation: "isolate",
+    background: "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
   }}
 >
                                         <div className="text-center p-4">
