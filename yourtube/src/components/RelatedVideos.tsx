@@ -262,21 +262,15 @@ const RelatedVideos: React.FC<RelatedVideosProps> = ({ videos }) => {
             >
               {/* ========== Thumbnail Section ========== */}
               <div className="relative w-[140px] sm:w-[160px] md:w-[168px] h-[79px] sm:h-[90px] md:h-[94px] bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md dark:shadow-gray-900/50">
-               {thumbnailUrl && !hasThumbnailFailed ? (
+              {thumbnailUrl && !hasThumbnailFailed ? (
   <img
-    src={thumbnailUrl}
+    src={thumbnailUrl.replace('https://eizqutnyengdtfxkczu.supabase.co/storage/v1/object/', 'https://eizqutnyengdtfxkczu.supabase.co/storage/v1/object/public/')}
     alt={video?.videotitle || "Video thumbnail"}
     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
     loading="lazy"
     onError={(e) => {
       console.error("❌ Thumbnail failed:", thumbnailUrl);
-      const target = e.currentTarget as HTMLImageElement;
-      // Try with cache buster
-      if (!target.src.includes('?t=')) {
-        target.src = `${thumbnailUrl}?t=${Date.now()}`;
-      } else {
-        handleThumbnailError(video._id, thumbnailUrl);
-      }
+      handleThumbnailError(video._id, thumbnailUrl);
     }}
     onLoad={() => {
       console.log("✅ Thumbnail loaded:", video._id);
