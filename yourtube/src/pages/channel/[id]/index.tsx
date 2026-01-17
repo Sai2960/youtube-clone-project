@@ -1503,395 +1503,227 @@ const ChannelPage = () => {
                           </span>
                         </div>
 
-                        {/* Premium Shorts Grid */}
-<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 w-full pb-4 px-1 sm:px-0">                          {shorts.map((short, index) => {
-                            const thumbnailUrl = getShortThumbnail(short);
-                            const videoUrl = getShortVideoUrl(short);
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5 w-full pb-4 px-1 sm:px-0">
+  {shorts.map((short, index) => {
+    const thumbnailUrl = getShortThumbnail(short);
+    const videoUrl = getShortVideoUrl(short);
 
-                            return (
-                              <div
-                                key={short._id || short.id}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  const shortId = short._id || short.id;
-                                  if (shortId) {
-                                    router.push(`/shorts?id=${shortId}`);
-                                  }
-                                }}
-                                className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
-                              >
-                             <div
-  className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500"
-  style={{
-    border: "1px solid rgba(239, 68, 68, 0.2)",
-  }}
->
-                                  {/* Animated Gradient Border on Hover */}
-                                  <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 -z-10"></div>
+    return (
+      <div
+        key={short._id || short.id}
+        onClick={(e) => {
+          e.preventDefault();
+          const shortId = short._id || short.id;
+          if (shortId) {
+            router.push(`/shorts?id=${shortId}`);
+          }
+        }}
+        className="group cursor-pointer w-full transform transition-all duration-500 active:scale-95 premium-hover-lift"
+      >
+        {/* ✅ FIXED: Use Tailwind classes like History/Liked pages */}
+        <div className="aspect-[9/16] rounded-2xl overflow-hidden relative bg-gradient-to-br from-slate-200 to-slate-300 dark:from-zinc-800 dark:to-zinc-900 ring-1 ring-red-500/20 dark:ring-red-500/30 shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20 transition-all duration-500">
+          
+          {/* Animated Gradient Border on Hover */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-opacity duration-500 -z-10"></div>
 
-                                <div
-  className="relative w-full"
-  style={{ 
-    paddingBottom: "177.78%",
-    background: "linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)"
-  }}
->
-                                    {/* Conditional Rendering Based on Available Media */}
-                                    {thumbnailUrl &&
-                                    thumbnailUrl !== "fallback" &&
-                                    thumbnailUrl.startsWith("http") ? (
-                                      <img
-                                        src={thumbnailUrl}
-                                        alt={short.title || "Short"}
-                                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                                        style={{ zIndex: 1 }}
-                                        loading="lazy"
-                                        onError={(e) => {
-                                          console.error(
-                                            "❌ Thumbnail image failed:",
-                                            short._id
-                                          );
-                                          const img = e.currentTarget;
-                                          img.style.display = "none";
+          {/* ✅ Conditional Media Rendering */}
+          {thumbnailUrl &&
+          thumbnailUrl !== "fallback" &&
+          thumbnailUrl.startsWith("http") ? (
+            <img
+              src={thumbnailUrl}
+              alt={short.title || "Short"}
+              className="w-full h-full object-cover relative z-10 transition-transform duration-700 group-hover:scale-110"
+              loading="lazy"
+              onError={(e) => {
+                console.error("❌ Thumbnail failed:", short._id);
+                const img = e.currentTarget;
+                img.style.display = "none";
 
-                                          const parent = img.parentElement;
-                                          if (
-                                            parent &&
-                                            !parent.querySelector(
-                                              ".media-fallback"
-                                            )
-                                          ) {
-                                            if (
-                                              videoUrl &&
-                                              videoUrl.startsWith("http")
-                                            ) {
-                                              const videoEl =
-                                                document.createElement("video");
-                                              videoEl.className =
-                                                "media-fallback absolute inset-0 w-full h-full object-cover";
-                                              videoEl.style.zIndex = "1";
-                                              videoEl.src = videoUrl;
-                                              videoEl.preload = "metadata";
-                                              videoEl.muted = true;
-                                              videoEl.playsInline = true;
+                const parent = img.parentElement;
+                if (parent && !parent.querySelector(".media-fallback")) {
+                  if (videoUrl && videoUrl.startsWith("http")) {
+                    const videoEl = document.createElement("video");
+                    videoEl.className = "media-fallback w-full h-full object-cover bg-transparent relative z-10";
+                    videoEl.src = videoUrl;
+                    videoEl.preload = "metadata";
+                    videoEl.muted = true;
+                    videoEl.playsInline = true;
 
-                                              videoEl.onerror = () => {
-                                                console.error(
-                                                  "❌ Video backup also failed:",
-                                                  short._id
-                                                );
-                                                videoEl.remove();
-                                                const fallbackUI =
-                                                  document.createElement("div");
-                                                fallbackUI.className =
-                                                  "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
-                                                fallbackUI.style.cssText =
-                                                  "z-index: 1;";
-                                                fallbackUI.innerHTML = `
-                                                  <div style="text-align: center; padding: 16px;">
-                                                    <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
-                                                      <svg style="width: 32px; height: 32px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
-                                                        <path d="M8 5v14l11-7z"/>
-                                                      </svg>
-                                                    </div>
-                                                    <p style="font-size: 14px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.15em;">SHORT</p>
-                                                  </div>
-                                                `;
-                                                parent?.appendChild(fallbackUI);
-                                              };
-
-                                              parent.appendChild(videoEl);
-                                            } else {
-                                              const fallbackUI =
-                                                document.createElement("div");
-                                              fallbackUI.className =
-                                                "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
-                                              fallbackUI.style.cssText =
-                                                "z-index: 1;";
-                                              fallbackUI.innerHTML = `
-                                                <div style="text-align: center; padding: 16px;">
-                                                  <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
-                                                    <svg style="width: 32px; height: 32px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
-                                                      <path d="M8 5v14l11-7z"/>
-                                                    </svg>
-                                                  </div>
-                                                  <p style="font-size: 14px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.15em;">SHORT</p>
-                                                </div>
-                                              `;
-                                              parent.appendChild(fallbackUI);
-                                            }
-                                          }
-                                        }}
-                                      />
-                                    ) : videoUrl &&
-                                      videoUrl.startsWith("http") ? (
-                                      <video
-                                        src={videoUrl}
-                                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                                        style={{ zIndex: 1 }}
-                                        preload="metadata"
-                                        muted
-                                        playsInline
-                                        onError={(e) => {
-                                          console.error(
-                                            "❌ Video failed:",
-                                            short._id
-                                          );
-                                          const videoEl = e.currentTarget;
-                                          videoEl.style.display = "none";
-
-                                          const parent = videoEl.parentElement;
-                                          if (
-                                            parent &&
-                                            !parent.querySelector(
-                                              ".media-fallback"
-                                            )
-                                          ) {
-                                            const fallbackUI =
-                                              document.createElement("div");
-                                            fallbackUI.className =
-                                              "media-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600";
-                                            fallbackUI.style.cssText =
-                                              "z-index: 1;";
-                                            fallbackUI.innerHTML = `
-                                              <div style="text-align: center; padding: 16px;">
-                                                <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
-                                                  <svg style="width: 32px; height: 32px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
-                                                    <path d="M8 5v14l11-7z"/>
-                                                  </svg>
-                                                </div>
-                                                <p style="font-size: 14px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.15em;">SHORT</p>
-                                              </div>
-                                            `;
-                                            parent.appendChild(fallbackUI);
-                                          }
-                                        }}
-                                      />
-                                    ) : (
-                                      // Enhanced fallback with better visibility
-                                   <div
-  className="absolute inset-0 w-full h-full flex items-center justify-center"
-  style={{
-    zIndex: 1,
-    background: "linear-gradient(135deg, #ef4444 0%, #ec4899 50%, #f43f5e 100%)",
-  }}
->
-                                        <div className="text-center p-4">
-                                          <div className="relative mb-3">
-                                            <div
-                                              className="absolute inset-0 rounded-full animate-ping opacity-50"
-                                              style={{
-                                                background:
-                                                  "rgba(255, 255, 255, 0.3)",
-                                              }}
-                                            />
-                                            <div
-                                              className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl"
-                                              style={{
-                                                background:
-                                                  "rgba(255, 255, 255, 0.95)",
-                                              }}
-                                            >
-                                              <Play
-                                                className="w-8 h-8 ml-1"
-                                                style={{ color: "#dc2626" }}
-                                                fill="#dc2626"
-                                              />
-                                            </div>
-                                          </div>
-                                          <p
-                                            className="text-xs font-black text-white tracking-widest"
-                                            style={{
-                                              textShadow:
-                                                "0 2px 4px rgba(0,0,0,0.3)",
-                                            }}
-                                          >
-                                            {short.title || "SHORT"}
-                                          </p>{" "}
-                                          <p className="text-[8px] text-white/70 mt-1">
-                                            Media loading...
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Premium Gradient Overlay */}
-                                    <div
-                                      className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
-                                      style={{
-                                        zIndex: 3,
-                                        background:
-                                          "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5), transparent)",
-                                      }}
-                                    />
-
-                                    {/* Hover Overlay */}
-                                    <div
-                                      className="absolute inset-0 bg-gradient-to-t from-red-600/0 via-transparent to-red-600/0 group-hover:from-red-600/20 group-hover:to-transparent transition-all duration-300 pointer-events-none"
-                                      style={{ zIndex: 4 }}
-                                    />
-
-                                    {/* Views Badge - Premium */}
-                                    <div
-                                      className="absolute bottom-3 left-3 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg"
-                                      style={{
-                                        zIndex: 5,
-                                        background: "rgba(0, 0, 0, 0.85)",
-                                        backdropFilter: "blur(8px)",
-                                      }}
-                                    >
-                                      <Play className="w-3 h-3" fill="white" />
-                                      <span>
-                                        {(short.views || 0).toLocaleString()}
-                                      </span>
-                                    </div>
-
-                                    {/* Duration Badge */}
-                                    {short.duration && (
-                                      <div
-                                        className="absolute bottom-3 right-3 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-lg"
-                                        style={{
-                                          zIndex: 5,
-                                          background: "rgba(0, 0, 0, 0.85)",
-                                          backdropFilter: "blur(8px)",
-                                        }}
-                                      >
-                                        {short.duration}s
-                                      </div>
-                                    )}
-
-                                    {/* Premium Play Button Overlay */}
-                                    <div
-                                      className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-500 flex items-center justify-center"
-                                      style={{ zIndex: 6 }}
-                                    >
-                                      <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
-                                        <div className="relative">
-                                          <div
-                                            className="absolute inset-0 rounded-full animate-ping opacity-50"
-                                            style={{ background: "#dc2626" }}
-                                          />
-                                          <div
-                                            className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/30"
-                                            style={{
-                                              background:
-                                                "linear-gradient(135deg, #ef4444, #ec4899)",
-                                            }}
-                                          >
-                                            <Play
-                                              className="w-7 h-7 sm:w-8 sm:h-8 text-white ml-1"
-                                              fill="white"
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Shine Effect */}
-                                    <div
-                                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-                                      style={{ zIndex: 7 }}
-                                    >
-                                      <div
-                                        className="absolute inset-0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"
-                                        style={{
-                                          background:
-                                            "linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)",
-                                        }}
-                                      />
-                                    </div>
-
-                                    {/* Index Badge - Premium */}
-                                    <div
-                                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg"
-                                      style={{
-                                        zIndex: 8,
-                                        background:
-                                          "linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9))",
-                                        backdropFilter: "blur(8px)",
-                                      }}
-                                    >
-                                      #{index + 1}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Title & Channel Info - Premium */}
-                                <div className="mt-3 sm:mt-4 px-1">
-                                  <h3
-                                    className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors duration-300"
-                                    style={{
-                                      wordBreak: "break-word",
-                                      overflowWrap: "break-word",
-                                    }}
-                                  >
-                                    {short.title}
-                                  </h3>
-
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className="relative flex-shrink-0"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        const channelId =
-                                          short.userId?._id ||
-                                          short.userId ||
-                                          channel?._id;
-                                        if (channelId)
-                                          router.push(`/channel/${channelId}`);
-                                      }}
-                                    >
-                                      <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 to-pink-500 rounded-full opacity-0 group-hover:opacity-100 blur transition-opacity duration-300"></div>
-                                      <Avatar className="relative w-6 h-6 ring-1 ring-gray-200 dark:ring-gray-700">
-                                        <AvatarImage
-                                          src={getImageUrl(
-                                            short.userId?.image ||
-                                              short.userId?.avatar ||
-                                              channel?.image,
-                                            true
-                                          )}
-                                          alt={
-                                            short.userId?.channelName ||
-                                            short.userId?.name ||
-                                            channel?.channelname ||
-                                            "Channel"
-                                          }
-                                          className="w-full h-full object-cover"
-                                        />
-                                        <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] font-bold">
-                                          {(short.userId?.channelName ||
-                                            short.userId?.name ||
-                                            channel?.channelname ||
-                                            "U")[0].toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                    </div>
-
-                                    <p
-                                      className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        const channelId =
-                                          short.userId?._id ||
-                                          short.userId ||
-                                          channel?._id;
-                                        if (channelId)
-                                          router.push(`/channel/${channelId}`);
-                                      }}
-                                    >
-                                      {short.userId?.channelName ||
-                                        short.userId?.name ||
-                                        channel?.channelname ||
-                                        "Unknown"}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
+                    videoEl.onerror = () => {
+                      console.error("❌ Video backup failed:", short._id);
+                      videoEl.remove();
+                      const fallbackUI = document.createElement("div");
+                      fallbackUI.className = "media-fallback w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600";
+                      fallbackUI.innerHTML = `
+                        <div style="text-align: center; padding: 16px;">
+                          <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
+                            <svg style="width: 32px; height: 32px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                          <p style="font-size: 14px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.15em;">SHORT</p>
                         </div>
+                      `;
+                      parent?.appendChild(fallbackUI);
+                    };
+
+                    parent.appendChild(videoEl);
+                  } else {
+                    // No video URL, show fallback
+                    const fallbackUI = document.createElement("div");
+                    fallbackUI.className = "media-fallback w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600";
+                    fallbackUI.innerHTML = `
+                      <div style="text-align: center; padding: 16px;">
+                        <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
+                          <svg style="width: 32px; height: 32px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                        <p style="font-size: 14px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.15em;">SHORT</p>
+                      </div>
+                    `;
+                    parent.appendChild(fallbackUI);
+                  }
+                }
+              }}
+            />
+          ) : videoUrl && videoUrl.startsWith("http") ? (
+            <video
+              src={videoUrl}
+              className="w-full h-full object-cover bg-transparent relative z-10 transition-transform duration-700 group-hover:scale-110"
+              preload="metadata"
+              muted
+              playsInline
+              onError={(e) => {
+                console.error("❌ Video failed:", short._id);
+                const videoEl = e.currentTarget;
+                videoEl.style.display = "none";
+
+                const parent = videoEl.parentElement;
+                if (parent && !parent.querySelector(".media-fallback")) {
+                  const fallbackUI = document.createElement("div");
+                  fallbackUI.className = "media-fallback w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600";
+                  fallbackUI.innerHTML = `
+                    <div style="text-align: center; padding: 16px;">
+                      <div style="width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-center; box-shadow: 0 20px 25px rgba(0,0,0,0.3);">
+                        <svg style="width: 32px; height: 32px; color: #dc2626; margin-left: 4px;" fill="#dc2626" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+                      <p style="font-size: 14px; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); letter-spacing: 0.15em;">SHORT</p>
+                    </div>
+                  `;
+                  parent.appendChild(fallbackUI);
+                }
+              }}
+            />
+          ) : (
+            // ✅ Enhanced fallback
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 via-pink-600 to-rose-600">
+              <div className="text-center p-4">
+                <div className="relative mb-3">
+                  <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-white/30" />
+                  <div className="relative w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-2xl bg-white/95">
+                    <Play className="w-8 h-8 ml-1 text-red-600" fill="currentColor" />
+                  </div>
+                </div>
+                <p className="text-xs font-black text-white tracking-widest" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
+                  {short.title || "SHORT"}
+                </p>
+                <p className="text-[8px] text-white/70 mt-1">Media loading...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Premium Gradient Overlay */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-20" />
+
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-red-600/0 via-transparent to-red-600/0 group-hover:from-red-600/20 group-hover:to-transparent transition-all duration-300 pointer-events-none z-20" />
+
+          {/* Views Badge */}
+          <div className="absolute bottom-3 left-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg z-30">
+            <Play className="w-3 h-3" fill="white" />
+            <span>{(short.views || 0).toLocaleString()}</span>
+          </div>
+
+          {/* Duration Badge */}
+          {short.duration && (
+            <div className="absolute bottom-3 right-3 bg-black/85 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-lg z-30">
+              {short.duration}s
+            </div>
+          )}
+
+          {/* Premium Play Button Overlay */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-500 flex items-center justify-center z-40">
+            <div className="opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 ease-out">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-red-600" />
+                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-2xl ring-4 ring-white/30">
+                  <Play className="w-7 h-7 sm:w-8 sm:h-8 text-white ml-1" fill="white" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Shine Effect */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-50">
+            <div className="absolute inset-0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          </div>
+
+          {/* Index Badge */}
+          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-br from-purple-500/90 to-pink-500/90 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1.5 rounded-lg z-50">
+            #{index + 1}
+          </div>
+        </div>
+
+        {/* Title & Channel Info */}
+        <div className="mt-3 sm:mt-4 px-1">
+          <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors duration-300" style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
+            {short.title}
+          </h3>
+
+          <div className="flex items-center gap-2">
+            <div
+              className="relative flex-shrink-0"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const channelId = short.userId?._id || short.userId || channel?._id;
+                if (channelId) router.push(`/channel/${channelId}`);
+              }}
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500 to-pink-500 rounded-full opacity-0 group-hover:opacity-100 blur transition-opacity duration-300"></div>
+              <Avatar className="relative w-6 h-6 ring-1 ring-gray-200 dark:ring-gray-700">
+                <AvatarImage
+                  src={getImageUrl(short.userId?.image || short.userId?.avatar || channel?.image, true)}
+                  alt={short.userId?.channelName || short.userId?.name || channel?.channelname || "Channel"}
+                  className="w-full h-full object-cover"
+                />
+                <AvatarFallback className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] font-bold">
+                  {(short.userId?.channelName || short.userId?.name || channel?.channelname || "U")[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+
+            <p
+              className="text-xs text-gray-600 dark:text-gray-400 font-medium line-clamp-1 flex-1 min-w-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const channelId = short.userId?._id || short.userId || channel?._id;
+                if (channelId) router.push(`/channel/${channelId}`);
+              }}
+            >
+              {short.userId?.channelName || short.userId?.name || channel?.channelname || "Unknown"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
                       </div>
                     ) : (
                       /* Empty State - Premium */
