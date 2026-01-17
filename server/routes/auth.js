@@ -895,39 +895,6 @@ router.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Generic user fetch by ID - MUST come AFTER /profile
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid ID format",
-      });
-    }
-
-    const user = await User.findById(id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      result: user,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
 // ✅ GET PUBLIC USER PROFILE BY ID
 router.get("/user/:userId", async (req, res) => {
   try {
@@ -1481,6 +1448,71 @@ router.get("/check-location", async (req, res) => {
     });
   }
 });
+
+// ✅ DEBUG: Check current theme logic
+router.get("/debug-theme", async (req, res) => {
+  try {
+    const ip =
+      req.ip ||
+      req.connection?.remoteAddress ||
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      "127.0.0.1";
+
+    const moment = (await import("moment-timezone")).default;
+    const currentMoment = moment().tz("Asia/Kolkata");
+
+    const { state, theme, otpMethod } = determineThemeAndOtpMethod(ip);
+
+    res.json({
+      success: true,
+      debug: {
+        serverTime: currentMoment.format("YYYY-MM-DD HH:mm:ss Z"),
+        hour: currentMoment.hour(),
+        minute: currentMoment.minute(),
+        isMorningTime: currentMoment.hour() >= 10 && currentMoment.hour() < 12,
+        detectedState: state,
+        determinedTheme: theme,
+        otpMethod: otpMethod,
+        ip: ip,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+// ✅ Generic ID route - MUST be LAST
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID format",
+      });
+    }
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      result: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 // ✅ OTP ROUTES
 router.post("/send-email-otp", async (req, res) => {
   try {
@@ -1766,37 +1798,6 @@ router.post("/otp-login", async (req, res) => {
       error: "Login failed",
       details: error.message,
     });
-  }
-});
-// ✅ DEBUG: Check current theme logic
-router.get("/debug-theme", async (req, res) => {
-  try {
-    const ip =
-      req.ip ||
-      req.connection?.remoteAddress ||
-      req.headers["x-forwarded-for"]?.split(",")[0] ||
-      "127.0.0.1";
-
-    const moment = (await import("moment-timezone")).default;
-    const currentMoment = moment().tz("Asia/Kolkata");
-
-    const { state, theme, otpMethod } = determineThemeAndOtpMethod(ip);
-
-    res.json({
-      success: true,
-      debug: {
-        serverTime: currentMoment.format("YYYY-MM-DD HH:mm:ss Z"),
-        hour: currentMoment.hour(),
-        minute: currentMoment.minute(),
-        isMorningTime: currentMoment.hour() >= 10 && currentMoment.hour() < 12,
-        detectedState: state,
-        determinedTheme: theme,
-        otpMethod: otpMethod,
-        ip: ip,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
   }
 });
 
