@@ -323,49 +323,19 @@ function AppContent({ Component, pageProps }: AppProps) {
     };
   }, []);
   // ============================================================================
-  // 🔴 CRITICAL: REAL-TIME THEME CHECKER - REPLACE LINES 278-322 in _app.js
+  // 🔴 CRITICAL: FORCE THEME CHECK ON EVERY PAGE LOAD
   // ============================================================================
   useEffect(() => {
     if (typeof window === "undefined" || !isThemeReady) return;
 
     let intervalId: NodeJS.Timeout;
-    let lastCheckedMinute = -1;
 
     const checkAndApplyTheme = async () => {
       try {
-        const now = new Date();
-        const currentMinute = now.getHours() * 60 + now.getMinutes();
-
-        // Only check if minute has changed
-        if (currentMinute === lastCheckedMinute) {
-          return;
-        }
-        lastCheckedMinute = currentMinute;
-
         console.log("\n⏰ ===== THEME CHECK =====");
-        console.log("   Time:", now.toLocaleTimeString());
+        console.log("   Client time:", new Date().toLocaleTimeString());
 
-        // ✅ CRITICAL: Check if user manually set theme recently
-        const manualOverride = localStorage.getItem("themeManualOverride");
-        if (manualOverride) {
-          const blockUntil = parseInt(manualOverride);
-          if (Date.now() < blockUntil) {
-            const hoursLeft = Math.ceil(
-              (blockUntil - Date.now()) / (1000 * 60 * 60),
-            );
-            console.log(
-              `🔒 Manual theme override active (${hoursLeft}h remaining)`,
-            );
-            console.log("⏭️ Skipping auto-theme check");
-            console.log("=========================\n");
-            return;
-          } else {
-            // Override expired, remove it
-            localStorage.removeItem("themeManualOverride");
-            console.log("🔓 Manual override expired, resuming auto-theme");
-          }
-        }
-
+        // ✅ ALWAYS check server for correct theme (no blocking)
         const timestamp = Date.now();
         const response = await fetch(
           `${API_URL}/auth/check-location?_t=${timestamp}`,
@@ -373,8 +343,9 @@ function AppContent({ Component, pageProps }: AppProps) {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "Cache-Control": "no-cache",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
               Pragma: "no-cache",
+              Expires: "0",
             },
             cache: "no-store",
           },
@@ -391,38 +362,42 @@ function AppContent({ Component, pageProps }: AppProps) {
           theme: locationData.theme,
           state: locationData.location?.state,
           serverTime: locationData.debug?.serverTime,
+          hour: locationData.debug?.hour,
+          isMorningTime: locationData.debug?.isMorningTime,
+          isSouthIndia: locationData.debug?.isSouthIndia,
         });
 
         if (locationData.success && locationData.theme) {
           const currentTheme = getStoredTheme();
-          const newTheme = locationData.theme;
+          const serverTheme = locationData.theme;
 
           console.log("🎨 Theme comparison:", {
             current: currentTheme,
-            new: newTheme,
-            needsUpdate: currentTheme !== newTheme,
+            server: serverTheme,
+            needsUpdate: currentTheme !== serverTheme,
           });
 
-          // Apply theme WITHOUT marking as manual (so auto-check continues)
-          if (currentTheme !== newTheme) {
+          // ✅ ALWAYS apply server theme (time-based theme wins)
+          if (currentTheme !== serverTheme) {
             console.log(
-              `🔄 AUTO-SWITCHING THEME: ${currentTheme} → ${newTheme}`,
+              `🔄 FORCING THEME CHANGE: ${currentTheme} → ${serverTheme}`,
             );
+            console.log("   Reason: Time-based theme overrides manual choice");
 
-            applyTheme(newTheme, false); // ✅ false = not a manual change
+            applyTheme(serverTheme, false); // Not a manual change
 
             if (user && updateUser) {
               console.log("👤 Updating user context with new theme");
-              updateUser({ theme: newTheme });
+              updateUser({ theme: serverTheme });
             }
 
             window.dispatchEvent(
               new CustomEvent("themeChanged", {
-                detail: { theme: newTheme, timestamp },
+                detail: { theme: serverTheme, timestamp },
               }),
             );
 
-            console.log("✅ Auto theme switch complete!");
+            console.log("✅ Theme enforcement complete!");
           } else {
             console.log(`✅ Theme already correct: ${currentTheme}`);
           }
@@ -434,9 +409,12 @@ function AppContent({ Component, pageProps }: AppProps) {
       }
     };
 
-    console.log("🚀 Starting real-time theme checker");
+    console.log("🚀 Starting theme enforcement system");
+
+    // ✅ CRITICAL: Check immediately on page load
     checkAndApplyTheme();
 
+    // ✅ Check every 60 seconds to catch time changes
     intervalId = setInterval(checkAndApplyTheme, 60000);
 
     return () => {
