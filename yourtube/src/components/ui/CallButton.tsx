@@ -1,25 +1,25 @@
 // components/ui/CallButton.tsx - COMPONENT TO INITIATE VIDEO CALLS
-import React, { useState } from 'react';
-import { Video, Phone, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/router';
-import axiosInstance from '@/lib/axiosinstance';
-import { getSocket, isSocketConnected, initializeSocket } from '@/lib/socket';
-import { useUser } from '@/lib/AuthContext';
+import React, { useState } from "react";
+import { Video, Phone, Loader2 } from "lucide-react";
+import { useRouter } from "next/router";
+import axiosInstance from "@/lib/axiosinstance";
+import { getSocket, isSocketConnected, initializeSocket } from "@/lib/socket";
+import { useUser } from "@/lib/AuthContext";
 
 interface CallButtonProps {
   recipientId: string;
   recipientName: string;
   recipientImage?: string;
-  variant?: 'icon' | 'button';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "icon" | "button";
+  size?: "sm" | "md" | "lg";
 }
 
 const CallButton: React.FC<CallButtonProps> = ({
   recipientId,
   recipientName,
   recipientImage,
-  variant = 'icon',
-  size = 'md'
+  variant = "icon",
+  size = "md",
 }) => {
   const router = useRouter();
   const { user } = useUser();
@@ -27,25 +27,25 @@ const CallButton: React.FC<CallButtonProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const sizeClasses = {
-    sm: 'p-2',
-    md: 'p-3',
-    lg: 'p-4'
+    sm: "p-2",
+    md: "p-3",
+    lg: "p-4",
   };
 
   const iconSizes = {
-    sm: 'w-4 h-4',
-    md: 'w-5 h-5',
-    lg: 'w-6 h-6'
+    sm: "w-4 h-4",
+    md: "w-5 h-5",
+    lg: "w-6 h-6",
   };
 
   const handleCall = async () => {
     if (!user) {
-      alert('Please log in to make calls');
+      alert("Please log in to make calls");
       return;
     }
 
     if (recipientId === user._id) {
-      alert('You cannot call yourself');
+      alert("You cannot call yourself");
       return;
     }
 
@@ -53,19 +53,22 @@ const CallButton: React.FC<CallButtonProps> = ({
       setIsInitiating(true);
       setError(null);
 
-      console.log('\n📞 ===== INITIATING CALL =====');
-      console.log('   From:', user.name || user.channelname);
-      console.log('   To:', recipientName);
-      console.log('   Recipient ID:', recipientId);
+      console.log("\n📞 ===== INITIATING CALL =====");
+      console.log("   From:", user.name || user.channelname);
+      console.log("   To:", recipientName);
+      console.log("   Recipient ID:", recipientId);
 
       // 1. Ensure socket is connected
       if (!isSocketConnected()) {
-        console.log('🔌 Socket not connected, initializing...');
+        console.log("🔌 Socket not connected, initializing...");
         initializeSocket(user._id);
-        
+
         // Wait for socket to connect
         await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error('Socket connection timeout')), 5000);
+          const timeout = setTimeout(
+            () => reject(new Error("Socket connection timeout")),
+            5000,
+          );
           const checkInterval = setInterval(() => {
             if (isSocketConnected()) {
               clearInterval(checkInterval);
@@ -77,77 +80,76 @@ const CallButton: React.FC<CallButtonProps> = ({
       }
 
       const socket = getSocket();
-      console.log('✅ Socket ready:', socket.id);
+      console.log("✅ Socket ready:", socket.id);
 
       // 2. Create call in database
-      console.log('📝 Creating call record...');
-      const response = await axiosInstance.post('/call/initiate', {
-        receiverId: recipientId
+      console.log("📝 Creating call record...");
+      const response = await axiosInstance.post("/call/initiate", {
+        receiverId: recipientId,
       });
 
       if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to initiate call');
+        throw new Error(response.data.message || "Failed to initiate call");
       }
 
       const { roomId, _id: callId } = response.data.call;
-      console.log('✅ Call record created');
-      console.log('   Room ID:', roomId);
-      console.log('   Call ID:', callId);
+      console.log("✅ Call record created");
+      console.log("   Room ID:", roomId);
+      console.log("   Call ID:", callId);
 
       // 3. Send call notification via socket
-      console.log('📤 Sending call notification...');
-      socket.emit('call-user', {
+      console.log("📤 Sending call notification...");
+      socket.emit("call-user", {
         userToCall: recipientId,
         from: user._id,
-        name: user.name || user.channelname,
-        image: user.image || '',
+        name: user.channelname || user.name || "Unknown User", // ✅ Channel name first
+        image: user.image || "",
         roomId: roomId,
-        callId: callId
+        callId: callId,
       });
 
       // 4. Wait for acknowledgment or timeout
       await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error('Call initiation timeout'));
+          reject(new Error("Call initiation timeout"));
         }, 3000);
 
-        socket.once('call-initiated', (data) => {
+        socket.once("call-initiated", (data) => {
           clearTimeout(timeout);
           if (data.success) {
-            console.log('✅ Call initiated successfully');
+            console.log("✅ Call initiated successfully");
             resolve(data);
           } else {
-            reject(new Error('Call initiation failed'));
+            reject(new Error("Call initiation failed"));
           }
         });
 
-        socket.once('call-error', (data) => {
+        socket.once("call-error", (data) => {
           clearTimeout(timeout);
-          reject(new Error(data.message || 'Recipient is offline'));
+          reject(new Error(data.message || "Recipient is offline"));
         });
       });
 
       // 5. Navigate to call page
-      console.log('🚀 Navigating to call page...');
-      console.log('===== CALL INITIATED =====\n');
+      console.log("🚀 Navigating to call page...");
+      console.log("===== CALL INITIATED =====\n");
 
       router.push({
         pathname: `/call/${roomId}`,
         query: {
           callId: callId,
           remoteName: recipientName,
-          initiator: 'true'
-        }
+          initiator: "true",
+        },
       });
-
     } catch (error: any) {
-      console.error('❌ Failed to initiate call:', error);
-      
-      let errorMessage = 'Failed to start call';
-      if (error.message.includes('offline')) {
+      console.error("❌ Failed to initiate call:", error);
+
+      let errorMessage = "Failed to start call";
+      if (error.message.includes("offline")) {
         errorMessage = `${recipientName} is not available`;
-      } else if (error.message.includes('timeout')) {
-        errorMessage = 'Connection timeout - please try again';
+      } else if (error.message.includes("timeout")) {
+        errorMessage = "Connection timeout - please try again";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
@@ -161,7 +163,7 @@ const CallButton: React.FC<CallButtonProps> = ({
     }
   };
 
-  if (variant === 'button') {
+  if (variant === "button") {
     return (
       <button
         onClick={handleCall}
@@ -219,4 +221,3 @@ const CallButton: React.FC<CallButtonProps> = ({
 };
 
 export default CallButton;
-

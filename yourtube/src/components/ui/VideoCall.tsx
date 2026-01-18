@@ -870,12 +870,6 @@ const VideoCall = ({
           (window as any).AudioContext || (window as any).webkitAudioContext;
 
         if (AudioContext) {
-          // ✅ iOS FIX: Create AudioContext AFTER user interaction
-          if (!audioContextRef.current) {
-            audioContextRef.current = new AudioContext();
-            console.log("✅ Created AudioContext on mobile");
-          }
-
           if (audioContextRef.current?.state === "suspended") {
             await audioContextRef.current.resume();
             console.log("✅ Resumed AudioContext on user interaction");
@@ -1571,32 +1565,7 @@ const VideoCall = ({
       console.log("🎤 Getting media stream with audio fix...");
       let stream: MediaStream;
       try {
-        // 📱 MOBILE: Detect and optimize for mobile
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-        if (isMobile) {
-          console.log("📱 Mobile detected - using optimized settings");
-          // Mobile-friendly lower resolution
-          stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            } as any,
-            video: {
-              width: { ideal: 640 },
-              height: { ideal: 480 },
-              frameRate: { ideal: 24 },
-              facingMode: "user",
-            },
-          });
-          console.log("✅ Mobile stream acquired");
-        } else {
-          console.log("💻 Desktop detected - using full quality");
-          stream = await ensureAudioNotMuted();
-          console.log("✅ Desktop stream acquired");
-        }
-
+        stream = await ensureAudioNotMuted();
         console.log("✅ Media acquired:", {
           audio: stream.getAudioTracks().length,
           video: stream.getVideoTracks().length,
@@ -1706,89 +1675,63 @@ const VideoCall = ({
                     video.srcObject as MediaStream,
                   );
 
-                  // 📱 MOBILE OPTIMIZATION: Detect mobile device
-                  const isMobile = /iPhone|iPad|iPod|Android/i.test(
-                    navigator.userAgent,
-                  );
+                  // 🎯 STEP 1: Noise gate (removes background noise)
+                  const compressor = audioCtx.createDynamicsCompressor();
+                  compressor.threshold.value = -50; // Remove quiet background noise
+                  compressor.knee.value = 40;
+                  compressor.ratio.value = 12;
+                  compressor.attack.value = 0;
+                  compressor.release.value = 0.25;
 
-                  if (isMobile) {
-                    console.log(
-                      "📱 Mobile detected - using lightweight audio processing",
-                    );
+                  // 🎯 STEP 2: High-pass filter (remove low-frequency rumble)
+                  const highpass = audioCtx.createBiquadFilter();
+                  highpass.type = "highpass";
+                  highpass.frequency.value = 100; // Remove frequencies below 100Hz
+                  highpass.Q.value = 1;
 
-                    // Simpler pipeline for mobile (saves battery)
-                    const gainNode = audioCtx.createGain();
-                    gainNode.gain.value = 2.0; // Lower boost for mobile
+                  // 🎯 STEP 3: Low-pass filter (remove high-frequency hiss)
+                  const lowpass = audioCtx.createBiquadFilter();
+                  lowpass.type = "lowpass";
+                  lowpass.frequency.value = 8000; // Remove frequencies above 8kHz
+                  lowpass.Q.value = 1;
 
-                    source.connect(gainNode).connect(audioCtx.destination);
+                  // 🎯 STEP 4: Voice boost (enhance mid-range frequencies)
+                  const voiceBoost = audioCtx.createBiquadFilter();
+                  voiceBoost.type = "peaking";
+                  voiceBoost.frequency.value = 2000; // Human voice range
+                  voiceBoost.Q.value = 1;
+                  voiceBoost.gain.value = 6; // Boost by 6dB
 
-                    console.log("🎙️ Mobile audio pipeline active!");
-                    console.log("   ✓ Gain: 2.0x");
+                  // 🎯 STEP 5: Final gain control
+                  const gainNode = audioCtx.createGain();
+                  gainNode.gain.value = 2.5; // Boost overall volume
 
-                    (window as any).__audioBooster = {
-                      audioCtx,
-                      source,
-                      gainNode,
-                    };
-                  } else {
-                    // Full pipeline for desktop
-                    // 🎯 STEP 1: Noise gate (removes background noise)
-                    const compressor = audioCtx.createDynamicsCompressor();
-                    compressor.threshold.value = -50;
-                    compressor.knee.value = 40;
-                    compressor.ratio.value = 12;
-                    compressor.attack.value = 0;
-                    compressor.release.value = 0.25;
+                  // 🔗 CONNECT THE PIPELINE
+                  source
+                    .connect(highpass)
+                    .connect(lowpass)
+                    .connect(voiceBoost)
+                    .connect(compressor)
+                    .connect(gainNode)
+                    .connect(audioCtx.destination);
 
-                    // 🎯 STEP 2: High-pass filter (remove low-frequency rumble)
-                    const highpass = audioCtx.createBiquadFilter();
-                    highpass.type = "highpass";
-                    highpass.frequency.value = 100;
-                    highpass.Q.value = 1;
+                  console.log("🎙️ Crystal clear audio pipeline active!");
+                  console.log("   ✓ Noise gate: -50dB threshold");
+                  console.log("   ✓ High-pass filter: 100Hz");
+                  console.log("   ✓ Low-pass filter: 8kHz");
+                  console.log("   ✓ Voice boost: +6dB @ 2kHz");
+                  console.log("   ✓ Final gain: 2.5x");
 
-                    // 🎯 STEP 3: Low-pass filter (remove high-frequency hiss)
-                    const lowpass = audioCtx.createBiquadFilter();
-                    lowpass.type = "lowpass";
-                    lowpass.frequency.value = 8000;
-                    lowpass.Q.value = 1;
-
-                    // 🎯 STEP 4: Voice boost (enhance mid-range frequencies)
-                    const voiceBoost = audioCtx.createBiquadFilter();
-                    voiceBoost.type = "peaking";
-                    voiceBoost.frequency.value = 2000;
-                    voiceBoost.Q.value = 1;
-                    voiceBoost.gain.value = 6;
-
-                    // 🎯 STEP 5: Final gain control
-                    const gainNode = audioCtx.createGain();
-                    gainNode.gain.value = 2.5;
-
-                    // 🔗 CONNECT THE PIPELINE
-                    source
-                      .connect(highpass)
-                      .connect(lowpass)
-                      .connect(voiceBoost)
-                      .connect(compressor)
-                      .connect(gainNode)
-                      .connect(audioCtx.destination);
-
-                    console.log("🎙️ Desktop audio pipeline active!");
-                    console.log("   ✓ Noise gate: -50dB threshold");
-                    console.log("   ✓ High-pass filter: 100Hz");
-                    console.log("   ✓ Low-pass filter: 8kHz");
-                    console.log("   ✓ Voice boost: +6dB @ 2kHz");
-                    console.log("   ✓ Final gain: 2.5x");
-
-                    (window as any).__audioBooster = {
-                      audioCtx,
-                      source,
-                      highpass,
-                      lowpass,
-                      voiceBoost,
-                      compressor,
-                      gainNode,
-                    };
-                  }
+                  // Store for cleanup
+                  (window as any).__audioBooster = {
+                    audioCtx,
+                    source,
+                    highpass,
+                    lowpass,
+                    voiceBoost,
+                    compressor,
+                    gainNode,
+                  };
                 }
               } catch (audioErr) {
                 console.warn("⚠️ Audio boost failed, using default:", audioErr);
