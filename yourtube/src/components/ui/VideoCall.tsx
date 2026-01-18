@@ -1791,11 +1791,11 @@ const VideoCall = ({
       // Join room
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
-      // ✅ BULLETPROOF: Handle both backend signals and fallback
+      // ✅ CRITICAL FIX: Proper receiver/initiator flow
       if (isInitiator) {
-        console.log("👑 INITIATOR - Waiting for receiver to be ready...");
+        console.log("👑 INITIATOR - Waiting for receiver-ready signal...");
 
-        // Wait for receiver-ready signal OR timeout
+        // Wait for receiver-ready signal
         const readyPromise = new Promise<void>((resolve) => {
           let resolved = false;
 
@@ -1806,11 +1806,11 @@ const VideoCall = ({
             }
           };
 
-          // Timeout after 5 seconds
+          // Timeout after 10 seconds
           const timeout = setTimeout(() => {
             console.warn("⚠️ Timeout - creating offer anyway");
             safeResolve();
-          }, 5000);
+          }, 10000);
 
           // Wait for receiver-ready signal
           socket.once("receiver-ready", () => {
@@ -1821,7 +1821,9 @@ const VideoCall = ({
         });
 
         await readyPromise;
-        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // Small delay to ensure receiver's handlers are ready
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         console.log("📝 Creating offer...");
         const offer = await webrtcServiceRef.current.createOffer();
@@ -1831,11 +1833,12 @@ const VideoCall = ({
       } else {
         console.log("👂 RECEIVER - Notifying server I'm ready...");
 
-        // Tell server the receiver is ready
+        // ✅ CRITICAL: Tell server the receiver is ready AFTER joining
         socket.emit("receiver-ready", roomId);
 
         console.log("👂 Waiting for offer...");
       }
+
       // Expose to window for debugging
       if (typeof window !== "undefined") {
         (window as any).peerConnection =

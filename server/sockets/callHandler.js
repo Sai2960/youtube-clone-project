@@ -2,10 +2,6 @@
 export const setupCallHandlers = (io, socket) => {
   console.log("📞 Setting up call handlers for socket:", socket.id);
 
-  // ==========================================
-  // ROOM MANAGEMENT
-  // ==========================================
-  // server/sockets/callHandler.js - Add this handler
   socket.on("join-room", (roomId, userId) => {
     console.log("👥 USER JOINING ROOM");
     console.log("   Room ID:", roomId);
@@ -38,27 +34,35 @@ export const setupCallHandlers = (io, socket) => {
       userCount,
     });
 
+    // ✅ FIX: Only trigger when BOTH users are ready
     if (userCount === 2) {
-      console.log("✅ Both users in room!");
-      console.log(
-        "   Waiting 12 seconds for BOTH users to finish media setup..."
-      );
+      console.log("✅ Both users in room - waiting for receiver-ready signal");
+      // Don't auto-trigger - wait for explicit receiver-ready
+    }
+  });
 
-      setTimeout(() => {
-        const currentRoom = io.sockets.adapter.rooms.get(roomId);
-        const currentCount = currentRoom ? currentRoom.size : 0;
+  // ✅ ADD THIS NEW HANDLER after join-room
+  socket.on("receiver-ready", (roomId) => {
+    console.log("📢 Receiver ready signal received");
+    console.log("   Room:", roomId);
+    console.log("   From socket:", socket.id);
 
-        if (currentCount === 2) {
-          console.log("✅✅✅ SENDING both-users-ready AFTER 12s delay");
-          io.to(roomId).emit("both-users-ready", {
-            roomId,
-            userCount: 2,
-            timestamp: Date.now(),
-          });
-        } else {
-          console.error("❌ User count changed during wait period!");
-        }
-      }, 12000); // ✅ CHANGED: 12 seconds instead of 3
+    const room = io.sockets.adapter.rooms.get(roomId);
+    const userCount = room ? room.size : 0;
+
+    console.log(`   Users in room: ${userCount}`);
+
+    if (userCount === 2) {
+      console.log("✅ Both users ready, triggering offer creation");
+
+      // Tell initiator to create offer
+      socket.to(roomId).emit("receiver-ready", {
+        roomId,
+        from: socket.id,
+        timestamp: Date.now(),
+      });
+    } else {
+      console.log("⏳ Waiting for second user before triggering offer");
     }
   });
 
@@ -225,7 +229,7 @@ export const setupCallHandlers = (io, socket) => {
   socket.on("audio-toggled", (roomId, enabled) => {
     if (!roomId) return;
     console.log(
-      `🎤 Audio ${enabled ? "enabled" : "disabled"} in room: ${roomId}`
+      `🎤 Audio ${enabled ? "enabled" : "disabled"} in room: ${roomId}`,
     );
     socket.to(roomId).emit("peer-audio-toggled", {
       socketId: socket.id,
@@ -237,7 +241,7 @@ export const setupCallHandlers = (io, socket) => {
   socket.on("video-toggled", (roomId, enabled) => {
     if (!roomId) return;
     console.log(
-      `📹 Video ${enabled ? "enabled" : "disabled"} in room: ${roomId}`
+      `📹 Video ${enabled ? "enabled" : "disabled"} in room: ${roomId}`,
     );
     socket.to(roomId).emit("peer-video-toggled", {
       socketId: socket.id,
@@ -249,7 +253,7 @@ export const setupCallHandlers = (io, socket) => {
   socket.on("fullscreen-request", (roomId, enabled) => {
     if (!roomId) return;
     console.log(
-      `🖥️ Fullscreen ${enabled ? "enabled" : "disabled"} in room: ${roomId}`
+      `🖥️ Fullscreen ${enabled ? "enabled" : "disabled"} in room: ${roomId}`,
     );
     socket.to(roomId).emit("peer-fullscreen-changed", {
       socketId: socket.id,
