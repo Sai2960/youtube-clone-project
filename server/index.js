@@ -152,7 +152,7 @@ const isOriginAllowed = (origin) => {
   if (!origin) return true; // Allow no origin for mobile apps
 
   return allowedOrigins.some((allowed) =>
-    typeof allowed === "string" ? allowed === origin : allowed.test(origin)
+    typeof allowed === "string" ? allowed === origin : allowed.test(origin),
   );
 };
 
@@ -170,7 +170,7 @@ const io = new Server(server, {
 
       // Check if allowed
       const isAllowed = allowedOrigins.some((allowed) =>
-        typeof allowed === "string" ? allowed === origin : allowed.test(origin)
+        typeof allowed === "string" ? allowed === origin : allowed.test(origin),
       );
 
       if (isAllowed || process.env.NODE_ENV === "production") {
@@ -217,7 +217,7 @@ app.use(
       return compression.filter(req, res);
     },
     level: 6, // Good balance between speed and compression
-  })
+  }),
 );
 
 console.log("✅ Compression middleware enabled");
@@ -317,7 +317,7 @@ app.use(
     preflightContinue: false,
     optionsSuccessStatus: 204,
     maxAge: 86400,
-  })
+  }),
 );
 
 console.log("✅ Express CORS configured");
@@ -338,7 +338,7 @@ app.get("/uploads/shorts/videos/:filename", (req, res) => {
     "uploads",
     "shorts",
     "videos",
-    filename
+    filename,
   );
 
   console.log("🎬 Shorts video request:", {
@@ -362,7 +362,7 @@ app.get("/uploads/shorts/videos/:filename", (req, res) => {
   res.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
   res.setHeader(
     "Access-Control-Expose-Headers",
-    "Content-Length, Content-Range, Accept-Ranges"
+    "Content-Length, Content-Range, Accept-Ranges",
   );
   res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Content-Type", "video/mp4");
@@ -423,7 +423,7 @@ app.get("/uploads/videos/:filename", (req, res) => {
   res.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
   res.setHeader(
     "Access-Control-Expose-Headers",
-    "Content-Length, Content-Range, Accept-Ranges"
+    "Content-Length, Content-Range, Accept-Ranges",
   );
   res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Content-Type", "video/mp4");
@@ -550,16 +550,16 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
+    "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD",
   );
   res.setHeader("Access-Control-Max-Age", "86400");
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, Range, If-None-Match, If-Modified-Since"
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, Range, If-None-Match, If-Modified-Since",
   );
   res.setHeader(
     "Access-Control-Expose-Headers",
-    "Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag"
+    "Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag",
   );
 
   if (req.method === "OPTIONS") {
@@ -588,11 +588,11 @@ app.use(
     res.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
     res.set(
       "Access-Control-Allow-Headers",
-      "Range, Content-Type, Authorization"
+      "Range, Content-Type, Authorization",
     );
     res.set(
       "Access-Control-Expose-Headers",
-      "Content-Length, Content-Range, Accept-Ranges"
+      "Content-Length, Content-Range, Accept-Ranges",
     );
 
     if (req.method === "OPTIONS") {
@@ -619,7 +619,7 @@ app.use(
       res.set("Cache-Control", "public, max-age=3600");
       res.set("X-Content-Type-Options", "nosniff");
     },
-  })
+  }),
 );
 
 app.use("/invoices", express.static(path.join(__dirname, "invoices")));
@@ -758,7 +758,7 @@ app.get("/test-env", (req, res) => {
     port: process.env.PORT || 8080,
     allowedOrigins: allowedOrigins.length,
     origins: allowedOrigins.map((o) =>
-      typeof o === "string" ? o : o.toString()
+      typeof o === "string" ? o : o.toString(),
     ),
     timestamp: new Date().toISOString(),
     railway: {
@@ -978,7 +978,67 @@ io.on("connection", (socket) => {
       });
     }
   });
+  // =================== CALL ROOM MANAGEMENT ===================
+  socket.on("join-room", (roomId, userId) => {
+    console.log("\n🚪 User joining room");
+    console.log("   User:", userId);
+    console.log("   Room:", roomId);
+    console.log("   Socket:", socket.id);
 
+    // Join the room
+    socket.join(roomId);
+
+    // Track this socket in the room
+    if (!activeCallRooms.has(roomId)) {
+      activeCallRooms.set(roomId, new Set());
+    }
+    activeCallRooms.get(roomId)?.add(socket.id);
+
+    // Get all sockets in this room
+    const roomSockets = io.sockets.adapter.rooms.get(roomId);
+    const userCount = roomSockets ? roomSockets.size : 0;
+
+    console.log(`   Room now has ${userCount} users`);
+
+    // Notify the user they joined successfully
+    socket.emit("room-joined", {
+      roomId,
+      userId,
+      userCount,
+      timestamp: Date.now(),
+    });
+
+    // ✅ CRITICAL: When both users are ready, trigger offer
+    if (userCount === 2) {
+      console.log(`✅✅✅ Both users ready in room: ${roomId}`);
+      console.log("   Triggering offer creation...");
+
+      // Tell BOTH users that they're ready
+      io.to(roomId).emit("both-users-ready", {
+        roomId,
+        userCount: 2,
+        timestamp: Date.now(),
+      });
+
+      console.log("📤 Sent both-users-ready to room");
+    } else if (userCount > 2) {
+      console.warn(`⚠️ Room ${roomId} has ${userCount} users (max 2 expected)`);
+    }
+  });
+
+  // ✅ Handle request-offer from receiver if stuck
+  socket.on("request-offer", (roomId) => {
+    console.log("📢 Receiver requesting offer for room:", roomId);
+
+    // Notify all users in room to send offer
+    socket.to(roomId).emit("should-create-offer", {
+      roomId,
+      requestedBy: socket.id,
+      timestamp: Date.now(),
+    });
+
+    console.log("✅ Forwarded offer request to room");
+  });
   // =================== DISCONNECT HANDLER ===================
   socket.on("disconnect", (reason) => {
     console.log("\n👋 User disconnected");
@@ -1290,7 +1350,7 @@ server.listen(PORT, HOST, () => {
     console.log("\n🚂 Railway Deployment:");
     if (process.env.RAILWAY_PUBLIC_DOMAIN) {
       console.log(
-        `   Public URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        `   Public URL: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`,
       );
     }
     if (process.env.RAILWAY_STATIC_URL) {
@@ -1443,7 +1503,7 @@ process.on("unhandledRejection", (reason, promise) => {
   // Don't exit in production, just log
   if (process.env.NODE_ENV !== "production") {
     console.error(
-      "💡 Tip: This promise rejection should be handled with .catch()"
+      "💡 Tip: This promise rejection should be handled with .catch()",
     );
   }
 });
@@ -1458,12 +1518,12 @@ process.on("uncaughtException", (error) => {
   // Only shutdown on critical errors in development
   if (process.env.NODE_ENV !== "production") {
     console.error(
-      "🛑 Shutting down due to uncaught exception in development mode"
+      "🛑 Shutting down due to uncaught exception in development mode",
     );
     handleShutdown("UNCAUGHT_EXCEPTION");
   } else {
     console.error(
-      "⚠️  Continuing in production mode - please fix this exception"
+      "⚠️  Continuing in production mode - please fix this exception",
     );
   }
 });
