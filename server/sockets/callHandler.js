@@ -130,17 +130,47 @@ export const setupCallHandlers = (io, socket) => {
     });
   });
 
-  // ==========================================
-  // CALL CONTROL
-  // ==========================================
-  socket.on("end-call", (roomId) => {
-    console.log("📞 CALL ENDED");
+  socket.on("end-call", (roomId, data) => {
+    console.log("📞 ===== CALL ENDED =====");
     console.log("   Room:", roomId);
-    console.log("   Ended by:", socket.id);
-    if (!roomId) return;
-    socket.to(roomId).emit("call-ended", { endedBy: socket.id });
+    console.log("   Ended by socket:", socket.id);
+    console.log("   Ended by user:", data?.endedBy);
+
+    if (!roomId) {
+      console.error("❌ No roomId provided");
+      return;
+    }
+
+    // ✅ Get all users in the room BEFORE leaving
+    const room = io.sockets.adapter.rooms.get(roomId);
+    const usersInRoom = room ? Array.from(room) : [];
+
+    console.log(`   Users in room before disconnect: ${usersInRoom.length}`);
+    console.log(`   User IDs: ${usersInRoom.join(", ")}`);
+
+    // ✅ CRITICAL: Notify ALL other users in the room that call ended
+    socket.to(roomId).emit("call-ended", {
+      endedBy: socket.id,
+      userId: data?.endedBy,
+      reason: "user-ended-call",
+      timestamp: Date.now(),
+    });
+
+    console.log("   ✅ Sent call-ended to all users in room");
+
+    // ✅ Remove this user from the room
     socket.leave(roomId);
-    console.log("   User left room:", roomId);
+    console.log(`   ✅ User ${socket.id} left room: ${roomId}`);
+
+    // ✅ Check if room is now empty
+    const remainingUsers = io.sockets.adapter.rooms.get(roomId);
+    if (!remainingUsers || remainingUsers.size === 0) {
+      console.log(`   🗑️ Room ${roomId} is now empty`);
+    } else {
+      console.log(`   ℹ️ ${remainingUsers.size} user(s) still in room`);
+    }
+
+    console.log("===========================\n");
   });
 
   socket.on("reject-call", (roomId) => {
