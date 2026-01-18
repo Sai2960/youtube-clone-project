@@ -1,9 +1,10 @@
 // youtube/src/lib/theme.ts - COMPLETE FIXED VERSION WITH GLOBAL ACCESS
+
 export type Theme = "light" | "dark";
 
 /**
  * 🎨 Apply theme to the entire application
- * ✅ NO MANUAL OVERRIDE - Time-based theme ALWAYS wins
+ * ✅ CRITICAL: Uses !important and multiple methods to ensure theme applies
  */
 export const applyTheme = (theme: Theme, isManualChange = false): void => {
   if (typeof window === "undefined") return;
@@ -13,8 +14,12 @@ export const applyTheme = (theme: Theme, isManualChange = false): void => {
   console.log("   Manual change:", isManualChange);
   console.log("   Timestamp:", new Date().toISOString());
 
-  // ✅ REMOVED: No more 24-hour manual override blocking
-  // Time-based theme ALWAYS takes priority
+  // ✅ CRITICAL: If this is a manual change, block auto-switching for 24 hours
+  if (isManualChange) {
+    const blockUntil = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    localStorage.setItem("themeManualOverride", blockUntil.toString());
+    console.log("🔒 Manual override set - blocking auto-switch for 24h");
+  }
 
   const html = document.documentElement;
   const body = document.body;
@@ -121,7 +126,7 @@ export const applyTheme = (theme: Theme, isManualChange = false): void => {
   metaTheme.setAttribute("content", bgColor);
   console.log("   ✓ Updated meta theme-color");
 
-  // Store in localStorage (but this will be overridden by time-based logic)
+  // Store in localStorage
   try {
     localStorage.setItem("theme", theme);
     console.log("   ✓ Saved to localStorage");
@@ -137,7 +142,6 @@ export const applyTheme = (theme: Theme, isManualChange = false): void => {
 
   console.log("===== THEME APPLICATION COMPLETE =====\n");
 };
-
 /**
  * Get stored theme from localStorage
  */
@@ -162,22 +166,31 @@ export const getStoredTheme = (): Theme => {
 };
 
 /**
- * Toggle between light and dark theme (manual user action)
+ * Toggle between light and dark theme
  */
 export const toggleTheme = (): Theme => {
   const current = getStoredTheme();
   const newTheme: Theme = current === "dark" ? "light" : "dark";
-  applyTheme(newTheme, true); // Mark as manual change
+  applyTheme(newTheme, true); // ✅ Mark as manual change
   return newTheme;
 };
 
 /**
- * Initialize theme on app load - ALWAYS fetches from server
+ * Initialize theme on app load
  */
 export const initializeTheme = (): Theme => {
   if (typeof window === "undefined") return "dark";
 
-  // Start with stored theme, but server will override it
+  // ✅ CRITICAL: Check URL params for theme (from login redirect)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTheme = urlParams.get("theme") as Theme;
+
+  if (urlTheme === "light" || urlTheme === "dark") {
+    console.log("🎨 Theme from URL:", urlTheme);
+    applyTheme(urlTheme);
+    return urlTheme;
+  }
+
   const theme = getStoredTheme();
   console.log("🎨 Initializing theme on app load:", theme);
   applyTheme(theme);
