@@ -126,12 +126,18 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         const testStream = await navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: { exact: defaultDevice.deviceId },
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 48000,
-            channelCount: 1,
-          },
+            echoCancellation: { exact: true },
+            noiseSuppression: { exact: true },
+            autoGainControl: { exact: true },
+            sampleRate: { ideal: 48000 },
+            channelCount: { ideal: 1 },
+            googEchoCancellation: true,
+            googAutoGainControl: true,
+            googNoiseSuppression: true,
+            googHighpassFilter: true,
+            googTypingNoiseDetection: true,
+            googAudioMirroring: false,
+          } as any, // ← ADD THIS
           video: false,
         });
 
@@ -145,12 +151,18 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
           const fullStream = await navigator.mediaDevices.getUserMedia({
             audio: {
               deviceId: { exact: defaultDevice.deviceId },
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-              sampleRate: 48000,
-              channelCount: 1,
-            },
+              echoCancellation: { exact: true },
+              noiseSuppression: { exact: true },
+              autoGainControl: { exact: true },
+              sampleRate: { ideal: 48000 },
+              channelCount: { ideal: 1 },
+              googEchoCancellation: true,
+              googAutoGainControl: true,
+              googNoiseSuppression: true,
+              googHighpassFilter: true,
+              googTypingNoiseDetection: true,
+              googAudioMirroring: false,
+            } as any, // ← ADD THIS
             video:
               videoInputs.length > 0
                 ? {
@@ -190,12 +202,18 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         const testStream = await navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: device.deviceId ? { exact: device.deviceId } : undefined,
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 48000,
-            channelCount: 1,
-          },
+            echoCancellation: { exact: true },
+            noiseSuppression: { exact: true },
+            autoGainControl: { exact: true },
+            sampleRate: { ideal: 48000 },
+            channelCount: { ideal: 1 },
+            googEchoCancellation: true,
+            googAutoGainControl: true,
+            googNoiseSuppression: true,
+            googHighpassFilter: true,
+            googTypingNoiseDetection: true,
+            googAudioMirroring: false,
+          } as any, // ← ADD THIS
           video: false,
         });
 
@@ -254,16 +272,21 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
         console.log(`   ✅ Found working device: ${device.label}`);
         audioTrack.stop();
 
-        // Get full stream with this device
         const fullStream = await navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: device.deviceId ? { exact: device.deviceId } : undefined,
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 48000,
-            channelCount: 1,
-          },
+            echoCancellation: { exact: true },
+            noiseSuppression: { exact: true },
+            autoGainControl: { exact: true },
+            sampleRate: { ideal: 48000 },
+            channelCount: { ideal: 1 },
+            googEchoCancellation: true,
+            googAutoGainControl: true,
+            googNoiseSuppression: true,
+            googHighpassFilter: true,
+            googTypingNoiseDetection: true,
+            googAudioMirroring: false,
+          } as any, // ← ADD THIS
           video:
             videoInputs.length > 0
               ? {
@@ -1265,10 +1288,16 @@ const VideoCall = ({
       }
     }
     // Clean up audio booster
+    // Clean up audio booster
     if (typeof window !== "undefined" && (window as any).__audioBooster) {
       try {
         const booster = (window as any).__audioBooster;
+        // Disconnect all nodes
         if (booster.source) booster.source.disconnect();
+        if (booster.highpass) booster.highpass.disconnect();
+        if (booster.lowpass) booster.lowpass.disconnect();
+        if (booster.voiceBoost) booster.voiceBoost.disconnect();
+        if (booster.compressor) booster.compressor.disconnect();
         if (booster.gainNode) booster.gainNode.disconnect();
         if (booster.audioCtx && booster.audioCtx.state !== "closed") {
           booster.audioCtx.close();
@@ -1635,7 +1664,7 @@ const VideoCall = ({
               video.muted = false;
               video.volume = 1.0;
 
-              // 🔊 CREATE AUDIO GAIN BOOSTER
+              // 🔊 CREATE ADVANCED AUDIO PROCESSING PIPELINE
               try {
                 if (video.srcObject) {
                   const AudioContext =
@@ -1645,19 +1674,63 @@ const VideoCall = ({
                   const source = audioCtx.createMediaStreamSource(
                     video.srcObject as MediaStream,
                   );
+
+                  // 🎯 STEP 1: Noise gate (removes background noise)
+                  const compressor = audioCtx.createDynamicsCompressor();
+                  compressor.threshold.value = -50; // Remove quiet background noise
+                  compressor.knee.value = 40;
+                  compressor.ratio.value = 12;
+                  compressor.attack.value = 0;
+                  compressor.release.value = 0.25;
+
+                  // 🎯 STEP 2: High-pass filter (remove low-frequency rumble)
+                  const highpass = audioCtx.createBiquadFilter();
+                  highpass.type = "highpass";
+                  highpass.frequency.value = 100; // Remove frequencies below 100Hz
+                  highpass.Q.value = 1;
+
+                  // 🎯 STEP 3: Low-pass filter (remove high-frequency hiss)
+                  const lowpass = audioCtx.createBiquadFilter();
+                  lowpass.type = "lowpass";
+                  lowpass.frequency.value = 8000; // Remove frequencies above 8kHz
+                  lowpass.Q.value = 1;
+
+                  // 🎯 STEP 4: Voice boost (enhance mid-range frequencies)
+                  const voiceBoost = audioCtx.createBiquadFilter();
+                  voiceBoost.type = "peaking";
+                  voiceBoost.frequency.value = 2000; // Human voice range
+                  voiceBoost.Q.value = 1;
+                  voiceBoost.gain.value = 6; // Boost by 6dB
+
+                  // 🎯 STEP 5: Final gain control
                   const gainNode = audioCtx.createGain();
-                  gainNode.gain.value = 3.0; // 🔥 BOOST AUDIO 3x
+                  gainNode.gain.value = 2.5; // Boost overall volume
 
-                  source.connect(gainNode);
-                  gainNode.connect(audioCtx.destination);
+                  // 🔗 CONNECT THE PIPELINE
+                  source
+                    .connect(highpass)
+                    .connect(lowpass)
+                    .connect(voiceBoost)
+                    .connect(compressor)
+                    .connect(gainNode)
+                    .connect(audioCtx.destination);
 
-                  console.log("🔊 Audio boosted 3x");
+                  console.log("🎙️ Crystal clear audio pipeline active!");
+                  console.log("   ✓ Noise gate: -50dB threshold");
+                  console.log("   ✓ High-pass filter: 100Hz");
+                  console.log("   ✓ Low-pass filter: 8kHz");
+                  console.log("   ✓ Voice boost: +6dB @ 2kHz");
+                  console.log("   ✓ Final gain: 2.5x");
 
                   // Store for cleanup
                   (window as any).__audioBooster = {
                     audioCtx,
-                    gainNode,
                     source,
+                    highpass,
+                    lowpass,
+                    voiceBoost,
+                    compressor,
+                    gainNode,
                   };
                 }
               } catch (audioErr) {
