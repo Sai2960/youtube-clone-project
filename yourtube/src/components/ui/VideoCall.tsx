@@ -1793,10 +1793,10 @@ const VideoCall = ({
       socket.emit("join-room", roomId, user._id);
       // ✅ BULLETPROOF: Handle both backend signals and fallback
       if (isInitiator) {
-        console.log("👑 INITIATOR - Waiting for both-users-ready signal...");
+        console.log("👑 INITIATOR - Waiting for receiver to be ready...");
 
-        // Listen for both-users-ready from backend
-        const readyPromise = new Promise<void>((resolve, reject) => {
+        // Wait for receiver-ready signal OR timeout
+        const readyPromise = new Promise<void>((resolve) => {
           let resolved = false;
 
           const safeResolve = () => {
@@ -1806,36 +1806,22 @@ const VideoCall = ({
             }
           };
 
-          // Timeout after 10 seconds
+          // Timeout after 5 seconds
           const timeout = setTimeout(() => {
-            if (!resolved) {
-              console.warn(
-                "⚠️ No both-users-ready signal, creating offer anyway",
-              );
-              safeResolve();
-            }
-          }, 10000);
-
-          // Listen for backend signal
-          socket.once("both-users-ready", () => {
-            console.log("✅ Backend confirmed both users ready!");
-            clearTimeout(timeout);
+            console.warn("⚠️ Timeout - creating offer anyway");
             safeResolve();
-          });
+          }, 5000);
 
-          // Also listen for manual trigger
-          socket.once("should-create-offer", () => {
-            console.log("✅ Manual offer request received");
+          // Wait for receiver-ready signal
+          socket.once("receiver-ready", () => {
+            console.log("✅ Receiver is ready!");
             clearTimeout(timeout);
             safeResolve();
           });
         });
 
-        // Wait for signal
         await readyPromise;
-
-        // Small delay for stability
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
         console.log("📝 Creating offer...");
         const offer = await webrtcServiceRef.current.createOffer();
@@ -1843,20 +1829,12 @@ const VideoCall = ({
         socket.emit("offer", roomId, offer);
         console.log("✅ Offer sent");
       } else {
-        console.log("👂 RECEIVER - Waiting for offer...");
+        console.log("👂 RECEIVER - Notifying server I'm ready...");
 
-        // ✅ SAFETY: Request offer if not received in 8 seconds
-        const offerTimeout = setTimeout(() => {
-          console.warn("⚠️ No offer received after 8s, requesting it");
-          socket.emit("request-offer", roomId);
-        }, 8000);
+        // Tell server the receiver is ready
+        socket.emit("receiver-ready", roomId);
 
-        // Clear timeout when offer arrives
-        const clearOfferTimeout = () => {
-          clearTimeout(offerTimeout);
-          socket.off("offer", clearOfferTimeout);
-        };
-        socket.once("offer", clearOfferTimeout);
+        console.log("👂 Waiting for offer...");
       }
       // Expose to window for debugging
       if (typeof window !== "undefined") {
