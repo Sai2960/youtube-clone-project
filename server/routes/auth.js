@@ -134,16 +134,17 @@ const determineThemeAndOtpMethod = (ip) => {
     const hour = currentTime.hour();
 
     if (isSouthIndia) otpMethod = "email";
-    if (isSouthIndia && hour >= 10 && hour < 12) theme = "light";
 
-    console.log(
-      "🎨 Theme determined:",
-      theme,
-      "| Hour:",
-      hour,
-      "| State:",
-      state,
-    );
+    // ✅ CRITICAL: Light theme ONLY during 10 AM - 12 PM in South India
+    if (isSouthIndia && hour >= 10 && hour < 12) {
+      theme = "light";
+      console.log("☀️ LIGHT THEME: South India + Morning (10-12)");
+    } else {
+      theme = "dark";
+      console.log("🌙 DARK THEME: Outside time window or not South India");
+    }
+
+    console.log("🎨 Theme determined:", theme, "| Hour:", hour);
 
     return {
       state,
