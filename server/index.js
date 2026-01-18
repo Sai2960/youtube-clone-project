@@ -1007,6 +1007,21 @@ io.on("connection", (socket) => {
       userCount,
       timestamp: Date.now(),
     });
+    // ✅ NEW: Handle receiver-ready signal
+    socket.on("receiver-ready", (roomId) => {
+      console.log("\n📢 Receiver ready signal received");
+      console.log("   Room:", roomId);
+      console.log("   From socket:", socket.id);
+
+      // Forward to all other users in the room (the initiator)
+      socket.to(roomId).emit("receiver-ready", {
+        roomId,
+        from: socket.id,
+        timestamp: Date.now(),
+      });
+
+      console.log("✅ Forwarded receiver-ready to room");
+    });
 
     // ✅ CRITICAL: When both users are ready, trigger offer
     if (userCount === 2) {
