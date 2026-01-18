@@ -1718,11 +1718,50 @@ const VideoCall = ({
       // Join room
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
-
+      // ✅ BULLETPROOF: Handle both backend signals and fallback
       if (isInitiator) {
-        console.log("👑 INITIATOR - Creating offer immediately");
+        console.log("👑 INITIATOR - Waiting for both-users-ready signal...");
 
-        // Small delay to ensure socket handlers are ready
+        // Listen for both-users-ready from backend
+        const readyPromise = new Promise<void>((resolve, reject) => {
+          let resolved = false;
+
+          const safeResolve = () => {
+            if (!resolved) {
+              resolved = true;
+              resolve();
+            }
+          };
+
+          // Timeout after 10 seconds
+          const timeout = setTimeout(() => {
+            if (!resolved) {
+              console.warn(
+                "⚠️ No both-users-ready signal, creating offer anyway",
+              );
+              safeResolve();
+            }
+          }, 10000);
+
+          // Listen for backend signal
+          socket.once("both-users-ready", () => {
+            console.log("✅ Backend confirmed both users ready!");
+            clearTimeout(timeout);
+            safeResolve();
+          });
+
+          // Also listen for manual trigger
+          socket.once("should-create-offer", () => {
+            console.log("✅ Manual offer request received");
+            clearTimeout(timeout);
+            safeResolve();
+          });
+        });
+
+        // Wait for signal
+        await readyPromise;
+
+        // Small delay for stability
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         console.log("📝 Creating offer...");
@@ -1730,8 +1769,22 @@ const VideoCall = ({
         console.log("📤 Sending offer...");
         socket.emit("offer", roomId, offer);
         console.log("✅ Offer sent");
-      }
+      } else {
+        console.log("👂 RECEIVER - Waiting for offer...");
 
+        // ✅ SAFETY: Request offer if not received in 8 seconds
+        const offerTimeout = setTimeout(() => {
+          console.warn("⚠️ No offer received after 8s, requesting it");
+          socket.emit("request-offer", roomId);
+        }, 8000);
+
+        // Clear timeout when offer arrives
+        const clearOfferTimeout = () => {
+          clearTimeout(offerTimeout);
+          socket.off("offer", clearOfferTimeout);
+        };
+        socket.once("offer", clearOfferTimeout);
+      }
       // Expose to window for debugging
       if (typeof window !== "undefined") {
         (window as any).peerConnection =
