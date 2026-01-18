@@ -110,13 +110,13 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
 
     console.log(
       "   Available audio inputs:",
-      audioInputs.map((d) => d.label || d.deviceId)
+      audioInputs.map((d) => d.label || d.deviceId),
     );
 
     // 🔥 TRY DEFAULT DEVICE FIRST (respects Windows settings)
     const defaultDevice = audioInputs.find(
       (d) =>
-        d.deviceId === "default" || d.label.toLowerCase().includes("default")
+        d.deviceId === "default" || d.label.toLowerCase().includes("default"),
     );
 
     if (defaultDevice) {
@@ -183,7 +183,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
       if (device.deviceId === "default") continue;
 
       console.log(
-        `   Testing device ${i + 1}/${audioInputs.length}: ${device.label}`
+        `   Testing device ${i + 1}/${audioInputs.length}: ${device.label}`,
       );
 
       try {
@@ -315,15 +315,15 @@ if (typeof window !== "undefined") {
       console.log("🔍 Current Refs Status:");
       console.log(
         "   window.debugVideoCall exists:",
-        !!(window as any).debugVideoCall
+        !!(window as any).debugVideoCall,
       );
       console.log(
         "   window.peerConnection exists:",
-        !!(window as any).peerConnection
+        !!(window as any).peerConnection,
       );
       console.log(
         "   window.webrtcService exists:",
-        !!(window as any).webrtcService
+        !!(window as any).webrtcService,
       );
     },
 
@@ -345,7 +345,7 @@ if (typeof window !== "undefined") {
         clearInterval(checkInterval);
         if (!(window as any).debugVideoCall) {
           console.error(
-            "❌ Debug commands never initialized - component may not have mounted"
+            "❌ Debug commands never initialized - component may not have mounted",
           );
           console.log("   Try clicking 'START CALL' button first");
         }
@@ -454,11 +454,11 @@ const VideoCall = ({
             console.log("   Active:", localStream.active);
             console.log(
               "   Audio tracks:",
-              localStream.getAudioTracks().length
+              localStream.getAudioTracks().length,
             );
             console.log(
               "   Video tracks:",
-              localStream.getVideoTracks().length
+              localStream.getVideoTracks().length,
             );
 
             localStream.getTracks().forEach((track, i) => {
@@ -474,11 +474,11 @@ const VideoCall = ({
 
           console.log(
             "\n   Video element srcObject:",
-            !!localVideoRef.current?.srcObject
+            !!localVideoRef.current?.srcObject,
           );
           console.log(
             "   Video element paused:",
-            localVideoRef.current?.paused
+            localVideoRef.current?.paused,
           );
           console.log("==================================\n");
         },
@@ -493,11 +493,11 @@ const VideoCall = ({
             console.log("   Active:", remoteStream.active);
             console.log(
               "   Audio tracks:",
-              remoteStream.getAudioTracks().length
+              remoteStream.getAudioTracks().length,
             );
             console.log(
               "   Video tracks:",
-              remoteStream.getVideoTracks().length
+              remoteStream.getVideoTracks().length,
             );
 
             remoteStream.getTracks().forEach((track, i) => {
@@ -513,11 +513,11 @@ const VideoCall = ({
 
           console.log(
             "\n   Video element srcObject:",
-            !!remoteVideoRef.current?.srcObject
+            !!remoteVideoRef.current?.srcObject,
           );
           console.log(
             "   Video element paused:",
-            remoteVideoRef.current?.paused
+            remoteVideoRef.current?.paused,
           );
           console.log("   Video dimensions:", {
             width: remoteVideoRef.current?.videoWidth,
@@ -527,15 +527,15 @@ const VideoCall = ({
           if (remoteAudioRef.current) {
             console.log(
               "   Audio element paused:",
-              remoteAudioRef.current.paused
+              remoteAudioRef.current.paused,
             );
             console.log(
               "   Audio element muted:",
-              remoteAudioRef.current.muted
+              remoteAudioRef.current.muted,
             );
             console.log(
               "   Audio element volume:",
-              remoteAudioRef.current.volume
+              remoteAudioRef.current.volume,
             );
           }
           console.log("===================================\n");
@@ -562,16 +562,16 @@ const VideoCall = ({
             console.log(
               `      Sender track: ${t.sender.track?.label || "none"} (${
                 t.sender.track?.kind || "none"
-              })`
+              })`,
             );
             console.log(`      Sender enabled: ${t.sender.track?.enabled}`);
             console.log(
               `      Receiver track: ${t.receiver.track?.label || "none"} (${
                 t.receiver.track?.kind || "none"
-              })`
+              })`,
             );
             console.log(
-              `      Receiver enabled: ${t.receiver.track?.enabled}\n`
+              `      Receiver enabled: ${t.receiver.track?.enabled}\n`,
             );
           });
           console.log("==================================\n");
@@ -685,7 +685,7 @@ const VideoCall = ({
             } else {
               console.log(
                 "   ℹ️ AudioContext state:",
-                audioContextRef.current.state
+                audioContextRef.current.state,
               );
             }
           } else {
@@ -1264,6 +1264,21 @@ const VideoCall = ({
         console.error("❌ AudioContext cleanup error:", e);
       }
     }
+    // Clean up audio booster
+    if (typeof window !== "undefined" && (window as any).__audioBooster) {
+      try {
+        const booster = (window as any).__audioBooster;
+        if (booster.source) booster.source.disconnect();
+        if (booster.gainNode) booster.gainNode.disconnect();
+        if (booster.audioCtx && booster.audioCtx.state !== "closed") {
+          booster.audioCtx.close();
+        }
+        delete (window as any).__audioBooster;
+        console.log("🔊 Audio booster cleaned up");
+      } catch (e) {
+        console.error("❌ Audio booster cleanup error:", e);
+      }
+    }
 
     // Clean local video
     if (localVideoRef.current?.srcObject) {
@@ -1616,12 +1631,38 @@ const VideoCall = ({
               video.style.opacity = "1";
               video.style.zIndex = "2147483647";
 
-              // Force play WITH audio
+              // Force play WITH BOOSTED audio
               video.muted = false;
               video.volume = 1.0;
 
-              await video.play();
-              console.log("✅ Video playing with audio!");
+              // 🔊 CREATE AUDIO GAIN BOOSTER
+              try {
+                if (video.srcObject) {
+                  const AudioContext =
+                    (window as any).AudioContext ||
+                    (window as any).webkitAudioContext;
+                  const audioCtx = new AudioContext();
+                  const source = audioCtx.createMediaStreamSource(
+                    video.srcObject as MediaStream,
+                  );
+                  const gainNode = audioCtx.createGain();
+                  gainNode.gain.value = 3.0; // 🔥 BOOST AUDIO 3x
+
+                  source.connect(gainNode);
+                  gainNode.connect(audioCtx.destination);
+
+                  console.log("🔊 Audio boosted 3x");
+
+                  // Store for cleanup
+                  (window as any).__audioBooster = {
+                    audioCtx,
+                    gainNode,
+                    source,
+                  };
+                }
+              } catch (audioErr) {
+                console.warn("⚠️ Audio boost failed, using default:", audioErr);
+              }
 
               // Double-check it's still visible
               setTimeout(() => {
@@ -1634,7 +1675,7 @@ const VideoCall = ({
             } catch (err: any) {
               console.error(
                 `❌ Play attempt ${playAttempts} failed:`,
-                err.name
+                err.name,
               );
 
               if (playAttempts < maxAttempts) {
@@ -1642,7 +1683,7 @@ const VideoCall = ({
                 return attemptPlay();
               } else {
                 console.error(
-                  "❌ All play attempts failed, showing manual play button"
+                  "❌ All play attempts failed, showing manual play button",
                 );
                 setShowPlayButton(true);
                 return false;
@@ -1667,7 +1708,7 @@ const VideoCall = ({
         (candidate: RTCIceCandidate) => {
           const socket = getSocket();
           socket.emit("ice-candidate", roomId, candidate);
-        }
+        },
       );
 
       // Add local stream to peer connection
@@ -1679,30 +1720,10 @@ const VideoCall = ({
       socket.emit("join-room", roomId, user._id);
 
       if (isInitiator) {
-        console.log("👑 INITIATOR - waiting for both-users-ready signal...");
+        console.log("👑 INITIATOR - Creating offer immediately");
 
-        await new Promise<void>((resolve, reject) => {
-          let resolved = false;
-
-          const safeResolve = () => {
-            if (!resolved) {
-              resolved = true;
-              resolve();
-            }
-          };
-
-          const timeout = setTimeout(() => {
-            console.error("❌ TIMEOUT: Receiver never joined after 90 seconds");
-            reject(new Error("Receiver did not join the call"));
-          }, 90000);
-
-          socket.once("both-users-ready", (data: any) => {
-            console.log("✅✅✅ Both users ready signal received!");
-            clearTimeout(timeout);
-            console.log("✅ Creating offer immediately");
-            safeResolve();
-          });
-        });
+        // Small delay to ensure socket handlers are ready
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         console.log("📝 Creating offer...");
         const offer = await webrtcServiceRef.current.createOffer();
@@ -1783,7 +1804,7 @@ const VideoCall = ({
         localVideo,
         remoteVideo,
         localStream,
-        remoteStream
+        remoteStream,
       );
 
       setIsRecording(true);
@@ -2039,8 +2060,8 @@ const VideoCall = ({
                   connectionStatus === "connected"
                     ? "bg-green-500"
                     : connectionStatus === "connecting"
-                    ? "bg-yellow-500 animate-pulse"
-                    : "bg-red-500"
+                      ? "bg-yellow-500 animate-pulse"
+                      : "bg-red-500"
                 }`}
               />
               <p className="text-gray-300 text-xs sm:text-sm capitalize">
