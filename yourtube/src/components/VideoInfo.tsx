@@ -187,10 +187,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 const allVideos =
                   response.data.videos || response.data.data || [];
                 likesArray = allVideos.filter(
-                  (item: any) => !item.reaction || item.reaction === "like"
+                  (item: any) => !item.reaction || item.reaction === "like",
                 );
                 dislikesArray = allVideos.filter(
-                  (item: any) => item.reaction === "dislike"
+                  (item: any) => item.reaction === "dislike",
                 );
               }
 
@@ -312,7 +312,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
       try {
         const response = await axiosInstance.get(
-          `/user/subscription-status/${videoUploaderId}`
+          `/user/subscription-status/${videoUploaderId}`,
         );
 
         console.log("📊 Subscription status response:", response.data);
@@ -384,7 +384,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
       try {
         const response = await axiosInstance.get(
-          `/like/check/${video._id}/${user._id}`
+          `/like/check/${video._id}/${user._id}`,
         );
 
         console.log("🔍 Reaction check response:", response.data);
@@ -505,7 +505,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
     } catch (error: any) {
       console.error("Subscription error:", error);
       setError(
-        error.response?.data?.message || "Failed to update subscription"
+        error.response?.data?.message || "Failed to update subscription",
       );
       setTimeout(() => setError(null), 3000);
     } finally {
@@ -528,7 +528,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         // Make API call to save notification preference
         const response = await axiosInstance.post(
           `/user/notification-preference/${videoUploaderId}`,
-          { preference: pref }
+          { preference: pref },
         );
 
         if (response.data.success) {
@@ -561,7 +561,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         setIsUpdatingNotification(false);
       }
     },
-    [videoUploaderId, notificationPreference, isUpdatingNotification]
+    [videoUploaderId, notificationPreference, isUpdatingNotification],
   );
 
   // Bell icon click handler - Fixed to prevent navigation
@@ -572,7 +572,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       console.log("🔔 Bell clicked, toggling menu");
       setShowSubscribeMenu((prev) => !prev);
     },
-    []
+    [],
   );
 
   // Close notification menu
@@ -768,22 +768,23 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           />
           {/* Bottom Sheet */}
           <div
-            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#212121] rounded-t-3xl shadow-2xl overflow-hidden"
+            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#1a1a1a] rounded-t-[28px] shadow-2xl overflow-hidden"
             style={{
-              animation: "slideUpSheet 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
+              animation: "slideUpSheet 0.35s cubic-bezier(0.32, 0.72, 0, 1)",
               maxHeight: "85vh",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.3)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Handle Bar */}
-            <div className="flex justify-center py-3 bg-white dark:bg-[#212121]">
-              <div className="w-10 h-1 bg-gray-300 dark:bg-neutral-600 rounded-full" />
+            <div className="flex justify-center py-4 bg-white dark:bg-[#1a1a1a]">
+              <div className="w-12 h-1.5 bg-gray-300 dark:bg-neutral-600 rounded-full" />
             </div>
 
             {/* Header */}
-            <div className="px-5 pb-5 pt-1 border-b border-gray-200 dark:border-neutral-700">
+            <div className="px-6 pb-5 pt-1 border-b border-gray-100 dark:border-neutral-800">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[18px] font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-[19px] font-bold text-gray-900 dark:text-white tracking-tight">
                   Notifications
                 </h3>
                 <button
@@ -792,7 +793,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     e.preventDefault();
                     closeNotificationMenu();
                   }}
-                  className="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+                  className="p-2.5 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all active:scale-95"
                   type="button"
                 >
                   <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
@@ -803,8 +804,8 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </p>
             </div>
 
-            {/* Options Container - FIXED FOR BOTH LIGHT AND DARK MODE - MOBILE ONLY */}
-            <div className="py-5 px-5 space-y-3">
+            {/* Options Container */}
+            <div className="py-6 px-6 space-y-3">
               {/* All Option */}
               <button
                 type="button"
@@ -814,45 +815,43 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("all");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
+                className={`w-full px-5 py-4 flex items-center justify-center gap-3 rounded-2xl transition-all duration-200 border-2 ${
                   notificationPreference === "all"
-                    ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
-                    : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
+                    ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 dark:border-blue-500 shadow-lg shadow-blue-500/20"
+                    : "bg-gray-50 dark:bg-neutral-800/80 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80 hover:border-gray-300 dark:hover:border-neutral-600"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Bell
-                    className={`w-5 h-5 ${
-                      notificationPreference === "all"
-                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-                        : "text-[#606060] dark:text-[#aaaaaa]"
-                    }`}
-                  />
-                  <span
-                    className={`font-semibold text-[15px] ${
-                      notificationPreference === "all"
-                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-                        : "text-[#0f0f0f] dark:text-[#f1f1f1]"
-                    }`}
+                <Bell
+                  className={`w-5 h-5 ${
+                    notificationPreference === "all"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`font-semibold text-[15px] ${
+                    notificationPreference === "all"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-700 dark:text-gray-200"
+                  }`}
+                >
+                  All
+                </span>
+                {notificationPreference === "all" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-auto"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                   >
-                    All
-                  </span>
-                  {notificationPreference === "all" && (
-                    <svg
-                      className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </div>
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
               </button>
 
               {/* Personalized Option */}
@@ -864,45 +863,43 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("personalized");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
+                className={`w-full px-5 py-4 flex items-center justify-center gap-3 rounded-2xl transition-all duration-200 border-2 ${
                   notificationPreference === "personalized"
-                    ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
-                    : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
+                    ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 dark:border-blue-500 shadow-lg shadow-blue-500/20"
+                    : "bg-gray-50 dark:bg-neutral-800/80 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80 hover:border-gray-300 dark:hover:border-neutral-600"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Bell
-                    className={`w-5 h-5 ${
-                      notificationPreference === "personalized"
-                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-                        : "text-[#606060] dark:text-[#aaaaaa]"
-                    }`}
-                  />
-                  <span
-                    className={`font-semibold text-[15px] ${
-                      notificationPreference === "personalized"
-                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-                        : "text-[#0f0f0f] dark:text-[#f1f1f1]"
-                    }`}
+                <Bell
+                  className={`w-5 h-5 ${
+                    notificationPreference === "personalized"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`font-semibold text-[15px] ${
+                    notificationPreference === "personalized"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-700 dark:text-gray-200"
+                  }`}
+                >
+                  Personalized
+                </span>
+                {notificationPreference === "personalized" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-auto"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                   >
-                    Personalized
-                  </span>
-                  {notificationPreference === "personalized" && (
-                    <svg
-                      className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </div>
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
               </button>
 
               {/* None Option */}
@@ -914,50 +911,48 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("none");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-5 py-4 flex flex-col items-center justify-center rounded-2xl transition-all border-2 ${
+                className={`w-full px-5 py-4 flex items-center justify-center gap-3 rounded-2xl transition-all duration-200 border-2 ${
                   notificationPreference === "none"
-                    ? "bg-[#e8f0fe] dark:bg-[#263850] border-[#1a73e8] dark:border-[#8ab4f8]"
-                    : "bg-[#f2f2f2] dark:bg-[#3c3c3c] border-[#e0e0e0] dark:border-[#5f5f5f] hover:bg-[#e8e8e8] dark:hover:bg-[#4a4a4a]"
+                    ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 dark:border-blue-500 shadow-lg shadow-blue-500/20"
+                    : "bg-gray-50 dark:bg-neutral-800/80 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-700/80 hover:border-gray-300 dark:hover:border-neutral-600"
                 } ${
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <BellOff
-                    className={`w-5 h-5 ${
-                      notificationPreference === "none"
-                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-                        : "text-[#606060] dark:text-[#aaaaaa]"
-                    }`}
-                  />
-                  <span
-                    className={`font-semibold text-[15px] ${
-                      notificationPreference === "none"
-                        ? "text-[#1a73e8] dark:text-[#8ab4f8]"
-                        : "text-[#0f0f0f] dark:text-[#f1f1f1]"
-                    }`}
+                <BellOff
+                  className={`w-5 h-5 ${
+                    notificationPreference === "none"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
+                <span
+                  className={`font-semibold text-[15px] ${
+                    notificationPreference === "none"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-700 dark:text-gray-200"
+                  }`}
+                >
+                  None
+                </span>
+                {notificationPreference === "none" && (
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-auto"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                   >
-                    None
-                  </span>
-                  {notificationPreference === "none" && (
-                    <svg
-                      className="w-5 h-5 text-[#1a73e8] dark:text-[#8ab4f8]"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </div>
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
 
             {/* Unsubscribe Section */}
-            <div className="border-t border-gray-200 dark:border-neutral-700 px-5 py-5">
+            <div className="border-t border-gray-100 dark:border-neutral-800 px-6 py-5">
               <button
                 type="button"
                 onClick={(e) => {
@@ -972,7 +967,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   closeNotificationMenu();
                   setTimeout(() => setShowUnsubscribeModal(true), 100);
                 }}
-                className="w-full py-4 px-5 text-center text-red-600 dark:text-red-400 font-semibold text-[15px] rounded-2xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 dark:active:bg-red-900/40 transition-all border-2 border-red-200 dark:border-red-800"
+                className="w-full py-4 px-5 text-center text-red-600 dark:text-red-400 font-semibold text-[15px] rounded-2xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 dark:active:bg-red-900/40 transition-all border-2 border-red-200 dark:border-red-800/50"
               >
                 Unsubscribe
               </button>
@@ -980,13 +975,13 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
             {/* Safe area padding for iOS */}
             <div
-              className="bg-white dark:bg-[#212121]"
+              className="bg-white dark:bg-[#1a1a1a]"
               style={{ height: "env(safe-area-inset-bottom, 0px)" }}
             />
           </div>
         </div>
 
-        {/* Desktop Dropdown - UNCHANGED */}
+        {/* Desktop Dropdown */}
         <div
           className="hidden md:block fixed inset-0"
           style={{ zIndex: 999999 }}
@@ -995,31 +990,33 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           <div className="absolute inset-0" onClick={closeNotificationMenu} />
           {/* Dropdown positioned relative to bell button */}
           <div
-            className="absolute bg-white dark:bg-[#282828] rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-700 overflow-hidden"
+            className="absolute bg-white dark:bg-[#212121] rounded-2xl shadow-2xl border border-gray-200 dark:border-neutral-700/80 overflow-hidden"
             style={{
-              width: "280px",
+              width: "300px",
               top: bellButtonRef.current
-                ? bellButtonRef.current.getBoundingClientRect().bottom + 8
+                ? bellButtonRef.current.getBoundingClientRect().bottom + 12
                 : "100px",
               left: bellButtonRef.current
                 ? Math.min(
                     bellButtonRef.current.getBoundingClientRect().left,
-                    window.innerWidth - 296
+                    window.innerWidth - 316,
                   )
                 : "100px",
-              animation: "fadeInScale 0.2s ease-out",
+              animation: "fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+              boxShadow:
+                "0 20px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-neutral-700/80 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-neutral-800/80 dark:to-neutral-800/50">
+              <h4 className="text-[15px] font-bold text-gray-900 dark:text-white tracking-tight">
                 Notification Preferences
               </h4>
             </div>
 
             {/* Options */}
-            <div className="py-1">
+            <div className="py-2">
               <button
                 type="button"
                 onClick={(e) => {
@@ -1028,7 +1025,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("all");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                className={`w-full px-5 py-3.5 flex items-center gap-4 transition-all duration-200 ${
                   notificationPreference === "all"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
@@ -1036,18 +1033,26 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                <Bell
-                  className={`w-5 h-5 flex-shrink-0 ${
+                <div
+                  className={`p-2 rounded-full ${
                     notificationPreference === "all"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 dark:text-gray-400"
+                      ? "bg-blue-100 dark:bg-blue-900/40"
+                      : "bg-gray-100 dark:bg-neutral-700"
                   }`}
-                />
+                >
+                  <Bell
+                    className={`w-4 h-4 ${
+                      notificationPreference === "all"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  />
+                </div>
                 <span
-                  className={`flex-1 text-left text-sm ${
+                  className={`flex-1 text-left text-[14px] ${
                     notificationPreference === "all"
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-gray-700 dark:text-gray-300"
+                      ? "text-blue-600 dark:text-blue-400 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 font-medium"
                   }`}
                 >
                   All
@@ -1075,7 +1080,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("personalized");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                className={`w-full px-5 py-3.5 flex items-center gap-4 transition-all duration-200 ${
                   notificationPreference === "personalized"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
@@ -1083,18 +1088,26 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                <Bell
-                  className={`w-5 h-5 flex-shrink-0 ${
+                <div
+                  className={`p-2 rounded-full ${
                     notificationPreference === "personalized"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 dark:text-gray-400"
+                      ? "bg-blue-100 dark:bg-blue-900/40"
+                      : "bg-gray-100 dark:bg-neutral-700"
                   }`}
-                />
+                >
+                  <Bell
+                    className={`w-4 h-4 ${
+                      notificationPreference === "personalized"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  />
+                </div>
                 <span
-                  className={`flex-1 text-left text-sm ${
+                  className={`flex-1 text-left text-[14px] ${
                     notificationPreference === "personalized"
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-gray-700 dark:text-gray-300"
+                      ? "text-blue-600 dark:text-blue-400 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 font-medium"
                   }`}
                 >
                   Personalized
@@ -1122,7 +1135,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   handleNotificationChange("none");
                 }}
                 disabled={isUpdatingNotification}
-                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                className={`w-full px-5 py-3.5 flex items-center gap-4 transition-all duration-200 ${
                   notificationPreference === "none"
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-neutral-700/50"
@@ -1130,18 +1143,26 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                   isUpdatingNotification ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                <BellOff
-                  className={`w-5 h-5 flex-shrink-0 ${
+                <div
+                  className={`p-2 rounded-full ${
                     notificationPreference === "none"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 dark:text-gray-400"
+                      ? "bg-blue-100 dark:bg-blue-900/40"
+                      : "bg-gray-100 dark:bg-neutral-700"
                   }`}
-                />
+                >
+                  <BellOff
+                    className={`w-4 h-4 ${
+                      notificationPreference === "none"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  />
+                </div>
                 <span
-                  className={`flex-1 text-left text-sm ${
+                  className={`flex-1 text-left text-[14px] ${
                     notificationPreference === "none"
-                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                      : "text-gray-700 dark:text-gray-300"
+                      ? "text-blue-600 dark:text-blue-400 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 font-medium"
                   }`}
                 >
                   None
@@ -1163,14 +1184,14 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
 
             {/* Unsubscribe */}
-            <div className="border-t border-gray-100 dark:border-neutral-700">
+            <div className="border-t border-gray-100 dark:border-neutral-700/80 p-3">
               <button
                 type="button"
                 onClick={() => {
                   closeNotificationMenu();
                   setShowUnsubscribeModal(true);
                 }}
-                className="w-full px-4 py-3 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium"
+                className="w-full px-4 py-3 text-center text-[14px] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all font-semibold rounded-xl"
               >
                 Unsubscribe
               </button>
@@ -1185,7 +1206,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
   return (
     <div className="w-full space-y-0 overflow-x-hidden bg-white dark:bg-[#0f0f0f]">
-      {/* Animation Keyframes */}
+      {/* Premium Animation Keyframes */}
       <style jsx global>{`
         @keyframes slideUpSheet {
           from {
@@ -1201,7 +1222,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         @keyframes fadeInScale {
           from {
             opacity: 0;
-            transform: scale(0.95) translateY(-4px);
+            transform: scale(0.95) translateY(-8px);
           }
           to {
             opacity: 1;
@@ -1209,34 +1230,141 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           }
         }
 
-        .md\\:hidden .flex.items-center.gap-4::-webkit-scrollbar {
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        @keyframes pulse-glow {
+          0%,
+          100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+          }
+        }
+
+        @keyframes like-bounce {
+          0%,
+          100% {
+            transform: scale(1);
+          }
+          25% {
+            transform: scale(1.25);
+          }
+          50% {
+            transform: scale(0.95);
+          }
+          75% {
+            transform: scale(1.1);
+          }
+        }
+
+        @keyframes dislike-bounce {
+          0%,
+          100% {
+            transform: scale(1) rotate(0deg);
+          }
+          25% {
+            transform: scale(1.2) rotate(-10deg);
+          }
+          50% {
+            transform: scale(0.95) rotate(5deg);
+          }
+          75% {
+            transform: scale(1.1) rotate(-3deg);
+          }
+        }
+
+        @keyframes ripple-effect {
+          0% {
+            transform: scale(0);
+            opacity: 0.6;
+          }
+          100% {
+            transform: scale(4);
+            opacity: 0;
+          }
+        }
+
+        .animate-like-bounce {
+          animation: like-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .animate-dislike-bounce {
+          animation: dislike-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .animate-ripple-effect {
+          animation: ripple-effect 0.6s ease-out forwards;
+        }
+
+        /* Premium button hover effects */
+        .premium-btn {
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .premium-btn::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            transparent
+          );
+          transform: translateX(-100%);
+          transition: transform 0.5s ease;
+        }
+
+        .premium-btn:hover::before {
+          transform: translateX(100%);
+        }
+
+        .premium-btn:active {
+          transform: scale(0.97);
+        }
+
+        /* Glass morphism effect */
+        .glass-effect {
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Smooth scrollbar hide for mobile */
+        .hide-scrollbar::-webkit-scrollbar {
           display: none !important;
           width: 0 !important;
           height: 0 !important;
         }
 
-        .md\\:hidden .flex.items-center.gap-4 {
+        .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none !important;
           scroll-behavior: smooth;
           -webkit-overflow-scrolling: touch;
         }
 
-        /* Remove any dots/indicators on mobile */
+        /* Mobile Like/Dislike premium animations */
         @media (max-width: 768px) {
-          .overflow-x-auto::after,
-          .overflow-x-auto::before {
-            display: none !important;
-          }
-
-          /* Mobile-only Like/Dislike animations */
           @keyframes mobile-like-pulse {
             0% {
               transform: scale(1);
             }
-            50% {
-              transform: scale(1.4);
-              filter: drop-shadow(0 0 8px rgba(6, 95, 212, 0.6));
+            30% {
+              transform: scale(1.35);
+              filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.7));
+            }
+            60% {
+              transform: scale(0.9);
             }
             100% {
               transform: scale(1);
@@ -1247,111 +1375,138 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             0% {
               transform: scale(1) rotate(0deg);
             }
-            50% {
-              transform: scale(1.4) rotate(-15deg);
-              filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
+            30% {
+              transform: scale(1.35) rotate(-12deg);
+              filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.7));
+            }
+            60% {
+              transform: scale(0.9) rotate(5deg);
             }
             100% {
               transform: scale(1) rotate(0deg);
             }
           }
 
-          @keyframes mobile-like-ripple {
+          @keyframes mobile-ripple {
             0% {
               transform: scale(0);
-              opacity: 0.8;
-            }
-            50% {
-              opacity: 0.5;
+              opacity: 0.7;
             }
             100% {
-              transform: scale(3);
-              opacity: 0;
-            }
-          }
-
-          @keyframes mobile-dislike-ripple {
-            0% {
-              transform: scale(0);
-              opacity: 0.8;
-            }
-            50% {
-              opacity: 0.5;
-            }
-            100% {
-              transform: scale(3);
+              transform: scale(3.5);
               opacity: 0;
             }
           }
 
           .mobile-like-animate {
-            animation: mobile-like-pulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: mobile-like-pulse 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
           .mobile-dislike-animate {
-            animation: mobile-dislike-pulse 0.6s
+            animation: mobile-dislike-pulse 0.65s
               cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
           .mobile-like-ripple {
-            animation: mobile-like-ripple 0.7s ease-out forwards;
+            animation: mobile-ripple 0.7s ease-out forwards;
           }
 
           .mobile-dislike-ripple {
-            animation: mobile-dislike-ripple 0.7s ease-out forwards;
+            animation: mobile-ripple 0.7s ease-out forwards;
           }
+        }
+
+        /* Premium Subscribe button animation */
+        .subscribe-btn {
+          background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+          transition: all 0.3s ease;
+        }
+
+        .subscribe-btn:hover {
+          background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark .subscribe-btn {
+          background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+        }
+
+        .dark .subscribe-btn:hover {
+          background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+        }
+
+        .subscribed-btn {
+          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+
+        .dark .subscribed-btn {
+          background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
         }
       `}</style>
 
-      {/* Error Toast */}
+      {/* Premium Error Toast */}
       {error && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999999] bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
+        <div
+          className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999999] px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold flex items-center gap-3"
+          style={{
+            background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+            color: "white",
+            boxShadow: "0 10px 40px rgba(239, 68, 68, 0.4)",
+            animation: "fadeInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
           {error}
         </div>
       )}
 
-      {/* 1. Title and Views Section */}
-      <div className="px-3 pt-3 pb-1 md:px-0 md:pt-0">
-        <h1 className="text-[18px] md:text-xl font-semibold text-gray-900 dark:text-white mb-1 leading-snug line-clamp-2">
+      {/* 1. Title and Views Section - Premium Design */}
+      <div className="px-4 pt-4 pb-2 md:px-0 md:pt-0">
+        <h1 className="text-[18px] md:text-[22px] font-bold text-gray-900 dark:text-white mb-2 leading-tight line-clamp-2 tracking-tight">
           {video.videotitle}
         </h1>
-        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 font-medium">
-          <span className="font-medium">{formatViews(video?.views || 0)}</span>
-          <span>•</span>
+        <div className="flex items-center gap-2 text-[13px] text-gray-600 dark:text-gray-400 font-medium">
+          <span className="font-semibold text-gray-700 dark:text-gray-300">
+            {formatViews(video?.views || 0)}
+          </span>
+          <span className="text-gray-400 dark:text-gray-500">•</span>
           <span>
             {video?.createdAt ? formatTimeAgo(video.createdAt) : "Recently"}
           </span>
         </div>
       </div>
 
-      {/* 2. Channel Row (Avatar, Name, Subscribe) */}
-      <div className="px-3 py-2 md:px-0 md:pt-3">
-        <div className="flex items-center justify-between md:border-b border-gray-200 dark:border-neutral-800 md:pb-3">
+      {/* 2. Channel Row - Premium Aligned Design */}
+      <div className="px-4 py-3 md:px-0 md:pt-4">
+        <div className="flex items-center justify-between md:border-b border-gray-100 dark:border-neutral-800/80 md:pb-4">
+          {/* Channel Info */}
           <div
             onClick={handleChannelClick}
-            className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg p-2 -ml-2 transition-colors group flex-1 min-w-0"
+            className="flex items-center gap-3.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800/60 rounded-xl p-2 -ml-2 transition-all duration-200 group flex-1 min-w-0"
           >
-            <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-transparent group-hover:ring-blue-500 transition-all">
+            <Avatar className="w-11 h-11 flex-shrink-0 ring-2 ring-gray-100 dark:ring-neutral-700 group-hover:ring-blue-400 dark:group-hover:ring-blue-500 transition-all duration-300 shadow-md">
               <AvatarImage
                 key={`videoinfo-avatar-${imageKey}`}
                 src={getImageUrl(
                   video?.uploadedBy?.image || video?.videoowner?.image,
-                  true
+                  true,
                 )}
                 alt={video.videochanel || "Channel"}
+                className="object-cover"
               />
-              <AvatarFallback className="bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-white text-sm font-medium">
+              <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-neutral-700 dark:to-neutral-800 text-gray-700 dark:text-white text-sm font-bold">
                 {video.videochanel ? video.videochanel[0]?.toUpperCase() : "U"}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-[15px] text-gray-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">
+              <h3 className="font-semibold text-[15px] text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
                 {video.uploadedBy?.channelname ||
                   video.uploadedBy?.name ||
                   video.videochanel ||
                   "Unknown Channel"}
               </h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+              <p className="text-[12px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">
                 {subscriberCount > 0
                   ? `${subscriberCount.toLocaleString()} subscribers`
                   : "0 subscribers"}
@@ -1359,17 +1514,18 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             </div>
           </div>
 
+          {/* Subscribe + Bell Buttons */}
           {!isOwner && user && videoUploaderId && (
-            <div className="flex items-center justify-center gap-2 flex-shrink-0">
-              {/* Mobile Subscribe Button - Theme Compatible */}
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              {/* Mobile Subscribe Button */}
               <Button
                 onClick={handleSubscribe}
                 disabled={isSubscribing}
-                className={`md:hidden h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
+                className={`md:hidden h-10 px-5 rounded-full font-bold text-[14px] transition-all duration-300 whitespace-nowrap shadow-lg ${
                   isSubscribed
-                    ? "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-900 dark:text-white border border-gray-300 dark:border-neutral-600"
-                    : "bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900"
-                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
+                    ? "subscribed-btn text-gray-800 dark:text-white border border-gray-200 dark:border-neutral-600"
+                    : "subscribe-btn text-white dark:text-gray-900"
+                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : "active:scale-95"}`}
               >
                 {isSubscribing ? (
                   <span className="flex items-center gap-2">
@@ -1384,11 +1540,11 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               <Button
                 onClick={handleSubscribe}
                 disabled={isSubscribing}
-                className={`hidden md:flex h-9 px-4 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${
+                className={`hidden md:flex h-10 px-5 rounded-full font-bold text-[14px] transition-all duration-300 whitespace-nowrap shadow-lg ${
                   isSubscribed
-                    ? "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white"
-                    : "bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : ""}`}
+                    ? "subscribed-btn text-gray-800 dark:text-white border border-gray-200 dark:border-neutral-600"
+                    : "subscribe-btn text-white dark:text-gray-900"
+                } ${isSubscribing ? "opacity-70 cursor-not-allowed" : "hover:-translate-y-0.5 active:scale-95"}`}
               >
                 {isSubscribing ? (
                   <span className="flex items-center gap-2">
@@ -1402,7 +1558,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 )}
               </Button>
 
-              {/* Bell Button - Mobile & Desktop - Perfectly Centered */}
+              {/* Bell Button - Premium Design */}
               {isSubscribed && (
                 <button
                   ref={bellButtonRef}
@@ -1412,81 +1568,75 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                     e.preventDefault();
                     handleBellClick(e);
                   }}
-                  className="h-9 w-9 rounded-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 transition-all flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-neutral-600 self-center"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
+                  className="h-10 w-10 rounded-full bg-gray-100 dark:bg-neutral-700/80 hover:bg-gray-200 dark:hover:bg-neutral-600 transition-all duration-300 flex items-center justify-center flex-shrink-0 border border-gray-200 dark:border-neutral-600 shadow-md hover:shadow-lg active:scale-95"
                   title="Notification preferences"
                 >
                   {notificationPreference === "none" ? (
-                    <BellOff className="w-5 h-5 text-gray-700 dark:text-white m-auto" />
+                    <BellOff className="w-[18px] h-[18px] text-gray-600 dark:text-white" />
                   ) : (
-                    <Bell className="w-5 h-5 text-gray-700 dark:text-white m-auto" />
+                    <Bell className="w-[18px] h-[18px] text-gray-600 dark:text-white" />
                   )}
                 </button>
               )}
             </div>
           )}
 
-          {/* Desktop Action Buttons */}
-          <div className="hidden md:flex items-center gap-2 flex-shrink-0 ml-4">
-            <div className="flex items-center bg-gray-100 dark:bg-neutral-800 rounded-full overflow-hidden shadow-sm">
+          {/* Desktop Action Buttons - Premium Design */}
+          <div className="hidden md:flex items-center gap-2.5 flex-shrink-0 ml-4">
+            {/* Like/Dislike Group */}
+            <div className="flex items-center bg-gray-100 dark:bg-neutral-800/90 rounded-full overflow-hidden shadow-md border border-gray-200/50 dark:border-neutral-700/50">
               <button
-                className={`relative px-4 py-2 flex items-center gap-2 transition-all duration-200 ${
+                className={`premium-btn relative px-5 py-2.5 flex items-center gap-2.5 transition-all duration-300 ${
                   isLiked
-                    ? "text-blue-600 dark:text-blue-500"
-                    : "text-gray-700 dark:text-white"
-                } ${
-                  likeAnimation ? "animate-like-bounce" : ""
-                } overflow-hidden hover:bg-gray-200 dark:hover:bg-neutral-700/50`}
+                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30"
+                    : "text-gray-700 dark:text-white hover:bg-gray-200/70 dark:hover:bg-neutral-700/70"
+                } overflow-hidden`}
                 onClick={handleLike}
                 disabled={!user}
               >
                 {likeRipple && (
-                  <span className="absolute inset-0 animate-ripple-effect bg-blue-500/30 rounded-full pointer-events-none" />
+                  <span className="absolute inset-0 animate-ripple-effect bg-blue-500/40 rounded-full pointer-events-none" />
                 )}
                 <ThumbsUp
-                  className="w-5 h-5 relative z-10"
+                  className={`w-5 h-5 relative z-10 transition-all duration-300 ${likeAnimation ? "animate-like-bounce" : ""}`}
                   fill={isLiked ? "currentColor" : "none"}
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                 />
-                <span className="text-sm font-medium tabular-nums relative z-10">
+                <span className="text-[14px] font-semibold tabular-nums relative z-10">
                   {likes}
                 </span>
               </button>
-              <div className="w-px h-6 bg-gray-300 dark:bg-neutral-700" />
+              <div className="w-[1px] h-7 bg-gray-300 dark:bg-neutral-600" />
               <button
-                className={`relative px-4 py-2 transition-all duration-200 ${
+                className={`premium-btn relative px-5 py-2.5 transition-all duration-300 ${
                   isDisliked
-                    ? "text-blue-600 dark:text-blue-500"
-                    : "text-gray-700 dark:text-white"
-                } ${
-                  dislikeAnimation ? "animate-dislike-bounce" : ""
-                } overflow-hidden hover:bg-gray-200 dark:hover:bg-neutral-700/50`}
+                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30"
+                    : "text-gray-700 dark:text-white hover:bg-gray-200/70 dark:hover:bg-neutral-700/70"
+                } overflow-hidden`}
                 onClick={handleDislike}
                 disabled={!user}
               >
                 {dislikeRipple && (
-                  <span className="absolute inset-0 animate-ripple-effect bg-blue-500/30 rounded-full pointer-events-none" />
+                  <span className="absolute inset-0 animate-ripple-effect bg-blue-500/40 rounded-full pointer-events-none" />
                 )}
                 <ThumbsDown
-                  className="w-5 h-5 relative z-10"
+                  className={`w-5 h-5 relative z-10 transition-all duration-300 ${dislikeAnimation ? "animate-dislike-bounce" : ""}`}
                   fill={isDisliked ? "currentColor" : "none"}
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                 />
               </button>
             </div>
 
+            {/* Share Button */}
             <button
-              className="px-4 py-2 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center gap-2 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0"
+              className="premium-btn px-5 py-2.5 bg-gray-100 dark:bg-neutral-800/90 rounded-full flex items-center gap-2.5 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all duration-300 shadow-md border border-gray-200/50 dark:border-neutral-700/50 flex-shrink-0"
               onClick={handleShare}
             >
-              <Share2 className="w-5 h-5" />
-              <span className="text-sm font-medium">Share</span>
+              <Share2 className="w-5 h-5" strokeWidth={2} />
+              <span className="text-[14px] font-semibold">Share</span>
             </button>
 
+            {/* Download Button */}
             {user && (
               <DownloadButton
                 videoId={video._id}
@@ -1496,89 +1646,89 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               />
             )}
 
+            {/* Save Button */}
             {user && (
               <button
-                className={`px-4 py-2 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all active:scale-95 shadow-sm flex-shrink-0 ${
+                className={`premium-btn px-5 py-2.5 bg-gray-100 dark:bg-neutral-800/90 rounded-full flex items-center gap-2.5 transition-all duration-300 shadow-md border border-gray-200/50 dark:border-neutral-700/50 flex-shrink-0 ${
                   isWatchLater
-                    ? "text-blue-600 dark:text-blue-500"
-                    : "text-gray-700 dark:text-white"
+                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30"
+                    : "text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700"
                 }`}
                 onClick={handleWatchLater}
               >
                 <Bookmark
                   className="w-5 h-5"
                   fill={isWatchLater ? "currentColor" : "none"}
+                  strokeWidth={2}
                 />
-                <span className="text-sm font-medium">
+                <span className="text-[14px] font-semibold">
                   {isWatchLater ? "Saved" : "Save"}
                 </span>
               </button>
             )}
 
+            {/* Delete Button */}
             {isOwner && (
               <button
                 onClick={() => setShowDeleteModal(true)}
-                className="px-4 py-2 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center gap-2 text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 shadow-sm flex-shrink-0"
+                className="premium-btn px-5 py-2.5 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-300 shadow-md border border-red-200/50 dark:border-red-800/50 flex-shrink-0"
               >
-                <Trash2 className="w-5 h-5" />
-                <span className="text-sm font-medium">Delete</span>
+                <Trash2 className="w-5 h-5" strokeWidth={2} />
+                <span className="text-[14px] font-semibold">Delete</span>
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Mobile Action Buttons - YouTube Flat Design */}
-      <div className="md:hidden px-3 py-3 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-neutral-800">
+      {/* Mobile Action Buttons - Premium Horizontal Design */}
+      <div className="md:hidden px-4 py-4 bg-white dark:bg-[#0f0f0f] border-b border-gray-100 dark:border-neutral-800/80">
         <div
           ref={scrollContainerRef}
-          className="flex items-center gap-4 overflow-x-auto pb-1"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex items-center gap-5 overflow-x-auto hide-scrollbar pb-1"
         >
-          {/* Like Button - Standalone with count */}
+          {/* Like Button */}
           <button
-            className={`relative flex items-center gap-2.5 transition-all duration-200 flex-shrink-0 ${
+            className={`relative flex items-center gap-2.5 transition-all duration-300 flex-shrink-0 ${
               isLiked
-                ? "text-[#065fd4] dark:text-[#3EA6FF]"
+                ? "text-blue-600 dark:text-blue-400"
                 : "text-gray-700 dark:text-white"
-            } hover:text-gray-900 dark:hover:text-white/80 active:scale-95 overflow-hidden`}
+            } active:scale-95`}
             onClick={handleLike}
             disabled={!user}
           >
             {likeRipple && (
-              <span className="absolute inset-0 mobile-like-ripple bg-[#065fd4]/50 dark:bg-[#3EA6FF]/50 rounded-full pointer-events-none z-0" />
+              <span className="absolute inset-0 mobile-like-ripple bg-blue-500/40 rounded-full pointer-events-none z-0" />
             )}
-            <ThumbsUp
-              className={`w-6 h-6 relative z-10 transition-all duration-200 ${
-                likeAnimation ? "mobile-like-animate" : ""
-              }`}
-              fill={isLiked ? "currentColor" : "none"}
-              strokeWidth={2}
-            />
-            <span
-              className={`text-sm font-medium tabular-nums whitespace-nowrap relative z-10 transition-all duration-200 ${
-                isLiked ? "text-[#065fd4] dark:text-[#3EA6FF]" : ""
-              }`}
-            >
+            <div className="relative">
+              <ThumbsUp
+                className={`w-6 h-6 relative z-10 transition-all duration-300 ${
+                  likeAnimation ? "mobile-like-animate" : ""
+                }`}
+                fill={isLiked ? "currentColor" : "none"}
+                strokeWidth={2}
+              />
+            </div>
+            <span className="text-[14px] font-semibold tabular-nums whitespace-nowrap">
               {likes}
             </span>
           </button>
 
-          {/* Dislike Button - Standalone */}
+          {/* Dislike Button */}
           <button
-            className={`relative flex items-center transition-all duration-200 flex-shrink-0 ${
+            className={`relative flex items-center transition-all duration-300 flex-shrink-0 ${
               isDisliked
-                ? "text-red-600 dark:text-red-500"
+                ? "text-red-500 dark:text-red-400"
                 : "text-gray-700 dark:text-white"
-            } hover:text-gray-900 dark:hover:text-white/80 active:scale-95 overflow-hidden`}
+            } active:scale-95`}
             onClick={handleDislike}
             disabled={!user}
           >
             {dislikeRipple && (
-              <span className="absolute inset-0 mobile-dislike-ripple bg-red-600/50 dark:bg-red-500/50 rounded-full pointer-events-none z-0" />
+              <span className="absolute inset-0 mobile-dislike-ripple bg-red-500/40 rounded-full pointer-events-none z-0" />
             )}
             <ThumbsDown
-              className={`w-6 h-6 relative z-10 transition-all duration-200 ${
+              className={`w-6 h-6 relative z-10 transition-all duration-300 ${
                 dislikeAnimation ? "mobile-dislike-animate" : ""
               }`}
               fill={isDisliked ? "currentColor" : "none"}
@@ -1588,21 +1738,23 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
 
           {/* Share Button */}
           <button
-            className="flex items-center gap-2.5 text-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white/80 transition-colors flex-shrink-0 active:scale-95"
+            className="flex items-center gap-2.5 text-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white/80 transition-all duration-200 flex-shrink-0 active:scale-95"
             onClick={handleShare}
           >
             <Share2 className="w-6 h-6" strokeWidth={2} />
-            <span className="text-sm font-medium whitespace-nowrap">Share</span>
+            <span className="text-[14px] font-semibold whitespace-nowrap">
+              Share
+            </span>
           </button>
 
           {/* Download Button */}
           {user && (
             <button
-              className="flex items-center gap-2.5 text-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white/80 transition-colors flex-shrink-0 active:scale-95"
+              className="flex items-center gap-2.5 text-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white/80 transition-all duration-200 flex-shrink-0 active:scale-95"
               onClick={handleDownload}
             >
               <Download className="w-6 h-6" strokeWidth={2} />
-              <span className="text-sm font-medium whitespace-nowrap">
+              <span className="text-[14px] font-semibold whitespace-nowrap">
                 Download
               </span>
             </button>
@@ -1611,11 +1763,11 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           {/* Save Button */}
           {user && (
             <button
-              className={`flex items-center gap-2.5 transition-colors flex-shrink-0 active:scale-95 ${
+              className={`flex items-center gap-2.5 transition-all duration-200 flex-shrink-0 active:scale-95 ${
                 isWatchLater
-                  ? "text-[#065fd4] dark:text-[#3EA6FF]"
+                  ? "text-blue-600 dark:text-blue-400"
                   : "text-gray-700 dark:text-white"
-              } hover:text-gray-900 dark:hover:text-white/80`}
+              }`}
               onClick={handleWatchLater}
             >
               <Bookmark
@@ -1623,19 +1775,20 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 fill={isWatchLater ? "currentColor" : "none"}
                 strokeWidth={2}
               />
-              <span className="text-sm font-medium whitespace-nowrap">
+              <span className="text-[14px] font-semibold whitespace-nowrap">
                 Save
               </span>
             </button>
           )}
 
+          {/* Delete Button */}
           {user && isOwner && (
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-2.5 text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors flex-shrink-0 active:scale-95"
+              className="flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 flex-shrink-0 active:scale-95"
             >
               <Trash2 className="w-6 h-6" strokeWidth={2} />
-              <span className="text-sm font-medium whitespace-nowrap">
+              <span className="text-[14px] font-semibold whitespace-nowrap">
                 Delete
               </span>
             </button>
@@ -1643,21 +1796,21 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
         </div>
       </div>
 
-      {/* Description */}
-      <div className="px-3 md:px-0 overflow-hidden">
+      {/* Description - Premium Card Design */}
+      <div className="px-4 md:px-0 overflow-hidden">
         <div
-          className="bg-gray-100 dark:bg-neutral-800/50 rounded-xl p-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors mt-3 max-w-full overflow-hidden"
+          className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-neutral-800/60 dark:to-neutral-800/40 rounded-2xl p-4 cursor-pointer hover:from-gray-100 hover:to-gray-150 dark:hover:from-neutral-700/60 dark:hover:to-neutral-700/40 transition-all duration-300 mt-4 max-w-full overflow-hidden border border-gray-200/50 dark:border-neutral-700/50 shadow-sm"
           onClick={() => setShowFullDescription(!showFullDescription)}
         >
-          <div className="flex flex-wrap gap-2 text-xs font-semibold text-gray-900 dark:text-white mb-2">
+          <div className="flex flex-wrap gap-2.5 text-[13px] font-bold text-gray-800 dark:text-white mb-3">
             <span>{formatViews(video?.views || 0)} views</span>
-            <span>•</span>
-            <span>
+            <span className="text-gray-400 dark:text-gray-500">•</span>
+            <span className="text-gray-600 dark:text-gray-300">
               {video?.createdAt ? formatTimeAgo(video.createdAt) : "Recently"}
             </span>
           </div>
           <div
-            className={`text-sm text-gray-900 dark:text-white max-w-full ${
+            className={`text-[14px] text-gray-800 dark:text-gray-200 max-w-full leading-relaxed ${
               showFullDescription ? "" : "line-clamp-2"
             }`}
           >
@@ -1671,10 +1824,10 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               {video.videodescription || "No description"}
             </p>
           </div>
-          <button className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1 mt-2">
+          <button className="text-[14px] font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mt-3 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
             {showFullDescription ? "Show less" : "...more"}
             <ChevronDown
-              className={`w-4 h-4 transition-transform ${
+              className={`w-4 h-4 transition-transform duration-300 ${
                 showFullDescription ? "rotate-180" : ""
               }`}
             />
@@ -1685,7 +1838,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
       {/* Notification Menu Portal */}
       <NotificationMenu />
 
-      {/* Unsubscribe Modal */}
+      {/* Unsubscribe Modal - Premium Design */}
       {showUnsubscribeModal &&
         portalMounted &&
         ReactDOM.createPortal(
@@ -1694,19 +1847,33 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
             style={{ zIndex: 9999999 }}
           >
             <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/70 backdrop-blur-md"
               onClick={() => setShowUnsubscribeModal(false)}
             />
 
-            <div className="relative bg-white dark:bg-[#212121] rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-6 border border-gray-200 dark:border-neutral-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
-                Unsubscribe from {video.videochanel || "this channel"}?
-              </h3>
+            <div
+              className="relative bg-white dark:bg-[#1a1a1a] rounded-3xl shadow-2xl max-w-sm w-full p-7 space-y-6 border border-gray-200/50 dark:border-neutral-700/50"
+              style={{
+                animation: "fadeInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                boxShadow: "0 25px 60px -12px rgba(0, 0, 0, 0.35)",
+              }}
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-neutral-800 flex items-center justify-center">
+                  <Bell className="w-8 h-8 text-gray-500 dark:text-gray-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Unsubscribe?
+                </h3>
+                <p className="text-[14px] text-gray-500 dark:text-gray-400">
+                  Unsubscribe from {video.videochanel || "this channel"}?
+                </p>
+              </div>
 
               <div className="flex gap-3 justify-center">
                 <Button
                   onClick={() => setShowUnsubscribeModal(false)}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-white bg-gray-100 dark:bg-neutral-700 hover:bg-gray-200 dark:hover:bg-neutral-600 rounded-full transition-colors border border-gray-200 dark:border-neutral-600"
+                  className="px-6 py-3 text-[14px] font-semibold text-gray-700 dark:text-white bg-gray-100 dark:bg-neutral-700 hover:bg-gray-200 dark:hover:bg-neutral-600 rounded-full transition-all duration-300 border border-gray-200 dark:border-neutral-600"
                   variant="ghost"
                 >
                   Cancel
@@ -1714,17 +1881,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 <Button
                   onClick={handleSubscribe}
                   disabled={isSubscribing}
-                  className="px-5 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+                  className="px-6 py-3 text-[14px] font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full transition-all duration-300 shadow-lg shadow-blue-500/30"
                 >
                   {isSubscribing ? "Unsubscribing..." : "Unsubscribe"}
                 </Button>
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
 
-      {/* Delete Confirmation Modal - Theme Compatible for Desktop & Mobile */}
+      {/* Delete Confirmation Modal - Premium Design */}
       {showDeleteModal &&
         portalMounted &&
         ReactDOM.createPortal(
@@ -1744,7 +1911,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
           >
             {/* Backdrop */}
             <div
-              className="absolute inset-0 bg-black/70 dark:bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/70 dark:bg-black/80 backdrop-blur-md"
               onClick={() => setShowDeleteModal(false)}
               style={{
                 position: "fixed",
@@ -1756,26 +1923,33 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               }}
             />
 
-            {/* Modal - Theme Compatible Design */}
+            {/* Modal */}
             <div
-              className="relative bg-white dark:bg-[#212121] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-neutral-700"
+              className="relative bg-white dark:bg-[#1a1a1a] rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200/50 dark:border-neutral-700/50"
               onClick={(e) => e.stopPropagation()}
-              style={{ zIndex: 2 }}
+              style={{
+                zIndex: 2,
+                animation: "fadeInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                boxShadow: "0 25px 60px -12px rgba(0, 0, 0, 0.35)",
+              }}
             >
               {/* Header */}
-              <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-neutral-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="px-7 pt-7 pb-5">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+                  <Trash2 className="w-8 h-8 text-red-500 dark:text-red-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
                   Delete Video?
                 </h3>
               </div>
 
               {/* Content */}
-              <div className="px-6 py-5">
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                  Are you sure you want to delete
+              <div className="px-7 pb-5">
+                <p className="text-[14px] text-gray-600 dark:text-gray-400 text-center mb-4">
+                  This will permanently delete:
                 </p>
                 <p
-                  className="text-sm text-red-600 dark:text-red-400 font-semibold break-words bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg border border-red-200 dark:border-red-500/30"
+                  className="text-[14px] text-red-600 dark:text-red-400 font-semibold text-center break-words bg-red-50 dark:bg-red-500/10 px-4 py-3 rounded-xl border border-red-200 dark:border-red-500/30"
                   style={{
                     overflowWrap: "anywhere",
                     wordBreak: "break-word",
@@ -1783,19 +1957,17 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
                 >
                   &quot;{video.videotitle}&quot;
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-4 flex items-start gap-2">
-                  <span className="text-yellow-600 dark:text-yellow-500 text-lg leading-none">
-                    ⚠️
-                  </span>
-                  <span>This action cannot be undone.</span>
+                <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-4 text-center flex items-center justify-center gap-2">
+                  <span className="text-amber-500 text-lg">⚠️</span>
+                  This action cannot be undone.
                 </p>
               </div>
 
               {/* Footer with Buttons */}
-              <div className="px-6 pb-6 pt-2 flex justify-center gap-3 bg-gray-50 dark:bg-neutral-800/30">
+              <div className="px-7 pb-7 pt-3 flex justify-center gap-3 bg-gray-50/50 dark:bg-neutral-800/30">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-6 py-2.5 rounded-full bg-gray-100 dark:bg-neutral-700 border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-600 font-medium text-sm transition-all"
+                  className="px-6 py-3 rounded-full bg-gray-100 dark:bg-neutral-700 border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-600 font-semibold text-[14px] transition-all duration-300"
                 >
                   Cancel
                 </button>
@@ -1811,7 +1983,7 @@ const VideoInfo = ({ video, onShare }: VideoInfoProps) => {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );
