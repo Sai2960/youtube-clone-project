@@ -1554,11 +1554,38 @@ const VideoCall = ({
           }
         }
       };
-
-      // ✅ Register handlers NOW
       socket.on("offer", handleOffer);
       socket.on("answer", handleAnswer);
       socket.on("ice-candidate", handleIceCandidate);
+
+      // ✅ NEW: Handle call ended by remote user
+      socket.on("call-ended", (data) => {
+        console.log("\n📴 ===== CALL ENDED BY REMOTE USER =====");
+        console.log("   Ended by socket:", data.endedBy);
+        console.log("   Ended by user:", data.userId);
+        console.log("   Reason:", data.reason);
+        console.log("   Timestamp:", new Date(data.timestamp).toISOString());
+        console.log("=======================================\n");
+
+        // ✅ Prevent double cleanup
+        if (callEndedRef.current) {
+          console.log("⚠️ Call already ended locally, ignoring remote signal");
+          return;
+        }
+
+        callEndedRef.current = true;
+
+        // ✅ Show message to user
+        setError(`Call ended by ${remotePeerName || "other user"}`);
+
+        // ✅ Clean up WITHOUT emitting another end-call signal (to prevent loop)
+        setTimeout(() => {
+          cleanup(false); // false = don't emit end-call signal
+          onEndCall();
+          router.push("/");
+        }, 2000); // 2 second delay so user sees the message
+      });
+
       console.log("✅ Socket handlers registered");
 
       // Get media stream with Windows audio fix
@@ -1950,31 +1977,47 @@ const VideoCall = ({
       console.error("Error emitting recording-stopped:", error);
     }
   };
-
-  // ✅ Handle end call
   const handleEndCall = async () => {
     if (callEndedRef.current) {
       console.log("⚠️ Call already ended, skipping");
       return;
     }
-    console.log("📴 Ending call initiated by local user");
+
+    console.log("\n📴 ===== ENDING CALL (LOCAL USER) =====");
+    console.log("   User:", user?._id);
+    console.log("   Room:", roomId);
+    console.log("   Time:", new Date().toISOString());
+    console.log("======================================\n");
+
     callEndedRef.current = true;
     isEndingCallRef.current = true;
 
     try {
+      // Stop recording if active
       if (isRecording) {
+        console.log("🛑 Stopping recording...");
         stopRecording();
       }
 
+      // ✅ CRITICAL: Emit end-call signal FIRST (before cleanup)
       try {
         const socket = getSocket();
-        socket.emit("end-call", roomId, { endedBy: user?._id });
-        console.log("📤 Sent end-call signal");
+        socket.emit("end-call", roomId, {
+          endedBy: user?._id,
+          userName: user?.name || user?.channelname || "Unknown",
+          timestamp: Date.now(),
+        });
+        console.log("📤 Sent end-call signal to server");
+
+        // ✅ Give server time to broadcast to other user
+        await new Promise((resolve) => setTimeout(resolve, 300));
       } catch (error) {
-        console.error("Socket emit error:", error);
+        console.error("❌ Socket emit error:", error);
       }
 
+      // Update call status in database
       if (callId) {
+        console.log("💾 Updating call status in database...");
         await axiosInstance
           .put(`/call/${callId}/status`, {
             status: "ended",
@@ -1983,14 +2026,23 @@ const VideoCall = ({
           .catch((err) => console.error("Failed to update call status:", err));
       }
 
-      cleanup(false);
+      // ✅ Clean up WITHOUT emitting again (already sent above)
+      console.log("🧹 Starting cleanup...");
+      cleanup(false); // false = don't emit end-call again
+
+      // Notify parent component
       onEndCall();
 
+      // Navigate away
+      console.log("🏠 Navigating to home...");
       setTimeout(() => {
         router.push("/");
       }, 500);
+
+      console.log("✅ Call ended successfully\n");
     } catch (error) {
-      console.error("Error ending call:", error);
+      console.error("❌ Error ending call:", error);
+      // Still try to cleanup and navigate
       cleanup(false);
       onEndCall();
       router.push("/");
