@@ -85,9 +85,10 @@ const generateToken = (user) => {
 
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
 };
+
 const determineThemeAndOtpMethod = (ip) => {
   try {
-    // Handle localhost
+    // ✅ Handle localhost
     if (ip === "::1" || ip === "127.0.0.1" || ip.startsWith("192.168")) {
       console.log("🏠 Localhost detected, using test location");
 
@@ -101,23 +102,17 @@ const determineThemeAndOtpMethod = (ip) => {
         timezone: "Asia/Kolkata",
         theme: isLightTime ? "light" : "dark",
         otpMethod: "email",
-        debug: {
-          method: "localhost",
-          hour: currentHour,
-          isMorningTime: isLightTime,
-          isSouthIndia: true,
-        },
+        debug: { method: "localhost", hour: currentHour },
       };
     }
 
-    // Use geoip-lite
+    // ✅ Use geoip-lite
     const geo = geoip.lookup(ip) || { country: "IN", region: "TN" };
     const state = geo.region || "Unknown";
     const city = geo.city || "Unknown";
     let theme = "dark";
     let otpMethod = "sms";
 
-    // South Indian states
     const southernStates = [
       "Tamil Nadu",
       "Kerala",
@@ -138,29 +133,8 @@ const determineThemeAndOtpMethod = (ip) => {
     const currentTime = moment().tz("Asia/Kolkata");
     const hour = currentTime.hour();
 
-    // ✅ CRITICAL: Only South India gets time-based theme
-    if (isSouthIndia) {
-      otpMethod = "email";
-
-      // ✅ 10 AM - 12 PM = LIGHT theme
-      if (hour >= 10 && hour < 12) {
-        theme = "light";
-        console.log(
-          `☀️ LIGHT THEME: South India + Morning (10-12) | Hour: ${hour}`,
-        );
-      } else {
-        // ✅ After 12 PM or before 10 AM = DARK theme
-        theme = "dark";
-        console.log(
-          `🌙 DARK THEME: South India + Outside 10-12 | Hour: ${hour}`,
-        );
-      }
-    } else {
-      // ✅ Non-South India = ALWAYS DARK
-      theme = "dark";
-      otpMethod = "sms";
-      console.log(`🌙 DARK THEME: Not South India | State: ${state}`);
-    }
+    if (isSouthIndia) otpMethod = "email";
+    if (isSouthIndia && hour >= 10 && hour < 12) theme = "light";
 
     console.log(
       "🎨 Theme determined:",
@@ -178,12 +152,7 @@ const determineThemeAndOtpMethod = (ip) => {
       otpMethod,
       country: geo.country || "IN",
       timezone: geo.timezone || "Asia/Kolkata",
-      debug: {
-        method: "geoip",
-        hour,
-        isSouthIndia,
-        isMorningTime: hour >= 10 && hour < 12,
-      },
+      debug: { method: "geoip", hour, isSouthIndia },
     };
   } catch (error) {
     console.error("⚠️ Theme determination error:", error);
@@ -191,10 +160,10 @@ const determineThemeAndOtpMethod = (ip) => {
       state: "Unknown",
       city: "Unknown",
       theme: "dark",
-      otpMethod: "sms",
+      otpMethod: "email",
       country: "IN",
       timezone: "Asia/Kolkata",
-      debug: { method: "error", isSouthIndia: false, isMorningTime: false },
+      debug: { method: "error" },
     };
   }
 };
@@ -1360,10 +1329,10 @@ router.get("/check-location", async (req, res) => {
     console.log("\n🌍 ===== LOCATION CHECK REQUEST =====");
     console.log("   Time:", new Date().toISOString());
 
-    // Prevent caching
+    // ✅ CRITICAL: Prevent ALL caching
     res.setHeader(
       "Cache-Control",
-      "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
     );
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -1372,24 +1341,32 @@ router.get("/check-location", async (req, res) => {
     // Extract IP
     let ip = "127.0.0.1";
 
-    const forwardedFor = req.headers["x-forwarded-for"];
-    const realIp = req.headers["x-real-ip"];
-    const cfIp = req.headers["cf-connecting-ip"];
+    try {
+      const forwardedFor = req.headers["x-forwarded-for"];
+      const realIp = req.headers["x-real-ip"];
+      const cfIp = req.headers["cf-connecting-ip"];
 
-    if (cfIp) {
-      ip = cfIp;
-    } else if (realIp) {
-      ip = realIp;
-    } else if (forwardedFor) {
-      ip = forwardedFor.split(",")[0].trim();
-    } else if (req.ip) {
-      ip = req.ip;
+      if (cfIp) {
+        ip = cfIp;
+      } else if (realIp) {
+        ip = realIp;
+      } else if (forwardedFor) {
+        ip = forwardedFor.split(",")[0].trim();
+      } else if (req.ip) {
+        ip = req.ip;
+      } else if (req.connection?.remoteAddress) {
+        ip = req.connection.remoteAddress;
+      }
+
+      ip = ip.replace(/^::ffff:/, "");
+      console.log("   Client IP:", ip);
+    } catch (ipError) {
+      console.error("   IP extraction error:", ipError.message);
+      ip = "127.0.0.1";
     }
 
-    ip = ip.replace(/^::ffff:/, "");
-    console.log("   Client IP:", ip);
-
-    // Get current IST time
+    // ✅ Get current time FIRST before calling determineThemeAndOtpMethod
+    const moment = (await import("moment-timezone")).default;
     const currentMoment = moment().tz("Asia/Kolkata");
     const currentHour = currentMoment.hour();
     const currentMinute = currentMoment.minute();
@@ -1404,16 +1381,33 @@ router.get("/check-location", async (req, res) => {
     console.log("   Minute:", currentMinute);
     console.log("   Is morning (10-12):", isMorningTime);
 
-    // Get theme and location
-    const result = determineThemeAndOtpMethod(ip);
+    // Determine theme
+    let result;
+    try {
+      result = determineThemeAndOtpMethod(ip);
+      console.log("   Location result:", {
+        state: result.state,
+        detectedTheme: result.theme,
+        otpMethod: result.otpMethod,
+      });
+    } catch (themeError) {
+      console.error("   Theme determination error:", themeError);
+      result = {
+        state: "Unknown",
+        city: "Unknown",
+        theme: "dark",
+        otpMethod: "sms",
+        country: "IN",
+        timezone: "Asia/Kolkata",
+      };
+    }
 
     console.log("🎨 FINAL DECISION:");
     console.log("   Theme to send:", result.theme);
     console.log("   OTP method:", result.otpMethod);
-    console.log("   State:", result.state);
-    console.log("   Is South India:", result.debug?.isSouthIndia);
     console.log("=====================================\n");
 
+    // ✅ Return response with extensive debugging
     return res.status(200).json({
       success: true,
       theme: result.theme || "dark",
@@ -1428,15 +1422,18 @@ router.get("/check-location", async (req, res) => {
         serverTime: currentMoment.format("YYYY-MM-DD HH:mm:ss Z"),
         hour: currentHour,
         minute: currentMinute,
-        isMorningTime: isMorningTime,
-        isSouthIndia: result.debug?.isSouthIndia || false,
+        isMorningTime,
         detectedState: result.state,
+        determinedTheme: result.theme,
         ip: ip,
         timestamp: Date.now(),
       },
     });
-  } catch (error) {
-    console.error("\n❌ LOCATION CHECK ERROR:", error);
+  } catch (outerError) {
+    console.error("\n❌ LOCATION CHECK FATAL ERROR");
+    console.error("Error:", outerError.message);
+    console.error("Stack:", outerError.stack);
+
     return res.status(200).json({
       success: true,
       theme: "dark",
@@ -1447,10 +1444,8 @@ router.get("/check-location", async (req, res) => {
         country: "IN",
         timezone: "Asia/Kolkata",
       },
-      debug: {
-        isSouthIndia: false,
-        isMorningTime: false,
-      },
+      error:
+        process.env.NODE_ENV === "development" ? outerError.message : undefined,
     });
   }
 });
