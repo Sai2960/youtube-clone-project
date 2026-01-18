@@ -9,7 +9,15 @@ import {
   MonitorUp,
   Circle,
   Maximize,
+  Minimize,
   Play,
+  Settings,
+  Users,
+  Shield,
+  Wifi,
+  WifiOff,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { WebRTCService } from "@/lib/webrtc";
 import { RecordingService } from "@/lib/recordingService";
@@ -28,7 +36,9 @@ interface VideoCallProps {
   onEndCall: () => void;
   remotePeerName?: string;
   callId?: string;
+  theme?: "light" | "dark";
 }
+
 // ✅ Audio verification helper
 const verifyAudioTrack = async (track: MediaStreamTrack): Promise<boolean> => {
   console.log("🎤 Verifying audio track:", {
@@ -137,7 +147,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
             googHighpassFilter: true,
             googTypingNoiseDetection: true,
             googAudioMirroring: false,
-          } as any, // ← ADD THIS
+          } as any,
           video: false,
         });
 
@@ -162,7 +172,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
               googHighpassFilter: true,
               googTypingNoiseDetection: true,
               googAudioMirroring: false,
-            } as any, // ← ADD THIS
+            } as any,
             video:
               videoInputs.length > 0
                 ? {
@@ -213,7 +223,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
             googHighpassFilter: true,
             googTypingNoiseDetection: true,
             googAudioMirroring: false,
-          } as any, // ← ADD THIS
+          } as any,
           video: false,
         });
 
@@ -286,7 +296,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
             googHighpassFilter: true,
             googTypingNoiseDetection: true,
             googAudioMirroring: false,
-          } as any, // ← ADD THIS
+          } as any,
           video:
             videoInputs.length > 0
               ? {
@@ -331,6 +341,7 @@ const ensureAudioNotMuted = async (): Promise<MediaStream> => {
     throw err;
   }
 };
+
 // ✅ Global debug helper
 if (typeof window !== "undefined") {
   (window as any).debugCall = {
@@ -378,16 +389,17 @@ if (typeof window !== "undefined") {
 
   console.log("✅ window.debugCall created globally");
 }
+
 const VideoCall = ({
   roomId,
   isInitiator,
   onEndCall,
   remotePeerName = "Remote User",
   callId = "",
+  theme = "dark",
 }: VideoCallProps) => {
   const router = useRouter();
   const { user } = useUser();
-  // ... rest of component
 
   // Logging
   console.log("🎬 ===== VideoCall RENDER =====");
@@ -412,6 +424,12 @@ const VideoCall = ({
   const [initError, setInitError] = useState<string | null>(null);
   const [initStep, setInitStep] = useState<string>("idle");
   const [remoteAudioStatus, setRemoteAudioStatus] = useState<string>("waiting");
+  const [callDuration, setCallDuration] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  const [networkQuality, setNetworkQuality] = useState<
+    "excellent" | "good" | "poor" | "disconnected"
+  >("good");
+
   // Refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -425,8 +443,98 @@ const VideoCall = ({
   const remoteStreamReceivedRef = useRef(false);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callDurationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   // Add this state near other states:
   const [hasRemoteStream, setHasRemoteStream] = useState(false);
+
+  // Theme colors
+  const themeColors = {
+    dark: {
+      bg: "bg-gradient-to-br from-gray-950 via-gray-900 to-black",
+      overlay: "bg-black/60",
+      glass: "bg-white/5 backdrop-blur-2xl border border-white/10",
+      glassHover: "hover:bg-white/10",
+      text: "text-white",
+      textMuted: "text-gray-400",
+      textSubtle: "text-gray-500",
+      accent: "from-violet-600 via-purple-600 to-indigo-600",
+      accentSolid: "bg-violet-600",
+      danger: "from-rose-600 to-red-600",
+      success: "from-emerald-500 to-green-500",
+      warning: "from-amber-500 to-orange-500",
+      buttonBg: "bg-white/10 hover:bg-white/20",
+      buttonActive: "bg-violet-600 hover:bg-violet-700",
+      buttonDanger:
+        "bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700",
+      shadow: "shadow-2xl shadow-black/50",
+      ring: "ring-white/20",
+    },
+    light: {
+      bg: "bg-gradient-to-br from-slate-100 via-gray-50 to-white",
+      overlay: "bg-white/80",
+      glass: "bg-black/5 backdrop-blur-2xl border border-black/10",
+      glassHover: "hover:bg-black/10",
+      text: "text-gray-900",
+      textMuted: "text-gray-600",
+      textSubtle: "text-gray-400",
+      accent: "from-violet-600 via-purple-600 to-indigo-600",
+      accentSolid: "bg-violet-600",
+      danger: "from-rose-600 to-red-600",
+      success: "from-emerald-500 to-green-500",
+      warning: "from-amber-500 to-orange-500",
+      buttonBg: "bg-black/10 hover:bg-black/20",
+      buttonActive: "bg-violet-600 hover:bg-violet-700",
+      buttonDanger:
+        "bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700",
+      shadow: "shadow-2xl shadow-gray-300/50",
+      ring: "ring-black/10",
+    },
+  };
+
+  const colors = themeColors[theme];
+
+  // ✅ Call duration timer
+  useEffect(() => {
+    if (connectionStatus === "connected") {
+      callDurationIntervalRef.current = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (callDurationIntervalRef.current) {
+        clearInterval(callDurationIntervalRef.current);
+      }
+    };
+  }, [connectionStatus]);
+
+  // ✅ Auto-hide controls
+  useEffect(() => {
+    const handleMouseMove = () => {
+      setShowControls(true);
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+      controlsTimeoutRef.current = setTimeout(() => {
+        if (connectionStatus === "connected") {
+          setShowControls(false);
+        }
+      }, 4000);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchstart", handleMouseMove);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchstart", handleMouseMove);
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, [connectionStatus]);
 
   // ✅ Force audio context resume on user interaction
   const ensureAudioContextResumed = async () => {
@@ -791,6 +899,7 @@ const VideoCall = ({
       clearInterval(persistInterval);
     };
   }, []);
+
   // ✅ Component mount/unmount logging
   useEffect(() => {
     console.log("🎬 VideoCall component MOUNTED");
@@ -912,7 +1021,7 @@ const VideoCall = ({
   // ✅ Monitor connection and track states
   useEffect(() => {
     if (connectionStatus !== "connected" || !webrtcServiceRef.current) return;
-    // ✅ Force video element refresh when connected
+
     const monitor = setInterval(async () => {
       // Check audio element
       const audioEl = remoteAudioRef.current;
@@ -982,19 +1091,18 @@ const VideoCall = ({
 
     return () => clearInterval(monitor);
   }, [connectionStatus]);
-  // ✅ Auto-start for initiator who already initiated the call
+
   // ✅ Auto-start for initiator who already initiated the call
   useEffect(() => {
     if (isInitiator && !userInteracted && roomId && !initializingRef.current) {
       console.log("🤖 Auto-starting call for initiator after delay");
 
-      // Give user 1 second to see the screen, then auto-start
       const autoStartTimer = setTimeout(() => {
         if (!userInteracted && !initializingRef.current) {
           console.log("🤖 Auto-clicking START CALL for initiator");
           setUserInteracted(true);
         }
-      }, 1000); // Reduced from any longer delay
+      }, 1000);
 
       return () => clearTimeout(autoStartTimer);
     }
@@ -1024,7 +1132,6 @@ const VideoCall = ({
 
     console.log("🔄 Force video visibility effect triggered");
 
-    // Force visibility and repaint
     const ensureVisible = () => {
       video.style.visibility = "visible";
       video.style.opacity = "1";
@@ -1037,9 +1144,8 @@ const VideoCall = ({
       video.style.zIndex = "1";
       video.style.objectFit = "cover";
 
-      // Force repaint
       video.style.display = "none";
-      video.offsetHeight; // Trigger reflow
+      video.offsetHeight;
       video.style.display = "block";
 
       console.log("✅ Video visibility forced:", {
@@ -1053,15 +1159,12 @@ const VideoCall = ({
       });
     };
 
-    // Immediate visibility
     ensureVisible();
 
-    // Also try forcing play again
     const playPromise = video.play().catch((e) => {
       console.error("Play retry failed:", e);
     });
 
-    // Retry after a short delay
     const timer = setTimeout(() => {
       console.log("🔄 Retrying video visibility...");
       ensureVisible();
@@ -1070,6 +1173,7 @@ const VideoCall = ({
 
     return () => clearTimeout(timer);
   }, [connectionStatus, hasRemoteStream]);
+
   // ✅ Main initialization effect
   useEffect(() => {
     console.log("\n🔄 ===== INIT EFFECT TRIGGERED =====");
@@ -1107,7 +1211,6 @@ const VideoCall = ({
       try {
         setInitError(null);
 
-        // Wait for video refs with timeout
         let attempts = 0;
         while (
           (!localVideoRef.current || !remoteVideoRef.current) &&
@@ -1172,7 +1275,6 @@ const VideoCall = ({
   }, [roomId, userInteracted]);
 
   // ✅ Monitor peer connection state
-  // ✅ Monitor peer connection state
   useEffect(() => {
     if (!webrtcServiceRef.current) return;
 
@@ -1185,15 +1287,11 @@ const VideoCall = ({
         ice: pc.iceConnectionState,
         signaling: pc.signalingState,
       });
-
-      // ✅ REMOVED: The manual stream triggering that was causing double-calls
-      // The webrtc.ts trackHandler already handles this properly
     };
 
     pc.addEventListener("connectionstatechange", checkConnection);
     pc.addEventListener("iceconnectionstatechange", checkConnection);
 
-    // Initial check
     setTimeout(checkConnection, 2000);
     const interval = setInterval(checkConnection, 5000);
 
@@ -1203,6 +1301,7 @@ const VideoCall = ({
       clearInterval(interval);
     };
   }, [isInitialized]);
+
   // ✅ Cleanup function
   const cleanup = (emitEvent: boolean = true) => {
     console.log("🧹 Cleanup starting...", {
@@ -1216,12 +1315,10 @@ const VideoCall = ({
       return;
     }
 
-    // Remove navigation blocker
     if (typeof window !== "undefined") {
       window.onbeforeunload = null;
     }
 
-    // Stop recording
     if (isRecording && recordingServiceRef.current) {
       try {
         recordingServiceRef.current.stopRecording();
@@ -1230,7 +1327,6 @@ const VideoCall = ({
       }
     }
 
-    // Stop monitor intervals
     document.querySelectorAll("#remote-audio-element").forEach((audio: any) => {
       if (audio._monitorInterval) {
         clearInterval(audio._monitorInterval);
@@ -1244,7 +1340,6 @@ const VideoCall = ({
       clearInterval(recordingIntervalRef.current);
     }
 
-    // Clean up remote audio element
     if (remoteAudioRef.current) {
       try {
         remoteAudioRef.current.pause();
@@ -1263,7 +1358,6 @@ const VideoCall = ({
       }
     }
 
-    // Remove ALL audio elements
     document.querySelectorAll("audio").forEach((audio) => {
       console.log("🗑️ Removing audio element:", audio.id);
       if (audio.srcObject) {
@@ -1278,7 +1372,6 @@ const VideoCall = ({
       audio.remove();
     });
 
-    // Close AudioContext
     if (audioContextRef.current && audioContextRef.current.state !== "closed") {
       try {
         audioContextRef.current.close();
@@ -1287,12 +1380,10 @@ const VideoCall = ({
         console.error("❌ AudioContext cleanup error:", e);
       }
     }
-    // Clean up audio booster
-    // Clean up audio booster
+
     if (typeof window !== "undefined" && (window as any).__audioBooster) {
       try {
         const booster = (window as any).__audioBooster;
-        // Disconnect all nodes
         if (booster.source) booster.source.disconnect();
         if (booster.highpass) booster.highpass.disconnect();
         if (booster.lowpass) booster.lowpass.disconnect();
@@ -1309,7 +1400,6 @@ const VideoCall = ({
       }
     }
 
-    // Clean local video
     if (localVideoRef.current?.srcObject) {
       try {
         const stream = localVideoRef.current.srcObject as MediaStream;
@@ -1324,7 +1414,6 @@ const VideoCall = ({
       }
     }
 
-    // Clean remote video
     if (remoteVideoRef.current?.srcObject) {
       try {
         const stream = remoteVideoRef.current.srcObject as MediaStream;
@@ -1339,7 +1428,6 @@ const VideoCall = ({
       }
     }
 
-    // Clean global media tracks
     if (typeof window !== "undefined" && (window as any).__mediaStreamTracks) {
       try {
         const tracks = (window as any).__mediaStreamTracks;
@@ -1359,7 +1447,6 @@ const VideoCall = ({
       }
     }
 
-    // Close WebRTC
     if (webrtcServiceRef.current) {
       try {
         webrtcServiceRef.current.close();
@@ -1369,13 +1456,11 @@ const VideoCall = ({
       }
     }
 
-    // Clean up window exposure
     if (typeof window !== "undefined") {
       delete (window as any).peerConnection;
       delete (window as any).webrtcService;
     }
 
-    // Emit end call if requested
     if (emitEvent && !callEndedRef.current) {
       try {
         const socket = getSocket();
@@ -1386,7 +1471,6 @@ const VideoCall = ({
       }
     }
 
-    // Reset initialization flags
     initializedRef.current = false;
     initializingRef.current = false;
     remoteStreamReceivedRef.current = false;
@@ -1394,66 +1478,6 @@ const VideoCall = ({
 
     console.log("✅ Cleanup complete");
   };
-
-  // ✅ Force video visibility by injecting CSS into document
-  useEffect(() => {
-    console.log("🎨 Injecting video visibility CSS");
-
-    const styleEl = document.createElement("style");
-    styleEl.id = "video-call-override";
-    styleEl.innerHTML = `
-    /* NUCLEAR OPTION - Remove all blockers */
-    body > *:not(#__next) {
-      display: none !important;
-    }
-    
-    html, body, #__next {
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      overflow: hidden !important;
-      background: black !important;
-    }
-    
-    /* Force video container to be visible */
-    .fixed.inset-0.w-screen.h-screen {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      z-index: 2147483647 !important;
-      background: black !important;
-      overflow: hidden !important;
-    }
-    
-    /* Force video element to be visible */
-    #remote-video-element {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover !important;
-      z-index: 1 !important;
-      background: black !important;
-      transform: none !important;
-    }
-  `;
-
-    document.head.appendChild(styleEl);
-
-    console.log("✅ Video visibility CSS injected");
-
-    return () => {
-      styleEl.remove();
-    };
-  }, []);
 
   // ✅ Initialize call function
   const initializeCall = async () => {
@@ -1466,7 +1490,6 @@ const VideoCall = ({
         throw new Error("User not authenticated");
       }
 
-      // Socket setup
       if (!isSocketConnected()) {
         console.log("🔌 Initializing socket...");
         initializeSocket.initializeSocket(user._id);
@@ -1482,12 +1505,10 @@ const VideoCall = ({
         return;
       }
 
-      // Create WebRTC service
       console.log("🔧 Creating WebRTC service...");
       webrtcServiceRef.current = new WebRTCService();
       recordingServiceRef.current = new RecordingService();
 
-      // ✅ CRITICAL FIX: Register socket handlers BEFORE doing anything else
       console.log("🔧 Registering socket handlers BEFORE media/joining...");
 
       const handleOffer = async (data: {
@@ -1555,13 +1576,11 @@ const VideoCall = ({
         }
       };
 
-      // ✅ Register handlers NOW
       socket.on("offer", handleOffer);
       socket.on("answer", handleAnswer);
       socket.on("ice-candidate", handleIceCandidate);
       console.log("✅ Socket handlers registered");
 
-      // Get media stream with Windows audio fix
       console.log("🎤 Getting media stream with audio fix...");
       let stream: MediaStream;
       try {
@@ -1575,15 +1594,12 @@ const VideoCall = ({
         return;
       }
 
-      // Set local stream
       webrtcServiceRef.current.setLocalStream(stream);
 
-      // ✅ THIS IS THE CRITICAL PART - Attach to local video WITH status update
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
         localVideoRef.current.muted = true;
 
-        // ✅ Force video visibility
         localVideoRef.current.style.display = "block";
         localVideoRef.current.style.visibility = "visible";
         localVideoRef.current.style.opacity = "1";
@@ -1591,11 +1607,9 @@ const VideoCall = ({
         await localVideoRef.current.play().catch(console.error);
         console.log("✅ Local video attached and playing");
 
-        // ✅ CRITICAL: Update status immediately to hide overlay
         setConnectionStatus("waiting");
         setInitStep("Camera ready - waiting for other person...");
 
-        // Force re-render
         setTimeout(() => {
           if (connectionStatus === "connecting") {
             setConnectionStatus("waiting");
@@ -1603,12 +1617,9 @@ const VideoCall = ({
         }, 100);
       }
 
-      // Setup event listeners BEFORE adding tracks
       console.log("🔧 Setting up event listeners...");
 
       webrtcServiceRef.current.setupEventListeners(
-        // Remote stream callback
-        // Remote stream callback
         async (remoteStream: MediaStream) => {
           console.log("\n🎬 ===== REMOTE STREAM RECEIVED =====");
 
@@ -1617,21 +1628,17 @@ const VideoCall = ({
             return;
           }
 
-          // Enable all tracks
           remoteStream.getTracks().forEach((track) => {
             track.enabled = true;
             console.log(`✅ Enabled ${track.kind}: ${track.label}`);
           });
 
-          // Attach stream to video
           const video = remoteVideoRef.current;
           video.srcObject = remoteStream;
 
-          // 🔥 CRITICAL FIX: Start MUTED to allow autoplay
           video.muted = true;
           video.volume = 1.0;
 
-          // Force video visibility
           video.style.visibility = "visible";
           video.style.opacity = "1";
           video.style.display = "block";
@@ -1645,7 +1652,7 @@ const VideoCall = ({
           video.style.backgroundColor = "black";
 
           console.log("✅ Video element visibility forced");
-          // 🔥 FORCE PLAY WITH MAXIMUM ATTEMPTS
+
           let playAttempts = 0;
           const maxAttempts = 5;
 
@@ -1654,17 +1661,14 @@ const VideoCall = ({
             console.log(`🎬 Play attempt ${playAttempts}/${maxAttempts}`);
 
             try {
-              // Force video to be visible FIRST
               video.style.display = "block";
               video.style.visibility = "visible";
               video.style.opacity = "1";
               video.style.zIndex = "2147483647";
 
-              // Force play WITH BOOSTED audio
               video.muted = false;
               video.volume = 1.0;
 
-              // 🔊 CREATE ADVANCED AUDIO PROCESSING PIPELINE
               try {
                 if (video.srcObject) {
                   const AudioContext =
@@ -1675,38 +1679,32 @@ const VideoCall = ({
                     video.srcObject as MediaStream,
                   );
 
-                  // 🎯 STEP 1: Noise gate (removes background noise)
                   const compressor = audioCtx.createDynamicsCompressor();
-                  compressor.threshold.value = -50; // Remove quiet background noise
+                  compressor.threshold.value = -50;
                   compressor.knee.value = 40;
                   compressor.ratio.value = 12;
                   compressor.attack.value = 0;
                   compressor.release.value = 0.25;
 
-                  // 🎯 STEP 2: High-pass filter (remove low-frequency rumble)
                   const highpass = audioCtx.createBiquadFilter();
                   highpass.type = "highpass";
-                  highpass.frequency.value = 100; // Remove frequencies below 100Hz
+                  highpass.frequency.value = 100;
                   highpass.Q.value = 1;
 
-                  // 🎯 STEP 3: Low-pass filter (remove high-frequency hiss)
                   const lowpass = audioCtx.createBiquadFilter();
                   lowpass.type = "lowpass";
-                  lowpass.frequency.value = 8000; // Remove frequencies above 8kHz
+                  lowpass.frequency.value = 8000;
                   lowpass.Q.value = 1;
 
-                  // 🎯 STEP 4: Voice boost (enhance mid-range frequencies)
                   const voiceBoost = audioCtx.createBiquadFilter();
                   voiceBoost.type = "peaking";
-                  voiceBoost.frequency.value = 2000; // Human voice range
+                  voiceBoost.frequency.value = 2000;
                   voiceBoost.Q.value = 1;
-                  voiceBoost.gain.value = 6; // Boost by 6dB
+                  voiceBoost.gain.value = 6;
 
-                  // 🎯 STEP 5: Final gain control
                   const gainNode = audioCtx.createGain();
-                  gainNode.gain.value = 2.5; // Boost overall volume
+                  gainNode.gain.value = 2.5;
 
-                  // 🔗 CONNECT THE PIPELINE
                   source
                     .connect(highpass)
                     .connect(lowpass)
@@ -1722,7 +1720,6 @@ const VideoCall = ({
                   console.log("   ✓ Voice boost: +6dB @ 2kHz");
                   console.log("   ✓ Final gain: 2.5x");
 
-                  // Store for cleanup
                   (window as any).__audioBooster = {
                     audioCtx,
                     source,
@@ -1737,7 +1734,6 @@ const VideoCall = ({
                 console.warn("⚠️ Audio boost failed, using default:", audioErr);
               }
 
-              // Double-check it's still visible
               setTimeout(() => {
                 video.style.display = "block";
                 video.style.visibility = "visible";
@@ -1766,36 +1762,30 @@ const VideoCall = ({
 
           await attemptPlay();
 
-          // Update states - THIS TRIGGERS RE-RENDER
           setHasRemoteStream(true);
           setConnectionStatus("connected");
           setShowPlayButton(false);
           setError(null);
 
-          // Mark ref too
           remoteStreamReceivedRef.current = true;
 
           console.log("===== REMOTE STREAM SETUP DONE =====\n");
         },
-        // ICE candidate callback
         (candidate: RTCIceCandidate) => {
           const socket = getSocket();
           socket.emit("ice-candidate", roomId, candidate);
         },
       );
 
-      // Add local stream to peer connection
       console.log("📤 Adding local stream to peer...");
       await webrtcServiceRef.current.addLocalStreamToPeer();
 
-      // Join room
       console.log("🚪 Joining room:", roomId);
       socket.emit("join-room", roomId, user._id);
-      // ✅ BULLETPROOF: Handle both backend signals and fallback
+
       if (isInitiator) {
         console.log("👑 INITIATOR - Waiting for both-users-ready signal...");
 
-        // Listen for both-users-ready from backend
         const readyPromise = new Promise<void>((resolve, reject) => {
           let resolved = false;
 
@@ -1806,7 +1796,6 @@ const VideoCall = ({
             }
           };
 
-          // Timeout after 10 seconds
           const timeout = setTimeout(() => {
             if (!resolved) {
               console.warn(
@@ -1816,14 +1805,12 @@ const VideoCall = ({
             }
           }, 10000);
 
-          // Listen for backend signal
           socket.once("both-users-ready", () => {
             console.log("✅ Backend confirmed both users ready!");
             clearTimeout(timeout);
             safeResolve();
           });
 
-          // Also listen for manual trigger
           socket.once("should-create-offer", () => {
             console.log("✅ Manual offer request received");
             clearTimeout(timeout);
@@ -1831,10 +1818,8 @@ const VideoCall = ({
           });
         });
 
-        // Wait for signal
         await readyPromise;
 
-        // Small delay for stability
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         console.log("📝 Creating offer...");
@@ -1845,20 +1830,18 @@ const VideoCall = ({
       } else {
         console.log("👂 RECEIVER - Waiting for offer...");
 
-        // ✅ SAFETY: Request offer if not received in 8 seconds
         const offerTimeout = setTimeout(() => {
           console.warn("⚠️ No offer received after 8s, requesting it");
           socket.emit("request-offer", roomId);
         }, 8000);
 
-        // Clear timeout when offer arrives
         const clearOfferTimeout = () => {
           clearTimeout(offerTimeout);
           socket.off("offer", clearOfferTimeout);
         };
         socket.once("offer", clearOfferTimeout);
       }
-      // Expose to window for debugging
+
       if (typeof window !== "undefined") {
         (window as any).peerConnection =
           webrtcServiceRef.current.getPeerConnection();
@@ -2042,9 +2025,11 @@ const VideoCall = ({
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
         console.log("✅ Entered fullscreen");
       } else {
         await document.exitFullscreen();
+        setIsFullscreen(false);
         console.log("✅ Exited fullscreen");
       }
     } catch (error) {
@@ -2054,261 +2039,793 @@ const VideoCall = ({
 
   // ✅ Format time
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
+
+    if (hrs > 0) {
+      return `${hrs.toString().padStart(2, "0")}:${mins
+        .toString()
+        .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
     return `${mins.toString().padStart(2, "0")}:${secs
       .toString()
       .padStart(2, "0")}`;
   };
+
+  // ✅ Get initials from name
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // ✅ Network quality indicator
+  const NetworkIndicator = () => {
+    const qualityConfig = {
+      excellent: {
+        color: "text-emerald-400",
+        bg: "bg-emerald-500/20",
+        icon: Wifi,
+        bars: 4,
+      },
+      good: {
+        color: "text-green-400",
+        bg: "bg-green-500/20",
+        icon: Wifi,
+        bars: 3,
+      },
+      poor: {
+        color: "text-amber-400",
+        bg: "bg-amber-500/20",
+        icon: Wifi,
+        bars: 2,
+      },
+      disconnected: {
+        color: "text-red-400",
+        bg: "bg-red-500/20",
+        icon: WifiOff,
+        bars: 0,
+      },
+    };
+
+    const config = qualityConfig[networkQuality];
+    const Icon = config.icon;
+
+    return (
+      <div
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${config.bg}`}
+      >
+        <Icon className={`w-3.5 h-3.5 ${config.color}`} />
+        <div className="flex gap-0.5">
+          {[1, 2, 3, 4].map((bar) => (
+            <div
+              key={bar}
+              className={`w-1 rounded-full transition-all duration-300 ${
+                bar <= config.bars ? config.color : "bg-gray-600"
+              }`}
+              style={{ height: `${bar * 3 + 4}px` }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // ✅ Premium Control Button Component
+  const ControlButton = ({
+    onClick,
+    active,
+    danger,
+    disabled,
+    icon: Icon,
+    label,
+    size = "normal",
+    pulse,
+  }: {
+    onClick: () => void;
+    active?: boolean;
+    danger?: boolean;
+    disabled?: boolean;
+    icon: any;
+    label: string;
+    size?: "normal" | "large";
+    pulse?: boolean;
+  }) => {
+    const baseClasses = `
+      relative group flex items-center justify-center
+      rounded-2xl transition-all duration-300 ease-out
+      transform hover:scale-105 active:scale-95
+      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
+      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent
+    `;
+
+    const sizeClasses =
+      size === "large"
+        ? "w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20"
+        : "w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16";
+
+    const iconSizeClasses =
+      size === "large"
+        ? "w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9"
+        : "w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7";
+
+    let colorClasses = "";
+    if (danger) {
+      colorClasses = `
+        bg-gradient-to-br from-rose-500 via-red-500 to-rose-600
+        hover:from-rose-600 hover:via-red-600 hover:to-rose-700
+        shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50
+        focus:ring-rose-500
+      `;
+    } else if (active) {
+      colorClasses = `
+        bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600
+        hover:from-violet-600 hover:via-purple-600 hover:to-indigo-700
+        shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50
+        focus:ring-violet-500
+      `;
+    } else {
+      colorClasses = `
+        ${colors.glass}
+        hover:bg-white/15 dark:hover:bg-white/15
+        shadow-lg shadow-black/10
+        focus:ring-white/30
+      `;
+    }
+
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <button
+          onClick={onClick}
+          disabled={disabled}
+          className={`${baseClasses} ${sizeClasses} ${colorClasses}`}
+          title={label}
+        >
+          {/* Pulse animation for active states */}
+          {pulse && (
+            <span className="absolute inset-0 rounded-2xl animate-ping bg-current opacity-20" />
+          )}
+
+          {/* Glow effect */}
+          <span
+            className={`
+            absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100
+            transition-opacity duration-300
+            ${danger ? "bg-rose-400/20" : active ? "bg-violet-400/20" : "bg-white/5"}
+            blur-xl
+          `}
+          />
+
+          {/* Icon */}
+          <Icon className={`${iconSizeClasses} text-white relative z-10`} />
+        </button>
+
+        {/* Label */}
+        <span
+          className={`
+          text-[10px] sm:text-xs font-medium tracking-wide
+          ${colors.textMuted} opacity-0 group-hover:opacity-100
+          transition-opacity duration-300 whitespace-nowrap
+        `}
+        >
+          {label}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div
-      className="fixed inset-0 w-screen h-screen bg-black"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "black",
-        zIndex: 2147483647,
-        overflow: "hidden",
-      }}
+      className={`
+        fixed inset-0 w-screen h-screen overflow-hidden
+        ${colors.bg}
+      `}
+      style={{ zIndex: 2147483647 }}
     >
-      {/* Remote Video */}
-      <video
-        ref={remoteVideoRef}
-        autoPlay
-        playsInline
-        muted={false}
-        id="remote-video-element"
-        className="video-call-remote"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: 1,
-          backgroundColor: "black",
-          display: "block",
-          visibility: "visible",
-          opacity: 1,
-        }}
-        onPlay={() => {
-          console.log("📹 Remote video onPlay fired");
-          if (remoteVideoRef.current) {
-            const v = remoteVideoRef.current;
-            v.muted = false;
-            v.volume = 1.0;
-            // Force visibility again
-            v.style.display = "block";
-            v.style.visibility = "visible";
-            v.style.opacity = "1";
-            v.style.zIndex = "2147483647";
-          }
-        }}
-        onLoadedMetadata={() => {
-          console.log("📹 Remote video metadata loaded");
-          // Force play and visibility
-          if (remoteVideoRef.current) {
-            const v = remoteVideoRef.current;
-            v.style.display = "block";
-            v.style.visibility = "visible";
-            v.style.opacity = "1";
-            v.play().catch((e) => console.error("Play error:", e));
-          }
-        }}
-      />
+      {/* ===== PREMIUM BACKGROUND EFFECTS ===== */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Animated gradient orbs */}
+        <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-to-br from-violet-600/20 to-transparent rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-gradient-to-tl from-indigo-600/20 to-transparent rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 bg-gradient-to-r from-purple-600/10 to-pink-600/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s" }}
+        />
 
-      {/* Connection Status Overlay - Hide when local video is ready */}
-      {connectionStatus === "connecting" &&
-        !localVideoRef.current?.srcObject && (
-          <div
-            id="connecting-overlay"
-            className="absolute inset-0 bg-black/80 flex items-center justify-center z-[1000000] pointer-events-none"
-          >
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-white text-xl">Starting camera...</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Please allow camera access
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: "50px 50px",
+          }}
+        />
+      </div>
 
-      {/* Local Video - Picture in Picture */}
-      <div
-        className="absolute bottom-24 right-4 w-32 h-24 sm:w-64 sm:h-48 rounded-xl overflow-hidden border-4 border-white shadow-2xl bg-black pointer-events-auto"
-        style={{
-          position: "fixed",
-          bottom: "6rem",
-          right: "1rem",
-          zIndex: 1000001,
-          backgroundColor: "black",
-        }}
-      >
-        {" "}
+      {/* ===== REMOTE VIDEO (Full Screen) ===== */}
+      <div className="absolute inset-0">
         <video
-          ref={localVideoRef}
+          ref={remoteVideoRef}
           autoPlay
           playsInline
-          muted={true}
+          muted={false}
+          id="remote-video-element"
           className="w-full h-full object-cover"
           style={{
             display: "block",
             visibility: "visible",
             opacity: 1,
           }}
+          onPlay={() => {
+            console.log("📹 Remote video onPlay fired");
+            if (remoteVideoRef.current) {
+              const v = remoteVideoRef.current;
+              v.muted = false;
+              v.volume = 1.0;
+              v.style.display = "block";
+              v.style.visibility = "visible";
+              v.style.opacity = "1";
+            }
+          }}
+          onLoadedMetadata={() => {
+            console.log("📹 Remote video metadata loaded");
+            if (remoteVideoRef.current) {
+              const v = remoteVideoRef.current;
+              v.style.display = "block";
+              v.style.visibility = "visible";
+              v.style.opacity = "1";
+              v.play().catch((e) => console.error("Play error:", e));
+            }
+          }}
         />
-        {!isVideoEnabled && (
-          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-            <VideoOff className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
+
+        {/* Remote video placeholder when no stream */}
+        {!hasRemoteStream && connectionStatus !== "connecting" && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              {/* Avatar placeholder */}
+              <div
+                className={`
+                w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44
+                rounded-full mx-auto mb-6
+                bg-gradient-to-br ${colors.accent}
+                flex items-center justify-center
+                shadow-2xl shadow-violet-500/30
+                ring-4 ring-white/10
+              `}
+              >
+                <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
+                  {getInitials(remotePeerName)}
+                </span>
+              </div>
+              <h3
+                className={`text-xl sm:text-2xl md:text-3xl font-semibold ${colors.text} mb-2`}
+              >
+                {remotePeerName}
+              </h3>
+              <p className={`${colors.textMuted} text-sm sm:text-base`}>
+                {connectionStatus === "waiting"
+                  ? "Waiting to connect..."
+                  : "Connecting..."}
+              </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Header - Call Info */}
-      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent p-3 sm:p-6 z-[1000002] pointer-events-none">
-        <div className="flex items-center justify-between pointer-events-auto">
-          <div>
-            <h2 className="text-white text-xl sm:text-3xl font-bold">
-              {remotePeerName}
-            </h2>
-            <div className="flex items-center gap-2 mt-1">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  connectionStatus === "connected"
-                    ? "bg-green-500"
-                    : connectionStatus === "connecting"
-                      ? "bg-yellow-500 animate-pulse"
-                      : "bg-red-500"
-                }`}
-              />
-              <p className="text-gray-300 text-xs sm:text-sm capitalize">
-                {connectionStatus}
+      {/* ===== CONNECTION OVERLAY ===== */}
+      {connectionStatus === "connecting" &&
+        !localVideoRef.current?.srcObject && (
+          <div
+            className={`
+            absolute inset-0 ${colors.overlay} backdrop-blur-xl
+            flex items-center justify-center z-50
+          `}
+          >
+            <div className="text-center p-8">
+              {/* Premium loader */}
+              <div className="relative w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-8">
+                {/* Outer ring */}
+                <div className="absolute inset-0 rounded-full border-4 border-violet-500/20" />
+                {/* Spinning ring */}
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-violet-500 animate-spin" />
+                {/* Inner pulse */}
+                <div className="absolute inset-4 rounded-full bg-gradient-to-br from-violet-500/30 to-indigo-500/30 animate-pulse" />
+                {/* Center icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Video className="w-8 h-8 sm:w-10 sm:h-10 text-violet-400" />
+                </div>
+              </div>
+
+              <h2
+                className={`text-2xl sm:text-3xl font-bold ${colors.text} mb-3`}
+              >
+                Starting Your Call
+              </h2>
+              <p className={`${colors.textMuted} text-sm sm:text-base`}>
+                Please allow camera and microphone access
               </p>
+
+              {/* Progress steps */}
+              <div className="mt-8 flex items-center justify-center gap-2">
+                {["Camera", "Microphone", "Connecting"].map((step, i) => (
+                  <div key={step} className="flex items-center gap-2">
+                    <div
+                      className={`
+                      w-2 h-2 rounded-full transition-colors duration-500
+                      ${i === 0 ? "bg-violet-500" : i === 1 ? "bg-violet-500/50" : "bg-violet-500/20"}
+                    `}
+                    />
+                    <span className={`text-xs ${colors.textSubtle}`}>
+                      {step}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* ===== HEADER - Call Info ===== */}
+      <div
+        className={`
+        absolute top-0 left-0 right-0 z-40
+        transition-all duration-500 ease-out
+        ${showControls ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}
+      `}
+      >
+        {/* Gradient fade */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent pointer-events-none" />
+
+        <div className="relative px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-6">
+          <div className="flex items-start justify-between">
+            {/* Left - Caller Info */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Avatar */}
+              <div
+                className={`
+                relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14
+                rounded-xl sm:rounded-2xl overflow-hidden
+                bg-gradient-to-br ${colors.accent}
+                shadow-lg shadow-violet-500/20
+                ring-2 ring-white/20
+              `}
+              >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm sm:text-base md:text-lg font-bold text-white">
+                    {getInitials(remotePeerName)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Name & Status */}
+              <div>
+                <h2 className="text-white text-base sm:text-lg md:text-xl font-semibold tracking-tight">
+                  {remotePeerName}
+                </h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {/* Status dot */}
+                  <div
+                    className={`
+                    w-2 h-2 rounded-full transition-colors duration-300
+                    ${
+                      connectionStatus === "connected"
+                        ? "bg-emerald-400 shadow-lg shadow-emerald-400/50"
+                        : connectionStatus === "connecting" ||
+                            connectionStatus === "waiting"
+                          ? "bg-amber-400 animate-pulse"
+                          : "bg-red-400"
+                    }
+                  `}
+                  />
+                  <span className="text-gray-400 text-xs sm:text-sm capitalize">
+                    {connectionStatus === "connected"
+                      ? formatTime(callDuration)
+                      : connectionStatus}
+                  </span>
+
+                  {/* Encrypted badge */}
+                  {connectionStatus === "connected" && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 ml-2">
+                      <Shield className="w-3 h-3 text-emerald-400" />
+                      <span className="text-[10px] text-emerald-400 font-medium">
+                        Encrypted
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right - Recording & Network */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Network quality */}
+              <NetworkIndicator />
+
+              {/* Recording indicator */}
+              {isRecording && (
+                <div
+                  className={`
+                  flex items-center gap-2 sm:gap-3
+                  bg-red-500/90 backdrop-blur-sm
+                  px-3 py-1.5 sm:px-4 sm:py-2
+                  rounded-full shadow-lg shadow-red-500/30
+                  animate-pulse
+                `}
+                >
+                  <div className="relative">
+                    <Circle className="w-3 h-3 sm:w-4 sm:h-4 fill-white text-white" />
+                    <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-75" />
+                  </div>
+                  <span className="text-white text-xs sm:text-sm font-bold tracking-wider">
+                    REC {formatTime(recordingTime)}
+                  </span>
+                </div>
+              )}
+
+              {/* Fullscreen toggle */}
+              <button
+                onClick={toggleFullscreen}
+                className={`
+                  p-2 sm:p-2.5 rounded-xl ${colors.glass}
+                  hover:bg-white/10 transition-all duration-300
+                  hidden sm:flex
+                `}
+              >
+                {isFullscreen ? (
+                  <Minimize className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                ) : (
+                  <Maximize className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== LOCAL VIDEO - Picture in Picture ===== */}
+      <div
+        className={`
+        absolute z-30 transition-all duration-500 ease-out
+        ${showControls ? "opacity-100 scale-100" : "opacity-80 scale-95"}
+        bottom-28 sm:bottom-32 md:bottom-36
+        right-3 sm:right-5 md:right-6
+      `}
+      >
+        <div
+          className={`
+          relative
+          w-24 h-32 sm:w-36 sm:h-48 md:w-44 md:h-60
+          rounded-2xl sm:rounded-3xl overflow-hidden
+          ${colors.glass} shadow-2xl shadow-black/40
+          ring-2 ring-white/20
+          group cursor-pointer
+          hover:ring-violet-500/50 hover:shadow-violet-500/20
+          transition-all duration-300
+        `}
+        >
+          {/* Video */}
+          <video
+            ref={localVideoRef}
+            autoPlay
+            playsInline
+            muted={true}
+            className="w-full h-full object-cover"
+            style={{
+              display: "block",
+              visibility: "visible",
+              opacity: 1,
+              transform: "scaleX(-1)", // Mirror effect
+            }}
+          />
+
+          {/* Video off overlay */}
+          {!isVideoEnabled && (
+            <div
+              className={`
+              absolute inset-0 ${colors.overlay} backdrop-blur-sm
+              flex items-center justify-center
+            `}
+            >
+              <div
+                className={`
+                w-12 h-12 sm:w-16 sm:h-16 rounded-full
+                bg-gradient-to-br ${colors.accent}
+                flex items-center justify-center
+              `}
+              >
+                <VideoOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+            </div>
+          )}
+
+          {/* Muted indicator */}
+          {!isAudioEnabled && (
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+              <div className="p-1.5 sm:p-2 rounded-full bg-red-500/90 shadow-lg shadow-red-500/30">
+                <MicOff className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+              </div>
+            </div>
+          )}
+
+          {/* "You" label */}
+          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
+            <div
+              className={`
+              px-2 py-0.5 sm:px-3 sm:py-1 rounded-full
+              ${colors.glass}
+            `}
+            >
+              <span className="text-[10px] sm:text-xs text-white font-medium">
+                You
+              </span>
             </div>
           </div>
 
-          {/* Recording Indicator */}
-          {isRecording && (
-            <div className="flex items-center gap-2 sm:gap-3 bg-red-600/90 backdrop-blur-sm px-3 py-2 sm:px-6 sm:py-3 rounded-full animate-pulse shadow-lg">
-              <Circle className="w-3 h-3 sm:w-4 sm:h-4 fill-white text-white" />
-              <span className="text-white text-sm sm:text-lg font-bold">
-                {formatTime(recordingTime)}
-              </span>
-            </div>
-          )}
+          {/* Hover expand hint */}
+          <div
+            className={`
+            absolute inset-0 bg-black/0 group-hover:bg-black/20
+            flex items-center justify-center
+            transition-all duration-300 opacity-0 group-hover:opacity-100
+          `}
+          >
+            <Maximize className="w-6 h-6 text-white/80" />
+          </div>
         </div>
       </div>
 
-      {/* Error/Info Message */}
+      {/* ===== ERROR MESSAGE ===== */}
       {error && (
-        <div className="absolute top-20 sm:top-24 left-1/2 transform -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg z-[1000003] shadow-xl max-w-md text-center text-sm sm:text-base pointer-events-auto">
-          {error}
+        <div
+          className={`
+          absolute top-20 sm:top-24 left-1/2 -translate-x-1/2
+          z-50 max-w-md w-[calc(100%-2rem)]
+        `}
+        >
+          <div
+            className={`
+            ${colors.glass} backdrop-blur-xl
+            px-4 py-3 sm:px-6 sm:py-4
+            rounded-2xl shadow-2xl shadow-black/20
+            border border-red-500/20
+          `}
+          >
+            <p className="text-red-400 text-sm sm:text-base text-center font-medium">
+              {error}
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Play Button - if autoplay blocked */}
+      {/* ===== PLAY BUTTON (Autoplay blocked) ===== */}
       {showPlayButton && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-[1000004] pointer-events-auto">
-          <button
-            onClick={handlePlayClick}
-            className="p-8 sm:p-12 rounded-full bg-green-600 hover:bg-green-700 transition-all shadow-2xl transform hover:scale-110 active:scale-95"
-          >
-            <Play
-              className="w-12 h-12 sm:w-16 sm:h-16 text-white"
-              fill="currentColor"
-            />
-          </button>
+        <div
+          className={`
+          absolute inset-0 ${colors.overlay} backdrop-blur-xl
+          flex items-center justify-center z-50
+        `}
+        >
+          <div className="text-center">
+            <button
+              onClick={handlePlayClick}
+              className={`
+                group relative
+                w-24 h-24 sm:w-32 sm:h-32
+                rounded-full
+                bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600
+                hover:from-violet-600 hover:via-purple-600 hover:to-indigo-700
+                shadow-2xl shadow-violet-500/40
+                transition-all duration-300
+                transform hover:scale-110 active:scale-95
+              `}
+            >
+              {/* Pulse rings */}
+              <span className="absolute inset-0 rounded-full bg-violet-500/30 animate-ping" />
+              <span
+                className="absolute -inset-3 rounded-full border-2 border-violet-500/30 animate-pulse"
+                style={{ animationDelay: "0.5s" }}
+              />
+
+              <Play
+                className="w-10 h-10 sm:w-12 sm:h-12 text-white relative z-10 ml-1"
+                fill="currentColor"
+              />
+            </button>
+            <p className={`mt-6 ${colors.text} text-lg font-medium`}>
+              Tap to start video
+            </p>
+            <p className={`mt-2 ${colors.textMuted} text-sm`}>
+              Audio will play automatically
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Control Bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 sm:p-8 z-[2147483641] pointer-events-none">
-        <div className="flex items-center justify-center gap-2 sm:gap-4 pointer-events-auto">
-          {/* Audio Toggle */}
-          <button
-            onClick={toggleAudio}
-            className={`p-3 sm:p-5 rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-lg ${
-              isAudioEnabled
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-            title={isAudioEnabled ? "Mute Audio" : "Unmute Audio"}
-          >
-            {isAudioEnabled ? (
-              <Mic className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
-            ) : (
-              <MicOff className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
-            )}
-          </button>
+      {/* ===== CONTROL BAR ===== */}
+      <div
+        className={`
+        absolute bottom-0 left-0 right-0 z-40
+        transition-all duration-500 ease-out
+        ${showControls ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
+      `}
+      >
+        {/* Gradient fade */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pointer-events-none" />
 
-          {/* Video Toggle */}
-          <button
-            onClick={toggleVideo}
-            className={`p-3 sm:p-5 rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-lg ${
-              isVideoEnabled
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-            title={isVideoEnabled ? "Turn Off Camera" : "Turn On Camera"}
-          >
-            {isVideoEnabled ? (
-              <Video className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
-            ) : (
-              <VideoOff className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
-            )}
-          </button>
-
-          {/* Screen Share Toggle */}
-          <button
-            onClick={toggleScreenShare}
-            className={`p-3 sm:p-5 rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-lg ${
-              isScreenSharing
-                ? "bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-400/50"
-                : "bg-gray-700 hover:bg-gray-600"
-            }`}
-            title={isScreenSharing ? "Stop Screen Share" : "Share Screen"}
-          >
-            <MonitorUp className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
-          </button>
-
-          {/* Record Toggle */}
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={connectionStatus !== "connected"}
-            className={`p-3 sm:p-5 rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-lg disabled:opacity-50 ${
-              isRecording
-                ? "bg-red-600 hover:bg-red-700 ring-2 ring-red-400/50"
-                : "bg-gray-700 hover:bg-gray-600"
-            }`}
-            title={isRecording ? "Stop Recording" : "Start Recording"}
-          >
-            <Circle
-              className={`w-5 h-5 sm:w-7 sm:h-7 text-white ${
-                isRecording ? "fill-white" : ""
-              }`}
+        <div className="relative px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
+          {/* Main controls */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
+            {/* Audio Toggle */}
+            <ControlButton
+              onClick={toggleAudio}
+              active={!isAudioEnabled}
+              icon={isAudioEnabled ? Mic : MicOff}
+              label={isAudioEnabled ? "Mute" : "Unmute"}
             />
-          </button>
 
-          {/* End Call */}
-          <button
-            onClick={handleEndCall}
-            disabled={isEndingCallRef.current}
-            className="p-4 sm:p-6 rounded-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 transition-all transform hover:scale-110 active:scale-95 shadow-xl ml-2 sm:ml-4"
-            title="End Call"
-          >
-            <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-          </button>
+            {/* Video Toggle */}
+            <ControlButton
+              onClick={toggleVideo}
+              active={!isVideoEnabled}
+              icon={isVideoEnabled ? Video : VideoOff}
+              label={isVideoEnabled ? "Stop Video" : "Start Video"}
+            />
+
+            {/* Screen Share */}
+            <ControlButton
+              onClick={toggleScreenShare}
+              active={isScreenSharing}
+              icon={MonitorUp}
+              label={isScreenSharing ? "Stop Share" : "Share Screen"}
+            />
+
+            {/* Record Toggle */}
+            <ControlButton
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={connectionStatus !== "connected"}
+              active={isRecording}
+              pulse={isRecording}
+              icon={Circle}
+              label={isRecording ? "Stop Rec" : "Record"}
+            />
+
+            {/* Spacer for visual separation */}
+            <div className="w-2 sm:w-4" />
+
+            {/* End Call - Larger and more prominent */}
+            <ControlButton
+              onClick={handleEndCall}
+              disabled={isEndingCallRef.current}
+              danger
+              size="large"
+              icon={PhoneOff}
+              label="End Call"
+            />
+          </div>
+
+          {/* Bottom safe area indicator for mobile */}
+          <div className="h-2 sm:h-4 md:h-6" />
         </div>
       </div>
+
+      {/* ===== SCREEN SHARE INDICATOR ===== */}
+      {isScreenSharing && (
+        <div
+          className={`
+          absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-50
+        `}
+        >
+          <div
+            className={`
+            flex items-center gap-2 sm:gap-3
+            ${colors.glass} backdrop-blur-xl
+            px-4 py-2 sm:px-5 sm:py-2.5
+            rounded-full shadow-2xl shadow-blue-500/20
+            border border-blue-500/30
+          `}
+          >
+            <div className="relative">
+              <MonitorUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+            </div>
+            <span className="text-blue-400 text-xs sm:text-sm font-medium">
+              Sharing your screen
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ===== PREMIUM CSS INJECTION ===== */}
+      <style jsx global>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        @keyframes glow {
+          0%,
+          100% {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        .video-call-premium * {
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Smooth scrollbar for any scrollable content */
+        .video-call-premium ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+
+        .video-call-premium ::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 3px;
+        }
+
+        .video-call-premium ::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 3px;
+        }
+
+        .video-call-premium ::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Video element enhancements */
+        #remote-video-element {
+          filter: contrast(1.02) saturate(1.05);
+        }
+
+        /* Button focus states */
+        button:focus-visible {
+          outline: none;
+          ring: 2px solid rgba(139, 92, 246, 0.5);
+          ring-offset: 2px;
+        }
+
+        /* Animations for smoother experience */
+        * {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Safe area padding for notched devices */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+          .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+          }
+        }
+      `}</style>
     </div>
   );
 };
