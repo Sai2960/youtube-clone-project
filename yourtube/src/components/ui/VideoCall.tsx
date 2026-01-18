@@ -2141,6 +2141,40 @@ const VideoCall = ({
             </div>
           </div>
         )}
+      {/* Waiting for Other Person Overlay */}
+      {connectionStatus === "waiting" && (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] pointer-events-none">
+          <div className="text-center p-8 bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-2xl max-w-md mx-4">
+            {/* Animated Rings */}
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping"></div>
+              <div className="absolute inset-0 border-4 border-blue-500/50 rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Video className="w-12 h-12 text-blue-400" />
+              </div>
+            </div>
+
+            {/* Status Text */}
+            <h3 className="text-2xl font-bold text-white mb-2">
+              Calling {remotePeerName}...
+            </h3>
+            <p className="text-slate-300 text-sm mb-4">
+              Waiting for them to answer
+            </p>
+
+            {/* Animated Dots */}
+            <div className="flex justify-center gap-2">
+              {[0, 0.2, 0.4].map((delay, i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                  style={{ animationDelay: `${delay}s` }}
+                ></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Local Video - Picture in Picture */}
       <div
@@ -2185,17 +2219,24 @@ const VideoCall = ({
                 className={`w-2 h-2 rounded-full ${
                   connectionStatus === "connected"
                     ? "bg-green-500"
-                    : connectionStatus === "connecting"
-                      ? "bg-yellow-500 animate-pulse"
-                      : "bg-red-500"
+                    : connectionStatus === "waiting"
+                      ? "bg-blue-500 animate-pulse"
+                      : connectionStatus === "connecting"
+                        ? "bg-yellow-500 animate-pulse"
+                        : "bg-red-500"
                 }`}
               />
-              <p className="text-gray-300 text-xs sm:text-sm capitalize">
-                {connectionStatus}
+              <p className="text-gray-300 text-xs sm:text-sm">
+                {connectionStatus === "waiting"
+                  ? "Calling..."
+                  : connectionStatus === "connecting"
+                    ? "Connecting..."
+                    : connectionStatus === "connected"
+                      ? "Connected"
+                      : "Disconnected"}
               </p>
             </div>
           </div>
-
           {/* Recording Indicator */}
           {isRecording && (
             <div className="flex items-center gap-2 sm:gap-3 bg-red-600/90 backdrop-blur-sm px-3 py-2 sm:px-6 sm:py-3 rounded-full animate-pulse shadow-lg">
